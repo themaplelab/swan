@@ -1,0 +1,10 @@
+Manifest-Version: 1.0
+Bundle-ManifestVersion: 2
+Bundle-Name: Swift
+Bundle-SymbolicName: com.ibm.wala.cast.swift
+Bundle-Version: 1.0.0.qualifier
+Bundle-Vendor: IBM
+Bundle-RequiredExecutionEnvironment: JavaSE-1.8
+Require-Bundle: com.ibm.wala.util;bundle-version="1.4.3",
+ com.ibm.wala.core;bundle-version="1.4.3",
+ com.ibm.wala.cast;bundle-version="1.4.3"
