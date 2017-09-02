@@ -10,6 +10,8 @@
  *****************************************************************************/
 package com.ibm.wala.cast.swift;
 
+import java.io.File;
+import java.net.MalformedURLException;
 import java.net.URL;
 
 import com.ibm.wala.cast.ir.translator.NativeTranslatorToCAst;
@@ -22,8 +24,8 @@ import com.ibm.wala.cast.tree.rewrite.CAstRewriterFactory;
 
 public class SwiftToCAstTranslator extends NativeTranslatorToCAst {
 
-	public SwiftToCAstTranslator() {
-		this(new CAstImpl(), null, null);
+	public SwiftToCAstTranslator(String fileName) throws MalformedURLException {
+		this(new CAstImpl(), new File(fileName).toURI().toURL(), fileName);
 	}
 	
 	private SwiftToCAstTranslator(CAst Ast, URL sourceURL, String sourceFileName) {
