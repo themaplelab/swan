@@ -84,34 +84,30 @@
 		<delete dir="${temp.folder}"/>
 	</target>
 
-	<target name="@dot.nestedJars">
+	<target name="bin.nestedJars">
 	</target>
-	<target name="@dot" depends="init,@dot.nestedJars" unless="@dot" description="Create jar: com.ibm.wala.cast.swift @dot.">
-		<delete dir="${build.result.folder}/@dot"/>
-		<mkdir dir="${build.result.folder}/@dot"/>
-		<path id="@dot.classpath">
-			<pathelement path="../../WALA/com.ibm.wala.util/bin/"/>
-			<pathelement path="../../WALA/com.ibm.wala.util/@dot"/>
-			<pathelement path="../../WALA/com.ibm.wala.core/bin/"/>
-			<pathelement path="../../WALA/com.ibm.wala.core/@dot"/>
-			<pathelement path="../../WALA/com.ibm.wala.shrike/bin/"/>
-			<pathelement path="../../WALA/com.ibm.wala.shrike/@dot"/>
-			<pathelement path="../../WALA/com.ibm.wala.cast/bin/"/>
-			<pathelement path="../../WALA/com.ibm.wala.cast/@dot"/>
-			<pathelement path="../../WALA/com.ibm.wala.cast/bin"/>
+	<target name="bin" depends="init,bin.nestedJars" unless="bin" description="Create jar: com.ibm.wala.cast.swift bin.">
+		<delete dir="${build.result.folder}/bin"/>
+		<mkdir dir="${build.result.folder}/bin"/>
+		<path id="bin.classpath">
+			<pathelement path="../../WALA/com.ibm.wala.util/target/classes/"/>
+			<pathelement path="../../WALA/com.ibm.wala.core/target/classes/"/>
+			<pathelement path="../../WALA/com.ibm.wala.shrike/target/classes/"/>
+			<pathelement path="../../WALA/com.ibm.wala.cast/target/classes/"/>
+			<pathelement path="../../WALA/com.ibm.wala.cast/target/classes/"/>
 			<pathelement path="../../WALA/com.ibm.wala.cast/lib/commons-io-2.4.jar"/>
 		</path>
 		<!-- compile the source code -->
-		<javac destdir="${build.result.folder}/@dot" failonerror="${javacFailOnError}" verbose="${javacVerbose}" debug="${javacDebugInfo}" includeAntRuntime="no" bootclasspath="${bundleBootClasspath}" source="${bundleJavacSource}" target="${bundleJavacTarget}"		>
+		<javac destdir="${build.result.folder}/bin" failonerror="${javacFailOnError}" verbose="${javacVerbose}" debug="${javacDebugInfo}" includeAntRuntime="no" bootclasspath="${bundleBootClasspath}" source="${bundleJavacSource}" target="${bundleJavacTarget}"		>
 			<compilerarg line="${compilerArg}" compiler="${build.compiler}"/>
-			<classpath refid="@dot.classpath" />
+			<classpath refid="bin.classpath" />
 			<src path="source/java/"			/>
 			<compilerarg value="@${basedir}/javaCompiler...args" compiler="org.eclipse.jdt.core.JDTCompilerAdapter"			/>
-			<compilerarg line="-log &apos;${build.result.folder}/@dot${logExtension}&apos;" compiler="org.eclipse.jdt.core.JDTCompilerAdapter"			/>
+			<compilerarg line="-log &apos;${build.result.folder}/bin${logExtension}&apos;" compiler="org.eclipse.jdt.core.JDTCompilerAdapter"			/>
 		</javac>
 		<antcall target="checkCompilationResults"/>
 		<!-- Copy necessary resources -->
-		<copy todir="${build.result.folder}/@dot" failonerror="true" overwrite="false">
+		<copy todir="${build.result.folder}/bin" failonerror="true" overwrite="false">
 			<fileset dir="source/java/">
 				<exclude name="**/*.java"/>
 				<exclude name="**/package.htm*"/>
@@ -140,8 +136,8 @@
 
 	<target name="build.jars" depends="init" description="Compile classes and build nested jars for the plug-in: com.ibm.wala.cast.swift.">
 		<delete file="${compilation.problem.marker}" quiet="true"/>
-		<available property="@dot" file="${build.result.folder}/@dot"/>
-		<antcall target="@dot"/>
+		<available property="bin" file="${build.result.folder}/bin"/>
+		<antcall target="bin"/>
 	</target>
 
 	<target name="checkCompilationResults" if="compilation.error.occured">
@@ -175,7 +171,7 @@
 		<eclipse.versionReplacer path="${build.result.folder}" version="1.0.0.201801191500"/>
 		<antcall target="apitools.generation">
 			<param name="projectLocation" value="${basedir}"/>
-			<param name="binary.folders" value="${build.result.folder}/@dot"/>
+			<param name="binary.folders" value="${build.result.folder}/bin"/>
 			<param name="projectName" value="${bundleId}_${bundleVersion}"/>
 			<param name="target.folder" value="${build.result.folder}"/>
 		</antcall>
@@ -190,7 +186,7 @@
 	<target name="gather.bin.parts" depends="init" if="destination.temp.folder">
 		<mkdir dir="${destination.temp.folder}/com.ibm.wala.cast.swift_1.0.0.201801191500"/>
 		<copy todir="${destination.temp.folder}/com.ibm.wala.cast.swift_1.0.0.201801191500" failonerror="true" overwrite="false">
-			<fileset dir="${build.result.folder}/@dot">
+			<fileset dir="${build.result.folder}/bin">
 				<include name="**"/>
 			</fileset>
 		</copy>
@@ -202,7 +198,7 @@
 		<eclipse.versionReplacer path="${destination.temp.folder}/com.ibm.wala.cast.swift_1.0.0.201801191500" version="1.0.0.201801191500"/>
 		<antcall target="apitools.generation">
 			<param name="projectLocation" value="${basedir}"/>
-			<param name="binary.folders" value="${build.result.folder}/@dot"/>
+			<param name="binary.folders" value="${build.result.folder}/bin"/>
 			<param name="projectName" value="${bundleId}_${bundleVersion}"/>
 			<param name="target.folder" value="${destination.temp.folder}/com.ibm.wala.cast.swift_1.0.0.201801191500"/>
 		</antcall>
@@ -235,13 +231,13 @@
 		<mkdir dir="${destination.temp.folder}/com.ibm.wala.cast.swift_1.0.0.201801191500"/>
 		<copy todir="${destination.temp.folder}/com.ibm.wala.cast.swift_1.0.0.201801191500" failonerror="false" overwrite="false">
 			<fileset dir="${build.result.folder}">
-				<include name="@dot${logExtension}"/>
+				<include name="bin${logExtension}"/>
 			</fileset>
 		</copy>
 	</target>
 
 	<target name="clean" depends="init" description="Clean the plug-in: com.ibm.wala.cast.swift of all the zips, jars and logs created.">
-		<delete dir="${build.result.folder}/@dot"/>
+		<delete dir="${build.result.folder}/bin"/>
 		<delete file="${build.result.folder}/src.zip"/>
 		<delete file="${plugin.destination}/com.ibm.wala.cast.swift_1.0.0.201801191500.jar"/>
 		<delete file="${plugin.destination}/com.ibm.wala.cast.swift_1.0.0.201801191500.zip"/>
