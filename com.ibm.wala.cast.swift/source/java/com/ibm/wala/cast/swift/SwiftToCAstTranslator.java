@@ -41,4 +41,8 @@ public class SwiftToCAstTranslator extends NativeTranslatorToCAst {
 	@Override
 	native public CAstEntity translateToCAst();
 
+
+	static {
+		System.loadLibrary("translator");
+	}
 }
