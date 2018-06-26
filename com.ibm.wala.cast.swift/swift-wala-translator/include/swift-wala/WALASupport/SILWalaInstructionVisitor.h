@@ -16,7 +16,7 @@ class WALAInstance;
 
 class SILWalaInstructionVisitor : public SILInstructionVisitor<SILWalaInstructionVisitor, jobject> {
 public:
-  SILWalaInstructionVisitor(std::shared_ptr<WALAInstance> Instance, bool Print) : Instance(Instance), Print(Print) {}
+  SILWalaInstructionVisitor(WALAInstance *Instance, bool Print) : Instance(Instance), Print(Print) {}
 
   void visitSILModule(SILModule *M);
   void visitSILFunction(SILFunction *F);
@@ -30,7 +30,7 @@ public:
   }
 
 private:
-  std::weak_ptr<WALAInstance> Instance;
+  WALAInstance *Instance;
   bool Print;
 
 };

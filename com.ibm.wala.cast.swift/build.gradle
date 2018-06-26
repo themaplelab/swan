@@ -10,6 +10,9 @@ sourceSets.main.java.srcDirs = ['source/java']
 
 def currentJavaHome = org.gradle.internal.jvm.Jvm.current().javaHome
 model {
+    toolChains {
+        clang(Clang)
+    }
     repositories {
         libs(PrebuiltLibraries) {
             jdk {

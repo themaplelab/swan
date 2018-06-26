@@ -40,9 +40,9 @@ project(":swift-wala-translator") {
 
                 buildOutput {
                     def outputDir = getInstallDir(binary)
-                    outputFile = file("${outputDir}/lib/libswiftWala.a")
+                    outputFile = file("${outputDir}/lib/libswiftWala.so")
                     exportedHeaders {
-                        srcDir "${outputDir}/include"
+                      srcDir "${projectDir}/include"
                     }
                 }
             }
