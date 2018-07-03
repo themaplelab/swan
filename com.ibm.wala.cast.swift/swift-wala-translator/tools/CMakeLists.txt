@@ -1,0 +1,1 @@
+add_subdirectory(swift-wala-translator-standalone)

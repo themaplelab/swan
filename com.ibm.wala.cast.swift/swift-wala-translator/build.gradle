@@ -32,7 +32,7 @@ project(":swift-wala-translator") {
                             "-DSWIFT_PATH_TO_LLVM_BUILD=${SWIFT_PATH_TO_LLVM_BUILD}",
                             "-DSWIFT_PATH_TO_CMARK_BUILD=${SWIFT_PATH_TO_CMARK_BUILD}",
                             "-DWALA_DIR=${WALA_DIR}"
-                    targets 'all', 'install'
+                    targets 'swiftWala', 'install'
                     inputs.dir 'lib'
                     inputs.file 'CMakeLists.txt'
                     workingDir intDir

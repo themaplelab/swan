@@ -24,6 +24,13 @@ struct Observer : public FrontendObserver {
   WALAInstance *Instance;
   Observer(WALAInstance *Instance) : Instance(Instance) {};
 
+  void parsedArgs(CompilerInvocation &Invocation) override {
+    Invocation.setImportSearchPaths({"/home/leo/Development/swift-source/build/Ninja-RelWithDebInfoAssert/swift-linux-x86_64/stdlib"});
+    Invocation.setSDKPath({"/home/leo/Development/swift-source/build/Ninja-RelWithDebInfoAssert/swift-linux-x86_64/stdlib"});
+    Invocation.setFrameworkSearchPaths({{"/home/leo/Development/swift-source/build/Ninja-RelWithDebInfoAssert/swift-linux-x86_64/stdlib",
+                                        true}});
+  }
+
   void performedSILGeneration(SILModule &Module) override {
     Instance->analyzeSILModule(Module);
   }
@@ -53,7 +60,7 @@ void WALAInstance::analyzeSILModule(SILModule &SM) {
 }
 
 void WALAInstance::analyze() {
-  auto Argv = {"", "-emit-llvm", File.c_str()};
+  auto Argv = {"", "-emit-sil", File.c_str()};
 
   ::Observer observer(this);
   SmallVector<const char *, 256> argv;

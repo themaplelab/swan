@@ -4,9 +4,13 @@
 
 using namespace swift_wala;
 
+extern "C" {
+
 JNIEXPORT jobject JNICALL
 Java_com_ibm_wala_cast_swift_SwiftToCAstTranslator_translateToCAst(JNIEnv *env, jobject obj)
 {
   WALAInstance Instance(env, obj);
   Instance.analyze();
+}
+
 }
