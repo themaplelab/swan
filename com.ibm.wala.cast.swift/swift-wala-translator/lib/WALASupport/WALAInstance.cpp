@@ -14,6 +14,7 @@
 #include "swift-wala/WALASupport/SILWalaInstructionVisitor.h"
 #include "llvm/Support/FileSystem.h"
 #include "llvm/Support/Process.h"
+#include "llvm/Support/Path.h"
 
 using namespace swift_wala;
 using namespace llvm;
@@ -25,10 +26,9 @@ struct Observer : public FrontendObserver {
   Observer(WALAInstance *Instance) : Instance(Instance) {};
 
   void parsedArgs(CompilerInvocation &Invocation) override {
-    Invocation.setImportSearchPaths({"/home/leo/Development/swift-source/build/Ninja-RelWithDebInfoAssert/swift-linux-x86_64/stdlib"});
-    Invocation.setSDKPath({"/home/leo/Development/swift-source/build/Ninja-RelWithDebInfoAssert/swift-linux-x86_64/stdlib"});
-    Invocation.setFrameworkSearchPaths({{"/home/leo/Development/swift-source/build/Ninja-RelWithDebInfoAssert/swift-linux-x86_64/stdlib",
-                                        true}});
+    llvm::SmallString<128> LibPath(std::getenv("SWIFT_BUILD_DIR"));
+    llvm::sys::path::append(LibPath, "lib", "swift");
+    Invocation.setRuntimeResourcePath(LibPath.str());
   }
 
   void performedSILGeneration(SILModule &Module) override {
