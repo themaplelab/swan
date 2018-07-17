@@ -21,6 +21,7 @@ import com.ibm.wala.cast.tree.impl.CAstImpl;
 import com.ibm.wala.cast.tree.rewrite.CAstRewriter.CopyKey;
 import com.ibm.wala.cast.tree.rewrite.CAstRewriter.RewriteContext;
 import com.ibm.wala.cast.tree.rewrite.CAstRewriterFactory;
+import com.ibm.wala.cast.util.CAstPrinter;
 
 public class SwiftToCAstTranslator extends NativeTranslatorToCAst {
 
@@ -40,5 +41,23 @@ public class SwiftToCAstTranslator extends NativeTranslatorToCAst {
 
 	@Override
 	native public CAstEntity translateToCAst();
+
+
+	static {
+		System.loadLibrary("translator");
+	}
+
+	public static void main(String[] args) {
+		if (args.length > 0) {
+			try {
+				SwiftToCAstTranslator translator = new SwiftToCAstTranslator(args[0]);
+				CAstEntity entity = translator.translateToCAst();
+				String astString = CAstPrinter.print(entity);
+				System.out.print(astString);
+			}
+			catch (Exception e) {
+			}
+		}
+	}
 
 }
