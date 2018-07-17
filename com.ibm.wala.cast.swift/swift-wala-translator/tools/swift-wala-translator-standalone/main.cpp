@@ -16,7 +16,9 @@ int main(int argc, const char *argv[]) {
               << "/com.ibm.wala.shrike/build/classes/java/main:" << WalaHome
               << "/com.ibm.wala.core/build/classes/java/main:"
               << WalaHome << "/com.ibm.wala.cast/build/classes/java/main:" << SwiftWalaHome
-              << "/com.ibm.wala.cast.swift/build/classes/java/main";
+              << "/com.ibm.wala.cast.swift/build/classes/java/main:" << SwiftWalaHome
+              << "/com.ibm.wala.cast.swift/build/libs/translator/shared";
+
   std::cout << PathBuilder.str() << std::endl;
   char *Path = strdup(PathBuilder.str().c_str());
   auto JavaEnv = launch_jvm(Path);
