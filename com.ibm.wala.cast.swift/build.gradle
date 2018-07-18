@@ -41,6 +41,7 @@ model {
             }
         }
     }
+
     components {
         translator(NativeLibrarySpec) {
             sources.cpp {
@@ -50,6 +51,15 @@ model {
                 }
                 lib library: 'jdk'
                 lib project: ':swift-wala-translator', library: "swiftWala"
+            }
+
+            binaries {
+                withType(StaticLibraryBinarySpec) {
+                    buildable = false
+                }
+                withType(SharedLibraryBinarySpec) {
+                    linker.args "-Wl,-rpath,$rootProject.projectDir/swift-wala-translator/build/libs/swiftWala/shared"
+                }
             }
         }
     }

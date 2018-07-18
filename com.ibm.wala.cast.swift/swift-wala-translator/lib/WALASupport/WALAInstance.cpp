@@ -26,7 +26,7 @@ struct Observer : public FrontendObserver {
   Observer(WALAInstance *Instance) : Instance(Instance) {};
 
   void parsedArgs(CompilerInvocation &Invocation) override {
-    llvm::SmallString<128> LibPath(std::getenv("SWIFT_BUILD_DIR"));
+    llvm::SmallString<128> LibPath(std::getenv("WALA_PATH_TO_SWIFT_BUILD"));
     llvm::sys::path::append(LibPath, "lib", "swift");
     Invocation.setRuntimeResourcePath(LibPath.str());
   }

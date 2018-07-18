@@ -47,4 +47,17 @@ public class SwiftToCAstTranslator extends NativeTranslatorToCAst {
 		System.loadLibrary("translator");
 	}
 
+	public static void main(String[] args) {
+		if (args.length > 0) {
+			try {
+				SwiftToCAstTranslator translator = new SwiftToCAstTranslator(args[0]);
+				CAstEntity entity = translator.translateToCAst();
+				String astString = CAstPrinter.print(entity);
+				System.out.print(astString);
+			}
+			catch (Exception e) {
+			}
+		}
+	}
+
 }
