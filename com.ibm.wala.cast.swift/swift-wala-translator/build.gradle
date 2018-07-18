@@ -17,7 +17,6 @@ project(":swift-wala-translator") {
     model {
         components {
             swiftWala(ExternalNativeLibrarySpec) {
-                println("hahaha")
                 buildConfig(CMake) {
                     def intDir = getIntermediateDir(binary)
                     def outputDir = getInstallDir(binary)
