@@ -41,6 +41,7 @@ model {
             }
         }
     }
+
     components {
         translator(NativeLibrarySpec) {
             sources.cpp {
@@ -51,6 +52,15 @@ model {
                 lib library: 'jdk'
                 lib project: ':swift-wala-translator', library: "swiftWala"
             }
+
+            binaries {
+                withType(StaticLibraryBinarySpec) {
+                    buildable = false
+                }
+                withType(SharedLibraryBinarySpec) {
+                    linker.args "-Wl,-rpath,$rootProject.projectDir/swift-wala-translator/build/libs/swiftWala/shared"
+                }
+            }
         }
     }
 }
@@ -60,6 +70,6 @@ dependencies {
     compile fileTree(dir: "${WALA_DIR}/com.ibm.wala.core/build/libs", include: '*.jar')
     compile fileTree(dir: "${WALA_DIR}/com.ibm.wala.shrike/build/libs", include: '*.jar')
     compile fileTree(dir: "${WALA_DIR}/com.ibm.wala.cast/build/libs", include: '*.jar')
-    compile fileTree(dir: "${WALA_DIR}/com.ibm.wala.cast/lib", include: '*.jar')
+    compile fileTree(dir: "${WALA_DIR}/com.ibm.wala.cast/build/libs", include: '*.jar')
 }
 

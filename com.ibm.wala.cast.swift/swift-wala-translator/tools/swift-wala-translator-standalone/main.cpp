@@ -10,13 +10,15 @@ int main(int argc, const char *argv[]) {
   if (argc <= 1)
     return 0;
   std::stringstream PathBuilder;
-  auto WalaHome = std::getenv("WALA_HOME");
-  auto SwiftWalaHome = std::getenv("SWIFT_WALA_HOME");
+  auto WalaHome = std::getenv("WALA_DIR");
+  auto SwiftWalaHome = std::getenv("SWIFT_WALA_DIR");
   PathBuilder << WalaHome << "/com.ibm.wala.util/build/classes/java/main:" << WalaHome
               << "/com.ibm.wala.shrike/build/classes/java/main:" << WalaHome
               << "/com.ibm.wala.core/build/classes/java/main:"
               << WalaHome << "/com.ibm.wala.cast/build/classes/java/main:" << SwiftWalaHome
-              << "/com.ibm.wala.cast.swift/build/classes/java/main";
+              << "/com.ibm.wala.cast.swift/build/classes/java/main:" << SwiftWalaHome
+              << "/com.ibm.wala.cast.swift/build/libs/translator/shared";
+
   std::cout << PathBuilder.str() << std::endl;
   char *Path = strdup(PathBuilder.str().c_str());
   auto JavaEnv = launch_jvm(Path);

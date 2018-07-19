@@ -40,7 +40,14 @@ project(":swift-wala-translator") {
 
                 buildOutput {
                     def outputDir = getInstallDir(binary)
-                    outputFile = file("${outputDir}/lib/libswiftWala.so")
+                    switch (targetPlatform.operatingSystem.name) {
+                        case 'linux':
+                            outputFile = file("${outputDir}/lib/libswiftWala.so")
+                            break
+                        case 'osx':
+                            outputFile = file("${outputDir}/lib/libswiftWala.dylib")
+                            break
+                    }
                     exportedHeaders {
                       srcDir "${projectDir}/include"
                     }
