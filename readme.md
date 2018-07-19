@@ -36,10 +36,10 @@ cd ..
 
 ```
 cd swift-wala/com.ibm.wala.cast.swift
-cp gralde.properties.example gradle.properties
+cp gradle.properties.example gradle.properties
 ```
 
-Edit `gralde.properties` and provide proper paths.
+Edit `gradle.properties` and provide proper paths.
 
 
 ### Build Swift-WALA
