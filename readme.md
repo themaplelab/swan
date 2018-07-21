@@ -48,7 +48,6 @@ Edit `gradle.properties` and provide proper paths.
 ./gradlew assemble
 ```
 
-
 ### Run The Program
 
 
@@ -70,4 +69,7 @@ export SWIFT_WALA_DIR={path/to/your/swift-wala/dir}
 ./swift-wala-translator-standalone example.swift
 ```
 
+### Troubleshoot
+
+- `warning: libXrender.so.1, needed by libjvm.so`: install jvm  dependencies. For example, on Ubuntu `apt install libfontconfig1 libxrender1 libxi6 libgconf-2-4 libxtst6`.
 
