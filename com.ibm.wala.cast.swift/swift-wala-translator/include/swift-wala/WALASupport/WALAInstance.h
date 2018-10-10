@@ -11,7 +11,6 @@ namespace swift {
     class SILModule;
 }
 
-
 class CAstWrapper;
 
 namespace swift_wala {
@@ -25,6 +24,7 @@ private:
 public:
   CAstWrapper *CAst;
 
+  jobject makeBigDecimal(const char *, int);
   void print(jobject Object);
   void analyze();
   void analyzeSILModule(swift::SILModule &SM);
@@ -33,3 +33,4 @@ public:
 }
 
 #endif //SWIFTWALATRANSLATOR_WALAINSTANCE_H
+
