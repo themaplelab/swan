@@ -12,6 +12,7 @@
 #include "swift/FrontendTool/FrontendTool.h"
 #include "swift/Frontend/Frontend.h"
 #include "swift-wala/WALASupport/SILWalaInstructionVisitor.h"
+#include "swift/SIL/SILValue.h"
 #include "llvm/Support/FileSystem.h"
 #include "llvm/Support/Process.h"
 #include "llvm/Support/Path.h"
@@ -93,3 +94,20 @@ WALAInstance::WALAInstance(JNIEnv *Env, jobject Obj) : JavaEnv(Env), XLator(Obj)
       THROW_ANY_EXCEPTION(Exception);
   CATCH()
 }
+
+
+jobject WALAInstance::makeBigDecimal(const char *strData, int strLen) {
+  char *safeData = strndup(strData, strLen);
+  jobject val = JavaEnv->NewStringUTF(safeData);
+  delete safeData;
+  jclass bigDecimalCls = JavaEnv->FindClass("java/math/BigDecimal");
+  // THROW_ANY_EXCEPTION(cpp_ex);
+  jmethodID bigDecimalInit = JavaEnv->GetMethodID(bigDecimalCls, 
+    "<init>", "(Ljava/lang/String;)V");
+  //THROW_ANY_EXCEPTION(cpp_ex);
+  jobject bigDecimal = JavaEnv->NewObject(bigDecimalCls, bigDecimalInit, val);
+  //THROW_ANY_EXCEPTION(cpp_ex);
+  JavaEnv->DeleteLocalRef(val);
+  return bigDecimal;
+}
+
