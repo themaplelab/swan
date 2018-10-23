@@ -65,6 +65,12 @@ model {
     }
 }
 
+task run(type:JavaExec) {
+    main = "com.ibm.wala.cast.swift.SwiftToCAstTranslator"
+    classpath = sourceSets.main.runtimeClasspath
+    systemProperties 'java.library.path': "$rootProject.projectDir/build/libs/translator/shared"
+}
+
 dependencies {
     compile fileTree(dir: "${WALA_DIR}/com.ibm.wala.util/build/libs", include: '*.jar')
     compile fileTree(dir: "${WALA_DIR}/com.ibm.wala.core/build/libs", include: '*.jar')
