@@ -58,7 +58,7 @@ model {
                     buildable = false
                 }
                 withType(SharedLibraryBinarySpec) {
-                    linker.args "-Wl,-rpath,$rootProject.projectDir/build/libs/swiftWala/shared"
+                    linker.args "-Wl,-rpath,$rootProject.projectDir/swift-wala-translator/build/libs/swiftWala/shared"
                 }
             }
         }

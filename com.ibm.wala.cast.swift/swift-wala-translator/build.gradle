@@ -1,5 +1,5 @@
 plugins {
-    id "com.cisco.external-build" version "1.11"
+    id "com.cisco.external-build" version "1.14"
 }
 
 import com.cisco.gradle.externalbuild.ExternalNativeLibrarySpec
