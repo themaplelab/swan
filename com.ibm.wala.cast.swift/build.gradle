@@ -58,11 +58,17 @@ model {
                     buildable = false
                 }
                 withType(SharedLibraryBinarySpec) {
-                    linker.args "-Wl,-rpath,$rootProject.projectDir/swift-wala-translator/build/libs/swiftWala/shared"
+                    linker.args "-Wl,-rpath,$rootProject.projectDir/build/libs/swiftWala/shared"
                 }
             }
         }
     }
+}
+
+task run(type:JavaExec) {
+    main = "com.ibm.wala.cast.swift.SwiftToCAstTranslator"
+    classpath = sourceSets.main.runtimeClasspath
+    systemProperties 'java.library.path': "$rootProject.projectDir/build/libs/translator/shared"
 }
 
 dependencies {

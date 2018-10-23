@@ -61,7 +61,9 @@ export SWIFT_WALA_DIR={path/to/your/swift-wala/dir}
 ```
 
 
-- To run the Java code you need to pass java library path `-Djava.library.path="{swift-wala/dir}/com.ibm.wala.cast.swift/build/libs/translator/shared"`.
+- To run the Java code:
+
+`./gradlew run --args THE_ARGS_YOU_WANT`
 
 
 - Otherwise, you can run the standalone c++ code in `{swift-wala/dir/}/com.ibm.wala.cast.swift/swift-wala-translator/build/external-build/swiftWala/linux_x86-64/bin`.
