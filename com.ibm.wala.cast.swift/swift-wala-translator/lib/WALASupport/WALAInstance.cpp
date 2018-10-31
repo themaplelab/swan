@@ -101,13 +101,23 @@ jobject WALAInstance::makeBigDecimal(const char *strData, int strLen) {
   jobject val = JavaEnv->NewStringUTF(safeData);
   delete safeData;
   jclass bigDecimalCls = JavaEnv->FindClass("java/math/BigDecimal");
-  // THROW_ANY_EXCEPTION(cpp_ex);
   jmethodID bigDecimalInit = JavaEnv->GetMethodID(bigDecimalCls, 
     "<init>", "(Ljava/lang/String;)V");
-  //THROW_ANY_EXCEPTION(cpp_ex);
   jobject bigDecimal = JavaEnv->NewObject(bigDecimalCls, bigDecimalInit, val);
-  //THROW_ANY_EXCEPTION(cpp_ex);
   JavaEnv->DeleteLocalRef(val);
   return bigDecimal;
 }
 
+jobject WALAInstance::getCAstNodes() {
+  jclass java_util_ArrayList      = JavaEnv->FindClass("java/util/ArrayList");
+  jmethodID java_util_ArrayList_  = JavaEnv->GetMethodID(java_util_ArrayList, "<init>", "(I)V");
+  jmethodID java_util_ArrayList_add         = JavaEnv->GetMethodID(java_util_ArrayList, "add", "(Ljava/lang/Object;)Z");
+
+  auto result = JavaEnv->NewObject(java_util_ArrayList, java_util_ArrayList_, CAstNodes.size());
+
+  for (jobject decl: CAstNodes) {
+    JavaEnv->CallBooleanMethod(result, java_util_ArrayList_add, decl);
+  }
+
+  return result;
+}

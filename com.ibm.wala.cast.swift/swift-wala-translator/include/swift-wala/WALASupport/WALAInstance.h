@@ -6,6 +6,7 @@
 #include <sstream>
 #include <cstring>
 #include <memory>
+#include <vector>
 
 namespace swift {
     class SILModule;
@@ -23,8 +24,10 @@ private:
 
 public:
   CAstWrapper *CAst;
+  std::vector<jobject> CAstNodes;
 
   jobject makeBigDecimal(const char *, int);
+  jobject getCAstNodes();
   void print(jobject Object);
   void analyze();
   void analyzeSILModule(swift::SILModule &SM);
