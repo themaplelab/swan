@@ -1,4 +1,4 @@
-# Contribute to Swift-WALA
+# Contribute to SWAN
 
 
 ## Download Projects
@@ -32,17 +32,17 @@ cd ..
 ```
 
 
-### Edit Swift-WALA Configurations
+### Edit SWAN Configurations
 
 ```
-cd swift-wala/com.ibm.wala.cast.swift
+cd swan/com.ibm.wala.cast.swift
 cp gradle.properties.example gradle.properties
 ```
 
 Edit `gradle.properties` and provide proper paths.
 
 
-### Build Swift-WALA
+### Build SWAN
 
 ```
 ./gradlew assemble
@@ -57,7 +57,7 @@ Edit `gradle.properties` and provide proper paths.
 ```
 export WALA_PATH_TO_SWIFT_BUILD={path/to/your/swift/build/dir}
 export WALA_DIR={path/to/your/wala/dir}
-export SWIFT_WALA_DIR={path/to/your/swift-wala/dir}
+export SWAN_DIR={path/to/your/swan/dir}
 ```
 
 
@@ -66,10 +66,10 @@ export SWIFT_WALA_DIR={path/to/your/swift-wala/dir}
 `./gradlew run --args THE_ARGS_YOU_WANT`
 
 
-- Otherwise, you can run the standalone c++ code in `{swift-wala/dir/}/com.ibm.wala.cast.swift/swift-wala-translator/build/external-build/swiftWala/linux_x86-64/bin`.
+- Otherwise, you can run the standalone c++ code in `{swan/dir/}/com.ibm.wala.cast.swift/swan-translator/build/external-build/swan/linux_x86-64/bin`.
 
 ```
-./swift-wala-translator-standalone example.swift
+./swan-standalone example.swift
 ```
 
 
