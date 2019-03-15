@@ -8,7 +8,7 @@ mkdir swift-source
 cd swift-source
 git clone https://github.com/apple/swift
 git clone https://github.com/wala/WALA
-git clone https://github.com/themaplelab/swift-wala
+git clone https://github.com/themaplelab/swan
 ```
 
 ## Build Dependencies
