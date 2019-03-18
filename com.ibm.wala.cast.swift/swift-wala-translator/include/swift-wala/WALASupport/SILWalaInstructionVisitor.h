@@ -110,7 +110,6 @@ public:
   /*                        Reference Counting                                   */
   /*******************************************************************************/
 
-  // Commenting out instructions that no longer exist in the Swift 5.0
   // jobject visitStrongUnpinInst(StrongUnpinInst *SUI);
   jobject visitEndLifetimeInst(EndLifetimeInst *ELI);
   jobject visitMarkDependenceInst(MarkDependenceInst *MDI);
@@ -125,7 +124,7 @@ public:
   jobject visitIntegerLiteralInst(IntegerLiteralInst *ILI);
   jobject visitFloatLiteralInst(FloatLiteralInst *FLI);
   jobject visitStringLiteralInst(StringLiteralInst *SLI);
-  jobject visitConstStringLiteralInst(ConstStringLiteralInst *CSLI);
+  //jobject visitConstStringLiteralInst(ConstStringLiteralInst *CSLI);
 
   /*******************************************************************************/
   /*                         Dynamic Dispatch                                    */

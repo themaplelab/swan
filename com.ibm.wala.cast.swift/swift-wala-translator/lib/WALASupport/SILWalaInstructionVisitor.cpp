@@ -957,7 +957,7 @@ jobject SILWalaInstructionVisitor::visitFloatLiteralInst(FloatLiteralInst *FLI) 
   return Node;
 }
 
-jobject SILWalaInstructionVisitor::visitConstStringLiteralInst(ConstStringLiteralInst *CSLI) {
+/*jobject SILWalaInstructionVisitor::visitConstStringLiteralInst(ConstStringLiteralInst *CSLI) {
   // Value: the string data for the literal, in UTF-8.
   StringRef Value = CSLI->getValue();
   if (Print) {
@@ -992,7 +992,7 @@ jobject SILWalaInstructionVisitor::visitConstStringLiteralInst(ConstStringLitera
   NodeMap.insert(std::make_pair(static_cast<ValueBase *>(CSLI), C));
 
   return C;
-}
+}*/
 
 jobject SILWalaInstructionVisitor::visitStringLiteralInst(StringLiteralInst *SLI) {
   // Value: the string data for the literal, in UTF-8.
