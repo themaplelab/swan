@@ -27,9 +27,8 @@ project(":swift-wala-translator") {
                     cmakeArgs "-DCMAKE_INSTALL_PREFIX=${outputDir}",
                             "-DCMAKE_C_COMPILER=clang",
                             "-DCMAKE_CXX_COMPILER=clang++",
-                            "-DWALA_PATH_TO_SWIFT_BUILD=${WALA_PATH_TO_SWIFT_BUILD}",
-                            "-DSWIFT_PATH_TO_LLVM_SOURCE=${SWIFT_PATH_TO_LLVM_SOURCE}",
-                            "-DSWIFT_PATH_TO_LLVM_BUILD=${SWIFT_PATH_TO_LLVM_BUILD}",
+                            "-DClang_DIR=${SWIFT_PATH_TO_LLVM_BUILD}/lib/cmake/clang",
+                            "-DLLVM_DIR=${SWIFT_PATH_TO_LLVM_BUILD}/lib/cmake/llvm",
                             "-DSWIFT_PATH_TO_CMARK_BUILD=${SWIFT_PATH_TO_CMARK_BUILD}",
                             "-DWALA_DIR=${WALA_DIR}"
                     targets 'swiftWala', 'install'
