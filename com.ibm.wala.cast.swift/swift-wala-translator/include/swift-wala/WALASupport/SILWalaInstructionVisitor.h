@@ -2,6 +2,7 @@
 #define SWIFT_SILWALAINSTRUCTIONVISITOR_H
 
 #include "swift/SIL/SILVisitor.h"
+#include "swift/SIL/ApplySite.h"
 #include "swift-wala/WALASupport/WALAInstance.h"
 #include "swift-wala/WALASupport/SymbolTable.h"
 
