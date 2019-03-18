@@ -798,7 +798,7 @@ jobject SILWalaInstructionVisitor::visitEndUnpairedAccessInst(EndUnpairedAccessI
 /*                              REFERENCE COUNTING                             */
 /*******************************************************************************/
 
-jobject SILWalaInstructionVisitor::visitStrongUnpinInst(StrongUnpinInst *SUI) {
+/*jobject SILWalaInstructionVisitor::visitStrongUnpinInst(StrongUnpinInst *SUI) {
 
   SILValue UnpinOperand = SUI->getOperand();
   
@@ -817,7 +817,7 @@ jobject SILWalaInstructionVisitor::visitStrongUnpinInst(StrongUnpinInst *SUI) {
   }
 
   return Instance->CAst->makeNode(CAstWrapper::EMPTY);
-}
+}*/
 
 jobject SILWalaInstructionVisitor::visitEndLifetimeInst(EndLifetimeInst *ELI) {
   SILValue EndLifetimeOperand = ELI->getOperand();
@@ -857,7 +857,7 @@ jobject SILWalaInstructionVisitor::visitMarkDependenceInst(MarkDependenceInst *M
   return Node;
 }
 
-jobject SILWalaInstructionVisitor::visitStrongPinInst(StrongPinInst *SPI) {
+/*jobject SILWalaInstructionVisitor::visitStrongPinInst(StrongPinInst *SPI) {
 
   SILValue PinOperand = SPI->getOperand();
 
@@ -873,7 +873,7 @@ jobject SILWalaInstructionVisitor::visitStrongPinInst(StrongPinInst *SPI) {
   NodeMap.insert(std::make_pair(static_cast<ValueBase *>(SPI), Node));
 
   return Node;
-}
+}*/
 
 /*******************************************************************************/
 /*                                  LITERALS                                   */

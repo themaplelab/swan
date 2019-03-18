@@ -110,10 +110,11 @@ public:
   /*                        Reference Counting                                   */
   /*******************************************************************************/
 
-  jobject visitStrongUnpinInst(StrongUnpinInst *SUI);
+  // Commenting out instructions that no longer exist in the Swift 5.0
+  // jobject visitStrongUnpinInst(StrongUnpinInst *SUI);
   jobject visitEndLifetimeInst(EndLifetimeInst *ELI);
   jobject visitMarkDependenceInst(MarkDependenceInst *MDI);
-  jobject visitStrongPinInst(StrongPinInst *SPI);
+  // jobject visitStrongPinInst(StrongPinInst *SPI);
 
   /*******************************************************************************/
   /*                         Literals                                            */
