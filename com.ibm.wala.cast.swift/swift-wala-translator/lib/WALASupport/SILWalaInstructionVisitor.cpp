@@ -1,5 +1,6 @@
 #include <swift/SIL/SILModule.h>
 #include <swift/AST/Module.h>
+#include <swift/SIL/SILInstruction.h>
 
 #include "swift-wala/WALASupport/BasicBlockLabeller.h"
 #include "swift-wala/WALASupport/SILWalaInstructionVisitor.h"
