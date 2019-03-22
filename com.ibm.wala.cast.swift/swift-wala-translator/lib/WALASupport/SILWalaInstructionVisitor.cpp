@@ -273,7 +273,7 @@ jobject SILWalaInstructionVisitor::getOperatorCAstType(Identifier Name) {
 
 jobject SILWalaInstructionVisitor::visitAllocStackInst(AllocStackInst *ASI) {
   Optional<SILDebugVariable> Info = ASI->getVarInfo();
-  unsigned ArgNo = Info.ArgNo;
+  unsigned ArgNo = Info->ArgNo;
 
   if (auto *Decl = ASI->getDecl()) {
     StringRef varName = Decl->getNameStr();
