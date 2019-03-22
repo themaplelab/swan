@@ -32,6 +32,8 @@ struct Observer : public FrontendObserver {
     Invocation.setRuntimeResourcePath(LibPath.str());
   }
 
+  // TODO: it looks like this infrastructure has substantially changed.
+  // We need to figure out how to hook into the compiler in Swift 5.0.
   void performedSILGeneration(SILModule &Module) override {
     Instance->analyzeSILModule(Module);
   }
@@ -63,6 +65,8 @@ void WALAInstance::analyzeSILModule(SILModule &SM) {
 void WALAInstance::analyze() {
   auto Argv = {"", "-emit-sil", File.c_str()};
 
+  // TODO: The following should be replaced with
+  // a call to InitLLVM due to a recent API change
   ::Observer observer(this);
   SmallVector<const char *, 256> argv;
   llvm::SpecificBumpPtrAllocator<char> ArgAllocator;
