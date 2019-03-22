@@ -586,19 +586,29 @@ jobject SILWalaInstructionVisitor::visitLoadBorrowInst(LoadBorrowInst *LBI) {
   return Instance->CAst->makeNode(CAstWrapper::EMPTY);
 }
 
+/*
+ * The semantics of this instruction has now changed in Swift 5.0.
+ * An EndBorrowInst is now guaranteed to be paired with a BeginBorrowInst.
+ * Therefore, I suggest that we here just return an empty CAst node,
+ * and do the bookkeeping in visitBeginBorrowInst().
+ *
+ * TODO: why do we even need to erase the borrowed value? It should be sufficient
+ * to check in visitEndBorrowInst that there is a matching EndBorrowInst for the
+ * visited BeginBorrowInst.
+ */
 jobject SILWalaInstructionVisitor::visitEndBorrowInst(EndBorrowInst *EBI) {
   if (Print) {
-    llvm::outs() << "\t [BORROWED VALUE]: " << EBI->getBorrowedValue() << "\n";
-    llvm::outs() << "\t [BORROWED VALUE ADDR]: " << EBI->getBorrowedValue().getOpaqueValue() << "\n";
-    llvm::outs() << "\t [ORRIGINAL VALUE]: " << EBI->getOriginalValue() << "\n";
-    llvm::outs() << "\t [ORRIGINAL VALUE ADDR]: " << EBI->getOriginalValue().getOpaqueValue() << "\n";
+//    llvm::outs() << "\t [BORROWED VALUE]: " << EBI->getBorrowedValue() << "\n";
+//    llvm::outs() << "\t [BORROWED VALUE ADDR]: " << EBI->getBorrowedValue().getOpaqueValue() << "\n";
+    llvm::outs() << "\t [ORRIGINAL VALUE]: " << EBI->getSingleOriginalValue() << "\n";
+    llvm::outs() << "\t [ORRIGINAL VALUE ADDR]: " << EBI->getSingleOriginalValue().getOpaqueValue() << "\n";
   }
-  if (NodeMap.find(EBI->getBorrowedValue()) != NodeMap.end()) {
-    if (Print) {
-      llvm::outs() << "\t borrowed value found in NodeMap, remove from NodeMap\n";
-    }
-    NodeMap.erase(EBI->getBorrowedValue());
-  }
+//  if (NodeMap.find(EBI->getBorrowedValue()) != NodeMap.end()) {
+//    if (Print) {
+//      llvm::outs() << "\t borrowed value found in NodeMap, remove from NodeMap\n";
+//    }
+//    NodeMap.erase(EBI->getBorrowedValue());
+//  }
   return Instance->CAst->makeNode(CAstWrapper::EMPTY);
 }
 
