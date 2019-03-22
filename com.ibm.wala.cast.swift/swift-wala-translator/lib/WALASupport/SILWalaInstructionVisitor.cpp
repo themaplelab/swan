@@ -293,8 +293,8 @@ jobject SILWalaInstructionVisitor::visitAllocStackInst(AllocStackInst *ASI) {
 }
 
 jobject SILWalaInstructionVisitor::visitAllocBoxInst(AllocBoxInst *ABI) {
-  SILDebugVariable Info = ABI->getVarInfo();
-  unsigned ArgNo = Info.ArgNo;
+  Optional<SILDebugVariable> Info = ABI->getVarInfo();
+  unsigned ArgNo = Info->ArgNo;
 
   if (auto *Decl = ABI->getDecl()) {
     StringRef varName = Decl->getNameStr();
@@ -442,8 +442,8 @@ jobject SILWalaInstructionVisitor::visitProjectValueBufferInst(ProjectValueBuffe
 /*******************************************************************************/
 
 jobject SILWalaInstructionVisitor::visitDebugValueInst(DebugValueInst *DBI) {
-  SILDebugVariable Info = DBI->getVarInfo();
-  unsigned ArgNo = Info.ArgNo;
+  Optional<SILDebugVariable> Info = DBI->getVarInfo();
+  unsigned ArgNo = Info->ArgNo;
 
   if (Print) {
     llvm::outs() << "[ARGNO]: " << ArgNo << "\n";
@@ -486,11 +486,10 @@ jobject SILWalaInstructionVisitor::visitDebugValueInst(DebugValueInst *DBI) {
 }
 
 jobject SILWalaInstructionVisitor::visitDebugValueAddrInst(DebugValueAddrInst *DVAI) {
-
-  SILDebugVariable DebugVar = DVAI->getVarInfo();
+  Optional<SILDebugVariable> DebugVar = DVAI->getVarInfo();
 
   if (Print) {
-    llvm::outs() << "\t [ARGNO]: " << DebugVar.ArgNo << "\n";
+    llvm::outs() << "\t [ARGNO]: " << DebugVar->ArgNo << "\n";
   }
 
   VarDecl *Decl = DVAI->getDecl();
