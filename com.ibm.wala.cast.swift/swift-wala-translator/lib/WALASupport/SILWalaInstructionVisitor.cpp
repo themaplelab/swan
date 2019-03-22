@@ -1,6 +1,5 @@
 #include <swift/SIL/SILModule.h>
 #include <swift/AST/Module.h>
-#include <swift/SIL/SILInstruction.h>
 
 #include "swift-wala/WALASupport/BasicBlockLabeller.h"
 #include "swift-wala/WALASupport/SILWalaInstructionVisitor.h"
@@ -273,7 +272,7 @@ jobject SILWalaInstructionVisitor::getOperatorCAstType(Identifier Name) {
 /*******************************************************************************/
 
 jobject SILWalaInstructionVisitor::visitAllocStackInst(AllocStackInst *ASI) {
-  SILDebugVariable Info = ASI->getVarInfo();
+  Optional<SILDebugVariable> Info = ASI->getVarInfo();
   unsigned ArgNo = Info.ArgNo;
 
   if (auto *Decl = ASI->getDecl()) {
