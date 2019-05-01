@@ -65,17 +65,11 @@ void WALAInstance::analyzeSILModule(SILModule &SM) {
 void WALAInstance::analyze() {
   auto Argv = {"", "-emit-sil", File.c_str()};
 
-  // TODO: The following should be replaced with
-  // a call to InitLLVM due to a recent API change
   ::Observer observer(this);
-  SmallVector<const char *, 256> argv;
-  llvm::SpecificBumpPtrAllocator<char> ArgAllocator;
-  std::error_code EC = llvm::sys::Process::GetArgumentVector(argv,
-                                                             llvm::ArrayRef<const char *>(Argv.begin(), Argv.end()),
-                                                             ArgAllocator);
-  if (EC) {
-    llvm::errs() << "error: couldn't get arguments: " << EC.message() << "\n";
-  }
+  auto argv_ = Argv.begin();
+  auto argc_ = Argv.end();
+  SmallVector<const char *, 256> argv(&argv_[0], &argv_[argc_]);
+
   performFrontend(llvm::makeArrayRef(argv.data()+1,
                                      argv.data()+argv.size()),
                   argv[0], (void *)(intptr_t)getExecutablePath,
@@ -105,7 +99,7 @@ jobject WALAInstance::makeBigDecimal(const char *strData, int strLen) {
   jobject val = JavaEnv->NewStringUTF(safeData);
   delete safeData;
   jclass bigDecimalCls = JavaEnv->FindClass("java/math/BigDecimal");
-  jmethodID bigDecimalInit = JavaEnv->GetMethodID(bigDecimalCls, 
+  jmethodID bigDecimalInit = JavaEnv->GetMethodID(bigDecimalCls,
     "<init>", "(Ljava/lang/String;)V");
   jobject bigDecimal = JavaEnv->NewObject(bigDecimalCls, bigDecimalInit, val);
   JavaEnv->DeleteLocalRef(val);
