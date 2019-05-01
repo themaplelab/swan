@@ -32,10 +32,11 @@ struct Observer : public FrontendObserver {
     Invocation.setRuntimeResourcePath(LibPath.str());
   }
 
-  // TODO: it looks like this infrastructure has substantially changed.
-  // We need to figure out how to hook into the compiler in Swift 5.0.
-  void performedSILGeneration(SILModule &Module) override {
-    Instance->analyzeSILModule(Module);
+  void configuredCompiler(CompilerInstance &CompilerInstance) override {
+    if (auto Module = CompilerInstance.takeSILModule())
+    {
+      Instance->analyzeSILModule(Module);
+    }
   }
 };
 
