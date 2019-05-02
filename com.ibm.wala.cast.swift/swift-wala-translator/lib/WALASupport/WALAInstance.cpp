@@ -36,6 +36,8 @@ struct Observer : public FrontendObserver {
     if (auto Module = CompilerInstance.takeSILModule())
     {
       Instance->analyzeSILModule(Module);
+      // reset so compiler can use SIL Module after
+      CompilerInstance.setSILModule(Module);
     }
   }
 };
