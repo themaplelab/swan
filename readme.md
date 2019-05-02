@@ -26,7 +26,7 @@ cd ..
 
 ```
 cd ./swift
-./utils/update-checkout --clone --tag swift-4.1.1-RELEASE
+./utils/update-checkout --clone
 ./utils/build-script -d
 cd ..
 ```
@@ -71,5 +71,3 @@ export SWIFT_WALA_DIR={path/to/your/swift-wala/dir}
 ```
 ./swift-wala-translator-standalone example.swift
 ```
-
-
