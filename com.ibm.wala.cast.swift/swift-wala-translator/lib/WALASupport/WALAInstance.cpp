@@ -35,9 +35,9 @@ struct Observer : public FrontendObserver {
   void configuredCompiler(CompilerInstance &CompilerInstance) override {
     if (auto Module = CompilerInstance.takeSILModule())
     {
-      Instance->analyzeSILModule(Module);
+      Module = Instance->analyzeSILModule(std::move(Module));
       // reset so compiler can use SIL Module after
-      CompilerInstance.setSILModule(Module);
+      CompilerInstance.setSILModule(std::move(Module));
     }
   }
 };
@@ -60,9 +60,10 @@ void WALAInstance::print(jobject Object) {
   JavaEnv->ReleaseStringUTFChars(Message, Text);
 }
 
-void WALAInstance::analyzeSILModule(SILModule &SM) {
+std::unique_ptr<SILModule> WALAInstance::analyzeSILModule(std::unique_ptr<SILModule> SM) {
   SILWalaInstructionVisitor Visitor(this, true);
-  Visitor.visitModule(&SM);
+  SM = Visitor.visitModule(std::move(SM));
+  return SM;
 }
 
 void WALAInstance::analyze() {
@@ -71,7 +72,8 @@ void WALAInstance::analyze() {
   ::Observer observer(this);
   auto argv_ = Argv.begin();
   auto argc_ = Argv.end();
-  SmallVector<const char *, 256> argv(&argv_[0], &argv_[argc_]);
+  // I don't think this works, placeholder
+  SmallVector<const char *, 256> argv(argv_, argc_);
 
   performFrontend(llvm::makeArrayRef(argv.data()+1,
                                      argv.data()+argv.size()),
