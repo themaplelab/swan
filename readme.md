@@ -10,6 +10,7 @@
 - **WHAT DOESN"T WORK:** [linker issue](https://termbin.com/sqe3) 
 - The build behaves the same on Mac as on Linux.
 - Current linker issues are preventing us from confirming that the two build issues are indeed fixed, and functionality still works at runtime.
+- [Added](https://github.com/themaplelab/swan/commit/1f18a1b63d11896067e52f783f2b2ee6917600a2) new case for [new](https://github.com/apple/swift/commit/425c190086e2c534f016ee3c8efa577b17d1d2c9) instruction mark type in `SILWalaInstructionVisitor.cpp`
 
 ## Download Projects
 
