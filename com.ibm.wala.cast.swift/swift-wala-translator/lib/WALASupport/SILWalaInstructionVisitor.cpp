@@ -658,6 +658,7 @@ jobject SILWalaInstructionVisitor::visitMarkUninitializedInst(MarkUninitializedI
     case 3: { KindOfMark = "DerivedSelf"; } break;
     case 4: { KindOfMark = "DerivedSelfOnly"; } break;
     case 5: { KindOfMark = "DelegatingSelf"; } break;
+    case 6: { KindOfMark = "DelegatingSelfAllocating"; } break;
   }
   if (Print) {
     llvm::outs() << "\t [MARK]: " << AddressToBeMarked.getOpaqueValue() << " AS " << KindOfMark << "\n";
