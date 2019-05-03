@@ -129,7 +129,7 @@ std::unique_ptr<SILModule> SILWalaInstructionVisitor::visitModule(std::unique_pt
   for (auto &F: *M) {
     visitSILFunction(&F);
   }
-  return std::move(M);
+  return M;
 }
 
 // Actions to take on a per-instruction basis.  InstrInfo contains all the relevant info
