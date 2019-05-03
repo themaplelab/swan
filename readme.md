@@ -1,5 +1,14 @@
 # Contribute to Swift-WALA
 
+### Swift 5 fix changes
+- Swift compiler has removed the virtual method `performedSILGeneration` that was used to hook in perviously
+- They added another virtual method called `configuredCompiler(CompilerInstance &CompilerInstance)`, from which we can get the SIL Module. However, the SIL Module are not longer passed by reference, but instead use `unique_ptr<SILModule>` which makes things annoying. Using `CompilerInstance.takeSILModule()` we can take the SIL Module, read it, but then we have to give it back. Therefore, we now have to `move` the `unique_ptr` around, just as the compiler does.
+- LLVM API has [changed](https://reviews.llvm.org/D45641), which is problematic for how we take in arguments. This has been fixed.
+- Some paths from `build.gradle` were [removed](https://github.com/themaplelab/swan/commit/f718f5e335eaeb019e4cd9130fbd30b7fe42e031). These have been added back and it appears the build issues that were arising due to that are solved.
+- When cloning SWAN, I renamed `swan/` to `swift-wala/` but I don't think this is neccessary/
+- Do **NOT** use quotation marks in `gradle.properties`
+- **WHAT DOESN"T WORK:** [linker issue](https://termbin.com/sqe3) 
+- Behaves the same on Mac as on Linux
 
 ## Download Projects
 
