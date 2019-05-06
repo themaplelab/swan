@@ -19,7 +19,7 @@ mkdir swift-source
 cd swift-source
 git clone https://github.com/apple/swift
 git clone https://github.com/wala/WALA
-git clone https://github.com/themaplelab/swan
+git clone https://github.com/themaplelab/swan -b swift5-fix
 ```
 
 ## Build Dependencies
