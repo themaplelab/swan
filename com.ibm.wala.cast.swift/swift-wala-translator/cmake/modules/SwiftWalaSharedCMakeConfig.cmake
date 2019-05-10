@@ -14,5 +14,6 @@ list(APPEND CMAKE_MODULE_PATH "${SWIFT_MAIN_SRC_DIR}/cmake/modules")
 
 include(SwiftUtils)
 include(SwiftSharedCMakeConfig)
+set(SWIFT_INCLUDE_TOOLS ON)
 swift_common_standalone_build_config(SWIFT FALSE)
 
