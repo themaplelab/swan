@@ -1,7 +1,20 @@
-//
-// Created by leo on 01/05/18.
-//
+/******************************************************************************
+ * Copyright (c) 2019 Maple @ University of Alberta
+ * All rights reserved. This program and the accompanying materials (unless
+ * otherwise specified by a license inside of the accompanying material)
+ * are made available under the terms of the Eclipse Public License v2.0
+ * which accompanies this distribution, and is available at
+ * http://www.eclipse.org/legal/epl-v20.html
+ *
+ * Contributors:
+ *    Ao Li (Github: Leeleo3x) - initial implementation
+ *    Daniil Tiganov (Github: tiganov) - documentation, QC changes, hook fix
+ *****************************************************************************/
+
+ // SEE HEADER FILE FOR DOCUMENTATION
+
 #include "swift-wala/WALASupport/WALAInstance.h"
+#include "swift-wala/WALASupport/SwiftCHook.h"
 
 #include <CAstWrapper.h>
 #include <launch.h>
@@ -20,33 +33,6 @@
 using namespace swift_wala;
 using namespace llvm;
 using namespace swift;
-
-namespace {
-struct Observer : public FrontendObserver {
-  WALAInstance *Instance;
-  Observer(WALAInstance *Instance) : Instance(Instance) {};
-
-  void parsedArgs(CompilerInvocation &Invocation) override {
-    llvm::SmallString<128> LibPath(std::getenv("WALA_PATH_TO_SWIFT_BUILD"));
-    llvm::sys::path::append(LibPath, "lib", "swift");
-    Invocation.setRuntimeResourcePath(LibPath.str());
-  }
-
-  void configuredCompiler(CompilerInstance &CompilerInstance) override {
-    if (auto Module = CompilerInstance.takeSILModule())
-    {
-      Module = Instance->analyzeSILModule(std::move(Module));
-      // reset so compiler can use SIL Module after
-      CompilerInstance.setSILModule(std::move(Module));
-    }
-  }
-};
-
-std::string getExecutablePath(const char *FirstArg) {
-  auto *P = (void *)(intptr_t)getExecutablePath;
-  return llvm::sys::fs::getMainExecutable(FirstArg, P);
-}
-}
 
 void WALAInstance::print(jobject Object) {
   auto ObjClass = JavaEnv->FindClass("java/lang/Object");
@@ -67,28 +53,32 @@ std::unique_ptr<SILModule> WALAInstance::analyzeSILModule(std::unique_ptr<SILMod
 }
 
 void WALAInstance::analyze() {
-  auto Argv = {"", "-emit-sil", File.c_str()};
+  auto Argv = {"", File.c_str()};
+  swift_wala::Observer observer(this); // create the hook
+  SmallVector<const char *, 256> argv(Argv.begin(), Argv.end());
 
-  ::Observer observer(this);
-  auto argv_ = Argv.begin();
-  auto argc_ = Argv.end();
-  // I don't think this works, placeholder
-  SmallVector<const char *, 256> argv(argv_, argc_);
-
+  // call Swift compiler frontend
   performFrontend(llvm::makeArrayRef(argv.data()+1,
                                      argv.data()+argv.size()),
                   argv[0], (void *)(intptr_t)getExecutablePath,
                   &observer);
 }
 
-WALAInstance::WALAInstance(JNIEnv *Env, jobject Obj) : JavaEnv(Env), XLator(Obj) {
+WALAInstance::WALAInstance(JNIEnv *Env, jobject Obj) : JavaEnv(Env), Translator(Obj) {
   TRY(Exception, JavaEnv)
-      CAst = new CAstWrapper(JavaEnv, Exception, XLator);
-      auto XLatorClass = JavaEnv->FindClass("com/ibm/wala/cast/swift/SwiftToCAstTranslator");
+      CAst = new CAstWrapper(JavaEnv, Exception, Translator); // for JNI calls
+      // find the bridge class
+      auto TranslatorClass = JavaEnv->FindClass("com/ibm/wala/cast/swift/SwiftToCAstTranslator");
       THROW_ANY_EXCEPTION(Exception);
-      auto GetLocalFile = JavaEnv->GetMethodID(XLatorClass, "getLocalFile", "()Ljava/lang/String;");
+
+      // get the file to analyze
+      // NOTE:
+      /// This can all be replaced by a direct parameter from the
+      /// standalone swift-wala program (since we are basically retrieving what
+      /// we JUST put into the object). However, this would increase coupling.
+      auto GetLocalFile = JavaEnv->GetMethodID(TranslatorClass, "getLocalFile", "()Ljava/lang/String;");
       THROW_ANY_EXCEPTION(Exception);
-      auto LocalFile = (jstring)(JavaEnv->CallObjectMethod(XLator, GetLocalFile, 0));
+      auto LocalFile = (jstring)(JavaEnv->CallObjectMethod(Translator, GetLocalFile, 0));
       THROW_ANY_EXCEPTION(Exception);
       auto LocalFileStr = JavaEnv->GetStringUTFChars(LocalFile, 0);
       THROW_ANY_EXCEPTION(Exception);
@@ -96,6 +86,7 @@ WALAInstance::WALAInstance(JNIEnv *Env, jobject Obj) : JavaEnv(Env), XLator(Obj)
       JavaEnv->ReleaseStringUTFChars(LocalFile, LocalFileStr);
       THROW_ANY_EXCEPTION(Exception);
   CATCH()
+      // TODO: Report exceptions to user
 }
 
 

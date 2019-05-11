@@ -7,15 +7,5 @@
  * http://www.eclipse.org/legal/epl-v20.html
  *
  * Contributors:
- *    Mark Mroz - initial implementation
+ *
  *****************************************************************************/
-
- // SEE HEADER FILE FOR DOCUMENTATION
-
-#include "swift-wala/WALASupport/BasicBlockLabeller.h"
-
-using namespace swift_wala;
-
-string BasicBlockLabeller::label(swift::SILBasicBlock* basicBlock) {
-  return (string("BLOCK #") + std::to_string(basicBlock->getDebugID()));
-}

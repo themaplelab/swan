@@ -1,3 +1,22 @@
+/******************************************************************************
+ * Copyright (c) 2019 Maple @ University of Alberta
+ * All rights reserved. This program and the accompanying materials (unless
+ * otherwise specified by a license inside of the accompanying material)
+ * are made available under the terms of the Eclipse Public License v2.0
+ * which accompanies this distribution, and is available at
+ * http://www.eclipse.org/legal/epl-v20.html
+ *
+ * Contributors:
+ *    Ao Li (Github: Leeleo3x) - initial implementation
+ *    Karim Ali (Github: karimhamdanali) - changes for swift5
+ *    Daniil Tiganov (Github: tiganov) - documentation, QC changes,
+ *                                       changes for hook and swift5
+ *****************************************************************************/
+
+ // SEE HEADER FILE FOR DOCUMENTATION
+
+ // TODO: Add thorough documentation to code.
+
 #include <swift/SIL/SILModule.h>
 #include <swift/AST/Module.h>
 

@@ -1,31 +1,41 @@
-# Contribute to Swift-WALA
 
-### Swift 5 fix changes
-- Swift compiler has removed the virtual method `performedSILGeneration` that was used to hook in perviously
-- They added another virtual method called `configuredCompiler(CompilerInstance &CompilerInstance)`, from which we can get the SIL Module. However, the `SILModule`s are no longer passed by reference, but instead use `unique_ptr<SILModule>`, which makes things annoying. Using `CompilerInstance.takeSILModule()` we can take the `SILModule`, read it, but then we must give it back to the compiler. Therefore, we now have to `move` the `unique_ptr` around, just as the compiler does.
-- LLVM API has [changed](https://reviews.llvm.org/D45641), which is problematic for how we take in arguments. This has been fixed, although not for certain.
-- Some paths from `build.gradle` were [removed](https://github.com/themaplelab/swan/commit/f718f5e335eaeb019e4cd9130fbd30b7fe42e031). These have been added back and it appears the build issues that were arising due to that are solved.
-- When cloning SWAN, I renamed `swan/` to `swift-wala/` but I don't think this is neccessary.
-- Do **NOT** use quotation marks in `gradle.properties`
-- **WHAT DOESN'T WORK:** [linker issue](https://termbin.com/sqe3)
-- The build behaves the same on macOS as on Linux.
-- Current linker issues are preventing us from confirming that the two build issues are indeed fixed, and functionality still works at runtime.
-- [Added](https://github.com/themaplelab/swan/commit/1f18a1b63d11896067e52f783f2b2ee6917600a2) new case for [new](https://github.com/apple/swift/commit/425c190086e2c534f016ee3c8efa577b17d1d2c9) instruction mark type in `SILWalaInstructionVisitor.cpp`
+<img src="https://karimali.ca/resources/images/projects/swan.png" height="80">
 
-## Download Projects
+# SWAN (a.k.a Swift-WALA)
 
+## Introduction
+
+This static program analysis framework is being developed for detecting security vulnerabilities in Swift applications using taint analysis. A custom translator converts Swift Intermediate Language ([SIL](https://github.com/apple/swift/blob/master/docs/SIL.rst)) to [WALA](https://github.com/wala/WALA) IR (called CAst). The SIL is retrieved by hooking into the Swift compiler and grabbing the SIL modules during compilation. The resulting CAst nodes are analyzed using custom analysis written on top of WALA.
+
+The current translator only supports the most common SIL instructions, and we recently added support for Swift5 so better SIL instruction support is likely to come soon.
+
+## Current work
+The translator and basic toolchain/dataflow has been implemented. We are currently working on implementing the architecture for the analysis to be built on top of WALA. Then we will implement points-to analysis and taint analysis with basic sources/sinks identified.
+
+## Future plans
+- Lifecycle awareness for iOS and macOS applications (custom call graph building)
+- Sources and sinks for iOS and macOS libraries
+- Xcode plugin
+- Better (maybe full) SIL instruction support for latest Swift version
+
+## Getting Started
+
+First, you should consider that the final build may be as large as 100GB in Swift debug mode.
+
+### Download Projects
+
+We use the latest swift compiler and WALA.
 ```
 mkdir swift-source
 cd swift-source
 git clone https://github.com/apple/swift
 git clone https://github.com/wala/WALA
-git clone https://github.com/themaplelab/swan -b swift5-fix
+git clone https://github.com/themaplelab/swan
 ```
 
-## Build Dependencies
+### Build Dependencies
 
-
-### WALA
+#### WALA
 
 ```
 cd ./WALA
@@ -33,17 +43,17 @@ cd ./WALA
 cd ..
 ```
 
-### Swift
+#### Swift
 
 ```
 cd ./swift
 ./utils/update-checkout --clone
-./utils/build-script -d
+./utils/build-script
 cd ..
 ```
+Optionally, the `-d` flag can be added to the `build-script` so Swift can compile in debug mode.
 
-
-### Edit Swift-WALA Configurations
+#### Edit Swift-WALA Configurations
 
 ```
 cd swift-wala/com.ibm.wala.cast.swift
@@ -53,24 +63,21 @@ cp gradle.properties.example gradle.properties
 Edit `gradle.properties` and provide proper paths. Some example paths are already provided to give you an idea of what they might look like for you. For macOS, change the `linux` to `macosx` in the paths. (e.g `swift-linux-x86_64` to `swift-macosx-x86_64`)
 
 
-### Build Swift-WALA
+#### Build Swift-WALA
 
 ```
 ./gradlew assemble
 ```
 
+### Running Swift-WALA
 
-### Run The Program
-
-
-- First you need to setup environment variables.
+- First you need to setup environment variables. You can also add this to your ``~/.bashrc` or ``~/.bash_profile`. Make sure to `source` after.
 
 ```
 export WALA_PATH_TO_SWIFT_BUILD={path/to/your/swift/build/dir}
 export WALA_DIR={path/to/your/wala/dir}
 export SWIFT_WALA_DIR={path/to/your/swift-wala/dir}
 ```
-
 
 - To run the Java code:
 
