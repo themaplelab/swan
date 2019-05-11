@@ -2,12 +2,12 @@
 <img src="https://karimali.ca/resources/images/projects/swan.png" width="150">
 
 # SWAN (a.k.a Swift-WALA)
-A static program analysis framework for analyzing Swift applications using WALA as the analysis core. 
+A static program analysis framework for analyzing Swift applications using [WALA](https://github.com/wala/WALA) as the analysis core. 
 
 
 ## Introduction
 
-This static program analysis framework is being developed for detecting security vulnerabilities in Swift applications using taint analysis. A custom translator converts Swift Intermediate Language ([SIL](https://github.com/apple/swift/blob/master/docs/SIL.rst)) to [WALA](https://github.com/wala/WALA) IR (called CAst). The SIL is retrieved by hooking into the Swift compiler and grabbing the SIL modules during compilation. The resulting CAst nodes are analyzed using custom analysis written on top of WALA.
+This static program analysis framework is being developed for detecting security vulnerabilities in Swift applications using taint analysis. A custom translator converts Swift Intermediate Language ([SIL](https://github.com/apple/swift/blob/master/docs/SIL.rst)) to WALA IR (called CAst). The SIL is retrieved by hooking into the Swift compiler and grabbing the SIL modules during compilation. The resulting CAst nodes are analyzed using custom analysis written on top of WALA.
 
 The current translator only supports the most common SIL instructions, and we recently added general support for Swift v5, so better SIL instruction support is likely to come soon.
 
@@ -76,7 +76,7 @@ Edit `gradle.properties` and provide proper paths. Some example paths are alread
 
 ### Running Swift-WALA
 
-- First you need to setup environment variables. You can also add this to your `~/.bashrc` or `~/.bash_profile`. Make sure to `source` after.
+- First you need to setup environment variables. You can also add this to your `~/.bashrc` or `~/.bash_profile`. Make sure to `source` after. The first two are the same as those set in `gradle.properties` and the third is just the directory this repo is in. 
 
 ```
 export WALA_PATH_TO_SWIFT_BUILD={path/to/your/swift/build/dir}
@@ -84,13 +84,11 @@ export WALA_DIR={path/to/your/wala/dir}
 export SWIFT_WALA_DIR={path/to/your/swift-wala/dir}
 ```
 
-- To run the Java code:
+#### Standalone executable
 
-`./gradlew run --args THE_ARGS_YOU_WANT`
+The standalone C++ program is the current method of running the framework. Once SWAN is built, the executable can be found in `{swift-wala/dir/}/com.ibm.wala.cast.swift/swift-wala-translator/build/external-build/swiftWala/linux_x86-64/bin`
 
-
-- Otherwise, you can run the standalone c++ code in `{swift-wala/dir/}/com.ibm.wala.cast.swift/swift-wala-translator/build/external-build/swiftWala/linux_x86-64/bin`.
-
+The program takes one parameter, which is the Swift file you want to analyze. SWAN only support one Swift file currently.
 ```
 ./swift-wala-translator-standalone example.swift
 ```
