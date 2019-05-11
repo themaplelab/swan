@@ -1,5 +1,5 @@
 
-<img src="https://karimali.ca/resources/images/projects/swan.png" height="80">
+<img src="https://karimali.ca/resources/images/projects/swan.png" width="150">
 
 # SWAN (a.k.a Swift-WALA)
 
@@ -7,10 +7,10 @@
 
 This static program analysis framework is being developed for detecting security vulnerabilities in Swift applications using taint analysis. A custom translator converts Swift Intermediate Language ([SIL](https://github.com/apple/swift/blob/master/docs/SIL.rst)) to [WALA](https://github.com/wala/WALA) IR (called CAst). The SIL is retrieved by hooking into the Swift compiler and grabbing the SIL modules during compilation. The resulting CAst nodes are analyzed using custom analysis written on top of WALA.
 
-The current translator only supports the most common SIL instructions, and we recently added support for Swift5 so better SIL instruction support is likely to come soon.
+The current translator only supports the most common SIL instructions, and we recently added general support for Swift v5, so better SIL instruction support is likely to come soon.
 
 ## Current work
-The translator and basic toolchain/dataflow has been implemented. We are currently working on implementing the architecture for the analysis to be built on top of WALA. Then we will implement points-to analysis and taint analysis with basic sources/sinks identified.
+The translator and basic toolchain/dataflow has been implemented. We are currently working on implementing the architecture for the analysis to be built on top of WALA. Then we will implement points-to analysis and taint analysis with basic sources and sinks identified.
 
 ## Future plans
 - Lifecycle awareness for iOS and macOS applications (custom call graph building)
@@ -20,11 +20,11 @@ The translator and basic toolchain/dataflow has been implemented. We are current
 
 ## Getting Started
 
-First, you should consider that the final build may be as large as 100GB in Swift debug mode.
+First, you should consider that the final build may be as large as 100GB.
 
 ### Download Projects
 
-We use the latest swift compiler and WALA.
+We use the latest Swift compiler and WALA.
 ```
 mkdir swift-source
 cd swift-source
@@ -71,7 +71,7 @@ Edit `gradle.properties` and provide proper paths. Some example paths are alread
 
 ### Running Swift-WALA
 
-- First you need to setup environment variables. You can also add this to your ``~/.bashrc` or ``~/.bash_profile`. Make sure to `source` after.
+- First you need to setup environment variables. You can also add this to your `~/.bashrc` or `~/.bash_profile`. Make sure to `source` after.
 
 ```
 export WALA_PATH_TO_SWIFT_BUILD={path/to/your/swift/build/dir}
