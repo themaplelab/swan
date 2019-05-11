@@ -49,7 +49,7 @@ public:
 
   // convert C++ string to Java BigDecimal, used in instruction visitor
   jobject makeBigDecimal(const char *strData, int strLen);
-  // return translated nodes
+  // return copy of translated nodes as a jobject (ArrayList of CAst ndoes)
   jobject getCAstNodes();
   // for debugging
   void print(jobject Object);
