@@ -27,6 +27,12 @@
 #include <memory>
 #include <vector>
 
+namespace swift {
+  class SILModule;
+}
+
+class CAstWrapper;
+
 namespace swift_wala {
 
 class WALAInstance {
