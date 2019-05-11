@@ -44,7 +44,7 @@ int main(int argc, const char *argv[]) {
   }
 
   std::string first_param = argv[1];
-  if (first_param.substr(first_param.find_last_of(".") + 1) != "swift")) {
+  if (first_param.substr(first_param.find_last_of(".") + 1) != "swift") {
     std::cout << "File is not a Swift file. Exiting..." << std::endl;
     return 0;
   }
