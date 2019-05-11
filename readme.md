@@ -22,7 +22,7 @@ The translator and basic toolchain/dataflow has been implemented. We are current
 
 ## Getting Started
 
-First, you should consider that the final build may be as large as 100GB.
+First, you should consider that the final build may be as large as ~52GB.
 
 **Disclaimer:** SWAN doesn't target a specific Swift or WALA source code version. The source code pulled from the Apple and IBM are not versioned, nor do they have stable branches. Therefore, the build is pretty volatile as changes made by Apple and IBM to their source code can break the build for SWAN. Changes in the Swift compiler are often problematic for SWAN. We try our best to make sure the build works with the most up to date dependency source code. Please open up an issue if it is breaking for you.
 
