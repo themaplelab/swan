@@ -39,7 +39,7 @@ int main(int argc, const char *argv[]) {
     return 0;
   }
 
-  if (argc > 1) {
+  if (argc > 2) {
     std::cout << "Only a single Swift file is currently supported!" << std::endl;
   }
 
