@@ -53,7 +53,7 @@ std::unique_ptr<SILModule> WALAInstance::analyzeSILModule(std::unique_ptr<SILMod
 }
 
 void WALAInstance::analyze() {
-  auto Argv = {"", File.c_str()};
+  auto Argv = {"", "-emit-sil", File.c_str()};
   swift_wala::Observer observer(this); // create the hook
   SmallVector<const char *, 256> argv(Argv.begin(), Argv.end());
 
