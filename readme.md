@@ -2,6 +2,8 @@
 <img src="https://karimali.ca/resources/images/projects/swan.png" width="150">
 
 # SWAN (a.k.a Swift-WALA)
+A static program analysis framework for analyzing Swift applications using WALA as the analysis core. 
+
 
 ## Introduction
 
