@@ -74,6 +74,14 @@ Edit `gradle.properties` and provide proper paths. Some example paths are alread
 ./gradlew assemble
 ```
 
+
+#### Trouble building
+Depending on what and where the failure is, you can try checking out an older commit. For Swift, you must first run `./utils/update-checkout --clone` and then `git checkout <commit>`. This is because `update-checkout` will pull the latest Swift from master. It will also pull in latest dependencies (which are unlikely to be the cause of build failure), but you can revert back to an older version of the `apple/swift` repo. For WALA, you can simply try checking out an older commit. 
+
+If you would like to find the offending commit, you should first narrow down the timeframe of where an offending change could have occured. This is easier to do if you know when the last successful build was and if Swift and WALA were up-to-date at that time. The build failure should be obvious enough to point you to either WALA or Swift as the culprit. From there, you can browse the commit history and try `revert` on suspicious commits until a successful build occurs. Yes, this can be a lengthy process since the Swift compiler takes very long to compile.
+
+Please open up an issue if you are experiencing build issues or difficulties.
+
 ### Running Swift-WALA
 
 - First you need to setup environment variables. You can also add this to your `~/.bashrc` or `~/.bash_profile`. Make sure to `source` after. The first two are the same as those set in `gradle.properties` and the third is just the directory this repo is in. 
