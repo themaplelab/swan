@@ -43,7 +43,8 @@ int main(int argc, const char *argv[]) {
     std::cout << "Only a single Swift file is currently supported!" << std::endl;
   }
 
-  if (argv[1].substr(fn.find_last_of(".") + 1) != "swift")) {
+  std::string first_param = argv[1];
+  if (first_param.substr(fn.find_last_of(".") + 1) != "swift")) {
     std::cout << "File is not a Swift file. Exiting..." << std::endl;
     return 0;
   }
