@@ -22,11 +22,13 @@
 #include <string>
 #include "swift/SIL/SILBasicBlock.h"
 
+using std::string;
+
 namespace swift_wala {
 
 class BasicBlockLabeller {
 public:
-  static std::string label(swift::SILBasicBlock* basicBlock);
+  static string label(swift::SILBasicBlock* basicBlock);
 };
 
 } // end swift_wala namespace
