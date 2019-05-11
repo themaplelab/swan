@@ -53,6 +53,8 @@ std::unique_ptr<SILModule> WALAInstance::analyzeSILModule(std::unique_ptr<SILMod
 }
 
 void WALAInstance::analyze() {
+  // this -emit-sil option is critical as it specifies the action for the frontend,
+  // otherwise the compiler will not do anything and complain no action was given
   auto Argv = {"", "-emit-sil", File.c_str()};
   swift_wala::Observer observer(this); // create the hook
   SmallVector<const char *, 256> argv(Argv.begin(), Argv.end());
