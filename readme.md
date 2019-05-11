@@ -22,6 +22,8 @@ The translator and basic toolchain/dataflow has been implemented. We are current
 
 First, you should consider that the final build may be as large as 100GB.
 
+**Disclaimer:** SWAN doesn't target a specific Swift or WALA source code version. The source code pulled from the Apple and IBM are not versioned, nor do they have stable branches. Therefore, the build is pretty volatile as changes made by Apple and IBM to their source code can break the build for SWAN. Changes in the Swift compiler are often problematic for SWAN. We try our best to make sure the build works with the most up to date dependency source code. Please open up an issue if it is breaking for you.
+
 ### Download Projects
 
 We use the latest Swift compiler and WALA.
@@ -32,6 +34,7 @@ git clone https://github.com/apple/swift
 git clone https://github.com/wala/WALA
 git clone https://github.com/themaplelab/swan
 ```
+`master` branch may not always be the up-to-date branch. In this case, use the `-b` flag when cloning `swan` to select the appropriate branch.
 
 ### Build Dependencies
 
