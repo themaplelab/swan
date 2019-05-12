@@ -59,7 +59,10 @@ int main(int argc, const char *argv[]) {
               << "/com.ibm.wala.cast.swift/build/classes/java/main:" << SwiftWalaHome
               << "/com.ibm.wala.cast.swift/build/libs/translator/shared";
 
+  std::cout << "-=- PATH BUILDER -=-" << std::endl << "=========================" << std::endl;
   std::cout << PathBuilder.str() << std::endl;
+  std::cout << "=========================" << std::endl;
+  
   char *Path = strdup(PathBuilder.str().c_str());
 
   auto JavaEnv = launch_jvm(Path);
