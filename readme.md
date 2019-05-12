@@ -24,7 +24,7 @@ The translator and basic toolchain/dataflow has been implemented. We are current
 First, you should consider that the final build may be as large as ~52GB.
 
 ### Release support
-Supported Swift and WALA releases on SWAN's `master` branch.
+Supported Swift (incl. dependencies) and WALA releases on SWAN's `master` branch.
 
 
 | OS | Swift Release | WALA Release | 
