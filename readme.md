@@ -27,9 +27,9 @@ First, you should consider that the final build may be as large as ~52GB.
 Supported Swift (incl. dependencies) and WALA releases on SWAN's `master` branch.
 
 
-| OS | Swift Release | WALA Release | 
+| OS | Swift Release Tag | WALA Release Tag | 
 | -----------|:-------:|:-----:|
-| macOS | [swift-5.0.1-RELEASE](https://github.com/apple/swift/releases/tag/swift-5.0.1-RELEASE) | ? |
+| macOS Mojave | [swift-5.0.1-RELEASE](https://github.com/apple/swift/releases/tag/swift-5.0.1-RELEASE) | ? |
 | Linux (Ubuntu 18.04) | [swift-5.0.1-RELEASE](https://github.com/apple/swift/releases/tag/swift-5.0.1-RELEASE) | [v1.5.3](https://github.com/wala/WALA/releases/tag/v1.5.3) |
 
 ### Download Projects
