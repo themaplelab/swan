@@ -85,7 +85,7 @@ cd ./swan
 
 ### Running Swift-WALA
 
-- First you need to setup environment variables. You can also add this to your `~/.bashrc` or `~/.bash_profile`. Make sure to `source` after. The first two are the same as those set in `gradle.properties` and the third is just the directory this repo is in. 
+- First you need to setup environment variables. You can also add this to your `~/.bashrc` or `~/.bash_profile`. Make sure to `source` after. The first two are the same as those set in `gradle.properties` and the third is just the directory of this repo. 
 
 ```
 export WALA_PATH_TO_SWIFT_BUILD={path/to/your/swift/build/dir}
@@ -95,9 +95,9 @@ export SWIFT_WALA_DIR={path/to/your/swift-wala/dir}
 
 #### Standalone executable
 
-The standalone C++ program is the current method of running the framework. Once SWAN is built, the executable can be found in `{swift-wala/dir/}/com.ibm.wala.cast.swift/swift-wala-translator/build/external-build/swiftWala/linux_x86-64/bin` (on Linux).
+The standalone C++ program is the current method of running the framework. Once SWAN is built, the executable `swift-wala-translator-standalone` can be found in `{SWIFT_WALA_DIR}/com.ibm.wala.cast.swift/swift-wala-translator/build/external-build/swiftWala/linux_x86-64/bin` (on Linux).
 
-The program takes one parameter, which is the Swift file you want to analyze. SWAN only supports one Swift file currently.
+The program takes one parameter: the Swift file you want to analyze. SWAN only supports one Swift file currently.
 ```
 ./swift-wala-translator-standalone example.swift
 ```
