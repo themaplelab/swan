@@ -4,7 +4,6 @@
 # SWAN (a.k.a Swift-WALA)
 A static program analysis framework for analyzing Swift applications using [WALA](https://github.com/wala/WALA) as the analysis core. 
 
-
 ## Introduction
 
 This static program analysis framework is being developed for detecting security vulnerabilities in Swift applications using taint analysis. A custom translator converts Swift Intermediate Language ([SIL](https://github.com/apple/swift/blob/master/docs/SIL.rst)) to WALA IR (called CAst). The SIL is retrieved by hooking into the Swift compiler and grabbing the SIL modules during compilation. The resulting CAst nodes are analyzed using custom analysis written on top of WALA.
@@ -24,7 +23,14 @@ The translator and basic toolchain/dataflow has been implemented. We are current
 
 First, you should consider that the final build may be as large as ~52GB.
 
-**Disclaimer:** SWAN doesn't target a specific Swift or WALA source code version. The source code pulled from the Apple and IBM are not versioned, nor do they have stable branches. Therefore, the build is pretty volatile as changes made by Apple and IBM to their source code can break the build for SWAN. Changes in the Swift compiler are often problematic for SWAN. We try our best to make sure the build works with the most up to date dependency source code. Please open up an issue if it is breaking for you.
+### Release support
+Supported Swift and WALA releases on SWAN's `master` branch.
+
+
+| OS | Swift Release | WALA Release | 
+| -----------|:-------:|:-----:|
+| macOS | [swift-5.0.1-RELEASE](https://github.com/apple/swift/releases/tag/swift-5.0.1-RELEASE) | ? |
+| Linux (Ubuntu 18.04) | [swift-5.0.1-RELEASE](https://github.com/apple/swift/releases/tag/swift-5.0.1-RELEASE) | [v1.5.3](https://github.com/wala/WALA/releases/tag/v1.5.3) |
 
 ### Download Projects
 
@@ -39,11 +45,13 @@ git clone https://github.com/themaplelab/swan
 `master` branch may not always be the up-to-date branch. In this case, use the `-b` flag when cloning `swan` to select the appropriate branch.
 
 ### Build Dependencies
+See compatibility table above for supported release tags, according to your OS. Please open up an issue if you are experiencing build issues or difficulties.
 
 #### WALA
 
 ```
 cd ./WALA
+git checkout SUPPORTED_TAG
 ./gradlew assemble
 cd ..
 ```
@@ -52,7 +60,7 @@ cd ..
 
 ```
 cd ./swift
-./utils/update-checkout --clone
+./utils/update-checkout --clone --tag SUPPORTED_TAG
 ./utils/build-script
 cd ..
 ```
@@ -71,16 +79,9 @@ Edit `gradle.properties` and provide proper paths. Some example paths are alread
 #### Build Swift-WALA
 
 ```
+cd ./swan
 ./gradlew assemble
 ```
-
-
-#### Trouble building
-Depending on what and where the failure is, you can try checking out an older commit. For Swift, you must first run `./utils/update-checkout --clone` and then `git checkout <commit>`. This is because `update-checkout` will pull the latest Swift from master. It will also pull in latest dependencies (which are unlikely to be the cause of build failure), but you can revert back to an older version of the `apple/swift` repo. For WALA, you can simply try checking out an older commit. 
-
-If you would like to find the offending commit, you should first narrow down the timeframe of where an offending change could have occured. This is easier to do if you know when the last successful build was and if Swift and WALA were up-to-date at that time. The build failure should be obvious enough to point you to either WALA or Swift as the culprit. From there, you can browse the commit history and try `revert` on suspicious commits until a successful build occurs. Yes, this can be a lengthy process since the Swift compiler takes very long to compile.
-
-Please open up an issue if you are experiencing build issues or difficulties.
 
 ### Running Swift-WALA
 
@@ -94,9 +95,9 @@ export SWIFT_WALA_DIR={path/to/your/swift-wala/dir}
 
 #### Standalone executable
 
-The standalone C++ program is the current method of running the framework. Once SWAN is built, the executable can be found in `{swift-wala/dir/}/com.ibm.wala.cast.swift/swift-wala-translator/build/external-build/swiftWala/linux_x86-64/bin`
+The standalone C++ program is the current method of running the framework. Once SWAN is built, the executable can be found in `{swift-wala/dir/}/com.ibm.wala.cast.swift/swift-wala-translator/build/external-build/swiftWala/linux_x86-64/bin` (on Linux).
 
-The program takes one parameter, which is the Swift file you want to analyze. SWAN only support one Swift file currently.
+The program takes one parameter, which is the Swift file you want to analyze. SWAN only supports one Swift file currently.
 ```
 ./swift-wala-translator-standalone example.swift
 ```
