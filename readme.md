@@ -33,7 +33,7 @@ Supported Swift (incl. dependencies) and WALA releases on SWAN's `master` branch
 | Linux (Ubuntu 18.04) | [swift-5.0.1-RELEASE](https://github.com/apple/swift/releases/tag/swift-5.0.1-RELEASE) | [v1.5.3](https://github.com/wala/WALA/releases/tag/v1.5.3) |
 
 #### \*You must be using Java 8 in order to compile WALA.
-
+--------------
 If you are not using Java 8 and wish to retain your current Java version, you can do the following after installing Java 8. [Credit.](https://stackoverflow.com/a/40754792)
 Add the following to your `~/.bash_profile` (macOS) or `~/.bashrc` (Linux).
 ##### macOS
@@ -58,6 +58,9 @@ Java HotSpot(TM) 64-Bit Server VM (build 25.201-b09, mixed mode)
 ```
 
 Note that this only temporarily sets your Java version. If you have downloaded Java 8 but do not want it to be your default, you can add the `export ...` part of the command to your `~/.bashrc` or `~/.bash_profile`.
+
+--------------
+
 ### Download Projects
 
 We use the latest Swift compiler and WALA.
