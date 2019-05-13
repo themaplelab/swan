@@ -5,10 +5,6 @@
  * are made available under the terms of the Eclipse Public License v2.0
  * which accompanies this distribution, and is available at
  * http://www.eclipse.org/legal/epl-v20.html
- *
- * Contributors:
- *    Ao Li (Github: Leeleo3x) - initial implementation
- *    Daniil Tiganov (Github: tiganov) - documentation, QC changes, hook fix
  *****************************************************************************/
 
  // SEE HEADER FILE FOR DOCUMENTATION

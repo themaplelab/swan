@@ -5,10 +5,6 @@
  * are made available under the terms of the Eclipse Public License v2.0
  * which accompanies this distribution, and is available at
  * http://www.eclipse.org/legal/epl-v20.html
- *
- * Contributors:
- *    Ao Li (Github: Leeleo3x) - initial implementation
- *    Daniil Tiganov (Github: tiganov) - documentation, QC changes
  *****************************************************************************/
 
 //----------------------------------------------------------------------------/
@@ -63,7 +59,7 @@ int main(int argc, const char *argv[]) {
   std::cout << "-=- PATH BUILDER -=-" << std::endl << div << std::endl;
   std::cout << PathBuilder.str() << std::endl;
   std::cout << div << std::endl << std::endl;
-  
+
   char *Path = strdup(PathBuilder.str().c_str());
 
   auto JavaEnv = launch_jvm(Path);
@@ -88,7 +84,7 @@ int main(int argc, const char *argv[]) {
       // start the WALAInstance, which hooks into the Swift compiler and will
       // pass the SIL to the translator
       auto Instance = swift_wala::WALAInstance(JavaEnv, Translator);
-      
+
       std::cout << "-=- SIL OUTPUT -=-" << std::endl << div << std::endl;
       Instance.analyze();
       std::cout << div << std::endl << std::endl;
