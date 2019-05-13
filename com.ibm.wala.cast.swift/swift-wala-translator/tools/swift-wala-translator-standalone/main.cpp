@@ -59,9 +59,10 @@ int main(int argc, const char *argv[]) {
               << "/com.ibm.wala.cast.swift/build/classes/java/main:" << SwiftWalaHome
               << "/com.ibm.wala.cast.swift/build/libs/translator/shared";
 
-  std::cout << "-=- PATH BUILDER -=-" << std::endl << "=========================" << std::endl;
+  std::string div = "================================================";
+  std::cout << "-=- PATH BUILDER -=-" << std::endl << div << std::endl;
   std::cout << PathBuilder.str() << std::endl;
-  std::cout << "=========================" << std::endl;
+  std::cout << div << std::endl << std::endl;
   
   char *Path = strdup(PathBuilder.str().c_str());
 
@@ -87,8 +88,19 @@ int main(int argc, const char *argv[]) {
       // start the WALAInstance, which hooks into the Swift compiler and will
       // pass the SIL to the translator
       auto Instance = swift_wala::WALAInstance(JavaEnv, Translator);
-
+      
+      std::cout << "-=- SIL OUTPUT -=-" << std::endl << div << std::endl;
       Instance.analyze();
+      std::cout << div << std::endl << std::endl;
+
+      // print result CAst nodes
+      std::cout << "-=- CAst NODES -=-" << std::endl << div << std::endl;
+      for (jobject Node : Instance.CAstNodes)
+      {
+      	Instance.print(Node);
+      }
+      std::cout << div << std::endl << std::endl;
+
   CATCH()
       // TODO: Report exceptions to user
 }
