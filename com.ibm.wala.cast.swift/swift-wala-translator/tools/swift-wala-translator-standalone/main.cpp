@@ -89,14 +89,6 @@ int main(int argc, const char *argv[]) {
       Instance.analyze();
       std::cout << div << std::endl << std::endl;
 
-      // print result CAst nodes
-      std::cout << "-=- CAst NODES -=-" << std::endl << div << std::endl;
-      for (jobject Node : Instance.CAstNodes)
-      {
-      	Instance.print(Node);
-      }
-      std::cout << div << std::endl << std::endl;
-
   CATCH()
       // TODO: Report exceptions to user
 }
