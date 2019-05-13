@@ -32,10 +32,13 @@ struct Observer : public FrontendObserver {
     Invocation.setRuntimeResourcePath(LibPath.str());
   }
 
-  // TODO: it looks like this infrastructure has substantially changed.
-  // We need to figure out how to hook into the compiler in Swift 5.0.
-  void performedSILGeneration(SILModule &Module) override {
-    Instance->analyzeSILModule(Module);
+  void configuredCompiler(CompilerInstance &CompilerInstance) override {
+    if (auto Module = CompilerInstance.takeSILModule())
+    {
+      Module = Instance->analyzeSILModule(std::move(Module));
+      // reset so compiler can use SIL Module after
+      CompilerInstance.setSILModule(std::move(Module));
+    }
   }
 };
 
@@ -57,25 +60,21 @@ void WALAInstance::print(jobject Object) {
   JavaEnv->ReleaseStringUTFChars(Message, Text);
 }
 
-void WALAInstance::analyzeSILModule(SILModule &SM) {
+std::unique_ptr<SILModule> WALAInstance::analyzeSILModule(std::unique_ptr<SILModule> SM) {
   SILWalaInstructionVisitor Visitor(this, true);
-  Visitor.visitModule(&SM);
+  SM = Visitor.visitModule(std::move(SM));
+  return SM;
 }
 
 void WALAInstance::analyze() {
   auto Argv = {"", "-emit-sil", File.c_str()};
 
-  // TODO: The following should be replaced with
-  // a call to InitLLVM due to a recent API change
   ::Observer observer(this);
-  SmallVector<const char *, 256> argv;
-  llvm::SpecificBumpPtrAllocator<char> ArgAllocator;
-  std::error_code EC = llvm::sys::Process::GetArgumentVector(argv,
-                                                             llvm::ArrayRef<const char *>(Argv.begin(), Argv.end()),
-                                                             ArgAllocator);
-  if (EC) {
-    llvm::errs() << "error: couldn't get arguments: " << EC.message() << "\n";
-  }
+  auto argv_ = Argv.begin();
+  auto argc_ = Argv.end();
+  // I don't think this works, placeholder
+  SmallVector<const char *, 256> argv(argv_, argc_);
+
   performFrontend(llvm::makeArrayRef(argv.data()+1,
                                      argv.data()+argv.size()),
                   argv[0], (void *)(intptr_t)getExecutablePath,
@@ -105,7 +104,7 @@ jobject WALAInstance::makeBigDecimal(const char *strData, int strLen) {
   jobject val = JavaEnv->NewStringUTF(safeData);
   delete safeData;
   jclass bigDecimalCls = JavaEnv->FindClass("java/math/BigDecimal");
-  jmethodID bigDecimalInit = JavaEnv->GetMethodID(bigDecimalCls, 
+  jmethodID bigDecimalInit = JavaEnv->GetMethodID(bigDecimalCls,
     "<init>", "(Ljava/lang/String;)V");
   jobject bigDecimal = JavaEnv->NewObject(bigDecimalCls, bigDecimalInit, val);
   JavaEnv->DeleteLocalRef(val);

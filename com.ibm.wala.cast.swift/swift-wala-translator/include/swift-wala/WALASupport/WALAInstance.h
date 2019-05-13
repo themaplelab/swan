@@ -30,10 +30,9 @@ public:
   jobject getCAstNodes();
   void print(jobject Object);
   void analyze();
-  void analyzeSILModule(swift::SILModule &SM);
+  std::unique_ptr<swift::SILModule> analyzeSILModule(std::unique_ptr<swift::SILModule> SM);
   explicit WALAInstance(JNIEnv* Env, jobject Obj);
 };
 }
 
 #endif //SWIFTWALATRANSLATOR_WALAINSTANCE_H
-

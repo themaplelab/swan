@@ -121,7 +121,7 @@ void SILWalaInstructionVisitor::visitSILFunction(SILFunction *F) {
   }
 }
 
-void SILWalaInstructionVisitor::visitModule(SILModule *M) {
+std::unique_ptr<SILModule> SILWalaInstructionVisitor::visitModule(std::unique_ptr<SILModule> M) {
   moduleInfo = std::make_shared<ModuleInfo>(M->getSwiftModule()->getModuleFilename());
   if (moduleInfo->sourcefile.empty()) {
     moduleInfo->sourcefile = "N/A";
@@ -129,6 +129,7 @@ void SILWalaInstructionVisitor::visitModule(SILModule *M) {
   for (auto &F: *M) {
     visitSILFunction(&F);
   }
+  return M;
 }
 
 // Actions to take on a per-instruction basis.  InstrInfo contains all the relevant info
@@ -657,6 +658,7 @@ jobject SILWalaInstructionVisitor::visitMarkUninitializedInst(MarkUninitializedI
     case 3: { KindOfMark = "DerivedSelf"; } break;
     case 4: { KindOfMark = "DerivedSelfOnly"; } break;
     case 5: { KindOfMark = "DelegatingSelf"; } break;
+    case 6: { KindOfMark = "DelegatingSelfAllocating"; } break;
   }
   if (Print) {
     llvm::outs() << "\t [MARK]: " << AddressToBeMarked.getOpaqueValue() << " AS " << KindOfMark << "\n";
@@ -687,7 +689,7 @@ jobject SILWalaInstructionVisitor::visitCopyAddrInst(CopyAddrInst *CAI) {
 
   jobject NewVar = findAndRemoveCAstNode(Source.getOpaqueValue());
   jobject OldVar = findAndRemoveCAstNode(Dest.getOpaqueValue());
-  
+
   jobject Node = Instance->CAst->makeNode(CAstWrapper::ASSIGN, NewVar, OldVar);
   NodeMap.insert(std::make_pair(CAI, Node));
 
@@ -727,8 +729,8 @@ jobject SILWalaInstructionVisitor::visitIndexAddrInst(IndexAddrInst *IAI) {
     NodeMap.insert(std::make_pair(static_cast<ValueBase *>(IAI), Node));
     return Node;
   }
-  
-  return Instance->CAst->makeNode(CAstWrapper::EMPTY); 
+
+  return Instance->CAst->makeNode(CAstWrapper::EMPTY);
 }
 
 jobject SILWalaInstructionVisitor::visitTailAddrInst(TailAddrInst *TAI) {
@@ -811,7 +813,7 @@ jobject SILWalaInstructionVisitor::visitEndUnpairedAccessInst(EndUnpairedAccessI
 /*jobject SILWalaInstructionVisitor::visitStrongUnpinInst(StrongUnpinInst *SUI) {
 
   SILValue UnpinOperand = SUI->getOperand();
-  
+
   if (Print) {
     llvm::outs() << "\t [VALUE]: " << UnpinOperand.getOpaqueValue() << "\n";
     llvm::outs() << "\t [NODE]: " << findAndRemoveCAstNode(UnpinOperand.getOpaqueValue()) << "\n";
@@ -1063,7 +1065,7 @@ jobject SILWalaInstructionVisitor::visitClassMethodInst(ClassMethodInst *CMI) {
 
   jobject ClassNode = findAndRemoveCAstNode(ClassOperand.getOpaqueValue());
 
-  jobject MemberNameNode = Instance->CAst->makeConstant(MemberFuncName.c_str());  
+  jobject MemberNameNode = Instance->CAst->makeConstant(MemberFuncName.c_str());
   jobject FuncNode = Instance->CAst->makeNode(CAstWrapper::FUNCTION_EXPR, MemberNameNode);
 
   jobject Node = Instance->CAst->makeNode(CAstWrapper::OBJECT_REF, ClassNode, FuncNode );
@@ -1086,7 +1088,7 @@ jobject SILWalaInstructionVisitor::visitObjCMethodInst(ObjCMethodInst *AMI) {
 
   jobject InterfaceNode = findAndRemoveCAstNode(InterfaceOperand.getOpaqueValue());
 
-  jobject MemberNameNode = Instance->CAst->makeConstant(MemberFuncName.c_str());  
+  jobject MemberNameNode = Instance->CAst->makeConstant(MemberFuncName.c_str());
   jobject FuncNode = Instance->CAst->makeNode(CAstWrapper::FUNCTION_EXPR, MemberNameNode);
 
   jobject Node = Instance->CAst->makeNode(CAstWrapper::OBJECT_REF, InterfaceNode, FuncNode);
@@ -1111,7 +1113,7 @@ jobject SILWalaInstructionVisitor::visitSuperMethodInst(SuperMethodInst *SMI) {
 
   jobject ClassNode = findAndRemoveCAstNode(ClassOperand.getOpaqueValue());
 
-  jobject MemberNameNode = Instance->CAst->makeConstant(MemberFuncName.c_str());  
+  jobject MemberNameNode = Instance->CAst->makeConstant(MemberFuncName.c_str());
   jobject FuncNode = Instance->CAst->makeNode(CAstWrapper::FUNCTION_EXPR, MemberNameNode);
 
   jobject Node = Instance->CAst->makeNode(CAstWrapper::OBJECT_REF, ClassNode, FuncNode );
@@ -1136,7 +1138,7 @@ jobject SILWalaInstructionVisitor::visitWitnessMethodInst(WitnessMethodInst *WMI
 
   jobject ProtocolNode = Instance->CAst->makeConstant(ProtocolName.c_str());
 
-  jobject MemberNameNode = Instance->CAst->makeConstant(MemberFuncName.c_str());  
+  jobject MemberNameNode = Instance->CAst->makeConstant(MemberFuncName.c_str());
   jobject FuncNode = Instance->CAst->makeNode(CAstWrapper::FUNCTION_EXPR, MemberNameNode);
 
   jobject Node = Instance->CAst->makeNode(CAstWrapper::OBJECT_REF, ProtocolNode , FuncNode );
@@ -1156,7 +1158,7 @@ jobject SILWalaInstructionVisitor::visitApplyInst(ApplyInst *AI) {
     return Node;
   }
   return Instance->CAst->makeNode(CAstWrapper::EMPTY);
-}   
+}
 
 jobject SILWalaInstructionVisitor::visitBeginApplyInst(BeginApplyInst *BAI) {
   if (auto Node = visitApplySite(BAI)) {
@@ -1315,9 +1317,9 @@ jobject SILWalaInstructionVisitor::visitValueMetatypeInst(ValueMetatypeInst *VMI
   jobject TypeNode = findAndRemoveCAstNode(ValueMetatypeOperand.getOpaqueValue());
 
   NodeMap.insert(std::make_pair(static_cast<ValueBase *>(VMI), TypeNode));
-  
+
   return TypeNode;
-}                     
+}
 
 /*******************************************************************************/
 /*                                AGGREGATE TYPES                              */
@@ -1381,7 +1383,7 @@ jobject SILWalaInstructionVisitor::visitTupleInst(TupleInst *TI) {
   NodeMap.insert(std::make_pair(static_cast<ValueBase *>(TI), VisitTupleNode));
 
   return VisitTupleNode;
-}  
+}
 
 jobject SILWalaInstructionVisitor::visitTupleExtractInst(TupleExtractInst *TEI) {
   // Operand is a tuple type from which some field needs to be extracted.
@@ -1412,7 +1414,7 @@ jobject SILWalaInstructionVisitor::visitTupleExtractInst(TupleExtractInst *TEI) 
 
   //And insert the new node to the NodeMap
   NodeMap.insert(std::make_pair(static_cast<ValueBase *>(TEI), TupleExtractNode));
-  
+
   if (Print) {
     llvm::outs() << "\t [OPERAND ADDR]: " << TupleTypeOperand.getOpaqueValue() << "\n";
     if(Element.hasName()){
@@ -1459,7 +1461,7 @@ jobject SILWalaInstructionVisitor::visitStructInst(StructInst *SI) {
 
   return VisitStructNode;
 }
-  
+
 jobject SILWalaInstructionVisitor::visitStructExtractInst(StructExtractInst *SEI) {
 
   SILValue StructOperand = SEI->getOperand();
@@ -1504,7 +1506,7 @@ jobject SILWalaInstructionVisitor::visitTupleElementAddrInst(TupleElementAddrIns
   jobject TupleElementAddrNode = Instance->CAst->makeNode(CAstWrapper::OBJECT_REF, TupleTypeNode, FieldNode);
 
   NodeMap.insert(std::make_pair(static_cast<ValueBase *>(TEAI), TupleElementAddrNode));
-  
+
   if (Print) {
     llvm::outs() << "\t [OPERAND ADDR]: " << TupleTypeOperand.getOpaqueValue() << "\n";
     if(Element.hasName()){
@@ -1550,7 +1552,7 @@ jobject SILWalaInstructionVisitor::visitRefElementAddrInst(RefElementAddrInst *R
 
   ClassDecl *ClassElement = REAI->getClassDecl();
   VarDecl *ClassField = REAI->getField();
-  
+
   jobject ElementNode = findAndRemoveCAstNode(ElementOperand.getOpaqueValue());
 
   if (Print) {
@@ -1576,7 +1578,7 @@ jobject SILWalaInstructionVisitor::visitRefTailAddrInst(RefTailAddrInst *RTAI) {
 
   ClassDecl *ClassElement = RTAI->getClassDecl();
   SILType  ResultType = RTAI->getTailType();
-  
+
   jobject ElementNode = findAndRemoveCAstNode(ElementOperand.getOpaqueValue());
 
   if (Print) {
@@ -1601,7 +1603,7 @@ jobject SILWalaInstructionVisitor::visitRefTailAddrInst(RefTailAddrInst *RTAI) {
 /*******************************************************************************/
 
 jobject SILWalaInstructionVisitor::visitEnumInst(EnumInst *EI) {
- 
+
   list<jobject> Properties;
 
   StringRef enumName = EI->getElement()->getParentEnum()->getName().str();
@@ -1649,7 +1651,7 @@ jobject SILWalaInstructionVisitor::visitUncheckedEnumDataInst(UncheckedEnumDataI
     llvm::outs() << "\t [CASE]: " << UED->getElement()->getNameStr() << "\n";
     llvm::outs() << "\t [OPERAND]: " << Value.getOpaqueValue() << "\n";
   }
-  
+
   jobject UncheckedEnumData = findAndRemoveCAstNode(Value.getOpaqueValue());
   NodeMap.insert(std::make_pair(static_cast<ValueBase *>(UED), UncheckedEnumData));
 
@@ -1659,7 +1661,7 @@ jobject SILWalaInstructionVisitor::visitUncheckedEnumDataInst(UncheckedEnumDataI
 jobject SILWalaInstructionVisitor::visitInjectEnumAddrInst(InjectEnumAddrInst *IUAI) {
 
   // This instruction can be ignored for us.
-  // Swift uses 2 pass initialization to initialize a data case but we can ignore this becuase in 
+  // Swift uses 2 pass initialization to initialize a data case but we can ignore this becuase in
   // visitInitEnumDataAddrInst we create the enum as an object_literal and it is fully initialized
 
   if (Print) {
@@ -1677,7 +1679,7 @@ jobject SILWalaInstructionVisitor::visitInitEnumDataAddrInst(InitEnumDataAddrIns
 
   SILValue EnumOperand = UDAI->getOperand();
   StringRef EnumName = UDAI->getElement()->getParentEnum()->getName().str();
-  
+
   jobject EnumNameNode = Instance->CAst->makeConstant(EnumName.data());
 
   Properties.push_back(EnumNameNode);
@@ -1756,7 +1758,7 @@ jobject SILWalaInstructionVisitor::visitSelectEnumInst(SelectEnumInst *SEI) {
     StringRef EnumName = CaseDecl->getParentEnum()->getName().str();
 
     for (EnumElementDecl *E : CaseDecl->getParentEnum()->getAllElements()) {
-      
+
       StringRef CaseName = E->getNameStr();
 
       SILValue CaseVal = SEI->getCaseResult(E);
@@ -1799,8 +1801,8 @@ jobject SILWalaInstructionVisitor::visitInitExistentialAddrInst(InitExistentialA
   }
 
   if (SymbolTable.has(IEAI->getOperand().getOpaqueValue())) {
-    auto name = "ExistentialAddr of " + 
-      SymbolTable.get(IEAI->getOperand().getOpaqueValue()) + " -> " + 
+    auto name = "ExistentialAddr of " +
+      SymbolTable.get(IEAI->getOperand().getOpaqueValue()) + " -> " +
       IEAI->getFormalConcreteType().getString();
     SymbolTable.insert(static_cast<ValueBase *>(IEAI), name);
     }
@@ -1816,8 +1818,8 @@ jobject SILWalaInstructionVisitor::visitInitExistentialValueInst(InitExistential
   }
 
    if (SymbolTable.has(IEVI->getOperand().getOpaqueValue())) {
-    auto name = "ExistentialValue of " + 
-      SymbolTable.get(IEVI->getOperand().getOpaqueValue()) + " -> " + 
+    auto name = "ExistentialValue of " +
+      SymbolTable.get(IEVI->getOperand().getOpaqueValue()) + " -> " +
       IEVI->getFormalConcreteType().getString();
     SymbolTable.insert(static_cast<ValueBase *>(IEVI), name);
   }
@@ -1892,8 +1894,8 @@ jobject SILWalaInstructionVisitor::visitInitExistentialMetatypeInst(InitExistent
   }
 
   if (SymbolTable.has(IEMI->getOperand().getOpaqueValue())) {
-    auto name = "ExistentialMetatype of " + 
-      SymbolTable.get(IEMI->getOperand().getOpaqueValue()) + " -> " + 
+    auto name = "ExistentialMetatype of " +
+      SymbolTable.get(IEMI->getOperand().getOpaqueValue()) + " -> " +
       IEMI->getType().getAsString();
     SymbolTable.insert(static_cast<ValueBase *>(IEMI), name);
   }
@@ -1926,8 +1928,8 @@ jobject SILWalaInstructionVisitor::visitInitExistentialRefInst(InitExistentialRe
   }
 
    if (SymbolTable.has(IERI->getOperand().getOpaqueValue())) {
-    auto name = "ExistentialRef of " + 
-      SymbolTable.get(IERI->getOperand().getOpaqueValue()) + " -> " + 
+    auto name = "ExistentialRef of " +
+      SymbolTable.get(IERI->getOperand().getOpaqueValue()) + " -> " +
       IERI->getFormalConcreteType().getString();
     SymbolTable.insert(static_cast<ValueBase *>(IERI), name);
   }
@@ -1953,14 +1955,14 @@ jobject SILWalaInstructionVisitor::visitOpenExistentialRefInst(OpenExistentialRe
   return castNode;
 }
 
-jobject SILWalaInstructionVisitor::visitAllocExistentialBoxInst(AllocExistentialBoxInst *AEBI) {    
+jobject SILWalaInstructionVisitor::visitAllocExistentialBoxInst(AllocExistentialBoxInst *AEBI) {
     if (Print) {
       llvm::outs() << "\t [AEBI]: " << AEBI << "\n";
       llvm::outs() << "\t [CONTRETE TYPE]: " << AEBI->getFormalConcreteType() << "\n";
       llvm::outs() << "\t [EXISTENTIAL TYPE]: " << AEBI->getExistentialType() << "\n";
     }
 
-    auto name = "ExistentialBox:" + 
+    auto name = "ExistentialBox:" +
       AEBI->getFormalConcreteType().getString() + "->" + AEBI->getExistentialType().getAsString();
     SymbolTable.insert(static_cast<ValueBase *>(AEBI), name);
 
@@ -2081,11 +2083,11 @@ jobject SILWalaInstructionVisitor::visitPointerToAddressInst(PointerToAddressIns
   SILValue ValueToBeConverted = PTAI->getConverted();
   // Now getting the type of address to be converted into
   string TypeToBeConvertedInto = PTAI->getType().getAsString();
-  
+
   // Conversion means it is a "CAST" instruction. CAST type node in Wala takes two other nodes.
   // One is a node corresponding to the value to be converted
   // Another is a node corresponding to the type to be converted into
-  
+
   // Firstly finding the node corresponding to the value to be converted
   jobject ToBeConvertedNode = findAndRemoveCAstNode(ValueToBeConverted.getOpaqueValue());
   // Then creating the node corresponding to the type to be converted into
@@ -2159,7 +2161,7 @@ jobject SILWalaInstructionVisitor::visitUncheckedTrivialBitCastInst(UncheckedTri
 
   NodeMap.insert(std::make_pair(static_cast<ValueBase *>(BI), CastedNode));
 
-  return CastedNode;  
+  return CastedNode;
 }
 
 jobject SILWalaInstructionVisitor::visitUncheckedOwnershipConversionInst(UncheckedOwnershipConversionInst *UOCI) {
@@ -2206,7 +2208,7 @@ jobject SILWalaInstructionVisitor::visitRawPointerToRefInst(RawPointerToRefInst 
     llvm::outs() << "\t [RawPointerToRef]: " << static_cast<ValueBase *>(CI) << "\n";
     llvm::outs() << "\t " << ValueToBeConverted.getOpaqueValue() << " [TO BE CONVERTED INTO]: " << TypeToBeConvertedInto << "\n";
   }
-  
+
   jobject ToBeConvertedNode = findAndRemoveCAstNode(ValueToBeConverted.getOpaqueValue());
 
   jobject TypeNode = Instance->CAst->makeConstant(TypeToBeConvertedInto.c_str());
@@ -2257,14 +2259,14 @@ jobject SILWalaInstructionVisitor::visitThinFunctionToPointerInst(ThinFunctionTo
 
    SILValue ConvertedFunction = TFPI->getConverted();
    string CovertedType = TFPI->getType().getAsString();
- 
+
    jobject FunctionPointerNode = findAndRemoveCAstNode(ConvertedFunction.getOpaqueValue());
- 
+
    if (Print) {
      llvm::outs() << "\t [FUNCTION ADDR]: " << ConvertedFunction.getOpaqueValue() << " [TO]: " << CovertedType << "\n";
      llvm::outs() << "\t [FUNCTION NODE]: " << FunctionPointerNode << "\n";
    }
- 
+
    NodeMap.insert(std::make_pair(static_cast<ValueBase *>(TFPI), FunctionPointerNode));
    return FunctionPointerNode;
 }
@@ -2333,7 +2335,7 @@ jobject SILWalaInstructionVisitor::visitThinToThickFunctionInst(ThinToThickFunct
     llvm::outs() << "\t [CALLEE ADDR]: " << CalleeValue.getOpaqueValue()  << " [TO]: " << CovertedType << "\n";
     llvm::outs() << "\t [CALLEE NODE]: " << FuncRefNode << "\n";
   }
-  
+
   // cast in CASt
   NodeMap.insert(std::make_pair(static_cast<ValueBase *>(TTFI), FuncRefNode));
   return FuncRefNode;
@@ -2399,7 +2401,7 @@ jobject SILWalaInstructionVisitor::visitUnconditionalCheckedCastAddrInst(Uncondi
 
   NodeMap.insert(std::make_pair(DestValue.getOpaqueValue(), ConversionNode));
   return ConversionNode;
-} 
+}
 
 /*******************************************************************************/
 /*                   RUNTIME FAILURES                                          */
@@ -2505,10 +2507,10 @@ jobject SILWalaInstructionVisitor::visitYieldInst(YieldInst *YI) {
   jobject ResumeGotoNode = Instance->CAst->makeNode(CAstWrapper::GOTO, ResumeLabelNode);
 
   jobject UnwindLabelNode = Instance->CAst->makeConstant(BasicBlockLabeller::label(UnwindBB).c_str());
-  jobject UnwindGotoNode = Instance->CAst->makeNode(CAstWrapper::GOTO, UnwindLabelNode); 
+  jobject UnwindGotoNode = Instance->CAst->makeNode(CAstWrapper::GOTO, UnwindLabelNode);
 
   jobject Node = Instance->CAst->makeNode(CAstWrapper::YIELD_STMT, Instance->CAst->makeArray(&yieldValues), ResumeGotoNode, UnwindGotoNode);
-  
+
   NodeMap.insert(std::make_pair(YI, Node));
 
   return Node;
@@ -2610,7 +2612,7 @@ jobject SILWalaInstructionVisitor::visitSwitchValueInst(SwitchValueInst *SVI) {
 
   SILValue Cond = SVI->getOperand();
   jobject CondNode = findAndRemoveCAstNode(Cond.getOpaqueValue());
-  
+
   if (Print) {
     llvm::outs() << "\t [COND]: " << Cond.getOpaqueValue() << "\n";
   }

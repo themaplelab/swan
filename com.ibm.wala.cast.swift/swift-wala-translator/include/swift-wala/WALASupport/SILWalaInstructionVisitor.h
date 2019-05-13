@@ -31,7 +31,7 @@ struct InstrInfo {
   unsigned num;
   swift::SILPrintContext::ID id;
   swift::SILInstructionKind instrKind;
-  
+
   swift::SILInstruction::MemoryBehavior memBehavior;
   swift::SILInstruction::ReleasingBehavior relBehavior;
 
@@ -51,10 +51,9 @@ class SILWalaInstructionVisitor : public SILInstructionVisitor<SILWalaInstructio
 public:
   SILWalaInstructionVisitor(WALAInstance *Instance, bool Print) : Instance(Instance), Print(Print) {}
 
-  void visitSILModule(SILModule *M);
+  std::unique_ptr<SILModule> visitModule(std::unique_ptr<SILModule> M);
   void visitSILFunction(SILFunction *F);
   void visitSILBasicBlock(SILBasicBlock *BB);
-  void visitModule(SILModule *M);
   void beforeVisit(SILInstruction *I);
 
   jobject visitSILInstruction(SILInstruction *I) {
@@ -284,4 +283,3 @@ private:
 }
 
 #endif //SWIFT_SILWALAINSTRUCTIONVISITOR_H
-

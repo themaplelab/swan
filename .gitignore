@@ -1,3 +1,4 @@
 /.gradle/
 .project
 .settings/org.eclipse.buildship.core.prefs
+com.ibm.wala.cast.swift/swift-wala-translator/build/
