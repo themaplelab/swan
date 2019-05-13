@@ -1,5 +1,18 @@
+/******************************************************************************
+ * Copyright (c) 2019 Maple @ University of Alberta
+ * All rights reserved. This program and the accompanying materials (unless
+ * otherwise specified by a license inside of the accompanying material)
+ * are made available under the terms of the Eclipse Public License v2.0
+ * which accompanies this distribution, and is available at
+ * http://www.eclipse.org/legal/epl-v20.html
+ *****************************************************************************/
+
+ // SEE HEADER FILE FOR DOCUMENTATION
+
 #include "swift-wala/WALASupport/SymbolTable.h"
 #include <cstdio>
+#include <iostream>
+#include <cassert>
 
 using namespace swift_wala;
 
@@ -8,11 +21,8 @@ bool SymbolTable::has(void* key) {
 }
 
 string SymbolTable::get(void* key) {
-	if (has(key)) {
-		return table.at(key);
-	} else {
-		return "";
-	}
+	assert(has(key) && "SymbolTable - Invalid key requested!");
+	return table.at(key);
 }
 
 void SymbolTable::insert(void* key, const string& name) {

@@ -1,5 +1,20 @@
-#ifndef SWIFT_SILWALAINSTRUCTIONVISITOR_H
-#define SWIFT_SILWALAINSTRUCTIONVISITOR_H
+/******************************************************************************
+ * Copyright (c) 2019 Maple @ University of Alberta
+ * All rights reserved. This program and the accompanying materials (unless
+ * otherwise specified by a license inside of the accompanying material)
+ * are made available under the terms of the Eclipse Public License v2.0
+ * which accompanies this distribution, and is available at
+ * http://www.eclipse.org/legal/epl-v20.html
+ *****************************************************************************/
+
+ //----------------------------------------------------------------------------/
+ /// DESCRIPTION
+ /// Main code for translating SIL to CAst.
+ ///
+ /// TODO: Add technical description and code documentation.
+ //----------------------------------------------------------------------------/
+
+#pragma once
 
 #include "swift/SIL/SILVisitor.h"
 #include "swift/SIL/ApplySite.h"
@@ -280,6 +295,4 @@ private:
 
 };
 
-}
-
-#endif //SWIFT_SILWALAINSTRUCTIONVISITOR_H
+} // end swift_wala namespace

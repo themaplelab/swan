@@ -6,7 +6,9 @@
  * http://www.eclipse.org/legal/epl-v10.html
  *
  * Contributors:
- *     IBM Corporation - initial API and implementation
+ * 		IBM Corporation - initial API and implementation
+ *		Ao Li (Github: Leeleo3x) - fixes
+ *		Mark Mroz - translator entity component
  *****************************************************************************/
 package com.ibm.wala.cast.swift;
 
@@ -38,7 +40,7 @@ public class SwiftToCAstTranslator extends NativeTranslatorToCAst {
 	public SwiftToCAstTranslator(String fileName) throws MalformedURLException {
 		this(new CAstImpl(), new File(fileName).toURI().toURL(), fileName);
 	}
-	
+
 	private SwiftToCAstTranslator(CAst Ast, URL sourceURL, String sourceFileName) {
 		super(Ast, sourceURL, sourceFileName);
 	}
@@ -95,7 +97,7 @@ public class SwiftToCAstTranslator extends NativeTranslatorToCAst {
         }
 
         private CAstNode ast;
-        
+
         @Override
         public CAstNode getAST() {
           if (ast == null) {
@@ -158,7 +160,7 @@ public class SwiftToCAstTranslator extends NativeTranslatorToCAst {
           // TODO Auto-generated method stub
           return null;
         }
-      };		
+      };
 	}
 
 	static {
@@ -181,4 +183,3 @@ public class SwiftToCAstTranslator extends NativeTranslatorToCAst {
 	}
 
 }
-

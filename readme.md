@@ -1,49 +1,101 @@
-# Contribute to Swift-WALA
 
-### Swift 5 fix changes
-- Swift compiler has removed the virtual method `performedSILGeneration` that was used to hook in perviously
-- They added another virtual method called `configuredCompiler(CompilerInstance &CompilerInstance)`, from which we can get the SIL Module. However, the `SILModule`s are no longer passed by reference, but instead use `unique_ptr<SILModule>`, which makes things annoying. Using `CompilerInstance.takeSILModule()` we can take the `SILModule`, read it, but then we must give it back to the compiler. Therefore, we now have to `move` the `unique_ptr` around, just as the compiler does.
-- LLVM API has [changed](https://reviews.llvm.org/D45641), which is problematic for how we take in arguments. This has been fixed, although not for certain.
-- Some paths from `build.gradle` were [removed](https://github.com/themaplelab/swan/commit/f718f5e335eaeb019e4cd9130fbd30b7fe42e031). These have been added back and it appears the build issues that were arising due to that are solved.
-- When cloning SWAN, I renamed `swan/` to `swift-wala/` but I don't think this is neccessary.
-- Do **NOT** use quotation marks in `gradle.properties`
-- **WHAT DOESN'T WORK:** [linker issue](https://termbin.com/sqe3)
-- The build behaves the same on macOS as on Linux.
-- Current linker issues are preventing us from confirming that the two build issues are indeed fixed, and functionality still works at runtime.
-- [Added](https://github.com/themaplelab/swan/commit/1f18a1b63d11896067e52f783f2b2ee6917600a2) new case for [new](https://github.com/apple/swift/commit/425c190086e2c534f016ee3c8efa577b17d1d2c9) instruction mark type in `SILWalaInstructionVisitor.cpp`
+<img src="https://karimali.ca/resources/images/projects/swan.png" width="150">
 
-## Download Projects
+# SWAN (a.k.a Swift-WALA)
+A static program analysis framework for analyzing Swift applications using [WALA](https://github.com/wala/WALA) as the analysis core. 
 
+## Introduction
+
+This static program analysis framework is being developed for detecting security vulnerabilities in Swift applications using taint analysis. A custom translator converts Swift Intermediate Language ([SIL](https://github.com/apple/swift/blob/master/docs/SIL.rst)) to WALA IR (called CAst). The SIL is retrieved by hooking into the Swift compiler and grabbing the SIL modules during compilation. The resulting CAst nodes are analyzed using custom analysis written on top of WALA.
+
+The current translator only supports the most common SIL instructions, and we recently added general support for Swift v5, so better SIL instruction support is likely to come soon.
+
+## Current work
+The translator and basic toolchain/dataflow has been implemented. We are currently working on implementing the architecture for the analysis to be built on top of WALA. Then we will implement points-to analysis and taint analysis with basic sources and sinks identified.
+
+## Future plans
+- Lifecycle awareness for iOS and macOS applications (custom call graph building)
+- Sources and sinks for iOS and macOS libraries
+- Xcode plugin
+- Better (maybe full) SIL instruction support for latest Swift version
+
+## Getting Started
+
+First, you should consider that the final build may be as large as ~52GB.
+
+### Release support
+Supported Swift (incl. dependencies) and WALA releases on SWAN's `master` branch.
+
+
+| OS | Swift Release Tag | WALA Release Tag* | 
+| -----------|:-------:|:-----:|
+| macOS Mojave | [swift-5.0.1-RELEASE](https://github.com/apple/swift/releases/tag/swift-5.0.1-RELEASE) | [v1.5.3](https://github.com/wala/WALA/releases/tag/v1.5.3) |
+| Linux (Ubuntu 18.04) | [swift-5.0.1-RELEASE](https://github.com/apple/swift/releases/tag/swift-5.0.1-RELEASE) | [v1.5.3](https://github.com/wala/WALA/releases/tag/v1.5.3) |
+
+#### \*You must be using Java 8 in order to compile WALA.
+--------------
+If you are not using Java 8 and wish to retain your current Java version, you can do the following after installing Java 8. [Credit.](https://stackoverflow.com/a/40754792)
+Add the following to your `~/.bash_profile` (macOS) or `~/.bashrc` (Linux).
+##### macOS
+```
+alias j<YOUR_VERSION>="export JAVA_HOME=`/usr/libexec/java_home -v <YOUR_VERSION>`; java -version"
+alias j8="export JAVA_HOME=`/usr/libexec/java_home -v 8`; java -version"
+```
+##### Linux
+You will need to check `/usr/lib/jvm` for the directory name of your current version. 
+```
+alias j<YOUR_VERSION>="export JAVA_HOME=`/usr/lib/jvm/YOUR_JAVA_DIR/bin/java`; java -version"
+alias j8="export JAVA_HOME=`/usr/lib/jvm/java-8-oracle/bin/java`; java -version"
+```
+Where `<YOUR_VERSION>` is your current Java version you wish to revert back to afterwards. Your can find your current Java version by typing `java -version`. Make sure to `source` after.
+
+Then, you can switch Java version by using the alias. e.g.
+```
+$ j8
+java version "1.8.0_201"
+Java(TM) SE Runtime Environment (build 1.8.0_201-b09)
+Java HotSpot(TM) 64-Bit Server VM (build 25.201-b09, mixed mode)
+```
+
+Note that this only temporarily sets your Java version. If you have downloaded Java 8 but do not want it to be your default, you can add the `export ...` part of the command to your `~/.bashrc` or `~/.bash_profile`.
+
+--------------
+
+### Download Projects
+
+We use the latest Swift compiler and WALA.
 ```
 mkdir swift-source
 cd swift-source
 git clone https://github.com/apple/swift
 git clone https://github.com/wala/WALA
-git clone https://github.com/themaplelab/swan -b swift5-fix
+git clone https://github.com/themaplelab/swan
 ```
+`master` branch may not always be the up-to-date branch. In this case, use the `-b` flag when cloning `swan` to select the appropriate branch.
 
-## Build Dependencies
+### Build Dependencies
+See compatibility table above for supported release tags, according to your OS. Please open up an issue if you are experiencing build issues or difficulties.
 
-
-### WALA
+#### WALA
 
 ```
 cd ./WALA
+git checkout SUPPORTED_TAG
 ./gradlew assemble
 cd ..
 ```
 
-### Swift
+#### Swift
 
 ```
 cd ./swift
-./utils/update-checkout --clone
-./utils/build-script -d
+./utils/update-checkout --clone --tag SUPPORTED_TAG
+./utils/build-script
 cd ..
 ```
+Optionally, the `-d` flag can be added to the `build-script` so Swift can compile in debug mode.
 
-
-### Edit Swift-WALA Configurations
+#### Edit Swift-WALA Configurations
 
 ```
 cd swift-wala/com.ibm.wala.cast.swift
@@ -53,17 +105,16 @@ cp gradle.properties.example gradle.properties
 Edit `gradle.properties` and provide proper paths. Some example paths are already provided to give you an idea of what they might look like for you. For macOS, change the `linux` to `macosx` in the paths. (e.g `swift-linux-x86_64` to `swift-macosx-x86_64`)
 
 
-### Build Swift-WALA
+#### Build Swift-WALA
 
 ```
+cd ./swan
 ./gradlew assemble
 ```
 
+### Running Swift-WALA
 
-### Run The Program
-
-
-- First you need to setup environment variables.
+- First you need to setup environment variables. You can also add this to your `~/.bashrc` or `~/.bash_profile`. Make sure to `source` after. The first two are the same as those set in `gradle.properties` and the third is just the directory of this repo. 
 
 ```
 export WALA_PATH_TO_SWIFT_BUILD={path/to/your/swift/build/dir}
@@ -71,14 +122,11 @@ export WALA_DIR={path/to/your/wala/dir}
 export SWIFT_WALA_DIR={path/to/your/swift-wala/dir}
 ```
 
+#### Standalone executable
 
-- To run the Java code:
+The standalone C++ program is the current method of running the framework. Once SWAN is built, the executable `swift-wala-translator-standalone` can be found in `{SWIFT_WALA_DIR}/com.ibm.wala.cast.swift/swift-wala-translator/build/external-build/swiftWala/linux_x86-64/bin` (on Linux).
 
-`./gradlew run --args THE_ARGS_YOU_WANT`
-
-
-- Otherwise, you can run the standalone c++ code in `{swift-wala/dir/}/com.ibm.wala.cast.swift/swift-wala-translator/build/external-build/swiftWala/linux_x86-64/bin`.
-
+The program takes one parameter: the Swift file you want to analyze. SWAN only supports one Swift file currently.
 ```
 ./swift-wala-translator-standalone example.swift
 ```
