@@ -32,8 +32,23 @@ Supported Swift (incl. dependencies) and WALA releases on SWAN's `master` branch
 | macOS Mojave | [swift-5.0.1-RELEASE](https://github.com/apple/swift/releases/tag/swift-5.0.1-RELEASE) | [v1.5.3](https://github.com/wala/WALA/releases/tag/v1.5.3) |
 | Linux (Ubuntu 18.04) | [swift-5.0.1-RELEASE](https://github.com/apple/swift/releases/tag/swift-5.0.1-RELEASE) | [v1.5.3](https://github.com/wala/WALA/releases/tag/v1.5.3) |
 
-\* You must be using Java 8 in order to compile WALA.
+#### \*You must be using Java 8 in order to compile WALA.
 
+If you are not using Java 8 and wish to retain your current Java version, you can do the following. [Credit.](https://stackoverflow.com/a/40754792)
+Add the following to your `~/.bash_profile` (macOS) or `~/.bashrc` (Linux).
+```
+alias j<YOUR_VERSION>="export JAVA_HOME=`/usr/libexec/java_home -v <YOUR_VERSION>`; java -version"
+alias j8="export JAVA_HOME=`/usr/libexec/java_home -v 8`; java -version"
+```
+Where `<YOUR_VERSION>` is your current Java version you wish to revert back to afterwards. Your can find your current Java version by typing `java -version`. Make sure to `source` after.
+
+Then, you can switch Java version by using the alias. e.g.
+```
+$ j8
+java version "1.8.0_201"
+Java(TM) SE Runtime Environment (build 1.8.0_201-b09)
+Java HotSpot(TM) 64-Bit Server VM (build 25.201-b09, mixed mode)
+```
 ### Download Projects
 
 We use the latest Swift compiler and WALA.
