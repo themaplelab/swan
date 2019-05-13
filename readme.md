@@ -29,9 +29,10 @@ Supported Swift (incl. dependencies) and WALA releases on SWAN's `master` branch
 
 | OS | Swift Release Tag | WALA Release Tag | 
 | -----------|:-------:|:-----:|
-| macOS Mojave | [swift-5.0.1-RELEASE](https://github.com/apple/swift/releases/tag/swift-5.0.1-RELEASE) | ? |
+| macOS Mojave | [swift-5.0.1-RELEASE](https://github.com/apple/swift/releases/tag/swift-5.0.1-RELEASE) | ?* |
 | Linux (Ubuntu 18.04) | [swift-5.0.1-RELEASE](https://github.com/apple/swift/releases/tag/swift-5.0.1-RELEASE) | [v1.5.3](https://github.com/wala/WALA/releases/tag/v1.5.3) |
 
+\* WALA _was_ building on macOS somewhere between R_1.5.2 and v1.5.3, but neither build currently.
 ### Download Projects
 
 We use the latest Swift compiler and WALA.
