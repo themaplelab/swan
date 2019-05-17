@@ -2,6 +2,8 @@ plugins {
     id "com.cisco.external-build" version "1.14"
 }
 
+group 'ca.maple.swan'
+
 import com.cisco.gradle.externalbuild.ExternalNativeLibrarySpec
 import com.cisco.gradle.externalbuild.tasks.CMake
 
@@ -13,7 +15,7 @@ def getInstallDir = { binary ->
     file("${buildDir}/install/${binary.component.name}/${binary.targetPlatform.name}")
 }
 
-project(":swift-wala-translator") {
+project(":ca.maple.swan.translator") {
     model {
         components {
             swiftWala(ExternalNativeLibrarySpec) {
