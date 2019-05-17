@@ -1,0 +1,4 @@
+rootProject.name = 'swan'
+
+include 'ca.maple.swan.translator'
+include 'ca.maple.swan.analysis'

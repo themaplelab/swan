@@ -19,6 +19,9 @@
 #include "swift/Demangling/Demangle.h"
 #include "CAstWrapper.h"
 
+#include <iostream>
+#include <fstream>
+
 using namespace swift_wala;
 
 
@@ -87,6 +90,16 @@ void SILWalaInstructionVisitor::beforeVisit(SILInstruction *I) {
   instrInfo->ops = llvm::ArrayRef<SILValue>(vals);
   perInstruction();
 
+  /*
+  char* od = std::getenv("SIL_INSTRUCTION_OUTPUT");
+  std::string OutputDir(od);
+  std::stringstream ss;
+  ss << OutputDir << "SIL_INSTRUCTION_OUTPUT.txt";
+  std::ofstream outfile;
+  outfile.open(ss);
+  outfile << getSILInstructionName(I->getKind());
+  outfile.close();
+  */
   if (Print) {
     llvm::outs() << "<< " << getSILInstructionName(I->getKind()) << " >>\n";
   }
