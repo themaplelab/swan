@@ -4,6 +4,7 @@ add_library(swiftWala SHARED
         WALAInstance.cpp
         SymbolTable.cpp
         BasicBlockLabeller.cpp
+        SwiftToCAstTranslatorJNIWrapper.cpp
         SILWalaInstructionVisitor.cpp)
 
 install(TARGETS swiftWala DESTINATION lib)
