@@ -18,20 +18,17 @@
 #include <string>
 #include <unordered_map>
 
-using std::string;
-using std::unordered_map;
-
 namespace swift_wala {
 
 class SymbolTable {
 public:
   bool has(void* key);
   string get(void* key);
-  void insert(void* key, const string& name);
-  void duplicate(void* key, const string& name);
+  void insert(void* key, const std::string& name);
+  void duplicate(void* key, const std::string& name);
   bool remove(void* key);
 private:
-  unordered_map<void*, string> table;
+  std::unordered_map<void*, std::string> table;
 };
 
 } // end swift_wala namespace

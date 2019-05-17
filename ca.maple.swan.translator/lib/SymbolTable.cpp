@@ -20,19 +20,19 @@ bool SymbolTable::has(void* key) {
 	return table.find(key) != table.end();
 }
 
-string SymbolTable::get(void* key) {
+std::string SymbolTable::get(void* key) {
 	assert(has(key) && "SymbolTable - Invalid key requested!");
 	return table.at(key);
 }
 
-void SymbolTable::insert(void* key, const string& name) {
+void SymbolTable::insert(void* key, const std::string& name) {
 	char buff[80]; // enough for 64 bit address
 	std::sprintf(buff, "%p", key);
-	string varName = name + "_" + buff;
+	std::string varName = name + "_" + buff;
 	table.insert(std::make_pair(key, varName));
 }
 
-void SymbolTable::duplicate(void* key, const string& name) {
+void SymbolTable::duplicate(void* key, const std::string& name) {
 	table.insert(std::make_pair(key, name));
 }
 
