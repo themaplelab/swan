@@ -10,7 +10,8 @@
  *		Ao Li (Github: Leeleo3x) - fixes
  *		Mark Mroz - translator entity component
  *****************************************************************************/
-package com.ibm.wala.cast.swift;
+
+package ca.maple.swan.analysis.translator;
 
 import com.ibm.wala.cast.tree.CAstType;
 import java.io.File;
@@ -50,7 +51,7 @@ public class SwiftToCAstTranslator extends NativeTranslatorToCAst {
 			boolean prepend) {
 		assert false;
 	}
-	private native ArrayList<CAstNode> translateToCAstNodes();
+	private native void translateToCAstNodes();
 
 	@Override
 	public CAstEntity translateToCAst() {
@@ -101,8 +102,7 @@ public class SwiftToCAstTranslator extends NativeTranslatorToCAst {
         @Override
         public CAstNode getAST() {
           if (ast == null) {
-
-          	ast = translateToCAstNodes().get(0);
+          	//ast = translateToCAstNodes().get(0);
           }
           return ast;
         }
@@ -164,16 +164,15 @@ public class SwiftToCAstTranslator extends NativeTranslatorToCAst {
 	}
 
 	static {
-		System.loadLibrary("translator");
+		// TODO: LOAD CORRECT LIBRARY HERE
+		// System.loadLibrary("translator");
 	}
 
 	public static void main(String[] args) {
 		if (args.length > 0) {
 			try {
 				SwiftToCAstTranslator translator = new SwiftToCAstTranslator(args[0]);
-				CAstEntity entity = translator.translateToCAst();
-				String astString = CAstPrinter.print(entity);
-				System.out.print(astString);
+				translator.translateToCAstNodes();
 			}
 			catch (Exception e) {
 				e.printStackTrace(System.out);
