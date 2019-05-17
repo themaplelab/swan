@@ -23,7 +23,7 @@ namespace swift_wala {
 class SymbolTable {
 public:
   bool has(void* key);
-  string get(void* key);
+  std::string get(void* key);
   void insert(void* key, const std::string& name);
   void duplicate(void* key, const std::string& name);
   bool remove(void* key);
