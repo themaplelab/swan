@@ -20,6 +20,3 @@ include_directories(${WALA_DIR}/com.ibm.wala.cast/source/c/include)
 link_directories(${WALA_DIR}/com.ibm.wala.cast/cast/build/lib/main/debug/)
 
 add_subdirectory(lib)
-add_subdirectory(tools)
-
-
