@@ -1,9 +1,7 @@
 /.gradle/
 .project
 .settings/org.eclipse.buildship.core.prefs
-./ca.maple.swan.analysis/build
-./ca.maple.swan.translator/build
-./build/
+build/
 .DS_Store
 gradle.properties
 
