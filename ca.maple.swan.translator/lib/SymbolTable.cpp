@@ -9,7 +9,7 @@
 
  // SEE HEADER FILE FOR DOCUMENTATION
 
-#include "swift-wala/WALASupport/SymbolTable.h"
+#include "SymbolTable.h"
 #include <cstdio>
 #include <iostream>
 #include <cassert>

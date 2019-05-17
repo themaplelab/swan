@@ -9,7 +9,7 @@
 
  // SEE HEADER FILE FOR DOCUMENTATION
 
-#include "swift-wala/WALASupport/BasicBlockLabeller.h"
+#include "BasicBlockLabeller.h"
 
 using namespace swift_wala;
 

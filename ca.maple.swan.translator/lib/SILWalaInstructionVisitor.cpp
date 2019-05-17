@@ -14,8 +14,8 @@
 #include <swift/SIL/SILModule.h>
 #include <swift/AST/Module.h>
 
-#include "swift-wala/WALASupport/BasicBlockLabeller.h"
-#include "swift-wala/WALASupport/SILWalaInstructionVisitor.h"
+#include "BasicBlockLabeller.h"
+#include "SILWalaInstructionVisitor.h"
 #include "swift/Demangling/Demangle.h"
 #include "CAstWrapper.h"
 

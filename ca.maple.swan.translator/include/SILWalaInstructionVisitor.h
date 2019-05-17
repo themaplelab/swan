@@ -18,8 +18,8 @@
 
 #include "swift/SIL/SILVisitor.h"
 #include "swift/SIL/ApplySite.h"
-#include "swift-wala/WALASupport/WALAInstance.h"
-#include "swift-wala/WALASupport/SymbolTable.h"
+#include "WALAInstance.h"
+#include "SymbolTable.h"
 
 #include <jni.h>
 #include <unordered_map>

@@ -9,8 +9,8 @@
 
  // SEE HEADER FILE FOR DOCUMENTATION
 
-#include "swift-wala/WALASupport/WALAInstance.h"
-#include "swift-wala/WALASupport/SwiftCHook.h"
+#include "WALAInstance.h"
+#include "SwiftCHook.h"
 
 #include <CAstWrapper.h>
 #include <launch.h>
@@ -21,7 +21,7 @@
 #include "swift/AST/Module.h"
 #include "swift/FrontendTool/FrontendTool.h"
 #include "swift/Frontend/Frontend.h"
-#include "swift-wala/WALASupport/SILWalaInstructionVisitor.h"
+#include "SILWalaInstructionVisitor.h"
 #include "swift/SIL/SILValue.h"
 #include "llvm/Support/FileSystem.h"
 #include "llvm/Support/Process.h"
