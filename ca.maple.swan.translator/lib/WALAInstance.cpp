@@ -68,7 +68,7 @@ WALAInstance::WALAInstance(JNIEnv *Env, jobject Obj) : JavaEnv(Env), Translator(
   TRY(Exception, JavaEnv)
       CAst = new CAstWrapper(JavaEnv, Exception, Translator); // for JNI calls
       // find the bridge class
-      auto TranslatorClass = JavaEnv->FindClass("com/ibm/wala/cast/swift/SwiftToCAstTranslator");
+      auto TranslatorClass = JavaEnv->FindClass("ca/maple/swan/analysis/translator/SwiftToCAstTranslator");
       THROW_ANY_EXCEPTION(Exception);
 
       // get the file to analyze
