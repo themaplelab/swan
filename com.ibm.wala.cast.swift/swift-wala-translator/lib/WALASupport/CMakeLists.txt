@@ -14,6 +14,5 @@ target_link_libraries(swiftWala
     swiftSema
     swiftAST
     cast
-    ${JNI_LIBRARIES}
     edit)
 
