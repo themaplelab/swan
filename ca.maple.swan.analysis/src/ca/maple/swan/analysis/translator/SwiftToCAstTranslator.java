@@ -169,9 +169,9 @@ public class SwiftToCAstTranslator extends NativeTranslatorToCAst {
 
         String SWANDir = "";
         try {
-            SWANDir = System.getenv("SWAN");
+            SWANDir = System.getenv("PATH_TO_SWAN");
         } catch (Exception e) {
-            System.err.println("Error: SWAN path not set! Exiting...");
+            System.err.println("Error: PATH_TO_SWAN path not set! Exiting...");
             System.exit(1);
         }
 
