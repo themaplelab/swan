@@ -118,10 +118,11 @@ cd ./swan
 
 ### Running Swift-WALA
 
-First you need to set up an environment variable. You can also add this to your `~/.bashrc` or `~/.bash_profile`. Make sure to `source` after. This variable is the same as in `gradle.properties`. This is needed for the Swift compiler hook.
+First you need to set some environment variables. You can also add the following to your `~/.bashrc` or `~/.bash_profile`, but make sure to source after. **Restart IDEA if you have it open.** The first variable is the same as in `gradle.properties`. The second variable is just the path to the directory containing this cloned repository.
 
 ```
 export WALA_PATH_TO_SWIFT_BUILD={path/to/your/swift/build/dir}
+export PATH_TO_SWAN={path/to/swan/dir}
 ```
 
 You may run the analysis by running the following in the root directory.
