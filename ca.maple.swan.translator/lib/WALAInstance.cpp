@@ -14,7 +14,6 @@
 
 #include <CAstWrapper.h>
 #include <launch.h>
-#include <iostream>
 
 #include "llvm/Support/raw_ostream.h"
 #include "swift/SIL/SILModule.h"
@@ -57,7 +56,6 @@ void WALAInstance::analyze() {
   SmallVector<const char *, 256> argv(Argv.begin(), Argv.end());
 
   // call Swift compiler frontend
-  std::cout << "File.c_str(): " << File.c_str() << std::endl;
   performFrontend(llvm::makeArrayRef(argv.data()+1,
                                      argv.data()+argv.size()),
                   argv[0], (void *)(intptr_t)getExecutablePath,
