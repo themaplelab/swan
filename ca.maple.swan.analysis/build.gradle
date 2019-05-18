@@ -15,7 +15,7 @@ repositories {
 sourceSets.main.java.srcDirs = ['src/']
 
 apply plugin: 'application'
-mainClassName = "ca.maple.swan.analysis.translator.SwiftToCAstTranslator"
+mainClassName = "ca.maple.swan.analysis.drivers.MainAnalysisDriver"
 
 dependencies {
     compile fileTree(dir: ":ca.maple.swan.translator")

@@ -51,7 +51,8 @@ public class SwiftToCAstTranslator extends NativeTranslatorToCAst {
 			boolean prepend) {
 		assert false;
 	}
-	private native void translateToCAstNodes();
+
+	public native void translateToCAstNodes();
 
 	@Override
 	public CAstEntity translateToCAst() {
@@ -162,45 +163,4 @@ public class SwiftToCAstTranslator extends NativeTranslatorToCAst {
         }
       };
 	}
-
-	static {
-        String sharedDir = "/ca.maple.swan.translator/build/libs/swiftWala/shared/";
-        String libName = "libswiftWala";
-
-        String SWANDir = "";
-        try {
-            SWANDir = System.getenv("PATH_TO_SWAN");
-        } catch (Exception e) {
-            System.err.println("Error: PATH_TO_SWAN path not set! Exiting...");
-            System.exit(1);
-        }
-
-        // try to load both dylib and so (instead of checking OS)
-        try {
-            System.load(SWANDir + sharedDir + libName + ".dylib");
-        } catch (Exception dylibException) {
-            try {
-                System.load(SWANDir + sharedDir + libName + ".so");
-            } catch (Exception soException) {
-                System.err.println("Could not find shared library!");
-                soException.printStackTrace();
-            }
-        }
-	}
-
-	public static void main(String[] args) {
-	    if (args.length != 1) {
-	        System.err.println("Usage: One input file expected!");
-        }
-		else {
-			try {
-				SwiftToCAstTranslator translator = new SwiftToCAstTranslator(args[0]);
-				translator.translateToCAstNodes();
-			}
-			catch (Exception e) {
-				e.printStackTrace(System.out);
-			}
-		}
-	}
-
 }
