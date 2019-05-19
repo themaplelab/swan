@@ -29,10 +29,13 @@ Supported Swift (incl. dependencies) and WALA releases on SWAN's `master` branch
 
 | OS | Swift Release Tag | WALA Release Tag* | 
 | -----------|:-------:|:-----:|
-| macOS Mojave | [swift-5.0.1-RELEASE](https://github.com/apple/swift/releases/tag/swift-5.0.1-RELEASE) | [v1.5.3](https://github.com/wala/WALA/releases/tag/v1.5.3) |
-| Linux (Ubuntu 18.04) | [swift-5.0.1-RELEASE](https://github.com/apple/swift/releases/tag/swift-5.0.1-RELEASE) | [v1.5.3](https://github.com/wala/WALA/releases/tag/v1.5.3) |
+| macOS Mojave | ** | [v1.5.3](https://github.com/wala/WALA/releases/tag/v1.5.3) |
+| Linux (Ubuntu 18.04) | ** | [v1.5.3](https://github.com/wala/WALA/releases/tag/v1.5.3) |
 
-#### \*You must be using Java 8 in order to compile WALA.
+**\*You must be using Java 8 in order to compile WALA.**
+
+**\*\*Hook is does not work currently.** We had a hook for [swift-5.0.1-RELEASE](https://github.com/apple/swift/releases/tag/swift-5.0.1-RELEASE), but the `FrontendTool` has since changed. Our new hook does not work since the methods fired to our `Observer` come before the SILModule is added to the `CompilerInstance`.
+
 --------------
 If you are not using Java 8 and wish to retain your current Java version, you can do the following after installing Java 8. [Credit.](https://stackoverflow.com/a/40754792)
 Add the following to your `~/.bash_profile` (macOS) or `~/.bashrc` (Linux).
