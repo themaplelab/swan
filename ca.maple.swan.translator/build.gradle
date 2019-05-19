@@ -41,7 +41,9 @@ project(":ca.maple.swan.translator") {
                     inputs.file 'CMakeLists.txt'
                     workingDir intDir
                 }
-
+                binaries.withType(StaticLibraryBinarySpec) {
+                    buildable = false
+                }
                 buildOutput {
                     def outputDir = getInstallDir(binary)
                     switch (targetPlatform.operatingSystem.name) {
