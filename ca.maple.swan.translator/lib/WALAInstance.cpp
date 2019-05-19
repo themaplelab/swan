@@ -14,6 +14,7 @@
 
 #include <CAstWrapper.h>
 #include <launch.h>
+#include <unistd.h>
 
 #include "llvm/Support/raw_ostream.h"
 #include "swift/SIL/SILModule.h"
@@ -54,6 +55,14 @@ void WALAInstance::analyze() {
   auto Argv = {"", "-emit-sil", File.c_str()};
   swift_wala::Observer observer(this); // create the hook
   SmallVector<const char *, 256> argv(Argv.begin(), Argv.end());
+
+  // change current working path to allow for relative pathed input files
+  // regular working dir is swan/ca.maple.swan.analysis, we change it to just swan/
+  char temp[1024];
+  std::string currentWorkingPath = getcwd(temp, sizeof(temp)) ? std::string( temp ) : std::string("");
+  size_t lastSlashIndex = currentWorkingPath.find_last_of("/");
+  std::string newCurrentWorkingPath = currentWorkingPath.substr(0, lastSlashIndex);
+  chdir(newCurrentWorkingPath.c_str());
 
   // call Swift compiler frontend
   performFrontend(llvm::makeArrayRef(argv.data()+1,
