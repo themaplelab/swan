@@ -19,7 +19,6 @@ mainClassName = "ca.maple.swan.analysis.drivers.MainAnalysisDriver"
 
 dependencies {
     compile fileTree(dir: ":ca.maple.swan.translator")
-    runtime fileTree(dir: ":ca.maple.swan.translator/build/libs/swiftWala/shared/", include: ['.dylib','.so'])
     compile fileTree(dir: "${WALA_DIR}/com.ibm.wala.translator/build/libs", include: '*.jar')
     compile fileTree(dir: "${WALA_DIR}/com.ibm.wala.core/build/libs", include: '*.jar')
     compile fileTree(dir: "${WALA_DIR}/com.ibm.wala.shrike/build/libs", include: '*.jar')
