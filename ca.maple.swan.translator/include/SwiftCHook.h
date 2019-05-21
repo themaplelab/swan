@@ -37,7 +37,10 @@
 #include "llvm/Support/Process.h"
 #include "llvm/Support/Path.h"
 
+using namespace swift;
+
 namespace swift_wala {
+
 struct Observer : public FrontendObserver {
   WALAInstance *Instance;
   Observer(WALAInstance *Instance) : Instance(Instance) {};

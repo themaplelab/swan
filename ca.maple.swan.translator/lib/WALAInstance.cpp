@@ -45,7 +45,7 @@ void WALAInstance::print(jobject Object) {
 
 void WALAInstance::analyzeSILModule(SILModule &SM) {
   SILWalaInstructionVisitor Visitor(this, true);
-  Visitor.visitModule(SM);
+  Visitor.visitModule(&SM);
 }
 
 void WALAInstance::analyze() {

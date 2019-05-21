@@ -23,9 +23,7 @@
 #include <memory>
 #include <vector>
 
-namespace swift {
-  class SILModule;
-}
+#include "swift/SIL/SILModule.h"
 
 class CAstWrapper;
 
@@ -52,7 +50,7 @@ public:
   // method to start the analysis, hooks into the Swift compiler frontend
   void analyze();
   // visits the given SIL module and will put the result back into the instance
-  void analyzeSILModule(SILModule &SM);
+  void analyzeSILModule(swift::SILModule &SM);
 };
 
 } // end swift_wala namespace
