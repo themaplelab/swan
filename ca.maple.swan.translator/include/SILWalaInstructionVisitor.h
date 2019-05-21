@@ -66,7 +66,7 @@ class SILWalaInstructionVisitor : public SILInstructionVisitor<SILWalaInstructio
 public:
   SILWalaInstructionVisitor(WALAInstance *Instance, bool Print) : Instance(Instance), Print(Print) {}
 
-  std::unique_ptr<SILModule> visitModule(std::unique_ptr<SILModule> M);
+  void visitModule(SILModule *M);
   void visitSILFunction(SILFunction *F);
   void visitSILBasicBlock(SILBasicBlock *BB);
   void beforeVisit(SILInstruction *I);

@@ -52,7 +52,7 @@ public:
   // method to start the analysis, hooks into the Swift compiler frontend
   void analyze();
   // visits the given SIL module and will put the result back into the instance
-  std::unique_ptr<swift::SILModule> analyzeSILModule(std::unique_ptr<swift::SILModule> SM);
+  void analyzeSILModule(SILModule &SM);
 };
 
 } // end swift_wala namespace

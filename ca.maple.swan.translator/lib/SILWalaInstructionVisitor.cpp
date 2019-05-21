@@ -147,7 +147,7 @@ void SILWalaInstructionVisitor::visitSILFunction(SILFunction *F) {
   }
 }
 
-std::unique_ptr<SILModule> SILWalaInstructionVisitor::visitModule(std::unique_ptr<SILModule> M) {
+void SILWalaInstructionVisitor::visitModule(SILModule *M) {
   moduleInfo = std::make_shared<ModuleInfo>(M->getSwiftModule()->getModuleFilename());
   if (moduleInfo->sourcefile.empty()) {
     moduleInfo->sourcefile = "N/A";
@@ -155,7 +155,6 @@ std::unique_ptr<SILModule> SILWalaInstructionVisitor::visitModule(std::unique_pt
   for (auto &F: *M) {
     visitSILFunction(&F);
   }
-  return M;
 }
 
 // Actions to take on a per-instruction basis.  InstrInfo contains all the relevant info

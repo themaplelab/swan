@@ -43,10 +43,9 @@ void WALAInstance::print(jobject Object) {
   JavaEnv->ReleaseStringUTFChars(Message, Text);
 }
 
-std::unique_ptr<SILModule> WALAInstance::analyzeSILModule(std::unique_ptr<SILModule> SM) {
+void WALAInstance::analyzeSILModule(SILModule &SM) {
   SILWalaInstructionVisitor Visitor(this, true);
-  SM = Visitor.visitModule(std::move(SM));
-  return SM;
+  Visitor.visitModule(SM);
 }
 
 void WALAInstance::analyze() {
@@ -79,10 +78,6 @@ WALAInstance::WALAInstance(JNIEnv *Env, jobject Obj) : JavaEnv(Env), Translator(
       THROW_ANY_EXCEPTION(Exception);
 
       // get the file to analyze
-      // NOTE:
-      /// This can all be replaced by a direct parameter from the
-      /// standalone swift-wala program (since we are basically retrieving what
-      /// we JUST put into the object). However, this would increase coupling.
       auto GetLocalFile = JavaEnv->GetMethodID(TranslatorClass, "getLocalFile", "()Ljava/lang/String;");
       THROW_ANY_EXCEPTION(Exception);
       auto LocalFile = (jstring)(JavaEnv->CallObjectMethod(Translator, GetLocalFile, 0));

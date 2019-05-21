@@ -48,13 +48,8 @@ struct Observer : public FrontendObserver {
     Invocation.setRuntimeResourcePath(LibPath.str());
   }
 
-  void configuredCompiler(CompilerInstance &CompilerInstance) override {
-    if (auto Module = CompilerInstance.takeSILModule())
-    {
-      Module = Instance->analyzeSILModule(std::move(Module));
-      // reset so compiler can use SIL Module after
-      CompilerInstance.setSILModule(std::move(Module));
-    }
+  void performedSILGeneration(SILModule &Module) override {
+    Instance->analyzeSILModule(Module);
   }
 };
 
