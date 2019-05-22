@@ -93,10 +93,9 @@ cd ..
 ```
 cd ./swift
 ./utils/update-checkout --clone --tag SUPPORTED_TAG
-./utils/build-script
+./utils/build-script -R
 cd ..
 ```
-Optionally, the `-d` flag can be added to the `build-script` so Swift can compile in debug mode.
 
 #### Edit Swift-WALA Configurations
 
