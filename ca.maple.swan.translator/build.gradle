@@ -1,0 +1,66 @@
+plugins {
+    id "com.cisco.external-build" version "1.14"
+}
+
+group 'ca.maple.swan'
+
+import com.cisco.gradle.externalbuild.ExternalNativeLibrarySpec
+import com.cisco.gradle.externalbuild.tasks.CMake
+
+def getIntermediateDir = { binary ->
+    file("${buildDir}/external-build/${binary.component.name}/${binary.targetPlatform.name}")
+}
+
+def getInstallDir = { binary ->
+    file("${buildDir}/install/${binary.component.name}/${binary.targetPlatform.name}")
+}
+
+project(":ca.maple.swan.translator") {
+    model {
+        components {
+            swiftWala(ExternalNativeLibrarySpec) {
+                buildConfig(CMake) {
+                    def intDir = getIntermediateDir(binary)
+                    def outputDir = getInstallDir(binary)
+
+                    redirectOutput = false
+
+                    cmakeRoot '.'
+                    cmakeArgs "-DCMAKE_INSTALL_PREFIX=${outputDir}",
+                            "-DCMAKE_C_COMPILER=clang",
+                            "-DCMAKE_CXX_COMPILER=clang++",
+                            "-DClang_DIR=${SWIFT_PATH_TO_LLVM_BUILD}/lib/cmake/clang",
+                            "-DWALA_PATH_TO_SWIFT_BUILD=${WALA_PATH_TO_SWIFT_BUILD}",
+                            "-DSWIFT_PATH_TO_LLVM_SOURCE=${SWIFT_PATH_TO_LLVM_SOURCE}",
+                            "-DSWIFT_PATH_TO_LLVM_BUILD=${SWIFT_PATH_TO_LLVM_BUILD}",
+                            "-DLLVM_DIR=${SWIFT_PATH_TO_LLVM_BUILD}/lib/cmake/llvm",
+                            "-DSWIFT_PATH_TO_CMARK_BUILD=${SWIFT_PATH_TO_CMARK_BUILD}",
+                            "-DWALA_DIR=${WALA_DIR}"
+                    targets 'swiftWala', 'install'
+                    inputs.dir 'lib'
+                    inputs.file 'CMakeLists.txt'
+                    workingDir intDir
+                }
+                binaries.withType(StaticLibraryBinarySpec) {
+                    buildable = false
+                }
+                buildOutput {
+                    def outputDir = getInstallDir(binary)
+                    switch (targetPlatform.operatingSystem.name) {
+                        case 'linux':
+                            outputFile = file("${outputDir}/lib/libswiftWala.so")
+                            break
+                        case 'osx':
+                            outputFile = file("${outputDir}/lib/libswiftWala.dylib")
+                            break
+                    }
+                    exportedHeaders {
+                      srcDir "${projectDir}/include"
+                    }
+                }
+            }
+
+        }
+    }
+
+}

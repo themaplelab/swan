@@ -11,7 +11,10 @@ This static program analysis framework is being developed for detecting security
 The current translator only supports the most common SIL instructions, and we recently added general support for Swift v5, so better SIL instruction support is likely to come soon.
 
 ## Current work
-The translator and basic toolchain/dataflow has been implemented. We are currently working on implementing the architecture for the analysis to be built on top of WALA. Then we will implement points-to analysis and taint analysis with basic sources and sinks identified.
+We are currently working on the following:
+- Implementing call graph construction
+
+Then we will implement points-to analysis and taint analysis with basic sources and sinks identified.
 
 ## Future plans
 - Lifecycle awareness for iOS and macOS applications (custom call graph building)
@@ -29,14 +32,13 @@ Supported Swift (incl. dependencies) and WALA releases on SWAN's `master` branch
 
 | OS | Swift Release Tag | WALA Release Tag* | 
 | -----------|:-------:|:-----:|
-| macOS Mojave | ** | [v1.5.3](https://github.com/wala/WALA/releases/tag/v1.5.3) |
-| Linux (Ubuntu 18.04) | ** | [v1.5.3](https://github.com/wala/WALA/releases/tag/v1.5.3) |
+| macOS Mojave | [master](https://github.com/apple/swift/tree/master) | [v1.5.3](https://github.com/wala/WALA/releases/tag/v1.5.3) |
+| Linux (Ubuntu 18.04) | [master](https://github.com/apple/swift/tree/master) | [v1.5.3](https://github.com/wala/WALA/releases/tag/v1.5.3) |
 
 **\*You must be using Java 8 in order to compile WALA.**
 
-**\*\*Hook is does not work currently.** We had a hook for [swift-5.0.1-RELEASE](https://github.com/apple/swift/releases/tag/swift-5.0.1-RELEASE), but the `FrontendTool` has since changed. Our new hook does not work since the methods fired to our `Observer` come before the SILModule is added to the `CompilerInstance`.
+### Switching to Java 8
 
---------------
 If you are not using Java 8 and wish to retain your current Java version, you can do the following after installing Java 8. [Credit.](https://stackoverflow.com/a/40754792)
 Add the following to your `~/.bash_profile` (macOS) or `~/.bashrc` (Linux).
 ##### macOS
@@ -61,8 +63,6 @@ Java HotSpot(TM) 64-Bit Server VM (build 25.201-b09, mixed mode)
 ```
 
 Note that this only temporarily sets your Java version. If you have downloaded Java 8 but do not want it to be your default, you can add the `export ...` part of the command to your `~/.bashrc` or `~/.bash_profile`.
-
---------------
 
 ### Download Projects
 
@@ -93,15 +93,14 @@ cd ..
 ```
 cd ./swift
 ./utils/update-checkout --clone --tag SUPPORTED_TAG
-./utils/build-script
+./utils/build-script -R
 cd ..
 ```
-Optionally, the `-d` flag can be added to the `build-script` so Swift can compile in debug mode.
 
 #### Edit Swift-WALA Configurations
 
 ```
-cd swift-wala/com.ibm.wala.cast.swift
+cd ./swan
 cp gradle.properties.example gradle.properties
 ```
 
@@ -117,19 +116,14 @@ cd ./swan
 
 ### Running Swift-WALA
 
-- First you need to setup environment variables. You can also add this to your `~/.bashrc` or `~/.bash_profile`. Make sure to `source` after. The first two are the same as those set in `gradle.properties` and the third is just the directory of this repo. 
+First you need to set some environment variables. You can also add the following to your `~/.bashrc` or `~/.bash_profile`, but make sure to source after. **Restart IDEA if you have it open.** The first variable is the same as in `gradle.properties`. The second variable is just the path to the directory containing this cloned repository.
 
 ```
 export WALA_PATH_TO_SWIFT_BUILD={path/to/your/swift/build/dir}
-export WALA_DIR={path/to/your/wala/dir}
-export SWIFT_WALA_DIR={path/to/your/swift-wala/dir}
+export PATH_TO_SWAN={path/to/swan/dir}
 ```
 
-#### Standalone executable
-
-The standalone C++ program is the current method of running the framework. Once SWAN is built, the executable `swift-wala-translator-standalone` can be found in `{SWIFT_WALA_DIR}/com.ibm.wala.cast.swift/swift-wala-translator/build/external-build/swiftWala/linux_x86-64/bin` (on Linux).
-
-The program takes one parameter: the Swift file you want to analyze. SWAN only supports one Swift file currently.
+You may run the analysis by running the following in the root directory.
 ```
-./swift-wala-translator-standalone example.swift
+./gradlew run --args="YOUR_SWIFT_FILE"
 ```
