@@ -23,4 +23,5 @@ dependencies {
     compile fileTree(dir: "${WALA_DIR}/com.ibm.wala.core/build/libs", include: '*.jar')
     compile fileTree(dir: "${WALA_DIR}/com.ibm.wala.shrike/build/libs", include: '*.jar')
     compile fileTree(dir: "${WALA_DIR}/com.ibm.wala.cast/build/libs", include: '*.jar')
+    compile fileTree(dir: "${WALA_DIR}/com.ibm.wala.util/build/libs", include: '*.jar')
 }
