@@ -106,9 +106,11 @@ void SILWalaInstructionVisitor::beforeVisit(SILInstruction *I) {
 }
 
 void SILWalaInstructionVisitor::visitSILBasicBlock(SILBasicBlock *BB) {
-  llvm::outs() << "Basic Block: ";
-  llvm::outs() << BB << "\n";
-  llvm::outs() << "SILFunctions: " << BB->getParent() << "\n";
+  if (Print) {
+    llvm::outs() << "Basic Block: ";
+    llvm::outs() << BB << "\n";
+    llvm::outs() << "SILFunctions: " << BB->getParent() << "\n";
+  }
   InstructionCount = 0;
   NodeMap.clear();
   NodeList.clear();
@@ -134,17 +136,22 @@ void SILWalaInstructionVisitor::visitSILFunction(SILFunction *F) {
   functionInfo =
       std::make_shared<FunctionInfo>(F->getName(), Demangle::demangleSymbolAsString(F->getName()));
   BlockStmtList.clear();
-  llvm::outs() << "SILFunction: ";
-  llvm::outs() << F << "\n";
-  F->print(llvm::outs(), true);
+  if (Print) {
+    llvm::outs() << "SILFunction: ";
+    llvm::outs() << F << "\n";
+    F->print(llvm::outs(), true);
+  }
 
   for (auto &BB: *F) {
     visitSILBasicBlock(&BB);
   }
 
-  for (auto &Stmt: BlockStmtList) {
-    Instance->print(Stmt);
+  if (Print) {
+    for (auto &Stmt: BlockStmtList) {
+      Instance->print(Stmt);
+    }
   }
+
 }
 
 void SILWalaInstructionVisitor::visitModule(SILModule *M) {
@@ -160,10 +167,13 @@ void SILWalaInstructionVisitor::visitModule(SILModule *M) {
 // Actions to take on a per-instruction basis.  InstrInfo contains all the relevant info
 // for the current instruction in the iteration.
 void SILWalaInstructionVisitor::perInstruction() {
-  Instance->print(Instance->CAst->makeLocation(
-      instrInfo->startLine, instrInfo->startCol,
-      instrInfo->endLine, instrInfo->endCol)
-  );
+  if (Print) {
+    Instance->print(Instance->CAst->makeLocation(
+        instrInfo->startLine, instrInfo->startCol,
+        instrInfo->endLine, instrInfo->endCol)
+    );
+  }
+
 
   if (Print) {
     llvm::outs() << "\t [INSTR] #" << instrInfo->num;
