@@ -1,6 +1,8 @@
 package ca.maple.swan.analysis.drivers;
 
 import ca.maple.swan.analysis.translator.SwiftToCAstTranslator;
+import com.ibm.wala.cast.tree.CAstEntity;
+import com.ibm.wala.cast.util.CAstPrinter;
 
 public class MainAnalysisDriver {
 
@@ -36,7 +38,9 @@ public class MainAnalysisDriver {
         else {
             try {
                 SwiftToCAstTranslator translator = new SwiftToCAstTranslator(args[0]);
-                translator.translateToCAstNodes();
+                CAstEntity entity = translator.translateToCAst();
+                String astString = CAstPrinter.print(entity);
+                System.out.println(astString);
             }
             catch (Exception e) {
                 e.printStackTrace(System.out);

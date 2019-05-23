@@ -14,7 +14,7 @@
 extern "C" {
 #endif
 
-JNIEXPORT void JNICALL
+JNIEXPORT jobject JNICALL
 Java_ca_maple_swan_analysis_translator_SwiftToCAstTranslator_translateToCAstNodes(JNIEnv *env, jobject obj);
 
 #ifdef __cplusplus

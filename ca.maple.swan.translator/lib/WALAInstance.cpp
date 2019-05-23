@@ -44,7 +44,7 @@ void WALAInstance::print(jobject Object) {
 }
 
 void WALAInstance::analyzeSILModule(SILModule &SM) {
-  SILWalaInstructionVisitor Visitor(this, true);
+  SILWalaInstructionVisitor Visitor(this, false); // bool is for enabling translator printing (for debug)
   Visitor.visitModule(&SM);
 }
 

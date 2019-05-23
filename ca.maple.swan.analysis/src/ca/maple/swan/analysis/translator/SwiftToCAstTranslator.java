@@ -32,7 +32,6 @@ import com.ibm.wala.cast.tree.impl.CAstImpl;
 import com.ibm.wala.cast.tree.rewrite.CAstRewriter.CopyKey;
 import com.ibm.wala.cast.tree.rewrite.CAstRewriter.RewriteContext;
 import com.ibm.wala.cast.tree.rewrite.CAstRewriterFactory;
-import com.ibm.wala.cast.util.CAstPrinter;
 import com.ibm.wala.cast.tree.CAstNode;
 import java.util.ArrayList;
 
@@ -52,7 +51,7 @@ public class SwiftToCAstTranslator extends NativeTranslatorToCAst {
 		assert false;
 	}
 
-	public native void translateToCAstNodes();
+	public native ArrayList<CAstNode> translateToCAstNodes();
 
 	@Override
 	public CAstEntity translateToCAst() {
@@ -103,7 +102,15 @@ public class SwiftToCAstTranslator extends NativeTranslatorToCAst {
         @Override
         public CAstNode getAST() {
           if (ast == null) {
-          	//ast = translateToCAstNodes().get(0);
+            try {
+                ast = translateToCAstNodes().get(0);
+            } catch (IndexOutOfBoundsException e) {
+                System.err.println("Error: Empty ArrayList<CAstNode> returned!");
+                e.printStackTrace();
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+
           }
           return ast;
         }

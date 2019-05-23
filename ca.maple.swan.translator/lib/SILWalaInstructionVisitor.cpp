@@ -129,6 +129,7 @@ void SILWalaInstructionVisitor::visitSILBasicBlock(SILBasicBlock *BB) {
     NodeList.push_front(Stmt);
     jobject BlockStmt = Instance->CAst->makeNode(CAstWrapper::BLOCK_STMT, Instance->CAst->makeArray(&NodeList));
     BlockStmtList.push_back(BlockStmt);
+    Instance->CAstNodes.push_back(BlockStmt);
   }
 }
 
@@ -1471,7 +1472,10 @@ jobject SILWalaInstructionVisitor::visitStructInst(StructInst *SI) {
 
   jobject DiscriminantNameNode = Instance->CAst->makeConstant(StructName.data());
 
-  llvm::outs() << "\t [STRUCT]: " << StructName <<  "\n";
+  if (Print) {
+    llvm::outs() << "\t [STRUCT]: " << StructName <<  "\n";
+  }
+
 
   Fields.push_back(DiscriminantNameNode);
 
