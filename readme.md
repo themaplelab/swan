@@ -132,3 +132,5 @@ You may run the analysis by running the following in the root directory.
 ```
 ./gradlew run --args="YOUR_SWIFT_FILE"
 ```
+
+The resultant SIL will be outputted to `sil.out` in the root directory. Debug info, such as the CAst AST, will be printed to the terminal.
