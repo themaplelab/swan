@@ -12,7 +12,6 @@ The current translator only supports the most common SIL instructions, and we re
 
 ## Current work
 We are currently working on the following:
-- Finalizing new framework structure (resolving issues)
 - Implementing call graph construction
 
 Then we will implement points-to analysis and taint analysis with basic sources and sinks identified.
@@ -33,14 +32,13 @@ Supported Swift (incl. dependencies) and WALA releases on SWAN's `master` branch
 
 | OS | Swift Release Tag | WALA Release Tag* | 
 | -----------|:-------:|:-----:|
-| macOS Mojave | ** | [v1.5.3](https://github.com/wala/WALA/releases/tag/v1.5.3) |
-| Linux (Ubuntu 18.04) | ** | [v1.5.3](https://github.com/wala/WALA/releases/tag/v1.5.3) |
+| macOS Mojave | [master](https://github.com/apple/swift/tree/master) | [v1.5.3](https://github.com/wala/WALA/releases/tag/v1.5.3) |
+| Linux (Ubuntu 18.04) | [master](https://github.com/apple/swift/tree/master) | [v1.5.3](https://github.com/wala/WALA/releases/tag/v1.5.3) |
 
 **\*You must be using Java 8 in order to compile WALA.**
 
-**\*\*Hook is does not work currently.** We had a hook for [swift-5.0.1-RELEASE](https://github.com/apple/swift/releases/tag/swift-5.0.1-RELEASE), but the `FrontendTool` has since changed. Our new hook does not work since the methods fired to our `Observer` come before the SILModule is added to the `CompilerInstance`.
+### Switching to Java 8
 
---------------
 If you are not using Java 8 and wish to retain your current Java version, you can do the following after installing Java 8. [Credit.](https://stackoverflow.com/a/40754792)
 Add the following to your `~/.bash_profile` (macOS) or `~/.bashrc` (Linux).
 ##### macOS
@@ -65,8 +63,6 @@ Java HotSpot(TM) 64-Bit Server VM (build 25.201-b09, mixed mode)
 ```
 
 Note that this only temporarily sets your Java version. If you have downloaded Java 8 but do not want it to be your default, you can add the `export ...` part of the command to your `~/.bashrc` or `~/.bash_profile`.
-
---------------
 
 ### Download Projects
 
@@ -97,10 +93,9 @@ cd ..
 ```
 cd ./swift
 ./utils/update-checkout --clone --tag SUPPORTED_TAG
-./utils/build-script
+./utils/build-script -R
 cd ..
 ```
-Optionally, the `-d` flag can be added to the `build-script` so Swift can compile in debug mode.
 
 #### Edit Swift-WALA Configurations
 
