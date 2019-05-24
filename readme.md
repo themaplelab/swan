@@ -33,10 +33,12 @@ Supported Swift (incl. dependencies) and WALA releases on SWAN's `master` branch
 
 | OS | Swift Release Tag | WALA Release Tag* | 
 | -----------|:-------:|:-----:|
-| macOS Mojave | [master](https://github.com/apple/swift/tree/master) | [v1.5.3](https://github.com/wala/WALA/releases/tag/v1.5.3) |
-| Linux (Ubuntu 18.04) | [master](https://github.com/apple/swift/tree/master) | [v1.5.3](https://github.com/wala/WALA/releases/tag/v1.5.3) |
+| macOS Mojave | [master](https://github.com/apple/swift/tree/master)** | [v1.5.3](https://github.com/wala/WALA/releases/tag/v1.5.3) |
+| Linux (Ubuntu 18.04) | [master](https://github.com/apple/swift/tree/master)** | [v1.5.3](https://github.com/wala/WALA/releases/tag/v1.5.3) |
 
 **\*You must be using Java 8 in order to compile WALA.**
+
+**\*\*[swift-DEVELOPMENT-SNAPSHOT-2019-05-22-a](https://github.com/apple/swift/releases/tag/swift-DEVELOPMENT-SNAPSHOT-2019-05-22-a) included a critical change. Everything since that snapshot should work to our knowledge. Everything before will not work.**
 
 ### Switching to Java 8
 
