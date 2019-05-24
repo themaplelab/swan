@@ -1,31 +1,36 @@
-/******************************************************************************
- * Copyright (c) 2019 Maple @ University of Alberta
- * All rights reserved. This program and the accompanying materials (unless
- * otherwise specified by a license inside of the accompanying material)
- * are made available under the terms of the Eclipse Public License v2.0
- * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v20.html
- *****************************************************************************/
+//===--- SILWalaInstructionVisitor.h - SIL to CAst Translator ------------===//
+//
+// This source file is part of the SWAN open source project
+//
+// Copyright (c) 2019 Maple @ University of Alberta
+// All rights reserved. This program and the accompanying materials (unless
+// otherwise specified by a license inside of the accompanying material)
+// are made available under the terms of the Eclipse Public License v2.0
+// which accompanies this distribution, and is available at
+// http://www.eclipse.org/legal/epl-v20.html
+//
+//===---------------------------------------------------------------------===//
+///
+/// This file defines the SILWalaInstructionVisitor class, which inherits
+/// the SILInstructionVisitor template class (part of the Swift compiler).
+/// The SILInstructionVisitor translates a given SIL (Swift Intermediate
+/// Language) Module to CAst (WALA IR).
+///
+//===---------------------------------------------------------------------===//
 
- //----------------------------------------------------------------------------/
- /// DESCRIPTION
- /// Main code for translating SIL to CAst.
- ///
- /// TODO: Add technical description and code documentation.
- //----------------------------------------------------------------------------/
+// TODO: Class/method Doxygen comments and thorough functionality comments.
 
-#pragma once
+#ifndef SWAN_SILWALAINSTRUCTIONVISITOR_H
+#define SWAN_SILWALAINSTRUCTIONVISITOR_H
 
-#include "swift/SIL/SILVisitor.h"
-#include "swift/SIL/ApplySite.h"
-#include "WALAInstance.h"
 #include "SymbolTable.h"
-
+#include "WALAInstance.h"
+#include "swift/SIL/ApplySite.h"
+#include "swift/SIL/SILVisitor.h"
 #include <jni.h>
 #include <unordered_map>
 
 using namespace swift;
-
 
 namespace swift_wala {
 
@@ -177,6 +182,7 @@ public:
   jobject visitTupleInst(TupleInst *TI);
   jobject visitTupleExtractInst(TupleExtractInst *TEI);
   jobject visitTupleElementAddrInst(TupleElementAddrInst *TEAI);
+  jobject visitDestructureTupleInst(DestructureTupleInst *DTI);
   jobject visitStructInst(StructInst *SI);
   jobject visitStructExtractInst(StructExtractInst *SEI);
   jobject visitStructElementAddrInst(StructElementAddrInst *SEAI);
@@ -296,3 +302,5 @@ private:
 };
 
 } // end swift_wala namespace
+
+#endif // SWAN_SILWALAINSTRUCTIONVISITOR_H

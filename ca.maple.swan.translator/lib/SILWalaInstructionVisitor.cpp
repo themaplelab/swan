@@ -1,29 +1,35 @@
-/******************************************************************************
- * Copyright (c) 2019 Maple @ University of Alberta
- * All rights reserved. This program and the accompanying materials (unless
- * otherwise specified by a license inside of the accompanying material)
- * are made available under the terms of the Eclipse Public License v2.0
- * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v20.html
- *****************************************************************************/
+//===--- SILWalaInstructionVisitor.cpp - SIL to CAst Translator ----------===//
+//
+// This source file is part of the SWAN open source project
+//
+// Copyright (c) 2019 Maple @ University of Alberta
+// All rights reserved. This program and the accompanying materials (unless
+// otherwise specified by a license inside of the accompanying material)
+// are made available under the terms of the Eclipse Public License v2.0
+// which accompanies this distribution, and is available at
+// http://www.eclipse.org/legal/epl-v20.html
+//
+//===---------------------------------------------------------------------===//
+///
+/// This file implements the SILWalaInstructionVisitor class, which inherits
+/// the SILInstructionVisitor template class (part of the Swift compiler).
+/// The SILInstructionVisitor translates a given SIL
+/// (Swift Intermediate Language) Module to CAst (WALA IR).
+///
+//===---------------------------------------------------------------------===//
 
- // SEE HEADER FILE FOR DOCUMENTATION
+// TODO: Add thorough documentation to code and adjust style.
 
- // TODO: Add thorough documentation to code.
-
-#include <swift/SIL/SILModule.h>
-#include <swift/AST/Module.h>
-
-#include "BasicBlockLabeller.h"
 #include "SILWalaInstructionVisitor.h"
-#include "swift/Demangling/Demangle.h"
+#include "BasicBlockLabeller.h"
 #include "CAstWrapper.h"
-
-#include <iostream>
+#include "swift/AST/Module.h"
+#include "swift/Demangling/Demangle.h"
+#include "swift/SIL/SILModule.h"
 #include <fstream>
+#include <iostream>
 
 using namespace swift_wala;
-
 
 // Gets the sourcefile, start line/col, end line/col, and writes it to the InstrInfo
 // that is passed in.
@@ -464,9 +470,9 @@ jobject SILWalaInstructionVisitor::visitProjectValueBufferInst(ProjectValueBuffe
     llvm::outs() << "\t [VALUE TYPE]: " << ValueTypeName << "\n";
   }
 
-  // NOTE: Apple documentation states: This instruction has undefined behavior if the value buffer is not currently allocated
-  //       (link: https://github.com/apple/swift/blob/master/docs/SIL.rst#project-value-buffer) so there is no need to allocate
-  //       it if it is not currently in the Symbol Table
+  // NOTE: Apple documentation states: This instruction has undefined behavior if the value buffer is not currently
+  //       allocated (link: https://github.com/apple/swift/blob/master/docs/SIL.rst#project-value-buffer) so there is
+  //       no need to allocate it if it is not currently in the Symbol Table
   if (SymbolTable.has(BufferValue.getOpaqueValue())) {
     SymbolTable.duplicate(static_cast<ValueBase *>(PVBI), SymbolTable.get(BufferValue.getOpaqueValue()).c_str());
   }
@@ -1585,6 +1591,14 @@ jobject SILWalaInstructionVisitor::visitStructElementAddrInst(StructElementAddrI
   return Node;
 }
 
+jobject SILWalaInstructionVisitor::visitDestructureTupleInst(DestructureTupleInst *DTI) {
+
+  // TODO: DUMMY NEEDS TO BE REPLACED
+  jobject DummyNode = Instance->CAst->makeNode(CAstWrapper::VAR);
+
+  return DummyNode;
+}
+
 jobject SILWalaInstructionVisitor::visitRefElementAddrInst(RefElementAddrInst *REAI) {
 
   SILValue ElementOperand = REAI->getOperand();
@@ -1803,7 +1817,8 @@ jobject SILWalaInstructionVisitor::visitSelectEnumInst(SelectEnumInst *SEI) {
       SILValue CaseVal = SEI->getCaseResult(E);
       if (auto intLit = dyn_cast<IntegerLiteralInst>(CaseVal)) {
 
-        auto CaseNameString = EnumName.str() + "." + CaseName.str() + ".enumlet!." + intLit->getValue().toString(10, false);
+        auto CaseNameString = EnumName.str() + "." + CaseName.str() + ".enumlet!." +
+            intLit->getValue().toString(10, false);
 
         jobject CaseNameNode = Instance->CAst->makeConstant(CaseNameString.c_str());
         jobject CaseValNode = findAndRemoveCAstNode(CaseVal);
@@ -2015,8 +2030,8 @@ jobject SILWalaInstructionVisitor::visitProjectExistentialBoxInst(ProjectExisten
     llvm::outs() << "\t [OPERAND ADDR]: " << PEBI->getOperand().getOpaqueValue() << "\n";
   }
   // NOTE: Apple documentation states: This instruction has undefined behavior if the box is not currently allocated
-  //       (link: https://github.com/apple/swift/blob/master/docs/SIL.rst#project-existential-box so there is no need to allocate
-  //       it if it is not currently in the Symbol Table
+  //       (link: https://github.com/apple/swift/blob/master/docs/SIL.rst#project-existential-box so there is no need
+  //       to allocate it if it is not currently in the Symbol Table
   if (SymbolTable.has(PEBI->getOperand().getOpaqueValue())) {
     SymbolTable.duplicate(static_cast<ValueBase *>(PEBI), SymbolTable.get(PEBI->getOperand().getOpaqueValue()).c_str());
   }
@@ -2137,7 +2152,8 @@ jobject SILWalaInstructionVisitor::visitPointerToAddressInst(PointerToAddressIns
   NodeMap.insert(std::make_pair(static_cast<ValueBase *>(PTAI), ConversionNode));
 
   if (Print) {
-    llvm::outs() << "\t" << ValueToBeConverted.getOpaqueValue() << " [TO BE CONVERTED INTO]: " << TypeToBeConvertedInto << " [TYPE ADDRESS] " << "\n";
+    llvm::outs() << "\t" << ValueToBeConverted.getOpaqueValue() << " [TO BE CONVERTED INTO]: " <<
+        TypeToBeConvertedInto << " [TYPE ADDRESS] " << "\n";
   }
 
   return ConversionNode;
@@ -2245,7 +2261,8 @@ jobject SILWalaInstructionVisitor::visitRawPointerToRefInst(RawPointerToRefInst 
 
   if (Print) {
     llvm::outs() << "\t [RawPointerToRef]: " << static_cast<ValueBase *>(CI) << "\n";
-    llvm::outs() << "\t " << ValueToBeConverted.getOpaqueValue() << " [TO BE CONVERTED INTO]: " << TypeToBeConvertedInto << "\n";
+    llvm::outs() << "\t " << ValueToBeConverted.getOpaqueValue() <<
+        " [TO BE CONVERTED INTO]: " << TypeToBeConvertedInto << "\n";
   }
 
   jobject ToBeConvertedNode = findAndRemoveCAstNode(ValueToBeConverted.getOpaqueValue());
@@ -2548,7 +2565,8 @@ jobject SILWalaInstructionVisitor::visitYieldInst(YieldInst *YI) {
   jobject UnwindLabelNode = Instance->CAst->makeConstant(BasicBlockLabeller::label(UnwindBB).c_str());
   jobject UnwindGotoNode = Instance->CAst->makeNode(CAstWrapper::GOTO, UnwindLabelNode);
 
-  jobject Node = Instance->CAst->makeNode(CAstWrapper::YIELD_STMT, Instance->CAst->makeArray(&yieldValues), ResumeGotoNode, UnwindGotoNode);
+  jobject Node = Instance->CAst->makeNode(CAstWrapper::YIELD_STMT,
+      Instance->CAst->makeArray(&yieldValues), ResumeGotoNode, UnwindGotoNode);
 
   NodeMap.insert(std::make_pair(YI, Node));
 

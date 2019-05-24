@@ -1,4 +1,4 @@
-//===--- BasicBlockLabeller.cpp - Returns ID of SIL basic block ----------===//
+//===-- FILENAME.h/cpp - Short file description --------------------------===//
 //
 // This source file is part of the SWAN open source project
 //
@@ -11,15 +11,6 @@
 //
 //===---------------------------------------------------------------------===//
 ///
-/// This file contains the implementation of the method that returns the ID
-/// of a given SIL basic block. It is used by SILWalaInstructionVisitor.
+/// This file contains ... DESCRIPTION OF BASIC PURPOSE
 ///
 //===---------------------------------------------------------------------===//
-
-#include "BasicBlockLabeller.h"
-
-using namespace swift_wala;
-
-string BasicBlockLabeller::label(swift::SILBasicBlock* basicBlock) {
-  return (string("BLOCK #") + std::to_string(basicBlock->getDebugID()));
-}
