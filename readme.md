@@ -13,6 +13,7 @@ The current translator only supports the most common SIL instructions, and we re
 ## Current work
 We are currently working on the following:
 - Implementing call graph construction
+- Adding wider SIL instruction support.
 
 Then we will implement points-to analysis and taint analysis with basic sources and sinks identified.
 
