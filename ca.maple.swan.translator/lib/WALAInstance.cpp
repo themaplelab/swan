@@ -51,7 +51,7 @@ void WALAInstance::analyzeSILModule(SILModule &SM) {
 void WALAInstance::analyze() {
   // this -emit-sil option is critical as it specifies the action for the frontend,
   // otherwise the compiler will not do anything and complain no action was given
-  auto Argv = {"", "-emit-sil", "-osil.out", File.c_str()};
+  auto Argv = {"", "-emit-sil", "-oout.sil", "-Onone", File.c_str()};
   swift_wala::Observer observer(this); // create the hook
   SmallVector<const char *, 256> argv(Argv.begin(), Argv.end());
 
