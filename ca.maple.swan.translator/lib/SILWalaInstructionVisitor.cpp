@@ -31,6 +31,101 @@
 
 using namespace swift_wala;
 
+void SILWalaInstructionVisitor::visitModule(SILModule *M) {
+  moduleInfo = std::make_shared<ModuleInfo>(M->getSwiftModule()->getModuleFilename());
+  if (moduleInfo->sourcefile.empty()) {
+    moduleInfo->sourcefile = "N/A";
+  }
+  for (auto &F: *M) {
+    visitSILFunction(&F);
+  }
+}
+
+void SILWalaInstructionVisitor::visitSILFunction(SILFunction *F) {
+  functionInfo =
+      std::make_shared<FunctionInfo>(F->getName(), Demangle::demangleSymbolAsString(F->getName()));
+  BlockStmtList.clear();
+  if (Print) {
+    llvm::outs() << "SILFunction: ";
+    llvm::outs() << F << "\n";
+    F->print(llvm::outs(), true);
+  }
+
+  for (auto &BB: *F) {
+    visitSILBasicBlock(&BB);
+  }
+
+  if (Print) {
+    for (auto &Stmt: BlockStmtList) {
+      Instance->print(Stmt);
+    }
+  }
+}
+
+void SILWalaInstructionVisitor::visitSILBasicBlock(SILBasicBlock *BB) {
+  if (Print) {
+    llvm::outs() << "Basic Block: ";
+    llvm::outs() << BB << "\n";
+    llvm::outs() << "SILFunctions: " << BB->getParent() << "\n";
+  }
+  InstructionCount = 0;
+  NodeMap.clear();
+  NodeList.clear();
+
+  for (auto &I: *BB) {
+    auto Node = visit(&I);
+    if (Node != nullptr) {
+      NodeList.push_back(Node);
+    }
+  }
+
+  if (NodeList.size() > 0) {
+    jobject Node = Instance->CAst->makeConstant(BasicBlockLabeller::label(BB).c_str());
+    jobject Stmt = Instance->CAst->makeNode(CAstWrapper::LABEL_STMT, Node, NodeList.front());
+    NodeList.pop_front();
+    NodeList.push_front(Stmt);
+    jobject BlockStmt = Instance->CAst->makeNode(CAstWrapper::BLOCK_STMT, Instance->CAst->makeArray(&NodeList));
+    BlockStmtList.push_back(BlockStmt);
+    Instance->CAstNodes.push_back(BlockStmt);
+  }
+}
+
+void SILWalaInstructionVisitor::beforeVisit(SILInstruction *I) {
+  instrInfo = std::make_shared<InstrInfo>();
+
+  updateInstrSourceInfo(I);
+
+  instrInfo->num = InstructionCount++;
+  instrInfo->memBehavior = I->getMemoryBehavior();
+  instrInfo->relBehavior = I->getReleasingBehavior();
+
+  //FixMe: replace with weak pointer.
+  instrInfo->modInfo = moduleInfo.get();
+  instrInfo->funcInfo = functionInfo.get();
+  instrInfo->instrKind = I->getKind();
+
+  std::vector<SILValue> vals;
+  for (const auto &op: I->getAllOperands()) {
+    vals.push_back(op.get());
+  }
+  instrInfo->ops = llvm::ArrayRef<SILValue>(vals);
+  perInstruction();
+
+  /*
+  char* od = std::getenv("SIL_INSTRUCTION_OUTPUT");
+  std::std::string OutputDir(od);
+  std::stringstream ss;
+  ss << OutputDir << "SIL_INSTRUCTION_OUTPUT.txt";
+  std::ofstream outfile;
+  outfile.open(ss);
+  outfile << getSILInstructionName(I->getKind());
+  outfile.close();
+  */
+  if (Print) {
+    llvm::outs() << "<< " << getSILInstructionName(I->getKind()) << " >>\n";
+  }
+}
+
 // Gets the sourcefile, start line/col, end line/col, and writes it to the InstrInfo
 // that is passed in.
 // TODO: check lastBuffer vs. buffer to see if start and end are in the same file
@@ -75,102 +170,6 @@ void SILWalaInstructionVisitor::updateInstrSourceInfo(SILInstruction *I) {
   }
 }
 
-void SILWalaInstructionVisitor::beforeVisit(SILInstruction *I) {
-  instrInfo = std::make_shared<InstrInfo>();
-
-  updateInstrSourceInfo(I);
-
-  instrInfo->num = InstructionCount++;
-  instrInfo->memBehavior = I->getMemoryBehavior();
-  instrInfo->relBehavior = I->getReleasingBehavior();
-
-  //FixMe: replace with weak pointer.
-  instrInfo->modInfo = moduleInfo.get();
-  instrInfo->funcInfo = functionInfo.get();
-  instrInfo->instrKind = I->getKind();
-
-  std::vector<SILValue> vals;
-  for (const auto &op: I->getAllOperands()) {
-    vals.push_back(op.get());
-  }
-  instrInfo->ops = llvm::ArrayRef<SILValue>(vals);
-  perInstruction();
-
-  /*
-  char* od = std::getenv("SIL_INSTRUCTION_OUTPUT");
-  std::std::string OutputDir(od);
-  std::stringstream ss;
-  ss << OutputDir << "SIL_INSTRUCTION_OUTPUT.txt";
-  std::ofstream outfile;
-  outfile.open(ss);
-  outfile << getSILInstructionName(I->getKind());
-  outfile.close();
-  */
-  if (Print) {
-    llvm::outs() << "<< " << getSILInstructionName(I->getKind()) << " >>\n";
-  }
-}
-
-void SILWalaInstructionVisitor::visitSILBasicBlock(SILBasicBlock *BB) {
-  if (Print) {
-    llvm::outs() << "Basic Block: ";
-    llvm::outs() << BB << "\n";
-    llvm::outs() << "SILFunctions: " << BB->getParent() << "\n";
-  }
-  InstructionCount = 0;
-  NodeMap.clear();
-  NodeList.clear();
-
-  for (auto &I: *BB) {
-    auto Node = visit(&I);
-    if (Node != nullptr) {
-      NodeList.push_back(Node);
-    }
-  }
-
-  if (NodeList.size() > 0) {
-    jobject Node = Instance->CAst->makeConstant(BasicBlockLabeller::label(BB).c_str());
-    jobject Stmt = Instance->CAst->makeNode(CAstWrapper::LABEL_STMT, Node, NodeList.front());
-    NodeList.pop_front();
-    NodeList.push_front(Stmt);
-    jobject BlockStmt = Instance->CAst->makeNode(CAstWrapper::BLOCK_STMT, Instance->CAst->makeArray(&NodeList));
-    BlockStmtList.push_back(BlockStmt);
-    Instance->CAstNodes.push_back(BlockStmt);
-  }
-}
-
-void SILWalaInstructionVisitor::visitSILFunction(SILFunction *F) {
-  functionInfo =
-      std::make_shared<FunctionInfo>(F->getName(), Demangle::demangleSymbolAsString(F->getName()));
-  BlockStmtList.clear();
-  if (Print) {
-    llvm::outs() << "SILFunction: ";
-    llvm::outs() << F << "\n";
-    F->print(llvm::outs(), true);
-  }
-
-  for (auto &BB: *F) {
-    visitSILBasicBlock(&BB);
-  }
-
-  if (Print) {
-    for (auto &Stmt: BlockStmtList) {
-      Instance->print(Stmt);
-    }
-  }
-
-}
-
-void SILWalaInstructionVisitor::visitModule(SILModule *M) {
-  moduleInfo = std::make_shared<ModuleInfo>(M->getSwiftModule()->getModuleFilename());
-  if (moduleInfo->sourcefile.empty()) {
-    moduleInfo->sourcefile = "N/A";
-  }
-  for (auto &F: *M) {
-    visitSILFunction(&F);
-  }
-}
-
 // Actions to take on a per-instruction basis.  InstrInfo contains all the relevant info
 // for the current instruction in the iteration.
 void SILWalaInstructionVisitor::perInstruction() {
@@ -180,7 +179,6 @@ void SILWalaInstructionVisitor::perInstruction() {
         instrInfo->endLine, instrInfo->endCol)
     );
   }
-
 
   if (Print) {
     llvm::outs() << "\t [INSTR] #" << instrInfo->num;
@@ -309,6 +307,63 @@ jobject SILWalaInstructionVisitor::getOperatorCAstType(Identifier Name) {
     return nullptr;
   }
 }
+
+jobject SILWalaInstructionVisitor::visitApplySite(ApplySite Apply) {
+  jobject Node = Instance->CAst->makeNode(CAstWrapper::EMPTY); // the CAst node to be created
+  auto *Callee = Apply.getReferencedFunction();
+
+  if (!Callee) {
+    return Instance->CAst->makeNode(CAstWrapper::EMPTY);
+  }
+
+  auto *FD = Callee->getLocation().getAsASTNode<FuncDecl>();
+
+  if (Print) {
+    llvm::outs() << "\t [CALLEE]: " << Demangle::demangleSymbolAsString(Callee->getName()) << "\n";
+    for (unsigned I = 0; I < Apply.getNumArguments(); ++I) {
+      SILValue V = Apply.getArgument(I);
+      llvm::outs() << "\t [ARG] #" << I << ": " << V;
+      llvm::outs() << "\t [ADDR] #" << I << ": " << V.getOpaqueValue() << "\n";
+    }
+  }
+
+  if (FD && (FD->isUnaryOperator() || FD->isBinaryOperator())) {
+    Identifier name = FD->getName();
+    jobject OperatorNode = getOperatorCAstType(name);
+    if (OperatorNode != nullptr) {
+      llvm::outs() << "\t Built in operator\n";
+      auto GetOperand = [&Apply, this](unsigned int Index) -> jobject {
+        if (Index < Apply.getNumArguments()) {
+          SILValue Argument = Apply.getArgument(Index);
+          return findAndRemoveCAstNode(Argument.getOpaqueValue());
+        }
+        else return Instance->CAst->makeNode(CAstWrapper::EMPTY);
+      };
+      if (FD->isUnaryOperator()) {
+        Node = Instance->CAst->makeNode(CAstWrapper::UNARY_EXPR, OperatorNode, GetOperand(0));
+      } else {
+        Node = Instance->CAst->makeNode(CAstWrapper::BINARY_EXPR, OperatorNode, GetOperand(0), GetOperand(1));
+      }
+      return Node;
+    } // otherwise, fall through to the regular funcion call logic
+  }
+
+  auto FuncExprNode = findAndRemoveCAstNode(Callee);
+  list<jobject> Params;
+
+  for (unsigned i = 0; i < Apply.getNumArguments(); ++i) {
+    SILValue Arg = Apply.getArgument(i);
+    jobject Child = findAndRemoveCAstNode(Arg.getOpaqueValue());
+    if (Child != nullptr) {
+      Params.push_back(Child);
+    }
+  }
+
+  Node = Instance->CAst->makeNode(CAstWrapper::CALL, FuncExprNode, Instance->CAst->makeArray(&Params));
+  return Node;
+}
+
+//===-------------------SPECIFIC INSTRUCTION VISITORS ----------------------===//
 
 /*******************************************************************************/
 /*                         ALLOCATION AND DEALLOCATION                         */
@@ -1236,61 +1291,6 @@ jobject SILWalaInstructionVisitor::visitPartialApplyInst(PartialApplyInst *PAI) 
     return Node;
   }
   return Instance->CAst->makeNode(CAstWrapper::EMPTY);
-}
-
-jobject SILWalaInstructionVisitor::visitApplySite(ApplySite Apply) {
-  jobject Node = Instance->CAst->makeNode(CAstWrapper::EMPTY); // the CAst node to be created
-  auto *Callee = Apply.getReferencedFunction();
-
-  if (!Callee) {
-    return Instance->CAst->makeNode(CAstWrapper::EMPTY);
-  }
-
-  auto *FD = Callee->getLocation().getAsASTNode<FuncDecl>();
-
-  if (Print) {
-    llvm::outs() << "\t [CALLEE]: " << Demangle::demangleSymbolAsString(Callee->getName()) << "\n";
-    for (unsigned I = 0; I < Apply.getNumArguments(); ++I) {
-      SILValue V = Apply.getArgument(I);
-      llvm::outs() << "\t [ARG] #" << I << ": " << V;
-      llvm::outs() << "\t [ADDR] #" << I << ": " << V.getOpaqueValue() << "\n";
-    }
-  }
-
-  if (FD && (FD->isUnaryOperator() || FD->isBinaryOperator())) {
-    Identifier name = FD->getName();
-    jobject OperatorNode = getOperatorCAstType(name);
-    if (OperatorNode != nullptr) {
-      llvm::outs() << "\t Built in operator\n";
-      auto GetOperand = [&Apply, this](unsigned int Index) -> jobject {
-        if (Index < Apply.getNumArguments()) {
-          SILValue Argument = Apply.getArgument(Index);
-          return findAndRemoveCAstNode(Argument.getOpaqueValue());
-        }
-        else return Instance->CAst->makeNode(CAstWrapper::EMPTY);
-      };
-      if (FD->isUnaryOperator()) {
-        Node = Instance->CAst->makeNode(CAstWrapper::UNARY_EXPR, OperatorNode, GetOperand(0));
-      } else {
-        Node = Instance->CAst->makeNode(CAstWrapper::BINARY_EXPR, OperatorNode, GetOperand(0), GetOperand(1));
-      }
-      return Node;
-    } // otherwise, fall through to the regular funcion call logic
-  }
-
-  auto FuncExprNode = findAndRemoveCAstNode(Callee);
-  list<jobject> Params;
-
-  for (unsigned i = 0; i < Apply.getNumArguments(); ++i) {
-    SILValue Arg = Apply.getArgument(i);
-    jobject Child = findAndRemoveCAstNode(Arg.getOpaqueValue());
-    if (Child != nullptr) {
-      Params.push_back(Child);
-    }
-  }
-
-  Node = Instance->CAst->makeNode(CAstWrapper::CALL, FuncExprNode, Instance->CAst->makeArray(&Params));
-  return Node;
 }
 
 jobject SILWalaInstructionVisitor::visitBuiltinInst(BuiltinInst *BI) {

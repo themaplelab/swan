@@ -81,6 +81,30 @@ public:
     return nullptr;
   }
 
+private:
+  WALAInstance *Instance;
+  bool Print;
+
+  void updateInstrSourceInfo(SILInstruction *I);
+  void perInstruction();
+  jobject visitApplySite(ApplySite Apply);
+  jobject findAndRemoveCAstNode(void *Key);
+  jobject getOperatorCAstType(Identifier Name);
+
+  unsigned int InstructionCount = 0;
+
+  std::shared_ptr<InstrInfo> instrInfo;
+  std::shared_ptr<FunctionInfo> functionInfo;
+  std::shared_ptr<ModuleInfo> moduleInfo;
+
+  SymbolTable SymbolTable;
+  std::unordered_map<void *, jobject> NodeMap;
+  std::list<jobject> NodeList;
+  std::list<jobject> BlockStmtList;
+
+public:
+  // SIL INSTRUCTION VISITOR CALLBACKS (TRANSLATE EACH INSTRUCTION TO CAST NODE)
+
   /*******************************************************************************/
   /*                      Allocation and Deallocation                            */
   /*******************************************************************************/
@@ -277,27 +301,6 @@ public:
   jobject visitCheckedCastBranchInst(CheckedCastBranchInst *CI);
   jobject visitCheckedCastAddrBranchInst(CheckedCastAddrBranchInst *CI);
   jobject visitTryApplyInst(TryApplyInst *TAI);
-
-private:
-  WALAInstance *Instance;
-  bool Print;
-
-  void updateInstrSourceInfo(SILInstruction *I);
-  void perInstruction();
-  jobject visitApplySite(ApplySite Apply);
-  jobject findAndRemoveCAstNode(void *Key);
-  jobject getOperatorCAstType(Identifier Name);
-
-  unsigned int InstructionCount = 0;
-
-  std::shared_ptr<InstrInfo> instrInfo;
-  std::shared_ptr<FunctionInfo> functionInfo;
-  std::shared_ptr<ModuleInfo> moduleInfo;
-
-  SymbolTable SymbolTable;
-  std::unordered_map<void *, jobject> NodeMap;
-  std::list<jobject> NodeList;
-  std::list<jobject> BlockStmtList;
 
 };
 
