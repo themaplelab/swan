@@ -7,11 +7,9 @@
  *
  * Contributors:
  * 		IBM Corporation - initial API and implementation
- *		Ao Li (Github: Leeleo3x) - fixes
- *		Mark Mroz - translator entity component
  *****************************************************************************/
 
-package ca.maple.swan.analysis.translator;
+package ca.maple.swan.swift.translator;
 
 import com.ibm.wala.cast.tree.CAstType;
 import java.io.File;
@@ -33,13 +31,23 @@ import com.ibm.wala.cast.tree.rewrite.CAstRewriter.CopyKey;
 import com.ibm.wala.cast.tree.rewrite.CAstRewriter.RewriteContext;
 import com.ibm.wala.cast.tree.rewrite.CAstRewriterFactory;
 import com.ibm.wala.cast.tree.CAstNode;
+import com.ibm.wala.classLoader.ModuleEntry;
+
 import java.util.ArrayList;
 
 public class SwiftToCAstTranslator extends NativeTranslatorToCAst {
 
+    static {
+        SwiftTranslatorPathLoader.load();
+    }
+
 	public SwiftToCAstTranslator(String fileName) throws MalformedURLException {
-		this(new CAstImpl(), new File(fileName).toURI().toURL(), fileName);
-	}
+        this(new CAstImpl(), new File(fileName).toURI().toURL(), fileName);
+    }
+
+    public SwiftToCAstTranslator(ModuleEntry m) throws MalformedURLException {
+        this(new CAstImpl(), new File(m.getName()).toURI().toURL(), m.getName());
+    }
 
 	private SwiftToCAstTranslator(CAst Ast, URL sourceURL, String sourceFileName) {
 		super(Ast, sourceURL, sourceFileName);

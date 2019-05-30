@@ -50,7 +50,7 @@ void WALAInstance::print(jobject Object) {
 }
 
 void WALAInstance::analyzeSILModule(SILModule &SM) {
-  SILWalaInstructionVisitor Visitor(this, false); // Bool is for enabling translator printing (for debug).
+  SILWalaInstructionVisitor Visitor(this, true); // Bool is for enabling translator printing (for debug).
   Visitor.visitModule(&SM);
 }
 
@@ -82,7 +82,7 @@ WALAInstance::WALAInstance(JNIEnv *Env, jobject Obj) : JavaEnv(Env), Translator(
   TRY(Exception, JavaEnv)
       CAst = new CAstWrapper(JavaEnv, Exception, Translator); // Used for JNI calls.
       // Find the bridge class.
-      auto TranslatorClass = JavaEnv->FindClass("ca/maple/swan/analysis/translator/SwiftToCAstTranslator");
+      auto TranslatorClass = JavaEnv->FindClass("ca/maple/swan/swift/translator/SwiftToCAstTranslator");
       THROW_ANY_EXCEPTION(Exception);
 
       // Get the file to analyze.

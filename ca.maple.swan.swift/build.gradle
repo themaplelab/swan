@@ -1,0 +1,24 @@
+plugins {
+    id 'java'
+    id 'groovy'
+}
+
+group 'ca.maple.swan'
+
+sourceCompatibility = 1.8
+
+repositories {
+    mavenCentral()
+    jcenter()
+}
+
+sourceSets.main.java.srcDirs = ['src/']
+
+dependencies {
+    compile fileTree(dir: ":ca.maple.swan.translator")
+    compile fileTree(dir: "${WALA_DIR}/com.ibm.wala.translator/build/libs", include: '*.jar')
+    compile fileTree(dir: "${WALA_DIR}/com.ibm.wala.core/build/libs", include: '*.jar')
+    compile fileTree(dir: "${WALA_DIR}/com.ibm.wala.shrike/build/libs", include: '*.jar')
+    compile fileTree(dir: "${WALA_DIR}/com.ibm.wala.cast/build/libs", include: '*.jar')
+    compile fileTree(dir: "${WALA_DIR}/com.ibm.wala.util/build/libs", include: '*.jar')
+}

@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<module external.linked.project.id=":ca.maple.swan.swift.test" external.linked.project.path="$MODULE_DIR$/../../ca.maple.swan.swift.test" external.root.project.path="$MODULE_DIR$/../../ca.maple.swan.swift.test" external.system.id="GRADLE" external.system.module.group="ca.maple.swan" external.system.module.version="unspecified" type="JAVA_MODULE" version="4">
+  <component name="ExternalSystem" externalSystem="GRADLE" externalSystemModuleGroup="ca.maple.swan" externalSystemModuleVersion="unspecified" linkedProjectId=":ca.maple.swan.swift.test" linkedProjectPath="$MODULE_DIR$/../../ca.maple.swan.swift.test" rootProjectPath="$MODULE_DIR$/../../ca.maple.swan.swift.test" />
+  <component name="NewModuleRootManager" inherit-compiler-output="true">
+    <exclude-output />
+    <content url="file://$MODULE_DIR$/../../ca.maple.swan.swift.test">
+      <excludeFolder url="file://$MODULE_DIR$/../../ca.maple.swan.swift.test/.gradle" />
+      <excludeFolder url="file://$MODULE_DIR$/../../ca.maple.swan.swift.test/build" />
+      <excludeFolder url="file://$MODULE_DIR$/../../ca.maple.swan.swift.test/out" />
+    </content>
+    <orderEntry type="inheritedJdk" />
+    <orderEntry type="sourceFolder" forTests="false" />
+  </component>
+</module>
