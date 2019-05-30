@@ -2,17 +2,17 @@ package ca.maple.swan.swift.client;
 
 import ca.maple.swan.swift.ipa.callgraph.SwiftSSAPropagationCallGraphBuilder;
 import ca.maple.swan.swift.ir.SwiftLanguage;
+import ca.maple.swan.swift.loader.SwiftLoader;
 import ca.maple.swan.swift.loader.SwiftLoaderFactory;
+import ca.maple.swan.swift.translator.SwiftTranslatorFactory;
 import ca.maple.swan.swift.types.SwiftTypes;
 import com.ibm.wala.cast.ipa.callgraph.AstCFAPointerKeys;
 import com.ibm.wala.cast.ipa.callgraph.AstContextInsensitiveSSAContextInterpreter;
+import com.ibm.wala.cast.ipa.callgraph.CAstAnalysisScope;
 import com.ibm.wala.cast.ir.ssa.AstIRFactory;
 import com.ibm.wala.cast.types.AstMethodReference;
 import com.ibm.wala.cast.util.Util;
-import com.ibm.wala.classLoader.IClass;
-import com.ibm.wala.classLoader.IMethod;
-import com.ibm.wala.classLoader.Module;
-import com.ibm.wala.classLoader.ModuleEntry;
+import com.ibm.wala.classLoader.*;
 import com.ibm.wala.client.AbstractAnalysisEngine;
 import com.ibm.wala.ipa.callgraph.*;
 import com.ibm.wala.ipa.callgraph.impl.ClassHierarchyClassTargetSelector;
@@ -21,7 +21,6 @@ import com.ibm.wala.ipa.callgraph.impl.ContextInsensitiveSelector;
 import com.ibm.wala.ipa.callgraph.impl.DefaultEntrypoint;
 import com.ibm.wala.ipa.callgraph.propagation.InstanceKey;
 import com.ibm.wala.ipa.callgraph.propagation.PropagationCallGraphBuilder;
-import com.ibm.wala.ipa.callgraph.propagation.cfa.ZeroXInstanceKeys;
 import com.ibm.wala.ipa.callgraph.propagation.cfa.nCFAContextSelector;
 import com.ibm.wala.ipa.cha.ClassHierarchyException;
 import com.ibm.wala.ssa.SSAOptions;
@@ -37,6 +36,7 @@ import com.ibm.wala.ipa.cha.SeqClassHierarchyFactory;
 import com.ibm.wala.ssa.IRFactory;
 import com.ibm.wala.types.ClassLoaderReference;
 import com.ibm.wala.util.collections.HashSetFactory;
+import com.ibm.wala.util.debug.Assertions;
 
 import java.io.IOException;
 import java.util.Collections;
@@ -45,42 +45,44 @@ import java.util.Set;
 public abstract class SwiftAnalysisEngine<T>
         extends AbstractAnalysisEngine<InstanceKey, SwiftSSAPropagationCallGraphBuilder, T> {
 
-    private final SwiftLoaderFactory loader = new SwiftLoaderFactory();
+    private SwiftLoaderFactory loaderFactory;
+    protected SwiftTranslatorFactory translatorFactory;
     private final IRFactory<IMethod> irs = AstIRFactory.makeDefaultFactory();
 
     public SwiftAnalysisEngine() {
         super();
     }
 
-    /** Set up the AnalysisScope object */
     @Override
-    public void buildAnalysisScope() throws IOException {
-        scope = new AnalysisScope(Collections.singleton(SwiftLanguage.Swift)) {
-            {
-                loadersByName.put(SwiftTypes.swiftLoaderName, SwiftTypes.swiftLoader);
-                loadersByName.put(SYNTHETIC, new ClassLoaderReference(SYNTHETIC, SwiftLanguage.Swift.getName(), SwiftTypes.swiftLoader));
-            }
-        };
-
-        for(Module o : moduleFiles) {
-            scope.addToScope(SwiftTypes.swiftLoader, o);
-        }
+    public void buildAnalysisScope() {
+        System.out.println("Building analysis scope...");
+        loaderFactory = new SwiftLoaderFactory(translatorFactory);
+        SourceModule[] files = moduleFiles.toArray(new SourceModule[0]);
+        scope = new CAstAnalysisScope(files, loaderFactory, Collections.singleton(SwiftLanguage.Swift));
     }
 
-    /** @return a IClassHierarchy object for this swift scope */
     @Override
     public IClassHierarchy buildClassHierarchy() {
+        System.out.println("Building class hierarchy...");
         try {
-            IClassHierarchy cha = SeqClassHierarchyFactory.make(scope, loader);
+            IClassHierarchy cha = SeqClassHierarchyFactory.make(scope, loaderFactory);
             Util.checkForFrontEndErrors(cha);
-            setClassHierarchy(cha);
+            for(Module m : moduleFiles) {
+                // cha is NULL here!
+                IClass entry = cha.lookupClass(TypeReference.findOrCreate(SwiftTypes.swiftLoader, TypeName.findOrCreate(scriptName(m))));
+                System.out.println(entry.toString());
+            }
             return cha;
         } catch (ClassHierarchyException e) {
-            assert false : e;
+            e.printStackTrace();
             return null;
         } catch (WalaException e) {
             throw new WalaRuntimeException(e.getMessage());
         }
+    }
+
+    public void setTranslatorFactory(SwiftTranslatorFactory factory) {
+        this.translatorFactory = factory;
     }
 
     private String scriptName(Module m) {
@@ -92,6 +94,7 @@ public abstract class SwiftAnalysisEngine<T>
     protected Iterable<Entrypoint> makeDefaultEntrypoints(AnalysisScope scope, IClassHierarchy cha) {
         Set<Entrypoint> result = HashSetFactory.make();
         for(Module m : moduleFiles) {
+            // cha is NULL here!
             IClass entry = cha.lookupClass(TypeReference.findOrCreate(SwiftTypes.swiftLoader, TypeName.findOrCreate(scriptName(m))));
             assert entry != null: "bad root name " + scriptName(m) + ":\n" + cha;
             MethodReference er = MethodReference.findOrCreate(entry.getReference(), AstMethodReference.fnSelector);

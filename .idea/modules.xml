@@ -2,10 +2,7 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
-      <module fileurl="file://$PROJECT_DIR$/.idea/modules/-715730190/ca.maple.swan.swan.ca.maple.swan.swift.main.iml" filepath="$PROJECT_DIR$/.idea/modules/-715730190/ca.maple.swan.swan.ca.maple.swan.swift.main.iml" />
       <module fileurl="file://$PROJECT_DIR$/.idea/modules/-715730190/ca.maple.swan.swan.ca.maple.swan.swift.test.iml" filepath="$PROJECT_DIR$/.idea/modules/-715730190/ca.maple.swan.swan.ca.maple.swan.swift.test.iml" />
-      <module fileurl="file://$PROJECT_DIR$/.idea/modules/ca.maple.swan.swan.ca.maple.swan.swift.test.main.iml" filepath="$PROJECT_DIR$/.idea/modules/ca.maple.swan.swan.ca.maple.swan.swift.test.main.iml" />
-      <module fileurl="file://$PROJECT_DIR$/.idea/modules/ca.maple.swan.swan.ca.maple.swan.swift.test.test.iml" filepath="$PROJECT_DIR$/.idea/modules/ca.maple.swan.swan.ca.maple.swan.swift.test.test.iml" />
       <module fileurl="file://$PROJECT_DIR$/.idea/modules/ca.maple.swan.swift.iml" filepath="$PROJECT_DIR$/.idea/modules/ca.maple.swan.swift.iml" />
       <module fileurl="file://$PROJECT_DIR$/.idea/modules/ca.maple.swan.swift.test.iml" filepath="$PROJECT_DIR$/.idea/modules/ca.maple.swan.swift.test.iml" />
       <module fileurl="file://$PROJECT_DIR$/.idea/modules/swan.iml" filepath="$PROJECT_DIR$/.idea/modules/swan.iml" />
@@ -15,7 +12,10 @@
       <module fileurl="file://$PROJECT_DIR$/.idea/modules/swan.ca.maple.swan.swift.test.main.iml" filepath="$PROJECT_DIR$/.idea/modules/swan.ca.maple.swan.swift.test.main.iml" />
       <module fileurl="file://$PROJECT_DIR$/.idea/modules/swan.ca.maple.swan.swift.test.test.iml" filepath="$PROJECT_DIR$/.idea/modules/swan.ca.maple.swan.swift.test.test.iml" />
       <module fileurl="file://$PROJECT_DIR$/.idea/modules/-2103977829/swan.ca.maple.swan.translator.iml" filepath="$PROJECT_DIR$/.idea/modules/-2103977829/swan.ca.maple.swan.translator.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/-715730190/swift-source.swan.ca.maple.swan.swift.main.iml" filepath="$PROJECT_DIR$/.idea/modules/-715730190/swift-source.swan.ca.maple.swan.swift.main.iml" />
       <module fileurl="file://$PROJECT_DIR$/.idea/modules/-715730190/swift-source.swan.ca.maple.swan.swift.test.iml" filepath="$PROJECT_DIR$/.idea/modules/-715730190/swift-source.swan.ca.maple.swan.swift.test.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/swift-source.swan.ca.maple.swan.swift.test.main.iml" filepath="$PROJECT_DIR$/.idea/modules/swift-source.swan.ca.maple.swan.swift.test.main.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/swift-source.swan.ca.maple.swan.swift.test.test.iml" filepath="$PROJECT_DIR$/.idea/modules/swift-source.swan.ca.maple.swan.swift.test.test.iml" />
     </modules>
   </component>
 </project>

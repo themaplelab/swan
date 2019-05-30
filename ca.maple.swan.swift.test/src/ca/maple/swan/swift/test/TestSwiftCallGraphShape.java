@@ -1,6 +1,7 @@
 package ca.maple.swan.swift.test;
 
 import ca.maple.swan.swift.client.SwiftAnalysisEngine;
+import ca.maple.swan.swift.translator.SwiftToCAstTranslatorFactory;
 import ca.maple.swan.swift.types.SwiftTypes;
 import com.ibm.wala.cast.types.AstMethodReference;
 import java.io.File;
@@ -72,6 +73,7 @@ public class TestSwiftCallGraphShape extends TestCallGraphShape {
             modules.add(getScript(n));
         }
         engine.setModuleFiles(modules);
+        engine.setTranslatorFactory(new SwiftToCAstTranslatorFactory());
         return engine;
     }
 

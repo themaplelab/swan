@@ -1,6 +1,5 @@
 plugins {
     id 'java'
-    id 'groovy'
 }
 
 group 'ca.maple.swan'
@@ -19,7 +18,6 @@ mainClassName = "ca.maple.swan.swift.test.TestSwiftCallGraphShape"
 
 dependencies {
     implementation project(":ca.maple.swan.swift")
-    compile fileTree(dir: "${WALA_DIR}/com.ibm.wala.translator/build/libs", include: '*.jar')
     compile fileTree(dir: "${WALA_DIR}/com.ibm.wala.core/build/libs", include: '*.jar')
     compile fileTree(dir: "${WALA_DIR}/com.ibm.wala.shrike/build/libs", include: '*.jar')
     compile fileTree(dir: "${WALA_DIR}/com.ibm.wala.cast/build/libs", include: '*.jar')

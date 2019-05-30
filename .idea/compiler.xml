@@ -6,12 +6,16 @@
       <module name="ca.maple.swan.swan.ca.maple.swan.swift.test" target="1.8" />
       <module name="ca.maple.swan.swan.ca.maple.swan.swift.test.main" target="1.8" />
       <module name="ca.maple.swan.swan.ca.maple.swan.swift.test.test" target="1.8" />
+      <module name="ca.maple.swan.swift.swan.ca.maple.swan.swift.main" target="1.8" />
       <module name="swan.ca.maple.swan.analysis.main" target="1.8" />
       <module name="swan.ca.maple.swan.analysis.test" target="1.8" />
       <module name="swan.ca.maple.swan.swift.main" target="1.8" />
       <module name="swan.ca.maple.swan.swift.test.main" target="1.8" />
       <module name="swan.ca.maple.swan.swift.test.test" target="1.8" />
+      <module name="swift-source.swan.ca.maple.swan.swift.main" target="1.8" />
       <module name="swift-source.swan.ca.maple.swan.swift.test" target="1.8" />
+      <module name="swift-source.swan.ca.maple.swan.swift.test.main" target="1.8" />
+      <module name="swift-source.swan.ca.maple.swan.swift.test.test" target="1.8" />
     </bytecodeTargetLevel>
   </component>
 </project>

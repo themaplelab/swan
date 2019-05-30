@@ -9,7 +9,7 @@ public class SwiftTypes extends AstTypeReference {
 
     public static final String swiftNameStr = "Swift";
 
-    public static final String swiftLoaderStr = "PythonLoader";
+    public static final String swiftLoaderStr = "SwiftLoader";
 
     public static final Atom swiftName = Atom.findOrCreateUnicodeAtom(swiftNameStr);
 
