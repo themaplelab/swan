@@ -25,7 +25,7 @@
 using namespace swift_wala;
 
 JNIEXPORT jobject JNICALL
-Java_ca_maple_swan_analysis_translator_SwiftToCAstTranslator_translateToCAstNodes(JNIEnv *env, jobject obj)
+Java_ca_maple_swan_swift_translator_SwiftToCAstTranslator_translateToCAstNodes(JNIEnv *env, jobject obj)
 {
     WALAInstance Instance(env, obj);
     Instance.analyze();
