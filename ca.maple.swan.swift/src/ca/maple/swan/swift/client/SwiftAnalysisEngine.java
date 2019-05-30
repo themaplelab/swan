@@ -4,6 +4,7 @@ import ca.maple.swan.swift.ipa.callgraph.SwiftSSAPropagationCallGraphBuilder;
 import ca.maple.swan.swift.ir.SwiftLanguage;
 import ca.maple.swan.swift.loader.SwiftLoader;
 import ca.maple.swan.swift.loader.SwiftLoaderFactory;
+import ca.maple.swan.swift.translator.SwiftToCAstTranslatorFactory;
 import ca.maple.swan.swift.translator.SwiftTranslatorFactory;
 import ca.maple.swan.swift.types.SwiftTypes;
 import com.ibm.wala.cast.ipa.callgraph.AstCFAPointerKeys;
@@ -45,8 +46,8 @@ import java.util.Set;
 public abstract class SwiftAnalysisEngine<T>
         extends AbstractAnalysisEngine<InstanceKey, SwiftSSAPropagationCallGraphBuilder, T> {
 
-    private SwiftLoaderFactory loaderFactory;
-    protected SwiftTranslatorFactory translatorFactory;
+    protected SwiftTranslatorFactory translatorFactory = new SwiftToCAstTranslatorFactory();
+    private SwiftLoaderFactory loaderFactory = new SwiftLoaderFactory(translatorFactory);
     private final IRFactory<IMethod> irs = AstIRFactory.makeDefaultFactory();
 
     public SwiftAnalysisEngine() {
@@ -56,7 +57,6 @@ public abstract class SwiftAnalysisEngine<T>
     @Override
     public void buildAnalysisScope() {
         System.out.println("Building analysis scope...");
-        loaderFactory = new SwiftLoaderFactory(translatorFactory);
         SourceModule[] files = moduleFiles.toArray(new SourceModule[0]);
         scope = new CAstAnalysisScope(files, loaderFactory, Collections.singleton(SwiftLanguage.Swift));
     }
@@ -65,10 +65,9 @@ public abstract class SwiftAnalysisEngine<T>
     public IClassHierarchy buildClassHierarchy() {
         System.out.println("Building class hierarchy...");
         try {
-            IClassHierarchy cha = SeqClassHierarchyFactory.make(scope, loaderFactory);
+            IClassHierarchy cha = SeqClassHierarchyFactory.make(scope, loaderFactory, SwiftLanguage.Swift);
             Util.checkForFrontEndErrors(cha);
             for(Module m : moduleFiles) {
-                // cha is NULL here!
                 IClass entry = cha.lookupClass(TypeReference.findOrCreate(SwiftTypes.swiftLoader, TypeName.findOrCreate(scriptName(m))));
                 System.out.println(entry.toString());
             }
@@ -79,10 +78,6 @@ public abstract class SwiftAnalysisEngine<T>
         } catch (WalaException e) {
             throw new WalaRuntimeException(e.getMessage());
         }
-    }
-
-    public void setTranslatorFactory(SwiftTranslatorFactory factory) {
-        this.translatorFactory = factory;
     }
 
     private String scriptName(Module m) {

@@ -73,7 +73,6 @@ public class TestSwiftCallGraphShape extends TestCallGraphShape {
             modules.add(getScript(n));
         }
         engine.setModuleFiles(modules);
-        engine.setTranslatorFactory(new SwiftToCAstTranslatorFactory());
         return engine;
     }
 
