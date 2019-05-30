@@ -331,7 +331,9 @@ jobject SILWalaInstructionVisitor::visitApplySite(ApplySite Apply) {
     Identifier name = FD->getName();
     jobject OperatorNode = getOperatorCAstType(name);
     if (OperatorNode != nullptr) {
-      llvm::outs() << "\t Built in operator\n";
+      if (Print) {
+        llvm::outs() << "\t Built in operator\n";
+      }
       auto GetOperand = [&Apply, this](unsigned int Index) -> jobject {
         if (Index < Apply.getNumArguments()) {
           SILValue Argument = Apply.getArgument(Index);
@@ -566,7 +568,9 @@ jobject SILWalaInstructionVisitor::visitDebugValueInst(DebugValueInst *DBI) {
     void *Addr = Val.getOpaqueValue();
     if (Addr) {
       SymbolTable.insert(Addr, VarName);
-      llvm::outs() << "\t [ADDR OF OPERAND]:" << Addr << "\n";
+      if (Print) {
+        llvm::outs() << "\t [ADDR OF OPERAND]:" << Addr << "\n";
+      }
     }
     else {
       if (Print) {
@@ -2600,7 +2604,9 @@ jobject SILWalaInstructionVisitor::visitBranchInst(BranchInst *BI) {
   }
 
   for (unsigned Idx = 0; Idx < BI->getNumArgs(); Idx++) {
-    llvm::outs() << "[ADDR]: " << Dest->getArgument(Idx) << "\n";
+    if (Print) {
+        llvm::outs() << "[ADDR]: " << Dest->getArgument(Idx) << "\n";
+    }
     jobject Node = findAndRemoveCAstNode(BI->getArg(Idx).getOpaqueValue());
     SymbolTable.insert(Dest->getArgument(Idx), ("argument" + std::to_string(Idx)));
 
