@@ -2,7 +2,6 @@ package ca.maple.swan.swift.loader;
 
 import ca.maple.swan.swift.ir.SwiftLanguage;
 import ca.maple.swan.swift.translator.SwiftCAstToIRTranslator;
-import ca.maple.swan.swift.translator.SwiftToCAstTranslator;
 import ca.maple.swan.swift.translator.SwiftTranslatorFactory;
 import ca.maple.swan.swift.types.SwiftTypes;
 import com.ibm.wala.cast.ir.translator.TranslatorToCAst;
@@ -10,9 +9,7 @@ import com.ibm.wala.cast.ir.translator.TranslatorToIR;
 import com.ibm.wala.cast.loader.CAstAbstractModuleLoader;
 import com.ibm.wala.cast.tree.CAst;
 import com.ibm.wala.cast.tree.CAstEntity;
-import com.ibm.wala.cast.tree.impl.CAstTypeDictionaryImpl;
 import com.ibm.wala.cast.tree.rewrite.CAstRewriterFactory;
-import com.ibm.wala.classLoader.IClassLoader;
 import com.ibm.wala.classLoader.Language;
 import com.ibm.wala.classLoader.ModuleEntry;
 import com.ibm.wala.ipa.cha.IClassHierarchy;
