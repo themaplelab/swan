@@ -27,8 +27,6 @@ public class SwiftLoader extends CAstAbstractModuleLoader {
 
     private final CAstRewriterFactory<?, ?> preprocessor;
 
-    private final CAstTypeDictionaryImpl<String> typeDictionary = new CAstTypeDictionaryImpl<String>();
-
     public SwiftLoader(IClassHierarchy cha, SwiftTranslatorFactory translatorFactory) {
         this(cha, translatorFactory, null);
     }

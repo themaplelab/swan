@@ -1,13 +1,11 @@
 package ca.maple.swan.swift.test;
 
 import ca.maple.swan.swift.client.SwiftAnalysisEngine;
-import ca.maple.swan.swift.translator.SwiftToCAstTranslatorFactory;
 import ca.maple.swan.swift.types.SwiftTypes;
 import com.ibm.wala.cast.types.AstMethodReference;
 import java.io.File;
 import java.io.IOException;
 import java.net.MalformedURLException;
-import java.net.URL;
 import java.util.Collection;
 import java.util.Set;
 
@@ -49,8 +47,7 @@ public class TestSwiftCallGraphShape extends TestCallGraphShape {
             if (f.exists()) {
                 return new SourceURLModule(f.toURI().toURL());
             } else {
-                URL url = new URL(name);
-                return new SourceURLModule(url);
+                throw new IOException("Script name is not a valid file!");
             }
         } catch (MalformedURLException e) {
             return new SourceURLModule(getClass().getClassLoader().getResource(name));
@@ -58,13 +55,7 @@ public class TestSwiftCallGraphShape extends TestCallGraphShape {
     }
 
     protected SwiftAnalysisEngine<?> createEngine() throws ClassHierarchyException, IllegalArgumentException, CancelException, IOException {
-        return new SwiftAnalysisEngine<Void>() {
-            @Override
-            public Void performAnalysis(PropagationCallGraphBuilder builder) throws CancelException {
-                assert false;
-                return null;
-            }
-        };
+        return new SwiftAnalysisEngine<Void>();
     }
 
     protected SwiftAnalysisEngine<?> makeEngine(SwiftAnalysisEngine<?> engine, String... name) throws ClassHierarchyException, IllegalArgumentException, CancelException, IOException {
@@ -94,16 +85,22 @@ public class TestSwiftCallGraphShape extends TestCallGraphShape {
 
     public static void main(String[] args) throws ClassHierarchyException, IllegalArgumentException, CancelException, IOException {
 
-        TestSwiftCallGraphShape driver = new TestSwiftCallGraphShape() {
+        TestSwiftCallGraphShape driver = new TestSwiftCallGraphShape();
 
-        };
+        SwiftAnalysisEngine<?> Engine;
+        try {
+            Engine = driver.makeEngine(args[0]);
+        } catch (Exception e) {
+            Engine = new SwiftAnalysisEngine<Void>(); // Make IDE happy.
+            System.out.println("Could not create SwiftAnalysisEngine!");
+            e.printStackTrace();
+            System.exit(1);
+        }
 
-        SwiftAnalysisEngine<?> E = driver.makeEngine(args[0]);
-
-        CallGraphBuilder<? super InstanceKey> builder = E.defaultCallGraphBuilder();
-        CallGraph CG = builder.makeCallGraph(E.getOptions(), new NullProgressMonitor());
+        CallGraphBuilder<? super InstanceKey> builder = Engine.defaultCallGraphBuilder();
+        CallGraph CG = builder.makeCallGraph(Engine.getOptions(), new NullProgressMonitor());
 
         CAstCallGraphUtil.AVOID_DUMP = false;
-        CAstCallGraphUtil.dumpCG(((SSAPropagationCallGraphBuilder)builder).getCFAContextInterpreter(), E.getPointerAnalysis(), CG);
+        CAstCallGraphUtil.dumpCG(((SSAPropagationCallGraphBuilder)builder).getCFAContextInterpreter(), Engine.getPointerAnalysis(), CG);
     }
 }

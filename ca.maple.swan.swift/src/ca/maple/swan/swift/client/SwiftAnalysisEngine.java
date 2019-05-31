@@ -1,8 +1,9 @@
 package ca.maple.swan.swift.client;
 
+import ca.maple.swan.swift.ipa.callgraph.SwiftAnalysisOptions;
+import ca.maple.swan.swift.ipa.callgraph.SwiftEntryPoints;
 import ca.maple.swan.swift.ipa.callgraph.SwiftSSAPropagationCallGraphBuilder;
 import ca.maple.swan.swift.ir.SwiftLanguage;
-import ca.maple.swan.swift.loader.SwiftLoader;
 import ca.maple.swan.swift.loader.SwiftLoaderFactory;
 import ca.maple.swan.swift.translator.SwiftToCAstTranslatorFactory;
 import ca.maple.swan.swift.translator.SwiftTranslatorFactory;
@@ -11,8 +12,6 @@ import com.ibm.wala.cast.ipa.callgraph.AstCFAPointerKeys;
 import com.ibm.wala.cast.ipa.callgraph.AstContextInsensitiveSSAContextInterpreter;
 import com.ibm.wala.cast.ipa.callgraph.CAstAnalysisScope;
 import com.ibm.wala.cast.ir.ssa.AstIRFactory;
-import com.ibm.wala.cast.types.AstMethodReference;
-import com.ibm.wala.cast.util.Util;
 import com.ibm.wala.classLoader.*;
 import com.ibm.wala.client.AbstractAnalysisEngine;
 import com.ibm.wala.ipa.callgraph.*;
@@ -21,33 +20,24 @@ import com.ibm.wala.ipa.callgraph.impl.ClassHierarchyMethodTargetSelector;
 import com.ibm.wala.ipa.callgraph.impl.ContextInsensitiveSelector;
 import com.ibm.wala.ipa.callgraph.impl.DefaultEntrypoint;
 import com.ibm.wala.ipa.callgraph.propagation.InstanceKey;
-import com.ibm.wala.ipa.callgraph.propagation.PropagationCallGraphBuilder;
 import com.ibm.wala.ipa.callgraph.propagation.cfa.nCFAContextSelector;
 import com.ibm.wala.ipa.cha.ClassHierarchyException;
 import com.ibm.wala.ssa.SSAOptions;
 import com.ibm.wala.ssa.SymbolTable;
-import com.ibm.wala.types.MethodReference;
-import com.ibm.wala.types.TypeName;
-import com.ibm.wala.types.TypeReference;
-import com.ibm.wala.util.CancelException;
-import com.ibm.wala.util.WalaException;
-import com.ibm.wala.util.WalaRuntimeException;
 import com.ibm.wala.ipa.cha.IClassHierarchy;
 import com.ibm.wala.ipa.cha.SeqClassHierarchyFactory;
 import com.ibm.wala.ssa.IRFactory;
 import com.ibm.wala.types.ClassLoaderReference;
-import com.ibm.wala.util.collections.HashSetFactory;
 import com.ibm.wala.util.debug.Assertions;
 
-import java.io.IOException;
 import java.util.Collections;
-import java.util.Set;
+import java.util.jar.JarFile;
 
-public abstract class SwiftAnalysisEngine<T>
+public class SwiftAnalysisEngine<T>
         extends AbstractAnalysisEngine<InstanceKey, SwiftSSAPropagationCallGraphBuilder, T> {
 
-    protected SwiftTranslatorFactory translatorFactory = new SwiftToCAstTranslatorFactory();
-    private SwiftLoaderFactory loaderFactory = new SwiftLoaderFactory(translatorFactory);
+    private final SwiftTranslatorFactory translatorFactory = new SwiftToCAstTranslatorFactory();
+    private final SwiftLoaderFactory loaderFactory = new SwiftLoaderFactory(translatorFactory);
     private final IRFactory<IMethod> irs = AstIRFactory.makeDefaultFactory();
 
     public SwiftAnalysisEngine() {
@@ -56,46 +46,50 @@ public abstract class SwiftAnalysisEngine<T>
 
     @Override
     public void buildAnalysisScope() {
-        System.out.println("Building analysis scope...");
         SourceModule[] files = moduleFiles.toArray(new SourceModule[0]);
         scope = new CAstAnalysisScope(files, loaderFactory, Collections.singleton(SwiftLanguage.Swift));
     }
 
     @Override
     public IClassHierarchy buildClassHierarchy() {
-        System.out.println("Building class hierarchy...");
         try {
-            IClassHierarchy cha = SeqClassHierarchyFactory.make(scope, loaderFactory, SwiftLanguage.Swift);
-            Util.checkForFrontEndErrors(cha);
-            for(Module m : moduleFiles) {
-                IClass entry = cha.lookupClass(TypeReference.findOrCreate(SwiftTypes.swiftLoader, TypeName.findOrCreate(scriptName(m))));
-                System.out.println(entry.toString());
-            }
-            return cha;
+            return setClassHierarchy(
+                    SeqClassHierarchyFactory.make(getScope(), loaderFactory, SwiftLanguage.Swift));
         } catch (ClassHierarchyException e) {
-            e.printStackTrace();
+            Assertions.UNREACHABLE(e.toString());
             return null;
-        } catch (WalaException e) {
-            throw new WalaRuntimeException(e.getMessage());
         }
     }
 
-    private String scriptName(Module m) {
-        String path = ((ModuleEntry)m).getName();
-        return "Lscript " + (path.contains("/")? path.substring(path.lastIndexOf('/')+1): path);
+    @Override
+    public void setJ2SELibraries(JarFile[] libs) {
+        Assertions.UNREACHABLE("Illegal to call setJ2SELibraries");
+    }
+
+    @Override
+    public void setJ2SELibraries(Module[] libs) {
+        Assertions.UNREACHABLE("Illegal to call setJ2SELibraries");
     }
 
     @Override
     protected Iterable<Entrypoint> makeDefaultEntrypoints(AnalysisScope scope, IClassHierarchy cha) {
-        Set<Entrypoint> result = HashSetFactory.make();
-        for(Module m : moduleFiles) {
-            // cha is NULL here!
-            IClass entry = cha.lookupClass(TypeReference.findOrCreate(SwiftTypes.swiftLoader, TypeName.findOrCreate(scriptName(m))));
-            assert entry != null: "bad root name " + scriptName(m) + ":\n" + cha;
-            MethodReference er = MethodReference.findOrCreate(entry.getReference(), AstMethodReference.fnSelector);
-            result.add(new DefaultEntrypoint(er, cha));
-        }
-        return result;
+        return new SwiftEntryPoints(cha, cha.getLoader(SwiftTypes.swiftLoader));
+    }
+
+    @Override
+    public IAnalysisCacheView makeDefaultCache() {
+        return new AnalysisCacheImpl(AstIRFactory.makeDefaultFactory());
+    }
+
+    @Override
+    public SwiftAnalysisOptions getDefaultOptions(Iterable<Entrypoint> roots) {
+        final SwiftAnalysisOptions options = new SwiftAnalysisOptions(scope, roots);
+
+        options.setUseConstantSpecificKeys(true);
+
+        options.setUseStacksForLexicalScoping(true);
+
+        return options;
     }
 
     @Override
@@ -126,7 +120,4 @@ public abstract class SwiftAnalysisEngine<T>
 
         return builder;
     }
-
-    public abstract T performAnalysis(PropagationCallGraphBuilder builder) throws CancelException;
-
 }
