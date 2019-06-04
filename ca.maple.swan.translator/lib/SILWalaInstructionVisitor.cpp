@@ -32,10 +32,17 @@
 using namespace swift_wala;
 
 void SILWalaInstructionVisitor::visitModule(SILModule *M) {
+  // The SIL module holds the SIL of the .swift file, there is only one SILModule per file.
+
+  // Give the module file a name if it doesn't have one (for source information use).
+  // Why would the module not have a name?
   moduleInfo = std::make_shared<ModuleInfo>(M->getSwiftModule()->getModuleFilename());
   if (moduleInfo->sourcefile.empty()) {
     moduleInfo->sourcefile = "N/A";
   }
+
+  // Visit every function under the SILModule. All SIL instructions lie within functions.
+  // Any code written outside of an explicit function in Swift is put under the "main" function.
   for (auto &F: *M) {
     visitSILFunction(&F);
   }
@@ -44,13 +51,16 @@ void SILWalaInstructionVisitor::visitModule(SILModule *M) {
 void SILWalaInstructionVisitor::visitSILFunction(SILFunction *F) {
   functionInfo =
       std::make_shared<FunctionInfo>(F->getName(), Demangle::demangleSymbolAsString(F->getName()));
+
   BlockStmtList.clear();
+
   if (Print) {
     llvm::outs() << "SILFunction: ";
     llvm::outs() << F << "\n";
     F->print(llvm::outs(), true);
   }
 
+  // Visit every basic block of the function.
   for (auto &BB: *F) {
     visitSILBasicBlock(&BB);
   }
@@ -68,10 +78,13 @@ void SILWalaInstructionVisitor::visitSILBasicBlock(SILBasicBlock *BB) {
     llvm::outs() << BB << "\n";
     llvm::outs() << "SILFunctions: " << BB->getParent() << "\n";
   }
+
+  // Clear information from previous basic block.
   InstructionCount = 0;
   NodeMap.clear();
   NodeList.clear();
 
+  // Visit every instruction of the basic block.
   for (auto &I: *BB) {
     auto Node = visit(&I);
     if (Node != nullptr) {
@@ -80,18 +93,23 @@ void SILWalaInstructionVisitor::visitSILBasicBlock(SILBasicBlock *BB) {
   }
 
   if (NodeList.size() > 0) {
+    // Make a new LABEL_STMT node with the SILBasicBlock # as the name, and at that node as the root
+    // of the NodeList tree.
     jobject Node = Instance->CAst->makeConstant(BasicBlockLabeller::label(BB).c_str());
     jobject Stmt = Instance->CAst->makeNode(CAstWrapper::LABEL_STMT, Node, NodeList.front());
     NodeList.pop_front();
     NodeList.push_front(Stmt);
+
+    // Make a BLOCK_STMT node as the root of the NodeList tree.
     jobject BlockStmt = Instance->CAst->makeNode(CAstWrapper::BLOCK_STMT, Instance->CAst->makeArray(&NodeList));
     BlockStmtList.push_back(BlockStmt);
+
+    // Temporary, until we figure out a way to map the nodes/entities and pass it back to Java.
     Instance->CAstNodes.push_back(BlockStmt);
   }
 }
 
 void SILWalaInstructionVisitor::beforeVisit(SILInstruction *I) {
-  instrInfo = std::make_shared<InstrInfo>();
 
   updateInstrSourceInfo(I);
 
@@ -99,7 +117,7 @@ void SILWalaInstructionVisitor::beforeVisit(SILInstruction *I) {
   instrInfo->memBehavior = I->getMemoryBehavior();
   instrInfo->relBehavior = I->getReleasingBehavior();
 
-  //FixMe: replace with weak pointer.
+  // FixMe: replace with weak pointer.
   instrInfo->modInfo = moduleInfo.get();
   instrInfo->funcInfo = functionInfo.get();
   instrInfo->instrKind = I->getKind();
@@ -111,28 +129,20 @@ void SILWalaInstructionVisitor::beforeVisit(SILInstruction *I) {
   instrInfo->ops = llvm::ArrayRef<SILValue>(vals);
   perInstruction();
 
-  /*
-  char* od = std::getenv("SIL_INSTRUCTION_OUTPUT");
-  std::std::string OutputDir(od);
-  std::stringstream ss;
-  ss << OutputDir << "SIL_INSTRUCTION_OUTPUT.txt";
-  std::ofstream outfile;
-  outfile.open(ss);
-  outfile << getSILInstructionName(I->getKind());
-  outfile.close();
-  */
   if (Print) {
     llvm::outs() << "<< " << getSILInstructionName(I->getKind()) << " >>\n";
   }
 }
 
-// Gets the sourcefile, start line/col, end line/col, and writes it to the InstrInfo
-// that is passed in.
-// TODO: check lastBuffer vs. buffer to see if start and end are in the same file
 void SILWalaInstructionVisitor::updateInstrSourceInfo(SILInstruction *I) {
+  // Get the sourcefile, start line/col, end line/col, and write it to the InstrInfo
+  // that is passed in.
+
+  // TODO: check lastBuffer vs. buffer to see if start and end are in the same file
+
   SourceManager &srcMgr = I->getModule().getSourceManager();
 
-  // Get file-line-col information for the source
+  // Get file-line-col information for the source.
   SILLocation debugLoc = I->getDebugLocation().getLocation();
   SILLocation::DebugLoc debugInfo = debugLoc.decodeDebugLoc(srcMgr);
 
@@ -170,38 +180,35 @@ void SILWalaInstructionVisitor::updateInstrSourceInfo(SILInstruction *I) {
   }
 }
 
-// Actions to take on a per-instruction basis.  InstrInfo contains all the relevant info
-// for the current instruction in the iteration.
 void SILWalaInstructionVisitor::perInstruction() {
+
   if (Print) {
     Instance->print(Instance->CAst->makeLocation(
         instrInfo->startLine, instrInfo->startCol,
         instrInfo->endLine, instrInfo->endCol)
     );
-  }
 
-  if (Print) {
     llvm::outs() << "\t [INSTR] #" << instrInfo->num;
     llvm::outs() << ", [OPNUM] " << instrInfo->id << "\n";
     llvm::outs() << "\t --> File: " << instrInfo->Filename << "\n";
 
-    // Has no location information
+    // Has no location information.
     if (instrInfo->srcType == -1) {
       llvm::outs() << "\t **** No source information. \n";
 
-      // Has only start information
+      // Has only start information.
     } else {
       llvm::outs() << "\t ++++ Start - Line " << instrInfo->startLine << ":"
                    << instrInfo->startCol << "\n";
     }
 
-    // Has end information
+    // Has end information.
     if (instrInfo->srcType == 0) {
       llvm::outs() << "\t ---- End - Line " << instrInfo->endLine;
       llvm::outs() << ":" << instrInfo->endCol << "\n";
     }
 
-    // Memory Behavior
+    // Memory Behavior.
     switch (instrInfo->memBehavior) {
     case SILInstruction::MemoryBehavior::None: {
       break;
@@ -223,7 +230,7 @@ void SILWalaInstructionVisitor::perInstruction() {
     }
     }
 
-    // Releasing Behavior
+    // Releasing Behavior.
     switch (instrInfo->relBehavior) {
     case SILInstruction::ReleasingBehavior::DoesNotRelease: {
       llvm::outs() << "\t\t [REL]: Does not release memory. \n";
@@ -235,7 +242,7 @@ void SILWalaInstructionVisitor::perInstruction() {
     }
     }
 
-    // Show operands, if they exist
+    // Show operands, if they exist.
     for (auto op = instrInfo->ops.begin(); op != instrInfo->ops.end(); ++op) {
       llvm::outs() << "\t\t [OPER]: " << *op;
     }
@@ -245,15 +252,14 @@ void SILWalaInstructionVisitor::perInstruction() {
 }
 
 jobject SILWalaInstructionVisitor::findAndRemoveCAstNode(void *Key) {
+  // TODO: What is this doing and why is it needed?
   jobject node = nullptr;
   if (SymbolTable.has(Key)) {
-    // this is a variable
+    // Then this is a variable.
     jobject name = Instance->CAst->makeConstant(SymbolTable.get(Key).c_str());
     node = Instance->CAst->makeNode(CAstWrapper::VAR, name);
   } else if (NodeMap.find(Key) != NodeMap.end()) {
-    // find
     node = NodeMap.at(Key);
-    // remove
     auto it = std::find(NodeList.begin(), NodeList.end(), node);
     if (it != NodeList.end()) {
       NodeList.erase(it);
@@ -294,25 +300,29 @@ jobject SILWalaInstructionVisitor::getOperatorCAstType(Identifier Name) {
   } else if (Name.is("&")) {
     return CAstWrapper::OP_BIT_AND;
   } else if (Name.is("&&")) {
-    // return CAstWrapper::OP_REL_AND;
-    return nullptr; // && and || are handled separatedly because they involve short circuits
+    // TODO: Why is this not handled?
+    // OLD: return CAstWrapper::OP_REL_AND;
+    return nullptr; // OLD: && and || are handled separately because they involve short circuits
   } else if (Name.is("|")) {
     return CAstWrapper::OP_BIT_OR;
   } else if (Name.is("||")) {
-    // return CAstWrapper::OP_REL_OR;
-    return nullptr; // && and || are handled separatedly because they involve short circuits
+    // TODO: Why is this not handled?
+    // OLD: return CAstWrapper::OP_REL_OR;
+    return nullptr; // OLD: && and || are handled separatedly because they involve short circuits
   } else if (Name.is("^")) {
     return CAstWrapper::OP_BIT_XOR;
   } else {
+    llvm::errs << "Unhandled operator detected! \n";
     return nullptr;
   }
 }
 
 jobject SILWalaInstructionVisitor::visitApplySite(ApplySite Apply) {
-  jobject Node = Instance->CAst->makeNode(CAstWrapper::EMPTY); // the CAst node to be created
+  jobject Node = Instance->CAst->makeNode(CAstWrapper::EMPTY);
   auto *Callee = Apply.getReferencedFunction();
 
   if (!Callee) {
+    llvm::errs << "Apply site's Callee is empty! \n";
     return Instance->CAst->makeNode(CAstWrapper::EMPTY);
   }
 
@@ -327,6 +337,8 @@ jobject SILWalaInstructionVisitor::visitApplySite(ApplySite Apply) {
     }
   }
 
+  // Handle if the function is an operator function (representing a built in operator).
+  // In this case, we don't want to treat it as an actual function call in the CAst.
   if (FD && (FD->isUnaryOperator() || FD->isBinaryOperator())) {
     Identifier name = FD->getName();
     jobject OperatorNode = getOperatorCAstType(name);
@@ -347,8 +359,12 @@ jobject SILWalaInstructionVisitor::visitApplySite(ApplySite Apply) {
         Node = Instance->CAst->makeNode(CAstWrapper::BINARY_EXPR, OperatorNode, GetOperand(0), GetOperand(1));
       }
       return Node;
-    } // otherwise, fall through to the regular funcion call logic
+    }
   }
+
+  // Otherwise, fall through to the regular function call logic.
+
+  // TODO: What is this code doing and why is it calling findAndRemoveCAstNode?
 
   auto FuncExprNode = findAndRemoveCAstNode(Callee);
   list<jobject> Params;

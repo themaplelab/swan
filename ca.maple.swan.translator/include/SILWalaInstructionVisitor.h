@@ -36,17 +36,20 @@ namespace swift_wala {
 
 class WALAInstance;
 
+/// ModuleInfo is used for storing source information into the CAst.
 struct ModuleInfo {
     explicit ModuleInfo(llvm::StringRef sourcefile) : sourcefile(sourcefile) {};
     llvm::StringRef sourcefile;
   };
 
+/// FunctionInfo is used for storing source information into the CAst.
 struct FunctionInfo {
   FunctionInfo(llvm::StringRef name, llvm::StringRef demangled) : name(name), demangled(demangled) {};
   llvm::StringRef name;
   llvm::StringRef demangled;
 };
 
+/// InstrInfo is used for storing source information into the CAst.
 struct InstrInfo {
   unsigned num;
   swift::SILPrintContext::ID id;
@@ -67,39 +70,67 @@ struct InstrInfo {
   FunctionInfo *funcInfo;
 };
 
+
+/// This class translates SIL to CAst by using Swift's SILInstructionVisitor which has callbacks, including
+/// ones for every type of SILInstruction. This makes translating simple.
 class SILWalaInstructionVisitor : public SILInstructionVisitor<SILWalaInstructionVisitor, jobject> {
 public:
   SILWalaInstructionVisitor(WALAInstance *Instance, bool Print) : Instance(Instance), Print(Print) {}
 
+  /// Visit the SILModule of the swift file that holds the SILFunctions.
   void visitModule(SILModule *M);
+  /// Visit the SILFunction that holds the SILBasicBlocks.
   void visitSILFunction(SILFunction *F);
+  /// Visit the SILBasicBlock that holds the SILInstructions.
   void visitSILBasicBlock(SILBasicBlock *BB);
+  /// Before visiting the SILInstruction, this callback is fired and here we set up the source info of the instruction.
   void beforeVisit(SILInstruction *I);
 
+  /// If we do not have a callback handler implemented for a SILInstruction, it will fire this method.
   jobject visitSILInstruction(SILInstruction *I) {
     llvm::outs() << "Not handled instruction: \n" << *I << "\n";
     return nullptr;
   }
 
 private:
+  /// The WALAInstance that holds the resultant CAst.
   WALAInstance *Instance;
+  /// Decides whether to print the translation debug info to terminal at runtime.
   bool Print;
 
+  /// Update instrInfo with the given SILInstruction information.
   void updateInstrSourceInfo(SILInstruction *I);
+  /// Called by beforeVisit. Prints debug info about the instrInfo (in our case). It can also handle any other
+  /// housekeeping that needs to be done at every instruction if needed.
   void perInstruction();
+
+  /// Import call that all instructions directly pertaining to function calls lead to. It will create a
+  /// CAstNode that will be mapped to the function site (CAstEntity).
   jobject visitApplySite(ApplySite Apply);
+  /// TODO: What is this used for exactly?
   jobject findAndRemoveCAstNode(void *Key);
+  /// Returns CAstNode with appropriate operator kind.
   jobject getOperatorCAstType(Identifier Name);
 
   unsigned int InstructionCount = 0;
 
+  /// Source information about the SILInstruction.
   std::shared_ptr<InstrInfo> instrInfo;
+  /// Source information about the SILFunction.
   std::shared_ptr<FunctionInfo> functionInfo;
+  /// Source information about the SILModule.
   std::shared_ptr<ModuleInfo> moduleInfo;
 
+  /// TODO: Why is this needed?
   SymbolTable SymbolTable;
+
+  /// Map of Instr* (various SIL instruction types) to the CAstNode representing it.
+  /// Scoped to the current SILBasicBlock.
   std::unordered_map<void *, jobject> NodeMap;
+  /// List of CAstNodes in the current SILBasicBlock.
   std::list<jobject> NodeList;
+  /// List of BLOCK_STMT CAstNodes that hold the AST for the SILBasicBlock.
+  /// Scoped to the current SILFunction.
   std::list<jobject> BlockStmtList;
 
 public:

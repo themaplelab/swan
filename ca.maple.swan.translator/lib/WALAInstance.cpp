@@ -49,6 +49,10 @@ void WALAInstance::print(jobject Object) {
   JavaEnv->ReleaseStringUTFChars(Message, Text);
 }
 
+void WALAInstance::printNode(jobject Node) {
+  CAst->log(Node);
+}
+
 void WALAInstance::analyzeSILModule(SILModule &SM) {
   SILWalaInstructionVisitor Visitor(this, true); // Bool is for enabling translator printing (for debug).
   Visitor.visitModule(&SM);

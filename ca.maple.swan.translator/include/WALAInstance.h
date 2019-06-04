@@ -54,8 +54,11 @@ public:
   /// Returns copy of translated nodes as a jobject (ArrayList<CastNode>).
   jobject getCAstNodes();
 
-  /// Used for debugging CAst nodes.
+  /// Used for debugging jobjects.
   void print(jobject Object);
+
+  /// Used for debugging CAst nodes, as jobjects. Not synchronous with llvm::outs()!
+  void printNode(jobject Node);
 
   /// Starts the analysis, and hooks into the Swift compiler frontend.
   void analyze();
