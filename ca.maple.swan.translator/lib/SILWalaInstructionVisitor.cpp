@@ -312,7 +312,7 @@ jobject SILWalaInstructionVisitor::getOperatorCAstType(Identifier Name) {
   } else if (Name.is("^")) {
     return CAstWrapper::OP_BIT_XOR;
   } else {
-    llvm::errs << "Unhandled operator detected! \n";
+    llvm::errs() << "Unhandled operator detected! \n";
     return nullptr;
   }
 }
@@ -322,7 +322,7 @@ jobject SILWalaInstructionVisitor::visitApplySite(ApplySite Apply) {
   auto *Callee = Apply.getReferencedFunction();
 
   if (!Callee) {
-    llvm::errs << "Apply site's Callee is empty! \n";
+    llvm::errs() << "Apply site's Callee is empty! \n";
     return Instance->CAst->makeNode(CAstWrapper::EMPTY);
   }
 
