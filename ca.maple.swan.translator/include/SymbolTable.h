@@ -12,7 +12,8 @@
 //===---------------------------------------------------------------------===//
 ///
 /// This file defines the data structure (a wrapped unordered_map) used by
-/// the SILWalaInstructionVisitor as a utility.
+/// the SILWalaInstructionVisitor as a utility for keeping track of
+/// allocation sites (mapped to a name for the symbol).
 ///
 //===---------------------------------------------------------------------===//
 
@@ -25,7 +26,7 @@
 namespace swift_wala {
 
 /// This class is used as a data structure utility by the
-/// SILWalaInstructionVisitor. It keeps track of... TODO
+/// SILWalaInstructionVisitor to keep track of allocation sites.
 class SymbolTable {
 public:
   bool has(void* key);
