@@ -2934,11 +2934,11 @@ jobject SILWalaInstructionVisitor::visitCheckedCastAddrBranchInst(CheckedCastAdd
 jobject SILWalaInstructionVisitor::visitTryApplyInst(TryApplyInst *TAI) {
   auto Call = visitApplySite(ApplySite(TAI));
   jobject TryFunc = Instance->CAst->makeNode(CAstWrapper::TRY, Call);
-  jobject VarName = Instance->CAst->makeConstant("resulf_of_try");
+  jobject VarName = Instance->CAst->makeConstant("result_of_try");
   jobject Var = Instance->CAst->makeNode(CAstWrapper::VAR, VarName);
   jobject Node = Instance->CAst->makeNode(CAstWrapper::ASSIGN, Var, TryFunc);
   NodeMap.insert(std::make_pair(TAI, Node));
   SILBasicBlock *BB = TAI->getNormalBB();
-  SymbolTable.insert(BB->getArgument(0), "resulf_of_try"); // insert the node into the hash map
+  SymbolTable.insert(BB->getArgument(0), "result_of_try"); // insert the node into the hash map
   return Node;
 }
