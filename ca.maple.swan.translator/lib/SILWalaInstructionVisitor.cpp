@@ -110,6 +110,7 @@ void SILWalaInstructionVisitor::visitSILBasicBlock(SILBasicBlock *BB) {
 }
 
 void SILWalaInstructionVisitor::beforeVisit(SILInstruction *I) {
+  instrInfo = std::make_shared<InstrInfo>();
 
   updateInstrSourceInfo(I);
 
