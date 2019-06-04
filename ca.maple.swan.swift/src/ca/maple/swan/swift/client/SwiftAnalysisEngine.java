@@ -34,12 +34,14 @@ import java.util.jar.JarFile;
 public class SwiftAnalysisEngine<T>
         extends AbstractAnalysisEngine<InstanceKey, SwiftSSAPropagationCallGraphBuilder, T> {
 
-    private final SwiftTranslatorFactory translatorFactory = new SwiftToCAstTranslatorFactory();
-    private final SwiftLoaderFactory loaderFactory = new SwiftLoaderFactory(translatorFactory);
+    private final SwiftTranslatorFactory translatorFactory;
+    private final SwiftLoaderFactory loaderFactory;
     private final IRFactory<IMethod> irs = AstIRFactory.makeDefaultFactory();
 
     public SwiftAnalysisEngine() {
         super();
+        translatorFactory = new SwiftToCAstTranslatorFactory();
+        loaderFactory = new SwiftLoaderFactory(translatorFactory);
     }
 
     @Override
@@ -52,7 +54,7 @@ public class SwiftAnalysisEngine<T>
     public IClassHierarchy buildClassHierarchy() {
         try {
             return setClassHierarchy(
-                    SeqClassHierarchyFactory.make(getScope(), loaderFactory, SwiftLanguage.Swift));
+                    SeqClassHierarchyFactory.make(scope, loaderFactory, SwiftLanguage.Swift));
         } catch (ClassHierarchyException e) {
             Assertions.UNREACHABLE(e.toString());
             return null;
