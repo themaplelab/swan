@@ -44,13 +44,19 @@ void SILWalaInstructionVisitor::visitModule(SILModule *M) {
   // Visit every function under the SILModule. All SIL instructions lie within functions.
   // Any code written outside of an explicit function in Swift is put under the "main" function.
   for (auto &F: *M) {
+    // Clear current entity information since we make an entity for each function.
+    currentEntity = std::make_shared<CAstEntityInfo>();
     visitSILFunction(&F);
+    // currentEntity should now be populated so we pass it to the instance.
+    Instance->addCAstEntityInfo(currentEntity);
   }
 }
 
 void SILWalaInstructionVisitor::visitSILFunction(SILFunction *F) {
   functionInfo =
       std::make_shared<FunctionInfo>(F->getName(), Demangle::demangleSymbolAsString(F->getName()));
+
+  currentEntity->functionName = Demangle::demangleSymbolAsString(F->getName());
 
   BlockStmtList.clear();
 
@@ -65,10 +71,11 @@ void SILWalaInstructionVisitor::visitSILFunction(SILFunction *F) {
     visitSILBasicBlock(&BB);
   }
 
-  if (Print) {
-    for (auto &Stmt: BlockStmtList) {
+  for (auto &Stmt: BlockStmtList) {
+    if (Print) {
       Instance->print(Stmt);
     }
+    currentEntity->basicBlocks.push_back(Stmt);
   }
 }
 
@@ -103,9 +110,6 @@ void SILWalaInstructionVisitor::visitSILBasicBlock(SILBasicBlock *BB) {
     // Make a BLOCK_STMT node as the root of the NodeList tree.
     jobject BlockStmt = Instance->CAst->makeNode(CAstWrapper::BLOCK_STMT, Instance->CAst->makeArray(&NodeList));
     BlockStmtList.push_back(BlockStmt);
-
-    // Temporary, until we figure out a way to map the nodes/entities and pass it back to Java.
-    Instance->CAstNodes.push_back(BlockStmt);
   }
 }
 
@@ -379,6 +383,7 @@ jobject SILWalaInstructionVisitor::visitApplySite(ApplySite Apply) {
   }
 
   Node = Instance->CAst->makeNode(CAstWrapper::CALL, FuncExprNode, Instance->CAst->makeArray(&Params));
+  currentEntity->callNodes.push_back(Node);
   return Node;
 }
 
@@ -1345,7 +1350,7 @@ jobject SILWalaInstructionVisitor::visitBuiltinInst(BuiltinInst *BI) {
   }
 
   jobject Node = Instance->CAst->makeNode(CAstWrapper::CALL, FuncExprNode, Instance->CAst->makeArray(&params));
-
+  // We do not add built in functions to the currentEntity.
   return Node;
 }
 
@@ -2622,7 +2627,7 @@ jobject SILWalaInstructionVisitor::visitBranchInst(BranchInst *BI) {
 
   for (unsigned Idx = 0; Idx < BI->getNumArgs(); Idx++) {
     if (Print) {
-        llvm::outs() << "[ADDR]: " << Dest->getArgument(Idx) << "\n";
+        llvm::outs() << "\t [ADDR]: " << Dest->getArgument(Idx) << "\n";
     }
     jobject Node = findAndRemoveCAstNode(BI->getArg(Idx).getOpaqueValue());
     SymbolTable.insert(Dest->getArgument(Idx), ("argument" + std::to_string(Idx)));

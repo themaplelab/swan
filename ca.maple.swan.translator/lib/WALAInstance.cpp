@@ -19,7 +19,7 @@
 
 #include "WALAInstance.h"
 #include "SILWalaInstructionVisitor.h"
-#include "SwiftCHook.h"
+#include "SwiftCHook.hpp"
 #include "swift/AST/Module.h"
 #include "swift/Frontend/Frontend.h"
 #include "swift/FrontendTool/FrontendTool.h"
@@ -127,4 +127,8 @@ jobject WALAInstance::getCAstNodes() {
   }
 
   return result;
+}
+
+void WALAInstance::addCAstEntityInfo(std::shared_ptr<CAstEntityInfo> entity) {
+  castEntities.push_back(entity);
 }

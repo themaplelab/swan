@@ -3,3 +3,5 @@ func chooseStepFunction(backward: Bool) -> (Int) -> Int {
     func stepBackward(input: Int) -> Int { return input - 1 }
     return backward ? stepBackward : stepForward
 }
+
+var x = chooseStepFunction(backward: true);

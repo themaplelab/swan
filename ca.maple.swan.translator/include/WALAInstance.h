@@ -26,6 +26,7 @@
 #include <memory>
 #include <vector>
 
+#include "InfoStructures.hpp"
 #include "swift/SIL/SILModule.h"
 
 class CAstWrapper;
@@ -40,6 +41,7 @@ private:
   JNIEnv *JavaEnv; // JVM.
   jobject Translator; // Java translator object.
   std::string File; // Swift file to analyze.
+  std::vector<std::shared_ptr<CAstEntityInfo>> castEntities; // Entity info needed to make the CAstEntities on the Java side.
 
 public:
   CAstWrapper *CAst; // For handling JNI calls (WALA).
@@ -66,6 +68,9 @@ public:
   /// Callback method from the Observer hook. It visits the given SIL module
   /// and will put the result back into the instance.
   void analyzeSILModule(swift::SILModule &SM);
+
+  /// Add the translated entity to the instance to later pass to the Java side.
+  void addCAstEntityInfo(std::shared_ptr<CAstEntityInfo> entity);
 };
 
 } // end swift_wala namespace

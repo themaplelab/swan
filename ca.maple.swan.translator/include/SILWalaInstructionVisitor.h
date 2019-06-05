@@ -23,11 +23,13 @@
 #ifndef SWAN_SILWALAINSTRUCTIONVISITOR_H
 #define SWAN_SILWALAINSTRUCTIONVISITOR_H
 
+#include "InfoStructures.hpp"
 #include "SymbolTable.h"
 #include "WALAInstance.h"
 #include "swift/SIL/ApplySite.h"
 #include "swift/SIL/SILVisitor.h"
 #include <jni.h>
+#include <list>
 #include <unordered_map>
 
 using namespace swift;
@@ -35,41 +37,6 @@ using namespace swift;
 namespace swift_wala {
 
 class WALAInstance;
-
-/// ModuleInfo is used for storing source information into the CAst.
-struct ModuleInfo {
-    explicit ModuleInfo(llvm::StringRef sourcefile) : sourcefile(sourcefile) {};
-    llvm::StringRef sourcefile;
-  };
-
-/// FunctionInfo is used for storing source information into the CAst.
-struct FunctionInfo {
-  FunctionInfo(llvm::StringRef name, llvm::StringRef demangled) : name(name), demangled(demangled) {};
-  llvm::StringRef name;
-  llvm::StringRef demangled;
-};
-
-/// InstrInfo is used for storing source information into the CAst.
-struct InstrInfo {
-  unsigned num;
-  swift::SILPrintContext::ID id;
-  swift::SILInstructionKind instrKind;
-
-  swift::SILInstruction::MemoryBehavior memBehavior;
-  swift::SILInstruction::ReleasingBehavior relBehavior;
-
-  short srcType;
-  std::string Filename;
-  unsigned startLine;
-  unsigned startCol;
-  unsigned endLine;
-  unsigned endCol;
-
-  llvm::ArrayRef<swift::SILValue> ops;
-  ModuleInfo *modInfo;
-  FunctionInfo *funcInfo;
-};
-
 
 /// This class translates SIL to CAst by using Swift's SILInstructionVisitor which has callbacks, including
 /// ones for every type of SILInstruction. This makes translating simple.
@@ -97,6 +64,9 @@ private:
   WALAInstance *Instance;
   /// Decides whether to print the translation debug info to terminal at runtime.
   bool Print;
+
+  /// Current 'Cast Entity' being worked on.
+  std::shared_ptr<CAstEntityInfo> currentEntity;
 
   /// Update instrInfo with the given SILInstruction information.
   void updateInstrSourceInfo(SILInstruction *I);

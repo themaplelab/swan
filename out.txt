@@ -1,0 +1,584 @@
+
+> Task :ca.maple.swan.swift.test:run FAILED
+SILFunction: 0x7fe465c18400
+// main
+sil [ossa] @main : $@convention(c) (Int32, UnsafeMutablePointer<Optional<UnsafeMutablePointer<Int8>>>) -> Int32 {
+bb0(%0 : $Int32, %1 : $UnsafeMutablePointer<Optional<UnsafeMutablePointer<Int8>>>):
+  alloc_global @$s3out1xyS2icvp                   // id: %2 line:7:5
+  %3 = global_addr @$s3out1xyS2icvp : $*@callee_guaranteed (Int) -> Int // user: %10 line:7:5
+  %4 = integer_literal $Builtin.Int1, -1          // user: %7 line:7:38
+  %5 = metatype $@thin Bool.Type                  // user: %7 line:7:38
+  // function_ref Bool.init(_builtinBooleanLiteral:)
+  %6 = function_ref @$sSb22_builtinBooleanLiteralSbBi1__tcfC : $@convention(method) (Builtin.Int1, @thin Bool.Type) -> Bool // user: %7 line:7:38
+  %7 = apply %6(%4, %5) : $@convention(method) (Builtin.Int1, @thin Bool.Type) -> Bool // user: %9 line:7:38
+  // function_ref chooseStepFunction(backward:)
+  %8 = function_ref @$s3out18chooseStepFunction8backwardS2icSb_tF : $@convention(thin) (Bool) -> @owned @callee_guaranteed (Int) -> Int // user: %9 line:7:9
+  %9 = apply %8(%7) : $@convention(thin) (Bool) -> @owned @callee_guaranteed (Int) -> Int // user: %10 line:7:9
+  store %9 to [init] %3 : $*@callee_guaranteed (Int) -> Int // id: %10 line:7:9
+  %11 = integer_literal $Builtin.Int32, 0         // user: %12 top_level
+  %12 = struct $Int32 (%11 : $Builtin.Int32)      // user: %13 top_level
+  return %12 : $Int32                             // id: %13 top_level
+} // end sil function 'main'
+
+Basic Block: 0x7fe465c18510
+SILFunctions: 0x7fe465c18400
+WALA: class java.lang.Object
+	 [INSTR] #0, [OPNUM] bb0
+	 --> File: /Users/tiganov/Documents/CS/swift-source/swan/ca.maple.swan.swift.test/test.swift
+	 ++++ Start - Line 7:5
+	 ---- End - Line 7:5
+		 +++ [MEM-F]: May have side effects. 
+		 [REL]: Does not release memory. 
+
+<< alloc_global >>
+	 [VAR NAME]:$s3out1xyS2icvp
+	 [VAR TYPE]:$@callee_guaranteed (Int) -> Int
+WALA: class java.lang.Object
+	 [INSTR] #1, [OPNUM] bb0
+	 --> File: /Users/tiganov/Documents/CS/swift-source/swan/ca.maple.swan.swift.test/test.swift
+	 ++++ Start - Line 7:5
+	 ---- End - Line 7:5
+		 [REL]: Does not release memory. 
+
+<< global_addr >>
+	 [VAR NAME]:$s3out1xyS2icvp
+WALA: class java.lang.Object
+	 [INSTR] #2, [OPNUM] bb0
+	 --> File: /Users/tiganov/Documents/CS/swift-source/swan/ca.maple.swan.swift.test/test.swift
+	 ++++ Start - Line 7:38
+	 ---- End - Line 7:38
+		 [REL]: Does not release memory. 
+
+<< integer_literal >>
+WALA: class java.lang.Object
+	 [INSTR] #3, [OPNUM] bb0
+	 --> File: /Users/tiganov/Documents/CS/swift-source/swan/ca.maple.swan.swift.test/test.swift
+	 ++++ Start - Line 7:38
+	 ---- End - Line 7:38
+		 [REL]: Does not release memory. 
+
+<< metatype >>
+	 [METATYPE]: $@thin Bool.Type
+WALA: class java.lang.Object
+	 [INSTR] #4, [OPNUM] bb0
+	 --> File: /Users/tiganov/Documents/CS/swift-source/swan/ca.maple.swan.swift.test/test.swift
+	 ++++ Start - Line 7:38
+	 ---- End - Line 7:38
+		 [REL]: Does not release memory. 
+
+<< function_ref >>
+	 [FUNCTION]: Swift.Bool.init(_builtinBooleanLiteral: Builtin.Int1) -> Swift.Bool
+WALA: class java.lang.Object
+	 [INSTR] #5, [OPNUM] bb0
+	 --> File: /Users/tiganov/Documents/CS/swift-source/swan/ca.maple.swan.swift.test/test.swift
+	 ++++ Start - Line 7:38
+	 ---- End - Line 7:38
+		 +++ [MEM-F]: May have side effects. 
+		 [REL]: May release memory. 
+		 [OPER]:   // function_ref Bool.init(_builtinBooleanLiteral:)
+  %6 = function_ref @$sSb22_builtinBooleanLiteralSbBi1__tcfC : $@convention(method) (Builtin.Int1, @thin Bool.Type) -> Bool // user: %7
+		 [OPER]:   %4 = integer_literal $Builtin.Int1, -1          // user: %7
+		 [OPER]:   %5 = metatype $@thin Bool.Type                  // user: %7
+
+<< apply >>
+	 [CALLEE]: Swift.Bool.init(_builtinBooleanLiteral: Builtin.Int1) -> Swift.Bool
+	 [ARG] #0:   %4 = integer_literal $Builtin.Int1, -1          // user: %7
+	 [ADDR] #0: 0x7fe464daf260
+	 [ARG] #1:   %5 = metatype $@thin Bool.Type                  // user: %7
+	 [ADDR] #1: 0x7fe464daf370
+WALA: class java.lang.Object
+	 [INSTR] #6, [OPNUM] bb0
+	 --> File: /Users/tiganov/Documents/CS/swift-source/swan/ca.maple.swan.swift.test/test.swift
+	 ++++ Start - Line 7:9
+	 ---- End - Line 7:9
+		 [REL]: Does not release memory. 
+
+<< function_ref >>
+	 [FUNCTION]: out.chooseStepFunction(backward: Swift.Bool) -> (Swift.Int) -> Swift.Int
+WALA: class java.lang.Object
+	 [INSTR] #7, [OPNUM] bb0
+	 --> File: /Users/tiganov/Documents/CS/swift-source/swan/ca.maple.swan.swift.test/test.swift
+	 ++++ Start - Line 7:9
+	 ---- End - Line 7:42
+		 +++ [MEM-F]: May have side effects. 
+		 [REL]: May release memory. 
+		 [OPER]:   // function_ref chooseStepFunction(backward:)
+  %8 = function_ref @$s3out18chooseStepFunction8backwardS2icSb_tF : $@convention(thin) (Bool) -> @owned @callee_guaranteed (Int) -> Int // user: %9
+		 [OPER]:   %7 = apply %6(%4, %5) : $@convention(method) (Builtin.Int1, @thin Bool.Type) -> Bool // user: %9
+
+<< apply >>
+	 [CALLEE]: out.chooseStepFunction(backward: Swift.Bool) -> (Swift.Int) -> Swift.Int
+	 [ARG] #0:   %7 = apply %6(%4, %5) : $@convention(method) (Builtin.Int1, @thin Bool.Type) -> Bool // user: %9
+	 [ADDR] #0: 0x7fe464daf860
+WALA: class java.lang.Object
+	 [INSTR] #8, [OPNUM] bb0
+	 --> File: /Users/tiganov/Documents/CS/swift-source/swan/ca.maple.swan.swift.test/test.swift
+	 ++++ Start - Line 7:9
+	 ---- End - Line 7:42
+		 +++ [MEM-W]: May write to memory. 
+		 [REL]: Does not release memory. 
+		 [OPER]:   %9 = apply %8(%7) : $@convention(thin) (Bool) -> @owned @callee_guaranteed (Int) -> Int // user: %10
+		 [OPER]:   %3 = global_addr @$s3out1xyS2icvp : $*@callee_guaranteed (Int) -> Int // user: %10
+
+<< store >>
+	 [SRC ADDR]: 0x7fe464daf540
+	 [DEST ADDR]: 0x7fe464daf0e0
+WALA: class java.lang.Object
+	 [INSTR] #9, [OPNUM] bb0
+	 --> File: 
+	 **** No source information. 
+		 [REL]: Does not release memory. 
+
+<< integer_literal >>
+WALA: class java.lang.Object
+	 [INSTR] #10, [OPNUM] bb0
+	 --> File: 
+	 **** No source information. 
+		 [REL]: Does not release memory. 
+		 [OPER]:   %11 = integer_literal $Builtin.Int32, 0         // user: %12
+
+<< struct >>
+	 [STRUCT]: Int32
+	 [OPERAND]: 0 [VALUE]: 0x7fe466002da8
+WALA: class java.lang.Object
+	 [INSTR] #11, [OPNUM] bb0
+	 --> File: 
+	 **** No source information. 
+		 [REL]: Does not release memory. 
+		 [OPER]:   %12 = struct $Int32 (%11 : $Builtin.Int32)      // user: %13
+
+<< return >>
+	 [OPERAND]:   %12 = struct $Int32 (%11 : $Builtin.Int32)      // user: %13
+
+	 [ADDR]: 0x7fe464daf6e0
+WALA: class java.lang.Object
+SILFunction: 0x7fe465c186c8
+// chooseStepFunction(backward:)
+sil hidden [ossa] @$s3out18chooseStepFunction8backwardS2icSb_tF : $@convention(thin) (Bool) -> @owned @callee_guaranteed (Int) -> Int {
+// %0                                             // users: %2, %1
+bb0(%0 : $Bool):
+  debug_value %0 : $Bool, let, name "backward", argno 1 // id: %1 line:1:25:in_prologue
+  %2 = struct_extract %0 : $Bool, #Bool._value    // user: %3 line:4:12
+  cond_br %2, bb1, bb2                            // id: %3 line:4:12
+
+bb1:                                              // Preds: bb0
+  // function_ref stepBackward #1 (input:) in chooseStepFunction(backward:)
+  %4 = function_ref @$s3out18chooseStepFunction8backwardS2icSb_tF12stepBackwardL_5inputS2i_tF : $@convention(thin) (Int) -> Int // user: %5 line:4:23
+  %5 = thin_to_thick_function %4 : $@convention(thin) (Int) -> Int to $@callee_guaranteed (Int) -> Int // user: %6 line:4:23
+  br bb3(%5 : $@callee_guaranteed (Int) -> Int)   // id: %6 line:4:23
+
+bb2:                                              // Preds: bb0
+  // function_ref stepForward #1 (input:) in chooseStepFunction(backward:)
+  %7 = function_ref @$s3out18chooseStepFunction8backwardS2icSb_tF11stepForwardL_5inputS2i_tF : $@convention(thin) (Int) -> Int // user: %8 line:4:38
+  %8 = thin_to_thick_function %7 : $@convention(thin) (Int) -> Int to $@callee_guaranteed (Int) -> Int // user: %9 line:4:38
+  br bb3(%8 : $@callee_guaranteed (Int) -> Int)   // id: %9 line:4:38
+
+// %10                                            // user: %11
+bb3(%10 : @owned $@callee_guaranteed (Int) -> Int): // Preds: bb2 bb1
+  return %10 : $@callee_guaranteed (Int) -> Int   // id: %11 line:4:5:return
+} // end sil function '$s3out18chooseStepFunction8backwardS2icSb_tF'
+
+Basic Block: 0x7fe465c18800
+SILFunctions: 0x7fe465c186c8
+WALA: class java.lang.Object
+	 [INSTR] #0, [OPNUM] bb0
+	 --> File: /Users/tiganov/Documents/CS/swift-source/swan/ca.maple.swan.swift.test/test.swift
+	 ++++ Start - Line 1:25
+	 ---- End - Line 1:35
+		 [REL]: Does not release memory. 
+		 [OPER]: %0 = argument of bb0 : $Bool                      // users: %2, %1
+
+<< debug_value >>
+[ARGNO]: 1
+	 [ADDR OF OPERAND]:0x7fe465c18848
+WALA: class java.lang.Object
+	 [INSTR] #1, [OPNUM] bb0
+	 --> File: /Users/tiganov/Documents/CS/swift-source/swan/ca.maple.swan.swift.test/test.swift
+	 ++++ Start - Line 4:12
+	 ---- End - Line 4:12
+		 [REL]: Does not release memory. 
+		 [OPER]: %0 = argument of bb0 : $Bool                      // users: %2, %1
+
+<< struct_extract >>
+	 [OPERAND ADDR]: 0x7fe465c18848
+	 [STRUCT]: Bool
+	 [STRUCT FIELD]: _value
+WALA: class java.lang.Object
+	 [INSTR] #2, [OPNUM] bb0
+	 --> File: /Users/tiganov/Documents/CS/swift-source/swan/ca.maple.swan.swift.test/test.swift
+	 ++++ Start - Line 4:12
+	 ---- End - Line 4:12
+		 [REL]: Does not release memory. 
+		 [OPER]:   %2 = struct_extract %0 : $Bool, #Bool._value    // user: %3
+
+<< cond_br >>
+	 [COND]: 0x7fe464dae850
+	 [TBB]: 0x7fe465c19370
+	 [INST0]: 0x7fe464dae940
+	 [INST1]: 0x7fe464dae9a0
+	 [INST2]: 0x7fe464daed70
+	 [FBB]: 0x7fe465c19328
+	 [INST0]: 0x7fe464daee00
+	 [INST1]: 0x7fe464daee60
+	 [INST2]: 0x7fe464daeee0
+Basic Block: 0x7fe465c19370
+SILFunctions: 0x7fe465c186c8
+WALA: class java.lang.Object
+	 [INSTR] #0, [OPNUM] bb0
+	 --> File: /Users/tiganov/Documents/CS/swift-source/swan/ca.maple.swan.swift.test/test.swift
+	 ++++ Start - Line 4:23
+	 ---- End - Line 4:23
+		 [REL]: Does not release memory. 
+
+<< function_ref >>
+	 [FUNCTION]: stepBackward #1 (input: Swift.Int) -> Swift.Int in out.chooseStepFunction(backward: Swift.Bool) -> (Swift.Int) -> Swift.Int
+WALA: class java.lang.Object
+	 [INSTR] #1, [OPNUM] bb0
+	 --> File: /Users/tiganov/Documents/CS/swift-source/swan/ca.maple.swan.swift.test/test.swift
+	 ++++ Start - Line 4:23
+	 ---- End - Line 4:23
+		 [REL]: Does not release memory. 
+		 [OPER]:   // function_ref stepBackward #1 (input:) in chooseStepFunction(backward:)
+  %4 = function_ref @$s3out18chooseStepFunction8backwardS2icSb_tF12stepBackwardL_5inputS2i_tF : $@convention(thin) (Int) -> Int // user: %5
+
+<< thin_to_thick_function >>
+	 [CALLEE ADDR]: 0x7fe464dae980 [TO]: $@callee_guaranteed (Int) -> Int
+	 [CALLEE NODE]: 0x7fe4660031f8
+WALA: class java.lang.Object
+	 [INSTR] #2, [OPNUM] bb0
+	 --> File: /Users/tiganov/Documents/CS/swift-source/swan/ca.maple.swan.swift.test/test.swift
+	 ++++ Start - Line 4:23
+	 ---- End - Line 4:23
+		 [REL]: Does not release memory. 
+		 [OPER]:   %5 = thin_to_thick_function %4 : $@convention(thin) (Int) -> Int to $@callee_guaranteed (Int) -> Int // user: %6
+
+<< br >>
+	 [DESTBB]: 0x7fe465c192b8
+	 [INST0]: 0x7fe464daef70
+	 [ADDR]: 0x7fe465c19300
+Basic Block: 0x7fe465c19328
+SILFunctions: 0x7fe465c186c8
+WALA: class java.lang.Object
+	 [INSTR] #0, [OPNUM] bb0
+	 --> File: /Users/tiganov/Documents/CS/swift-source/swan/ca.maple.swan.swift.test/test.swift
+	 ++++ Start - Line 4:38
+	 ---- End - Line 4:38
+		 [REL]: Does not release memory. 
+
+<< function_ref >>
+	 [FUNCTION]: stepForward #1 (input: Swift.Int) -> Swift.Int in out.chooseStepFunction(backward: Swift.Bool) -> (Swift.Int) -> Swift.Int
+WALA: class java.lang.Object
+	 [INSTR] #1, [OPNUM] bb0
+	 --> File: /Users/tiganov/Documents/CS/swift-source/swan/ca.maple.swan.swift.test/test.swift
+	 ++++ Start - Line 4:38
+	 ---- End - Line 4:38
+		 [REL]: Does not release memory. 
+		 [OPER]:   // function_ref stepForward #1 (input:) in chooseStepFunction(backward:)
+  %7 = function_ref @$s3out18chooseStepFunction8backwardS2icSb_tF11stepForwardL_5inputS2i_tF : $@convention(thin) (Int) -> Int // user: %8
+
+<< thin_to_thick_function >>
+	 [CALLEE ADDR]: 0x7fe464daee40 [TO]: $@callee_guaranteed (Int) -> Int
+	 [CALLEE NODE]: 0x7fe464f1ccf8
+WALA: class java.lang.Object
+	 [INSTR] #2, [OPNUM] bb0
+	 --> File: /Users/tiganov/Documents/CS/swift-source/swan/ca.maple.swan.swift.test/test.swift
+	 ++++ Start - Line 4:38
+	 ---- End - Line 4:38
+		 [REL]: Does not release memory. 
+		 [OPER]:   %8 = thin_to_thick_function %7 : $@convention(thin) (Int) -> Int to $@callee_guaranteed (Int) -> Int // user: %9
+
+<< br >>
+	 [DESTBB]: 0x7fe465c192b8
+	 [INST0]: 0x7fe464daef70
+	 [ADDR]: 0x7fe465c19300
+Basic Block: 0x7fe465c192b8
+SILFunctions: 0x7fe465c186c8
+WALA: class java.lang.Object
+	 [INSTR] #0, [OPNUM] bb0
+	 --> File: /Users/tiganov/Documents/CS/swift-source/swan/ca.maple.swan.swift.test/test.swift
+	 ++++ Start - Line 4:5
+	 ---- End - Line 4:38
+		 [REL]: Does not release memory. 
+		 [OPER]: %10 = argument of bb3 : $@callee_guaranteed (Int) -> Int // user: %11
+
+<< return >>
+	 [OPERAND]: %10 = argument of bb3 : $@callee_guaranteed (Int) -> Int // user: %11
+
+	 [ADDR]: 0x7fe465c19300
+WALA: class java.lang.Object
+WALA: class java.lang.Object
+WALA: class java.lang.Object
+WALA: class java.lang.Object
+SILFunction: 0x7fe465c18988
+// stepForward #1 (input:) in chooseStepFunction(backward:)
+sil private [ossa] @$s3out18chooseStepFunction8backwardS2icSb_tF11stepForwardL_5inputS2i_tF : $@convention(thin) (Int) -> Int {
+// %0                                             // users: %8, %1
+bb0(%0 : $Int):
+  debug_value %0 : $Int, let, name "input", argno 1 // id: %1 line:2:22:in_prologue
+  %2 = metatype $@thin Int.Type                   // user: %8 line:2:56
+  %3 = integer_literal $Builtin.IntLiteral, 1     // user: %6 line:2:58
+  %4 = metatype $@thin Int.Type                   // user: %6 line:2:58
+  // function_ref Int.init(_builtinIntegerLiteral:)
+  %5 = function_ref @$sSi22_builtinIntegerLiteralSiBI_tcfC : $@convention(method) (Builtin.IntLiteral, @thin Int.Type) -> Int // user: %6 line:2:58
+  %6 = apply %5(%3, %4) : $@convention(method) (Builtin.IntLiteral, @thin Int.Type) -> Int // user: %8 line:2:58
+  // function_ref static Int.+ infix(_:_:)
+  %7 = function_ref @$sSi1poiyS2i_SitFZ : $@convention(method) (Int, Int, @thin Int.Type) -> Int // user: %8 line:2:56
+  %8 = apply %7(%0, %6, %2) : $@convention(method) (Int, Int, @thin Int.Type) -> Int // user: %9 line:2:56
+  return %8 : $Int                                // id: %9 line:2:43:return
+} // end sil function '$s3out18chooseStepFunction8backwardS2icSb_tF11stepForwardL_5inputS2i_tF'
+
+Basic Block: 0x7fe465c18ac0
+SILFunctions: 0x7fe465c18988
+WALA: class java.lang.Object
+	 [INSTR] #0, [OPNUM] bb0
+	 --> File: /Users/tiganov/Documents/CS/swift-source/swan/ca.maple.swan.swift.test/test.swift
+	 ++++ Start - Line 2:22
+	 ---- End - Line 2:29
+		 [REL]: Does not release memory. 
+		 [OPER]: %0 = argument of bb0 : $Int                       // users: %8, %1
+
+<< debug_value >>
+[ARGNO]: 1
+	 [ADDR OF OPERAND]:0x7fe465c18b08
+WALA: class java.lang.Object
+	 [INSTR] #1, [OPNUM] bb0
+	 --> File: /Users/tiganov/Documents/CS/swift-source/swan/ca.maple.swan.swift.test/test.swift
+	 ++++ Start - Line 2:56
+	 ---- End - Line 2:56
+		 [REL]: Does not release memory. 
+
+<< metatype >>
+	 [METATYPE]: $@thin Int.Type
+WALA: class java.lang.Object
+	 [INSTR] #2, [OPNUM] bb0
+	 --> File: /Users/tiganov/Documents/CS/swift-source/swan/ca.maple.swan.swift.test/test.swift
+	 ++++ Start - Line 2:58
+	 ---- End - Line 2:58
+		 [REL]: Does not release memory. 
+
+<< integer_literal >>
+WALA: class java.lang.Object
+	 [INSTR] #3, [OPNUM] bb0
+	 --> File: /Users/tiganov/Documents/CS/swift-source/swan/ca.maple.swan.swift.test/test.swift
+	 ++++ Start - Line 2:58
+	 ---- End - Line 2:58
+		 [REL]: Does not release memory. 
+
+<< metatype >>
+	 [METATYPE]: $@thin Int.Type
+WALA: class java.lang.Object
+	 [INSTR] #4, [OPNUM] bb0
+	 --> File: /Users/tiganov/Documents/CS/swift-source/swan/ca.maple.swan.swift.test/test.swift
+	 ++++ Start - Line 2:58
+	 ---- End - Line 2:58
+		 [REL]: Does not release memory. 
+
+<< function_ref >>
+	 [FUNCTION]: Swift.Int.init(_builtinIntegerLiteral: Builtin.IntLiteral) -> Swift.Int
+WALA: class java.lang.Object
+	 [INSTR] #5, [OPNUM] bb0
+	 --> File: /Users/tiganov/Documents/CS/swift-source/swan/ca.maple.swan.swift.test/test.swift
+	 ++++ Start - Line 2:58
+	 ---- End - Line 2:58
+		 +++ [MEM-F]: May have side effects. 
+		 [REL]: May release memory. 
+		 [OPER]:   // function_ref Int.init(_builtinIntegerLiteral:)
+  %5 = function_ref @$sSi22_builtinIntegerLiteralSiBI_tcfC : $@convention(method) (Builtin.IntLiteral, @thin Int.Type) -> Int // user: %6
+		 [OPER]:   %3 = integer_literal $Builtin.IntLiteral, 1     // user: %6
+		 [OPER]:   %4 = metatype $@thin Int.Type                   // user: %6
+
+<< apply >>
+	 [CALLEE]: Swift.Int.init(_builtinIntegerLiteral: Builtin.IntLiteral) -> Swift.Int
+	 [ARG] #0:   %3 = integer_literal $Builtin.IntLiteral, 1     // user: %6
+	 [ADDR] #0: 0x7fe464dac200
+	 [ARG] #1:   %4 = metatype $@thin Int.Type                   // user: %6
+	 [ADDR] #1: 0x7fe464dadd20
+WALA: class java.lang.Object
+	 [INSTR] #6, [OPNUM] bb0
+	 --> File: /Users/tiganov/Documents/CS/swift-source/swan/ca.maple.swan.swift.test/test.swift
+	 ++++ Start - Line 2:56
+	 ---- End - Line 2:56
+		 [REL]: Does not release memory. 
+
+<< function_ref >>
+	 [FUNCTION]: static Swift.Int.+ infix(Swift.Int, Swift.Int) -> Swift.Int
+WALA: class java.lang.Object
+	 [INSTR] #7, [OPNUM] bb0
+	 --> File: /Users/tiganov/Documents/CS/swift-source/swan/ca.maple.swan.swift.test/test.swift
+	 ++++ Start - Line 2:50
+	 ---- End - Line 2:58
+		 +++ [MEM-F]: May have side effects. 
+		 [REL]: May release memory. 
+		 [OPER]:   // function_ref static Int.+ infix(_:_:)
+  %7 = function_ref @$sSi1poiyS2i_SitFZ : $@convention(method) (Int, Int, @thin Int.Type) -> Int // user: %8
+		 [OPER]: %0 = argument of bb0 : $Int                       // users: %8, %1
+		 [OPER]:   %6 = apply %5(%3, %4) : $@convention(method) (Builtin.IntLiteral, @thin Int.Type) -> Int // user: %8
+		 [OPER]:   %2 = metatype $@thin Int.Type                   // user: %8
+
+<< apply >>
+	 [CALLEE]: static Swift.Int.+ infix(Swift.Int, Swift.Int) -> Swift.Int
+	 [ARG] #0: %0 = argument of bb0 : $Int                       // users: %8, %1
+	 [ADDR] #0: 0x7fe465c18b08
+	 [ARG] #1:   %6 = apply %5(%3, %4) : $@convention(method) (Builtin.IntLiteral, @thin Int.Type) -> Int // user: %8
+	 [ADDR] #1: 0x7fe464dae3f0
+	 [ARG] #2:   %2 = metatype $@thin Int.Type                   // user: %8
+	 [ADDR] #2: 0x7fe464dac0b0
+	 Built in operator
+WALA: class java.lang.Object
+	 [INSTR] #8, [OPNUM] bb0
+	 --> File: /Users/tiganov/Documents/CS/swift-source/swan/ca.maple.swan.swift.test/test.swift
+	 ++++ Start - Line 2:43
+	 ---- End - Line 2:58
+		 [REL]: Does not release memory. 
+		 [OPER]:   %8 = apply %7(%0, %6, %2) : $@convention(method) (Int, Int, @thin Int.Type) -> Int // user: %9
+
+<< return >>
+	 [OPERAND]:   %8 = apply %7(%0, %6, %2) : $@convention(method) (Int, Int, @thin Int.Type) -> Int // user: %9
+
+	 [ADDR]: 0x7fe464dae150
+WALA: class java.lang.Object
+SILFunction: 0x7fe465c18c60
+// Int.init(_builtinIntegerLiteral:)
+sil [transparent] [serialized] @$sSi22_builtinIntegerLiteralSiBI_tcfC : $@convention(method) (Builtin.IntLiteral, @thin Int.Type) -> Int
+
+SILFunction: 0x7fe465c18d88
+// static Int.+ infix(_:_:)
+sil [transparent] [serialized] @$sSi1poiyS2i_SitFZ : $@convention(method) (Int, Int, @thin Int.Type) -> Int
+
+SILFunction: 0x7fe465c18f18
+// stepBackward #1 (input:) in chooseStepFunction(backward:)
+sil private [ossa] @$s3out18chooseStepFunction8backwardS2icSb_tF12stepBackwardL_5inputS2i_tF : $@convention(thin) (Int) -> Int {
+// %0                                             // users: %8, %1
+bb0(%0 : $Int):
+  debug_value %0 : $Int, let, name "input", argno 1 // id: %1 line:3:23:in_prologue
+  %2 = metatype $@thin Int.Type                   // user: %8 line:3:57
+  %3 = integer_literal $Builtin.IntLiteral, 1     // user: %6 line:3:59
+  %4 = metatype $@thin Int.Type                   // user: %6 line:3:59
+  // function_ref Int.init(_builtinIntegerLiteral:)
+  %5 = function_ref @$sSi22_builtinIntegerLiteralSiBI_tcfC : $@convention(method) (Builtin.IntLiteral, @thin Int.Type) -> Int // user: %6 line:3:59
+  %6 = apply %5(%3, %4) : $@convention(method) (Builtin.IntLiteral, @thin Int.Type) -> Int // user: %8 line:3:59
+  // function_ref static Int.- infix(_:_:)
+  %7 = function_ref @$sSi1soiyS2i_SitFZ : $@convention(method) (Int, Int, @thin Int.Type) -> Int // user: %8 line:3:57
+  %8 = apply %7(%0, %6, %2) : $@convention(method) (Int, Int, @thin Int.Type) -> Int // user: %9 line:3:57
+  return %8 : $Int                                // id: %9 line:3:44:return
+} // end sil function '$s3out18chooseStepFunction8backwardS2icSb_tF12stepBackwardL_5inputS2i_tF'
+
+Basic Block: 0x7fe465c19050
+SILFunctions: 0x7fe465c18f18
+WALA: class java.lang.Object
+	 [INSTR] #0, [OPNUM] bb0
+	 --> File: /Users/tiganov/Documents/CS/swift-source/swan/ca.maple.swan.swift.test/test.swift
+	 ++++ Start - Line 3:23
+	 ---- End - Line 3:30
+		 [REL]: Does not release memory. 
+		 [OPER]: %0 = argument of bb0 : $Int                       // users: %8, %1
+
+<< debug_value >>
+[ARGNO]: 1
+	 [ADDR OF OPERAND]:0x7fe465c19098
+WALA: class java.lang.Object
+	 [INSTR] #1, [OPNUM] bb0
+	 --> File: /Users/tiganov/Documents/CS/swift-source/swan/ca.maple.swan.swift.test/test.swift
+	 ++++ Start - Line 3:57
+	 ---- End - Line 3:57
+		 [REL]: Does not release memory. 
+
+<< metatype >>
+	 [METATYPE]: $@thin Int.Type
+WALA: class java.lang.Object
+	 [INSTR] #2, [OPNUM] bb0
+	 --> File: /Users/tiganov/Documents/CS/swift-source/swan/ca.maple.swan.swift.test/test.swift
+	 ++++ Start - Line 3:59
+	 ---- End - Line 3:59
+		 [REL]: Does not release memory. 
+
+<< integer_literal >>
+WALA: class java.lang.Object
+	 [INSTR] #3, [OPNUM] bb0
+	 --> File: /Users/tiganov/Documents/CS/swift-source/swan/ca.maple.swan.swift.test/test.swift
+	 ++++ Start - Line 3:59
+	 ---- End - Line 3:59
+		 [REL]: Does not release memory. 
+
+<< metatype >>
+	 [METATYPE]: $@thin Int.Type
+WALA: class java.lang.Object
+	 [INSTR] #4, [OPNUM] bb0
+	 --> File: /Users/tiganov/Documents/CS/swift-source/swan/ca.maple.swan.swift.test/test.swift
+	 ++++ Start - Line 3:59
+	 ---- End - Line 3:59
+		 [REL]: Does not release memory. 
+
+<< function_ref >>
+	 [FUNCTION]: Swift.Int.init(_builtinIntegerLiteral: Builtin.IntLiteral) -> Swift.Int
+WALA: class java.lang.Object
+	 [INSTR] #5, [OPNUM] bb0
+	 --> File: /Users/tiganov/Documents/CS/swift-source/swan/ca.maple.swan.swift.test/test.swift
+	 ++++ Start - Line 3:59
+	 ---- End - Line 3:59
+		 +++ [MEM-F]: May have side effects. 
+		 [REL]: May release memory. 
+		 [OPER]:   // function_ref Int.init(_builtinIntegerLiteral:)
+  %5 = function_ref @$sSi22_builtinIntegerLiteralSiBI_tcfC : $@convention(method) (Builtin.IntLiteral, @thin Int.Type) -> Int // user: %6
+		 [OPER]:   %3 = integer_literal $Builtin.IntLiteral, 1     // user: %6
+		 [OPER]:   %4 = metatype $@thin Int.Type                   // user: %6
+
+<< apply >>
+	 [CALLEE]: Swift.Int.init(_builtinIntegerLiteral: Builtin.IntLiteral) -> Swift.Int
+	 [ARG] #0:   %3 = integer_literal $Builtin.IntLiteral, 1     // user: %6
+	 [ADDR] #0: 0x7fe464dae790
+	 [ARG] #1:   %4 = metatype $@thin Int.Type                   // user: %6
+	 [ADDR] #1: 0x7fe464daea80
+WALA: class java.lang.Object
+	 [INSTR] #6, [OPNUM] bb0
+	 --> File: /Users/tiganov/Documents/CS/swift-source/swan/ca.maple.swan.swift.test/test.swift
+	 ++++ Start - Line 3:57
+	 ---- End - Line 3:57
+		 [REL]: Does not release memory. 
+
+<< function_ref >>
+	 [FUNCTION]: static Swift.Int.- infix(Swift.Int, Swift.Int) -> Swift.Int
+WALA: class java.lang.Object
+	 [INSTR] #7, [OPNUM] bb0
+	 --> File: /Users/tiganov/Documents/CS/swift-source/swan/ca.maple.swan.swift.test/test.swift
+	 ++++ Start - Line 3:51
+	 ---- End - Line 3:59
+		 +++ [MEM-F]: May have side effects. 
+		 [REL]: May release memory. 
+		 [OPER]:   // function_ref static Int.- infix(_:_:)
+  %7 = function_ref @$sSi1soiyS2i_SitFZ : $@convention(method) (Int, Int, @thin Int.Type) -> Int // user: %8
+		 [OPER]: %0 = argument of bb0 : $Int                       // users: %8, %1
+		 [OPER]:   %6 = apply %5(%3, %4) : $@convention(method) (Builtin.IntLiteral, @thin Int.Type) -> Int // user: %8
+		 [OPER]:   %2 = metatype $@thin Int.Type                   // user: %8
+
+<< apply >>
+	 [CALLEE]: static Swift.Int.- infix(Swift.Int, Swift.Int) -> Swift.Int
+	 [ARG] #0: %0 = argument of bb0 : $Int                       // users: %8, %1
+	 [ADDR] #0: 0x7fe465c19098
+	 [ARG] #1:   %6 = apply %5(%3, %4) : $@convention(method) (Builtin.IntLiteral, @thin Int.Type) -> Int // user: %8
+	 [ADDR] #1: 0x7fe464daebd0
+	 [ARG] #2:   %2 = metatype $@thin Int.Type                   // user: %8
+	 [ADDR] #2: 0x7fe464dae730
+	 Built in operator
+WALA: class java.lang.Object
+	 [INSTR] #8, [OPNUM] bb0
+	 --> File: /Users/tiganov/Documents/CS/swift-source/swan/ca.maple.swan.swift.test/test.swift
+	 ++++ Start - Line 3:44
+	 ---- End - Line 3:59
+		 [REL]: Does not release memory. 
+		 [OPER]:   %8 = apply %7(%0, %6, %2) : $@convention(method) (Int, Int, @thin Int.Type) -> Int // user: %9
+
+<< return >>
+	 [OPERAND]:   %8 = apply %7(%0, %6, %2) : $@convention(method) (Int, Int, @thin Int.Type) -> Int // user: %9
+
+	 [ADDR]: 0x7fe464daecb0
+WALA: class java.lang.Object
+SILFunction: 0x7fe465c191a8
+// static Int.- infix(_:_:)
+sil [transparent] [serialized] @$sSi1soiyS2i_SitFZ : $@convention(method) (Int, Int, @thin Int.Type) -> Int
+
+SILFunction: 0x7fe465c36f10
+// Bool.init(_builtinBooleanLiteral:)
+sil [transparent] [serialized] @$sSb22_builtinBooleanLiteralSbBi1__tcfC : $@convention(method) (Builtin.Int1, @thin Bool.Type) -> Bool
+
+4 actionable tasks: 1 executed, 3 up-to-date
