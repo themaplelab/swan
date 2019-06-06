@@ -1,21 +1,27 @@
 package ca.maple.swan.swift.translator;
 
 import ca.maple.swan.swift.loader.SwiftLoader;
+import ca.maple.swan.swift.types.SwiftTypes;
 import com.ibm.wala.cast.ir.translator.AstTranslator;
 import com.ibm.wala.cast.loader.AstMethod;
 import com.ibm.wala.cast.tree.CAstEntity;
 import com.ibm.wala.cast.tree.CAstNode;
 import com.ibm.wala.cast.tree.CAstSourcePositionMap;
 import com.ibm.wala.cast.tree.CAstType;
+import com.ibm.wala.cast.tree.impl.CAstSymbolImpl;
 import com.ibm.wala.cfg.AbstractCFG;
 import com.ibm.wala.cfg.IBasicBlock;
 import com.ibm.wala.ssa.SSAInstruction;
 import com.ibm.wala.ssa.SymbolTable;
+import com.ibm.wala.types.TypeName;
 import com.ibm.wala.types.TypeReference;
+import com.ibm.wala.util.collections.HashMapFactory;
 
 import java.util.Map;
 
 public class SwiftCAstToIRTranslator extends AstTranslator {
+
+    private final Map<CAstType, TypeName> walaTypeNames = HashMapFactory.make();
 
     public SwiftCAstToIRTranslator(SwiftLoader loader) {
         super(loader);
@@ -23,7 +29,12 @@ public class SwiftCAstToIRTranslator extends AstTranslator {
 
     @Override
     protected boolean useDefaultInitValues() {
-        return false;
+        return true;
+    }
+
+    @Override
+    protected boolean hasImplicitGlobals() {
+        return true;
     }
 
     @Override
@@ -33,17 +44,25 @@ public class SwiftCAstToIRTranslator extends AstTranslator {
 
     @Override
     protected TypeReference defaultCatchType() {
-        return null;
+        return null; // TODO
     }
 
     @Override
     protected TypeReference makeType(CAstType cAstType) {
-        return null;
+        return TypeReference.findOrCreate(SwiftTypes.swiftLoader, TypeName.string2TypeName(cAstType.getName()));
     }
 
     @Override
     protected boolean defineType(CAstEntity cAstEntity, WalkContext walkContext) {
         return false;
+    }
+
+    private Scope scriptScope(Scope s) {
+        if (s.getEntity().getKind() == CAstEntity.SCRIPT_ENTITY) {
+            return s;
+        } else {
+            return scriptScope(s.getParent());
+        }
     }
 
     @Override

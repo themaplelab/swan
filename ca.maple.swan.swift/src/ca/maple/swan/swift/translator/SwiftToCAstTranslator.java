@@ -11,6 +11,9 @@
 
 package ca.maple.swan.swift.translator;
 
+import ca.maple.swan.swift.tree.CAstEntityInfo;
+import ca.maple.swan.swift.tree.ScriptEntity;
+import ca.maple.swan.swift.tree.ScriptEntityBuilder;
 import com.ibm.wala.cast.tree.CAstType;
 import java.io.File;
 import java.net.MalformedURLException;
@@ -59,123 +62,10 @@ public class SwiftToCAstTranslator extends NativeTranslatorToCAst {
 		assert false;
 	}
 
-	public native ArrayList<CAstNode> translateToCAstNodes();
+	public native ArrayList<CAstEntityInfo> translateToCAstNodes();
 
 	@Override
 	public CAstEntity translateToCAst() {
-		return new CAstEntity() {
-
-        @Override
-        public int getKind() {
-          return CAstEntity.FUNCTION_ENTITY;
-        }
-
-        @Override
-        public String getName() {
-          return sourceURL.getFile();
-        }
-
-        @Override
-        public String getSignature() {
-          return "()";
-        }
-
-        @Override
-        public String[] getArgumentNames() {
-           return new String[0];
-        }
-
-        @Override
-        public CAstNode[] getArgumentDefaults() {
-          return new CAstNode[0];
-        }
-
-        @Override
-        public int getArgumentCount() {
-          return 0;
-        }
-
-        @Override
-        public Map<CAstNode, Collection<CAstEntity>> getAllScopedEntities() {
-          return Collections.emptyMap();
-        }
-
-        @Override
-        public Iterator<CAstEntity> getScopedEntities(CAstNode construct) {
-          return Collections.emptyIterator();
-        }
-
-        private CAstNode ast;
-
-        @Override
-        public CAstNode getAST() {
-          if (ast == null) {
-            try {
-                ast = translateToCAstNodes().get(0);
-            } catch (IndexOutOfBoundsException e) {
-                System.err.println("Error: Empty ArrayList<CAstNode> returned!");
-                e.printStackTrace();
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-
-          }
-          return ast;
-        }
-
-        @Override
-        public CAstControlFlowMap getControlFlow() {
-          // TODO Auto-generated method stub
-          return null;
-        }
-
-        @Override
-        public CAstSourcePositionMap getSourceMap() {
-          // TODO Auto-generated method stub
-          return null;
-        }
-
-        @Override
-        public Position getPosition() {
-          // TODO Auto-generated method stub
-          return null;
-        }
-
-        @Override
-        public CAstNodeTypeMap getNodeTypeMap() {
-          // TODO Auto-generated method stub
-          return null;
-        }
-
-        @Override
-        public Collection<CAstQualifier> getQualifiers() {
-          // TODO Auto-generated method stub
-          return null;
-        }
-
-        @Override
-        public CAstType getType() {
-          // TODO Auto-generated method stub
-          return null;
-        }
-
-        @Override
-        public Collection<CAstAnnotation> getAnnotations() {
-          // TODO Auto-generated method stub
-          return null;
-        }
-
-        @Override
-        public Position getPosition(int arg) {
-          // TODO Auto-generated method stub
-          return null;
-        }
-
-        @Override
-        public Position getNamePosition() {
-          // TODO Auto-generated method stub
-          return null;
-        }
-      };
+		return ScriptEntityBuilder.buildScriptEntity(new File(getFile()), translateToCAstNodes());
 	}
 }

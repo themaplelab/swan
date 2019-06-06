@@ -73,6 +73,7 @@ struct CAstEntityInfo {
     llvm::outs() << "-*- CAST ENTITY INFO -*-" << "\n";
     llvm::outs() << "\tFUNCTION NAME: " << functionName << "\n";
     // If we print the blocks using CAstWrapper, they won't print where expected to the terminal.
+    // There is probably a way to solve this but is not necessary for now.
     llvm::outs() << "\t# OF BASIC BLOCKS: " << basicBlocks.size() << "\n";
     llvm::outs() << "\t# OF CALL NODES: " << callNodes.size() << "\n";
     llvm::outs() << "\t# OF CONTROL FLOW NODES: " << cfNodes.size() << "\n";
