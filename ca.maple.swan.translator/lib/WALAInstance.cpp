@@ -54,7 +54,7 @@ void WALAInstance::printNode(jobject Node) {
 }
 
 void WALAInstance::analyzeSILModule(SILModule &SM) {
-  SILWalaInstructionVisitor Visitor(this, true); // Bool is for enabling translator printing (for debug).
+  SILWalaInstructionVisitor Visitor(this, false); // Bool is for enabling translator printing (for debug).
   Visitor.visitModule(&SM);
 }
 
@@ -129,6 +129,6 @@ jobject WALAInstance::getCAstNodes() {
   return result;
 }
 
-void WALAInstance::addCAstEntityInfo(std::shared_ptr<CAstEntityInfo> entity) {
-  castEntities.push_back(entity);
+void WALAInstance::addCAstEntityInfo(std::unique_ptr<CAstEntityInfo> entity) {
+  castEntities.push_back(std::move(entity));
 }

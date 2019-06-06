@@ -41,7 +41,7 @@ private:
   JNIEnv *JavaEnv; // JVM.
   jobject Translator; // Java translator object.
   std::string File; // Swift file to analyze.
-  std::vector<std::shared_ptr<CAstEntityInfo>> castEntities; // Entity info needed to make the CAstEntities on the Java side.
+  std::vector<std::unique_ptr<CAstEntityInfo>> castEntities; // Entity info needed to make the CAstEntities on the Java side.
 
 public:
   CAstWrapper *CAst; // For handling JNI calls (WALA).
@@ -70,7 +70,7 @@ public:
   void analyzeSILModule(swift::SILModule &SM);
 
   /// Add the translated entity to the instance to later pass to the Java side.
-  void addCAstEntityInfo(std::shared_ptr<CAstEntityInfo> entity);
+  void addCAstEntityInfo(std::unique_ptr<CAstEntityInfo> entity);
 };
 
 } // end swift_wala namespace

@@ -68,6 +68,15 @@ struct CAstEntityInfo {
   std::vector<jobject> basicBlocks; // Every basic block belonging to this entity.
   std::vector<jobject> callNodes; // Instructions that call other functions (entities).
   std::vector<jobject> cfNodes; // Instructions that impact intra-function control flow.
+
+  void print() {
+    llvm::outs() << "-*- CAST ENTITY INFO -*-" << "\n";
+    llvm::outs() << "\tFUNCTION NAME: " << functionName << "\n";
+    // If we print the blocks using CAstWrapper, they won't print where expected to the terminal.
+    llvm::outs() << "\t# OF BASIC BLOCKS: " << basicBlocks.size() << "\n";
+    llvm::outs() << "\t# OF CALL NODES: " << callNodes.size() << "\n";
+    llvm::outs() << "\t# OF CONTROL FLOW NODES: " << cfNodes.size() << "\n";
+  }
 };
 
 } // end swift_wala namespace

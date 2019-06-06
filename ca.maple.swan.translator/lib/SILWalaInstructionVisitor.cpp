@@ -28,6 +28,7 @@
 #include "swift/SIL/SILModule.h"
 #include <fstream>
 #include <iostream>
+#include <memory>
 
 using namespace swift_wala;
 
@@ -45,10 +46,11 @@ void SILWalaInstructionVisitor::visitModule(SILModule *M) {
   // Any code written outside of an explicit function in Swift is put under the "main" function.
   for (auto &F: *M) {
     // Clear current entity information since we make an entity for each function.
-    currentEntity = std::make_shared<CAstEntityInfo>();
+    currentEntity = std::make_unique<CAstEntityInfo>();
     visitSILFunction(&F);
     // currentEntity should now be populated so we pass it to the instance.
-    Instance->addCAstEntityInfo(currentEntity);
+    currentEntity->print();
+    Instance->addCAstEntityInfo(std::move(currentEntity));
   }
 }
 
@@ -71,11 +73,10 @@ void SILWalaInstructionVisitor::visitSILFunction(SILFunction *F) {
     visitSILBasicBlock(&BB);
   }
 
-  for (auto &Stmt: BlockStmtList) {
-    if (Print) {
+  if (Print) {
+    for (auto &Stmt: BlockStmtList) {
       Instance->print(Stmt);
     }
-    currentEntity->basicBlocks.push_back(Stmt);
   }
 }
 
@@ -110,6 +111,7 @@ void SILWalaInstructionVisitor::visitSILBasicBlock(SILBasicBlock *BB) {
     // Make a BLOCK_STMT node as the root of the NodeList tree.
     jobject BlockStmt = Instance->CAst->makeNode(CAstWrapper::BLOCK_STMT, Instance->CAst->makeArray(&NodeList));
     BlockStmtList.push_back(BlockStmt);
+    currentEntity->basicBlocks.push_back(Stmt);
   }
 }
 
@@ -2588,8 +2590,12 @@ jobject SILWalaInstructionVisitor::visitYieldInst(YieldInst *YI) {
   jobject ResumeLabelNode = Instance->CAst->makeConstant(BasicBlockLabeller::label(ResumeBB).c_str());
   jobject ResumeGotoNode = Instance->CAst->makeNode(CAstWrapper::GOTO, ResumeLabelNode);
 
+  currentEntity->cfNodes.push_back(ResumeGotoNode);
+
   jobject UnwindLabelNode = Instance->CAst->makeConstant(BasicBlockLabeller::label(UnwindBB).c_str());
   jobject UnwindGotoNode = Instance->CAst->makeNode(CAstWrapper::GOTO, UnwindLabelNode);
+
+  currentEntity->cfNodes.push_back(UnwindGotoNode);
 
   jobject Node = Instance->CAst->makeNode(CAstWrapper::YIELD_STMT,
       Instance->CAst->makeArray(&yieldValues), ResumeGotoNode, UnwindGotoNode);
@@ -2637,6 +2643,7 @@ jobject SILWalaInstructionVisitor::visitBranchInst(BranchInst *BI) {
     jobject assign = Instance->CAst->makeNode(CAstWrapper::ASSIGN, var, Node);
     NodeList.push_back(assign);
   }
+  currentEntity->cfNodes.push_back(GotoNode);
   return GotoNode;
 }
 
@@ -2663,6 +2670,7 @@ jobject SILWalaInstructionVisitor::visitCondBranchInst(CondBranchInst *CBI) {
   if (TrueBasicBlock != nullptr) {
     jobject LabelNode = Instance->CAst->makeConstant(BasicBlockLabeller::label(TrueBasicBlock).c_str());
     TrueGotoNode = Instance->CAst->makeNode(CAstWrapper::GOTO, LabelNode);
+    currentEntity->cfNodes.push_back(TrueGotoNode);
   }
 
   // 3. False block
@@ -2680,6 +2688,7 @@ jobject SILWalaInstructionVisitor::visitCondBranchInst(CondBranchInst *CBI) {
   if (FalseBasicBlock != nullptr) {
     jobject LabelNode = Instance->CAst->makeConstant(BasicBlockLabeller::label(FalseBasicBlock).c_str());
     FalseGotoNode = Instance->CAst->makeNode(CAstWrapper::GOTO, LabelNode);
+    currentEntity->cfNodes.push_back(FalseGotoNode);
   }
 
   // 4. Assemble them into an if-stmt node
@@ -2734,6 +2743,7 @@ jobject SILWalaInstructionVisitor::visitSwitchValueInst(SwitchValueInst *SVI) {
 
     auto GotoCaseNode = Instance->CAst->makeNode(CAstWrapper::GOTO, LabelNode);
     Children.push_back(GotoCaseNode);
+    currentEntity->cfNodes.push_back(GotoCaseNode);
   }
 
   auto SwitchCasesNode = Instance->CAst->makeNode(CAstWrapper::BLOCK_STMT,  Instance->CAst->makeArray(&Children));
@@ -2747,7 +2757,7 @@ jobject SILWalaInstructionVisitor::visitSwitchValueInst(SwitchValueInst *SVI) {
 jobject SILWalaInstructionVisitor::visitSelectValueInst(SelectValueInst *SVI) {
 
   if (Print) {
-    llvm::outs() << "\t This should never be reached! Swift does not support this anymore" << "\n";
+    llvm::errs() << "\t This should never be reached! Swift does not support this anymore" << "\n";
   }
 
   return Instance->CAst->makeNode(CAstWrapper::EMPTY);
@@ -2790,6 +2800,7 @@ jobject SILWalaInstructionVisitor::visitSwitchEnumInst(SwitchEnumInst *SWI) {
 
     auto GotoCaseNode = Instance->CAst->makeNode(CAstWrapper::GOTO, LabelNode);
     Children.push_back(GotoCaseNode);
+    currentEntity->cfNodes.push_back(GotoCaseNode);
   }
 
   auto SwitchCasesNode = Instance->CAst->makeNode(CAstWrapper::BLOCK_STMT,  Instance->CAst->makeArray(&Children));
@@ -2825,6 +2836,8 @@ jobject SILWalaInstructionVisitor::visitSwitchEnumAddrInst(SwitchEnumAddrInst *S
 
       Children.push_back(ElementNameNode);
       Children.push_back(GotoNode);
+
+      currentEntity->cfNodes.push_back(GotoNode);
     }
 
     if (SEAI->hasDefault()) {
@@ -2842,6 +2855,8 @@ jobject SILWalaInstructionVisitor::visitSwitchEnumAddrInst(SwitchEnumAddrInst *S
 
       Children.push_back(ElementNameNode);
       Children.push_back(GotoNode);
+
+      currentEntity->cfNodes.push_back(GotoNode);
     }
 
     jobject EnumNode = Instance->CAst->makeNode(CAstWrapper::BLOCK_STMT,  Instance->CAst->makeArray(&Children));
@@ -2877,6 +2892,8 @@ jobject SILWalaInstructionVisitor::visitCheckedCastBranchInst(CheckedCastBranchI
   jobject SuccessBlockNode = Instance->CAst->makeConstant(BasicBlockLabeller::label(SuccessBlock).c_str());
   jobject SuccessGoToNode = Instance->CAst->makeNode(CAstWrapper::GOTO, SuccessBlockNode);
 
+  currentEntity->cfNodes.push_back(SuccessGoToNode);
+
   // 3. False block
   SILBasicBlock *FailureBlock = CI->getFailureBB();
 
@@ -2886,6 +2903,8 @@ jobject SILWalaInstructionVisitor::visitCheckedCastBranchInst(CheckedCastBranchI
 
   jobject FailureBlockNode = Instance->CAst->makeConstant(BasicBlockLabeller::label(FailureBlock).c_str());
   jobject FailureGoToNode = Instance->CAst->makeNode(CAstWrapper::GOTO, FailureBlockNode);
+
+  currentEntity->cfNodes.push_back(FailureGoToNode);
 
   // 4. Assemble them into an if-stmt node
   jobject StmtNode = Instance->CAst->makeNode(CAstWrapper::IF_STMT, ConversionNode, SuccessGoToNode, FailureGoToNode);
@@ -2919,6 +2938,8 @@ jobject SILWalaInstructionVisitor::visitCheckedCastAddrBranchInst(CheckedCastAdd
   jobject SuccessBlockNode = Instance->CAst->makeConstant(BasicBlockLabeller::label(SuccessBlock).c_str());
   jobject SuccessGoToNode = Instance->CAst->makeNode(CAstWrapper::GOTO, SuccessBlockNode);
 
+  currentEntity->cfNodes.push_back(SuccessGoToNode);
+
   // 3. False block
   SILBasicBlock *FailureBlock = CI->getFailureBB();
 
@@ -2928,6 +2949,8 @@ jobject SILWalaInstructionVisitor::visitCheckedCastAddrBranchInst(CheckedCastAdd
 
   jobject FailureBlockNode = Instance->CAst->makeConstant(BasicBlockLabeller::label(FailureBlock).c_str());
   jobject FailureGoToNode = Instance->CAst->makeNode(CAstWrapper::GOTO, FailureBlockNode);
+
+  currentEntity->cfNodes.push_back(FailureGoToNode);
 
   // 4. Assemble them into an if-stmt node
   jobject StmtNode = Instance->CAst->makeNode(CAstWrapper::IF_STMT, ConversionNode, SuccessGoToNode, FailureGoToNode);

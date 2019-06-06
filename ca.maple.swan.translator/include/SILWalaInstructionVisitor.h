@@ -66,7 +66,7 @@ private:
   bool Print;
 
   /// Current 'Cast Entity' being worked on.
-  std::shared_ptr<CAstEntityInfo> currentEntity;
+  std::unique_ptr<CAstEntityInfo> currentEntity;
 
   /// Update instrInfo with the given SILInstruction information.
   void updateInstrSourceInfo(SILInstruction *I);
