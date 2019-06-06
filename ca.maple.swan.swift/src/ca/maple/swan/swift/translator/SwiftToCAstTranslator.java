@@ -12,20 +12,11 @@
 package ca.maple.swan.swift.translator;
 
 import ca.maple.swan.swift.tree.CAstEntityInfo;
-import ca.maple.swan.swift.tree.ScriptEntity;
 import ca.maple.swan.swift.tree.ScriptEntityBuilder;
-import com.ibm.wala.cast.tree.CAstType;
 import java.io.File;
 import java.net.MalformedURLException;
 import java.net.URL;
 
-import java.util.*;
-import com.ibm.wala.cast.tree.CAstQualifier;
-import com.ibm.wala.cast.tree.CAstNodeTypeMap;
-import com.ibm.wala.cast.tree.CAstAnnotation;
-import com.ibm.wala.cast.tree.CAstControlFlowMap;
-import com.ibm.wala.cast.tree.CAstSourcePositionMap;
-import com.ibm.wala.cast.tree.CAstSourcePositionMap.Position;
 import com.ibm.wala.cast.ir.translator.NativeTranslatorToCAst;
 import com.ibm.wala.cast.tree.CAst;
 import com.ibm.wala.cast.tree.CAstEntity;
@@ -33,7 +24,6 @@ import com.ibm.wala.cast.tree.impl.CAstImpl;
 import com.ibm.wala.cast.tree.rewrite.CAstRewriter.CopyKey;
 import com.ibm.wala.cast.tree.rewrite.CAstRewriter.RewriteContext;
 import com.ibm.wala.cast.tree.rewrite.CAstRewriterFactory;
-import com.ibm.wala.cast.tree.CAstNode;
 import com.ibm.wala.classLoader.ModuleEntry;
 
 import java.util.ArrayList;
