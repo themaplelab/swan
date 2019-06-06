@@ -65,10 +65,15 @@ public class ScriptEntityBuilder {
         }
         assert(scriptEntity != null) : "Script Entity was not created most likely due to no \"main\" function found!";
 
-        // Add scoped entities for each entity.
         for (AbstractCodeEntity entity : functionEntities) {
+            // Add scoped entities.
             for (CAstNode caller : mappedInfo.get(entity.getName()).callNodes) {
-                entity.addScopedEntity(caller, findCallee(caller, functionEntities));
+                entity.addScopedEntity(caller, findCallee(caller, functionEntities)); // TODO: Handle null
+            }
+
+            // Add the CFG targets.
+            for (CAstNode cfNode : mappedInfo.get(entity.getName()).cfNodes) {
+                entity.setGotoTarget(cfNode, findTarget(cfNode, mappedInfo.get(entity.getName()).cfNodes)); // TODO: Handle null
             }
         }
 
@@ -80,6 +85,19 @@ public class ScriptEntityBuilder {
         for (CAstEntity entity : entities) {
             if (entity.getName() == node.getValue()) {
                 return entity;
+            }
+        }
+        return null;
+    }
+
+    private static CAstNode findTarget(CAstNode node, ArrayList<CAstNode> possibleTargets) {
+        for (CAstNode possibleTarget : possibleTargets) {
+            assert(possibleTarget.getKind() == CAstNode.BLOCK_STMT);
+            assert(possibleTarget.getChild(0).getKind() == CAstNode.LABEL_STMT);
+            if (node.getKind() == CAstNode.CALL) {
+                if (possibleTarget.getChild(0).getValue() == node.getValue()) {
+                    return possibleTarget;
+                }
             }
         }
         return null;
