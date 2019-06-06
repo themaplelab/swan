@@ -22,7 +22,7 @@ public class ScriptEntityBuilder {
         HashMap<String, CAstEntityInfo> mappedInfo = new HashMap<>();
 
         for (CAstEntityInfo info : CAstEntityInfos) {
-            if ((info.functionName == "main") && (scriptEntity == null)) {
+            if ((info.functionName.equals("main")) && (scriptEntity == null)) {
                 scriptEntity = new ScriptEntity(file, new CAstType.Function(){
 
                     @Override
@@ -59,7 +59,9 @@ public class ScriptEntityBuilder {
             } else {
                 AbstractCodeEntity functionEntity = new FunctionEntity(info.functionName);
                 functionEntities.add(functionEntity);
-                functionEntity.setAst(info.basicBlocks.get(0));
+                if (info.basicBlocks.size() > 0) {
+                    functionEntity.setAst(info.basicBlocks.get(0));
+                }
             }
             mappedInfo.put(info.functionName, info);
         }
@@ -73,17 +75,19 @@ public class ScriptEntityBuilder {
 
             // Add the CFG targets.
             for (CAstNode cfNode : mappedInfo.get(entity.getName()).cfNodes) {
+                entity.setGotoTarget(cfNode, cfNode); // Apparently this is necessary.
                 entity.setGotoTarget(cfNode, findTarget(cfNode, mappedInfo.get(entity.getName()).cfNodes)); // TODO: Handle null
             }
         }
-
+        scriptEntity.print();
         return scriptEntity;
     }
 
     private static CAstEntity findCallee(CAstNode node, ArrayList<AbstractCodeEntity> entities) {
         assert(node.getKind() == CAstNode.CALL);
+        assert(node.getChild(0).getKind() == CAstNode.FUNCTION_EXPR);
         for (CAstEntity entity : entities) {
-            if (entity.getName() == node.getValue()) {
+            if (entity.getName().equals((String)node.getChild(0).getChild(0).getValue())) {
                 return entity;
             }
         }
@@ -94,8 +98,8 @@ public class ScriptEntityBuilder {
         for (CAstNode possibleTarget : possibleTargets) {
             assert(possibleTarget.getKind() == CAstNode.BLOCK_STMT);
             assert(possibleTarget.getChild(0).getKind() == CAstNode.LABEL_STMT);
-            if (node.getKind() == CAstNode.CALL) {
-                if (possibleTarget.getChild(0).getValue() == node.getValue()) {
+            if (node.getKind() == CAstNode.GOTO) {
+                if (possibleTarget.getChild(0).getValue().equals(node.getChild(0).getValue())) {
                     return possibleTarget;
                 }
             }
