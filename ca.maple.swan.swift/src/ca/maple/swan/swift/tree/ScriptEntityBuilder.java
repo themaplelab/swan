@@ -78,8 +78,9 @@ public class ScriptEntityBuilder {
                 entity.setGotoTarget(cfNode, cfNode); // Apparently this is necessary.
                 entity.setGotoTarget(cfNode, findTarget(cfNode, mappedInfo.get(entity.getName()).cfNodes)); // TODO: Handle null
             }
+
+            EntityPrinter.print(entity);
         }
-        scriptEntity.print();
         return scriptEntity;
     }
 
@@ -87,7 +88,7 @@ public class ScriptEntityBuilder {
         assert(node.getKind() == CAstNode.CALL);
         assert(node.getChild(0).getKind() == CAstNode.FUNCTION_EXPR);
         for (CAstEntity entity : entities) {
-            if (entity.getName().equals((String)node.getChild(0).getChild(0).getValue())) {
+            if (entity.getName().equals(node.getChild(0).getChild(0).getValue())) {
                 return entity;
             }
         }
