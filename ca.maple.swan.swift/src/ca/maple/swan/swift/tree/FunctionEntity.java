@@ -35,7 +35,7 @@ public class FunctionEntity extends AbstractCodeEntity {
 
     @Override
     public String getName() {
-        return "function " + this.functionName;
+        return this.functionName;
     }
 
     @Override

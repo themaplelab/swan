@@ -33,7 +33,7 @@ public class EntityPrinter {
                 System.out.println("\t\t\t" + ((CAstNode) pair.getKey()).toString().replace("\n", " | "));
                 System.out.println("\t\t\t</CALL_NODE>");
                 for (CAstEntity scopedEntity : (Collection<CAstEntity>) (pair.getValue())) {
-                    System.out.println("\t\t\t<ENTITY>" + scopedEntity.getName().toString().replace("\n", " | ") + "</ENTITY>");
+                    System.out.println("\t\t\t<ENTITY>" + scopedEntity.getName().replace("\n", " | ") + "</ENTITY>");
                 }
                 System.out.println("\t\t</SCOPED_ENTITY>");
             }
