@@ -2,12 +2,9 @@ package ca.maple.swan.swift.tree;
 
 import com.ibm.wala.cast.ir.translator.AbstractCodeEntity;
 import com.ibm.wala.cast.tree.*;
-import com.ibm.wala.cast.util.CAstPrinter;
 
 import java.util.Collection;
-import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
 
 public class FunctionEntity extends AbstractCodeEntity {
 

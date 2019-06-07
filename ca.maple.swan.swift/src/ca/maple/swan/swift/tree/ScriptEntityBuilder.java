@@ -22,8 +22,9 @@ public class ScriptEntityBuilder {
         HashMap<String, CAstEntityInfo> mappedInfo = new HashMap<>();
 
         for (CAstEntityInfo info : CAstEntityInfos) {
+            AbstractCodeEntity newEntity;
             if ((info.functionName.equals("main")) && (scriptEntity == null)) {
-                scriptEntity = new ScriptEntity(file, new CAstType.Function(){
+                newEntity = new ScriptEntity(file, new CAstType.Function(){
 
                     @Override
                     public String getName() {
@@ -55,13 +56,13 @@ public class ScriptEntityBuilder {
                         return 0; // TODO
                     }
                 });
-                scriptEntity.setAst(info.basicBlocks.get(0));
+                scriptEntity = (ScriptEntity)newEntity;
             } else {
-                AbstractCodeEntity functionEntity = new FunctionEntity(info.functionName);
-                functionEntities.add(functionEntity);
-                if (info.basicBlocks.size() > 0) {
-                    functionEntity.setAst(info.basicBlocks.get(0));
-                }
+                newEntity = new FunctionEntity(info.functionName);
+            }
+            functionEntities.add(newEntity);
+            if (info.basicBlocks.size() > 0) {
+                newEntity.setAst(info.basicBlocks.get(0));
             }
             mappedInfo.put(info.functionName, info);
         }
@@ -78,7 +79,6 @@ public class ScriptEntityBuilder {
                 entity.setGotoTarget(cfNode, cfNode); // Apparently this is necessary.
                 entity.setGotoTarget(cfNode, findTarget(cfNode, mappedInfo.get(entity.getName()).cfNodes)); // TODO: Handle null
             }
-
             EntityPrinter.print(entity);
         }
         return scriptEntity;

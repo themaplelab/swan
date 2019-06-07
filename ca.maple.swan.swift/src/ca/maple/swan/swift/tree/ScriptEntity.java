@@ -2,12 +2,8 @@ package ca.maple.swan.swift.tree;
 
 import com.ibm.wala.cast.ir.translator.AbstractScriptEntity;
 import com.ibm.wala.cast.tree.*;
-import com.ibm.wala.cast.util.CAstPrinter;
 
 import java.io.File;
-import java.util.Collection;
-import java.util.Iterator;
-import java.util.Map;
 
 public class ScriptEntity extends AbstractScriptEntity {
 
@@ -43,4 +39,8 @@ public class ScriptEntity extends AbstractScriptEntity {
         return null;
     }
 
+    @Override
+    public String getName() {
+        return "main";
+    }
 }
