@@ -4,7 +4,7 @@ import com.ibm.wala.cast.ir.translator.AbstractCodeEntity;
 import com.ibm.wala.cast.tree.*;
 
 import java.util.Collection;
-import java.util.List;
+import java.util.Collections;
 
 public class FunctionEntity extends AbstractCodeEntity {
 
@@ -14,35 +14,15 @@ public class FunctionEntity extends AbstractCodeEntity {
 
     public FunctionEntity(String name) {
         // Temporary
-        super(new CAstType.Function() {
-            @Override
-            public CAstType getReturnType() {
-                return null;
-            }
-
-            @Override
-            public List<CAstType> getArgumentTypes() {
-                return null;
-            }
-
-            @Override
-            public Collection<CAstType> getExceptionTypes() {
-                return null;
-            }
-
-            @Override
-            public int getArgumentCount() {
-                return 0;
-            }
-
+        super(new CAstType() {
             @Override
             public String getName() {
-                return name;
+                return "Function";
             }
 
             @Override
             public Collection<CAstType> getSupertypes() {
-                return null;
+                return Collections.emptySet();
             }
         });
         this.functionName = name;
@@ -55,22 +35,22 @@ public class FunctionEntity extends AbstractCodeEntity {
 
     @Override
     public String getName() {
-        return this.functionName;
+        return "function " + this.functionName;
     }
 
     @Override
     public String[] getArgumentNames() {
-        return new String[0];
+        return new String[0]; // TODO?
     }
 
     @Override
     public CAstNode[] getArgumentDefaults() {
-        return new CAstNode[0];
+        return new CAstNode[0]; // TODO?
     }
 
     @Override
     public int getArgumentCount() {
-        return 0;
+        return 0; // TODO?
     }
 
     @Override
@@ -86,6 +66,11 @@ public class FunctionEntity extends AbstractCodeEntity {
     @Override
     public Collection<CAstQualifier> getQualifiers() {
         return null;
+    }
+
+    @Override
+    public String toString() {
+        return "function " + this.functionName;
     }
 
 }

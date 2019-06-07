@@ -3,13 +3,11 @@ package ca.maple.swan.swift.tree;
 import com.ibm.wala.cast.ir.translator.AbstractCodeEntity;
 import com.ibm.wala.cast.tree.CAstEntity;
 import com.ibm.wala.cast.tree.CAstNode;
-import com.ibm.wala.cast.tree.CAstType;
 
 import java.io.File;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.HashMap;
-import java.util.List;
+
 
 public class ScriptEntityBuilder {
 
@@ -24,38 +22,7 @@ public class ScriptEntityBuilder {
         for (CAstEntityInfo info : CAstEntityInfos) {
             AbstractCodeEntity newEntity;
             if ((info.functionName.equals("main")) && (scriptEntity == null)) {
-                newEntity = new ScriptEntity(file, new CAstType.Function(){
-
-                    @Override
-                    public String getName() {
-                        return null; // TODO
-                    }
-
-                    @Override
-                    public Collection<CAstType> getSupertypes() {
-                        return null; // TODO
-                    }
-
-                    @Override
-                    public CAstType getReturnType() {
-                        return null; // TODO
-                    }
-
-                    @Override
-                    public List<CAstType> getArgumentTypes() {
-                        return null; // TODO
-                    }
-
-                    @Override
-                    public Collection<CAstType> getExceptionTypes() {
-                        return null; // TODO
-                    }
-
-                    @Override
-                    public int getArgumentCount() {
-                        return 0; // TODO
-                    }
-                });
+                newEntity = new ScriptEntity(file);
                 scriptEntity = (ScriptEntity)newEntity;
             } else {
                 newEntity = new FunctionEntity(info.functionName);
