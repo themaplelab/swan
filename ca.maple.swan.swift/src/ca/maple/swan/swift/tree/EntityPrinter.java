@@ -4,6 +4,7 @@ import com.ibm.wala.cast.ir.translator.AbstractCodeEntity;
 import com.ibm.wala.cast.tree.CAstControlFlowMap;
 import com.ibm.wala.cast.tree.CAstEntity;
 import com.ibm.wala.cast.tree.CAstNode;
+import com.ibm.wala.cast.tree.impl.CAstControlFlowRecorder;
 import com.ibm.wala.cast.util.CAstPrinter;
 
 import java.util.Collection;
@@ -43,15 +44,21 @@ public class EntityPrinter {
 
         if (!entity.getControlFlow().getMappedNodes().isEmpty()) {
             System.out.println("\t<CONTROL_FLOW_EDGES>");
+            System.out.println("\t<NOTE>Reflexive edges are ommited!</NOTE>");
 
-            CAstControlFlowMap map = entity.getControlFlow();
+            CAstControlFlowRecorder map = entity.getControlFlow();
             for (CAstNode source : map.getMappedNodes()) {
-                System.out.println("\t\t<CONTROL_FLOW>");
-                for (Object label : map.getTargetLabels(source)) {
+                if (map.isMapped(source) && !(map.getTargetLabels(source).isEmpty())) {
+                    System.out.println("\t\t<CONTROL_FLOW>");
                     System.out.println("\t\t\t<FROM>" + source.toString().replace("\n", " | ") + "</FROM>");
-                    System.out.println("\t\t\t<TO>" + map.getTarget(source, label).toString().replace("\n", " | ") + "</TO>");
+                    for (Object label : map.getTargetLabels(source)) {
+                        CAstNode target = map.getTarget(source, label);
+                        if (target != source) {
+                            System.out.println("\t\t\t<TO>" + target.toString().replace("\n", " | ") + "</TO>");
+                        }
+                    }
+                    System.out.println("\t\t</CONTROL_FLOW>");
                 }
-                System.out.println("\t\t</CONTROL_FLOW>");
             }
             System.out.println("\t</CONTROL_FLOW_EDGES>");
         }

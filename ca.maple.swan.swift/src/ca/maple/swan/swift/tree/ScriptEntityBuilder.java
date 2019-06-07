@@ -77,7 +77,8 @@ public class ScriptEntityBuilder {
             // Add the CFG targets.
             for (CAstNode cfNode : mappedInfo.get(entity.getName()).cfNodes) {
                 entity.setGotoTarget(cfNode, cfNode); // Apparently this is necessary.
-                entity.setGotoTarget(cfNode, findTarget(cfNode, mappedInfo.get(entity.getName()).cfNodes)); // TODO: Handle null
+                CAstNode target = findTarget(cfNode, mappedInfo.get(entity.getName()).basicBlocks);
+                entity.setLabelledGotoTarget(cfNode, target, "GOTO"); // TODO: Handle null
             }
             EntityPrinter.print(entity);
         }
