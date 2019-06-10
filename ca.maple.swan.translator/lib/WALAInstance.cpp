@@ -63,7 +63,7 @@ void WALAInstance::analyze() {
   // otherwise the compiler will not do anything and complain no action was given.
   // Also, the callbacks required for the translation (hook) will not be triggered
   // without this option.
-  auto Argv = {"", "-emit-sil", "-oout.sil", "-Onone", File.c_str()};
+  auto Argv = {"", "-emit-silgen", "-oout.sil", "-Onone", File.c_str()};
   swift_wala::Observer observer(this); // create the hook
   SmallVector<const char *, 256> argv(Argv.begin(), Argv.end());
 
