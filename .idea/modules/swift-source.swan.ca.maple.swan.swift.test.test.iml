@@ -37,7 +37,7 @@
     <orderEntry type="module-library">
       <library>
         <CLASSES>
-          <root url="jar://$MODULE_DIR$/../../../WALA/com.ibm.wala.shrike/build/libs/com.ibm.wala.shrike-1.5.4-SNAPSHOT.jar!/" />
+          <root url="jar://$MODULE_DIR$/../../../WALA/com.ibm.wala.cast/build/libs/com.ibm.wala.cast-1.5.4-SNAPSHOT-javadoc.jar!/" />
         </CLASSES>
         <JAVADOC />
         <SOURCES />
@@ -64,7 +64,7 @@
     <orderEntry type="module-library">
       <library>
         <CLASSES>
-          <root url="jar://$MODULE_DIR$/../../../WALA/com.ibm.wala.cast/build/libs/com.ibm.wala.cast-1.5.4-SNAPSHOT-sources.jar!/" />
+          <root url="jar://$MODULE_DIR$/../../../WALA/com.ibm.wala.util/build/libs/com.ibm.wala.util-1.5.4-SNAPSHOT-sources.jar!/" />
         </CLASSES>
         <JAVADOC />
         <SOURCES />
@@ -73,7 +73,7 @@
     <orderEntry type="module-library">
       <library>
         <CLASSES>
-          <root url="jar://$MODULE_DIR$/../../../WALA/com.ibm.wala.cast/build/libs/com.ibm.wala.cast-1.5.4-SNAPSHOT-javadoc.jar!/" />
+          <root url="jar://$MODULE_DIR$/../../../WALA/com.ibm.wala.shrike/build/libs/com.ibm.wala.shrike-1.5.4-SNAPSHOT.jar!/" />
         </CLASSES>
         <JAVADOC />
         <SOURCES />
@@ -100,7 +100,7 @@
     <orderEntry type="module-library">
       <library>
         <CLASSES>
-          <root url="jar://$MODULE_DIR$/../../../WALA/com.ibm.wala.util/build/libs/com.ibm.wala.util-1.5.4-SNAPSHOT-sources.jar!/" />
+          <root url="jar://$MODULE_DIR$/../../../WALA/com.ibm.wala.cast/build/libs/com.ibm.wala.cast-1.5.4-SNAPSHOT-sources.jar!/" />
         </CLASSES>
         <JAVADOC />
         <SOURCES />
