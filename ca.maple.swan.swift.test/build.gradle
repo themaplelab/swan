@@ -23,3 +23,7 @@ dependencies {
     compile fileTree(dir: "${WALA_DIR}/com.ibm.wala.cast/build/libs", include: '*.jar')
     compile fileTree(dir: "${WALA_DIR}/com.ibm.wala.util/build/libs", include: '*.jar')
 }
+
+run {
+    enableAssertions = true
+}
