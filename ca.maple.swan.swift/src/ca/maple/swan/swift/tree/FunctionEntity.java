@@ -4,7 +4,6 @@ import com.ibm.wala.cast.ir.translator.AbstractCodeEntity;
 import com.ibm.wala.cast.tree.*;
 
 import java.util.Collection;
-import java.util.Collections;
 
 public class FunctionEntity extends AbstractCodeEntity {
 
@@ -14,17 +13,7 @@ public class FunctionEntity extends AbstractCodeEntity {
 
     public FunctionEntity(String name) {
         // Temporary
-        super(new CAstType() {
-            @Override
-            public String getName() {
-                return "CodeBody";
-            }
-
-            @Override
-            public Collection<CAstType> getSupertypes() {
-                return Collections.emptySet();
-            }
-        });
+        super(new SwiftFunction());
         this.functionName = name;
     }
 

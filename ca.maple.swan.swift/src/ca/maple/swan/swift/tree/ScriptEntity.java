@@ -6,6 +6,7 @@ import com.ibm.wala.cast.tree.*;
 import java.io.File;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.List;
 
 
 public class ScriptEntity extends AbstractScriptEntity {
@@ -29,18 +30,7 @@ public class ScriptEntity extends AbstractScriptEntity {
     //      CAstNode - Basic Block #0 of the SILFunction
 
     public ScriptEntity(File file) {
-        super(file, new CAstType(){
-
-            @Override
-            public String getName() {
-                return "Script";
-            }
-
-            @Override
-            public Collection<CAstType> getSupertypes() {
-                return Collections.emptySet();
-            }
-        });
+        super(file, new SwiftFunction());
     }
 
     @Override
