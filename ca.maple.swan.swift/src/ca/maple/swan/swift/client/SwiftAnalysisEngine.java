@@ -28,6 +28,7 @@ import com.ibm.wala.ssa.SymbolTable;
 import com.ibm.wala.ipa.cha.IClassHierarchy;
 import com.ibm.wala.ipa.cha.SeqClassHierarchyFactory;
 import com.ibm.wala.ssa.IRFactory;
+import com.ibm.wala.types.ClassLoaderReference;
 import com.ibm.wala.types.MethodReference;
 import com.ibm.wala.types.TypeName;
 import com.ibm.wala.types.TypeReference;
@@ -53,8 +54,16 @@ public class SwiftAnalysisEngine<T>
 
     @Override
     public void buildAnalysisScope() {
-        SourceModule[] files = moduleFiles.toArray(new SourceModule[0]);
-        scope = new CAstAnalysisScope(files, loaderFactory, Collections.singleton(SwiftLanguage.Swift));
+        scope = new AnalysisScope(Collections.singleton(SwiftLanguage.Swift)) {
+            {
+                loadersByName.put(SwiftTypes.swiftLoaderName, SwiftTypes.swiftLoader);
+                loadersByName.put(SYNTHETIC, new ClassLoaderReference(SYNTHETIC, SwiftLanguage.Swift.getName(), SwiftTypes.swiftLoader));
+            }
+        };
+
+        for(Module o : moduleFiles) {
+            scope.addToScope(SwiftTypes.swiftLoader, o);
+        }
     }
 
     @Override
@@ -80,7 +89,7 @@ public class SwiftAnalysisEngine<T>
 
     private String scriptName(Module m) {
         String path = ((ModuleEntry)m).getName();
-        return "Lscript " + (path.contains("/")? path.substring(path.lastIndexOf('/')+1): path);
+        return "LScript " + (path.contains("/")? path.substring(path.lastIndexOf('/')+1): path);
     }
 
     @Override
@@ -88,7 +97,7 @@ public class SwiftAnalysisEngine<T>
         Set<Entrypoint> result = HashSetFactory.make();
         for(Module m : moduleFiles) {
             IClass entry = cha.lookupClass(TypeReference.findOrCreate(SwiftTypes.swiftLoader, TypeName.findOrCreate(scriptName(m))));
-            assert entry != null: "bad root name " + scriptName(m) + ":\n" + cha;
+            assert (entry != null) : "bad root name " + scriptName(m) + ":\n" + cha;
             MethodReference er = MethodReference.findOrCreate(entry.getReference(), AstMethodReference.fnSelector);
             result.add(new DefaultEntrypoint(er, cha));
         }
