@@ -1,5 +1,6 @@
 package ca.maple.swan.swift.loader;
 
+import ca.maple.swan.swift.ir.SwiftInstructionFactory;
 import ca.maple.swan.swift.ir.SwiftLanguage;
 import ca.maple.swan.swift.translator.SwiftCAstToIRTranslator;
 import ca.maple.swan.swift.translator.SwiftTranslatorFactory;
@@ -66,6 +67,18 @@ public class SwiftLoader extends CAstAbstractModuleLoader {
 
     @Override
     public SSAInstructionFactory getInstructionFactory() {
-        return null;
+        return SwiftLanguage.Swift.instructionFactory();
     }
+
+    // TODO: What exactly are these for?
+
+    final CoreClass ROOT = new CoreClass(SwiftTypes.rootTypeName, null, this, null);
+
+    final CoreClass CODE_BODY = new CoreClass(SwiftTypes.CodeBody.getName(), SwiftTypes.rootTypeName, this, null);
+
+    final CoreClass STRING = new CoreClass(SwiftTypes.String.getName(), null, this, null);
+
+    final CoreClass BOOLEAN = new CoreClass(SwiftTypes.Boolean.getName(), null, this, null);
+
+    final CoreClass OBJECT = new CoreClass(SwiftTypes.Object.getName(), null, this, null);
 }

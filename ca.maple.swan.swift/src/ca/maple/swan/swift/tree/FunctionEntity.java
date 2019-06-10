@@ -17,7 +17,7 @@ public class FunctionEntity extends AbstractCodeEntity {
         super(new CAstType() {
             @Override
             public String getName() {
-                return "Function";
+                return "CodeBody";
             }
 
             @Override

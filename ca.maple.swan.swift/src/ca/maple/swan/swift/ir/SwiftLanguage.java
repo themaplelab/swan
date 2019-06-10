@@ -2,6 +2,7 @@ package ca.maple.swan.swift.ir;
 
 import ca.maple.swan.swift.types.SwiftTypes;
 import com.ibm.wala.analysis.typeInference.PrimitiveType;
+import com.ibm.wala.classLoader.JavaLanguage;
 import com.ibm.wala.classLoader.LanguageImpl;
 import com.ibm.wala.ipa.callgraph.AnalysisOptions;
 import com.ibm.wala.ipa.callgraph.CGNode;
@@ -26,7 +27,7 @@ import java.util.Collection;
 
 public class SwiftLanguage extends LanguageImpl {
 
-    public static SwiftLanguage Swift = new SwiftLanguage();
+    public static final SwiftLanguage Swift = new SwiftLanguage();
 
     @Override
     public Atom getName() {
@@ -115,7 +116,7 @@ public class SwiftLanguage extends LanguageImpl {
 
     @Override
     public SSAInstructionFactory instructionFactory() {
-        return null;
+        return new JavaLanguage.JavaInstructionFactory(); // TEMPORARY
     }
 
     @Override
