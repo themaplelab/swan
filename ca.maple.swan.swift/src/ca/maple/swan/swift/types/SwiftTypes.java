@@ -17,22 +17,21 @@ public class SwiftTypes extends AstTypeReference {
 
     public static final ClassLoaderReference swiftLoader = new ClassLoaderReference(swiftLoaderName, swiftName, null);
 
-    // TODO: These I put in here but I don't know exactly what is needed.
-
     public static final TypeReference Root = TypeReference.findOrCreate(swiftLoader, rootTypeName);
 
     public static final TypeReference CodeBody = TypeReference.findOrCreate(swiftLoader, functionTypeName);
 
-    public static final TypeReference Script = TypeReference.findOrCreate(swiftLoader, "LScript");
+    public static final TypeReference FunctionRef = TypeReference.findOrCreate(swiftLoader, "LFunctionRef");
 
-    public static final TypeReference Function = TypeReference.findOrCreate(swiftLoader, "LFunction");
-
-    public static final TypeReference Boolean = TypeReference.findOrCreate(swiftLoader, "LBoolean");
+    public static final TypeReference GlobalAddr = TypeReference.findOrCreate(swiftLoader, "LGlobalAddr");
 
     public static final TypeReference String = TypeReference.findOrCreate(swiftLoader, "LString");
 
-    public static final TypeReference Tuple = TypeReference.findOrCreate(swiftLoader, "LTuple");
+    public static final TypeReference Integer = TypeReference.findOrCreate(swiftLoader, "LInteger");
 
-    public static final TypeReference Object = TypeReference.findOrCreate(swiftLoader, "LObject");
+    public static final TypeReference Float = TypeReference.findOrCreate(swiftLoader, "LFloat");
+
+    // Boolean does not exist since it is represented as an Integer in translation
+
 
 }
