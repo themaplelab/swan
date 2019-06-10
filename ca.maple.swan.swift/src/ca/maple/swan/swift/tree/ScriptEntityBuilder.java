@@ -38,7 +38,7 @@ public class ScriptEntityBuilder {
         for (AbstractCodeEntity entity : functionEntities) {
             // Add scoped entities.
             for (CAstNode caller : mappedInfo.get(entity.getName()).callNodes) {
-                entity.addScopedEntity(caller, findCallee(caller, functionEntities)); // TODO: Handle null
+                entity.addScopedEntity(null, findCallee(caller, functionEntities)); // TODO: Handle null
             }
 
             // Add the CFG targets.
