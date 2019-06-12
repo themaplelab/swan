@@ -3,6 +3,7 @@ package ca.maple.swan.swift.tree;
 import com.ibm.wala.cast.ir.translator.AbstractCodeEntity;
 import com.ibm.wala.cast.tree.CAstEntity;
 import com.ibm.wala.cast.tree.CAstNode;
+import com.ibm.wala.cast.tree.impl.CAstImpl;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -55,8 +56,10 @@ public class ScriptEntityBuilder {
     private static CAstEntity findCallee(CAstNode node, ArrayList<AbstractCodeEntity> entities) {
         assert(node.getKind() == CAstNode.CALL);
         assert(node.getChild(0).getKind() == CAstNode.FUNCTION_EXPR);
+        CAstImpl Ast = new CAstImpl();
         for (CAstEntity entity : entities) {
             if (entity.getName().equals(node.getChild(0).getChild(0).getValue())) {
+                node.getChildren().set(0, Ast.makeConstant(entity));
                 return entity;
             }
         }
