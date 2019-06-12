@@ -62,6 +62,7 @@ public class TestSwiftCallGraphShape extends TestCallGraphShape {
         for(String n : name) {
             modules.add(getScript(n));
         }
+
         engine.setModuleFiles(modules);
         return engine;
     }

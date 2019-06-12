@@ -19,6 +19,8 @@ public class SwiftTypes extends AstTypeReference {
 
     public static final TypeReference Root = TypeReference.findOrCreate(swiftLoader, rootTypeName);
 
+    public static final TypeReference Script = TypeReference.findOrCreate(swiftLoader, "LScript");
+
     public static final TypeReference CodeBody = TypeReference.findOrCreate(swiftLoader, functionTypeName);
 
     public static final TypeReference FunctionRef = TypeReference.findOrCreate(swiftLoader, "LFunctionRef");

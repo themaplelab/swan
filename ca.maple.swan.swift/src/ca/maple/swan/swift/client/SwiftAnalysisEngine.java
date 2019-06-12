@@ -1,6 +1,7 @@
 package ca.maple.swan.swift.client;
 
 import ca.maple.swan.swift.ipa.callgraph.SwiftAnalysisOptions;
+import ca.maple.swan.swift.ipa.callgraph.SwiftEntryPoints;
 import ca.maple.swan.swift.ipa.callgraph.SwiftSSAPropagationCallGraphBuilder;
 import ca.maple.swan.swift.ir.SwiftLanguage;
 import ca.maple.swan.swift.loader.SwiftLoaderFactory;
@@ -12,6 +13,7 @@ import com.ibm.wala.cast.ipa.callgraph.AstContextInsensitiveSSAContextInterprete
 import com.ibm.wala.cast.ipa.callgraph.CAstAnalysisScope;
 import com.ibm.wala.cast.ir.ssa.AstIRFactory;
 import com.ibm.wala.cast.types.AstMethodReference;
+import com.ibm.wala.cast.util.Util;
 import com.ibm.wala.classLoader.*;
 import com.ibm.wala.classLoader.Module;
 import com.ibm.wala.client.AbstractAnalysisEngine;
@@ -22,22 +24,24 @@ import com.ibm.wala.ipa.callgraph.impl.ContextInsensitiveSelector;
 import com.ibm.wala.ipa.callgraph.impl.DefaultEntrypoint;
 import com.ibm.wala.ipa.callgraph.propagation.InstanceKey;
 import com.ibm.wala.ipa.callgraph.propagation.cfa.nCFAContextSelector;
-import com.ibm.wala.ipa.cha.ClassHierarchyException;
+import com.ibm.wala.ipa.cha.*;
 import com.ibm.wala.ssa.SSAOptions;
 import com.ibm.wala.ssa.SymbolTable;
-import com.ibm.wala.ipa.cha.IClassHierarchy;
-import com.ibm.wala.ipa.cha.SeqClassHierarchyFactory;
 import com.ibm.wala.ssa.IRFactory;
 import com.ibm.wala.types.ClassLoaderReference;
 import com.ibm.wala.types.MethodReference;
 import com.ibm.wala.types.TypeName;
 import com.ibm.wala.types.TypeReference;
+import com.ibm.wala.util.WalaException;
+import com.ibm.wala.util.WalaRuntimeException;
 import com.ibm.wala.util.collections.HashSetFactory;
 import com.ibm.wala.util.debug.Assertions;
 
 import java.util.Collections;
 import java.util.Set;
 import java.util.jar.JarFile;
+
+import static com.ibm.wala.ipa.callgraph.impl.Util.makeMainEntrypoints;
 
 public class SwiftAnalysisEngine<T>
         extends AbstractAnalysisEngine<InstanceKey, SwiftSSAPropagationCallGraphBuilder, T> {
@@ -54,26 +58,22 @@ public class SwiftAnalysisEngine<T>
 
     @Override
     public void buildAnalysisScope() {
-        scope = new AnalysisScope(Collections.singleton(SwiftLanguage.Swift)) {
-            {
-                loadersByName.put(SwiftTypes.swiftLoaderName, SwiftTypes.swiftLoader);
-                loadersByName.put(SYNTHETIC, new ClassLoaderReference(SYNTHETIC, SwiftLanguage.Swift.getName(), SwiftTypes.swiftLoader));
-            }
-        };
-
-        for(Module o : moduleFiles) {
-            scope.addToScope(SwiftTypes.swiftLoader, o);
-        }
+        SourceModule[] files = moduleFiles.toArray(new SourceModule[0]);
+        scope = new CAstAnalysisScope(files, loaderFactory, Collections.singleton(SwiftLanguage.Swift));
     }
 
     @Override
     public IClassHierarchy buildClassHierarchy() {
         try {
-            return setClassHierarchy(
-                    SeqClassHierarchyFactory.make(scope, loaderFactory, SwiftLanguage.Swift));
+            IClassHierarchy cha = ClassHierarchyFactory.make(scope, loaderFactory, SwiftLanguage.Swift);
+            Util.checkForFrontEndErrors(cha);
+            setClassHierarchy(cha);
+            return cha;
         } catch (ClassHierarchyException e) {
             Assertions.UNREACHABLE(e.toString());
             return null;
+        } catch (WalaException e) {
+            throw new WalaRuntimeException(e.getMessage());
         }
     }
 
@@ -94,6 +94,7 @@ public class SwiftAnalysisEngine<T>
 
     @Override
     protected Iterable<Entrypoint> makeDefaultEntrypoints(AnalysisScope scope, IClassHierarchy cha) {
+        /*
         Set<Entrypoint> result = HashSetFactory.make();
         for(Module m : moduleFiles) {
             IClass entry = cha.lookupClass(TypeReference.findOrCreate(SwiftTypes.swiftLoader, TypeName.findOrCreate(scriptName(m))));
@@ -102,6 +103,9 @@ public class SwiftAnalysisEngine<T>
             result.add(new DefaultEntrypoint(er, cha));
         }
         return result;
+         */
+        // return makeMainEntrypoints(scope, cha);
+        return new SwiftEntryPoints(cha, cha.getLoader(SwiftTypes.swiftLoader));
     }
 
     @Override

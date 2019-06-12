@@ -49,7 +49,7 @@ void SILWalaInstructionVisitor::visitModule(SILModule *M) {
     currentEntity = std::make_unique<CAstEntityInfo>();
     visitSILFunction(&F);
     // currentEntity should now be populated so we pass it to the instance.
-    currentEntity->print();
+    // DEBUG: currentEntity->print();
     Instance->addCAstEntityInfo(std::move(currentEntity));
   }
 }
@@ -111,7 +111,7 @@ void SILWalaInstructionVisitor::visitSILBasicBlock(SILBasicBlock *BB) {
     // Make a BLOCK_STMT node as the root of the NodeList tree.
     jobject BlockStmt = Instance->CAst->makeNode(CAstWrapper::BLOCK_STMT, Instance->CAst->makeArray(&NodeList));
     BlockStmtList.push_back(BlockStmt);
-    currentEntity->basicBlocks.push_back(Stmt);
+    currentEntity->basicBlocks.push_back(BlockStmt);
   }
 }
 

@@ -4,9 +4,6 @@ import com.ibm.wala.cast.ir.translator.AbstractScriptEntity;
 import com.ibm.wala.cast.tree.*;
 
 import java.io.File;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.List;
 
 
 public class ScriptEntity extends AbstractScriptEntity {
@@ -30,7 +27,7 @@ public class ScriptEntity extends AbstractScriptEntity {
     //      CAstNode - Basic Block #0 of the SILFunction
 
     public ScriptEntity(File file) {
-        super(file, new SwiftFunction());
+        super(file, new SwiftScriptType());
     }
 
     @Override

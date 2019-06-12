@@ -5,7 +5,7 @@ import com.ibm.wala.cast.tree.CAstType;
 import java.util.Collection;
 import java.util.List;
 
-public class SwiftFunction implements CAstType.Function {
+public class SwiftFunctionType implements CAstType.Function {
 
     // TODO: Implement these methods for ScriptEntity and FunctionEntity. Might have to add a constructor.
 

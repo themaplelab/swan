@@ -71,7 +71,9 @@ public class SwiftLoader extends CAstAbstractModuleLoader {
 
     final CoreClass ROOT = new CoreClass(SwiftTypes.rootTypeName, null, this, null);
 
-    final CoreClass CODE_BODY = new CoreClass(SwiftTypes.CodeBody.getName(), SwiftTypes.rootTypeName, this, null);
+    final CoreClass SCRIPT = new CoreClass(SwiftTypes.Script.getName(), SwiftTypes.rootTypeName, this, null);
+
+    final CoreClass CODE_BODY = new CoreClass(SwiftTypes.CodeBody.getName(), SwiftTypes.Script.getName(), this, null);
 
     final CoreClass FUNCTION_REF = new CoreClass(SwiftTypes.FunctionRef.getName(), null, this, null);
 

@@ -13,7 +13,7 @@ public class FunctionEntity extends AbstractCodeEntity {
 
     public FunctionEntity(String name) {
         // Temporary
-        super(new SwiftFunction());
+        super(new SwiftFunctionType());
         this.functionName = name;
     }
 

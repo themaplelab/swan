@@ -68,7 +68,7 @@ public class ScriptEntityBuilder {
             assert(possibleTarget.getKind() == CAstNode.BLOCK_STMT);
             assert(possibleTarget.getChild(0).getKind() == CAstNode.LABEL_STMT);
             if (node.getKind() == CAstNode.GOTO) {
-                if (possibleTarget.getChild(0).getValue().equals(node.getChild(0).getValue())) {
+                if (possibleTarget.getChild(0).getChild(0).getValue().equals(node.getChild(0).getValue())) {
                     return possibleTarget;
                 }
             }
