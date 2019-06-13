@@ -59,7 +59,7 @@ public class ScriptEntityBuilder {
         CAstImpl Ast = new CAstImpl();
         for (CAstEntity entity : entities) {
             if (entity.getName().equals(node.getChild(0).getChild(0).getValue())) {
-                node.getChildren().set(0, Ast.makeConstant(entity));
+                node.getChildren().set(0, Ast.makeNode(CAstNode.FUNCTION_EXPR, Ast.makeConstant(entity)));
                 return entity;
             }
         }
