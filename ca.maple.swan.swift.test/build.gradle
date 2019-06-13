@@ -1,0 +1,29 @@
+plugins {
+    id 'java'
+}
+
+group 'ca.maple.swan'
+
+sourceCompatibility = 1.8
+
+repositories {
+    mavenCentral()
+    jcenter()
+}
+
+sourceSets.main.java.srcDirs = ['src/']
+
+apply plugin: 'application'
+mainClassName = "ca.maple.swan.swift.test.TestSwiftCallGraphShape"
+
+dependencies {
+    implementation project(":ca.maple.swan.swift")
+    compile fileTree(dir: "${WALA_DIR}/com.ibm.wala.core/build/libs", include: '*.jar')
+    compile fileTree(dir: "${WALA_DIR}/com.ibm.wala.shrike/build/libs", include: '*.jar')
+    compile fileTree(dir: "${WALA_DIR}/com.ibm.wala.cast/build/libs", include: '*.jar')
+    compile fileTree(dir: "${WALA_DIR}/com.ibm.wala.util/build/libs", include: '*.jar')
+}
+
+run {
+    enableAssertions = true
+}

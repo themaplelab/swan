@@ -1,18 +1,24 @@
-/******************************************************************************
- * Copyright (c) 2019 Maple @ University of Alberta
- * All rights reserved. This program and the accompanying materials (unless
- * otherwise specified by a license inside of the accompanying material)
- * are made available under the terms of the Eclipse Public License v2.0
- * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v20.html
- *****************************************************************************/
-
- // SEE HEADER FILE FOR DOCUMENTATION
+//===--- SymbolTable.cpp - Symbol table data structure -------------------===//
+//
+// This source file is part of the SWAN open source project
+//
+// Copyright (c) 2019 Maple @ University of Alberta
+// All rights reserved. This program and the accompanying materials (unless
+// otherwise specified by a license inside of the accompanying material)
+// are made available under the terms of the Eclipse Public License v2.0
+// which accompanies this distribution, and is available at
+// http://www.eclipse.org/legal/epl-v20.html
+//
+//===---------------------------------------------------------------------===//
+///
+/// This file implements the data structure (a wrapped unordered_map) used by
+/// the SILWalaInstructionVisitor as a utility.
+///
+//===---------------------------------------------------------------------===//
 
 #include "SymbolTable.h"
-#include <cstdio>
-#include <iostream>
 #include <cassert>
+#include <cstdio>
 
 using namespace swift_wala;
 
@@ -26,7 +32,7 @@ std::string SymbolTable::get(void* key) {
 }
 
 void SymbolTable::insert(void* key, const std::string& name) {
-	char buff[80]; // enough for 64 bit address
+	char buff[80]; // Enough for 64 bit address.
 	std::sprintf(buff, "%p", key);
 	std::string varName = name + "_" + buff;
 	table.insert(std::make_pair(key, varName));

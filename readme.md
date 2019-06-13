@@ -13,8 +13,11 @@ The current translator only supports the most common SIL instructions, and we re
 ## Current work
 We are currently working on the following:
 - Implementing call graph construction
+- Translation to WALA IR from CAst
 
-Then we will implement points-to analysis and taint analysis with basic sources and sinks identified.
+Then we will implement points-to analysis and taint analysis with basic sources and sinks identified. We also plan to add full SIL instruction support.
+
+**Important Note:** The Java side (analysis side) is very much a mess right now and is not well documented since it is largely volatile at this point.
 
 ## Future plans
 - Lifecycle awareness for iOS and macOS applications (custom call graph building)
@@ -32,10 +35,12 @@ Supported Swift (incl. dependencies) and WALA releases on SWAN's `master` branch
 
 | OS | Swift Release Tag | WALA Release Tag* | 
 | -----------|:-------:|:-----:|
-| macOS Mojave | [master](https://github.com/apple/swift/tree/master) | [v1.5.3](https://github.com/wala/WALA/releases/tag/v1.5.3) |
-| Linux (Ubuntu 18.04) | [master](https://github.com/apple/swift/tree/master) | [v1.5.3](https://github.com/wala/WALA/releases/tag/v1.5.3) |
+| macOS Mojave | [master](https://github.com/apple/swift/tree/master)** | [v1.5.3](https://github.com/wala/WALA/releases/tag/v1.5.3) |
+| Linux (Ubuntu 18.04) | [master](https://github.com/apple/swift/tree/master)** | [v1.5.3](https://github.com/wala/WALA/releases/tag/v1.5.3) |
 
 **\*You must be using Java 8 in order to compile WALA.**
+
+**\*\*[swift-DEVELOPMENT-SNAPSHOT-2019-05-22-a](https://github.com/apple/swift/releases/tag/swift-DEVELOPMENT-SNAPSHOT-2019-05-22-a) included a critical change. Everything since that snapshot should work to our knowledge. Everything before will not work.**
 
 ### Switching to Java 8
 
@@ -123,7 +128,34 @@ export WALA_PATH_TO_SWIFT_BUILD={path/to/your/swift/build/dir}
 export PATH_TO_SWAN={path/to/swan/dir}
 ```
 
-You may run the analysis by running the following in the root directory.
+You may run the analysis by running the following in the **root** directory. However, the test files must lie inside of `ca.maple.swan.swift.test/`. You may use the files under `testFiles/` there.
 ```
 ./gradlew run --args="YOUR_SWIFT_FILE"
+```
+
+The resultant SIL will be outputted to `sil.out` in the root directory. Debug info, such as the CAst AST, will be printed to the terminal if enabled (no easy way to disable/enable this yet).
+
+`v1.1.0` supports translation from SIL to WALA CAst, and has an analysis engine and call graph shape tester. It isn't fully implemented yet since it is missing an implementation for `SwiftInstructionFactory` and `SwiftCAstToIRTranslator`. You should expect the following exception. 
+```
+Exception in thread "main" java.lang.AssertionError
+	at com.ibm.wala.cast.ir.translator.AstTranslator$1.makeSymbol(AstTranslator.java:1913)
+	at com.ibm.wala.cast.ir.translator.AstTranslator$AbstractScope.lookup(AstTranslator.java:1835)
+	at com.ibm.wala.cast.ir.translator.AstTranslator.leaveVarAssign(AstTranslator.java:4610)
+	at com.ibm.wala.cast.ir.translator.AstTranslator.leaveVarAssign(AstTranslator.java:109)
+	at com.ibm.wala.cast.tree.visit.CAstVisitor.visitAssignNodes(CAstVisitor.java:1065)
+	at com.ibm.wala.cast.tree.visit.CAstVisitor.visit(CAstVisitor.java:788)
+	at com.ibm.wala.cast.tree.visit.CAstVisitor.visitChildren(CAstVisitor.java:488)
+	at com.ibm.wala.cast.tree.visit.CAstVisitor.visitAllChildren(CAstVisitor.java:497)
+	at com.ibm.wala.cast.tree.visit.CAstVisitor.visit(CAstVisitor.java:561)
+	at com.ibm.wala.cast.tree.visit.CAstVisitor.visitEntities(CAstVisitor.java:240)
+	at com.ibm.wala.cast.ir.translator.AstTranslator.walkEntities(AstTranslator.java:5274)
+	at com.ibm.wala.cast.ir.translator.AstTranslator.translate(AstTranslator.java:5424)
+	at com.ibm.wala.cast.loader.CAstAbstractModuleLoader.init(CAstAbstractModuleLoader.java:117)
+	at com.ibm.wala.cast.loader.SingleClassLoaderFactory.getLoader(SingleClassLoaderFactory.java:39)
+	at com.ibm.wala.ipa.cha.ClassHierarchy.<init>(ClassHierarchy.java:270)
+	at com.ibm.wala.ipa.cha.ClassHierarchy.<init>(ClassHierarchy.java:193)
+	at com.ibm.wala.ipa.cha.ClassHierarchyFactory.make(ClassHierarchyFactory.java:124)
+	at ca.maple.swan.swift.client.SwiftAnalysisEngine.buildClassHierarchy(SwiftAnalysisEngine.java:68)
+	at com.ibm.wala.client.AbstractAnalysisEngine.defaultCallGraphBuilder(AbstractAnalysisEngine.java:279)
+	at ca.maple.swan.swift.test.TestSwiftCallGraphShape.main(TestSwiftCallGraphShape.java:100)
 ```

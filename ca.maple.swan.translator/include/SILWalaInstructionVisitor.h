@@ -1,80 +1,110 @@
-/******************************************************************************
- * Copyright (c) 2019 Maple @ University of Alberta
- * All rights reserved. This program and the accompanying materials (unless
- * otherwise specified by a license inside of the accompanying material)
- * are made available under the terms of the Eclipse Public License v2.0
- * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v20.html
- *****************************************************************************/
+//===--- SILWalaInstructionVisitor.h - SIL to CAst Translator ------------===//
+//
+// This source file is part of the SWAN open source project
+//
+// Copyright (c) 2019 Maple @ University of Alberta
+// All rights reserved. This program and the accompanying materials (unless
+// otherwise specified by a license inside of the accompanying material)
+// are made available under the terms of the Eclipse Public License v2.0
+// which accompanies this distribution, and is available at
+// http://www.eclipse.org/legal/epl-v20.html
+//
+//===---------------------------------------------------------------------===//
+///
+/// This file defines the SILWalaInstructionVisitor class, which inherits
+/// the SILInstructionVisitor template class (part of the Swift compiler).
+/// The SILInstructionVisitor translates a given SIL (Swift Intermediate
+/// Language) Module to CAst (WALA IR).
+///
+//===---------------------------------------------------------------------===//
 
- //----------------------------------------------------------------------------/
- /// DESCRIPTION
- /// Main code for translating SIL to CAst.
- ///
- /// TODO: Add technical description and code documentation.
- //----------------------------------------------------------------------------/
+// TODO: Class/method Doxygen comments and thorough functionality comments.
 
-#pragma once
+#ifndef SWAN_SILWALAINSTRUCTIONVISITOR_H
+#define SWAN_SILWALAINSTRUCTIONVISITOR_H
 
-#include "swift/SIL/SILVisitor.h"
-#include "swift/SIL/ApplySite.h"
-#include "WALAInstance.h"
+#include "InfoStructures.hpp"
 #include "SymbolTable.h"
-
+#include "WALAInstance.h"
+#include "swift/SIL/ApplySite.h"
+#include "swift/SIL/SILVisitor.h"
 #include <jni.h>
+#include <list>
 #include <unordered_map>
 
 using namespace swift;
-
 
 namespace swift_wala {
 
 class WALAInstance;
 
-struct ModuleInfo {
-    explicit ModuleInfo(llvm::StringRef sourcefile) : sourcefile(sourcefile) {};
-    llvm::StringRef sourcefile;
-  };
-
-struct FunctionInfo {
-  FunctionInfo(llvm::StringRef name, llvm::StringRef demangled) : name(name), demangled(demangled) {};
-  llvm::StringRef name;
-  llvm::StringRef demangled;
-};
-
-struct InstrInfo {
-  unsigned num;
-  swift::SILPrintContext::ID id;
-  swift::SILInstructionKind instrKind;
-
-  swift::SILInstruction::MemoryBehavior memBehavior;
-  swift::SILInstruction::ReleasingBehavior relBehavior;
-
-  short srcType;
-  std::string Filename;
-  unsigned startLine;
-  unsigned startCol;
-  unsigned endLine;
-  unsigned endCol;
-
-  llvm::ArrayRef<swift::SILValue> ops;
-  ModuleInfo *modInfo;
-  FunctionInfo *funcInfo;
-};
-
+/// This class translates SIL to CAst by using Swift's SILInstructionVisitor which has callbacks, including
+/// ones for every type of SILInstruction. This makes translating simple.
 class SILWalaInstructionVisitor : public SILInstructionVisitor<SILWalaInstructionVisitor, jobject> {
 public:
   SILWalaInstructionVisitor(WALAInstance *Instance, bool Print) : Instance(Instance), Print(Print) {}
 
+  /// Visit the SILModule of the swift file that holds the SILFunctions.
   void visitModule(SILModule *M);
+  /// Visit the SILFunction that holds the SILBasicBlocks.
   void visitSILFunction(SILFunction *F);
+  /// Visit the SILBasicBlock that holds the SILInstructions.
   void visitSILBasicBlock(SILBasicBlock *BB);
+  /// Before visiting the SILInstruction, this callback is fired and here we set up the source info of the instruction.
   void beforeVisit(SILInstruction *I);
 
+  /// If we do not have a callback handler implemented for a SILInstruction, it will fire this method.
   jobject visitSILInstruction(SILInstruction *I) {
     llvm::outs() << "Not handled instruction: \n" << *I << "\n";
     return nullptr;
   }
+
+private:
+  /// The WALAInstance that holds the resultant CAst.
+  WALAInstance *Instance;
+  /// Decides whether to print the translation debug info to terminal at runtime.
+  bool Print;
+
+  /// Current 'Cast Entity' being worked on.
+  std::unique_ptr<CAstEntityInfo> currentEntity;
+
+  /// Update instrInfo with the given SILInstruction information.
+  void updateInstrSourceInfo(SILInstruction *I);
+  /// Called by beforeVisit. Prints debug info about the instrInfo (in our case). It can also handle any other
+  /// housekeeping that needs to be done at every instruction if needed.
+  void perInstruction();
+
+  /// Import call that all instructions directly pertaining to function calls lead to. It will create a
+  /// CAstNode that will be mapped to the function site (CAstEntity).
+  jobject visitApplySite(ApplySite Apply);
+  /// TODO: What is this used for exactly?
+  jobject findAndRemoveCAstNode(void *Key);
+  /// Returns CAstNode with appropriate operator kind.
+  jobject getOperatorCAstType(Identifier Name);
+
+  unsigned int InstructionCount = 0;
+
+  /// Source information about the SILInstruction.
+  std::shared_ptr<InstrInfo> instrInfo;
+  /// Source information about the SILFunction.
+  std::shared_ptr<FunctionInfo> functionInfo;
+  /// Source information about the SILModule.
+  std::shared_ptr<ModuleInfo> moduleInfo;
+
+  /// TODO: Why is this needed?
+  SymbolTable SymbolTable;
+
+  /// Map of Instr* (various SIL instruction types) to the CAstNode representing it.
+  /// Scoped to the current SILBasicBlock.
+  std::unordered_map<void *, jobject> NodeMap;
+  /// List of CAstNodes in the current SILBasicBlock.
+  std::list<jobject> NodeList;
+  /// List of BLOCK_STMT CAstNodes that hold the AST for the SILBasicBlock.
+  /// Scoped to the current SILFunction.
+  std::list<jobject> BlockStmtList;
+
+public:
+  // SIL INSTRUCTION VISITOR CALLBACKS (TRANSLATE EACH INSTRUCTION TO CAST NODE)
 
   /*******************************************************************************/
   /*                      Allocation and Deallocation                            */
@@ -177,6 +207,7 @@ public:
   jobject visitTupleInst(TupleInst *TI);
   jobject visitTupleExtractInst(TupleExtractInst *TEI);
   jobject visitTupleElementAddrInst(TupleElementAddrInst *TEAI);
+  jobject visitDestructureTupleInst(DestructureTupleInst *DTI);
   jobject visitStructInst(StructInst *SI);
   jobject visitStructExtractInst(StructExtractInst *SEI);
   jobject visitStructElementAddrInst(StructElementAddrInst *SEAI);
@@ -272,27 +303,8 @@ public:
   jobject visitCheckedCastAddrBranchInst(CheckedCastAddrBranchInst *CI);
   jobject visitTryApplyInst(TryApplyInst *TAI);
 
-private:
-  WALAInstance *Instance;
-  bool Print;
-
-  void updateInstrSourceInfo(SILInstruction *I);
-  void perInstruction();
-  jobject visitApplySite(ApplySite Apply);
-  jobject findAndRemoveCAstNode(void *Key);
-  jobject getOperatorCAstType(Identifier Name);
-
-  unsigned int InstructionCount = 0;
-
-  std::shared_ptr<InstrInfo> instrInfo;
-  std::shared_ptr<FunctionInfo> functionInfo;
-  std::shared_ptr<ModuleInfo> moduleInfo;
-
-  SymbolTable SymbolTable;
-  std::unordered_map<void *, jobject> NodeMap;
-  std::list<jobject> NodeList;
-  std::list<jobject> BlockStmtList;
-
 };
 
 } // end swift_wala namespace
+
+#endif // SWAN_SILWALAINSTRUCTIONVISITOR_H

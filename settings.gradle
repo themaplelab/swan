@@ -1,4 +1,5 @@
 rootProject.name = 'swan'
 
 include 'ca.maple.swan.translator'
-include 'ca.maple.swan.analysis'
+include 'ca.maple.swan.swift'
+include 'ca.maple.swan.swift.test'
