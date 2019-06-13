@@ -17,6 +17,8 @@ We are currently working on the following:
 
 Then we will implement points-to analysis and taint analysis with basic sources and sinks identified. We also plan to add full SIL instruction support.
 
+**Important Note:** The Java side (analysis side) is very much a mess right now and is not well documented since it is largely volatile at this point.
+
 ## Future plans
 - Lifecycle awareness for iOS and macOS applications (custom call graph building)
 - Sources and sinks for iOS and macOS libraries
