@@ -8,6 +8,7 @@ import com.ibm.wala.cast.tree.CAstEntity;
 import com.ibm.wala.cast.tree.CAstNode;
 import com.ibm.wala.cast.tree.CAstSourcePositionMap;
 import com.ibm.wala.cast.tree.CAstType;
+import com.ibm.wala.cast.tree.impl.CAstSymbolImpl;
 import com.ibm.wala.cfg.AbstractCFG;
 import com.ibm.wala.cfg.IBasicBlock;
 import com.ibm.wala.ssa.SSAInstruction;
@@ -52,16 +53,8 @@ public class SwiftCAstToIRTranslator extends AstTranslator {
     }
 
     @Override
-    protected boolean defineType(CAstEntity cAstEntity, WalkContext walkContext) {
+    protected boolean defineType(CAstEntity type, WalkContext wc) {
         return false;
-    }
-
-    private Scope scriptScope(Scope s) {
-        if (s.getEntity().getKind() == CAstEntity.SCRIPT_ENTITY) {
-            return s;
-        } else {
-            return scriptScope(s.getParent());
-        }
     }
 
     @Override
