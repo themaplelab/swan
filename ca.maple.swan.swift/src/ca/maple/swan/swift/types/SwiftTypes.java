@@ -1,9 +1,15 @@
 package ca.maple.swan.swift.types;
 
+import com.ibm.wala.cast.tree.CAstType;
 import com.ibm.wala.cast.types.AstTypeReference;
 import com.ibm.wala.types.ClassLoaderReference;
 import com.ibm.wala.types.TypeReference;
+import com.ibm.wala.util.collections.HashMapFactory;
 import com.ibm.wala.util.strings.Atom;
+
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.Map;
 
 public class SwiftTypes extends AstTypeReference {
 
@@ -35,5 +41,26 @@ public class SwiftTypes extends AstTypeReference {
 
     // Boolean does not exist since it is represented as an Integer in translation
 
+    private static Map<String, CAstType> CAstTypes = new HashMap<String, CAstType>();
 
+    public static CAstType findOrCreateCAstType(String typeName) {
+        if (CAstTypes.containsKey(typeName)) {
+            return CAstTypes.get(typeName);
+        } else {
+            CAstType newType = new CAstType() {
+
+                @Override
+                public java.lang.String getName() {
+                    return typeName;
+                }
+
+                @Override
+                public Collection<CAstType> getSupertypes() {
+                    return null;
+                }
+            };
+            CAstTypes.put(typeName, newType);
+            return newType;
+        }
+    }
 }

@@ -147,6 +147,20 @@ jobject WALAInstance::getCAstNodesOfEntityInfo(const std::vector<jobject> &nodes
   return ArrayListCastNode;
 }
 
+jobject WALAInstance::getArgumentTypesOfEntityInfo(const std::vector<std::string> &argumentTypes) {
+  jclass ArrayList = JavaEnv->FindClass("java/util/ArrayList");
+  jmethodID ArrayListConstructor = JavaEnv->GetMethodID(ArrayList, "<init>", "(I)V");
+  jmethodID ArrayListAdd = JavaEnv->GetMethodID(ArrayList, "add", "(Ljava/lang/Object;)Z");
+
+  auto ArrayListArguments = JavaEnv->NewObject(ArrayList, ArrayListConstructor, argumentTypes.size());
+
+  for (std::string type: argumentTypes) {
+      JavaEnv->CallBooleanMethod(ArrayListArguments, ArrayListAdd, JavaEnv->NewStringUTF(type.c_str()));
+  }
+
+  return ArrayListArguments;
+}
+
 jobject WALAInstance::getCAstEntityInfo() {
   TRY(Exception, JavaEnv)
     // Create ArrayList<CAstEntityInfo>
@@ -162,7 +176,7 @@ jobject WALAInstance::getCAstEntityInfo() {
     for (auto &info : castEntities) {
       auto CAstEntityInfoClass = JavaEnv->FindClass("ca/maple/swan/swift/tree/CAstEntityInfo");
       THROW_ANY_EXCEPTION(Exception);
-      jmethodID CAstEntityInfoConstructor = JavaEnv->GetMethodID(CAstEntityInfoClass, "<init>", "(Ljava/lang/String;Ljava/util/ArrayList;Ljava/util/ArrayList;Ljava/util/ArrayList;)V");
+      jmethodID CAstEntityInfoConstructor = JavaEnv->GetMethodID(CAstEntityInfoClass, "<init>", "(Ljava/lang/String;Ljava/util/ArrayList;Ljava/util/ArrayList;Ljava/util/ArrayList;Ljava/lang/String;Ljava/util/ArrayList;)V");
       THROW_ANY_EXCEPTION(Exception);
 
       // get CAstEntityInfo constructor arguments
@@ -174,10 +188,15 @@ jobject WALAInstance::getCAstEntityInfo() {
       THROW_ANY_EXCEPTION(Exception);
       jobject CFNodes = getCAstNodesOfEntityInfo(info->cfNodes);
       THROW_ANY_EXCEPTION(Exception);
+      jstring ReturnType = JavaEnv->NewStringUTF(info->returnType.c_str());
+      THROW_ANY_EXCEPTION(Exception);
+      jobject ArgumentTypes = getArgumentTypesOfEntityInfo(info->argumentTypes);
+      THROW_ANY_EXCEPTION(Exception);
+
 
       // create the CAstEntity object and add it to the ArrayList
       auto CAstEntityInfoObject = JavaEnv->NewObject(CAstEntityInfoClass, CAstEntityInfoConstructor,
-        FunctionName, BasicBlocks, CallNodes, CFNodes);
+        FunctionName, BasicBlocks, CallNodes, CFNodes, ReturnType, ArgumentTypes);
       JavaEnv->CallBooleanMethod(ArrayListCAstEntityInfo, ArrayListAdd, CAstEntityInfoObject);
     }
     return ArrayListCAstEntityInfo;

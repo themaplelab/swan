@@ -3,6 +3,7 @@ package ca.maple.swan.swift.tree;
 import com.ibm.wala.cast.ir.translator.AbstractCodeEntity;
 import com.ibm.wala.cast.tree.CAstEntity;
 import com.ibm.wala.cast.tree.CAstNode;
+import com.ibm.wala.cast.tree.CAstType;
 import com.ibm.wala.cast.tree.impl.CAstControlFlowRecorder;
 import com.ibm.wala.cast.util.CAstPrinter;
 
@@ -21,6 +22,17 @@ public class EntityPrinter {
             System.out.println("<FUNCTION_ENTITY>");
         }
         System.out.println("\t<FUNCTION_NAME>" + entity.getName() + "</FUNCTION_NAME>");
+
+        if (entity instanceof FunctionEntity) {
+            System.out.println("<RETURN_TYPE>" + ((CAstType.Function) entity.getType()).getReturnType() + "</RETURN_TYPE>");
+            System.out.println("<ARGUMENT_COUNT>" + ((CAstType.Function) entity.getType()).getArgumentCount() + "</ARGUMENT_COUNT>");
+            System.out.println("<ARGUMENT_TYPES>");
+
+            for (CAstType type : ((CAstType.Function) entity.getType()).getArgumentTypes()) {
+                System.out.println(type);
+            }
+            System.out.println("</ARGUMENT_TYPES>");
+        }
 
         if (!entity.getAllScopedEntities().equals(Collections.emptyMap())) {
             System.out.println("\t<SCOPED_ENTITIES>");
@@ -66,9 +78,9 @@ public class EntityPrinter {
         }
 
         if (entity instanceof ScriptEntity) {
-            System.out.println("</SCRIPT ENTITY>");
+            System.out.println("</SCRIPT_ENTITY>");
         } else if (entity instanceof FunctionEntity) {
-            System.out.println("</FUNCTION ENTITY>");
+            System.out.println("</FUNCTION_ENTITY>");
         }
 
         System.out.println("====================");

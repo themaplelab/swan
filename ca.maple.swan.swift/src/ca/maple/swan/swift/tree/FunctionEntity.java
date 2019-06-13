@@ -3,6 +3,7 @@ package ca.maple.swan.swift.tree;
 import com.ibm.wala.cast.ir.translator.AbstractCodeEntity;
 import com.ibm.wala.cast.tree.*;
 
+import java.util.ArrayList;
 import java.util.Collection;
 
 public class FunctionEntity extends AbstractCodeEntity {
@@ -11,9 +12,9 @@ public class FunctionEntity extends AbstractCodeEntity {
 
     String functionName;
 
-    public FunctionEntity(String name) {
+    public FunctionEntity(String name, String returnType, ArrayList<String> argumentTypes) {
         // Temporary
-        super(new SwiftFunctionType());
+        super(new SwiftFunctionType(returnType, argumentTypes));
         this.functionName = name;
     }
 

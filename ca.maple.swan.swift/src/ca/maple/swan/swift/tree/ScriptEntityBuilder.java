@@ -26,7 +26,7 @@ public class ScriptEntityBuilder {
                 newEntity = new ScriptEntity(file);
                 scriptEntity = (ScriptEntity)newEntity;
             } else {
-                newEntity = new FunctionEntity(info.functionName);
+                newEntity = new FunctionEntity(info.functionName, info.returnType, info.argumentTypes);
             }
             functionEntities.add(newEntity);
             if (info.basicBlocks.size() > 0) {

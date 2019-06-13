@@ -72,11 +72,14 @@ public:
   /// Add the translated entity to the instance to later pass to the Java side.
   void addCAstEntityInfo(std::unique_ptr<CAstEntityInfo> entity);
 
-  /// Returns ArrayList<CAstEntityInfo> as jobject
+  /// Returns ArrayList<CAstEntityInfo> as jobject.
   jobject getCAstEntityInfo();
 
-  /// Used to turn fields of CAstEntityInfo into ArrayList<CAstNode> as jobject
+  /// Used to turn fields of CAstEntityInfo into ArrayList<CAstNode> as jobject.
   jobject getCAstNodesOfEntityInfo(const std::vector<jobject> &nodes);
+
+  /// Used to turn the std::vector<std::string> of argument types to ArrayList<String> as jobject.
+  jobject getArgumentTypesOfEntityInfo(const std::vector<std::string> &argumentTypes);
 };
 
 } // end swift_wala namespace
