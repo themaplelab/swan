@@ -24,12 +24,12 @@ public class EntityPrinter {
         System.out.println("\t<FUNCTION_NAME>" + entity.getName() + "</FUNCTION_NAME>");
 
         if (entity instanceof FunctionEntity) {
-            System.out.println("<RETURN_TYPE>" + ((CAstType.Function) entity.getType()).getReturnType() + "</RETURN_TYPE>");
+            System.out.println("<RETURN_TYPE>" + ((CAstType.Function) entity.getType()).getReturnType().getName() + "</RETURN_TYPE>");
             System.out.println("<ARGUMENT_COUNT>" + ((CAstType.Function) entity.getType()).getArgumentCount() + "</ARGUMENT_COUNT>");
             System.out.println("<ARGUMENT_TYPES>");
 
             for (CAstType type : ((CAstType.Function) entity.getType()).getArgumentTypes()) {
-                System.out.println(type);
+                System.out.println(type.getName());
             }
             System.out.println("</ARGUMENT_TYPES>");
         }

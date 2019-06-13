@@ -29,18 +29,6 @@ public class SwiftTypes extends AstTypeReference {
 
     public static final TypeReference CodeBody = TypeReference.findOrCreate(swiftLoader, functionTypeName);
 
-    public static final TypeReference FunctionRef = TypeReference.findOrCreate(swiftLoader, "LFunctionRef");
-
-    public static final TypeReference GlobalAddr = TypeReference.findOrCreate(swiftLoader, "LGlobalAddr");
-
-    public static final TypeReference String = TypeReference.findOrCreate(swiftLoader, "LString");
-
-    public static final TypeReference Integer = TypeReference.findOrCreate(swiftLoader, "LInteger");
-
-    public static final TypeReference Float = TypeReference.findOrCreate(swiftLoader, "LFloat");
-
-    // Boolean does not exist since it is represented as an Integer in translation
-
     private static Map<String, CAstType> CAstTypes = new HashMap<String, CAstType>();
 
     public static CAstType findOrCreateCAstType(String typeName) {

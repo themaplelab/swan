@@ -55,7 +55,7 @@ public class SwiftLanguage extends LanguageImpl {
 
     @Override
     public boolean isIntType(TypeReference typeReference) {
-        return typeReference == SwiftTypes.Integer;
+        return false;
     }
 
     @Override
@@ -70,7 +70,7 @@ public class SwiftLanguage extends LanguageImpl {
 
     @Override
     public boolean isFloatType(TypeReference typeReference) {
-        return typeReference == SwiftTypes.Float;
+        return false;
     }
 
     @Override
@@ -80,7 +80,7 @@ public class SwiftLanguage extends LanguageImpl {
 
     @Override
     public boolean isStringType(TypeReference typeReference) {
-        return typeReference == SwiftTypes.String;
+        return false;
     }
 
     @Override
@@ -125,7 +125,7 @@ public class SwiftLanguage extends LanguageImpl {
 
     @Override
     public TypeReference getStringType() {
-        return SwiftTypes.String;
+        return null;
     }
 
     @Override

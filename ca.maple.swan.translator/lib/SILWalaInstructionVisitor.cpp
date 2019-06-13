@@ -49,7 +49,7 @@ void SILWalaInstructionVisitor::visitModule(SILModule *M) {
     currentEntity = std::make_unique<CAstEntityInfo>();
     visitSILFunction(&F);
     // currentEntity should now be populated so we pass it to the instance.
-    currentEntity->print();
+    // currentEntity->print();
     Instance->addCAstEntityInfo(std::move(currentEntity));
   }
 }
@@ -62,8 +62,13 @@ void SILWalaInstructionVisitor::visitSILFunction(SILFunction *F) {
 
   BlockStmtList.clear();
 
-  currentEntity->returnType = F->getLoweredType().getAsString();
-  currentEntity->argumentTypes.push_back(currentEntity->returnType); // TEMPORARY
+  //currentEntity->returnType = F->getLoweredFunctionType()->getSingleResult().getSILStorageType().getAsString();
+  currentEntity->returnType = F->getLoweredFunctionType()->getSingleResult().getType().getString();
+
+
+  for (auto &param: F->getLoweredFunctionType()->getParameters()) {
+    currentEntity->argumentTypes.push_back(param.getType().getString());
+  }
 
   if (Print) {
     llvm::outs() << "SILFunction: ";
