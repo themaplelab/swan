@@ -73,7 +73,7 @@ public class EntityPrinter {
 
         if (entity.getAST() != null) {
             System.out.println("\t<TOP_LEVEL_AST>");
-            CAstPrinter.print(entity.getAST());
+            System.out.println(entity.getAST());
             System.out.println("\t</TOP_LEVEL_AST>");
         }
 
