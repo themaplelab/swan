@@ -51,7 +51,7 @@ public class EntityPrinter {
         }
 
         if (!entity.getControlFlow().getMappedNodes().isEmpty()) {
-            System.out.println("\t<CONTROL_FLOW_EDGES>");
+            System.out.println("\t<CONTROL_FLOW_MAP>");
             System.out.println("\t<NOTE>Reflexive edges are ommited!</NOTE>");
 
             CAstControlFlowRecorder map = entity.getControlFlow();
@@ -68,7 +68,7 @@ public class EntityPrinter {
                     System.out.println("\t\t</CONTROL_FLOW>");
                 }
             }
-            System.out.println("\t</CONTROL_FLOW_EDGES>");
+            System.out.println("\t</CONTROL_FLOW_MAP>");
         }
 
         if (entity.getAST() != null) {
