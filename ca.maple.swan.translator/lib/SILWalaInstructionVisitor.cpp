@@ -79,11 +79,13 @@ void SILWalaInstructionVisitor::visitSILFunction(SILFunction *F) {
     visitSILBasicBlock(&BB);
   }
 
+  /* This is useless.
   if (Print) {
     for (auto &Stmt: BlockStmtList) {
       Instance->print(Stmt);
     }
   }
+  */
 }
 
 void SILWalaInstructionVisitor::visitSILBasicBlock(SILBasicBlock *BB) {
@@ -196,10 +198,12 @@ void SILWalaInstructionVisitor::updateInstrSourceInfo(SILInstruction *I) {
 void SILWalaInstructionVisitor::perInstruction() {
 
   if (Print) {
+    /* This is useless.
     Instance->print(Instance->CAst->makeLocation(
         instrInfo->startLine, instrInfo->startCol,
         instrInfo->endLine, instrInfo->endCol)
     );
+    */
 
     llvm::outs() << "\t [INSTR] #" << instrInfo->num;
     llvm::outs() << ", [OPNUM] " << instrInfo->id << "\n";
@@ -265,7 +269,6 @@ void SILWalaInstructionVisitor::perInstruction() {
 }
 
 jobject SILWalaInstructionVisitor::findAndRemoveCAstNode(void *Key) {
-  // TODO: What is this doing and why is it needed?
   jobject node = nullptr;
   if (SymbolTable.has(Key)) {
     // Then this is a variable.
@@ -376,8 +379,6 @@ jobject SILWalaInstructionVisitor::visitApplySite(ApplySite Apply) {
   }
 
   // Otherwise, fall through to the regular function call logic.
-
-  // TODO: What is this code doing and why is it calling findAndRemoveCAstNode?
 
   auto FuncExprNode = findAndRemoveCAstNode(Callee);
   list<jobject> Params;
@@ -1628,7 +1629,7 @@ jobject SILWalaInstructionVisitor::visitStructElementAddrInst(StructElementAddrI
 jobject SILWalaInstructionVisitor::visitDestructureTupleInst(DestructureTupleInst *DTI) {
 
   // TODO: DUMMY NEEDS TO BE REPLACED
-  jobject DummyNode = Instance->CAst->makeNode(CAstWrapper::VAR);
+  jobject DummyNode = Instance->CAst->makeNode(CAstWrapper::EMPTY);
 
   return DummyNode;
 }

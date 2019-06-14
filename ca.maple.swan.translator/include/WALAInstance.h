@@ -56,9 +56,6 @@ public:
   /// Returns copy of translated nodes as a jobject (ArrayList<CastNode>).
   jobject getCAstNodes();
 
-  /// Used for debugging jobjects.
-  void print(jobject Object);
-
   /// Used for debugging CAst nodes, as jobjects. Not synchronous with llvm::outs()!
   void printNode(jobject Node);
 

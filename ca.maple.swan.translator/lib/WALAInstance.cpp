@@ -37,24 +37,12 @@ using namespace swift_wala;
 using namespace llvm;
 using namespace swift;
 
-void WALAInstance::print(jobject Object) {
-  auto ObjClass = JavaEnv->FindClass("java/lang/Object");
-  auto ToString = JavaEnv->GetMethodID(ObjClass, "toString", "()Ljava/lang/String;");
-  auto Message = (jstring) JavaEnv->CallObjectMethod(ObjClass, ToString);
-
-  jboolean Result = false;
-  const char *Text = JavaEnv->GetStringUTFChars(Message, &Result);
-
-  outs() << "WALA: " << Text << "\n";
-  JavaEnv->ReleaseStringUTFChars(Message, Text);
-}
-
 void WALAInstance::printNode(jobject Node) {
   CAst->log(Node);
 }
 
 void WALAInstance::analyzeSILModule(SILModule &SM) {
-  SILWalaInstructionVisitor Visitor(this, false); // Bool is for enabling translator printing (for debug).
+  SILWalaInstructionVisitor Visitor(this, true); // Bool is for enabling translator printing (for debug).
   Visitor.visitModule(&SM);
 }
 
