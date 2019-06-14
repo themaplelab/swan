@@ -62,12 +62,10 @@ void SILWalaInstructionVisitor::visitSILFunction(SILFunction *F) {
 
   BlockStmtList.clear();
 
-  //currentEntity->returnType = F->getLoweredFunctionType()->getSingleResult().getSILStorageType().getAsString();
-  currentEntity->returnType = F->getLoweredFunctionType()->getSingleResult().getType().getString();
-
+  currentEntity->returnType = F->getLoweredFunctionType()->getSingleResult().getSILStorageType().getAsString();
 
   for (auto &param: F->getLoweredFunctionType()->getParameters()) {
-    currentEntity->argumentTypes.push_back(param.getType().getString());
+    currentEntity->argumentTypes.push_back(param.getSILStorageType().getAsString());
   }
 
   if (Print) {
@@ -476,7 +474,7 @@ jobject SILWalaInstructionVisitor::visitAllocGlobalInst(AllocGlobalInst *AGI) {
   SILType Type = Var->getLoweredType();
   if (Print) {
     llvm::outs() << "\t [VAR NAME]:" << Name << "\n";
-    llvm::outs() << "\t [VAR TYPE]:" << Type << "\n";
+    llvm::outs() << "\t [VAR TYPE]:" << Type.getAsString() << "\n";
   }
   return Instance->CAst->makeNode(CAstWrapper::EMPTY);
 }
