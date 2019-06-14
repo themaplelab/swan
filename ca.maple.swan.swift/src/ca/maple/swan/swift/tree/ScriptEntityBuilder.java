@@ -20,6 +20,8 @@ public class ScriptEntityBuilder {
         ArrayList<AbstractCodeEntity> functionEntities = new ArrayList<>();
         HashMap<String, CAstEntityInfo> mappedInfo = new HashMap<>();
 
+        System.out.println("\n\n=============CAST=ENTITIES=============\n\n");
+
         for (CAstEntityInfo info : CAstEntityInfos) {
             AbstractCodeEntity newEntity;
             if ((info.functionName.equals("main")) && (scriptEntity == null)) {
@@ -50,6 +52,9 @@ public class ScriptEntityBuilder {
             }
             EntityPrinter.print(entity);
         }
+
+        System.out.println("\n==========END=OF=CAST=ENTITIES=========\n\n");
+
         return scriptEntity;
     }
 

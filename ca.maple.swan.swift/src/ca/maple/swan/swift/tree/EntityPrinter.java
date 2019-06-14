@@ -83,6 +83,6 @@ public class EntityPrinter {
             System.out.println("</FUNCTION_ENTITY>");
         }
 
-        System.out.println("====================");
+        System.out.println("====================\n");
     }
 }
