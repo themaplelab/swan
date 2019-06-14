@@ -32,15 +32,14 @@ public class SwiftTypes extends AstTypeReference {
     private static Map<String, CAstType> CAstTypes = new HashMap<String, CAstType>();
 
     public static CAstType findOrCreateCAstType(String typeName) {
-        String javaStyleTypeName = "L" + typeName;
-        if (CAstTypes.containsKey(javaStyleTypeName)) {
-            return CAstTypes.get(javaStyleTypeName);
+        if (CAstTypes.containsKey(typeName)) {
+            return CAstTypes.get(typeName);
         } else {
             CAstType newType = new CAstType() {
 
                 @Override
                 public java.lang.String getName() {
-                    return javaStyleTypeName;
+                    return typeName;
                 }
 
                 @Override
@@ -48,7 +47,7 @@ public class SwiftTypes extends AstTypeReference {
                     return null;
                 }
             };
-            CAstTypes.put(javaStyleTypeName, newType);
+            CAstTypes.put(typeName, newType);
             return newType;
         }
     }
