@@ -20,7 +20,7 @@
 #include <cassert>
 #include <cstdio>
 
-using namespace swift_wala;
+using namespace swan;
 
 bool SymbolTable::has(void* key) {
 	return table.find(key) != table.end();

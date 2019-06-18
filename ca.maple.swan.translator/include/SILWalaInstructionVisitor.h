@@ -34,7 +34,7 @@
 
 using namespace swift;
 
-namespace swift_wala {
+namespace swan {
 
 class WALAInstance;
 
@@ -305,6 +305,6 @@ public:
 
 };
 
-} // end swift_wala namespace
+} // end swan namespace
 
 #endif // SWAN_SILWALAINSTRUCTIONVISITOR_H

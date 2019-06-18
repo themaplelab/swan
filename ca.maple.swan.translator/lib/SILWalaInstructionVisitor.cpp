@@ -31,7 +31,7 @@
 #include <iostream>
 #include <memory>
 
-using namespace swift_wala;
+using namespace swan;
 
 void SILWalaInstructionVisitor::visitModule(SILModule *M) {
   // The SIL module holds the SIL of the .swift file, there is only one SILModule per file.

@@ -25,7 +25,7 @@
 
 using namespace swift;
 
-namespace swift_wala {
+namespace swan {
 
 /// ModuleInfo is used for storing source information into the CAst.
 struct ModuleInfo {
@@ -84,6 +84,6 @@ struct CAstEntityInfo {
     }
 };
 
-} // end swift_wala namespace
+} // end swan namespace
 
 #endif // SWAN_INFOSTRUCTURES_HPP

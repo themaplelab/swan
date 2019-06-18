@@ -18,7 +18,7 @@
 
 #include "BasicBlockLabeller.h"
 
-using namespace swift_wala;
+using namespace swan;
 
 string BasicBlockLabeller::label(swift::SILBasicBlock* basicBlock) {
   return (string("BLOCK #") + std::to_string(basicBlock->getDebugID()));

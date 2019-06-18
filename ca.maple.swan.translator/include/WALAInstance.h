@@ -31,7 +31,7 @@
 
 class CAstWrapper;
 
-namespace swift_wala {
+namespace swan {
 
 /// This class serves as a bridge between the JNI bridge and the
 /// SILWalaInstructionVisitor. It is effectively the framework's
@@ -79,6 +79,6 @@ public:
   jobject getArgumentTypesOfEntityInfo(const std::vector<std::string> &argumentTypes);
 };
 
-} // end swift_wala namespace
+} // end swan namespace
 
 #endif // SWAN_WALAINSTANCE_H

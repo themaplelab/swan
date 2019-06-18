@@ -23,7 +23,7 @@
 #include <string>
 #include <unordered_map>
 
-namespace swift_wala {
+namespace swan {
 
 /// This class is used as a data structure utility by the
 /// SILWalaInstructionVisitor to keep track of allocation sites.
@@ -38,6 +38,6 @@ private:
   std::unordered_map<void*, std::string> table;
 };
 
-} // end swift_wala namespace
+} // end swan namespace
 
 #endif // SWAN_SYMBOLTABLE_H

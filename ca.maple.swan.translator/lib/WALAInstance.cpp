@@ -33,7 +33,7 @@
 #include <launch.h>
 #include <unistd.h>
 
-using namespace swift_wala;
+using namespace swan;
 using namespace llvm;
 using namespace swift;
 
@@ -52,14 +52,14 @@ void WALAInstance::analyze() {
   // Also, the callbacks required for the translation (hook) will not be triggered
   // without this option.
   auto Argv = {"", "-emit-silgen", "-oout.sil", "-Onone", File.c_str()};
-  swift_wala::Observer observer(this); // create the hook
+  swan::Observer observer(this); // create the hook
   SmallVector<const char *, 256> argv(Argv.begin(), Argv.end());
 
   // Change current working path to allow for relative pathed input files.
   // Regular working dir is swan/ca.maple.swan.analysis, we change it to just swan/.
   char temp[1024];
   std::string currentWorkingPath = getcwd(temp, sizeof(temp)) ? std::string( temp ) : std::string("");
-  size_t lastSlashIndex = currentWorkingPath.find_last_of("/");
+  size_t lastSlashIndex = currentWorkingPath.find_last_of("/"); // TODO: Make this less hardcoded.
   std::string newCurrentWorkingPath = currentWorkingPath.substr(0, lastSlashIndex);
   chdir(newCurrentWorkingPath.c_str());
 
