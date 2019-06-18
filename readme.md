@@ -1,7 +1,7 @@
 
 <img src="https://karimali.ca/resources/images/projects/swan.png" width="150">
 
-# SWAN (a.k.a Swift-WALA)
+# SWAN
 A static program analysis framework for analyzing Swift applications using [WALA](https://github.com/wala/WALA) as the analysis core. 
 
 ## Introduction
@@ -102,7 +102,7 @@ cd ./swift
 cd ..
 ```
 
-#### Edit Swift-WALA Configurations
+#### Edit SWAN Configurations
 
 ```
 cd ./swan
@@ -112,14 +112,14 @@ cp gradle.properties.example gradle.properties
 Edit `gradle.properties` and provide proper paths. Some example paths are already provided to give you an idea of what they might look like for you. For macOS, change the `linux` to `macosx` in the paths. (e.g `swift-linux-x86_64` to `swift-macosx-x86_64`)
 
 
-#### Build Swift-WALA
+#### Build SWAN
 
 ```
 cd ./swan
 ./gradlew assemble
 ```
 
-### Running Swift-WALA
+### Running SWAN
 
 First you need to set some environment variables. You can also add the following to your `~/.bashrc` or `~/.bash_profile`, but make sure to source after. **Restart IDEA if you have it open.** The first variable is the same as in `gradle.properties`. The second variable is just the path to the directory containing this cloned repository.
 
