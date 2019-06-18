@@ -29,7 +29,9 @@ public class SwiftTypes extends AstTypeReference {
 
     public static final TypeReference CodeBody = TypeReference.findOrCreate(swiftLoader, functionTypeName);
 
-    private static Map<String, CAstType> CAstTypes = new HashMap<String, CAstType>();
+    public static final TypeReference Object = TypeReference.findOrCreate(swiftLoader, "LObject");
+
+    private static Map<String, CAstType> CAstTypes = new HashMap<>();
 
     public static CAstType findOrCreateCAstType(String typeName) {
         if (CAstTypes.containsKey(typeName)) {

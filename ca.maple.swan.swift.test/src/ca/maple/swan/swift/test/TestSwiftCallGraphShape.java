@@ -7,6 +7,7 @@ import java.io.File;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.util.Collection;
+import java.util.Scanner;
 import java.util.Set;
 
 import com.ibm.wala.cast.ipa.callgraph.CAstCallGraphUtil;
