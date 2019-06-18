@@ -24,6 +24,7 @@
 #include "BasicBlockLabeller.h"
 #include "CAstWrapper.h"
 #include "swift/AST/Module.h"
+#include "swift/AST/Types.h"
 #include "swift/Demangling/Demangle.h"
 #include "swift/SIL/SILModule.h"
 #include <fstream>
@@ -89,6 +90,7 @@ void SILWalaInstructionVisitor::visitSILFunction(SILFunction *F) {
 }
 
 void SILWalaInstructionVisitor::visitSILBasicBlock(SILBasicBlock *BB) {
+
   if (Print) {
     llvm::outs() << "Basic Block: ";
     llvm::outs() << BB << "\n";
@@ -260,8 +262,8 @@ void SILWalaInstructionVisitor::perInstruction() {
     }
 
     // Show operands, if they exist.
-    for (auto op = instrInfo->ops.begin(); op != instrInfo->ops.end(); ++op) {
-      llvm::outs() << "\t\t [OPER]: " << *op;
+    for (SILValue op : instrInfo->ops) {
+      llvm::outs() << "\t\t [OPER]: " << op;
     }
 
     llvm::outs() << "\n";
@@ -335,7 +337,7 @@ jobject SILWalaInstructionVisitor::getOperatorCAstType(Identifier Name) {
 
 jobject SILWalaInstructionVisitor::visitApplySite(ApplySite Apply) {
   jobject Node = Instance->CAst->makeNode(CAstWrapper::EMPTY);
-  auto *Callee = Apply.getReferencedFunction();
+  auto *Callee = Apply.getReferencedFunctionOrNull();
 
   if (!Callee) {
     llvm::errs() << "Apply site's Callee is empty! \n";
@@ -1025,7 +1027,7 @@ jobject SILWalaInstructionVisitor::visitMarkDependenceInst(MarkDependenceInst *M
 
 jobject SILWalaInstructionVisitor::visitFunctionRefInst(FunctionRefInst *FRI) {
   // Cast the instr to access methods
-  std::string FuncName = Demangle::demangleSymbolAsString(FRI->getReferencedFunction()->getName());
+  std::string FuncName = Demangle::demangleSymbolAsString(FRI->getReferencedFunctionOrNull()->getName());
   jobject NameNode = Instance->CAst->makeConstant(FuncName.c_str());
   jobject FuncExprNode = Instance->CAst->makeNode(CAstWrapper::FUNCTION_EXPR, NameNode);
 
@@ -1033,7 +1035,7 @@ jobject SILWalaInstructionVisitor::visitFunctionRefInst(FunctionRefInst *FRI) {
     llvm::outs() << "\t [FUNCTION]: " << FuncName << "\n";
   }
 
-  NodeMap.insert(std::make_pair(FRI->getReferencedFunction(), FuncExprNode));
+  NodeMap.insert(std::make_pair(FRI->getReferencedFunctionOrNull(), FuncExprNode));
   NodeMap.insert(std::make_pair(static_cast<ValueBase *>(FRI), FuncExprNode));
   return Instance->CAst->makeNode(CAstWrapper::EMPTY);
 }
@@ -1628,7 +1630,33 @@ jobject SILWalaInstructionVisitor::visitStructElementAddrInst(StructElementAddrI
 
 jobject SILWalaInstructionVisitor::visitDestructureTupleInst(DestructureTupleInst *DTI) {
 
-  // TODO: DUMMY NEEDS TO BE REPLACED
+  /*
+  llvm::outs() << "RESULTS===\n";
+  for (auto result: DTI->getAllResults()) {
+    llvm::outs() << result.getOpaqueValue() << "\n"; // LHS values
+  }
+  llvm::outs() << "OPERAND===\n";
+
+  //llvm::outs() << DTI->getOperandRef().get().getOpaqueValue() << "\n";
+
+  for (auto operand: DTI->getOperand()->getType().castTo<TupleType>()->getElements()) {
+    //llvm::outs() << operand.getType().getOpaqueValue() << "\n";
+  }
+
+  llvm::outs() << "===OPERAND\n";
+  llvm::outs() << "===RESULTS\n";
+
+
+  // NOTES:
+  //
+  // DTI->getOperand().getOpaqueValue() | Presumably the addr of the tuple operand
+  // DTI->getAllOperands().size() | 1
+  // DTI->getOperand()->getType().castTo<TupleType>()->getElements() | Valid
+  //
+  // Can I use extract TupleExtractInst?
+
+  */
+
   jobject DummyNode = Instance->CAst->makeNode(CAstWrapper::EMPTY);
 
   return DummyNode;
