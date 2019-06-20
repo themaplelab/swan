@@ -28,7 +28,6 @@
 #include "swift/Demangling/Demangle.h"
 #include "swift/SIL/SILModule.h"
 #include <fstream>
-#include <iostream>
 #include <memory>
 
 using namespace swan;
@@ -76,8 +75,10 @@ void SILWalaInstructionVisitor::visitSILFunction(SILFunction *F) {
   }
 
   // Visit every basic block of the function.
+  Instance->currentBlock = 0;
   for (auto &BB: *F) {
     visitSILBasicBlock(&BB);
+    ++Instance->currentBlock;
   }
 
   /* This is useless.
@@ -337,7 +338,7 @@ jobject SILWalaInstructionVisitor::getOperatorCAstType(Identifier Name) {
 
 jobject SILWalaInstructionVisitor::visitApplySite(ApplySite Apply) {
   jobject Node = Instance->CAst->makeNode(CAstWrapper::EMPTY);
-  auto *Callee = Apply.getReferencedFunctionOrNull();
+  auto *Callee = Apply.getReferencedFunction();
 
   if (!Callee) {
     llvm::errs() << "Apply site's Callee is empty! \n";
@@ -601,6 +602,12 @@ jobject SILWalaInstructionVisitor::visitDebugValueInst(DebugValueInst *DBI) {
     void *Addr = Val.getOpaqueValue();
     if (Addr) {
       SymbolTable.insert(Addr, VarName);
+
+      if (Instance->currentBlock == 0) {
+        // Add the variable as an argument name to the current function since this is the first basic block.
+        currentEntity->argumentNames.push_back(SymbolTable.get(Addr));
+      }
+
       if (Print) {
         llvm::outs() << "\t [ADDR OF OPERAND]:" << Addr << "\n";
       }
@@ -643,6 +650,11 @@ jobject SILWalaInstructionVisitor::visitDebugValueAddrInst(DebugValueAddrInst *D
       }
 
       SymbolTable.insert(Addr, VarName);
+
+      if (Instance->currentBlock == 0) {
+        // Add the variable as an argument name to the current function since this is the first basic block.
+        currentEntity->argumentNames.push_back(SymbolTable.get(Addr));
+      }
 
     } else {
       if (Print) {
@@ -1027,7 +1039,7 @@ jobject SILWalaInstructionVisitor::visitMarkDependenceInst(MarkDependenceInst *M
 
 jobject SILWalaInstructionVisitor::visitFunctionRefInst(FunctionRefInst *FRI) {
   // Cast the instr to access methods
-  std::string FuncName = Demangle::demangleSymbolAsString(FRI->getReferencedFunctionOrNull()->getName());
+  std::string FuncName = Demangle::demangleSymbolAsString(FRI->getReferencedFunction()->getName());
   jobject NameNode = Instance->CAst->makeConstant(FuncName.c_str());
   jobject FuncExprNode = Instance->CAst->makeNode(CAstWrapper::FUNCTION_EXPR, NameNode);
 
@@ -1035,7 +1047,7 @@ jobject SILWalaInstructionVisitor::visitFunctionRefInst(FunctionRefInst *FRI) {
     llvm::outs() << "\t [FUNCTION]: " << FuncName << "\n";
   }
 
-  NodeMap.insert(std::make_pair(FRI->getReferencedFunctionOrNull(), FuncExprNode));
+  NodeMap.insert(std::make_pair(FRI->getReferencedFunction(), FuncExprNode));
   NodeMap.insert(std::make_pair(static_cast<ValueBase *>(FRI), FuncExprNode));
   return Instance->CAst->makeNode(CAstWrapper::EMPTY);
 }
@@ -1161,6 +1173,11 @@ jobject SILWalaInstructionVisitor::visitStringLiteralInst(StringLiteralInst *SLI
     }
     case StringLiteralInst::Encoding::ObjCSelector: {
       encoding = "ObjCSelector";
+      break;
+    }
+
+    case StringLiteralInst::Encoding::Bytes: {
+      encoding = "Bytes";
       break;
     }
   }

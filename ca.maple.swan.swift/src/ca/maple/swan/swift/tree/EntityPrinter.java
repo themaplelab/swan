@@ -7,10 +7,7 @@ import com.ibm.wala.cast.tree.CAstType;
 import com.ibm.wala.cast.tree.impl.CAstControlFlowRecorder;
 import com.ibm.wala.cast.util.CAstPrinter;
 
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Iterator;
-import java.util.Map;
+import java.util.*;
 
 public class EntityPrinter {
     public static void print(AbstractCodeEntity entity) {
@@ -26,12 +23,20 @@ public class EntityPrinter {
         if (entity instanceof FunctionEntity) {
             System.out.println("<RETURN_TYPE>" + ((CAstType.Function) entity.getType()).getReturnType().getName() + "</RETURN_TYPE>");
             System.out.println("<ARGUMENT_COUNT>" + ((CAstType.Function) entity.getType()).getArgumentCount() + "</ARGUMENT_COUNT>");
-            System.out.println("<ARGUMENT_TYPES>");
+            System.out.println("<ARGUMENTS>");
 
-            for (CAstType type : ((CAstType.Function) entity.getType()).getArgumentTypes()) {
-                System.out.println(type.getName());
+            List<CAstType> argumentTypes = ((CAstType.Function) entity.getType()).getArgumentTypes();
+            String[] argumentNames = entity.getArgumentNames();
+            for (int i = 0; i < ((CAstType.Function) entity.getType()).getArgumentCount(); ++i) {
+                System.out.println("\t<ARGUMENT>");
+                System.out.println("\t\t<TYPE>" + argumentTypes.get(i).getName() + "</TYPE>");
+                if (i < argumentNames.length) {
+                    System.out.println("\t\t<NAME>" + argumentNames[i] + "</NAME>");
+                }
+                System.out.println("\t</ARGUMENT>");
             }
-            System.out.println("</ARGUMENT_TYPES>");
+
+            System.out.println("</ARGUMENTS>");
         }
 
         if (!entity.getAllScopedEntities().equals(Collections.emptyMap())) {
@@ -72,9 +77,9 @@ public class EntityPrinter {
         }
 
         if (entity.getAST() != null) {
-            System.out.println("\t<TOP_LEVEL_AST>");
+            System.out.println("\t<AST>");
             System.out.println(entity.getAST());
-            System.out.println("\t</TOP_LEVEL_AST>");
+            System.out.println("\t</AST>");
         }
 
         if (entity instanceof ScriptEntity) {

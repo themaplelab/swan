@@ -70,6 +70,7 @@ struct CAstEntityInfo {
   std::vector<jobject> cfNodes; // Instructions that impact intra-function control flow.
   std::string returnType; // Return type of the function as a string. e.g. "@convention(thin) (Int) -> Int"
   std::vector<std::string> argumentTypes; // Vector of argument type names of the function.
+  std::vector<std::string> argumentNames; // Vector of argument names corresponding to those referenced in the AST.
 
   void print() {
       llvm::outs() << "-*- CAST ENTITY INFO -*-" << "\n";
@@ -80,7 +81,12 @@ struct CAstEntityInfo {
       llvm::outs() << "\t# OF CALL NODES: " << callNodes.size() << "\n";
       llvm::outs() << "\t# OF CONTROL FLOW NODES: " << cfNodes.size() << "\n";
       llvm::outs() << "\tRETURN TYPE: " << returnType << "\n";
-      llvm::outs() << "\t# OF ARGUMENT TYPES: " << argumentTypes.size() << "\n";
+      for (auto argType: argumentTypes) {
+        llvm::outs() << "\tARGUMENT TYPE: " << argType << "\n";
+      }
+      for (auto argName: argumentNames) {
+        llvm::outs() << "\tARGUMENT NAME: " << argName << "\n";
+      }
     }
 };
 

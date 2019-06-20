@@ -163,8 +163,10 @@ jobject WALAInstance::getCAstEntityInfo() {
     // Add every CAstEntityInfo to ArrayList
     for (auto &info : castEntities) {
       auto CAstEntityInfoClass = JavaEnv->FindClass("ca/maple/swan/swift/tree/CAstEntityInfo");
+
       THROW_ANY_EXCEPTION(Exception);
-      jmethodID CAstEntityInfoConstructor = JavaEnv->GetMethodID(CAstEntityInfoClass, "<init>", "(Ljava/lang/String;Ljava/util/ArrayList;Ljava/util/ArrayList;Ljava/util/ArrayList;Ljava/lang/String;Ljava/util/ArrayList;)V");
+      jmethodID CAstEntityInfoConstructor = JavaEnv->GetMethodID(CAstEntityInfoClass, "<init>",
+        "(Ljava/lang/String;Ljava/util/ArrayList;Ljava/util/ArrayList;Ljava/util/ArrayList;Ljava/lang/String;Ljava/util/ArrayList;Ljava/util/ArrayList;)V");
       THROW_ANY_EXCEPTION(Exception);
 
       // get CAstEntityInfo constructor arguments
@@ -180,11 +182,12 @@ jobject WALAInstance::getCAstEntityInfo() {
       THROW_ANY_EXCEPTION(Exception);
       jobject ArgumentTypes = getArgumentTypesOfEntityInfo(info->argumentTypes);
       THROW_ANY_EXCEPTION(Exception);
-
+      jobject ArgumentNames = getArgumentTypesOfEntityInfo(info->argumentNames);
+      THROW_ANY_EXCEPTION(Exception);
 
       // create the CAstEntity object and add it to the ArrayList
       auto CAstEntityInfoObject = JavaEnv->NewObject(CAstEntityInfoClass, CAstEntityInfoConstructor,
-        FunctionName, BasicBlocks, CallNodes, CFNodes, ReturnType, ArgumentTypes);
+        FunctionName, BasicBlocks, CallNodes, CFNodes, ReturnType, ArgumentTypes, ArgumentNames);
       JavaEnv->CallBooleanMethod(ArrayListCAstEntityInfo, ArrayListAdd, CAstEntityInfoObject);
     }
     return ArrayListCAstEntityInfo;

@@ -77,6 +77,11 @@ public:
 
   /// Used to turn the std::vector<std::string> of argument types to ArrayList<String> as jobject.
   jobject getArgumentTypesOfEntityInfo(const std::vector<std::string> &argumentTypes);
+
+  /// Used to keep track of the currentBlock index so we know when to add the basic block arguments to the
+  /// entity argument names. There is probably a better way to do this such as looking up the basic block
+  /// the instruction lies in, but this is good enough for now.
+  unsigned int currentBlock = 0;
 };
 
 } // end swan namespace

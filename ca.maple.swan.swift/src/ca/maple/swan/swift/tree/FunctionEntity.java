@@ -11,11 +11,13 @@ public class FunctionEntity extends AbstractCodeEntity {
     // WORK IN PROGRESS
 
     String functionName;
+    private String[] argumentNames;
 
-    public FunctionEntity(String name, String returnType, ArrayList<String> argumentTypes) {
-        // Temporary
+    public FunctionEntity(String name, String returnType,
+                          ArrayList<String> argumentTypes, ArrayList<String> argumentNames) {
         super(new SwiftFunctionType(returnType, argumentTypes));
         this.functionName = name;
+        this.argumentNames = argumentNames.toArray(new String[0]);
     }
 
     @Override
@@ -30,7 +32,7 @@ public class FunctionEntity extends AbstractCodeEntity {
 
     @Override
     public String[] getArgumentNames() {
-        return new String[0]; // TODO?
+        return this.argumentNames;
     }
 
     @Override
