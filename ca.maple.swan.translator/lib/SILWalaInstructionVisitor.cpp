@@ -347,6 +347,10 @@ jobject SILWalaInstructionVisitor::visitApplySite(ApplySite Apply) {
       llvm::outs() << "\t [ARG] #" << I << ": " << V;
       llvm::outs() << "\t [ADDR] #" << I << ": " << V.getOpaqueValue() << "\n";
     }
+    auto result = Apply.getInstruction()->getResult(0);
+    if (result) {
+      llvm::outs() << "\t [RESULT]: " << result.getOpaqueValue() << "\n";
+    }
   }
 
   // Handle if the function is an operator function (representing a built in operator).
