@@ -49,6 +49,9 @@ void SILWalaInstructionVisitor::visitModule(SILModule *M) {
     currentEntity = std::make_unique<CAstEntityInfo>();
     visitSILFunction(&F);
     // currentEntity should now be populated so we pass it to the instance.
+    if (Print) {
+      currentEntity->print();
+    }
     Instance->addCAstEntityInfo(std::move(currentEntity));
   }
 }
@@ -262,6 +265,7 @@ jobject SILWalaInstructionVisitor::findAndRemoveCAstNode(void *Key) {
     // Then this is a variable.
     jobject name = Instance->CAst->makeConstant(SymbolTable.get(Key).c_str());
     node = Instance->CAst->makeNode(CAstWrapper::VAR, name);
+    currentEntity->variableTypes.insert({node, SymbolTable.getType(Key)});
   } else if (NodeMap.find(Key) != NodeMap.end()) {
     node = NodeMap.at(Key);
     auto it = std::find(NodeList.begin(), NodeList.end(), node);
@@ -269,7 +273,7 @@ jobject SILWalaInstructionVisitor::findAndRemoveCAstNode(void *Key) {
       NodeList.erase(it);
     }
   } else {
-    llvm::errs() << "### RETURNING NULL NODE!\n";
+    llvm::errs() << "ERROR: RETURNING NULL NODE!\n";
   }
   return node;
 }
@@ -318,7 +322,7 @@ jobject SILWalaInstructionVisitor::getOperatorCAstType(Identifier Name) {
   } else if (Name.is("^")) {
     return CAstWrapper::OP_BIT_XOR;
   } else {
-    llvm::errs() << "Unhandled operator detected! \n";
+    llvm::errs() << "ERROR: Unhandled operator detected! \n";
     return nullptr;
   }
 }
@@ -328,7 +332,7 @@ jobject SILWalaInstructionVisitor::visitApplySite(ApplySite Apply) {
   auto *Callee = Apply.getReferencedFunction();
 
   if (!Callee) {
-    llvm::errs() << "Apply site's Callee is empty! \n";
+    llvm::errs() << "ERROR: Apply site's Callee is empty! \n";
     return Instance->CAst->makeNode(CAstWrapper::EMPTY);
   }
 
@@ -401,14 +405,14 @@ jobject SILWalaInstructionVisitor::visitAllocStackInst(AllocStackInst *ASI) {
     if (Print) {
       llvm::outs() << "\t [ARG]#" << ArgNo << ": " << varName << "\n";
     }
-    SymbolTable.insert(static_cast<ValueBase *>(ASI), varName);
+    SymbolTable.insert(static_cast<ValueBase *>(ASI), Decl->getType().getString(), varName);
   }
   else {
     // Temporary allocation when referencing self.
     if (Print) {
       llvm::outs() << "\t [ARG]#" << ArgNo << ": " << "self" << "\n";
     }
-    SymbolTable.insert(static_cast<ValueBase *>(ASI), "self");
+    SymbolTable.insert(static_cast<ValueBase *>(ASI), "NULL", "self");
   }
   return Instance->CAst->makeNode(CAstWrapper::EMPTY);
 }
@@ -422,14 +426,14 @@ jobject SILWalaInstructionVisitor::visitAllocBoxInst(AllocBoxInst *ABI) {
     if (Print) {
       llvm::outs() << "\t [ARG]#" << ArgNo << ": " << varName << "\n";
     }
-    SymbolTable.insert(static_cast<ValueBase *>(ABI), varName);
+    SymbolTable.insert(static_cast<ValueBase *>(ABI), Decl->getType().getString(), varName);
   }
   else {
     // Temporary allocation when referencing self.
     if (Print) {
       llvm::outs() << "\t [ARG]#" << ArgNo << ": " << "self" << "\n";
     }
-    SymbolTable.insert(static_cast<ValueBase *>(ABI), "self");
+    SymbolTable.insert(static_cast<ValueBase *>(ABI), "NULL", "self");
   }
   return Instance->CAst->makeNode(CAstWrapper::EMPTY);
 }
@@ -441,7 +445,7 @@ jobject SILWalaInstructionVisitor::visitAllocRefInst(AllocRefInst *ARI) {
     llvm::outs() << "\t [VAR TYPE]: " << RefTypeName << "\n";
   }
 
-  SymbolTable.insert(static_cast<ValueBase *>(ARI), RefTypeName);
+  SymbolTable.insert(static_cast<ValueBase *>(ARI), RefTypeName, RefTypeName);
 
   ArrayRef<SILType> Types = ARI->getTailAllocatedTypes();
   ArrayRef<Operand> Counts = ARI->getTailAllocatedCounts();
@@ -454,7 +458,7 @@ jobject SILWalaInstructionVisitor::visitAllocRefInst(AllocRefInst *ARI) {
       llvm::outs() << "\t [OPERAND]: " << OperandValue.getOpaqueValue() << " [TYPE]: " << OperandTypeName << "\n";
     }
 
-    SymbolTable.insert(static_cast<ValueBase *>(OperandValue.getOpaqueValue()), OperandTypeName);
+    SymbolTable.insert(static_cast<ValueBase *>(OperandValue.getOpaqueValue()), OperandTypeName, OperandTypeName);
   }
   return  Instance->CAst->makeNode(CAstWrapper::EMPTY);
 }
@@ -508,7 +512,7 @@ jobject SILWalaInstructionVisitor::visitProjectBoxInst(ProjectBoxInst *PBI) {
     // NOTE: Apple documentation states: This instruction has undefined behavior if the box is not currently allocated
     //       (link: https://github.com/apple/swift/blob/master/docs/SIL.rst#project_box) so there is no need to allocate
     //       it if it is not currently in the Symbol Table.
-    SymbolTable.duplicate(static_cast<ValueBase *>(PBI), SymbolTable.get(PBI->getOperand().getOpaqueValue()).c_str());
+    SymbolTable.duplicate(static_cast<ValueBase *>(PBI), PBI->getOperand()->getType().getAsString(), SymbolTable.get(PBI->getOperand().getOpaqueValue()).c_str());
   }
   return Instance->CAst->makeNode(CAstWrapper::EMPTY);
 }
@@ -522,7 +526,7 @@ jobject SILWalaInstructionVisitor::visitAllocValueBufferInst(AllocValueBufferIns
     llvm::outs() << "\t [VALUE TYPE]: " << ValueTypeName << "\n";
   }
 
-  SymbolTable.insert(static_cast<ValueBase *>(ValueBuffer.getOpaqueValue()), ValueTypeName);
+  SymbolTable.insert(static_cast<ValueBase *>(ValueBuffer.getOpaqueValue()), ValueTypeName, ValueTypeName);
   return  Instance->CAst->makeNode(CAstWrapper::EMPTY);
 }
 
@@ -552,7 +556,7 @@ jobject SILWalaInstructionVisitor::visitProjectValueBufferInst(ProjectValueBuffe
   //       allocated (link: https://github.com/apple/swift/blob/master/docs/SIL.rst#project-value-buffer) so there is
   //       no need to allocate it if it is not currently in the Symbol Table.
   if (SymbolTable.has(BufferValue.getOpaqueValue())) {
-    SymbolTable.duplicate(static_cast<ValueBase *>(PVBI), SymbolTable.get(BufferValue.getOpaqueValue()).c_str());
+    SymbolTable.duplicate(static_cast<ValueBase *>(PVBI), PVBI->getOperand()->getType().getAsString(), SymbolTable.get(BufferValue.getOpaqueValue()).c_str());
   }
 
   return Instance->CAst->makeNode(CAstWrapper::EMPTY);
@@ -589,7 +593,7 @@ jobject SILWalaInstructionVisitor::visitDebugValueInst(DebugValueInst *DBI) {
     void *Addr = Val.getOpaqueValue();
     if (Addr) {
       if (!SymbolTable.has(Addr)) {
-        SymbolTable.insert(Addr, VarName);
+        SymbolTable.insert(Addr, Val->getType().getAsString(), VarName);
       }
 
       if (Instance->currentBlock == 0) {
@@ -638,7 +642,7 @@ jobject SILWalaInstructionVisitor::visitDebugValueAddrInst(DebugValueAddrInst *D
         llvm::outs() << "\t [ADDR OF OPERAND]: " << Addr << "\n";
       }
 
-      SymbolTable.insert(Addr, VarName);
+      SymbolTable.insert(Addr, Operand->getType().getAsString(), VarName);
 
       if (Instance->currentBlock == 0) {
         // Add the variable as an argument name to the current function since this is the first basic block.
@@ -1000,7 +1004,7 @@ jobject SILWalaInstructionVisitor::visitGlobalAddrInst(GlobalAddrInst *GAI) {
   if (Print) {
     llvm::outs() << "\t [VAR NAME]:" << Name << "\n";
   }
-  SymbolTable.insert(static_cast<ValueBase *>(GAI), Name);
+  SymbolTable.insert(static_cast<ValueBase *>(GAI), variable->getLoweredType().getAsString(), Name);
   return Instance->CAst->makeNode(CAstWrapper::EMPTY);
 }
 
@@ -1210,7 +1214,7 @@ jobject SILWalaInstructionVisitor::visitApplyInst(ApplyInst *AI) {
   if (auto ApplyNode = visitApplySite(AI)) {
     SILValue result = AI->getResult(0);
     if (result) {
-      SymbolTable.insert(result.getOpaqueValue());
+      SymbolTable.insert(result.getOpaqueValue(), result->getType().getAsString());
       jobject Var = findAndRemoveCAstNode(result.getOpaqueValue());
       jobject Node = Instance->CAst->makeNode(CAstWrapper::ASSIGN, Var, ApplyNode);
       NodeMap.insert(std::make_pair(static_cast<ValueBase *>(AI), Node));
@@ -1488,6 +1492,7 @@ jobject SILWalaInstructionVisitor::visitStructExtractInst(StructExtractInst *SEI
   std::string FieldName = StructField->getNameStr();
   jobject FieldNameNode = Instance->CAst->makeConstant(FieldName.c_str());
   jobject FieldNode = Instance->CAst->makeNode(CAstWrapper::VAR, FieldNameNode);
+  currentEntity->variableTypes.insert({FieldNode, StructField->getType().getString()});
   jobject Node = Instance->CAst->makeNode(CAstWrapper::OBJECT_REF, ElementNode , FieldNode);
 
   NodeMap.insert(std::make_pair(static_cast<ValueBase *>(SEI), Node));
@@ -1546,6 +1551,7 @@ jobject SILWalaInstructionVisitor::visitStructElementAddrInst(StructElementAddrI
   std::string FieldName = StructField->getNameStr();
   jobject FieldNameNode = Instance->CAst->makeConstant(FieldName.c_str());
   jobject FieldNode = Instance->CAst->makeNode(CAstWrapper::VAR, FieldNameNode);
+  currentEntity->variableTypes.insert({FieldNode, StructField->getType().getString()});
 
   jobject Node = Instance->CAst->makeNode(CAstWrapper::OBJECT_REF, ElementNode , FieldNode);
 
@@ -1606,6 +1612,7 @@ jobject SILWalaInstructionVisitor::visitRefElementAddrInst(RefElementAddrInst *R
   std::string ClassName = ClassField->getNameStr();
   jobject FieldNameNode = Instance->CAst->makeConstant(ClassName.c_str());
   jobject FieldNode = Instance->CAst->makeNode(CAstWrapper::VAR, FieldNameNode);
+  currentEntity->variableTypes.insert({FieldNode, ClassField->getType().getString()});
 
   // OBJECT_REF takes (CLASS , FIELD)
   auto Node = Instance->CAst->makeNode(CAstWrapper::OBJECT_REF, ElementNode , FieldNode);
@@ -1847,7 +1854,7 @@ jobject SILWalaInstructionVisitor::visitInitExistentialAddrInst(InitExistentialA
     auto name = "ExistentialAddr of " +
       SymbolTable.get(IEAI->getOperand().getOpaqueValue()) + " -> " +
       IEAI->getFormalConcreteType().getString();
-    SymbolTable.insert(static_cast<ValueBase *>(IEAI), name);
+    SymbolTable.insert(static_cast<ValueBase *>(IEAI), IEAI->getOperand()->getType().getAsString(), name);
     }
 
   return Instance->CAst->makeNode(CAstWrapper::EMPTY);
@@ -1864,7 +1871,7 @@ jobject SILWalaInstructionVisitor::visitInitExistentialValueInst(InitExistential
     auto name = "ExistentialValue of " +
       SymbolTable.get(IEVI->getOperand().getOpaqueValue()) + " -> " +
       IEVI->getFormalConcreteType().getString();
-    SymbolTable.insert(static_cast<ValueBase *>(IEVI), name);
+    SymbolTable.insert(static_cast<ValueBase *>(IEVI), IEVI->getOperand()->getType().getAsString(), name);
   }
 
   return Instance->CAst->makeNode(CAstWrapper::EMPTY);
@@ -1940,7 +1947,7 @@ jobject SILWalaInstructionVisitor::visitInitExistentialMetatypeInst(InitExistent
     auto name = "ExistentialMetatype of " +
       SymbolTable.get(IEMI->getOperand().getOpaqueValue()) + " -> " +
       IEMI->getType().getAsString();
-    SymbolTable.insert(static_cast<ValueBase *>(IEMI), name);
+    SymbolTable.insert(static_cast<ValueBase *>(IEMI), IEMI->getOperand()->getType().getAsString(), name);
   }
 
   return Instance->CAst->makeNode(CAstWrapper::EMPTY);
@@ -1974,7 +1981,7 @@ jobject SILWalaInstructionVisitor::visitInitExistentialRefInst(InitExistentialRe
     auto name = "ExistentialRef of " +
       SymbolTable.get(IERI->getOperand().getOpaqueValue()) + " -> " +
       IERI->getFormalConcreteType().getString();
-    SymbolTable.insert(static_cast<ValueBase *>(IERI), name);
+    SymbolTable.insert(static_cast<ValueBase *>(IERI), IERI->getOperand()->getType().getAsString(), name);
   }
 
   return Instance->CAst->makeNode(CAstWrapper::EMPTY);
@@ -2007,7 +2014,7 @@ jobject SILWalaInstructionVisitor::visitAllocExistentialBoxInst(AllocExistential
 
     auto name = "ExistentialBox:" +
       AEBI->getFormalConcreteType().getString() + "->" + AEBI->getExistentialType().getAsString();
-    SymbolTable.insert(static_cast<ValueBase *>(AEBI), name);
+    SymbolTable.insert(static_cast<ValueBase *>(AEBI), AEBI->getFormalConcreteType().getString(), name);
 
     return Instance->CAst->makeNode(CAstWrapper::EMPTY);
 }
@@ -2022,7 +2029,7 @@ jobject SILWalaInstructionVisitor::visitProjectExistentialBoxInst(ProjectExisten
   //       (link: https://github.com/apple/swift/blob/master/docs/SIL.rst#project-existential-box so there is no need
   //       to allocate it if it is not currently in the Symbol Table
   if (SymbolTable.has(PEBI->getOperand().getOpaqueValue())) {
-    SymbolTable.duplicate(static_cast<ValueBase *>(PEBI), SymbolTable.get(PEBI->getOperand().getOpaqueValue()).c_str());
+    SymbolTable.duplicate(static_cast<ValueBase *>(PEBI), PEBI->getOperand()->getType().getAsString(), SymbolTable.get(PEBI->getOperand().getOpaqueValue()).c_str());
   }
 
   return Instance->CAst->makeNode(CAstWrapper::EMPTY);
@@ -2556,10 +2563,17 @@ jobject SILWalaInstructionVisitor::visitBranchInst(BranchInst *BI) {
         llvm::outs() << "\t [ADDR]: " << Dest->getArgument(Idx) << "\n";
     }
     jobject Node = findAndRemoveCAstNode(BI->getArg(Idx).getOpaqueValue());
-    SymbolTable.insert(Dest->getArgument(Idx), ("argument" + std::to_string(Idx)));
+    SymbolTable.insert(Dest->getArgument(Idx), BI->getArg(Idx)->getType().getAsString(), ("argument" + std::to_string(Idx)));
 
     jobject varName = Instance->CAst->makeConstant(SymbolTable.get(Dest->getArgument(Idx)).c_str());
     jobject var = Instance->CAst->makeNode(CAstWrapper::VAR, varName);
+    currentEntity->variableTypes.insert({var, SymbolTable.getType(Dest->getArgument(Idx))});
+    auto argTypeIt = currentEntity->variableTypes.find(Node);
+    if (argTypeIt != currentEntity->variableTypes.end()) {
+        currentEntity->variableTypes.insert({var, argTypeIt->second});
+    } else {
+        llvm::errs() << "ERROR: Could not find type for basic block argument SRC!\n";
+    }
     jobject assign = Instance->CAst->makeNode(CAstWrapper::ASSIGN, var, Node);
     NodeList.push_back(assign);
   }
@@ -2677,7 +2691,7 @@ jobject SILWalaInstructionVisitor::visitSwitchValueInst(SwitchValueInst *SVI) {
 jobject SILWalaInstructionVisitor::visitSelectValueInst(SelectValueInst *SVI) {
 
   if (Print) {
-    llvm::errs() << "\t This should never be reached! Swift does not support this anymore" << "\n";
+    llvm::errs() << "\t ERROR: This should never be reached! Swift does not support this anymore" << "\n";
   }
 
   return Instance->CAst->makeNode(CAstWrapper::EMPTY);
@@ -2884,9 +2898,11 @@ jobject SILWalaInstructionVisitor::visitTryApplyInst(TryApplyInst *TAI) {
   jobject TryFunc = Instance->CAst->makeNode(CAstWrapper::TRY, Call);
   jobject VarName = Instance->CAst->makeConstant("result_of_try");
   jobject Var = Instance->CAst->makeNode(CAstWrapper::VAR, VarName);
+  currentEntity->variableTypes.insert({Var, "NULL"}); // TODO: Replace NULL type?
   jobject Node = Instance->CAst->makeNode(CAstWrapper::ASSIGN, Var, TryFunc);
   NodeMap.insert(std::make_pair(TAI, Node));
   SILBasicBlock *BB = TAI->getNormalBB();
-  SymbolTable.insert(BB->getArgument(0), "result_of_try"); // insert the node into the hash map
+  // TODO: Replace NULL type?
+  SymbolTable.insert(BB->getArgument(0), "NULL", "result_of_try"); // insert the node into the hash map
   return Node;
 }

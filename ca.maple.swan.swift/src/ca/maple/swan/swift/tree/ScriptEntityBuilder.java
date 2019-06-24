@@ -13,6 +13,7 @@
 
 package ca.maple.swan.swift.tree;
 
+import ca.maple.swan.swift.types.SwiftTypes;
 import com.ibm.wala.cast.ir.translator.AbstractCodeEntity;
 import com.ibm.wala.cast.tree.CAstEntity;
 import com.ibm.wala.cast.tree.CAstNode;
@@ -45,6 +46,9 @@ public class ScriptEntityBuilder {
             functionEntities.add(newEntity);
             if (info.basicBlocks.size() > 0) {
                 newEntity.setAst(info.basicBlocks.get(0));
+            }
+            for (CAstNode node: info.variableTypes.keySet()) {
+                newEntity.setNodeType(node, SwiftTypes.findOrCreateCAstType(info.variableTypes.get(node)));
             }
             mappedInfo.put(info.functionName, info);
         }

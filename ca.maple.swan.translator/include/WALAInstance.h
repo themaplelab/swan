@@ -78,6 +78,9 @@ public:
   /// Used to turn the std::vector<std::string> of argument types to ArrayList<String> as jobject.
   jobject getArgumentTypesOfEntityInfo(const std::vector<std::string> &argumentTypes);
 
+  /// Converts a given C++ map to a Java LinkedHashMap and returns it as jobject.
+  jobject mapToLinkedHashMap(const std::map<jobject, std::string> &map);
+
   /// Used to keep track of the currentBlock index so we know when to add the basic block arguments to the
   /// entity argument names. There is probably a better way to do this such as looking up the basic block
   /// the instruction lies in, but this is good enough for now.

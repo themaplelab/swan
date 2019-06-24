@@ -16,6 +16,7 @@ package ca.maple.swan.swift.tree;
 import com.ibm.wala.cast.tree.CAstNode;
 
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 
 public class CAstEntityInfo {
 
@@ -26,10 +27,12 @@ public class CAstEntityInfo {
     public String returnType;
     public ArrayList<String> argumentTypes;
     public ArrayList<String> argumentNames;
+    public LinkedHashMap<CAstNode, String> variableTypes;
 
     CAstEntityInfo(String functionName, ArrayList<CAstNode> basicBlocks,
                    ArrayList<CAstNode> callNodes, ArrayList<CAstNode> cfNodes,
-                   String returnType, ArrayList<String> argumentTypes, ArrayList<String> argumentNames) {
+                   String returnType, ArrayList<String> argumentTypes,
+                   ArrayList<String> argumentNames, LinkedHashMap<CAstNode, String> variableTypes) {
         this.functionName = functionName;
         this.basicBlocks = basicBlocks;
         this.callNodes = callNodes;
@@ -37,5 +40,6 @@ public class CAstEntityInfo {
         this.returnType = returnType;
         this.argumentTypes = argumentTypes;
         this.argumentNames = argumentNames;
+        this.variableTypes = variableTypes;
     }
 }

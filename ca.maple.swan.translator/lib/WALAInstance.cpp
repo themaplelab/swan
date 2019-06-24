@@ -149,6 +149,20 @@ jobject WALAInstance::getArgumentTypesOfEntityInfo(const std::vector<std::string
   return ArrayListArguments;
 }
 
+jobject WALAInstance::mapToLinkedHashMap(const std::map<jobject, std::string> &map) {
+  jclass LinkedHashMapClass = JavaEnv->FindClass("java/util/LinkedHashMap");
+  jmethodID LinkedHashMapConstructor = JavaEnv->GetMethodID(LinkedHashMapClass , "<init>", "()V");
+  jmethodID LinkedHashMapPut = JavaEnv->GetMethodID(LinkedHashMapClass , "put", "(Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object;");
+
+  auto linkedHashMap = JavaEnv->NewObject(LinkedHashMapClass, LinkedHashMapConstructor);
+
+  for (auto it = map.begin(); it != map.end(); ++it) {
+    JavaEnv->CallVoidMethod(linkedHashMap, LinkedHashMapPut, it->first, JavaEnv->NewStringUTF(it->second.c_str()));
+  }
+
+  return linkedHashMap;
+}
+
 jobject WALAInstance::getCAstEntityInfo() {
   TRY(Exception, JavaEnv)
     // Create ArrayList<CAstEntityInfo>
@@ -166,7 +180,7 @@ jobject WALAInstance::getCAstEntityInfo() {
 
       THROW_ANY_EXCEPTION(Exception);
       jmethodID CAstEntityInfoConstructor = JavaEnv->GetMethodID(CAstEntityInfoClass, "<init>",
-        "(Ljava/lang/String;Ljava/util/ArrayList;Ljava/util/ArrayList;Ljava/util/ArrayList;Ljava/lang/String;Ljava/util/ArrayList;Ljava/util/ArrayList;)V");
+        "(Ljava/lang/String;Ljava/util/ArrayList;Ljava/util/ArrayList;Ljava/util/ArrayList;Ljava/lang/String;Ljava/util/ArrayList;Ljava/util/ArrayList;Ljava/util/LinkedHashMap;)V");
       THROW_ANY_EXCEPTION(Exception);
 
       // get CAstEntityInfo constructor arguments
@@ -184,10 +198,12 @@ jobject WALAInstance::getCAstEntityInfo() {
       THROW_ANY_EXCEPTION(Exception);
       jobject ArgumentNames = getArgumentTypesOfEntityInfo(info->argumentNames);
       THROW_ANY_EXCEPTION(Exception);
+      jobject VariableTypes = mapToLinkedHashMap(info->variableTypes);
+      THROW_ANY_EXCEPTION(Exception);
 
       // create the CAstEntity object and add it to the ArrayList
       auto CAstEntityInfoObject = JavaEnv->NewObject(CAstEntityInfoClass, CAstEntityInfoConstructor,
-        FunctionName, BasicBlocks, CallNodes, CFNodes, ReturnType, ArgumentTypes, ArgumentNames);
+        FunctionName, BasicBlocks, CallNodes, CFNodes, ReturnType, ArgumentTypes, ArgumentNames, VariableTypes);
       JavaEnv->CallBooleanMethod(ArrayListCAstEntityInfo, ArrayListAdd, CAstEntityInfoObject);
     }
     return ArrayListCAstEntityInfo;

@@ -51,6 +51,15 @@ public class EntityPrinter {
             System.out.println("</ARGUMENTS>");
         }
 
+        if (entity.getNodeTypeMap().keySet().size() > 0) {
+            System.out.println("\t<VARIABLES>");
+            for (CAstNode node: entity.getNodeTypeMap().keySet()) {
+                System.out.println("\t\t<NAME>" + node.getChild(0) + "</NAME>");
+                System.out.println("\t\t<TYPE>" + entity.getNodeTypeMap().get(node).getName() + "</TYPE>");
+            }
+            System.out.println("\t</VARIABLES>");
+        }
+
         if (!entity.getAllScopedEntities().equals(Collections.emptyMap())) {
             System.out.println("\t<SCOPED_ENTITIES>");
 
