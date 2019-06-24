@@ -84,6 +84,9 @@ private:
 
   unsigned int InstructionCount = 0;
 
+  /// Enable/Disable adding EMPTY nodes to the AST (useful for debugging but otherwise unnecessary).
+  bool AddEmptyNodes = false;
+
   /// Source information about the SILInstruction.
   std::shared_ptr<InstrInfo> instrInfo;
   /// Source information about the SILFunction.

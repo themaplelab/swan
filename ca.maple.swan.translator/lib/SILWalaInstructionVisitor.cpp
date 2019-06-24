@@ -107,7 +107,12 @@ void SILWalaInstructionVisitor::visitSILBasicBlock(SILBasicBlock *BB) {
   for (auto &I: *BB) {
     auto Node = visit(&I);
     if (Node != nullptr) {
-      NodeList.push_back(Node);
+      if (!AddEmptyNodes && (Instance->CAst->getKind(Node) == CAstWrapper::EMPTY))
+      {
+        continue;
+      } else {
+        NodeList.push_back(Node);
+      }
     }
   }
 
