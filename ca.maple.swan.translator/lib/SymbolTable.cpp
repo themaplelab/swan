@@ -34,7 +34,12 @@ std::string SymbolTable::get(void* key) {
 void SymbolTable::insert(void* key, const std::string& name) {
 	char buff[80]; // Enough for 64 bit address.
 	std::sprintf(buff, "%p", key);
-	std::string varName = name + "_" + buff;
+	std::string varName;
+	if (name != "") {
+	    varName = name + "_" + buff;
+	} else {
+	    varName = buff;
+	}
 	table.insert(std::make_pair(key, varName));
 }
 

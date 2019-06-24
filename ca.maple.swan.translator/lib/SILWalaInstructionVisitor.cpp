@@ -283,6 +283,8 @@ jobject SILWalaInstructionVisitor::findAndRemoveCAstNode(void *Key) {
     if (it != NodeList.end()) {
       NodeList.erase(it);
     }
+  } else {
+    llvm::outs() << "### RETURNING NULL NODE!\n";
   }
   return node;
 }
@@ -601,7 +603,9 @@ jobject SILWalaInstructionVisitor::visitDebugValueInst(DebugValueInst *DBI) {
 
     void *Addr = Val.getOpaqueValue();
     if (Addr) {
-      SymbolTable.insert(Addr, VarName);
+      if (!SymbolTable.has(Addr)) {
+        SymbolTable.insert(Addr, VarName);
+      }
 
       if (Instance->currentBlock == 0) {
         // Add the variable as an argument name to the current function since this is the first basic block.
@@ -1304,9 +1308,19 @@ jobject SILWalaInstructionVisitor::visitWitnessMethodInst(WitnessMethodInst *WMI
 /*******************************************************************************/
 
 jobject SILWalaInstructionVisitor::visitApplyInst(ApplyInst *AI) {
-  if (auto Node = visitApplySite(AI)) {
-    NodeMap.insert(std::make_pair(static_cast<ValueBase *>(AI), Node)); // insert the node into the hash map
-    return Node;
+  if (auto ApplyNode = visitApplySite(AI)) {
+    SILValue result = AI->getResult(0);
+    if (result) {
+      SymbolTable.insert(result.getOpaqueValue());
+      jobject Var = findAndRemoveCAstNode(result.getOpaqueValue());
+      jobject Node = Instance->CAst->makeNode(CAstWrapper::ASSIGN, Var, ApplyNode);
+      NodeMap.insert(std::make_pair(static_cast<ValueBase *>(AI), Node));
+      return Node;
+    } else {
+
+      NodeMap.insert(std::make_pair(static_cast<ValueBase *>(AI), ApplyNode));
+      return ApplyNode;
+    }
   }
   return Instance->CAst->makeNode(CAstWrapper::EMPTY);
 }

@@ -31,7 +31,7 @@ class SymbolTable {
 public:
   bool has(void* key);
   std::string get(void* key);
-  void insert(void* key, const std::string& name);
+  void insert(void* key, const std::string& name = std::string(""));
   void duplicate(void* key, const std::string& name);
   bool remove(void* key);
 private:
