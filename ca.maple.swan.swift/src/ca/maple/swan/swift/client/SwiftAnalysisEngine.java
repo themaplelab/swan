@@ -1,3 +1,16 @@
+//===--- SwiftAnalysisEngine.java ----------------------------------------===//
+//
+// This source file is part of the SWAN open source project
+//
+// Copyright (c) 2019 Maple @ University of Alberta
+// All rights reserved. This program and the accompanying materials (unless
+// otherwise specified by a license inside of the accompanying material)
+// are made available under the terms of the Eclipse Public License v2.0
+// which accompanies this distribution, and is available at
+// http://www.eclipse.org/legal/epl-v20.html
+//
+//===---------------------------------------------------------------------===//
+
 package ca.maple.swan.swift.client;
 
 import ca.maple.swan.swift.ipa.callgraph.SwiftAnalysisOptions;
@@ -12,7 +25,6 @@ import com.ibm.wala.cast.ipa.callgraph.AstCFAPointerKeys;
 import com.ibm.wala.cast.ipa.callgraph.AstContextInsensitiveSSAContextInterpreter;
 import com.ibm.wala.cast.ipa.callgraph.CAstAnalysisScope;
 import com.ibm.wala.cast.ir.ssa.AstIRFactory;
-import com.ibm.wala.cast.types.AstMethodReference;
 import com.ibm.wala.cast.util.Util;
 import com.ibm.wala.classLoader.*;
 import com.ibm.wala.classLoader.Module;
@@ -21,27 +33,18 @@ import com.ibm.wala.ipa.callgraph.*;
 import com.ibm.wala.ipa.callgraph.impl.ClassHierarchyClassTargetSelector;
 import com.ibm.wala.ipa.callgraph.impl.ClassHierarchyMethodTargetSelector;
 import com.ibm.wala.ipa.callgraph.impl.ContextInsensitiveSelector;
-import com.ibm.wala.ipa.callgraph.impl.DefaultEntrypoint;
 import com.ibm.wala.ipa.callgraph.propagation.InstanceKey;
 import com.ibm.wala.ipa.callgraph.propagation.cfa.nCFAContextSelector;
 import com.ibm.wala.ipa.cha.*;
 import com.ibm.wala.ssa.SSAOptions;
 import com.ibm.wala.ssa.SymbolTable;
 import com.ibm.wala.ssa.IRFactory;
-import com.ibm.wala.types.ClassLoaderReference;
-import com.ibm.wala.types.MethodReference;
-import com.ibm.wala.types.TypeName;
-import com.ibm.wala.types.TypeReference;
 import com.ibm.wala.util.WalaException;
 import com.ibm.wala.util.WalaRuntimeException;
-import com.ibm.wala.util.collections.HashSetFactory;
 import com.ibm.wala.util.debug.Assertions;
 
 import java.util.Collections;
-import java.util.Set;
 import java.util.jar.JarFile;
-
-import static com.ibm.wala.ipa.callgraph.impl.Util.makeMainEntrypoints;
 
 public class SwiftAnalysisEngine<T>
         extends AbstractAnalysisEngine<InstanceKey, SwiftSSAPropagationCallGraphBuilder, T> {
