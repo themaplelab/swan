@@ -273,7 +273,9 @@ jobject SILWalaInstructionVisitor::findAndRemoveCAstNode(void *Key) {
       NodeList.erase(it);
     }
   } else {
-    llvm::errs() << "ERROR: RETURNING NULL NODE!\n";
+    // TODO: Replace with a better exit (JVM exception using JNI?).
+    llvm::outs() << "ERROR: Returning nullptr from findAndRemoveCAstNode. Exiting...\n";
+    exit(1);
   }
   return node;
 }
@@ -322,7 +324,7 @@ jobject SILWalaInstructionVisitor::getOperatorCAstType(Identifier Name) {
   } else if (Name.is("^")) {
     return CAstWrapper::OP_BIT_XOR;
   } else {
-    llvm::errs() << "ERROR: Unhandled operator detected! \n";
+    llvm::outs() << "ERROR: Unhandled operator detected! \n";
     return nullptr;
   }
 }
@@ -332,7 +334,7 @@ jobject SILWalaInstructionVisitor::visitApplySite(ApplySite Apply) {
   auto *Callee = Apply.getReferencedFunction();
 
   if (!Callee) {
-    llvm::errs() << "ERROR: Apply site's Callee is empty! \n";
+    llvm::outs() << "ERROR: Apply site's Callee is empty! \n";
     return Instance->CAst->makeNode(CAstWrapper::EMPTY);
   }
 
@@ -2572,7 +2574,7 @@ jobject SILWalaInstructionVisitor::visitBranchInst(BranchInst *BI) {
     if (argTypeIt != currentEntity->variableTypes.end()) {
         currentEntity->variableTypes.insert({var, argTypeIt->second});
     } else {
-        llvm::errs() << "ERROR: Could not find type for basic block argument SRC!\n";
+        llvm::outs() << "ERROR: Could not find type for basic block argument SRC!\n";
     }
     jobject assign = Instance->CAst->makeNode(CAstWrapper::ASSIGN, var, Node);
     NodeList.push_back(assign);
@@ -2691,7 +2693,7 @@ jobject SILWalaInstructionVisitor::visitSwitchValueInst(SwitchValueInst *SVI) {
 jobject SILWalaInstructionVisitor::visitSelectValueInst(SelectValueInst *SVI) {
 
   if (Print) {
-    llvm::errs() << "\t ERROR: This should never be reached! Swift does not support this anymore" << "\n";
+    llvm::outs() << "\t ERROR: This should never be reached! Swift does not support this anymore" << "\n";
   }
 
   return Instance->CAst->makeNode(CAstWrapper::EMPTY);
