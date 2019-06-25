@@ -75,8 +75,8 @@ public class ScriptEntityBuilder {
     }
 
     private static CAstEntity findCallee(CAstNode node, ArrayList<AbstractCodeEntity> entities) {
-        assert(node.getKind() == CAstNode.CALL);
-        assert(node.getChild(0).getKind() == CAstNode.FUNCTION_EXPR);
+        assert(node.getKind() == CAstNode.CALL) : "node is not a CALL node!";
+        assert(node.getChild(0).getKind() == CAstNode.FUNCTION_EXPR) : "node's first child is not a FUNCTION_EXPR!";
         CAstImpl Ast = new CAstImpl();
         for (CAstEntity entity : entities) {
             if (entity.getName().equals(node.getChild(0).getChild(0).getValue())) {
