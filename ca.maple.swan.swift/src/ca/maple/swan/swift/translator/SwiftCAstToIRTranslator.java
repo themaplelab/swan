@@ -64,7 +64,7 @@ public class SwiftCAstToIRTranslator extends AstTranslator {
 
     @Override
     protected boolean hasImplicitGlobals() {
-        return true;
+        return false;
     }
 
     @Override
