@@ -180,7 +180,7 @@ jobject WALAInstance::getCAstEntityInfo() {
 
       THROW_ANY_EXCEPTION(Exception);
       jmethodID CAstEntityInfoConstructor = JavaEnv->GetMethodID(CAstEntityInfoClass, "<init>",
-        "(Ljava/lang/String;Ljava/util/ArrayList;Ljava/util/ArrayList;Ljava/util/ArrayList;Ljava/lang/String;Ljava/util/ArrayList;Ljava/util/ArrayList;Ljava/util/LinkedHashMap;)V");
+        "(Ljava/lang/String;Ljava/util/ArrayList;Ljava/util/ArrayList;Ljava/util/ArrayList;Ljava/lang/String;Ljava/util/ArrayList;Ljava/util/ArrayList;Ljava/util/LinkedHashMap;Lcom/ibm/wala/cast/tree/impl/CAstSourcePositionRecorder;)V");
       THROW_ANY_EXCEPTION(Exception);
 
       // get CAstEntityInfo constructor arguments
@@ -203,10 +203,69 @@ jobject WALAInstance::getCAstEntityInfo() {
 
       // create the CAstEntity object and add it to the ArrayList
       auto CAstEntityInfoObject = JavaEnv->NewObject(CAstEntityInfoClass, CAstEntityInfoConstructor,
-        FunctionName, BasicBlocks, CallNodes, CFNodes, ReturnType, ArgumentTypes, ArgumentNames, VariableTypes);
+        FunctionName, BasicBlocks, CallNodes, CFNodes, ReturnType, ArgumentTypes, ArgumentNames,
+        VariableTypes, info->CAstSourcePositionRecorder);
       JavaEnv->CallBooleanMethod(ArrayListCAstEntityInfo, ArrayListAdd, CAstEntityInfoObject);
     }
     return ArrayListCAstEntityInfo;
   CATCH()
     // TODO: Control may reach end of non-void function.
+}
+
+void WALAInstance::createCAstSourcePositionRecorder() {
+  TRY(Exception, JavaEnv)
+    auto CAstSourcePositionRecorderClass = JavaEnv->FindClass("com/ibm/wala/cast/tree/impl/CAstSourcePositionRecorder");
+    THROW_ANY_EXCEPTION(Exception);
+    auto CAstSourcePositionRecorderClassConstructor = JavaEnv->GetMethodID(CAstSourcePositionRecorderClass, "<init>", "()V");
+    THROW_ANY_EXCEPTION(Exception);
+    auto CAstSourcePositionRecorderObject = JavaEnv->NewObject(
+      CAstSourcePositionRecorderClass, CAstSourcePositionRecorderClassConstructor);
+    THROW_ANY_EXCEPTION(Exception);
+    CurrentCAstSourcePositionRecorder = CAstSourcePositionRecorderObject;
+  CATCH()
+}
+
+void WALAInstance::addSourceInfo(jobject CAstNode, std::shared_ptr<InstrInfo> instrInfo) {
+  TRY(Exception, JavaEnv)
+    auto CAstSourcePositionRecorderClass = JavaEnv->FindClass("com/ibm/wala/cast/tree/impl/CAstSourcePositionRecorder");
+    THROW_ANY_EXCEPTION(Exception);
+    auto CAstSourcePositionRecorderClassSetPositionMethod = JavaEnv->GetMethodID(
+      CAstSourcePositionRecorderClass, "setPosition", "(Lcom/ibm/wala/cast/tree/CAstNode;IIIILjava/lang/String;Ljava/lang/String;)V");
+    THROW_ANY_EXCEPTION(Exception);
+    switch (instrInfo->srcType) {
+      case -1: { // No Location.
+        break;
+      }
+      case 0: { // Valid start and end.
+        int fl = instrInfo->startLine;
+        int fc = instrInfo->startCol;
+        int ll = instrInfo->endLine;
+        int lc = instrInfo->endCol;
+        jobject url = JavaEnv->NewStringUTF(("file:" + instrInfo->Filename).c_str());
+        auto file = JavaEnv->NewStringUTF(("file:" + instrInfo->Filename).c_str());
+
+        JavaEnv->CallVoidMethod(CurrentCAstSourcePositionRecorder, CAstSourcePositionRecorderClassSetPositionMethod,
+          CAstNode, fl, fc, ll, lc, url, file);
+        THROW_ANY_EXCEPTION(Exception);
+        break;
+      }
+      case 1: { // Valid start but not valid end.
+        int fl = instrInfo->startLine;
+        int fc = instrInfo->startCol;
+        int ll = instrInfo->startLine; // Workaround
+        int lc = instrInfo->startCol; // Workarounds
+        jobject url = JavaEnv->NewStringUTF(("file:" + instrInfo->Filename).c_str());
+        auto file = JavaEnv->NewStringUTF(("file:" + instrInfo->Filename).c_str());
+
+        JavaEnv->CallVoidMethod(CurrentCAstSourcePositionRecorder, CAstSourcePositionRecorderClassSetPositionMethod,
+          CAstNode, fl, fc, ll, lc, url, file);
+        THROW_ANY_EXCEPTION(Exception);
+        break;
+       }
+    }
+  CATCH()
+}
+
+jobject WALAInstance::getCurrentCAstSourcePositionRecorder() {
+  return CurrentCAstSourcePositionRecorder;
 }

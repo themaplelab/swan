@@ -38,10 +38,11 @@ public class ScriptEntityBuilder {
         for (CAstEntityInfo info : CAstEntityInfos) {
             AbstractCodeEntity newEntity;
             if ((info.functionName.equals("main")) && (scriptEntity == null)) {
-                newEntity = new ScriptEntity(file);
+                newEntity = new ScriptEntity(file, info.sourcePositionRecorder);
                 scriptEntity = (ScriptEntity)newEntity;
             } else {
-                newEntity = new FunctionEntity(info.functionName, info.returnType, info.argumentTypes, info.argumentNames);
+                newEntity = new FunctionEntity(info.functionName, info.returnType, info.argumentTypes,
+                        info.argumentNames, info.sourcePositionRecorder);
             }
             functionEntities.add(newEntity);
             if (info.basicBlocks.size() > 0) {

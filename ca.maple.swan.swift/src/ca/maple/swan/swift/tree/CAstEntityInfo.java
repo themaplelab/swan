@@ -14,6 +14,7 @@
 package ca.maple.swan.swift.tree;
 
 import com.ibm.wala.cast.tree.CAstNode;
+import com.ibm.wala.cast.tree.impl.CAstSourcePositionRecorder;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -28,11 +29,13 @@ public class CAstEntityInfo {
     public ArrayList<String> argumentTypes;
     public ArrayList<String> argumentNames;
     public LinkedHashMap<CAstNode, String> variableTypes;
+    public CAstSourcePositionRecorder sourcePositionRecorder;
 
     CAstEntityInfo(String functionName, ArrayList<CAstNode> basicBlocks,
                    ArrayList<CAstNode> callNodes, ArrayList<CAstNode> cfNodes,
                    String returnType, ArrayList<String> argumentTypes,
-                   ArrayList<String> argumentNames, LinkedHashMap<CAstNode, String> variableTypes) {
+                   ArrayList<String> argumentNames, LinkedHashMap<CAstNode,
+                   String> variableTypes, CAstSourcePositionRecorder sourcePositionRecorder) {
         this.functionName = functionName;
         this.basicBlocks = basicBlocks;
         this.callNodes = callNodes;
@@ -41,5 +44,6 @@ public class CAstEntityInfo {
         this.argumentTypes = argumentTypes;
         this.argumentNames = argumentNames;
         this.variableTypes = variableTypes;
+        this.sourcePositionRecorder = sourcePositionRecorder;
     }
 }

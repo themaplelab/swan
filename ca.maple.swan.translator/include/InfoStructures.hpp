@@ -49,7 +49,7 @@ struct InstrInfo {
   swift::SILInstruction::MemoryBehavior memBehavior;
   swift::SILInstruction::ReleasingBehavior relBehavior;
 
-  short srcType;
+  short srcType = -1;
   std::string Filename;
   unsigned startLine;
   unsigned startCol;
@@ -72,6 +72,7 @@ struct CAstEntityInfo {
   std::vector<std::string> argumentTypes; // Vector of argument type names of the function.
   std::vector<std::string> argumentNames; // Vector of argument names corresponding to those referenced in the AST.
   std::map<jobject, std::string> variableTypes; // Map of jobject (VAR CAstNode) to a string representing its type.
+  jobject CAstSourcePositionRecorder; // Maps CAstNodes to source information.
 
   void print() {
       llvm::outs() << "\n\n" << "-*- CAST ENTITY INFO -*-" << "\n";

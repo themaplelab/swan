@@ -16,6 +16,7 @@ package ca.maple.swan.swift.tree;
 import com.ibm.wala.cast.ir.translator.AbstractCodeEntity;
 import com.ibm.wala.cast.tree.CAstEntity;
 import com.ibm.wala.cast.tree.CAstNode;
+import com.ibm.wala.cast.tree.CAstSourcePositionMap;
 import com.ibm.wala.cast.tree.CAstType;
 import com.ibm.wala.cast.tree.impl.CAstControlFlowRecorder;
 
@@ -101,6 +102,25 @@ public class EntityPrinter {
             System.out.println("\t<AST>");
             System.out.println(entity.getAST());
             System.out.println("\t</AST>");
+        }
+
+        Iterator sourceIterator = entity.getSourceMap().getMappedNodes();
+        if (sourceIterator.hasNext()) {
+            System.out.println("\t<SOURCE_MAP>");
+            while (sourceIterator.hasNext()) {
+                CAstNode node = (CAstNode) sourceIterator.next();
+                CAstSourcePositionMap.Position pos = entity.getSourceMap().getPosition(node);
+                System.out.println("\t\t<MAPPING>");
+                System.out.println("\t\t\t<NODE>");
+                System.out.println("\t\t\t\t" + node.toString().replace("\n", "\n\t\t\t\t"));
+                System.out.println("\t\t\t</NODE>");
+                System.out.println("\t\t\t<POSITION>");
+                System.out.println("\t\t\t\t" + pos);
+                System.out.println("\t\t\t\t" + pos.getURL());
+                System.out.println("\t\t\t</POSITION>");
+                System.out.println("\t\t</MAPPING>");
+            }
+            System.out.println("\t</SOURCE_MAP>");
         }
 
         if (entity instanceof ScriptEntity) {

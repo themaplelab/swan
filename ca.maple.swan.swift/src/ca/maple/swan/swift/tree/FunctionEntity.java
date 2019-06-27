@@ -15,6 +15,7 @@ package ca.maple.swan.swift.tree;
 
 import com.ibm.wala.cast.ir.translator.AbstractCodeEntity;
 import com.ibm.wala.cast.tree.*;
+import com.ibm.wala.cast.tree.impl.CAstSourcePositionRecorder;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -25,12 +26,15 @@ public class FunctionEntity extends AbstractCodeEntity {
 
     String functionName;
     private String[] argumentNames;
+    CAstSourcePositionRecorder sourcePositionRecorder;
 
     public FunctionEntity(String name, String returnType,
-                          ArrayList<String> argumentTypes, ArrayList<String> argumentNames) {
+                          ArrayList<String> argumentTypes,
+                          ArrayList<String> argumentNames, CAstSourcePositionRecorder sourcePositionRecorder) {
         super(new SwiftFunctionType(returnType, argumentTypes));
         this.functionName = name;
         this.argumentNames = argumentNames.toArray(new String[0]);
+        this.sourcePositionRecorder = sourcePositionRecorder;
     }
 
     @Override
@@ -78,4 +82,8 @@ public class FunctionEntity extends AbstractCodeEntity {
         return "function " + this.functionName;
     }
 
+    @Override
+    public CAstSourcePositionRecorder getSourceMap() {
+        return this.sourcePositionRecorder;
+    }
 }

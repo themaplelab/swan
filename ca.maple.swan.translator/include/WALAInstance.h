@@ -42,6 +42,7 @@ private:
   jobject Translator; // Java translator object.
   std::string File; // Swift file to analyze.
   std::vector<std::unique_ptr<CAstEntityInfo>> castEntities; // Entity info needed to make the CAstEntities on the Java side.
+  jobject CurrentCAstSourcePositionRecorder = nullptr;
 
 public:
   CAstWrapper *CAst; // For handling JNI calls (WALA).
@@ -80,6 +81,15 @@ public:
 
   /// Converts a given C++ map to a Java LinkedHashMap and returns it as jobject.
   jobject mapToLinkedHashMap(const std::map<jobject, std::string> &map);
+
+  /// Creates a CAstSourcePositionRecorder object and returns it as jobject. Every CAstEntity needs one.
+  void createCAstSourcePositionRecorder();
+
+  /// Calls setPosition on the CurrentCAstSourcePositionRecorder using the given info and CAstNode.
+  void addSourceInfo(jobject CAstNode, std::shared_ptr<InstrInfo> instrInfo);
+
+  /// Returns the current source position recorder (presumably to add it to the currentEntity).
+  jobject getCurrentCAstSourcePositionRecorder();
 
   /// Used to keep track of the currentBlock index so we know when to add the basic block arguments to the
   /// entity argument names. There is probably a better way to do this such as looking up the basic block

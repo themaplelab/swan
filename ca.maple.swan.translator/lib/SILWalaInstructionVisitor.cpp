@@ -47,11 +47,14 @@ void SILWalaInstructionVisitor::visitModule(SILModule *M) {
   for (auto &F: *M) {
     // Clear current entity information since we make an entity for each function.
     currentEntity = std::make_unique<CAstEntityInfo>();
+    // Create a new source position recorder for this entity.
+    Instance->createCAstSourcePositionRecorder();
     visitSILFunction(&F);
     // currentEntity should now be populated so we pass it to the instance.
     if (Print) {
       currentEntity->print();
     }
+    currentEntity->CAstSourcePositionRecorder = Instance->getCurrentCAstSourcePositionRecorder();
     Instance->addCAstEntityInfo(std::move(currentEntity));
   }
 }
@@ -106,6 +109,7 @@ void SILWalaInstructionVisitor::visitSILBasicBlock(SILBasicBlock *BB) {
         continue;
       } else {
         NodeList.push_back(Node);
+        Instance->addSourceInfo(Node, instrInfo);
       }
     }
   }
@@ -205,7 +209,7 @@ void SILWalaInstructionVisitor::perInstruction() {
 
     if (instrInfo->srcType == -1) { // Has no location information.
       llvm::outs() << "\t **** No source information. \n";
-    } else { // Has only start information.
+    } else { // Has start information.
       llvm::outs() << "\t ++++ Start - Line " << instrInfo->startLine << ":"
                    << instrInfo->startCol << "\n";
     }
