@@ -1603,10 +1603,15 @@ jobject SILWalaInstructionVisitor::visitStructExtractInst(StructExtractInst *SEI
 
   std::string FieldName = StructField->getNameStr();
   jobject FieldNameNode = Instance->CAst->makeConstant(FieldName.c_str());
-  /*
-  NodeList.push_back(Instance->CAst->makeNode(CAstWrapper::DECL_STMT,
-    Instance->CAst->makeConstant(Instance->CAst->makeSymbol(FieldName.c_str()))));
-  */
+
+
+  jobject declNode = Instance->CAst->makeNode(CAstWrapper::DECL_STMT,
+                         Instance->CAst->makeConstant(FieldName.c_str()),
+                         Instance->CAst->makeConstant("UNKNOWN"));
+  NodeList.push_back(declNode);
+  currentEntity->declNodes.push_back(declNode);
+
+
   jobject FieldNode = Instance->CAst->makeNode(CAstWrapper::VAR, FieldNameNode);
   currentEntity->variableTypes.insert({FieldNode, StructField->getType().getString()});
 
@@ -1688,10 +1693,15 @@ jobject SILWalaInstructionVisitor::visitStructElementAddrInst(StructElementAddrI
 
   std::string FieldName = StructField->getNameStr();
   jobject FieldNameNode = Instance->CAst->makeConstant(FieldName.c_str());
-  /*
-  NodeList.push_back(Instance->CAst->makeNode(CAstWrapper::DECL_STMT,
-    Instance->CAst->makeConstant(Instance->CAst->makeSymbol(FieldName.c_str()))));
-  */
+
+
+  jobject declNode = Instance->CAst->makeNode(CAstWrapper::DECL_STMT,
+                         Instance->CAst->makeConstant(FieldName.c_str()),
+                         Instance->CAst->makeConstant("UNKNOWN"));
+  NodeList.push_back(declNode);
+  currentEntity->declNodes.push_back(declNode);
+
+
   jobject FieldNode = Instance->CAst->makeNode(CAstWrapper::VAR, FieldNameNode);
   currentEntity->variableTypes.insert({FieldNode, StructField->getType().getString()});
 
@@ -1721,10 +1731,15 @@ jobject SILWalaInstructionVisitor::visitDestructureTupleInst(DestructureTupleIns
     SymbolTable.insert(result.getOpaqueValue(), result->getType().getAsString());
     jobject ResultantVar = findAndRemoveCAstNode(result.getOpaqueValue());
     jobject FieldNameNode = Instance->CAst->makeConstant(("FIELD_" + std::to_string(i)).c_str());
-    /*
-    NodeList.push_back(Instance->CAst->makeNode(CAstWrapper::DECL_STMT,
-      Instance->CAst->makeConstant(Instance->CAst->makeSymbol(("FIELD_" + std::to_string(i)).c_str()))));
-    */
+
+
+    jobject declNode = Instance->CAst->makeNode(CAstWrapper::DECL_STMT,
+                           Instance->CAst->makeConstant(("FIELD_" + std::to_string(i)).c_str()),
+                           Instance->CAst->makeConstant("UNKNOWN"));
+    NodeList.push_back(declNode);
+    currentEntity->declNodes.push_back(declNode);
+
+
     jobject FieldNode = Instance->CAst->makeNode(CAstWrapper::VAR, FieldNameNode);
     jobject ObjectRef = Instance->CAst->makeNode(CAstWrapper::OBJECT_REF, operand, FieldNode);
     jobject Node = Instance->CAst->makeNode(CAstWrapper::ASSIGN, ResultantVar, ObjectRef);
@@ -1751,10 +1766,15 @@ jobject SILWalaInstructionVisitor::visitRefElementAddrInst(RefElementAddrInst *R
 
   std::string ClassName = ClassField->getNameStr();
   jobject FieldNameNode = Instance->CAst->makeConstant(ClassName.c_str());
-  /*
-  NodeList.push_back(Instance->CAst->makeNode(CAstWrapper::DECL_STMT,
-    Instance->CAst->makeConstant(Instance->CAst->makeSymbol(ClassName.c_str()))));
-  */
+
+
+  jobject declNode = Instance->CAst->makeNode(CAstWrapper::DECL_STMT,
+                         Instance->CAst->makeConstant(ClassName.c_str()),
+                         Instance->CAst->makeConstant("UNKNOWN"));
+  NodeList.push_back(declNode);
+  currentEntity->declNodes.push_back(declNode);
+
+
   jobject FieldNode = Instance->CAst->makeNode(CAstWrapper::VAR, FieldNameNode);
   currentEntity->variableTypes.insert({FieldNode, ClassField->getType().getString()});
 
@@ -2756,10 +2776,14 @@ jobject SILWalaInstructionVisitor::visitBranchInst(BranchInst *BI) {
     SymbolTable.insert(Dest->getArgument(Idx), BI->getArg(Idx)->getType().getAsString(), ("argument" + std::to_string(Idx)));
 
     jobject varName = Instance->CAst->makeConstant(SymbolTable.get(Dest->getArgument(Idx)).c_str());
-    /*
-    NodeList.push_back(Instance->CAst->makeNode(CAstWrapper::DECL_STMT,
-      Instance->CAst->makeConstant(Instance->CAst->makeSymbol(SymbolTable.get(Dest->getArgument(Idx)).c_str()))));
-    */
+
+
+    jobject declNode = Instance->CAst->makeNode(CAstWrapper::DECL_STMT,
+                           Instance->CAst->makeConstant(SymbolTable.get(Dest->getArgument(Idx)).c_str()),
+                           Instance->CAst->makeConstant("UNKNOWN"));
+    NodeList.push_back(declNode);
+    currentEntity->declNodes.push_back(declNode);
+
     jobject var = Instance->CAst->makeNode(CAstWrapper::VAR, varName);
     currentEntity->variableTypes.insert({var, SymbolTable.getType(Dest->getArgument(Idx))});
     auto argTypeIt = currentEntity->variableTypes.find(Node);
@@ -3091,10 +3115,13 @@ jobject SILWalaInstructionVisitor::visitTryApplyInst(TryApplyInst *TAI) {
   auto Call = visitApplySite(ApplySite(TAI));
   jobject TryFunc = Instance->CAst->makeNode(CAstWrapper::TRY, Call);
   jobject VarName = Instance->CAst->makeConstant("result_of_try");
-  /*
-  NodeList.push_back(Instance->CAst->makeNode(CAstWrapper::DECL_STMT,
-    Instance->CAst->makeConstant(Instance->CAst->makeSymbol("result_of_try"))));
-  */
+
+  jobject declNode = Instance->CAst->makeNode(CAstWrapper::DECL_STMT,
+                         Instance->CAst->makeConstant("result_of_try"),
+                         Instance->CAst->makeConstant("UNKNOWN"));
+  NodeList.push_back(declNode);
+  currentEntity->declNodes.push_back(declNode);
+
   jobject Var = Instance->CAst->makeNode(CAstWrapper::VAR, VarName);
   currentEntity->variableTypes.insert({Var, "NULL"}); // TODO: Replace NULL type?
   jobject Node = Instance->CAst->makeNode(CAstWrapper::ASSIGN, Var, TryFunc);

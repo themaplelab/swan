@@ -82,8 +82,12 @@ public class ScriptEntityBuilder {
                         new CAstSymbolImpl((String)declNode.getChild(0).getValue(),
                                 SwiftTypes.findOrCreateCAstType((String)declNode.getChild(1).getValue()))
                 );
+                /* TODO: Mutating the AST like this is not recommended and is bad practice. AST translation needs to be
+                 * done in explicit "translation" steps. That is, generate a new AST from the old one. Albeit,
+                 * generating an entire new AST is inefficient and not needed for a simple mutation like this.
+                 */
                 declNode.getChildren().set(0, symbol);
-                declNode.getChildren().set(1, Ast.makeNode(CAstNode.EMPTY)); // Workaround
+                declNode.getChildren().set(1, Ast.makeConstant(null));
             }
             EntityPrinter.print(entity);
         }
