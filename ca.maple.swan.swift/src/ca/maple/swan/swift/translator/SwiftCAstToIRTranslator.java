@@ -59,7 +59,7 @@ public class SwiftCAstToIRTranslator extends AstTranslator {
 
     @Override
     protected boolean useDefaultInitValues() {
-        return true;
+        return false;
     }
 
     @Override

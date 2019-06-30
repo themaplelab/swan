@@ -18,6 +18,7 @@ import com.ibm.wala.cast.ir.translator.AbstractCodeEntity;
 import com.ibm.wala.cast.tree.CAstEntity;
 import com.ibm.wala.cast.tree.CAstNode;
 import com.ibm.wala.cast.tree.impl.CAstImpl;
+import com.ibm.wala.cast.tree.impl.CAstSymbolImpl;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -28,7 +29,7 @@ public class ScriptEntityBuilder {
     public static ScriptEntity buildScriptEntity(File file, ArrayList<CAstEntityInfo> CAstEntityInfos) {
 
         // WORK IN PROGRESS
-
+        CAstImpl Ast = new CAstImpl();
         ScriptEntity scriptEntity = null;
         ArrayList<AbstractCodeEntity> functionEntities = new ArrayList<>();
         HashMap<String, CAstEntityInfo> mappedInfo = new HashMap<>();
@@ -66,6 +67,23 @@ public class ScriptEntityBuilder {
                 entity.setGotoTarget(cfNode, cfNode); // Apparently this is necessary.
                 CAstNode target = findTarget(cfNode, mappedInfo.get(entity.getName()).basicBlocks);
                 entity.setLabelledGotoTarget(cfNode, target, "GOTO"); // TODO: Handle null
+            }
+
+            // Translate (correct) the DECL_STMTs of the entity.
+            // Expected initial DECL_STMT format:
+            // DECL_STMT
+            //   NAME (constant string)
+            //   TYPE (constant string)
+            for (CAstNode declNode : mappedInfo.get(entity.getName()).declNodes) {
+                assert(declNode.getKind() == CAstNode.DECL_STMT) : "declNode is not of DECL_STMT kind";
+                assert(declNode.getChild(0).getKind() == CAstNode.CONSTANT) : "declNode's first child is not a constant";
+                assert(declNode.getChild(1).getKind() == CAstNode.CONSTANT) : "declNode's second child is not a constant";
+                CAstNode symbol = Ast.makeConstant(
+                        new CAstSymbolImpl((String)declNode.getChild(0).getValue(),
+                                SwiftTypes.findOrCreateCAstType((String)declNode.getChild(1).getValue()))
+                );
+                declNode.getChildren().set(0, symbol);
+                declNode.getChildren().set(1, Ast.makeNode(CAstNode.EMPTY)); // Workaround
             }
             EntityPrinter.print(entity);
         }

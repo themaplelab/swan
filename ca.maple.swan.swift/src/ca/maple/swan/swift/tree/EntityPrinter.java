@@ -23,7 +23,10 @@ import com.ibm.wala.cast.tree.impl.CAstControlFlowRecorder;
 import java.util.*;
 
 public class EntityPrinter {
+
     public static void print(AbstractCodeEntity entity) {
+        boolean printMapping = false; // The mapping output can be large and annoying.
+
         System.out.println("====================");
         if (entity instanceof ScriptEntity) {
             System.out.println("<SCRIPT_ENTITY>");
@@ -104,23 +107,25 @@ public class EntityPrinter {
             System.out.println("\t</AST>");
         }
 
-        Iterator sourceIterator = entity.getSourceMap().getMappedNodes();
-        if (sourceIterator.hasNext()) {
-            System.out.println("\t<SOURCE_MAP>");
-            while (sourceIterator.hasNext()) {
-                CAstNode node = (CAstNode) sourceIterator.next();
-                CAstSourcePositionMap.Position pos = entity.getSourceMap().getPosition(node);
-                System.out.println("\t\t<MAPPING>");
-                System.out.println("\t\t\t<NODE>");
-                System.out.println("\t\t\t\t" + node.toString().replace("\n", "\n\t\t\t\t"));
-                System.out.println("\t\t\t</NODE>");
-                System.out.println("\t\t\t<POSITION>");
-                System.out.println("\t\t\t\t" + pos);
-                System.out.println("\t\t\t\t" + pos.getURL());
-                System.out.println("\t\t\t</POSITION>");
-                System.out.println("\t\t</MAPPING>");
+        if (printMapping) {
+            Iterator sourceIterator = entity.getSourceMap().getMappedNodes();
+            if (sourceIterator.hasNext()) {
+                System.out.println("\t<SOURCE_MAP>");
+                while (sourceIterator.hasNext()) {
+                    CAstNode node = (CAstNode) sourceIterator.next();
+                    CAstSourcePositionMap.Position pos = entity.getSourceMap().getPosition(node);
+                    System.out.println("\t\t<MAPPING>");
+                    System.out.println("\t\t\t<NODE>");
+                    System.out.println("\t\t\t\t" + node.toString().replace("\n", "\n\t\t\t\t"));
+                    System.out.println("\t\t\t</NODE>");
+                    System.out.println("\t\t\t<POSITION>");
+                    System.out.println("\t\t\t\t" + pos);
+                    System.out.println("\t\t\t\t" + pos.getURL());
+                    System.out.println("\t\t\t</POSITION>");
+                    System.out.println("\t\t</MAPPING>");
+                }
+                System.out.println("\t</SOURCE_MAP>");
             }
-            System.out.println("\t</SOURCE_MAP>");
         }
 
         if (entity instanceof ScriptEntity) {

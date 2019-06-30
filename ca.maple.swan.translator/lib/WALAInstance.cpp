@@ -180,7 +180,7 @@ jobject WALAInstance::getCAstEntityInfo() {
 
       THROW_ANY_EXCEPTION(Exception);
       jmethodID CAstEntityInfoConstructor = JavaEnv->GetMethodID(CAstEntityInfoClass, "<init>",
-        "(Ljava/lang/String;Ljava/util/ArrayList;Ljava/util/ArrayList;Ljava/util/ArrayList;Ljava/lang/String;Ljava/util/ArrayList;Ljava/util/ArrayList;Ljava/util/LinkedHashMap;Lcom/ibm/wala/cast/tree/impl/CAstSourcePositionRecorder;)V");
+        "(Ljava/lang/String;Ljava/util/ArrayList;Ljava/util/ArrayList;Ljava/util/ArrayList;Ljava/lang/String;Ljava/util/ArrayList;Ljava/util/ArrayList;Ljava/util/LinkedHashMap;Lcom/ibm/wala/cast/tree/impl/CAstSourcePositionRecorder;Ljava/util/ArrayList;)V");
       THROW_ANY_EXCEPTION(Exception);
 
       // get CAstEntityInfo constructor arguments
@@ -200,11 +200,13 @@ jobject WALAInstance::getCAstEntityInfo() {
       THROW_ANY_EXCEPTION(Exception);
       jobject VariableTypes = mapToLinkedHashMap(info->variableTypes);
       THROW_ANY_EXCEPTION(Exception);
+      jobject DeclNodes = getCAstNodesOfEntityInfo(info->declNodes);
+      THROW_ANY_EXCEPTION(Exception);
 
       // create the CAstEntity object and add it to the ArrayList
       auto CAstEntityInfoObject = JavaEnv->NewObject(CAstEntityInfoClass, CAstEntityInfoConstructor,
         FunctionName, BasicBlocks, CallNodes, CFNodes, ReturnType, ArgumentTypes, ArgumentNames,
-        VariableTypes, info->CAstSourcePositionRecorder);
+        VariableTypes, info->CAstSourcePositionRecorder, DeclNodes);
       JavaEnv->CallBooleanMethod(ArrayListCAstEntityInfo, ArrayListAdd, CAstEntityInfoObject);
     }
     return ArrayListCAstEntityInfo;

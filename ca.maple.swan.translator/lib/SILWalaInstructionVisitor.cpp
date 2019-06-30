@@ -67,7 +67,11 @@ void SILWalaInstructionVisitor::visitSILFunction(SILFunction *F) {
 
   BlockStmtList.clear();
 
-  currentEntity->returnType = F->getLoweredFunctionType()->getSingleResult().getSILStorageType().getAsString();
+  if (F->getLoweredFunctionType()->getNumResults() == 1) {
+    currentEntity->returnType = F->getLoweredFunctionType()->getSingleResult().getSILStorageType().getAsString();
+  } else {
+    currentEntity->returnType = "MultiResultType"; // TODO: Replace with appropriate Tuple/Struct/Etc?
+  }
 
   for (auto &param: F->getLoweredFunctionType()->getParameters()) {
     currentEntity->argumentTypes.push_back(param.getSILStorageType().getAsString());
@@ -119,7 +123,7 @@ void SILWalaInstructionVisitor::visitSILBasicBlock(SILBasicBlock *BB) {
     // of the NodeList tree.
     jobject Node = Instance->CAst->makeConstant(BasicBlockLabeller::label(BB).c_str());
     jobject Stmt = Instance->CAst->makeNode(CAstWrapper::LABEL_STMT, Node);
-    NodeList.pop_front();
+    // NodeList.pop_front();
     NodeList.push_front(Stmt);
 
     // Make a BLOCK_STMT node as the root of the NodeList tree.
@@ -267,6 +271,11 @@ jobject SILWalaInstructionVisitor::findAndRemoveCAstNode(void *Key) {
   jobject node = nullptr;
   if (SymbolTable.has(Key)) {
     // Then this is a variable.
+    jobject declNode = Instance->CAst->makeNode(CAstWrapper::DECL_STMT,
+      Instance->CAst->makeConstant(SymbolTable.get(Key).c_str()),
+      Instance->CAst->makeConstant(SymbolTable.getType(Key).c_str()));
+    NodeList.push_back(declNode);
+    currentEntity->declNodes.push_back(declNode);
     jobject name = Instance->CAst->makeConstant(SymbolTable.get(Key).c_str());
     node = Instance->CAst->makeNode(CAstWrapper::VAR, name);
     currentEntity->variableTypes.insert({node, SymbolTable.getType(Key)});
@@ -409,19 +418,18 @@ jobject SILWalaInstructionVisitor::visitApplySite(ApplySite Apply) {
 
 jobject SILWalaInstructionVisitor::visitAllocStackInst(AllocStackInst *ASI) {
   Optional<SILDebugVariable> Info = ASI->getVarInfo();
-  unsigned ArgNo = Info->ArgNo;
 
   if (auto *Decl = ASI->getDecl()) {
     StringRef varName = Decl->getNameStr();
-    if (Print) {
-      llvm::outs() << "\t [ARG]#" << ArgNo << ": " << varName << "\n";
+    if (Print && Info.hasValue()) {
+      llvm::outs() << "\t [ARG]#" << Info->ArgNo << ": " << varName << "\n";
     }
     SymbolTable.insert(static_cast<ValueBase *>(ASI), Decl->getType().getString(), varName);
   }
   else {
     // Temporary allocation when referencing self.
-    if (Print) {
-      llvm::outs() << "\t [ARG]#" << ArgNo << ": " << "self" << "\n";
+    if (Print && Info.hasValue()) {
+      llvm::outs() << "\t [ARG]#" << Info->ArgNo << ": " << "self" << "\n";
     }
     SymbolTable.insert(static_cast<ValueBase *>(ASI), "NULL", "self");
   }
@@ -430,19 +438,18 @@ jobject SILWalaInstructionVisitor::visitAllocStackInst(AllocStackInst *ASI) {
 
 jobject SILWalaInstructionVisitor::visitAllocBoxInst(AllocBoxInst *ABI) {
   Optional<SILDebugVariable> Info = ABI->getVarInfo();
-  unsigned ArgNo = Info->ArgNo;
 
   if (auto *Decl = ABI->getDecl()) {
     StringRef varName = Decl->getNameStr();
-    if (Print) {
-      llvm::outs() << "\t [ARG]#" << ArgNo << ": " << varName << "\n";
+    if (Print && Info.hasValue()) {
+      llvm::outs() << "\t [ARG]#" << Info->ArgNo << ": " << varName << "\n";
     }
     SymbolTable.insert(static_cast<ValueBase *>(ABI), Decl->getType().getString(), varName);
   }
   else {
     // Temporary allocation when referencing self.
-    if (Print) {
-      llvm::outs() << "\t [ARG]#" << ArgNo << ": " << "self" << "\n";
+    if (Print && Info.hasValue()) {
+      llvm::outs() << "\t [ARG]#" << Info->ArgNo << ": " << "self" << "\n";
     }
     SymbolTable.insert(static_cast<ValueBase *>(ABI), "NULL", "self");
   }
@@ -579,9 +586,9 @@ jobject SILWalaInstructionVisitor::visitProjectValueBufferInst(ProjectValueBuffe
 
 jobject SILWalaInstructionVisitor::visitDebugValueInst(DebugValueInst *DBI) {
   Optional<SILDebugVariable> Info = DBI->getVarInfo();
-  unsigned ArgNo = Info->ArgNo;
 
-  if (Print) {
+  if (Print && Info.hasValue()) {
+    unsigned ArgNo = Info->ArgNo;
     llvm::outs() << "[ARGNO]: " << ArgNo << "\n";
   }
 
@@ -634,7 +641,7 @@ jobject SILWalaInstructionVisitor::visitDebugValueInst(DebugValueInst *DBI) {
 jobject SILWalaInstructionVisitor::visitDebugValueAddrInst(DebugValueAddrInst *DVAI) {
   Optional<SILDebugVariable> DebugVar = DVAI->getVarInfo();
 
-  if (Print) {
+  if (Print && DebugVar.hasValue()) {
     llvm::outs() << "\t [ARGNO]: " << DebugVar->ArgNo << "\n";
   }
 
@@ -731,10 +738,24 @@ jobject SILWalaInstructionVisitor::visitBeginBorrowInst(BeginBorrowInst *BBI) {
 
 jobject SILWalaInstructionVisitor::visitLoadBorrowInst(LoadBorrowInst *LBI) {
   if (Print) {
-    llvm::outs() << "\t [NAME]: " << LBI->getOperand() << "\n";
-    llvm::outs() << "\t [ADDR]: " << LBI->getOperand().getOpaqueValue() << "\n";
+    llvm::outs() << "\t [OPERAND]: " << LBI->getOperand() << "\n";
+    llvm::outs() << "\t [OPERAND ADDR]: " << LBI->getOperand().getOpaqueValue() << "\n";
   }
-  return Instance->CAst->makeNode(CAstWrapper::EMPTY);
+  auto operandNode = findAndRemoveCAstNode(LBI->getOperand().getOpaqueValue());
+  auto result = LBI->getResult(0);
+  if (result) {
+    SymbolTable.insert(result.getOpaqueValue(), result->getType().getAsString());
+    llvm::outs() << "\t [RESULT ADDR]: " << result.getOpaqueValue() << "\n";
+    llvm::outs() << "\t [RESULT TYPE]: " << result->getType().getAsString() << "\n";
+    jobject Var = findAndRemoveCAstNode(result.getOpaqueValue());
+    jobject Node = Instance->CAst->makeNode(CAstWrapper::ASSIGN, Var, operandNode);
+    NodeMap.insert(std::make_pair(static_cast<ValueBase *>(LBI), Var));
+    return Node;
+  } else {
+    llvm::outs() << "ERROR: (visitLoadBorrowInst) Instruction has no result!" << "\n";
+    NodeMap.insert(std::make_pair(static_cast<ValueBase *>(LBI), operandNode));
+    return operandNode;
+  }
 }
 
 /*
@@ -912,10 +933,10 @@ jobject SILWalaInstructionVisitor::visitTailAddrInst(TailAddrInst *TAI) {
 
 jobject SILWalaInstructionVisitor::visitBeginAccessInst(BeginAccessInst *BAI) {
   if (Print) {
-    llvm::outs() << "\t [OPERAND ADDR]:" << (BAI->getSource()).getOpaqueValue() << "\n";
+    llvm::outs() << "\t [OPERAND ADDR]:" << (BAI->getOperand()).getOpaqueValue() << "\n";
   }
-  jobject Var = findAndRemoveCAstNode(BAI->getSource().getOpaqueValue());
-  NodeMap.insert(std::make_pair(static_cast<ValueBase *>(BAI), Var));
+  jobject operandVar = findAndRemoveCAstNode(BAI->getSource().getOpaqueValue());
+  NodeMap.insert(std::make_pair(static_cast<ValueBase *>(BAI), operandVar));
   return Instance->CAst->makeNode(CAstWrapper::EMPTY);
 }
 
@@ -1159,6 +1180,8 @@ jobject SILWalaInstructionVisitor::visitClassMethodInst(ClassMethodInst *CMI) {
   auto result = CMI->getResult(0);
   if (result) {
     SymbolTable.insert(result.getOpaqueValue(), result->getType().getAsString());
+    llvm::outs() << "\t [RESULT ADDR]: " << result.getOpaqueValue() << "\n";
+    llvm::outs() << "\t [RESULT TYPE]: " << result->getType().getAsString() << "\n";
     jobject Var = findAndRemoveCAstNode(result.getOpaqueValue());
     jobject Node = Instance->CAst->makeNode(CAstWrapper::ASSIGN, Var, ClassMethodRefNode);
     NodeMap.insert(std::make_pair(static_cast<ValueBase *>(CMI), Var));
@@ -1580,6 +1603,10 @@ jobject SILWalaInstructionVisitor::visitStructExtractInst(StructExtractInst *SEI
 
   std::string FieldName = StructField->getNameStr();
   jobject FieldNameNode = Instance->CAst->makeConstant(FieldName.c_str());
+  /*
+  NodeList.push_back(Instance->CAst->makeNode(CAstWrapper::DECL_STMT,
+    Instance->CAst->makeConstant(Instance->CAst->makeSymbol(FieldName.c_str()))));
+  */
   jobject FieldNode = Instance->CAst->makeNode(CAstWrapper::VAR, FieldNameNode);
   currentEntity->variableTypes.insert({FieldNode, StructField->getType().getString()});
 
@@ -1661,6 +1688,10 @@ jobject SILWalaInstructionVisitor::visitStructElementAddrInst(StructElementAddrI
 
   std::string FieldName = StructField->getNameStr();
   jobject FieldNameNode = Instance->CAst->makeConstant(FieldName.c_str());
+  /*
+  NodeList.push_back(Instance->CAst->makeNode(CAstWrapper::DECL_STMT,
+    Instance->CAst->makeConstant(Instance->CAst->makeSymbol(FieldName.c_str()))));
+  */
   jobject FieldNode = Instance->CAst->makeNode(CAstWrapper::VAR, FieldNameNode);
   currentEntity->variableTypes.insert({FieldNode, StructField->getType().getString()});
 
@@ -1681,39 +1712,26 @@ jobject SILWalaInstructionVisitor::visitStructElementAddrInst(StructElementAddrI
 }
 
 jobject SILWalaInstructionVisitor::visitDestructureTupleInst(DestructureTupleInst *DTI) {
-
-  // Here I want to
-
-  /*
-  llvm::outs() << "RESULTS===\n";
+  auto operand = findAndRemoveCAstNode(DTI->getOperand().getOpaqueValue());
+  llvm::outs() << "\t [OPERAND ADDR]: " << DTI->getOperand().getOpaqueValue() << "\n";
+  int i = 0;
   for (auto result: DTI->getAllResults()) {
-    llvm::outs() << result.getOpaqueValue() << "\n"; // LHS values
+    llvm::outs() << "\t [" << i << " RESULT ADDR]: " << result.getOpaqueValue() << "\n";
+    llvm::outs() << "\t [" << i << " RESULT TYPE]: " << result->getType().getAsString() << "\n";
+    SymbolTable.insert(result.getOpaqueValue(), result->getType().getAsString());
+    jobject ResultantVar = findAndRemoveCAstNode(result.getOpaqueValue());
+    jobject FieldNameNode = Instance->CAst->makeConstant(("FIELD_" + std::to_string(i)).c_str());
+    /*
+    NodeList.push_back(Instance->CAst->makeNode(CAstWrapper::DECL_STMT,
+      Instance->CAst->makeConstant(Instance->CAst->makeSymbol(("FIELD_" + std::to_string(i)).c_str()))));
+    */
+    jobject FieldNode = Instance->CAst->makeNode(CAstWrapper::VAR, FieldNameNode);
+    jobject ObjectRef = Instance->CAst->makeNode(CAstWrapper::OBJECT_REF, operand, FieldNode);
+    jobject Node = Instance->CAst->makeNode(CAstWrapper::ASSIGN, ResultantVar, ObjectRef);
+    NodeList.push_back(Node);
+    ++i;
   }
-  llvm::outs() << "OPERAND===\n";
-
-  //llvm::outs() << DTI->getOperandRef().get().getOpaqueValue() << "\n";
-
-  for (auto operand: DTI->getOperand()->getType().castTo<TupleType>()->getElements()) {
-    //llvm::outs() << operand.getType().getOpaqueValue() << "\n";
-  }
-
-  llvm::outs() << "===OPERAND\n";
-  llvm::outs() << "===RESULTS\n";
-
-
-  // NOTES:
-  //
-  // DTI->getOperand().getOpaqueValue() | Presumably the addr of the tuple operand
-  // DTI->getAllOperands().size() | 1
-  // DTI->getOperand()->getType().castTo<TupleType>()->getElements() | Valid
-  //
-  // Can I use extract TupleExtractInst?
-
-  */
-
-  jobject DummyNode = Instance->CAst->makeNode(CAstWrapper::EMPTY);
-
-  return DummyNode;
+  return Instance->CAst->makeNode(CAstWrapper::EMPTY);
 }
 
 jobject SILWalaInstructionVisitor::visitRefElementAddrInst(RefElementAddrInst *REAI) {
@@ -1733,6 +1751,10 @@ jobject SILWalaInstructionVisitor::visitRefElementAddrInst(RefElementAddrInst *R
 
   std::string ClassName = ClassField->getNameStr();
   jobject FieldNameNode = Instance->CAst->makeConstant(ClassName.c_str());
+  /*
+  NodeList.push_back(Instance->CAst->makeNode(CAstWrapper::DECL_STMT,
+    Instance->CAst->makeConstant(Instance->CAst->makeSymbol(ClassName.c_str()))));
+  */
   jobject FieldNode = Instance->CAst->makeNode(CAstWrapper::VAR, FieldNameNode);
   currentEntity->variableTypes.insert({FieldNode, ClassField->getType().getString()});
 
@@ -2673,9 +2695,10 @@ jobject SILWalaInstructionVisitor::visitYieldInst(YieldInst *YI) {
 
   for (const auto &value : YI->getYieldedValues()) {
     if (Print) {
+      llvm::outs() << "\t [YIELD ADDR]: " << value.getOpaqueValue() << "\n";
       llvm::outs() << "\t [YIELD VALUE]: " << value << "\n";
     }
-    jobject child = findAndRemoveCAstNode(value);
+    jobject child = findAndRemoveCAstNode(value.getOpaqueValue());
     if (child != nullptr) {
       yieldValues.push_back(child);
     }
@@ -2733,6 +2756,10 @@ jobject SILWalaInstructionVisitor::visitBranchInst(BranchInst *BI) {
     SymbolTable.insert(Dest->getArgument(Idx), BI->getArg(Idx)->getType().getAsString(), ("argument" + std::to_string(Idx)));
 
     jobject varName = Instance->CAst->makeConstant(SymbolTable.get(Dest->getArgument(Idx)).c_str());
+    /*
+    NodeList.push_back(Instance->CAst->makeNode(CAstWrapper::DECL_STMT,
+      Instance->CAst->makeConstant(Instance->CAst->makeSymbol(SymbolTable.get(Dest->getArgument(Idx)).c_str()))));
+    */
     jobject var = Instance->CAst->makeNode(CAstWrapper::VAR, varName);
     currentEntity->variableTypes.insert({var, SymbolTable.getType(Dest->getArgument(Idx))});
     auto argTypeIt = currentEntity->variableTypes.find(Node);
@@ -3064,6 +3091,10 @@ jobject SILWalaInstructionVisitor::visitTryApplyInst(TryApplyInst *TAI) {
   auto Call = visitApplySite(ApplySite(TAI));
   jobject TryFunc = Instance->CAst->makeNode(CAstWrapper::TRY, Call);
   jobject VarName = Instance->CAst->makeConstant("result_of_try");
+  /*
+  NodeList.push_back(Instance->CAst->makeNode(CAstWrapper::DECL_STMT,
+    Instance->CAst->makeConstant(Instance->CAst->makeSymbol("result_of_try"))));
+  */
   jobject Var = Instance->CAst->makeNode(CAstWrapper::VAR, VarName);
   currentEntity->variableTypes.insert({Var, "NULL"}); // TODO: Replace NULL type?
   jobject Node = Instance->CAst->makeNode(CAstWrapper::ASSIGN, Var, TryFunc);

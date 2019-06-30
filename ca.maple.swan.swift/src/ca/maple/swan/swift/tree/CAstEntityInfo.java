@@ -30,12 +30,14 @@ public class CAstEntityInfo {
     public ArrayList<String> argumentNames;
     public LinkedHashMap<CAstNode, String> variableTypes;
     public CAstSourcePositionRecorder sourcePositionRecorder;
+    public ArrayList<CAstNode> declNodes;
 
     CAstEntityInfo(String functionName, ArrayList<CAstNode> basicBlocks,
                    ArrayList<CAstNode> callNodes, ArrayList<CAstNode> cfNodes,
                    String returnType, ArrayList<String> argumentTypes,
                    ArrayList<String> argumentNames, LinkedHashMap<CAstNode,
-                   String> variableTypes, CAstSourcePositionRecorder sourcePositionRecorder) {
+                   String> variableTypes, CAstSourcePositionRecorder sourcePositionRecorder,
+                   ArrayList<CAstNode> declNodes) {
         this.functionName = functionName;
         this.basicBlocks = basicBlocks;
         this.callNodes = callNodes;
@@ -45,5 +47,6 @@ public class CAstEntityInfo {
         this.argumentNames = argumentNames;
         this.variableTypes = variableTypes;
         this.sourcePositionRecorder = sourcePositionRecorder;
+        this.declNodes = declNodes;
     }
 }
