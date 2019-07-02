@@ -55,6 +55,9 @@ void SILWalaInstructionVisitor::visitModule(SILModule *M) {
       currentEntity->print();
     }
     currentEntity->CAstSourcePositionRecorder = Instance->getCurrentCAstSourcePositionRecorder();
+    if (currentEntity->basicBlocks.size() == 0) {
+      currentEntity->basicBlocks.push_back(Instance->CAst->makeNode(CAstWrapper::EMPTY));
+    }
     Instance->addCAstEntityInfo(std::move(currentEntity));
   }
 }
