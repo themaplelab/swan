@@ -18,8 +18,6 @@
 ///
 //===---------------------------------------------------------------------===//
 
-// TODO: Class/method Doxygen comments and thorough functionality comments.
-
 #ifndef SWAN_SILWALAINSTRUCTIONVISITOR_H
 #define SWAN_SILWALAINSTRUCTIONVISITOR_H
 
@@ -31,6 +29,7 @@
 #include <jni.h>
 #include <list>
 #include <unordered_map>
+#include <unordered_set>
 
 using namespace swift;
 
@@ -68,6 +67,9 @@ private:
   /// Current 'Cast Entity' being worked on.
   std::unique_ptr<CAstEntityInfo> currentEntity;
 
+  /// Set of all opaque values already declared (so we do not redeclare a value).
+  std::unordered_set<void *> declaredValues;
+
   /// Update instrInfo with the given SILInstruction information.
   void updateInstrSourceInfo(SILInstruction *I);
   /// Called by beforeVisit. Prints debug info about the instrInfo (in our case). It can also handle any other
@@ -77,7 +79,8 @@ private:
   /// Import call that all instructions directly pertaining to function calls lead to. It will create a
   /// CAstNode that will be mapped to the function site (CAstEntity).
   jobject visitApplySite(ApplySite Apply);
-  /// TODO: What is this used for exactly?
+  /// Returns a CAstNode given a key (OpaqueValue). The function first looks up the key in the symbol table, and then
+  /// the NodeMap.
   jobject findAndRemoveCAstNode(void *Key);
   /// Returns CAstNode with appropriate operator kind.
   jobject getOperatorCAstType(Identifier Name);
@@ -94,7 +97,6 @@ private:
   /// Source information about the SILModule.
   std::shared_ptr<ModuleInfo> moduleInfo;
 
-  /// TODO: Why is this needed?
   SymbolTable SymbolTable;
 
   /// Map of Instr* (various SIL instruction types) to the CAstNode representing it.
