@@ -39,11 +39,15 @@ public class ScriptEntityBuilder {
         for (CAstEntityInfo info : CAstEntityInfos) {
             AbstractCodeEntity newEntity;
             if ((info.functionName.equals("main")) && (scriptEntity == null)) {
-                newEntity = new ScriptEntity(file, info.sourcePositionRecorder);
+                String scriptName = "script " + file.getName();
+                mappedInfo.put(scriptName, info);
+                newEntity = new ScriptEntity(scriptName, file, info.sourcePositionRecorder);
                 scriptEntity = (ScriptEntity)newEntity;
+                info.functionName = scriptName;
             } else {
                 newEntity = new FunctionEntity(info.functionName, info.returnType, info.argumentTypes,
                         info.argumentNames, info.sourcePositionRecorder);
+                mappedInfo.put(info.functionName, info);
             }
             functionEntities.add(newEntity);
             if (info.basicBlocks.size() > 0) {
@@ -52,7 +56,6 @@ public class ScriptEntityBuilder {
             for (CAstNode node: info.variableTypes.keySet()) {
                 newEntity.setNodeType(node, SwiftTypes.findOrCreateCAstType(info.variableTypes.get(node)));
             }
-            mappedInfo.put(info.functionName, info);
         }
         assert(scriptEntity != null) : "Script Entity was not created most likely due to no \"main\" function found!";
 

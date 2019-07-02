@@ -13,9 +13,11 @@
 
 package ca.maple.swan.swift.tree;
 
+import ca.maple.swan.swift.client.SwiftAnalysisEngine;
 import com.ibm.wala.cast.ir.translator.AbstractScriptEntity;
 import com.ibm.wala.cast.tree.*;
 import com.ibm.wala.cast.tree.impl.CAstSourcePositionRecorder;
+import com.ibm.wala.classLoader.Module;
 
 import java.io.File;
 
@@ -25,10 +27,12 @@ public class ScriptEntity extends AbstractScriptEntity {
     // WORK IN PROGRESS
 
     CAstSourcePositionRecorder sourcePositionRecorder;
+    String scriptName;
 
-    public ScriptEntity(File file, CAstSourcePositionRecorder cAstSourcePositionRecorder) {
+    public ScriptEntity(String scriptName, File file, CAstSourcePositionRecorder cAstSourcePositionRecorder) {
         super(file, new SwiftScriptType());
         this.sourcePositionRecorder = cAstSourcePositionRecorder;
+        this.scriptName = scriptName;
     }
 
     @Override
@@ -43,7 +47,7 @@ public class ScriptEntity extends AbstractScriptEntity {
 
     @Override
     public String getName() {
-        return "main";
+        return scriptName;
     }
 
     @Override
