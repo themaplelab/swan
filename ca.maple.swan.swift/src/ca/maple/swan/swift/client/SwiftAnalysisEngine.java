@@ -14,7 +14,6 @@
 package ca.maple.swan.swift.client;
 
 import ca.maple.swan.swift.ipa.callgraph.SwiftAnalysisOptions;
-import ca.maple.swan.swift.ipa.callgraph.SwiftEntryPoints;
 import ca.maple.swan.swift.ipa.callgraph.SwiftSSAPropagationCallGraphBuilder;
 import ca.maple.swan.swift.ir.SwiftLanguage;
 import ca.maple.swan.swift.loader.SwiftLoaderFactory;
@@ -25,6 +24,7 @@ import com.ibm.wala.cast.ipa.callgraph.AstCFAPointerKeys;
 import com.ibm.wala.cast.ipa.callgraph.AstContextInsensitiveSSAContextInterpreter;
 import com.ibm.wala.cast.ipa.callgraph.CAstAnalysisScope;
 import com.ibm.wala.cast.ir.ssa.AstIRFactory;
+import com.ibm.wala.cast.types.AstMethodReference;
 import com.ibm.wala.cast.util.Util;
 import com.ibm.wala.classLoader.*;
 import com.ibm.wala.classLoader.Module;
@@ -33,17 +33,23 @@ import com.ibm.wala.ipa.callgraph.*;
 import com.ibm.wala.ipa.callgraph.impl.ClassHierarchyClassTargetSelector;
 import com.ibm.wala.ipa.callgraph.impl.ClassHierarchyMethodTargetSelector;
 import com.ibm.wala.ipa.callgraph.impl.ContextInsensitiveSelector;
+import com.ibm.wala.ipa.callgraph.impl.DefaultEntrypoint;
 import com.ibm.wala.ipa.callgraph.propagation.InstanceKey;
 import com.ibm.wala.ipa.callgraph.propagation.cfa.nCFAContextSelector;
 import com.ibm.wala.ipa.cha.*;
 import com.ibm.wala.ssa.SSAOptions;
 import com.ibm.wala.ssa.SymbolTable;
 import com.ibm.wala.ssa.IRFactory;
+import com.ibm.wala.types.MethodReference;
+import com.ibm.wala.types.TypeName;
+import com.ibm.wala.types.TypeReference;
 import com.ibm.wala.util.WalaException;
 import com.ibm.wala.util.WalaRuntimeException;
+import com.ibm.wala.util.collections.HashSetFactory;
 import com.ibm.wala.util.debug.Assertions;
 
 import java.util.Collections;
+import java.util.Set;
 import java.util.jar.JarFile;
 
 public class SwiftAnalysisEngine<T>
@@ -92,12 +98,12 @@ public class SwiftAnalysisEngine<T>
 
     private String scriptName(Module m) {
         String path = ((ModuleEntry)m).getName();
-        return "LScript " + (path.contains("/")? path.substring(path.lastIndexOf('/')+1): path);
+        return "Lscript " + (path.contains("/")? path.substring(path.lastIndexOf('/')+1): path);
     }
 
     @Override
     protected Iterable<Entrypoint> makeDefaultEntrypoints(AnalysisScope scope, IClassHierarchy cha) {
-        /*
+
         Set<Entrypoint> result = HashSetFactory.make();
         for(Module m : moduleFiles) {
             IClass entry = cha.lookupClass(TypeReference.findOrCreate(SwiftTypes.swiftLoader, TypeName.findOrCreate(scriptName(m))));
@@ -106,9 +112,6 @@ public class SwiftAnalysisEngine<T>
             result.add(new DefaultEntrypoint(er, cha));
         }
         return result;
-         */
-        // return makeMainEntrypoints(scope, cha);
-        return new SwiftEntryPoints(cha, cha.getLoader(SwiftTypes.swiftLoader));
     }
 
     @Override

@@ -16,7 +16,6 @@ package ca.maple.swan.swift.translator;
 import ca.maple.swan.swift.loader.SwiftLoader;
 import ca.maple.swan.swift.ssa.SwiftInvokeInstruction;
 import ca.maple.swan.swift.types.SwiftTypes;
-import com.ibm.wala.cast.ir.ssa.AstGlobalRead;
 import com.ibm.wala.cast.ir.ssa.AstInstructionFactory;
 import com.ibm.wala.cast.ir.translator.AstTranslator;
 import com.ibm.wala.cast.loader.AstMethod;
@@ -32,11 +31,9 @@ import com.ibm.wala.cfg.IBasicBlock;
 import com.ibm.wala.classLoader.CallSiteReference;
 import com.ibm.wala.classLoader.IClass;
 import com.ibm.wala.classLoader.NewSiteReference;
-import com.ibm.wala.shrikeBT.IInvokeInstruction;
 import com.ibm.wala.ssa.SSAInstruction;
 import com.ibm.wala.ssa.SymbolTable;
 import com.ibm.wala.types.FieldReference;
-import com.ibm.wala.types.MethodReference;
 import com.ibm.wala.types.TypeName;
 import com.ibm.wala.types.TypeReference;
 import com.ibm.wala.util.collections.HashMapFactory;
@@ -285,18 +282,7 @@ public class SwiftCAstToIRTranslator extends AstTranslator {
 
     @Override
     protected void doPrimitive(int resultVal, WalkContext context, CAstNode primitiveCall) {
-        if (primitiveCall.getChildCount() == 2 && "import".equals(primitiveCall.getChild(0).getValue())) {
-            String name = (String) primitiveCall.getChild(1).getValue();
-            int idx = context.cfg().getCurrentInstruction();
-            if (loader.lookupClass(TypeName.findOrCreate("Lscript " + name + ".py")) != null) {
-                FieldReference global = makeGlobalRef("script " + name + ".py");
-                context.cfg().addInstruction(new AstGlobalRead(context.cfg().getCurrentInstruction(), resultVal, global));
-            } else {
-                TypeReference imprt = TypeReference.findOrCreate(SwiftTypes.swiftLoader, "L" + name);
-                MethodReference call = MethodReference.findOrCreate(imprt, "import", "()L" + primitiveCall.getChild(1).getValue());
-                context.cfg().addInstruction(Swift.instructionFactory().InvokeInstruction(idx, resultVal, new int[0], context.currentScope().allocateTempValue(), CallSiteReference.make(idx, call, IInvokeInstruction.Dispatch.STATIC), null));
-            }
-        }
+
     }
 
     @Override
