@@ -120,7 +120,8 @@ public class SwiftInvokeInstruction extends SSAAbstractInvokeInstruction {
 
     @Override
     public void visit(IVisitor v) {
-        ((SwiftInstructionVisitor)v).visitSwiftInvoke(this);
+        assert v instanceof SwiftInstructionVisitor;
+        ((SwiftInstructionVisitor) v).visitSwiftInvoke(this);
     }
 
     @Override
