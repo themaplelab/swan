@@ -271,7 +271,9 @@ jobject SILWalaInstructionVisitor::findAndRemoveCAstNode(void *Key) {
   jobject node = nullptr;
   if (SymbolTable.has(Key)) {
     // Then this is a variable.
-    if (declaredValues.find(Key) == declaredValues.end()) {
+    if ((declaredValues.find(Key) == declaredValues.end()) &&
+        (currentEntity->argumentNames.end() == std::find(currentEntity->argumentNames.begin(),
+        currentEntity->argumentNames.end(), SymbolTable.get(Key)))) {
       jobject declNode = Instance->CAst->makeNode(CAstWrapper::DECL_STMT,
         Instance->CAst->makeConstant(SymbolTable.get(Key).c_str()),
         Instance->CAst->makeConstant(SymbolTable.getType(Key).c_str()));
