@@ -13,16 +13,20 @@
 
 package ca.maple.swan.swift.ir;
 
+import ca.maple.swan.swift.cfg.SwiftInducedCFG;
 import ca.maple.swan.swift.ssa.SwiftInvokeInstruction;
 import ca.maple.swan.swift.types.SwiftTypes;
 import com.ibm.wala.analysis.typeInference.PrimitiveType;
 import com.ibm.wala.cast.ir.ssa.*;
 import com.ibm.wala.cast.java.loader.JavaSourceLoaderImpl;
 import com.ibm.wala.cast.types.AstMethodReference;
+import com.ibm.wala.cfg.InducedCFG;
 import com.ibm.wala.classLoader.CallSiteReference;
+import com.ibm.wala.classLoader.IMethod;
 import com.ibm.wala.classLoader.LanguageImpl;
 import com.ibm.wala.ipa.callgraph.AnalysisOptions;
 import com.ibm.wala.ipa.callgraph.CGNode;
+import com.ibm.wala.ipa.callgraph.Context;
 import com.ibm.wala.ipa.callgraph.IAnalysisCacheView;
 import com.ibm.wala.ipa.callgraph.impl.AbstractRootMethod;
 import com.ibm.wala.ipa.callgraph.impl.FakeRootClass;
@@ -37,6 +41,7 @@ import com.ibm.wala.shrikeCT.BootstrapMethodsReader;
 import com.ibm.wala.shrikeCT.InvalidClassFileException;
 import com.ibm.wala.ssa.SSAAbstractInvokeInstruction;
 import com.ibm.wala.ssa.SSAArrayStoreInstruction;
+import com.ibm.wala.ssa.SSAInstruction;
 import com.ibm.wala.ssa.SSAInvokeInstruction;
 import com.ibm.wala.types.FieldReference;
 import com.ibm.wala.types.MethodReference;
@@ -229,6 +234,11 @@ public class SwiftLanguage extends LanguageImpl {
     @Override
     public AbstractRootMethod getFakeRootMethod(IClassHierarchy cha, AnalysisOptions options, IAnalysisCacheView cache) {
         return new FakeRootMethod(new FakeRootClass(SwiftTypes.swiftLoader, cha), options, cache);
+    }
+
+    @Override
+    public InducedCFG makeInducedCFG(SSAInstruction[] instructions, IMethod method, Context context) {
+        return new SwiftInducedCFG(instructions, method, context);
     }
 
     @Override
