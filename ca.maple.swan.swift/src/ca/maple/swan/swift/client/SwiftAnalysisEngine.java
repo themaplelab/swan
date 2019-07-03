@@ -15,6 +15,7 @@ package ca.maple.swan.swift.client;
 
 import ca.maple.swan.swift.ipa.callgraph.SwiftAnalysisOptions;
 import ca.maple.swan.swift.ipa.callgraph.SwiftSSAPropagationCallGraphBuilder;
+import ca.maple.swan.swift.ipa.callgraph.SwiftScopeMappingInstanceKeys;
 import ca.maple.swan.swift.ir.SwiftLanguage;
 import ca.maple.swan.swift.loader.SwiftLoaderFactory;
 import ca.maple.swan.swift.translator.SwiftToCAstTranslatorFactory;
@@ -35,6 +36,7 @@ import com.ibm.wala.ipa.callgraph.impl.ClassHierarchyMethodTargetSelector;
 import com.ibm.wala.ipa.callgraph.impl.ContextInsensitiveSelector;
 import com.ibm.wala.ipa.callgraph.impl.DefaultEntrypoint;
 import com.ibm.wala.ipa.callgraph.propagation.InstanceKey;
+import com.ibm.wala.ipa.callgraph.propagation.cfa.ZeroXInstanceKeys;
 import com.ibm.wala.ipa.callgraph.propagation.cfa.nCFAContextSelector;
 import com.ibm.wala.ipa.cha.*;
 import com.ibm.wala.ssa.SSAOptions;
@@ -155,6 +157,8 @@ public class SwiftAnalysisEngine<T>
         builder.setContextInterpreter(interpreter);
 
         builder.setContextSelector(new nCFAContextSelector(1, new ContextInsensitiveSelector()));
+
+        builder.setInstanceKeys(new SwiftScopeMappingInstanceKeys(builder, new ZeroXInstanceKeys(options, cha, interpreter, ZeroXInstanceKeys.ALLOCATIONS)));
 
         return builder;
     }

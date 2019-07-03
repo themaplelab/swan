@@ -43,6 +43,10 @@ public class SwiftTypes extends AstTypeReference {
 
     public static final TypeReference Object = TypeReference.findOrCreate(swiftLoader, "LObject");
 
+    public static final TypeReference String = TypeReference.findOrCreate(swiftLoader, "LString");
+
+    public static final TypeReference Trampoline = TypeReference.findOrCreate(swiftLoader, "LTrampoline");
+
     private static Map<String, CAstType> CAstTypes = new HashMap<>();
 
     public static CAstType findOrCreateCAstType(String typeName) {

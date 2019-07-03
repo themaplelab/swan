@@ -20,4 +20,5 @@ dependencies {
     compile fileTree(dir: "${WALA_DIR}/com.ibm.wala.shrike/build/libs", include: '*.jar')
     compile fileTree(dir: "${WALA_DIR}/com.ibm.wala.cast/build/libs", include: '*.jar')
     compile fileTree(dir: "${WALA_DIR}/com.ibm.wala.util/build/libs", include: '*.jar')
+    compile 'org.eclipse.lsp4j:org.eclipse.lsp4j.jsonrpc:0.7.2'
 }

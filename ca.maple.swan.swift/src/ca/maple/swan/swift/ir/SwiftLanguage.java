@@ -68,7 +68,7 @@ public class SwiftLanguage extends LanguageImpl {
 
     @Override
     public TypeReference getThrowableType() {
-        return null;
+        return SwiftTypes.Root;
     }
 
     @Override

@@ -1,4 +1,4 @@
-//===--- SwiftLanguage.java ----------------------------------------------===//
+//===--- SwiftInducedCFG.java --------------------------------------------===//
 //
 // This source file is part of the SWAN open source project
 //
