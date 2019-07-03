@@ -19,6 +19,7 @@ import com.ibm.wala.cast.tree.CAstEntity;
 import com.ibm.wala.cast.tree.CAstNode;
 import com.ibm.wala.cast.tree.impl.CAstImpl;
 import com.ibm.wala.cast.tree.impl.CAstSymbolImpl;
+import com.ibm.wala.util.debug.Assertions;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -29,36 +30,48 @@ public class ScriptEntityBuilder {
     public static ScriptEntity buildScriptEntity(File file, ArrayList<CAstEntityInfo> CAstEntityInfos) {
 
         // WORK IN PROGRESS
+        // TODO: Add exception handling.
+
         CAstImpl Ast = new CAstImpl();
         ScriptEntity scriptEntity = null;
         ArrayList<AbstractCodeEntity> functionEntities = new ArrayList<>();
+        // mappedInfo is used to do post-processing on the CAst entities after they have been created.
         HashMap<String, CAstEntityInfo> mappedInfo = new HashMap<>();
 
         System.out.println("\n\n=============CAST=ENTITIES=============\n\n");
 
+        // Create the CAst entities representing the [functions of the] script.
         for (CAstEntityInfo info : CAstEntityInfos) {
             AbstractCodeEntity newEntity;
+            // A SIL script should have a "main" function (that is not explicit in the Swift code). This main function
+            // is represented by a ScriptEntity since it is the root of the script.
             if ((info.functionName.equals("main")) && (scriptEntity == null)) {
-                String scriptName = "script " + file.getName();
+                // We want to name the ScriptEntity with its filename, so the cha has a unique type for the script.
+                // TODO: Add full path to name because you can possibly have multiple .swift files with the same name
+                // but with different paths.
+                String scriptName = "script " + file.getName(); // Omit the "L" here because it is added later.
                 mappedInfo.put(scriptName, info);
                 newEntity = new ScriptEntity(scriptName, file, info.sourcePositionRecorder);
                 scriptEntity = (ScriptEntity)newEntity;
                 info.functionName = scriptName;
-            } else {
+            } else { // Any other function should fall under a FunctionEntity.
                 newEntity = new FunctionEntity(info.functionName, info.returnType, info.argumentTypes,
                         info.argumentNames, info.sourcePositionRecorder);
                 mappedInfo.put(info.functionName, info);
             }
             functionEntities.add(newEntity);
+            // Set the entity's AST to be the first basic block of the function.
             if (info.basicBlocks.size() > 0) {
                 newEntity.setAst(info.basicBlocks.get(0));
             }
+            // Set the node type map.
             for (CAstNode node: info.variableTypes.keySet()) {
                 newEntity.setNodeType(node, SwiftTypes.findOrCreateCAstType(info.variableTypes.get(node)));
             }
         }
-        assert(scriptEntity != null) : "Script Entity was not created most likely due to no \"main\" function found!";
+        assert(scriptEntity != null) : "Script Entity was not created most likely due to no \"main\" function found.";
 
+        // Do post-processing on the entities.
         for (AbstractCodeEntity entity : functionEntities) {
             // Add scoped entities.
             for (CAstNode caller : mappedInfo.get(entity.getName()).callNodes) {
@@ -94,15 +107,14 @@ public class ScriptEntityBuilder {
             }
             EntityPrinter.print(entity);
         }
-
         System.out.println("\n==========END=OF=CAST=ENTITIES=========\n\n");
-
         return scriptEntity;
     }
 
+    // Finds the entity a CALL node calls by looking up the function name.
     private static CAstEntity findCallee(CAstNode node, ArrayList<AbstractCodeEntity> entities) {
-        assert(node.getKind() == CAstNode.CALL) : "node is not a CALL node!";
-        assert(node.getChild(0).getKind() == CAstNode.FUNCTION_EXPR) : "node's first child is not a FUNCTION_EXPR!";
+        assert(node.getKind() == CAstNode.CALL) : "node is not a CALL node";
+        assert(node.getChild(0).getKind() == CAstNode.FUNCTION_EXPR) : "node's first child is not a FUNCTION_EXPR";
         CAstImpl Ast = new CAstImpl();
         for (CAstEntity entity : entities) {
             if (entity.getName().equals(node.getChild(0).getChild(0).getValue())) {
@@ -113,14 +125,17 @@ public class ScriptEntityBuilder {
         return null;
     }
 
+    // Finds the basic block node a control flow node refers to by looking up the basic block name.
     private static CAstNode findTarget(CAstNode node, ArrayList<CAstNode> possibleTargets) {
         for (CAstNode possibleTarget : possibleTargets) {
-            assert(possibleTarget.getKind() == CAstNode.BLOCK_STMT);
-            assert(possibleTarget.getChild(0).getKind() == CAstNode.LABEL_STMT);
+            assert(possibleTarget.getKind() == CAstNode.BLOCK_STMT) : "possibleTarget is not a BLOCK_STMT";
+            assert(possibleTarget.getChild(0).getKind() == CAstNode.LABEL_STMT) : "possibleTarget's first child is not a LABEL_STMT";
             if (node.getKind() == CAstNode.GOTO) {
                 if (possibleTarget.getChild(0).getChild(0).getValue().equals(node.getChild(0).getValue())) {
                     return possibleTarget;
                 }
+            } else {
+                Assertions.UNREACHABLE("Only GOTOs are supported for now");
             }
         }
         return null;
