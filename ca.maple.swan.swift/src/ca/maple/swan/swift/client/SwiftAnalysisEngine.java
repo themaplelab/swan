@@ -13,9 +13,9 @@
 
 package ca.maple.swan.swift.client;
 
-import ca.maple.swan.swift.ipa.callgraph.SwiftAnalysisOptions;
-import ca.maple.swan.swift.ipa.callgraph.SwiftSSAPropagationCallGraphBuilder;
-import ca.maple.swan.swift.ipa.callgraph.SwiftScopeMappingInstanceKeys;
+import ca.maple.swan.swift.ipa.callgraph.*;
+import ca.maple.swan.swift.ipa.summaries.BuiltinFunctions;
+import ca.maple.swan.swift.ipa.summaries.SwiftComprehensionTrampolines;
 import ca.maple.swan.swift.ir.SwiftLanguage;
 import ca.maple.swan.swift.loader.SwiftLoaderFactory;
 import ca.maple.swan.swift.translator.SwiftToCAstTranslatorFactory;
@@ -132,12 +132,30 @@ public class SwiftAnalysisEngine<T>
         return options;
     }
 
+    protected void addBypassLogic(IClassHierarchy cha, AnalysisOptions options) {
+
+        options.setSelector(
+                new SwiftTrampolineTargetSelector(
+                        new SwiftConstructorTargetSelector(
+                                new SwiftComprehensionTrampolines(
+                                        options.getMethodTargetSelector()))));
+
+
+
+        BuiltinFunctions builtins = new BuiltinFunctions(cha);
+        options.setSelector(
+                builtins.builtinClassTargetSelector(
+                        options.getClassTargetSelector()));
+    }
+
     @Override
     protected SwiftSSAPropagationCallGraphBuilder getCallGraphBuilder(IClassHierarchy cha, AnalysisOptions options, IAnalysisCacheView cache2) {
         IAnalysisCacheView cache = new AnalysisCacheImpl(irs, options.getSSAOptions());
 
         options.setSelector(new ClassHierarchyClassTargetSelector(cha));
         options.setSelector(new ClassHierarchyMethodTargetSelector(cha));
+
+        addBypassLogic(cha, options);
 
         options.setUseConstantSpecificKeys(true);
 

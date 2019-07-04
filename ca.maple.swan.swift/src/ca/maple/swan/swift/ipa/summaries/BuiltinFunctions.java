@@ -286,8 +286,9 @@ public class BuiltinFunctions {
     private static final Map<String,Either<TypeReference,Integer>> builtinFunctions = HashMapFactory.make();
 
     static {
+
+        builtinFunctions.put("Swift.Int.init(_builtinIntegerLiteral: Builtin.IntLiteral) -> Swift.Int", Either.forLeft(SwiftTypes.Int));
         /*
-        builtinFunctions.put("enumerate", Either.forLeft(SwiftTypes.enumerate));
         builtinFunctions.put("int", Either.forLeft(TypeReference.Int));
         builtinFunctions.put("len", Either.forLeft(TypeReference.Int));
         builtinFunctions.put("list", Either.forLeft(SwiftTypes.list));
