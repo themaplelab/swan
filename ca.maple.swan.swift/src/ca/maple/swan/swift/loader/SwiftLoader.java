@@ -15,7 +15,7 @@ package ca.maple.swan.swift.loader;
 
 import ca.maple.swan.swift.ir.SwiftLanguage;
 import ca.maple.swan.swift.translator.SwiftCAstToIRTranslator;
-import ca.maple.swan.swift.translator.SwiftTranslatorFactory;
+import ca.maple.swan.swift.translator.SwiftToCAstTranslatorFactory;
 import ca.maple.swan.swift.types.SwiftTypes;
 import com.ibm.wala.cast.ir.translator.AstTranslator;
 import com.ibm.wala.cast.ir.translator.TranslatorToCAst;
@@ -47,17 +47,17 @@ import java.util.Map;
 
 public class SwiftLoader extends CAstAbstractModuleLoader {
 
-    private final SwiftTranslatorFactory translatorFactory;
+    private final SwiftToCAstTranslatorFactory translatorFactory;
 
     private final CAstRewriterFactory<?, ?> preprocessor;
 
-    public SwiftLoader(IClassHierarchy cha, SwiftTranslatorFactory translatorFactory) {
+    public SwiftLoader(IClassHierarchy cha, SwiftToCAstTranslatorFactory translatorFactory) {
         this(cha, translatorFactory, null);
     }
 
     public SwiftLoader(
             IClassHierarchy cha,
-            SwiftTranslatorFactory translatorFactory,
+            SwiftToCAstTranslatorFactory translatorFactory,
             CAstRewriterFactory<?, ?> preprocessor) {
         super(cha);
         this.translatorFactory = translatorFactory;

@@ -55,7 +55,7 @@ public class TestSwiftCallGraphShape extends TestCallGraphShape {
     }
 
     protected SwiftAnalysisEngine<?> createEngine() throws ClassHierarchyException, IllegalArgumentException, CancelException, IOException {
-        return new SwiftAnalysisEngine<Void>();
+        return new SwiftAnalysisEngine.PropagationSwiftAnalysisEngine();
     }
 
     protected SwiftAnalysisEngine<?> makeEngine(SwiftAnalysisEngine<?> engine, String... name) throws ClassHierarchyException, IllegalArgumentException, CancelException, IOException {
@@ -92,13 +92,13 @@ public class TestSwiftCallGraphShape extends TestCallGraphShape {
         try {
             Engine = driver.makeEngine(args[0]);
         } catch (Exception e) {
-            Engine = new SwiftAnalysisEngine<Void>(); // Make IDE happy.
+            Engine = new SwiftAnalysisEngine.PropagationSwiftAnalysisEngine(); // Make IDE happy.
             System.out.println("Could not create SwiftAnalysisEngine!");
             e.printStackTrace();
             System.exit(1);
         }
 
-        CallGraphBuilder<? super InstanceKey> builder = Engine.defaultCallGraphBuilder();
+        CallGraphBuilder builder = Engine.defaultCallGraphBuilder();
         CallGraph CG = builder.makeCallGraph(Engine.getOptions(), new NullProgressMonitor());
 
         CAstCallGraphUtil.AVOID_DUMP = false;

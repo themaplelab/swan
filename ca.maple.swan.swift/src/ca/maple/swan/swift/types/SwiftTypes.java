@@ -35,21 +35,17 @@ public class SwiftTypes extends AstTypeReference {
 
     public static final ClassLoaderReference swiftLoader = new ClassLoaderReference(swiftLoaderName, swiftName, null);
 
+    // For now, we use "L" prefix for types.
+
     public static final TypeReference Root = TypeReference.findOrCreate(swiftLoader, rootTypeName);
+
+    public static final TypeReference FakeRoot = TypeReference.findOrCreate(swiftLoader, "LFakeRoot");
 
     public static final TypeReference Script = TypeReference.findOrCreate(swiftLoader, "LScript");
 
     public static final TypeReference CodeBody = TypeReference.findOrCreate(swiftLoader, functionTypeName);
 
     public static final TypeReference Object = TypeReference.findOrCreate(swiftLoader, "LObject");
-
-    public static final TypeReference String = TypeReference.findOrCreate(swiftLoader, "LString");
-
-    public static final TypeReference Int = TypeReference.findOrCreate(swiftLoader, "LInt");
-
-    public static final TypeReference Trampoline = TypeReference.findOrCreate(swiftLoader, "LTrampoline");
-
-    public static final TypeReference Comprehension = TypeReference.findOrCreate(swiftLoader, "LComprehension");
 
     private static Map<String, CAstType> CAstTypes = new HashMap<>();
 

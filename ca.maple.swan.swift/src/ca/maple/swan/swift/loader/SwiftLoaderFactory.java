@@ -13,7 +13,7 @@
 
 package ca.maple.swan.swift.loader;
 
-import ca.maple.swan.swift.translator.SwiftTranslatorFactory;
+import ca.maple.swan.swift.translator.SwiftToCAstTranslatorFactory;
 import ca.maple.swan.swift.types.SwiftTypes;
 import com.ibm.wala.cast.loader.SingleClassLoaderFactory;
 import com.ibm.wala.cast.tree.rewrite.CAstRewriterFactory;
@@ -23,15 +23,15 @@ import com.ibm.wala.types.ClassLoaderReference;
 
 
 public class SwiftLoaderFactory extends SingleClassLoaderFactory {
-    protected final SwiftTranslatorFactory translatorFactory;
+    protected final SwiftToCAstTranslatorFactory translatorFactory;
     protected final CAstRewriterFactory<?, ?> preprocessor;
 
-    public SwiftLoaderFactory(SwiftTranslatorFactory factory) {
+    public SwiftLoaderFactory(SwiftToCAstTranslatorFactory factory) {
         this(factory, null);
     }
 
     public SwiftLoaderFactory(
-            SwiftTranslatorFactory factory, CAstRewriterFactory<?, ?> preprocessor) {
+            SwiftToCAstTranslatorFactory factory, CAstRewriterFactory<?, ?> preprocessor) {
         this.translatorFactory = factory;
         this.preprocessor = preprocessor;
     }

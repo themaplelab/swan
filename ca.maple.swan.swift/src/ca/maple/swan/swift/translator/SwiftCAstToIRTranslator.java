@@ -54,30 +54,36 @@ public class SwiftCAstToIRTranslator extends AstTranslator {
         super(loader);
     }
 
+    // Init values don't really matter for SIL.
     @Override
     protected boolean useDefaultInitValues() {
         return false;
     }
 
+    // SIL does not have globals.
     @Override
     protected boolean hasImplicitGlobals() {
         return false;
     }
 
+    // SIL does not have globals.
     @Override
     protected boolean treatGlobalsAsLexicallyScoped() {
         return false;
     }
 
+    // This does not apply to SIL (I think).
     @Override
     protected TypeReference defaultCatchType() {
-        return null; // TODO
+        return null;
     }
 
+    // Make a TypeReference for a given CAstType.
     @Override
     protected TypeReference makeType(CAstType cAstType) {
         return TypeReference.findOrCreate(SwiftTypes.swiftLoader, TypeName.string2TypeName(cAstType.getName()));
     }
+
 
     @Override
     protected boolean defineType(CAstEntity type, WalkContext wc) {
@@ -98,6 +104,7 @@ public class SwiftCAstToIRTranslator extends AstTranslator {
         return true;
     }
 
+    // Recursively find and return the root scope.
     private Scope scriptScope(Scope s) {
         if (s.getEntity().getKind() == CAstEntity.SCRIPT_ENTITY) {
             return s;
@@ -105,6 +112,7 @@ public class SwiftCAstToIRTranslator extends AstTranslator {
             return scriptScope(s.getParent());
         }
     }
+
 
     @Override
     protected void declareFunction(CAstEntity N, WalkContext context) {

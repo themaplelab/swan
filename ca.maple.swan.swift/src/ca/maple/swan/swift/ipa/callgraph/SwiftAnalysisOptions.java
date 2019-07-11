@@ -22,4 +22,5 @@ public class SwiftAnalysisOptions extends AnalysisOptions {
     public SwiftAnalysisOptions(AnalysisScope scope, Iterable<? extends Entrypoint> e) {
         super(scope, e);
     }
+
 }

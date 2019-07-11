@@ -19,8 +19,8 @@ import com.ibm.wala.classLoader.ModuleEntry;
 
 import java.net.MalformedURLException;
 
-public class SwiftToCAstTranslatorFactory implements SwiftTranslatorFactory {
-    @Override
+public class SwiftToCAstTranslatorFactory {
+
     public TranslatorToCAst make(CAst ast, ModuleEntry M) {
         try {
             return new SwiftToCAstTranslator(M);
