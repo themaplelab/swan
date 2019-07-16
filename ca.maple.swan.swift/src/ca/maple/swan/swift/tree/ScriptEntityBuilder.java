@@ -66,7 +66,7 @@ public class ScriptEntityBuilder {
             }
             // Set the node type map.
             for (CAstNode node: info.variableTypes.keySet()) {
-                newEntity.setNodeType(node, SwiftTypes.findOrCreateCAstType(info.variableTypes.get(node)));
+                newEntity.setNodeType(node, SwiftTypes.findOrCreateCAstType("Any"/*info.variableTypes.get(node)*/));
             }
         }
         assert(scriptEntity != null) : "Script Entity was not created most likely due to no \"main\" function found.";
@@ -75,7 +75,9 @@ public class ScriptEntityBuilder {
         for (AbstractCodeEntity entity : functionEntities) {
             // Add scoped entities.
             for (CAstNode caller : mappedInfo.get(entity.getName()).callNodes) {
-                entity.addScopedEntity(null, findCallee(caller, functionEntities)); // TODO: Handle null
+                CAstEntity target = findCallee(caller, functionEntities);
+                entity.addScopedEntity(null, target); // TODO: Handle null
+                entity.setGotoTarget(caller, target.getAST()); // TODO: Handle null exception
             }
 
             // Add the CFG targets.
@@ -96,7 +98,7 @@ public class ScriptEntityBuilder {
                 assert(declNode.getChild(1).getKind() == CAstNode.CONSTANT) : "declNode's second child is not a constant";
                 CAstNode symbol = Ast.makeConstant(
                         new CAstSymbolImpl((String)declNode.getChild(0).getValue(),
-                                SwiftTypes.findOrCreateCAstType((String)declNode.getChild(1).getValue()))
+                                SwiftTypes.findOrCreateCAstType("Any"/*(String)declNode.getChild(1).getValue()*/))
                 );
                 /* TODO: Mutating the AST like this is not recommended and is bad practice. AST translation needs to be
                  * done in explicit "translation" steps. That is, generate a new AST from the old one. Albeit,
@@ -116,12 +118,14 @@ public class ScriptEntityBuilder {
         assert(node.getKind() == CAstNode.CALL) : "node is not a CALL node";
         assert(node.getChild(0).getKind() == CAstNode.FUNCTION_EXPR) : "node's first child is not a FUNCTION_EXPR";
         CAstImpl Ast = new CAstImpl();
+        String functionName = (String)node.getChild(0).getChild(0).getValue();
         for (CAstEntity entity : entities) {
-            if (entity.getName().equals(node.getChild(0).getChild(0).getValue())) {
+            if (entity.getName().equals(functionName)) {
                 node.getChildren().set(0, Ast.makeNode(CAstNode.FUNCTION_EXPR, Ast.makeConstant(entity)));
                 return entity;
             }
         }
+        assert(false) : "could not find callee!";
         return null;
     }
 
@@ -138,6 +142,7 @@ public class ScriptEntityBuilder {
                 Assertions.UNREACHABLE("Only GOTOs are supported for now");
             }
         }
+        assert(false) : "could not find target!";
         return null;
     }
 }

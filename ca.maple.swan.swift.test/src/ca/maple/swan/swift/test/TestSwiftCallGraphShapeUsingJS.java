@@ -1,13 +1,13 @@
 package ca.maple.swan.swift.test;
 
-import ca.maple.swan.swift.client.SwiftAnalysisEngine;
+import ca.maple.swan.swift.translator.SwiftToCAstTranslatorFactory;
 import ca.maple.swan.swift.types.SwiftTypes;
+import com.ibm.wala.cast.js.client.JavaScriptAnalysisEngine;
 import com.ibm.wala.cast.types.AstMethodReference;
 import java.io.File;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.util.Collection;
-import java.util.Scanner;
 import java.util.Set;
 
 import com.ibm.wala.cast.ipa.callgraph.CAstCallGraphUtil;
@@ -17,7 +17,6 @@ import com.ibm.wala.classLoader.SourceURLModule;
 import com.ibm.wala.ipa.callgraph.CGNode;
 import com.ibm.wala.ipa.callgraph.CallGraph;
 import com.ibm.wala.ipa.callgraph.CallGraphBuilder;
-import com.ibm.wala.ipa.callgraph.propagation.InstanceKey;
 import com.ibm.wala.ipa.callgraph.propagation.SSAPropagationCallGraphBuilder;
 import com.ibm.wala.ipa.cha.ClassHierarchyException;
 import com.ibm.wala.types.MethodReference;
@@ -28,7 +27,7 @@ import com.ibm.wala.util.NullProgressMonitor;
 import com.ibm.wala.util.collections.HashSetFactory;
 import com.ibm.wala.util.strings.Atom;
 
-public class TestSwiftCallGraphShape extends TestCallGraphShape {
+public class TestSwiftCallGraphShapeUsingJS extends TestCallGraphShape {
 
     @Override
     public Collection<CGNode> getNodes(CallGraph CG, String functionIdentifier) {
@@ -54,11 +53,14 @@ public class TestSwiftCallGraphShape extends TestCallGraphShape {
         }
     }
 
-    protected SwiftAnalysisEngine<?> createEngine() throws ClassHierarchyException, IllegalArgumentException, CancelException, IOException {
-        return new SwiftAnalysisEngine.PropagationSwiftAnalysisEngine();
+    protected JavaScriptAnalysisEngine.PropagationJavaScriptAnalysisEngine createEngine() throws ClassHierarchyException, IllegalArgumentException, CancelException, IOException {
+        JavaScriptAnalysisEngine.PropagationJavaScriptAnalysisEngine engine = new JavaScriptAnalysisEngine.PropagationJavaScriptAnalysisEngine();
+        engine.setTranslatorFactory(new SwiftToCAstTranslatorFactory());
+        return engine;
+
     }
 
-    protected SwiftAnalysisEngine<?> makeEngine(SwiftAnalysisEngine<?> engine, String... name) throws ClassHierarchyException, IllegalArgumentException, CancelException, IOException {
+    protected JavaScriptAnalysisEngine.PropagationJavaScriptAnalysisEngine makeEngine(JavaScriptAnalysisEngine.PropagationJavaScriptAnalysisEngine engine, String... name) throws ClassHierarchyException, IllegalArgumentException, CancelException, IOException {
         Set<Module> modules = HashSetFactory.make();
         for(String n : name) {
             modules.add(getScript(n));
@@ -68,7 +70,7 @@ public class TestSwiftCallGraphShape extends TestCallGraphShape {
         return engine;
     }
 
-    protected SwiftAnalysisEngine<?> makeEngine(String... name) throws ClassHierarchyException, IllegalArgumentException, CancelException, IOException {
+    protected JavaScriptAnalysisEngine.PropagationJavaScriptAnalysisEngine makeEngine(String... name) throws ClassHierarchyException, IllegalArgumentException, CancelException, IOException {
         return makeEngine(createEngine(), name);
     }
 
@@ -86,13 +88,13 @@ public class TestSwiftCallGraphShape extends TestCallGraphShape {
 
     public static void main(String[] args) throws ClassHierarchyException, IllegalArgumentException, CancelException, IOException {
 
-        TestSwiftCallGraphShape driver = new TestSwiftCallGraphShape();
+        TestSwiftCallGraphShapeUsingJS driver = new TestSwiftCallGraphShapeUsingJS();
 
-        SwiftAnalysisEngine<?> Engine;
+        JavaScriptAnalysisEngine.PropagationJavaScriptAnalysisEngine Engine;
         try {
             Engine = driver.makeEngine(args[0]);
         } catch (Exception e) {
-            Engine = new SwiftAnalysisEngine.PropagationSwiftAnalysisEngine(); // Make IDE happy.
+            Engine = new JavaScriptAnalysisEngine.PropagationJavaScriptAnalysisEngine(); // Make IDE happy.
             System.out.println("Could not create SwiftAnalysisEngine!");
             e.printStackTrace();
             System.exit(1);

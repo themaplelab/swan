@@ -405,6 +405,8 @@ jobject SILWalaInstructionVisitor::visitApplySite(ApplySite Apply) {
   auto FuncExprNode = findAndRemoveCAstNode(Callee);
   list<jobject> Params;
 
+  Params.push_back(Instance->CAst->makeConstant("dispatch"));
+
   for (unsigned i = 0; i < Apply.getNumArguments(); ++i) {
     SILValue Arg = Apply.getArgument(i);
     jobject Child = findAndRemoveCAstNode(Arg.getOpaqueValue());
@@ -413,8 +415,12 @@ jobject SILWalaInstructionVisitor::visitApplySite(ApplySite Apply) {
     }
   }
 
-  Node = Instance->CAst->makeNode(CAstWrapper::CALL, FuncExprNode, Instance->CAst->makeArray(&Params));
-  currentEntity->callNodes.push_back(Node);
+  if (Instance->CAst->getKind(FuncExprNode) == CAstWrapper::PRIMITIVE) {
+    return FuncExprNode;
+  } else {
+    Node = Instance->CAst->makeNode(CAstWrapper::CALL, FuncExprNode, Instance->CAst->makeArray(&Params));
+    currentEntity->callNodes.push_back(Node);
+  }
   return Node;
 }
 
@@ -1042,6 +1048,17 @@ jobject SILWalaInstructionVisitor::visitFunctionRefInst(FunctionRefInst *FRI) {
   // Cast the instr to access methods.
   std::string FuncName = Demangle::demangleSymbolAsString(FRI->getReferencedFunction()->getName());
   jobject NameNode = Instance->CAst->makeConstant(FuncName.c_str());
+
+  if (FuncName == "Swift.Int.init(_builtinIntegerLiteral: Builtin.IntLiteral) -> Swift.Int") { // TEMP.
+    jobject primitiveNode = Instance->CAst->makeNode(CAstWrapper::PRIMITIVE, NameNode);
+    NodeMap.insert(std::make_pair(FRI->getReferencedFunction(), primitiveNode));
+    NodeMap.insert(std::make_pair(static_cast<ValueBase *>(FRI), primitiveNode));
+    if (Print) {
+      llvm::outs() << "\t [BUILT IN FUNCTION]: " << FuncName << "\n";
+    }
+    return Instance->CAst->makeNode(CAstWrapper::EMPTY);
+  }
+
   jobject FuncExprNode = Instance->CAst->makeNode(CAstWrapper::FUNCTION_EXPR, NameNode);
 
   if (Print) {
@@ -1389,9 +1406,10 @@ jobject SILWalaInstructionVisitor::visitBuiltinInst(BuiltinInst *BI) {
     }
   }
 
-  jobject Node = Instance->CAst->makeNode(CAstWrapper::CALL, FuncExprNode, Instance->CAst->makeArray(&params));
+  // jobject Node = Instance->CAst->makeNode(CAstWrapper::CALL, FuncExprNode, Instance->CAst->makeArray(&params));
   // We do not add built in functions to the currentEntity.
-  return Node;
+  // return Node;
+  return Instance->CAst->makeNode(CAstWrapper::PRIMITIVE, NameNode);
 }
 
 /*******************************************************************************/

@@ -14,12 +14,13 @@
 package ca.maple.swan.swift.translator;
 
 import com.ibm.wala.cast.ir.translator.TranslatorToCAst;
+import com.ibm.wala.cast.js.translator.JavaScriptTranslatorFactory;
 import com.ibm.wala.cast.tree.CAst;
 import com.ibm.wala.classLoader.ModuleEntry;
 
 import java.net.MalformedURLException;
 
-public class SwiftToCAstTranslatorFactory {
+public class SwiftToCAstTranslatorFactory implements JavaScriptTranslatorFactory {
 
     public TranslatorToCAst make(CAst ast, ModuleEntry M) {
         try {
