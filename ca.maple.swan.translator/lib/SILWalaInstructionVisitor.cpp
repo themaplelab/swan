@@ -68,6 +68,16 @@ void SILWalaInstructionVisitor::visitSILFunction(SILFunction *F) {
 
   currentEntity->functionName = Demangle::demangleSymbolAsString(F->getName());
 
+  if (!F->empty()) {
+    for (auto arg: F->getArguments()) {
+      if (arg->getDecl() && arg->getDecl()->hasName()) {
+        SymbolTable.insert(arg, "Any", arg->getDecl()->getBaseName().getIdentifier().str());
+        currentEntity->argumentNames.push_back(SymbolTable.get(arg));
+      }
+    }
+  }
+
+
   BlockStmtList.clear();
 
   if (F->getLoweredFunctionType()->getNumResults() == 1) {
@@ -282,7 +292,7 @@ jobject SILWalaInstructionVisitor::findAndRemoveCAstNode(void *Key) {
         Instance->CAst->makeConstant(SymbolTable.getType(Key).c_str()));
       NodeList.push_back(declNode);
       currentEntity->declNodes.push_back(declNode);
-      declaredValues.insert(declNode);
+      declaredValues.insert(Key);
     }
     jobject name = Instance->CAst->makeConstant(SymbolTable.get(Key).c_str());
     node = Instance->CAst->makeNode(CAstWrapper::VAR, name);
@@ -628,11 +638,6 @@ jobject SILWalaInstructionVisitor::visitDebugValueInst(DebugValueInst *DBI) {
         SymbolTable.insert(Addr, Val->getType().getAsString(), VarName);
       }
 
-      if (Instance->currentBlock == 0) {
-        // Add the variable as an argument name to the current function since this is the first basic block.
-        currentEntity->argumentNames.push_back(SymbolTable.get(Addr));
-      }
-
       if (Print) {
         llvm::outs() << "\t [ADDR OF OPERAND]:" << Addr << "\n";
       }
@@ -674,11 +679,8 @@ jobject SILWalaInstructionVisitor::visitDebugValueAddrInst(DebugValueAddrInst *D
         llvm::outs() << "\t [ADDR OF OPERAND]: " << Addr << "\n";
       }
 
-      SymbolTable.insert(Addr, Operand->getType().getAsString(), VarName);
-
-      if (Instance->currentBlock == 0) {
-        // Add the variable as an argument name to the current function since this is the first basic block.
-        currentEntity->argumentNames.push_back(SymbolTable.get(Addr));
+      if (!SymbolTable.has(Addr)) {
+        SymbolTable.insert(Addr, Operand->getType().getAsString(), VarName);
       }
 
     } else {
