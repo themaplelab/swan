@@ -28,7 +28,7 @@ import com.ibm.wala.util.collections.HashSetFactory;
 import com.ibm.wala.util.strings.Atom;
 
 public class TestSwiftCallGraphShapeUsingJS extends TestCallGraphShape {
-
+    
     @Override
     public Collection<CGNode> getNodes(CallGraph CG, String functionIdentifier) {
         if (functionIdentifier.contains(":")) {
@@ -53,14 +53,14 @@ public class TestSwiftCallGraphShapeUsingJS extends TestCallGraphShape {
         }
     }
 
-    protected JavaScriptAnalysisEngine.PropagationJavaScriptAnalysisEngine createEngine() throws ClassHierarchyException, IllegalArgumentException, CancelException, IOException {
-        JavaScriptAnalysisEngine.PropagationJavaScriptAnalysisEngine engine = new JavaScriptAnalysisEngine.PropagationJavaScriptAnalysisEngine();
+    protected JavaScriptAnalysisEngine createEngine() throws ClassHierarchyException, IllegalArgumentException, CancelException, IOException {
+        JavaScriptAnalysisEngine engine = new JavaScriptAnalysisEngine.PropagationJavaScriptAnalysisEngine();
         engine.setTranslatorFactory(new SwiftToCAstTranslatorFactory());
         return engine;
 
     }
 
-    protected JavaScriptAnalysisEngine.PropagationJavaScriptAnalysisEngine makeEngine(JavaScriptAnalysisEngine.PropagationJavaScriptAnalysisEngine engine, String... name) throws ClassHierarchyException, IllegalArgumentException, CancelException, IOException {
+    protected JavaScriptAnalysisEngine makeEngine(JavaScriptAnalysisEngine engine, String... name) throws ClassHierarchyException, IllegalArgumentException, CancelException, IOException {
         Set<Module> modules = HashSetFactory.make();
         for(String n : name) {
             modules.add(getScript(n));
@@ -70,7 +70,7 @@ public class TestSwiftCallGraphShapeUsingJS extends TestCallGraphShape {
         return engine;
     }
 
-    protected JavaScriptAnalysisEngine.PropagationJavaScriptAnalysisEngine makeEngine(String... name) throws ClassHierarchyException, IllegalArgumentException, CancelException, IOException {
+    protected JavaScriptAnalysisEngine makeEngine(String... name) throws ClassHierarchyException, IllegalArgumentException, CancelException, IOException {
         return makeEngine(createEngine(), name);
     }
 
@@ -78,32 +78,32 @@ public class TestSwiftCallGraphShapeUsingJS extends TestCallGraphShape {
         return makeEngine(name).buildDefaultCallGraph();
     }
 
-    StringBuffer dump(CallGraph CG) {
+    static void dump(CallGraph CG) {
+        System.out.println("*** DUMPING CG ***");
         StringBuffer sb = new StringBuffer();
         for(CGNode n : CG) {
             sb.append(n.getIR()).append("\n");
         }
-        return sb;
+        System.out.println(sb);
+        System.out.println("*** FINISHED DUMPING CG ***");
     }
 
     public static void main(String[] args) throws ClassHierarchyException, IllegalArgumentException, CancelException, IOException {
 
         TestSwiftCallGraphShapeUsingJS driver = new TestSwiftCallGraphShapeUsingJS();
 
-        JavaScriptAnalysisEngine.PropagationJavaScriptAnalysisEngine Engine;
+        JavaScriptAnalysisEngine Engine;
         try {
             Engine = driver.makeEngine(args[0]);
+            CallGraphBuilder builder = Engine.defaultCallGraphBuilder();
+            CallGraph CG = builder.makeCallGraph(Engine.getOptions(), new NullProgressMonitor());
+
+            CAstCallGraphUtil.AVOID_DUMP = false;
+            dump(CG);
+            //CAstCallGraphUtil.dumpCG(((SSAPropagationCallGraphBuilder)builder).getCFAContextInterpreter(), Engine.getPointerAnalysis(), CG);
         } catch (Exception e) {
-            Engine = new JavaScriptAnalysisEngine.PropagationJavaScriptAnalysisEngine(); // Make IDE happy.
-            System.out.println("Could not create SwiftAnalysisEngine!");
             e.printStackTrace();
             System.exit(1);
         }
-
-        CallGraphBuilder builder = Engine.defaultCallGraphBuilder();
-        CallGraph CG = builder.makeCallGraph(Engine.getOptions(), new NullProgressMonitor());
-
-        CAstCallGraphUtil.AVOID_DUMP = false;
-        CAstCallGraphUtil.dumpCG(((SSAPropagationCallGraphBuilder)builder).getCFAContextInterpreter(), Engine.getPointerAnalysis(), CG);
     }
 }
