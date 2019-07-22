@@ -76,15 +76,18 @@ public class ScriptEntityBuilder {
             // Add scoped entities.
             for (CAstNode caller : mappedInfo.get(entity.getName()).callNodes) {
                 CAstEntity target = findCallee(caller, functionEntities);
-                entity.addScopedEntity(null, target); // TODO: Handle null
-                entity.setGotoTarget(caller, target.getAST()); // TODO: Handle null exception
+                assert(target != null) : "could not find a target";
+                entity.addScopedEntity(null, target);
+                assert(target.getAST() != null) : "target's AST is null";
+                entity.setGotoTarget(caller, target.getAST());
             }
 
             // Add the CFG targets.
             for (CAstNode cfNode : mappedInfo.get(entity.getName()).cfNodes) {
-                entity.setGotoTarget(cfNode, cfNode); // Apparently this is necessary.
                 CAstNode target = findTarget(cfNode, mappedInfo.get(entity.getName()).basicBlocks);
-                entity.setLabelledGotoTarget(cfNode, target, "GOTO"); // TODO: Handle null
+                if (target != null) {
+                    entity.setGotoTarget(cfNode, target);
+                }
             }
 
             // Translate (correct) the DECL_STMTs of the entity.
@@ -107,6 +110,10 @@ public class ScriptEntityBuilder {
                 declNode.getChildren().set(0, symbol);
                 declNode.getChildren().set(1, Ast.makeConstant(null));
             }
+
+            // Map every node in the AST to itself.
+            ReflexiveMapper.mapEntity(entity);
+
             EntityPrinter.print(entity);
         }
         System.out.println("\n==========END=OF=CAST=ENTITIES=========\n\n");
@@ -125,7 +132,7 @@ public class ScriptEntityBuilder {
                 return entity;
             }
         }
-        assert(false) : "could not find callee!";
+        assert(false) : "could not find callee";
         return null;
     }
 
@@ -142,7 +149,7 @@ public class ScriptEntityBuilder {
                 Assertions.UNREACHABLE("Only GOTOs are supported for now");
             }
         }
-        assert(false) : "could not find target!";
+        assert(false) : "could not find target";
         return null;
     }
 }

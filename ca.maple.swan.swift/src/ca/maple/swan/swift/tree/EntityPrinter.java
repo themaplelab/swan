@@ -86,13 +86,15 @@ public class EntityPrinter {
 
             CAstControlFlowRecorder map = entity.getControlFlow();
             for (CAstNode source : map.getMappedNodes()) {
-                if (map.isMapped(source) && !(map.getTargetLabels(source).isEmpty())) {
+                if (map.isMapped(source) && !(map.getTargetLabels(source).isEmpty()) && map.getTargetLabels(source).size() > 1) {
                     System.out.println("\t\t<CONTROL_FLOW>");
                     System.out.println("\t\t\t<FROM>" + source.toString().replace("\n", " | ") + "</FROM>");
                     for (Object label : map.getTargetLabels(source)) {
-                        CAstNode target = map.getTarget(source, label);
-                        if (target != source) {
-                            System.out.println("\t\t\t<TO>" + target.toString().replace("\n", " | ") + "</TO>");
+                        if (entity.getControlFlow().isMapped(source)) {
+                            CAstNode target = map.getTarget(source, label);
+                            if (target != source) {
+                                System.out.println("\t\t\t<TO>" + target.toString().replace("\n", " | ") + "</TO>");
+                            }
                         }
                     }
                     System.out.println("\t\t</CONTROL_FLOW>");
