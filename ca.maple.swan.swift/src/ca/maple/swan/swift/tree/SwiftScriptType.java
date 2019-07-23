@@ -17,6 +17,9 @@ import com.ibm.wala.cast.tree.CAstType;
 
 import java.util.Collection;
 
+/*
+ * This class is the CAstType that the ScriptEntity is of.
+ */
 public class SwiftScriptType implements CAstType {
     @Override
     public String getName() {

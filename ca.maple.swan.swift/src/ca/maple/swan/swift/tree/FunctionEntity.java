@@ -20,9 +20,10 @@ import com.ibm.wala.cast.tree.impl.CAstSourcePositionRecorder;
 import java.util.ArrayList;
 import java.util.Collection;
 
+/*
+ * This class represents a translated SIL function.
+ */
 public class FunctionEntity extends AbstractCodeEntity {
-
-    // WORK IN PROGRESS
 
     String functionName;
     private String[] argumentNames;
@@ -59,7 +60,7 @@ public class FunctionEntity extends AbstractCodeEntity {
 
     @Override
     public int getArgumentCount() {
-        return 0; // TODO?
+        return this.argumentNames.length;
     }
 
     @Override

@@ -19,6 +19,14 @@ import com.ibm.wala.cast.tree.impl.CAstSourcePositionRecorder;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 
+/*
+ * This class is parallel to the C++ CAstEntityInfo class. Objects of this class are created on the C++ side using
+ * JNI and returned up to the SwiftToCAstTranslator, where they are then used in the call to ScriptEntityBuilder.
+ *
+ * This class holds all of the information necessary to build the CAstEntities. There are nodes that need to be
+ * explicitly added to a container in order to eliminate AST traversal (when looking up CALL node targets,
+ * for instance).
+ */
 public class CAstEntityInfo {
 
     public String functionName;

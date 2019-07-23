@@ -1,8 +1,8 @@
 package ca.maple.swan.swift.test;
 
 import ca.maple.swan.swift.translator.SwiftToCAstTranslatorFactory;
-import ca.maple.swan.swift.types.SwiftTypes;
 import com.ibm.wala.cast.js.client.JavaScriptAnalysisEngine;
+import com.ibm.wala.cast.js.types.JavaScriptTypes;
 import com.ibm.wala.cast.types.AstMethodReference;
 import java.io.File;
 import java.io.IOException;
@@ -17,7 +17,6 @@ import com.ibm.wala.classLoader.SourceURLModule;
 import com.ibm.wala.ipa.callgraph.CGNode;
 import com.ibm.wala.ipa.callgraph.CallGraph;
 import com.ibm.wala.ipa.callgraph.CallGraphBuilder;
-import com.ibm.wala.ipa.callgraph.propagation.SSAPropagationCallGraphBuilder;
 import com.ibm.wala.ipa.cha.ClassHierarchyException;
 import com.ibm.wala.types.MethodReference;
 import com.ibm.wala.types.TypeName;
@@ -34,9 +33,9 @@ public class TestSwiftCallGraphShapeUsingJS extends TestCallGraphShape {
         if (functionIdentifier.contains(":")) {
             String cls = functionIdentifier.substring(0, functionIdentifier.indexOf(":"));
             String name = functionIdentifier.substring(functionIdentifier.indexOf(":")+1);
-            return CG.getNodes(MethodReference.findOrCreate(TypeReference.findOrCreate(SwiftTypes.swiftLoader, TypeName.string2TypeName("L" + cls)), Atom.findOrCreateUnicodeAtom(name), AstMethodReference.fnDesc));
+            return CG.getNodes(MethodReference.findOrCreate(TypeReference.findOrCreate(JavaScriptTypes.jsLoader, TypeName.string2TypeName("L" + cls)), Atom.findOrCreateUnicodeAtom(name), AstMethodReference.fnDesc));
         } else {
-            return CG.getNodes(MethodReference.findOrCreate(TypeReference.findOrCreate(SwiftTypes.swiftLoader, TypeName.string2TypeName("L" + functionIdentifier)), AstMethodReference.fnSelector));
+            return CG.getNodes(MethodReference.findOrCreate(TypeReference.findOrCreate(JavaScriptTypes.jsLoader, TypeName.string2TypeName("L" + functionIdentifier)), AstMethodReference.fnSelector));
         }
     }
 
@@ -74,10 +73,6 @@ public class TestSwiftCallGraphShapeUsingJS extends TestCallGraphShape {
         return makeEngine(createEngine(), name);
     }
 
-    protected CallGraph process(String... name) throws ClassHierarchyException, IllegalArgumentException, CancelException, IOException {
-        return makeEngine(name).buildDefaultCallGraph();
-    }
-
     static void dump(CallGraph CG) {
         System.out.println("*** DUMPING CG ***");
         StringBuffer sb = new StringBuffer();
@@ -100,7 +95,6 @@ public class TestSwiftCallGraphShapeUsingJS extends TestCallGraphShape {
 
             CAstCallGraphUtil.AVOID_DUMP = false;
             dump(CG);
-            //CAstCallGraphUtil.dumpCG(((SSAPropagationCallGraphBuilder)builder).getCFAContextInterpreter(), Engine.getPointerAnalysis(), CG);
         } catch (Exception e) {
             e.printStackTrace();
             System.exit(1);

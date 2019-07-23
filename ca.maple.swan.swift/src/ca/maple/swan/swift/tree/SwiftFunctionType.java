@@ -13,21 +13,22 @@
 
 package ca.maple.swan.swift.tree;
 
-import ca.maple.swan.swift.types.SwiftTypes;
+import ca.maple.swan.swift.types.AnyCAstType;
 import com.ibm.wala.cast.tree.CAstType;
 
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
+/*
+ * This class is the CAstType that FunctionEntities are of.
+ */
 public class SwiftFunctionType implements CAstType.Function {
 
-    // TODO: Implement these methods for ScriptEntity and FunctionEntity. Might have to add a constructor.
-
     SwiftFunctionType(String returnType, ArrayList<String> argumentTypes) {
-        this.cAstType = SwiftTypes.findOrCreateCAstType(returnType);
+        this.cAstType = new AnyCAstType();
         for (String argumentType : argumentTypes) {
-            argumentCAstTypes.add(SwiftTypes.findOrCreateCAstType(argumentType));
+            argumentCAstTypes.add(new AnyCAstType());
         }
     }
 

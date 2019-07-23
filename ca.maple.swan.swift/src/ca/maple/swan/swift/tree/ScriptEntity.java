@@ -19,10 +19,10 @@ import com.ibm.wala.cast.tree.impl.CAstSourcePositionRecorder;
 
 import java.io.File;
 
-
+/*
+ * This class represents the translated "main" SIL function.
+ */
 public class ScriptEntity extends AbstractScriptEntity {
-
-    // WORK IN PROGRESS
 
     CAstSourcePositionRecorder sourcePositionRecorder;
     String scriptName;
