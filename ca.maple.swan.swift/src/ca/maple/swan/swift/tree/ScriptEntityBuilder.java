@@ -41,9 +41,7 @@ public class ScriptEntityBuilder {
         // MappedInfo is used to do post-processing on the CAst entities after they have been created.
         HashMap<String, CAstEntityInfo> mappedInfo = new HashMap<>();
 
-        if (DEBUG) {
-            System.out.println("\n\n=============CAST=ENTITIES=============\n\n");
-        }
+        if (DEBUG) System.out.println("\n\n=============CAST=ENTITIES=============\n\n");
 
         // Create the CAst entities representing the [functions of the] script.
         for (CAstEntityInfo info : CAstEntityInfos) {
@@ -85,6 +83,7 @@ public class ScriptEntityBuilder {
                 entity.addScopedEntity(null, target);
                 assert(target.getAST() != null) : "target's AST is null";
                 entity.setGotoTarget(caller, target.getAST());
+                // caller.getChildren().set(0, Ast.makeNode(CAstNode.FUNCTION_EXPR, Ast.makeConstant(target)));
             }
 
             // Add the CFG targets.
@@ -94,8 +93,6 @@ public class ScriptEntityBuilder {
                     entity.setGotoTarget(cfNode, target);
                 }
             }
-
-            // TODO: Remove types since they are no longer needed for the JS-based analysis.
 
             // Translate (correct) the DECL_STMTs of the entity.
             // Expected initial DECL_STMT format:
@@ -119,13 +116,9 @@ public class ScriptEntityBuilder {
 
             // Map every node in the AST to itself.
             ReflexiveMapper.mapEntity(entity);
-            if (DEBUG) {
-                EntityPrinter.print(entity);
-            }
+            if (DEBUG) EntityPrinter.print(entity);
         }
-        if (DEBUG) {
-            System.out.println("\n==========END=OF=CAST=ENTITIES=========\n\n");
-        }
+        if (DEBUG) System.out.println("\n==========END=OF=CAST=ENTITIES=========\n\n");
         return scriptEntity;
     }
 
