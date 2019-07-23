@@ -415,7 +415,7 @@ jobject SILWalaInstructionVisitor::visitApplySite(ApplySite Apply) {
   auto FuncExprNode = findAndRemoveCAstNode(Callee);
   list<jobject> Params;
 
-  Params.push_back(Instance->CAst->makeConstant("dispatch"));
+  Params.push_back(Instance->CAst->makeConstant("do")); // TODO: Unsure about this.
 
   for (unsigned i = 0; i < Apply.getNumArguments(); ++i) {
     SILValue Arg = Apply.getArgument(i);
