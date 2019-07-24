@@ -15,6 +15,7 @@ package ca.maple.swan.swift.tree;
 
 import com.ibm.wala.cast.ir.translator.AbstractCodeEntity;
 import com.ibm.wala.cast.tree.*;
+import com.ibm.wala.cast.tree.impl.CAstNodeTypeMapRecorder;
 import com.ibm.wala.cast.tree.impl.CAstSourcePositionRecorder;
 
 import java.util.ArrayList;
@@ -24,6 +25,8 @@ import java.util.Collection;
  * This class represents a translated SIL function.
  */
 public class FunctionEntity extends AbstractCodeEntity {
+
+    // TODO: Is it necessary to implement getNamePosition(), getPosition(int[] arg), getPosition()?
 
     String functionName;
     private String[] argumentNames;
@@ -80,11 +83,21 @@ public class FunctionEntity extends AbstractCodeEntity {
 
     @Override
     public String toString() {
-        return "function " + this.functionName;
+        return "<Swift function " + getName() + ">";
     }
 
     @Override
     public CAstSourcePositionRecorder getSourceMap() {
         return this.sourcePositionRecorder;
+    }
+
+    @Override
+    public CAstNodeTypeMapRecorder getNodeTypeMap() {
+        return null;
+    }
+
+    @Override
+    public Collection<CAstAnnotation> getAnnotations() {
+        return null;
     }
 }
