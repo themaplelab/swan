@@ -24,7 +24,6 @@ import com.ibm.wala.ssa.SSAInstruction;
 import com.ibm.wala.types.MethodReference;
 import com.ibm.wala.util.collections.HashSetFactory;
 import com.ibm.wala.util.graph.traverse.BFSPathFinder;
-import com.sun.corba.se.spi.activation.EndpointInfoListHelper;
 
 import java.io.IOException;
 import java.util.List;
