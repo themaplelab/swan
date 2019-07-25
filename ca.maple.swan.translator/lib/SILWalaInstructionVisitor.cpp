@@ -22,6 +22,7 @@
 
 #include "SILWalaInstructionVisitor.h"
 #include "BasicBlockLabeller.h"
+#include "BuiltinFunctions.hpp"
 #include "CAstWrapper.h"
 #include "swift/AST/Module.h"
 #include "swift/AST/Types.h"
@@ -67,6 +68,16 @@ void SILWalaInstructionVisitor::visitSILFunction(SILFunction *F) {
       std::make_shared<FunctionInfo>(F->getName(), Demangle::demangleSymbolAsString(F->getName()));
 
   currentEntity->functionName = Demangle::demangleSymbolAsString(F->getName());
+
+  if (!F->empty()) {
+    for (auto arg: F->getArguments()) {
+      if (arg->getDecl() && arg->getDecl()->hasName()) {
+        SymbolTable.insert(arg, "Any", arg->getDecl()->getBaseName().getIdentifier().str());
+        currentEntity->argumentNames.push_back(SymbolTable.get(arg));
+      }
+    }
+  }
+
 
   BlockStmtList.clear();
 
@@ -282,7 +293,7 @@ jobject SILWalaInstructionVisitor::findAndRemoveCAstNode(void *Key) {
         Instance->CAst->makeConstant(SymbolTable.getType(Key).c_str()));
       NodeList.push_back(declNode);
       currentEntity->declNodes.push_back(declNode);
-      declaredValues.insert(declNode);
+      declaredValues.insert(Key);
     }
     jobject name = Instance->CAst->makeConstant(SymbolTable.get(Key).c_str());
     node = Instance->CAst->makeNode(CAstWrapper::VAR, name);
@@ -405,6 +416,8 @@ jobject SILWalaInstructionVisitor::visitApplySite(ApplySite Apply) {
   auto FuncExprNode = findAndRemoveCAstNode(Callee);
   list<jobject> Params;
 
+  Params.push_back(Instance->CAst->makeConstant("do")); // TODO: Unsure about this.
+
   for (unsigned i = 0; i < Apply.getNumArguments(); ++i) {
     SILValue Arg = Apply.getArgument(i);
     jobject Child = findAndRemoveCAstNode(Arg.getOpaqueValue());
@@ -413,8 +426,12 @@ jobject SILWalaInstructionVisitor::visitApplySite(ApplySite Apply) {
     }
   }
 
-  Node = Instance->CAst->makeNode(CAstWrapper::CALL, FuncExprNode, Instance->CAst->makeArray(&Params));
-  currentEntity->callNodes.push_back(Node);
+  if (Instance->CAst->getKind(FuncExprNode) == CAstWrapper::CONSTANT) {
+    return FuncExprNode;
+  } else {
+    Node = Instance->CAst->makeNode(CAstWrapper::CALL, FuncExprNode, Instance->CAst->makeArray(&Params));
+    currentEntity->callNodes.push_back(Node);
+  }
   return Node;
 }
 
@@ -622,11 +639,6 @@ jobject SILWalaInstructionVisitor::visitDebugValueInst(DebugValueInst *DBI) {
         SymbolTable.insert(Addr, Val->getType().getAsString(), VarName);
       }
 
-      if (Instance->currentBlock == 0) {
-        // Add the variable as an argument name to the current function since this is the first basic block.
-        currentEntity->argumentNames.push_back(SymbolTable.get(Addr));
-      }
-
       if (Print) {
         llvm::outs() << "\t [ADDR OF OPERAND]:" << Addr << "\n";
       }
@@ -668,11 +680,8 @@ jobject SILWalaInstructionVisitor::visitDebugValueAddrInst(DebugValueAddrInst *D
         llvm::outs() << "\t [ADDR OF OPERAND]: " << Addr << "\n";
       }
 
-      SymbolTable.insert(Addr, Operand->getType().getAsString(), VarName);
-
-      if (Instance->currentBlock == 0) {
-        // Add the variable as an argument name to the current function since this is the first basic block.
-        currentEntity->argumentNames.push_back(SymbolTable.get(Addr));
+      if (!SymbolTable.has(Addr)) {
+        SymbolTable.insert(Addr, Operand->getType().getAsString(), VarName);
       }
 
     } else {
@@ -1042,6 +1051,17 @@ jobject SILWalaInstructionVisitor::visitFunctionRefInst(FunctionRefInst *FRI) {
   // Cast the instr to access methods.
   std::string FuncName = Demangle::demangleSymbolAsString(FRI->getReferencedFunction()->getName());
   jobject NameNode = Instance->CAst->makeConstant(FuncName.c_str());
+
+  if (builtinFunctions.find(FuncName) != builtinFunctions.end()) {
+    jobject constantNode = Instance->CAst->makeNode(CAstWrapper::CONSTANT, NameNode);
+    NodeMap.insert(std::make_pair(FRI->getReferencedFunction(), constantNode));
+    NodeMap.insert(std::make_pair(static_cast<ValueBase *>(FRI), constantNode));
+    if (Print) {
+      llvm::outs() << "\t [BUILT IN FUNCTION]: " << FuncName << "\n";
+    }
+    return Instance->CAst->makeNode(CAstWrapper::EMPTY);
+  }
+
   jobject FuncExprNode = Instance->CAst->makeNode(CAstWrapper::FUNCTION_EXPR, NameNode);
 
   if (Print) {
@@ -1377,7 +1397,6 @@ jobject SILWalaInstructionVisitor::visitBuiltinInst(BuiltinInst *BI) {
   }
 
   jobject NameNode = Instance->CAst->makeConstant(FuncName.c_str());
-  jobject FuncExprNode = Instance->CAst->makeNode(CAstWrapper::FUNCTION_EXPR, NameNode);
 
   for (const auto &operand : BI->getArguments()) {
     if (Print) {
@@ -1389,9 +1408,8 @@ jobject SILWalaInstructionVisitor::visitBuiltinInst(BuiltinInst *BI) {
     }
   }
 
-  jobject Node = Instance->CAst->makeNode(CAstWrapper::CALL, FuncExprNode, Instance->CAst->makeArray(&params));
-  // We do not add built in functions to the currentEntity.
-  return Node;
+  // We do not add builtins to the currentEntity.
+  return Instance->CAst->makeNode(CAstWrapper::CONSTANT, NameNode, Instance->CAst->makeArray(&params));
 }
 
 /*******************************************************************************/

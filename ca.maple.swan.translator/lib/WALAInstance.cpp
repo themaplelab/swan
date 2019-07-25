@@ -51,6 +51,10 @@ void WALAInstance::analyze() {
   // otherwise the compiler will not do anything and complain no action was given.
   // Also, the callbacks required for the translation (hook) will not be triggered
   // without this option.
+
+  // Note that "-o<name>.sil" option will prefix all function names with "<name>.". If you omit this option, it will
+  // prefix the function names with the .swift filename. This _shouldn't_ be problematic, but could be in the future
+  // especially with multi-file analysis.
   auto Argv = {"", "-emit-silgen", "-oout.sil", "-Onone", File.c_str()};
   swan::Observer observer(this); // create the hook
   SmallVector<const char *, 256> argv(Argv.begin(), Argv.end());

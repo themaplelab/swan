@@ -13,7 +13,7 @@
 
 package ca.maple.swan.swift.tree;
 
-import ca.maple.swan.swift.types.SwiftTypes;
+import ca.maple.swan.swift.types.AnyCAstType;
 import com.ibm.wala.cast.ir.translator.AbstractCodeEntity;
 import com.ibm.wala.cast.tree.CAstEntity;
 import com.ibm.wala.cast.tree.CAstNode;
@@ -25,20 +25,23 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.HashMap;
 
+/*
+ * This class builds all of the CAstEntities required for translation, based on the given CAstEntityInfos.
+ */
 public class ScriptEntityBuilder {
 
     public static ScriptEntity buildScriptEntity(File file, ArrayList<CAstEntityInfo> CAstEntityInfos) {
 
-        // WORK IN PROGRESS
-        // TODO: Add exception handling.
+        boolean DEBUG = true;
 
         CAstImpl Ast = new CAstImpl();
         ScriptEntity scriptEntity = null;
         ArrayList<AbstractCodeEntity> functionEntities = new ArrayList<>();
-        // mappedInfo is used to do post-processing on the CAst entities after they have been created.
+
+        // MappedInfo is used to do post-processing on the CAst entities after they have been created.
         HashMap<String, CAstEntityInfo> mappedInfo = new HashMap<>();
 
-        System.out.println("\n\n=============CAST=ENTITIES=============\n\n");
+        if (DEBUG) System.out.println("\n\n=============CAST=ENTITIES=============\n\n");
 
         // Create the CAst entities representing the [functions of the] script.
         for (CAstEntityInfo info : CAstEntityInfos) {
@@ -48,7 +51,7 @@ public class ScriptEntityBuilder {
             if ((info.functionName.equals("main")) && (scriptEntity == null)) {
                 // We want to name the ScriptEntity with its filename, so the cha has a unique type for the script.
                 // TODO: Add full path to name because you can possibly have multiple .swift files with the same name
-                // but with different paths.
+                //       but with different paths.
                 String scriptName = "script " + file.getName(); // Omit the "L" here because it is added later.
                 mappedInfo.put(scriptName, info);
                 newEntity = new ScriptEntity(scriptName, file, info.sourcePositionRecorder);
@@ -66,7 +69,7 @@ public class ScriptEntityBuilder {
             }
             // Set the node type map.
             for (CAstNode node: info.variableTypes.keySet()) {
-                newEntity.setNodeType(node, SwiftTypes.findOrCreateCAstType(info.variableTypes.get(node)));
+                newEntity.setNodeType(node, new AnyCAstType());
             }
         }
         assert(scriptEntity != null) : "Script Entity was not created most likely due to no \"main\" function found.";
@@ -75,14 +78,20 @@ public class ScriptEntityBuilder {
         for (AbstractCodeEntity entity : functionEntities) {
             // Add scoped entities.
             for (CAstNode caller : mappedInfo.get(entity.getName()).callNodes) {
-                entity.addScopedEntity(null, findCallee(caller, functionEntities)); // TODO: Handle null
+                CAstEntity target = findCallee(caller, functionEntities);
+                assert(target != null) : "could not find a target";
+                entity.addScopedEntity(null, target);
+                assert(target.getAST() != null) : "target's AST is null";
+                entity.setGotoTarget(caller, target.getAST());
+                // caller.getChildren().set(0, Ast.makeNode(CAstNode.FUNCTION_EXPR, Ast.makeConstant(target)));
             }
 
             // Add the CFG targets.
             for (CAstNode cfNode : mappedInfo.get(entity.getName()).cfNodes) {
-                entity.setGotoTarget(cfNode, cfNode); // Apparently this is necessary.
                 CAstNode target = findTarget(cfNode, mappedInfo.get(entity.getName()).basicBlocks);
-                entity.setLabelledGotoTarget(cfNode, target, "GOTO"); // TODO: Handle null
+                if (target != null) {
+                    entity.setGotoTarget(cfNode, target);
+                }
             }
 
             // Translate (correct) the DECL_STMTs of the entity.
@@ -95,19 +104,21 @@ public class ScriptEntityBuilder {
                 assert(declNode.getChild(0).getKind() == CAstNode.CONSTANT) : "declNode's first child is not a constant";
                 assert(declNode.getChild(1).getKind() == CAstNode.CONSTANT) : "declNode's second child is not a constant";
                 CAstNode symbol = Ast.makeConstant(
-                        new CAstSymbolImpl((String)declNode.getChild(0).getValue(),
-                                SwiftTypes.findOrCreateCAstType((String)declNode.getChild(1).getValue()))
+                        new CAstSymbolImpl((String)declNode.getChild(0).getValue(), new AnyCAstType())
                 );
                 /* TODO: Mutating the AST like this is not recommended and is bad practice. AST translation needs to be
-                 * done in explicit "translation" steps. That is, generate a new AST from the old one. Albeit,
-                 * generating an entire new AST is inefficient and not needed for a simple mutation like this.
+                 *  done in explicit "translation" steps. That is, generate a new AST from the old one. Albeit,
+                 *  generating an entire new AST is inefficient and is not needed for a simple mutation like this.
                  */
                 declNode.getChildren().set(0, symbol);
                 declNode.getChildren().set(1, Ast.makeConstant(null));
             }
-            EntityPrinter.print(entity);
+
+            // Map every node in the AST to itself.
+            ReflexiveMapper.mapEntity(entity);
+            if (DEBUG) EntityPrinter.print(entity);
         }
-        System.out.println("\n==========END=OF=CAST=ENTITIES=========\n\n");
+        if (DEBUG) System.out.println("\n==========END=OF=CAST=ENTITIES=========\n\n");
         return scriptEntity;
     }
 
@@ -116,16 +127,18 @@ public class ScriptEntityBuilder {
         assert(node.getKind() == CAstNode.CALL) : "node is not a CALL node";
         assert(node.getChild(0).getKind() == CAstNode.FUNCTION_EXPR) : "node's first child is not a FUNCTION_EXPR";
         CAstImpl Ast = new CAstImpl();
+        String functionName = (String)node.getChild(0).getChild(0).getValue();
         for (CAstEntity entity : entities) {
-            if (entity.getName().equals(node.getChild(0).getChild(0).getValue())) {
+            if (entity.getName().equals(functionName)) {
                 node.getChildren().set(0, Ast.makeNode(CAstNode.FUNCTION_EXPR, Ast.makeConstant(entity)));
                 return entity;
             }
         }
+        assert(false) : "could not find callee";
         return null;
     }
 
-    // Finds the basic block node a control flow node refers to by looking up the basic block name.
+    // Finds the basic block node a control flow node goes to to by looking up the basic block name.
     private static CAstNode findTarget(CAstNode node, ArrayList<CAstNode> possibleTargets) {
         for (CAstNode possibleTarget : possibleTargets) {
             assert(possibleTarget.getKind() == CAstNode.BLOCK_STMT) : "possibleTarget is not a BLOCK_STMT";
@@ -138,6 +151,7 @@ public class ScriptEntityBuilder {
                 Assertions.UNREACHABLE("Only GOTOs are supported for now");
             }
         }
+        assert(false) : "could not find target";
         return null;
     }
 }

@@ -29,6 +29,10 @@ import com.ibm.wala.classLoader.ModuleEntry;
 
 import java.util.ArrayList;
 
+/*
+ * This class translates the Swift code to a single CAstEntity (the "main" ScriptEntity) by calling a JNI method
+ * that calls into the C++ translator code.
+ */
 public class SwiftToCAstTranslator extends NativeTranslatorToCAst {
 
     static {

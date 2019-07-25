@@ -20,20 +20,25 @@ import com.ibm.wala.cast.tree.impl.CAstSourcePositionRecorder;
 import java.util.ArrayList;
 import java.util.Collection;
 
+/*
+ * This class represents a translated SIL function.
+ */
 public class FunctionEntity extends AbstractCodeEntity {
 
-    // WORK IN PROGRESS
-
     String functionName;
-    private String[] argumentNames;
+    private final String[] arguments;
     CAstSourcePositionRecorder sourcePositionRecorder;
+
+    // TODO
+    // private final CAstSourcePositionMap.Position namePosition;
+    // private final CAstSourcePositionMap.Position[] paramPositions;
 
     public FunctionEntity(String name, String returnType,
                           ArrayList<String> argumentTypes,
                           ArrayList<String> argumentNames, CAstSourcePositionRecorder sourcePositionRecorder) {
         super(new SwiftFunctionType(returnType, argumentTypes));
         this.functionName = name;
-        this.argumentNames = argumentNames.toArray(new String[0]);
+        this.arguments = argumentNames.toArray(new String[0]);
         this.sourcePositionRecorder = sourcePositionRecorder;
     }
 
@@ -49,28 +54,36 @@ public class FunctionEntity extends AbstractCodeEntity {
 
     @Override
     public String[] getArgumentNames() {
-        return this.argumentNames;
+        return this.arguments;
     }
 
     @Override
     public CAstNode[] getArgumentDefaults() {
-        return new CAstNode[0]; // TODO?
+        return new CAstNode[0];
     }
 
     @Override
     public int getArgumentCount() {
-        return 0; // TODO?
+        return this.arguments.length;
     }
 
     @Override
     public CAstSourcePositionMap.Position getNamePosition() {
+        // TODO return namePosition;
         return null;
     }
 
     @Override
-    public CAstSourcePositionMap.Position getPosition(int i) {
+    public CAstSourcePositionMap.Position getPosition() {
+        return this.sourcePositionRecorder.getPosition(this.getAST());
+    }
+
+    @Override
+    public CAstSourcePositionMap.Position getPosition(int arg) {
+        // TODO return paramPositions[arg];
         return null;
     }
+
 
     @Override
     public Collection<CAstQualifier> getQualifiers() {
@@ -79,11 +92,12 @@ public class FunctionEntity extends AbstractCodeEntity {
 
     @Override
     public String toString() {
-        return "function " + this.functionName;
+        return "<Swift function " + getName() + ">";
     }
 
     @Override
     public CAstSourcePositionRecorder getSourceMap() {
         return this.sourcePositionRecorder;
     }
+
 }

@@ -13,27 +13,21 @@
 
 package ca.maple.swan.swift.loader;
 
-import ca.maple.swan.swift.translator.SwiftTranslatorFactory;
-import ca.maple.swan.swift.types.SwiftTypes;
-import com.ibm.wala.cast.loader.SingleClassLoaderFactory;
+import com.ibm.wala.cast.js.loader.JavaScriptLoaderFactory;
+import com.ibm.wala.cast.js.translator.JavaScriptTranslatorFactory;
 import com.ibm.wala.cast.tree.rewrite.CAstRewriterFactory;
 import com.ibm.wala.classLoader.IClassLoader;
 import com.ibm.wala.ipa.cha.IClassHierarchy;
-import com.ibm.wala.types.ClassLoaderReference;
 
+public class SwiftLoaderFactory extends JavaScriptLoaderFactory {
 
-public class SwiftLoaderFactory extends SingleClassLoaderFactory {
-    protected final SwiftTranslatorFactory translatorFactory;
-    protected final CAstRewriterFactory<?, ?> preprocessor;
-
-    public SwiftLoaderFactory(SwiftTranslatorFactory factory) {
+    public SwiftLoaderFactory(JavaScriptTranslatorFactory factory) {
         this(factory, null);
     }
 
     public SwiftLoaderFactory(
-            SwiftTranslatorFactory factory, CAstRewriterFactory<?, ?> preprocessor) {
-        this.translatorFactory = factory;
-        this.preprocessor = preprocessor;
+            JavaScriptTranslatorFactory factory, CAstRewriterFactory<?, ?> preprocessor) {
+        super(factory, preprocessor);
     }
 
     @Override
@@ -41,8 +35,4 @@ public class SwiftLoaderFactory extends SingleClassLoaderFactory {
         return new SwiftLoader(cha, translatorFactory, preprocessor);
     }
 
-    @Override
-    public ClassLoaderReference getTheReference() {
-        return SwiftTypes.swiftLoader;
-    }
 }

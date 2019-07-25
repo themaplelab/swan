@@ -13,18 +13,20 @@
 
 package ca.maple.swan.swift.tree;
 
-import ca.maple.swan.swift.client.SwiftAnalysisEngine;
 import com.ibm.wala.cast.ir.translator.AbstractScriptEntity;
 import com.ibm.wala.cast.tree.*;
+import com.ibm.wala.cast.tree.impl.CAstNodeTypeMapRecorder;
 import com.ibm.wala.cast.tree.impl.CAstSourcePositionRecorder;
-import com.ibm.wala.classLoader.Module;
 
 import java.io.File;
+import java.util.Collection;
 
-
+/*
+ * This class represents the translated "main" SIL function.
+ */
 public class ScriptEntity extends AbstractScriptEntity {
 
-    // WORK IN PROGRESS
+    // TODO: Is it necessary to implement getNamePosition(), getPosition(int[] arg), getPosition()?
 
     CAstSourcePositionRecorder sourcePositionRecorder;
     String scriptName;
@@ -33,6 +35,11 @@ public class ScriptEntity extends AbstractScriptEntity {
         super(file, new SwiftScriptType());
         this.sourcePositionRecorder = cAstSourcePositionRecorder;
         this.scriptName = scriptName;
+    }
+
+    @Override
+    public int getKind() {
+        return CAstEntity.SCRIPT_ENTITY;
     }
 
     @Override
@@ -53,5 +60,10 @@ public class ScriptEntity extends AbstractScriptEntity {
     @Override
     public CAstSourcePositionRecorder getSourceMap() {
         return this.sourcePositionRecorder;
+    }
+
+    @Override
+    public String toString() {
+        return "<Swift script " + getName() + ">";
     }
 }
