@@ -40,6 +40,7 @@ import com.ibm.wala.ipa.callgraph.impl.Everywhere;
 import com.ibm.wala.ipa.callgraph.propagation.InstanceKey;
 import com.ibm.wala.ipa.cha.ClassHierarchy;
 import com.ibm.wala.ipa.cha.ClassHierarchyException;
+import com.ibm.wala.ipa.cha.IClassHierarchy;
 import com.ibm.wala.ipa.slicer.SDG;
 import com.ibm.wala.ipa.slicer.Slicer;
 import com.ibm.wala.ipa.slicer.Statement;
@@ -106,14 +107,17 @@ public class TestSwiftCallGraphShapeUsingJS extends TestCallGraphShape {
         return makeEngine(createEngine(), name);
     }
 
-    static void dumpCHA(ClassHierarchy cha) {
+    static void dumpCHA(IClassHierarchy cha) {
         System.out.println("*** DUMPING CHA ***");
         for (IClass c: cha) {
             System.out.println("<CLASS>"+c+"</CLASS");
             for (IMethod m: c.getDeclaredMethods()) {
                 System.out.println("<METHOD>"+m+"</METHOD");
                 System.out.println("<# ARGUMENTS>"+m.getNumberOfParameters()+"</# ARGUMENTS>");
-                // TODO: Are argument names not preserved?
+                for (int i = 0; i < m.getNumberOfParameters(); ++i) {
+                    System.out.println("<ARGUMENT>"+m.getLocalVariableName(0, i)+"<ARGUMENT>"); // TODO: Does this work?
+                }
+                // TODO: This prints the CFG, we should just print the IR instructions here.
                 System.out.println(irFactory.makeIR(m, Everywhere.EVERYWHERE, options));
             }
         }
@@ -140,7 +144,8 @@ public class TestSwiftCallGraphShapeUsingJS extends TestCallGraphShape {
             CallGraphBuilder builder = Engine.defaultCallGraphBuilder();
             CallGraph CG = builder.makeCallGraph(Engine.getOptions(), new NullProgressMonitor());
 
-            dumpCG(CG);
+            dumpCHA(CG.getClassHierarchy());
+            // dumpCG(CG);
 
             SDG<InstanceKey> sdg = new SDG<InstanceKey>(CG, builder.getPointerAnalysis(), new JavaScriptModRef<InstanceKey>(), Slicer.DataDependenceOptions.NO_BASE_NO_HEAP_NO_EXCEPTIONS, Slicer.ControlDependenceOptions.NONE);
             Set<List<Statement>> paths = TaintAnalysis.getPaths(sdg, TaintAnalysis.swiftSources, TaintAnalysis.swiftSinks);
