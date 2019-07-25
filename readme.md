@@ -6,24 +6,20 @@ A static program analysis framework for analyzing Swift applications using [WALA
 
 ## Introduction
 
-This static program analysis framework is being developed for detecting security vulnerabilities in Swift applications using taint analysis. A custom translator converts Swift Intermediate Language ([SIL](https://github.com/apple/swift/blob/master/docs/SIL.rst)) to WALA IR (called CAst). The SIL is retrieved by hooking into the Swift compiler and grabbing the SIL modules during compilation. The resulting CAst nodes are analyzed using custom analysis written on top of WALA.
+This static program analysis framework is being developed for detecting security vulnerabilities in Swift applications using taint analysis. A custom translator converts Swift Intermediate Language ([SIL](https://github.com/apple/swift/blob/master/docs/SIL.rst)) to WALA IR (called CAst). The SIL is retrieved by hooking into the Swift compiler and grabbing the SIL modules during compilation. The resulting CAst nodes are analyzed using custom analysis written on top of WALA (specifically, the JS analysis).
 
-The current translator only supports the most common SIL instructions, and we recently added general support for Swift v5, so better SIL instruction support is likely to come soon.
+The translator supports common SIL instructions, and we recently added general support for Swift v5.
 
 ## Current work
 We are currently working on the following:
-- Implementing call graph construction
-- Translation to WALA IR from CAst
-
-Then we will implement points-to analysis and taint analysis with basic sources and sinks identified. We also plan to add full SIL instruction support.
-
-**Important Note:** The Java side (analysis side) is very much a mess right now and is not well documented since it is largely volatile at this point.
+- Fixing translation from SIL to CAst issues
+- Taint Analysis
 
 ## Future plans
 - Lifecycle awareness for iOS and macOS applications (custom call graph building)
 - Sources and sinks for iOS and macOS libraries
 - Xcode plugin
-- Better (maybe full) SIL instruction support for latest Swift version
+- Full or more robust SIL instruction support (e.g. more accurate translation)
 
 ## Getting Started
 
@@ -126,7 +122,9 @@ export WALA_PATH_TO_SWIFT_BUILD={path/to/your/swift/build/dir}
 export PATH_TO_SWAN={path/to/swan/dir}
 ```
 
-You may run the analysis by running the following in the **root** directory. However, the test files must lie inside of `ca.maple.swan.swift.test/`. You may use the files under `testFiles/` there.
+The current analysis driver is just a call graph constructor. Once sinks and sources are identified, it will also be able to do taint analysis.
+
+You must run the analysis by running the following in the **root** directory. However, the test files must lie inside of `ca.maple.swan.swift.test/`. You may use the files under `testFiles/` there.
 ```
 ./gradlew run --args="YOUR_SWIFT_FILE"
 ```
