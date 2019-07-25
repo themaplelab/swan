@@ -22,6 +22,7 @@
 
 #include "SILWalaInstructionVisitor.h"
 #include "BasicBlockLabeller.h"
+#include "BuiltinFunctions.hpp"
 #include "CAstWrapper.h"
 #include "swift/AST/Module.h"
 #include "swift/AST/Types.h"
@@ -425,7 +426,7 @@ jobject SILWalaInstructionVisitor::visitApplySite(ApplySite Apply) {
     }
   }
 
-  if (Instance->CAst->getKind(FuncExprNode) == CAstWrapper::PRIMITIVE) {
+  if (Instance->CAst->getKind(FuncExprNode) == CAstWrapper::CONSTANT) {
     return FuncExprNode;
   } else {
     Node = Instance->CAst->makeNode(CAstWrapper::CALL, FuncExprNode, Instance->CAst->makeArray(&Params));
@@ -1051,10 +1052,10 @@ jobject SILWalaInstructionVisitor::visitFunctionRefInst(FunctionRefInst *FRI) {
   std::string FuncName = Demangle::demangleSymbolAsString(FRI->getReferencedFunction()->getName());
   jobject NameNode = Instance->CAst->makeConstant(FuncName.c_str());
 
-  if (FuncName == "Swift.Int.init(_builtinIntegerLiteral: Builtin.IntLiteral) -> Swift.Int") { // TEMP.
-    jobject primitiveNode = Instance->CAst->makeNode(CAstWrapper::PRIMITIVE, NameNode);
-    NodeMap.insert(std::make_pair(FRI->getReferencedFunction(), primitiveNode));
-    NodeMap.insert(std::make_pair(static_cast<ValueBase *>(FRI), primitiveNode));
+  if (builtinFunctions.find(FuncName) != builtinFunctions.end()) {
+    jobject constantNode = Instance->CAst->makeNode(CAstWrapper::CONSTANT, NameNode);
+    NodeMap.insert(std::make_pair(FRI->getReferencedFunction(), constantNode));
+    NodeMap.insert(std::make_pair(static_cast<ValueBase *>(FRI), constantNode));
     if (Print) {
       llvm::outs() << "\t [BUILT IN FUNCTION]: " << FuncName << "\n";
     }
@@ -1396,7 +1397,6 @@ jobject SILWalaInstructionVisitor::visitBuiltinInst(BuiltinInst *BI) {
   }
 
   jobject NameNode = Instance->CAst->makeConstant(FuncName.c_str());
-  jobject FuncExprNode = Instance->CAst->makeNode(CAstWrapper::FUNCTION_EXPR, NameNode);
 
   for (const auto &operand : BI->getArguments()) {
     if (Print) {
@@ -1408,10 +1408,8 @@ jobject SILWalaInstructionVisitor::visitBuiltinInst(BuiltinInst *BI) {
     }
   }
 
-  // jobject Node = Instance->CAst->makeNode(CAstWrapper::CALL, FuncExprNode, Instance->CAst->makeArray(&params));
-  // We do not add built in functions to the currentEntity.
-  // return Node;
-  return Instance->CAst->makeNode(CAstWrapper::PRIMITIVE, NameNode);
+  // We do not add builtins to the currentEntity.
+  return Instance->CAst->makeNode(CAstWrapper::CONSTANT, NameNode, Instance->CAst->makeArray(&params));
 }
 
 /*******************************************************************************/
