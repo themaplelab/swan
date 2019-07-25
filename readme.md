@@ -124,9 +124,17 @@ export PATH_TO_SWAN={path/to/swan/dir}
 
 The current analysis driver is just a call graph constructor. Once sinks and sources are identified, it will also be able to do taint analysis.
 
+**IDEA**
+
+There are some run configs ready to use.
+ 
+**From the terminal**
+
 You must run the analysis by running the following in the **root** directory. However, the test files must lie inside of `ca.maple.swan.swift.test/`. You may use the files under `testFiles/` there.
 ```
 ./gradlew run --args="YOUR_SWIFT_FILE"
 ```
 
-You should expect exceptions on this branch as it is WIP and not fully functional.
+--------------------
+
+**You should expect exceptions on this branch as it is WIP and not fully functional.**
