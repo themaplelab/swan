@@ -19,15 +19,14 @@ import com.ibm.wala.cast.tree.CAstNode;
 import java.util.ArrayList;
 
 /*
- * This class maps a given CAstEntity's AST nodes to themselves since WALA requires this. There are certain nodes
- * that won't be mapped to themselves for nuanced reasons.
+ * This class maps a given CAstEntity's AST nodes to themselves since WALA requires this.
  */
 public class ReflexiveMapper {
 
-    // Don't map nodes of these types to themselves.
-    private static ArrayList<Integer> blackListedNodes = new ArrayList<Integer>();
+    // Map only nodes of these types to themselves.
+    private static ArrayList<Integer> whiteListedNodes = new ArrayList<Integer>();
     static {
-        blackListedNodes.add(CAstNode.BINARY_EXPR);
+        whiteListedNodes.add(CAstNode.OBJECT_LITERAL);
     }
 
     static public void mapEntity(AbstractCodeEntity entity) {
@@ -41,7 +40,7 @@ public class ReflexiveMapper {
          return;
        }
        for (CAstNode n : node.getChildren()) {
-           if (!entity.getControlFlow().isMapped(n) && !blackListedNodes.contains(n.getKind())) {
+           if (!entity.getControlFlow().isMapped(n) && whiteListedNodes.contains(n.getKind())) {
                entity.setGotoTarget(n, n);
            }
            map(entity, n);
