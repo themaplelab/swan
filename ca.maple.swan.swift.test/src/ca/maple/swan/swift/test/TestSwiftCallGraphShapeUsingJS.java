@@ -14,15 +14,18 @@
 package ca.maple.swan.swift.test;
 
 import ca.maple.swan.swift.client.SwiftAnalysisEngine;
+import ca.maple.swan.swift.taint.TaintAnalysis;
 import ca.maple.swan.swift.translator.SwiftToCAstTranslatorFactory;
 import com.ibm.wala.cast.ir.ssa.AstIRFactory;
 import com.ibm.wala.cast.js.client.JavaScriptAnalysisEngine;
+import com.ibm.wala.cast.js.ipa.modref.JavaScriptModRef;
 import com.ibm.wala.cast.js.types.JavaScriptTypes;
 import com.ibm.wala.cast.types.AstMethodReference;
 import java.io.File;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.util.Collection;
+import java.util.List;
 import java.util.Set;
 
 import com.ibm.wala.cast.util.test.TestCallGraphShape;
@@ -34,8 +37,12 @@ import com.ibm.wala.ipa.callgraph.CGNode;
 import com.ibm.wala.ipa.callgraph.CallGraph;
 import com.ibm.wala.ipa.callgraph.CallGraphBuilder;
 import com.ibm.wala.ipa.callgraph.impl.Everywhere;
+import com.ibm.wala.ipa.callgraph.propagation.InstanceKey;
+import com.ibm.wala.ipa.cha.ClassHierarchy;
 import com.ibm.wala.ipa.cha.ClassHierarchyException;
-import com.ibm.wala.shrikeBT.IInstruction;
+import com.ibm.wala.ipa.slicer.SDG;
+import com.ibm.wala.ipa.slicer.Slicer;
+import com.ibm.wala.ipa.slicer.Statement;
 import com.ibm.wala.ssa.IRFactory;
 import com.ibm.wala.ssa.SSAOptions;
 import com.ibm.wala.types.MethodReference;
@@ -99,10 +106,9 @@ public class TestSwiftCallGraphShapeUsingJS extends TestCallGraphShape {
         return makeEngine(createEngine(), name);
     }
 
-    static void dump(CallGraph CG) {
-
+    static void dumpCHA(ClassHierarchy cha) {
         System.out.println("*** DUMPING CHA ***");
-        for (IClass c: CG.getClassHierarchy()) {
+        for (IClass c: cha) {
             System.out.println("<CLASS>"+c+"</CLASS");
             for (IMethod m: c.getDeclaredMethods()) {
                 System.out.println("<METHOD>"+m+"</METHOD");
@@ -112,6 +118,9 @@ public class TestSwiftCallGraphShapeUsingJS extends TestCallGraphShape {
             }
         }
         System.out.println("*** FINISHED DUMPING CHA ***\n");
+    }
+
+    static void dumpCG(CallGraph CG) {
         System.out.println("*** DUMPING CG ***");
         StringBuffer sb = new StringBuffer();
         for(CGNode n : CG) {
@@ -131,7 +140,12 @@ public class TestSwiftCallGraphShapeUsingJS extends TestCallGraphShape {
             CallGraphBuilder builder = Engine.defaultCallGraphBuilder();
             CallGraph CG = builder.makeCallGraph(Engine.getOptions(), new NullProgressMonitor());
 
-            dump(CG);
+            dumpCG(CG);
+
+            SDG<InstanceKey> sdg = new SDG<InstanceKey>(CG, builder.getPointerAnalysis(), new JavaScriptModRef<InstanceKey>(), Slicer.DataDependenceOptions.NO_BASE_NO_HEAP_NO_EXCEPTIONS, Slicer.ControlDependenceOptions.NONE);
+            Set<List<Statement>> paths = TaintAnalysis.getPaths(sdg, TaintAnalysis.documentUrlSource, TaintAnalysis.documentWriteSink);
+            System.out.println(paths);
+            TaintAnalysis.printPaths(paths);
         } catch (Exception e) {
             e.printStackTrace();
             System.exit(1);
