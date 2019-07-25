@@ -66,14 +66,4 @@ public class ScriptEntity extends AbstractScriptEntity {
     public String toString() {
         return "<Swift script " + getName() + ">";
     }
-
-    @Override
-    public CAstNodeTypeMapRecorder getNodeTypeMap() {
-        return null;
-    }
-
-    @Override
-    public Collection<CAstAnnotation> getAnnotations() {
-        return null;
-    }
 }

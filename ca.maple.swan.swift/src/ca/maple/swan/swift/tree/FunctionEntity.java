@@ -90,14 +90,4 @@ public class FunctionEntity extends AbstractCodeEntity {
     public CAstSourcePositionRecorder getSourceMap() {
         return this.sourcePositionRecorder;
     }
-
-    @Override
-    public CAstNodeTypeMapRecorder getNodeTypeMap() {
-        return null;
-    }
-
-    @Override
-    public Collection<CAstAnnotation> getAnnotations() {
-        return null;
-    }
 }
