@@ -143,7 +143,7 @@ public class TestSwiftCallGraphShapeUsingJS extends TestCallGraphShape {
             dumpCG(CG);
 
             SDG<InstanceKey> sdg = new SDG<InstanceKey>(CG, builder.getPointerAnalysis(), new JavaScriptModRef<InstanceKey>(), Slicer.DataDependenceOptions.NO_BASE_NO_HEAP_NO_EXCEPTIONS, Slicer.ControlDependenceOptions.NONE);
-            Set<List<Statement>> paths = TaintAnalysis.getPaths(sdg, TaintAnalysis.documentUrlSource, TaintAnalysis.documentWriteSink);
+            Set<List<Statement>> paths = TaintAnalysis.getPaths(sdg, TaintAnalysis.swiftSources, TaintAnalysis.swiftSinks);
             System.out.println(paths);
             TaintAnalysis.printPaths(paths);
         } catch (Exception e) {

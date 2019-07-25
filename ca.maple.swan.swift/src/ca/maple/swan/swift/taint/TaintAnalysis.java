@@ -24,6 +24,7 @@ import com.ibm.wala.ssa.SSAInstruction;
 import com.ibm.wala.types.MethodReference;
 import com.ibm.wala.util.collections.HashSetFactory;
 import com.ibm.wala.util.graph.traverse.BFSPathFinder;
+import com.sun.corba.se.spi.activation.EndpointInfoListHelper;
 
 import java.io.IOException;
 import java.util.List;
@@ -98,6 +99,23 @@ public class TaintAnalysis {
     };
     /************************************ EXAMPLES *************************************/
 
+    public static EndpointFinder swiftSources = new EndpointFinder() {
+        @Override
+        public boolean endpoint(Statement s) {
+            if (s.getKind()== Statement.Kind.NORMAL) {
+                NormalStatement ns = (NormalStatement) s;
+                SSAInstruction inst = ns.getInstruction();
+            }
+            return false;
+        }
+    };
+
+    public static EndpointFinder swiftSinks = new EndpointFinder() {
+        @Override
+        public boolean endpoint(Statement s) {
+            return false;
+        }
+    };
 
 
     public static Set<List<Statement>> getPaths(SDG<? extends InstanceKey> G, EndpointFinder sources, EndpointFinder sinks) {
