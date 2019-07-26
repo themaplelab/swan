@@ -114,9 +114,6 @@ public class TestSwiftCallGraphShapeUsingJS extends TestCallGraphShape {
             for (IMethod m: c.getDeclaredMethods()) {
                 System.out.println("<METHOD>"+m+"</METHOD");
                 System.out.println("<# ARGUMENTS>"+m.getNumberOfParameters()+"</# ARGUMENTS>");
-                for (int i = 0; i < m.getNumberOfParameters(); ++i) {
-                    System.out.println("<ARGUMENT NAME>"+m.getLocalVariableName(0, i)+"<ARGUMENT NAME>"); // TODO: Does this work?
-                }
                 // TODO: This prints the CFG, we should just print the IR instructions here.
                 System.out.println(irFactory.makeIR(m, Everywhere.EVERYWHERE, options));
             }
