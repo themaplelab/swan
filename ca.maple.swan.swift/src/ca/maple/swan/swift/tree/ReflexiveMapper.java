@@ -27,23 +27,24 @@ public class ReflexiveMapper {
     private static ArrayList<Integer> whiteListedNodes = new ArrayList<Integer>();
     static {
         whiteListedNodes.add(CAstNode.OBJECT_LITERAL);
+        whiteListedNodes.add(CAstNode.OBJECT_REF);
     }
 
     static public void mapEntity(AbstractCodeEntity entity) {
        CAstNode root = entity.getAST();
-       entity.setGotoTarget(root, root);
        map(entity, root);
     }
 
     static private void map(AbstractCodeEntity entity, CAstNode node) {
-       if (node.getChildren().isEmpty()) {
+        if (!entity.getControlFlow().isMapped(node) && whiteListedNodes.contains(node.getKind())) {
+            entity.setGotoTarget(node, node);
+        }
+        if (node.getChildren().isEmpty()) {
          return;
-       }
-       for (CAstNode n : node.getChildren()) {
-           if (!entity.getControlFlow().isMapped(n) && whiteListedNodes.contains(n.getKind())) {
-               entity.setGotoTarget(n, n);
-           }
-           map(entity, n);
-       }
+        } else {
+            for (CAstNode n : node.getChildren()) {
+                map(entity, n);
+            }
+        }
     }
 }
