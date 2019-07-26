@@ -125,18 +125,18 @@ void WALAInstance::addCAstEntityInfo(std::unique_ptr<CAstEntityInfo> entity) {
   castEntities.push_back(std::move(entity));
 }
 
-jobject WALAInstance::getCAstNodesOfEntityInfo(const std::vector<jobject> &nodes) {
+jobject WALAInstance::vectorToArrayList(const std::vector<jobject> &v) {
   jclass ArrayList = JavaEnv->FindClass("java/util/ArrayList");
   jmethodID ArrayListConstructor = JavaEnv->GetMethodID(ArrayList, "<init>", "(I)V");
   jmethodID ArrayListAdd = JavaEnv->GetMethodID(ArrayList, "add", "(Ljava/lang/Object;)Z");
 
-  auto ArrayListCastNode = JavaEnv->NewObject(ArrayList, ArrayListConstructor, nodes.size());
+  auto ArrayListObject = JavaEnv->NewObject(ArrayList, ArrayListConstructor, v.size());
 
-  for (jobject node: nodes) {
-    JavaEnv->CallBooleanMethod(ArrayListCastNode, ArrayListAdd, node);
+  for (jobject element: v) {
+    JavaEnv->CallBooleanMethod(ArrayListObject, ArrayListAdd, element);
   }
 
-  return ArrayListCastNode;
+  return ArrayListObject;
 }
 
 jobject WALAInstance::getArgumentTypesOfEntityInfo(const std::vector<std::string> &argumentTypes) {
@@ -184,17 +184,17 @@ jobject WALAInstance::getCAstEntityInfo() {
 
       THROW_ANY_EXCEPTION(Exception);
       jmethodID CAstEntityInfoConstructor = JavaEnv->GetMethodID(CAstEntityInfoClass, "<init>",
-        "(Ljava/lang/String;Ljava/util/ArrayList;Ljava/util/ArrayList;Ljava/util/ArrayList;Ljava/lang/String;Ljava/util/ArrayList;Ljava/util/ArrayList;Ljava/util/LinkedHashMap;Lcom/ibm/wala/cast/tree/impl/CAstSourcePositionRecorder;Ljava/util/ArrayList;)V");
+        "(Ljava/lang/String;Ljava/util/ArrayList;Ljava/util/ArrayList;Ljava/util/ArrayList;Ljava/lang/String;Ljava/util/ArrayList;Ljava/util/ArrayList;Ljava/util/LinkedHashMap;Lcom/ibm/wala/cast/tree/impl/CAstSourcePositionRecorder;Ljava/util/ArrayList;Lcom/ibm/wala/cast/tree/CAstSourcePositionMap$Position;Ljava/util/ArrayList;)V");
       THROW_ANY_EXCEPTION(Exception);
 
       // get CAstEntityInfo constructor arguments
       jstring FunctionName = JavaEnv->NewStringUTF(info->functionName.c_str());
       THROW_ANY_EXCEPTION(Exception);
-      jobject BasicBlocks = getCAstNodesOfEntityInfo(info->basicBlocks);
+      jobject BasicBlocks = vectorToArrayList(info->basicBlocks);
       THROW_ANY_EXCEPTION(Exception);
-      jobject CallNodes = getCAstNodesOfEntityInfo(info->callNodes);
+      jobject CallNodes = vectorToArrayList(info->callNodes);
       THROW_ANY_EXCEPTION(Exception);
-      jobject CFNodes = getCAstNodesOfEntityInfo(info->cfNodes);
+      jobject CFNodes = vectorToArrayList(info->cfNodes);
       THROW_ANY_EXCEPTION(Exception);
       jstring ReturnType = JavaEnv->NewStringUTF(info->returnType.c_str());
       THROW_ANY_EXCEPTION(Exception);
@@ -204,13 +204,15 @@ jobject WALAInstance::getCAstEntityInfo() {
       THROW_ANY_EXCEPTION(Exception);
       jobject VariableTypes = mapToLinkedHashMap(info->variableTypes);
       THROW_ANY_EXCEPTION(Exception);
-      jobject DeclNodes = getCAstNodesOfEntityInfo(info->declNodes);
+      jobject DeclNodes = vectorToArrayList(info->declNodes);
+      THROW_ANY_EXCEPTION(Exception);
+      jobject ArgumentPositions = vectorToArrayList(info->argumentPositions);
       THROW_ANY_EXCEPTION(Exception);
 
       // create the CAstEntity object and add it to the ArrayList
       auto CAstEntityInfoObject = JavaEnv->NewObject(CAstEntityInfoClass, CAstEntityInfoConstructor,
         FunctionName, BasicBlocks, CallNodes, CFNodes, ReturnType, ArgumentTypes, ArgumentNames,
-        VariableTypes, info->CAstSourcePositionRecorder, DeclNodes);
+        VariableTypes, info->CAstSourcePositionRecorder, DeclNodes, info->functionPosition, ArgumentPositions);
       JavaEnv->CallBooleanMethod(ArrayListCAstEntityInfo, ArrayListAdd, CAstEntityInfoObject);
     }
     return ArrayListCAstEntityInfo;
@@ -236,7 +238,7 @@ void WALAInstance::addSourceInfo(jobject CAstNode, std::shared_ptr<InstrInfo> in
     auto CAstSourcePositionRecorderClass = JavaEnv->FindClass("com/ibm/wala/cast/tree/impl/CAstSourcePositionRecorder");
     THROW_ANY_EXCEPTION(Exception);
     auto CAstSourcePositionRecorderClassSetPositionMethod = JavaEnv->GetMethodID(
-      CAstSourcePositionRecorderClass, "setPosition", "(Lcom/ibm/wala/cast/tree/CAstNode;IIIILjava/lang/String;Ljava/lang/String;)V");
+      CAstSourcePositionRecorderClass, "setPosition", "(Lcom/ibm/wala/cast/tree/CAstNode;Lcom/ibm/wala/cast/tree/CAstSourcePositionMap$Position;)V");
     THROW_ANY_EXCEPTION(Exception);
     switch (instrInfo->srcType) {
       case -1: { // No Location.
@@ -247,11 +249,9 @@ void WALAInstance::addSourceInfo(jobject CAstNode, std::shared_ptr<InstrInfo> in
         int fc = instrInfo->startCol;
         int ll = instrInfo->endLine;
         int lc = instrInfo->endCol;
-        jobject url = JavaEnv->NewStringUTF(("file:" + instrInfo->Filename).c_str());
-        auto file = JavaEnv->NewStringUTF(("file:" + instrInfo->Filename).c_str());
 
         JavaEnv->CallVoidMethod(CurrentCAstSourcePositionRecorder, CAstSourcePositionRecorderClassSetPositionMethod,
-          CAstNode, fl, fc, ll, lc, url, file);
+          CAstNode, CAst->makeLocation(fl, fc, ll, lc));
         THROW_ANY_EXCEPTION(Exception);
         break;
       }
@@ -259,12 +259,10 @@ void WALAInstance::addSourceInfo(jobject CAstNode, std::shared_ptr<InstrInfo> in
         int fl = instrInfo->startLine;
         int fc = instrInfo->startCol;
         int ll = instrInfo->startLine; // Workaround
-        int lc = instrInfo->startCol; // Workarounds
-        jobject url = JavaEnv->NewStringUTF(("file:" + instrInfo->Filename).c_str());
-        auto file = JavaEnv->NewStringUTF(("file:" + instrInfo->Filename).c_str());
+        int lc = instrInfo->startCol; // Workaround
 
         JavaEnv->CallVoidMethod(CurrentCAstSourcePositionRecorder, CAstSourcePositionRecorderClassSetPositionMethod,
-          CAstNode, fl, fc, ll, lc, url, file);
+          CAstNode, CAst->makeLocation(fl, fc, ll, lc));
         THROW_ANY_EXCEPTION(Exception);
         break;
        }

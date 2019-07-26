@@ -108,30 +108,30 @@ public class TestSwiftCallGraphShapeUsingJS extends TestCallGraphShape {
     }
 
     static void dumpCHA(IClassHierarchy cha) {
-        System.out.println("*** DUMPING CHA ***");
+        System.out.println("*** DUMPING CHA... ***");
         for (IClass c: cha) {
             System.out.println("<CLASS>"+c+"</CLASS");
             for (IMethod m: c.getDeclaredMethods()) {
                 System.out.println("<METHOD>"+m+"</METHOD");
                 System.out.println("<# ARGUMENTS>"+m.getNumberOfParameters()+"</# ARGUMENTS>");
                 for (int i = 0; i < m.getNumberOfParameters(); ++i) {
-                    System.out.println("<ARGUMENT>"+m.getLocalVariableName(0, i)+"<ARGUMENT>"); // TODO: Does this work?
+                    System.out.println("<ARGUMENT NAME>"+m.getLocalVariableName(0, i)+"<ARGUMENT NAME>"); // TODO: Does this work?
                 }
                 // TODO: This prints the CFG, we should just print the IR instructions here.
                 System.out.println(irFactory.makeIR(m, Everywhere.EVERYWHERE, options));
             }
         }
-        System.out.println("*** FINISHED DUMPING CHA ***\n");
+        System.out.println("*** ...FINISHED DUMPING CHA ***\n");
     }
 
     static void dumpCG(CallGraph CG) {
-        System.out.println("*** DUMPING CG ***");
+        System.out.println("*** DUMPING CG... ***");
         StringBuffer sb = new StringBuffer();
         for(CGNode n : CG) {
             sb.append(n.getIR()).append("\n");
         }
         System.out.println(sb);
-        System.out.println("*** FINISHED DUMPING CG ***");
+        System.out.println("*** ...FINISHED DUMPING CG ***");
     }
 
     public static void main(String[] args) throws ClassHierarchyException, IllegalArgumentException, CancelException, IOException {
@@ -140,7 +140,7 @@ public class TestSwiftCallGraphShapeUsingJS extends TestCallGraphShape {
 
         JavaScriptAnalysisEngine Engine;
         try {
-            Engine = driver.makeEngine(args[0]);
+            Engine = driver.makeEngine(args);
             CallGraphBuilder builder = Engine.defaultCallGraphBuilder();
             CallGraph CG = builder.makeCallGraph(Engine.getOptions(), new NullProgressMonitor());
 
@@ -150,11 +150,14 @@ public class TestSwiftCallGraphShapeUsingJS extends TestCallGraphShape {
             SDG<InstanceKey> sdg = new SDG<InstanceKey>(CG, builder.getPointerAnalysis(), new JavaScriptModRef<InstanceKey>(), Slicer.DataDependenceOptions.NO_BASE_NO_HEAP_NO_EXCEPTIONS, Slicer.ControlDependenceOptions.NONE);
             Set<List<Statement>> paths = TaintAnalysis.getPaths(sdg, TaintAnalysis.swiftSources, TaintAnalysis.swiftSinks);
 
-            System.out.println("*** DUMPING TAINT ANALYSIS PATHS ***");
-            System.out.println(paths);
-            TaintAnalysis.printPaths(paths);
-            System.out.println("*** FINSIHED DUMPING TAINT ANALYSIS PATHS ***");
-
+            if (paths.size() > 0) {
+                System.out.println("*** DUMPING TAINT ANALYSIS PATHS... ***");
+                System.out.println(paths);
+                TaintAnalysis.printPaths(paths);
+                System.out.println("*** ...FINSIHED DUMPING TAINT ANALYSIS PATHS ***");
+            } else {
+                System.out.println("*** NO TAINT ANALYSIS PATHS ***");
+            }
         } catch (Exception e) {
             e.printStackTrace();
             System.exit(1);
