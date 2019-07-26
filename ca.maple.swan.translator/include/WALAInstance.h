@@ -73,8 +73,8 @@ public:
   /// Returns ArrayList<CAstEntityInfo> as jobject.
   jobject getCAstEntityInfo();
 
-  /// Used to turn fields of CAstEntityInfo into ArrayList<CAstNode> as jobject.
-  jobject getCAstNodesOfEntityInfo(const std::vector<jobject> &nodes);
+  /// Converts C++ std::vector<jobject> to Java ArrayList.
+  jobject vectorToArrayList(const std::vector<jobject> &v);
 
   /// Used to turn the std::vector<std::string> of argument types to ArrayList<String> as jobject.
   jobject getArgumentTypesOfEntityInfo(const std::vector<std::string> &argumentTypes);

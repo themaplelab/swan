@@ -46,6 +46,14 @@ void SILWalaInstructionVisitor::visitModule(SILModule *M) {
   // Visit every function under the SILModule. All SIL instructions lie within functions.
   // Any code written outside of an explicit function in Swift is put under the "main" function.
   for (auto &F: *M) {
+
+    // Don't visit built in functions.
+    if (builtinFunctions.find(Demangle::demangleSymbolAsString(F.getName())) != builtinFunctions.end()) {
+      return;
+    }
+
+    assert(!F.empty());
+
     // Clear current entity information since we make an entity for each function.
     currentEntity = std::make_unique<CAstEntityInfo>();
     // Create a new source position recorder for this entity.
@@ -56,28 +64,58 @@ void SILWalaInstructionVisitor::visitModule(SILModule *M) {
       currentEntity->print();
     }
     currentEntity->CAstSourcePositionRecorder = Instance->getCurrentCAstSourcePositionRecorder();
-    if (currentEntity->basicBlocks.size() == 0) {
-      currentEntity->basicBlocks.push_back(Instance->CAst->makeNode(CAstWrapper::EMPTY));
-    }
     Instance->addCAstEntityInfo(std::move(currentEntity));
   }
 }
 
 void SILWalaInstructionVisitor::visitSILFunction(SILFunction *F) {
+
   functionInfo =
       std::make_shared<FunctionInfo>(F->getName(), Demangle::demangleSymbolAsString(F->getName()));
 
   currentEntity->functionName = Demangle::demangleSymbolAsString(F->getName());
+
+  /* (HAVING ISSUES)
+  int fl, fc, ll, lc;
+  // TODO: Should probably do some better error checking here.
+  if (!F->getLocation().isNull()) {
+    SourceManager &srcMgr = F->getModule().getSourceManager();
+    SourceRange srcRange = F->getLocation().getSourceRange();
+    SourceLoc srcStart = srcRange.Start;
+    SourceLoc srcEnd = srcRange.End;
+    assert(srcStart.isValid());
+    assert(srcEnd.isValid());
+    auto startLineCol = srcMgr.getLineAndColumn(srcStart);
+    fl = startLineCol.first;
+    fc = startLineCol.second;
+    auto endLineCol = srcMgr.getLineAndColumn(srcEnd);
+    ll = endLineCol.first;
+    lc = endLineCol.second;
+    currentEntity->functionPosition = Instance->CAst->makeLocation(fl, fc, ll, lc);
+  }
+  */
+
+  // TEMPORARY
+  currentEntity->functionPosition = Instance->CAst->makeLocation(0, 0, 0, 0);
 
   if (!F->empty()) {
     for (auto arg: F->getArguments()) {
       if (arg->getDecl() && arg->getDecl()->hasName()) {
         SymbolTable.insert(arg, "Any", arg->getDecl()->getBaseName().getIdentifier().str());
         currentEntity->argumentNames.push_back(SymbolTable.get(arg));
+
+        // Swift compiler doesn't seem to have a way of getting the specific location of a param. :(
+        // This will suffice for now.
+        /* (HAVING ISSUES)
+        if (!F->getLocation().isNull()) {
+          currentEntity->argumentPositions.push_back(Instance->CAst->makeLocation(fl, fc, ll, lc));
+        }
+        */
+        // TEMPORARY
+        currentEntity->argumentPositions.push_back(Instance->CAst->makeLocation(0, 0, 0, 0));
       }
     }
   }
-
 
   BlockStmtList.clear();
 

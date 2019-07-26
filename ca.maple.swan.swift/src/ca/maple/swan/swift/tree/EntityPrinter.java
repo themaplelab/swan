@@ -40,6 +40,7 @@ public class EntityPrinter {
         System.out.println("\t<FUNCTION_NAME>" + entity.getName() + "</FUNCTION_NAME>");
 
         if (entity instanceof FunctionEntity) {
+            System.out.println("\t<FUNCTION_POSITION>" + entity.getPosition() + "</FUNCTION_POSITION>");
             System.out.println("<RETURN_TYPE>" + ((CAstType.Function) entity.getType()).getReturnType().getName() + "</RETURN_TYPE>");
             System.out.println("<ARGUMENT_COUNT>" + ((CAstType.Function) entity.getType()).getArgumentCount() + "</ARGUMENT_COUNT>");
             System.out.println("<ARGUMENTS>");

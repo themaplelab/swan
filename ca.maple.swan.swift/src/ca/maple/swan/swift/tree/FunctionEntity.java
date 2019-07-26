@@ -16,6 +16,7 @@ package ca.maple.swan.swift.tree;
 import com.ibm.wala.cast.ir.translator.AbstractCodeEntity;
 import com.ibm.wala.cast.tree.*;
 import com.ibm.wala.cast.tree.impl.CAstSourcePositionRecorder;
+import com.ibm.wala.cast.tree.impl.LineNumberPosition;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -28,18 +29,27 @@ public class FunctionEntity extends AbstractCodeEntity {
     String functionName;
     private final String[] arguments;
     CAstSourcePositionRecorder sourcePositionRecorder;
-
-    // TODO
-    // private final CAstSourcePositionMap.Position namePosition;
-    // private final CAstSourcePositionMap.Position[] paramPositions;
+    CAstSourcePositionMap.Position functionPosition;
+    CAstSourcePositionMap.Position namePosition;
+    ArrayList<CAstSourcePositionMap.Position> argumentPositions;
 
     public FunctionEntity(String name, String returnType,
                           ArrayList<String> argumentTypes,
-                          ArrayList<String> argumentNames, CAstSourcePositionRecorder sourcePositionRecorder) {
+                          ArrayList<String> argumentNames, CAstSourcePositionRecorder sourcePositionRecorder,
+                          CAstSourcePositionMap.Position functionPosition,
+                          ArrayList<CAstSourcePositionMap.Position> argumentPositions) {
         super(new SwiftFunctionType(returnType, argumentTypes));
+        assert((argumentNames.size() == argumentTypes.size()) && (argumentTypes.size() == argumentPositions.size()))
+                : "Function: " + name + " :argument information is not parallel";
         this.functionName = name;
         this.arguments = argumentNames.toArray(new String[0]);
         this.sourcePositionRecorder = sourcePositionRecorder;
+        this.functionPosition = functionPosition;
+        this.argumentPositions = argumentPositions;
+        this.setPosition(functionPosition);
+        // SILLocation/SILFunction doesn't have a way of getting the columns of the function name (AFAIK), so we just
+        // grab the first line of the function.
+        this.namePosition = new LineNumberPosition(functionPosition.getURL(), functionPosition.getURL(), functionPosition.getFirstLine());
     }
 
     @Override
@@ -69,21 +79,14 @@ public class FunctionEntity extends AbstractCodeEntity {
 
     @Override
     public CAstSourcePositionMap.Position getNamePosition() {
-        // TODO return namePosition;
-        return null;
+        return this.namePosition;
     }
 
     @Override
-    public CAstSourcePositionMap.Position getPosition() {
-        return this.sourcePositionRecorder.getPosition(this.getAST());
-    }
+    public CAstSourcePositionMap.Position getPosition(int i) {
 
-    @Override
-    public CAstSourcePositionMap.Position getPosition(int arg) {
-        // TODO return paramPositions[arg];
-        return null;
+        return this.argumentPositions.get(i);
     }
-
 
     @Override
     public Collection<CAstQualifier> getQualifiers() {

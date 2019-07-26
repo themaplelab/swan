@@ -59,7 +59,7 @@ public class ScriptEntityBuilder {
                 info.functionName = scriptName;
             } else { // Any other function should fall under a FunctionEntity.
                 newEntity = new FunctionEntity(info.functionName, info.returnType, info.argumentTypes,
-                        info.argumentNames, info.sourcePositionRecorder);
+                        info.argumentNames, info.sourcePositionRecorder, info.functionPosition, info.argumentPositions);
                 mappedInfo.put(info.functionName, info);
             }
             functionEntities.add(newEntity);

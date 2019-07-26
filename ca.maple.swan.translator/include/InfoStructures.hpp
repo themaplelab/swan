@@ -74,6 +74,8 @@ struct CAstEntityInfo {
   std::map<jobject, std::string> variableTypes; // Map of jobject (VAR CAstNode) to a string representing its type.
   jobject CAstSourcePositionRecorder; // Maps CAstNodes to source information.
   std::vector<jobject> declNodes; // These are DECL_STMTs which need to be mutated on the Java side later.
+  jobject functionPosition; // The Position of the function (for `getNamePosition()`).
+  std::vector<jobject> argumentPositions; // The Positions of the function arguments (for `getPosition(int arg)`);
 
   void print() {
       llvm::outs() << "\n\n" << "-*- CAST ENTITY INFO -*-" << "\n";

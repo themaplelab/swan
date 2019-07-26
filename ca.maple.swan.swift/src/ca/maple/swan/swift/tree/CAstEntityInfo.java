@@ -14,6 +14,7 @@
 package ca.maple.swan.swift.tree;
 
 import com.ibm.wala.cast.tree.CAstNode;
+import com.ibm.wala.cast.tree.CAstSourcePositionMap;
 import com.ibm.wala.cast.tree.impl.CAstSourcePositionRecorder;
 
 import java.util.ArrayList;
@@ -39,22 +40,27 @@ public class CAstEntityInfo {
     public LinkedHashMap<CAstNode, String> variableTypes;
     public CAstSourcePositionRecorder sourcePositionRecorder;
     public ArrayList<CAstNode> declNodes;
+    public CAstSourcePositionMap.Position functionPosition;
+    public ArrayList<CAstSourcePositionMap.Position> argumentPositions;
 
     CAstEntityInfo(String functionName, ArrayList<CAstNode> basicBlocks,
                    ArrayList<CAstNode> callNodes, ArrayList<CAstNode> cfNodes,
                    String returnType, ArrayList<String> argumentTypes,
                    ArrayList<String> argumentNames, LinkedHashMap<CAstNode,
                    String> variableTypes, CAstSourcePositionRecorder sourcePositionRecorder,
-                   ArrayList<CAstNode> declNodes) {
+                   ArrayList<CAstNode> declNodes, CAstSourcePositionMap.Position functionPosition,
+                   ArrayList<CAstSourcePositionMap.Position> argumentPositions) {
         this.functionName = functionName;
         this.basicBlocks = basicBlocks;
         this.callNodes = callNodes;
         this.cfNodes = cfNodes;
         this.returnType = returnType;
-        this.argumentTypes = argumentTypes;
+        this.argumentTypes = argumentTypes; // These are currently discarded.
         this.argumentNames = argumentNames;
-        this.variableTypes = variableTypes;
+        this.variableTypes = variableTypes; // These are currently discarded.
         this.sourcePositionRecorder = sourcePositionRecorder;
         this.declNodes = declNodes;
+        this.functionPosition = functionPosition;
+        this.argumentPositions = argumentPositions;
     }
 }
