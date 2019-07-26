@@ -111,7 +111,7 @@ public class ScriptEntityBuilder {
                  *  generating an entire new AST is inefficient and is not needed for a simple mutation like this.
                  */
                 declNode.getChildren().set(0, symbol);
-                declNode.getChildren().set(1, Ast.makeConstant(null));
+                declNode.getChildren().set(1, Ast.makeNode(CAstNode.CONSTANT,  Ast.makeConstant("Any")));
             }
 
             // Map every node in the AST to itself.
@@ -134,7 +134,7 @@ public class ScriptEntityBuilder {
                 return entity;
             }
         }
-        assert(false) : "could not find callee";
+        assert(false) : "could not find callee for: " + functionName;
         return null;
     }
 

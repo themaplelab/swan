@@ -84,7 +84,6 @@ public class FunctionEntity extends AbstractCodeEntity {
 
     @Override
     public CAstSourcePositionMap.Position getPosition(int i) {
-
         return this.argumentPositions.get(i);
     }
 

@@ -18,7 +18,8 @@
 ///
 //===---------------------------------------------------------------------===//
 
-// TODO: Add thorough documentation to code and adjust style.
+// TODO: Remove improper usage of CONSTANT nodes. (Use makeConstant where necessary or just omit the CONSTANT node
+//  since it is a nop in some cases).
 
 #include "SILWalaInstructionVisitor.h"
 #include "BasicBlockLabeller.h"
@@ -47,12 +48,15 @@ void SILWalaInstructionVisitor::visitModule(SILModule *M) {
   // Any code written outside of an explicit function in Swift is put under the "main" function.
   for (auto &F: *M) {
 
-    // Don't visit built in functions.
+    // Don't visit built in functions. Assume empty functions are built in functions.
     if (builtinFunctions.find(Demangle::demangleSymbolAsString(F.getName())) != builtinFunctions.end()) {
       return;
     }
 
-    assert(!F.empty());
+    if (F.empty()) {
+      llvm::outs() << "Function with empty body: " << Demangle::demangleSymbolAsString(F.getName()) << "\n";
+      return;
+    }
 
     // Clear current entity information since we make an entity for each function.
     currentEntity = std::make_unique<CAstEntityInfo>();
@@ -75,7 +79,6 @@ void SILWalaInstructionVisitor::visitSILFunction(SILFunction *F) {
 
   currentEntity->functionName = Demangle::demangleSymbolAsString(F->getName());
 
-  /* (HAVING ISSUES)
   int fl, fc, ll, lc;
   // TODO: Should probably do some better error checking here.
   if (!F->getLocation().isNull()) {
@@ -93,10 +96,6 @@ void SILWalaInstructionVisitor::visitSILFunction(SILFunction *F) {
     lc = endLineCol.second;
     currentEntity->functionPosition = Instance->CAst->makeLocation(fl, fc, ll, lc);
   }
-  */
-
-  // TEMPORARY
-  currentEntity->functionPosition = Instance->CAst->makeLocation(0, 0, 0, 0);
 
   if (!F->empty()) {
     for (auto arg: F->getArguments()) {
@@ -106,13 +105,9 @@ void SILWalaInstructionVisitor::visitSILFunction(SILFunction *F) {
 
         // Swift compiler doesn't seem to have a way of getting the specific location of a param. :(
         // This will suffice for now.
-        /* (HAVING ISSUES)
         if (!F->getLocation().isNull()) {
           currentEntity->argumentPositions.push_back(Instance->CAst->makeLocation(fl, fc, ll, lc));
         }
-        */
-        // TEMPORARY
-        currentEntity->argumentPositions.push_back(Instance->CAst->makeLocation(0, 0, 0, 0));
       }
     }
   }
@@ -344,7 +339,7 @@ jobject SILWalaInstructionVisitor::findAndRemoveCAstNode(void *Key) {
     }
   } else {
     // TODO: Replace with a better exit (JVM exception using JNI?).
-    llvm::outs() << "ERROR: Returning nullptr from findAndRemoveCAstNode. Exiting...\n";
+    llvm::errs() << "ERROR: Returning nullptr from findAndRemoveCAstNode. Exiting...\n";
     exit(1);
   }
   return node;
@@ -394,7 +389,7 @@ jobject SILWalaInstructionVisitor::getOperatorCAstType(Identifier Name) {
   } else if (Name.is("^")) {
     return CAstWrapper::OP_BIT_XOR;
   } else {
-    llvm::outs() << "ERROR: Unhandled operator detected! \n";
+    llvm::errs() << "ERROR: Unhandled operator detected! \n";
     return nullptr;
   }
 }
@@ -404,7 +399,7 @@ jobject SILWalaInstructionVisitor::visitApplySite(ApplySite Apply) {
   auto *Callee = Apply.getReferencedFunction();
 
   if (!Callee) {
-    llvm::outs() << "ERROR: Apply site's Callee is empty! \n";
+    llvm::errs() << "ERROR: Apply site's Callee is empty! \n";
     return Instance->CAst->makeNode(CAstWrapper::EMPTY);
   }
 
@@ -807,7 +802,7 @@ jobject SILWalaInstructionVisitor::visitLoadBorrowInst(LoadBorrowInst *LBI) {
     NodeMap.insert(std::make_pair(static_cast<ValueBase *>(LBI), Var));
     return Node;
   } else {
-    llvm::outs() << "ERROR: (visitLoadBorrowInst) Instruction has no result!" << "\n";
+    llvm::errs() << "ERROR: (visitLoadBorrowInst) Instruction has no result!" << "\n";
     NodeMap.insert(std::make_pair(static_cast<ValueBase *>(LBI), operandNode));
     return operandNode;
   }
@@ -950,7 +945,7 @@ jobject SILWalaInstructionVisitor::visitIndexAddrInst(IndexAddrInst *IAI) {
     NodeMap.insert(std::make_pair(static_cast<ValueBase *>(IAI), Var));
     return Node;
   } else {
-    llvm::outs() << "ERROR: (visitIndexAddrInst) Instruction has no result!" << "\n";
+    llvm::errs() << "ERROR: (visitIndexAddrInst) Instruction has no result!" << "\n";
     NodeMap.insert(std::make_pair(static_cast<ValueBase *>(IAI), ArrayRefNode));
     return ArrayRefNode;
   }
@@ -980,7 +975,7 @@ jobject SILWalaInstructionVisitor::visitTailAddrInst(TailAddrInst *TAI) {
     NodeMap.insert(std::make_pair(static_cast<ValueBase *>(TAI), Var));
     return Node;
   } else {
-    llvm::outs() << "ERROR: (visitIndexAddrInst) Instruction has no result!" << "\n";
+    llvm::errs() << "ERROR: (visitIndexAddrInst) Instruction has no result!" << "\n";
     NodeMap.insert(std::make_pair(static_cast<ValueBase *>(TAI), ArrayRefNode));
     return ArrayRefNode;
   }
@@ -1091,7 +1086,7 @@ jobject SILWalaInstructionVisitor::visitFunctionRefInst(FunctionRefInst *FRI) {
   jobject NameNode = Instance->CAst->makeConstant(FuncName.c_str());
 
   if (builtinFunctions.find(FuncName) != builtinFunctions.end()) {
-    jobject constantNode = Instance->CAst->makeNode(CAstWrapper::CONSTANT, NameNode);
+    jobject constantNode = Instance->CAst->makeConstant(FuncName.c_str());
     NodeMap.insert(std::make_pair(FRI->getReferencedFunction(), constantNode));
     NodeMap.insert(std::make_pair(static_cast<ValueBase *>(FRI), constantNode));
     if (Print) {
@@ -1253,7 +1248,7 @@ jobject SILWalaInstructionVisitor::visitClassMethodInst(ClassMethodInst *CMI) {
     NodeMap.insert(std::make_pair(static_cast<ValueBase *>(CMI), Var));
     return Node;
   } else {
-    llvm::outs() << "ERROR: (visitClassMethodInst) Instruction has no result!" << "\n";
+    llvm::errs() << "ERROR: (visitClassMethodInst) Instruction has no result!" << "\n";
     NodeMap.insert(std::make_pair(static_cast<ValueBase *>(CMI), ClassMethodRefNode));
     return ClassMethodRefNode;
   }
@@ -1285,7 +1280,7 @@ jobject SILWalaInstructionVisitor::visitObjCMethodInst(ObjCMethodInst *AMI) {
     NodeMap.insert(std::make_pair(static_cast<ValueBase *>(AMI), Var));
     return Node;
   } else {
-    llvm::outs() << "ERROR: (visitObjCMethodInst) Instruction has no result!" << "\n";
+    llvm::errs() << "ERROR: (visitObjCMethodInst) Instruction has no result!" << "\n";
     NodeMap.insert(std::make_pair(static_cast<ValueBase *>(AMI), ObjCMethodRefNode));
     return ObjCMethodRefNode;
   }
@@ -1319,7 +1314,7 @@ jobject SILWalaInstructionVisitor::visitSuperMethodInst(SuperMethodInst *SMI) {
     NodeMap.insert(std::make_pair(static_cast<ValueBase *>(SMI), Var));
     return Node;
   } else {
-    llvm::outs() << "ERROR: (visitSuperMethodInst) Instruction has no result!" << "\n";
+    llvm::errs() << "ERROR: (visitSuperMethodInst) Instruction has no result!" << "\n";
     NodeMap.insert(std::make_pair(static_cast<ValueBase *>(SMI), SuperMethodRefNode));
     return SuperMethodRefNode;
   }
@@ -1353,7 +1348,7 @@ jobject SILWalaInstructionVisitor::visitWitnessMethodInst(WitnessMethodInst *WMI
     NodeMap.insert(std::make_pair(static_cast<ValueBase *>(WMI), Var));
     return Node;
   } else {
-    llvm::outs() << "ERROR: (visitWitnessMethodInst) Instruction has no result!" << "\n";
+    llvm::errs() << "ERROR: (visitWitnessMethodInst) Instruction has no result!" << "\n";
     NodeMap.insert(std::make_pair(static_cast<ValueBase *>(WMI), WitnessMethodRefNode));
     return WitnessMethodRefNode;
   }
@@ -1373,7 +1368,7 @@ jobject SILWalaInstructionVisitor::visitApplyInst(ApplyInst *AI) {
       NodeMap.insert(std::make_pair(static_cast<ValueBase *>(AI), Node));
       return Node;
     } else {
-      llvm::outs() << "ERROR: (visitApplyInst) Instruction has no result!" << "\n";
+      llvm::errs() << "ERROR: (visitApplyInst) Instruction has no result!" << "\n";
       NodeMap.insert(std::make_pair(static_cast<ValueBase *>(AI), ApplyNode));
       return ApplyNode;
     }
@@ -1550,7 +1545,7 @@ jobject SILWalaInstructionVisitor::visitTupleInst(TupleInst *TI) {
     NodeMap.insert(std::make_pair(static_cast<ValueBase *>(TI), Var));
     return Node;
   } else {
-    llvm::outs() << "ERROR: (visitTupleInst) Instruction has no result!" << "\n";
+    llvm::errs() << "ERROR: (visitTupleInst) Instruction has no result!" << "\n";
     NodeMap.insert(std::make_pair(static_cast<ValueBase *>(TI), VisitTupleNode));
     return VisitTupleNode;
   }
@@ -1599,7 +1594,7 @@ jobject SILWalaInstructionVisitor::visitTupleExtractInst(TupleExtractInst *TEI) 
     NodeMap.insert(std::make_pair(static_cast<ValueBase *>(TEI), Var));
     return Node;
   } else {
-    llvm::outs() << "ERROR: (visitTupleExtractInst) Instruction has no result!" << "\n";
+    llvm::errs() << "ERROR: (visitTupleExtractInst) Instruction has no result!" << "\n";
     NodeMap.insert(std::make_pair(static_cast<ValueBase *>(TEI), TupleExtractNode));
     return TupleExtractNode;
   }
@@ -1644,7 +1639,7 @@ jobject SILWalaInstructionVisitor::visitStructInst(StructInst *SI) {
     NodeMap.insert(std::make_pair(static_cast<ValueBase *>(SI), Var));
     return Node;
   } else {
-    llvm::outs() << "ERROR: (visitStructInst) Instruction has no result!" << "\n";
+    llvm::errs() << "ERROR: (visitStructInst) Instruction has no result!" << "\n";
     NodeMap.insert(std::make_pair(static_cast<ValueBase *>(SI), VisitStructNode));
     return VisitStructNode;
   }
@@ -1689,7 +1684,7 @@ jobject SILWalaInstructionVisitor::visitStructExtractInst(StructExtractInst *SEI
     NodeMap.insert(std::make_pair(static_cast<ValueBase *>(SEI), Var));
     return Node;
   } else {
-    llvm::outs() << "ERROR: (visitStructExtractInst) Instruction has no result!" << "\n";
+    llvm::errs() << "ERROR: (visitStructExtractInst) Instruction has no result!" << "\n";
     NodeMap.insert(std::make_pair(static_cast<ValueBase *>(SEI), StructExtractNode));
     return StructExtractNode;
   }
@@ -1734,7 +1729,7 @@ jobject SILWalaInstructionVisitor::visitTupleElementAddrInst(TupleElementAddrIns
     NodeMap.insert(std::make_pair(static_cast<ValueBase *>(TEAI), Var));
     return Node;
   } else {
-    llvm::outs() << "ERROR: (visitTupleElementAddrInst) Instruction has no result!" << "\n";
+    llvm::errs() << "ERROR: (visitTupleElementAddrInst) Instruction has no result!" << "\n";
     NodeMap.insert(std::make_pair(static_cast<ValueBase *>(TEAI), TupleElementAddrNode));
     return TupleElementAddrNode;
   }
@@ -1779,7 +1774,7 @@ jobject SILWalaInstructionVisitor::visitStructElementAddrInst(StructElementAddrI
     NodeMap.insert(std::make_pair(static_cast<ValueBase *>(SEAI), Var));
     return Node;
   } else {
-    llvm::outs() << "ERROR: (visitStructElementAddrInst) Instruction has no result!" << "\n";
+    llvm::errs() << "ERROR: (visitStructElementAddrInst) Instruction has no result!" << "\n";
     NodeMap.insert(std::make_pair(static_cast<ValueBase *>(SEAI), StructElementAddrNode));
     return StructElementAddrNode;
   }
@@ -1852,7 +1847,7 @@ jobject SILWalaInstructionVisitor::visitRefElementAddrInst(RefElementAddrInst *R
     NodeMap.insert(std::make_pair(static_cast<ValueBase *>(REAI), Var));
     return Node;
   } else {
-    llvm::outs() << "ERROR: (visitRefElementAddrInst) Instruction has no result!" << "\n";
+    llvm::errs() << "ERROR: (visitRefElementAddrInst) Instruction has no result!" << "\n";
     NodeMap.insert(std::make_pair(static_cast<ValueBase *>(REAI), RefElementAddrNode));
     return RefElementAddrNode;
   }
@@ -1886,7 +1881,7 @@ jobject SILWalaInstructionVisitor::visitRefTailAddrInst(RefTailAddrInst *RTAI) {
     NodeMap.insert(std::make_pair(static_cast<ValueBase *>(RTAI), Var));
     return Node;
   } else {
-    llvm::outs() << "ERROR: (visitRefTailAddrInst) Instruction has no result!" << "\n";
+    llvm::errs() << "ERROR: (visitRefTailAddrInst) Instruction has no result!" << "\n";
     NodeMap.insert(std::make_pair(static_cast<ValueBase *>(RTAI), RefTailAddrNode));
     return RefTailAddrNode;
   }
@@ -1939,7 +1934,7 @@ jobject SILWalaInstructionVisitor::visitEnumInst(EnumInst *EI) {
     NodeMap.insert(std::make_pair(static_cast<ValueBase *>(EI), Var));
     return Node;
   } else {
-    llvm::outs() << "ERROR: (visitEnumInst) Instruction has no result!" << "\n";
+    llvm::errs() << "ERROR: (visitEnumInst) Instruction has no result!" << "\n";
     NodeMap.insert(std::make_pair(static_cast<ValueBase *>(EI), VisitEnumNode));
     return VisitEnumNode;
   }
@@ -2011,7 +2006,7 @@ jobject SILWalaInstructionVisitor::visitInitEnumDataAddrInst(InitEnumDataAddrIns
     NodeMap.insert(std::make_pair(static_cast<ValueBase *>(UDAI), Var));
     return Node;
   } else {
-    llvm::outs() << "ERROR: (visitInitEnumDataAddrInst) Instruction has no result!" << "\n";
+    llvm::errs() << "ERROR: (visitInitEnumDataAddrInst) Instruction has no result!" << "\n";
     NodeMap.insert(std::make_pair(static_cast<ValueBase *>(UDAI), InitEnumNode));
     return InitEnumNode;
   }
@@ -2048,7 +2043,7 @@ jobject SILWalaInstructionVisitor::visitUncheckedTakeEnumDataAddrInst(UncheckedT
     NodeMap.insert(std::make_pair(static_cast<ValueBase *>(UDAI), Var));
     return Node;
   } else {
-    llvm::outs() << "ERROR: (visitUncheckedTakeEnumDataAddrInst) Instruction has no result!" << "\n";
+    llvm::errs() << "ERROR: (visitUncheckedTakeEnumDataAddrInst) Instruction has no result!" << "\n";
     NodeMap.insert(std::make_pair(static_cast<ValueBase *>(UDAI), ReferenceNode));
     return ReferenceNode;
   }
@@ -2854,7 +2849,7 @@ jobject SILWalaInstructionVisitor::visitBranchInst(BranchInst *BI) {
     if (argTypeIt != currentEntity->variableTypes.end()) {
         currentEntity->variableTypes.insert({var, argTypeIt->second});
     } else {
-        llvm::outs() << "ERROR: Could not find type for basic block argument SRC!\n";
+        llvm::errs() << "ERROR: Could not find type for basic block argument SRC!\n";
     }
     jobject assign = Instance->CAst->makeNode(CAstWrapper::ASSIGN, var, Node);
     NodeList.push_back(assign);

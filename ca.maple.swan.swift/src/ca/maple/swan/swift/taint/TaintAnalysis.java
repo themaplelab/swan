@@ -101,9 +101,10 @@ public class TaintAnalysis {
     public static EndpointFinder swiftSources = new EndpointFinder() {
         @Override
         public boolean endpoint(Statement s) {
-            if (s.getKind()== Statement.Kind.NORMAL) {
-                NormalStatement ns = (NormalStatement) s;
-                SSAInstruction inst = ns.getInstruction();
+            if (s.getKind()== Statement.Kind.NORMAL_RET_CALLER) {
+                MethodReference ref = ((NormalReturnCaller)s).getInstruction().getCallSite().getDeclaredTarget();
+                String st = ref.getName().toString();
+                System.out.println(st);
             }
             return false;
         }
@@ -162,7 +163,6 @@ public class TaintAnalysis {
 
     public static void printPaths(Set<List<Statement>> paths) throws IOException {
         for(List<Statement> path : paths) {
-            System.out.println("Witness:");
             printPath(path);
         }
     }
