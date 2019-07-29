@@ -26,7 +26,8 @@ namespace swan {
 
 static std::unordered_set<std::string> builtinFunctions({
   "Swift.Int.init(_builtinIntegerLiteral: Builtin.IntLiteral) -> Swift.Int",
-  "Swift.String.init(_builtinStringLiteral: Builtin.RawPointer, utf8CodeUnitCount: Builtin.Word, isASCII: Builtin.Int1) -> Swift.String"
+  "Swift.String.init(_builtinStringLiteral: Builtin.RawPointer, utf8CodeUnitCount: Builtin.Word, isASCII: Builtin.Int1) -> Swift.String",
+  "Swift.Bool.init(_builtinBooleanLiteral: Builtin.Int1) -> Swift.Bool"
   // Add more builtin functions here...
 });
 
