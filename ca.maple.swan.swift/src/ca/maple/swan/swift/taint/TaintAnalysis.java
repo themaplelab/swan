@@ -101,11 +101,45 @@ public class TaintAnalysis {
     public static EndpointFinder swiftSources = new EndpointFinder() {
         @Override
         public boolean endpoint(Statement s) {
+            switch(s.getKind()) {
+                case PARAM_CALLER:
+                    System.out.println(s);
+                    break;
+                case PARAM_CALLEE:
+                    System.out.println(s);
+                    break;
+                case NORMAL_RET_CALLER:
+                    System.out.println(s);
+                    break;
+                case NORMAL_RET_CALLEE:
+                    System.out.println(s);
+                    break;
+                case EXC_RET_CALLER:
+                    System.out.println(s);
+                    break;
+                case EXC_RET_CALLEE:
+                    System.out.println(s);
+                    break;
+                case HEAP_PARAM_CALLER:
+                    System.out.println(s);
+                    break;
+                case HEAP_PARAM_CALLEE:
+                    System.out.println(s);
+                    break;
+                case HEAP_RET_CALLER:
+                    System.out.println(s);
+                    break;
+                case HEAP_RET_CALLEE:
+                    System.out.println(s);
+                    break;
+            }
+            /*
             if (s.getKind()== Statement.Kind.NORMAL_RET_CALLER) {
                 MethodReference ref = ((NormalReturnCaller)s).getInstruction().getCallSite().getDeclaredTarget();
                 String st = ref.getName().toString();
                 System.out.println(st);
             }
+             */
             return false;
         }
     };
