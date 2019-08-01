@@ -36,6 +36,12 @@ static std::unordered_set<std::string> builtinFunctions({
   "static Swift.Int.+ infix(Swift.Int, Swift.Int) -> Swift.Int"
 
   // Add more builtin functions here...
+
+  /* TODO: Later, we can simply create CAstEntities with an empty AST so we don't have to maintain built in functions.
+   *  The downside to doing this is that the CHA/CG, and the analysis in general would be bloated with classes that
+   *  have no real body. Later, it would be possible to generate method summaries for these builtins. For now, and
+   *  for the sake of easier debugging, we will leave it as a hardcoded list of builtins.
+   */
 });
 
 } // end swan namespace
