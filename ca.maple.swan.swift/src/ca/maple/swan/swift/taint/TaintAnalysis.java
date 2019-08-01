@@ -16,7 +16,10 @@ package ca.maple.swan.swift.taint;
 import com.ibm.wala.cast.loader.AstMethod;
 import com.ibm.wala.cast.tree.CAstSourcePositionMap;
 import com.ibm.wala.cast.util.SourceBuffer;
+import com.ibm.wala.classLoader.CallSiteReference;
 import com.ibm.wala.classLoader.IMethod;
+import com.ibm.wala.ipa.callgraph.CGNode;
+import com.ibm.wala.ipa.callgraph.CallGraph;
 import com.ibm.wala.ipa.callgraph.propagation.InstanceKey;
 import com.ibm.wala.ipa.slicer.*;
 import com.ibm.wala.ssa.SSAGetInstruction;
@@ -29,7 +32,11 @@ import java.io.IOException;
 import java.util.List;
 import java.util.Set;
 
+import static com.ibm.wala.ipa.slicer.Statement.Kind.NORMAL_RET_CALLER;
+
 public class TaintAnalysis {
+
+    static CallGraph CG = null;
 
     interface EndpointFinder {
 
@@ -69,7 +76,7 @@ public class TaintAnalysis {
     public static EndpointFinder getDeviceSource = new EndpointFinder() {
         @Override
         public boolean endpoint(Statement s) {
-            if (s.getKind()== Statement.Kind.NORMAL_RET_CALLER) {
+            if (s.getKind()== NORMAL_RET_CALLER) {
                 MethodReference ref = ((NormalReturnCaller)s).getInstruction().getCallSite().getDeclaredTarget();
                 if (ref.getName().toString().equals("getDeviceId")) {
                     return true;
@@ -101,45 +108,16 @@ public class TaintAnalysis {
     public static EndpointFinder swiftSources = new EndpointFinder() {
         @Override
         public boolean endpoint(Statement s) {
-            switch(s.getKind()) {
-                case PARAM_CALLER:
-                    System.out.println(s);
-                    break;
-                case PARAM_CALLEE:
-                    System.out.println(s);
-                    break;
-                case NORMAL_RET_CALLER:
-                    System.out.println(s);
-                    break;
-                case NORMAL_RET_CALLEE:
-                    System.out.println(s);
-                    break;
-                case EXC_RET_CALLER:
-                    System.out.println(s);
-                    break;
-                case EXC_RET_CALLEE:
-                    System.out.println(s);
-                    break;
-                case HEAP_PARAM_CALLER:
-                    System.out.println(s);
-                    break;
-                case HEAP_PARAM_CALLEE:
-                    System.out.println(s);
-                    break;
-                case HEAP_RET_CALLER:
-                    System.out.println(s);
-                    break;
-                case HEAP_RET_CALLEE:
-                    System.out.println(s);
-                    break;
+            if (s.getKind() == NORMAL_RET_CALLER) {
+                CallSiteReference cs = ((NormalReturnCaller)s).getInstruction().getCallSite();
+                CGNode node = s.getNode();
+                Set<CGNode> it = CG.getPossibleTargets(node, cs);
+                for (CGNode target: it) {
+                    if (target.getMethod().getDeclaringClass().toString().equals("function Lscript testTaint.swift/out.source() -> Swift.String")) {
+                        return true;
+                    }
+                }
             }
-            /*
-            if (s.getKind()== Statement.Kind.NORMAL_RET_CALLER) {
-                MethodReference ref = ((NormalReturnCaller)s).getInstruction().getCallSite().getDeclaredTarget();
-                String st = ref.getName().toString();
-                System.out.println(st);
-            }
-             */
             return false;
         }
     };
@@ -147,6 +125,13 @@ public class TaintAnalysis {
     public static EndpointFinder swiftSinks = new EndpointFinder() {
         @Override
         public boolean endpoint(Statement s) {
+            if (s.getKind()== Statement.Kind.PARAM_CALLEE) {
+                String ref = ((ParamCallee)s).getNode().getMethod().toString();
+                if (ref.equals("<Code body of function Lscript testTaint.swift/out.sink(sunk: Swift.String) -> ()>")) {
+                    return true;
+                }
+            }
+
             return false;
         }
     };
@@ -154,6 +139,7 @@ public class TaintAnalysis {
 
     public static Set<List<Statement>> getPaths(SDG<? extends InstanceKey> G, EndpointFinder sources, EndpointFinder sinks) {
         Set<List<Statement>> result = HashSetFactory.make();
+        CG = G.getCallGraph();
         for(Statement src : G) {
             if (sources.endpoint(src)) {
                 for(Statement dst : G) {
