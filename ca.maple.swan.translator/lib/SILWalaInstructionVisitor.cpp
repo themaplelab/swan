@@ -793,8 +793,10 @@ jobject SILWalaInstructionVisitor::visitLoadBorrowInst(LoadBorrowInst *LBI) {
   auto result = LBI->getResult(0);
   if (result) {
     SymbolTable.insert(result.getOpaqueValue(), result->getType().getAsString());
-    llvm::outs() << "\t [RESULT ADDR]: " << result.getOpaqueValue() << "\n";
-    llvm::outs() << "\t [RESULT TYPE]: " << result->getType().getAsString() << "\n";
+    if (Print) {
+      llvm::outs() << "\t [RESULT ADDR]: " << result.getOpaqueValue() << "\n";
+      llvm::outs() << "\t [RESULT TYPE]: " << result->getType().getAsString() << "\n";
+    }
     jobject Var = findAndRemoveCAstNode(result.getOpaqueValue());
     jobject Node = Instance->CAst->makeNode(CAstWrapper::ASSIGN, Var, operandNode);
     NodeMap.insert(std::make_pair(static_cast<ValueBase *>(LBI), Var));
@@ -1780,22 +1782,25 @@ jobject SILWalaInstructionVisitor::visitStructElementAddrInst(StructElementAddrI
 
 jobject SILWalaInstructionVisitor::visitDestructureTupleInst(DestructureTupleInst *DTI) {
   auto operand = findAndRemoveCAstNode(DTI->getOperand().getOpaqueValue());
-  llvm::outs() << "\t [OPERAND ADDR]: " << DTI->getOperand().getOpaqueValue() << "\n";
+  if (Print) {
+    llvm::outs() << "\t [OPERAND ADDR]: " << DTI->getOperand().getOpaqueValue() << "\n";
+  }
   int i = 0;
   for (auto result: DTI->getAllResults()) {
-    llvm::outs() << "\t [" << i << " RESULT ADDR]: " << result.getOpaqueValue() << "\n";
-    llvm::outs() << "\t [" << i << " RESULT TYPE]: " << result->getType().getAsString() << "\n";
+    if (Print) {
+      llvm::outs() << "\t [" << i << " RESULT ADDR]: " << result.getOpaqueValue() << "\n";
+      llvm::outs() << "\t [" << i << " RESULT TYPE]: " << result->getType().getAsString() << "\n";
+    }
+
     SymbolTable.insert(result.getOpaqueValue(), result->getType().getAsString());
     jobject ResultantVar = findAndRemoveCAstNode(result.getOpaqueValue());
     jobject FieldNameNode = Instance->CAst->makeConstant(("FIELD_" + std::to_string(i)).c_str());
-
 
     jobject declNode = Instance->CAst->makeNode(CAstWrapper::DECL_STMT,
                            Instance->CAst->makeConstant(("FIELD_" + std::to_string(i)).c_str()),
                            Instance->CAst->makeConstant("UNKNOWN"));
     NodeList.push_back(declNode);
     currentEntity->declNodes.push_back(declNode);
-
 
     jobject FieldNode = Instance->CAst->makeNode(CAstWrapper::VAR, FieldNameNode);
     jobject ObjectRef = Instance->CAst->makeNode(CAstWrapper::OBJECT_REF, operand, FieldNode);
