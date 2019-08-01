@@ -50,12 +50,12 @@ void SILWalaInstructionVisitor::visitModule(SILModule *M) {
 
     // Don't visit built in functions. Assume empty functions are built in functions.
     if (builtinFunctions.find(Demangle::demangleSymbolAsString(F.getName())) != builtinFunctions.end()) {
-      return;
+      continue;
     }
 
     if (F.empty()) {
       llvm::outs() << "Function with empty body: " << Demangle::demangleSymbolAsString(F.getName()) << "\n";
-      return;
+      continue;
     }
 
     // Clear current entity information since we make an entity for each function.
