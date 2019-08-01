@@ -131,10 +131,8 @@ void SILWalaInstructionVisitor::visitSILFunction(SILFunction *F) {
   }
 
   // Visit every basic block of the function.
-  Instance->currentBlock = 0;
   for (auto &BB: *F) {
     visitSILBasicBlock(&BB);
-    ++Instance->currentBlock;
   }
 }
 
