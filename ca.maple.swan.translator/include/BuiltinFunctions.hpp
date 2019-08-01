@@ -30,8 +30,9 @@ static std::unordered_set<std::string> builtinFunctions({
   "Swift.Bool.init(_builtinBooleanLiteral: Builtin.Int1) -> Swift.Bool",
   "default argument 1 of Swift.print(_: Any..., separator: Swift.String, terminator: Swift.String) -> ()",
   "Swift.print(_: Any..., separator: Swift.String, terminator: Swift.String) -> ()",
+  "default argument 2 of Swift.print(_: Any..., separator: Swift.String, terminator: Swift.String) -> ()",
+  "Swift._allocateUninitializedArray<A>(Builtin.Word) -> (Swift.Array<A>, Builtin.RawPointer)"
 
-  "default argument 2 of Swift.print(_: Any..., separator: Swift.String, terminator: Swift.String) -> ()"
   // Add more builtin functions here...
 });
 
