@@ -24,6 +24,7 @@ import com.ibm.wala.util.debug.Assertions;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 
 /*
  * This class builds all of the CAstEntities required for translation, based on the given CAstEntityInfos.
@@ -63,10 +64,19 @@ public class ScriptEntityBuilder {
                 mappedInfo.put(info.functionName, info);
             }
             functionEntities.add(newEntity);
-            // Set the entity's AST to be the first basic block of the function.
+
+            // Set the entity's AST to be the first basic block of the function, with the other basic blocks as
+            // children of the first block.
             if (info.basicBlocks.size() > 0) {
-                newEntity.setAst(info.basicBlocks.get(0));
+                List<CAstNode> body = new ArrayList<>();
+                body.addAll(info.basicBlocks.get(0).getChildren());
+                for (int i = 1; i < info.basicBlocks.size(); i++) {
+                    body.add(info.basicBlocks.get(i));
+                }
+                CAstNode parentBlock = Ast.makeNode(CAstNode.BLOCK_STMT, body);
+                newEntity.setAst(parentBlock);
             }
+
             // Set the node type map.
             for (CAstNode node: info.variableTypes.keySet()) {
                 newEntity.setNodeType(node, new AnyCAstType());
