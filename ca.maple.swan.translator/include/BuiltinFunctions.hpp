@@ -31,7 +31,9 @@ static std::unordered_set<std::string> builtinFunctions({
   "default argument 1 of Swift.print(_: Any..., separator: Swift.String, terminator: Swift.String) -> ()",
   "Swift.print(_: Any..., separator: Swift.String, terminator: Swift.String) -> ()",
   "default argument 2 of Swift.print(_: Any..., separator: Swift.String, terminator: Swift.String) -> ()",
-  "Swift._allocateUninitializedArray<A>(Builtin.Word) -> (Swift.Array<A>, Builtin.RawPointer)"
+  "Swift._allocateUninitializedArray<A>(Builtin.Word) -> (Swift.Array<A>, Builtin.RawPointer)",
+  "static Swift.Int.- infix(Swift.Int, Swift.Int) -> Swift.Int",
+  "static Swift.Int.+ infix(Swift.Int, Swift.Int) -> Swift.Int"
 
   // Add more builtin functions here...
 });
