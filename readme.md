@@ -34,34 +34,7 @@ Supported Swift (incl. dependencies) and WALA releases on SWAN's `master` branch
 | macOS Mojave | [master](https://github.com/apple/swift/tree/master) | [v1.5.3](https://github.com/wala/WALA/releases/tag/v1.5.3) |
 | Linux (Ubuntu 18.04) | [master](https://github.com/apple/swift/tree/master) | [v1.5.3](https://github.com/wala/WALA/releases/tag/v1.5.3) |
 
-**\*You must be using Java 8 in order to compile WALA.**
-
-### Switching to Java 8
-
-If you are not using Java 8 and wish to retain your current Java version, you can do the following after installing Java 8. [Credit.](https://stackoverflow.com/a/40754792)
-Add the following to your `~/.bash_profile` (macOS) or `~/.bashrc` (Linux).
-##### macOS
-```
-alias j<YOUR_VERSION>="export JAVA_HOME=`/usr/libexec/java_home -v <YOUR_VERSION>`; java -version"
-alias j8="export JAVA_HOME=`/usr/libexec/java_home -v 8`; java -version"
-```
-##### Linux
-You will need to check `/usr/lib/jvm` for the directory name of your current version. 
-```
-alias j<YOUR_VERSION>="export JAVA_HOME=`/usr/lib/jvm/YOUR_JAVA_DIR/bin/java`; java -version"
-alias j8="export JAVA_HOME=`/usr/lib/jvm/java-8-oracle/bin/java`; java -version"
-```
-Where `<YOUR_VERSION>` is your current Java version you wish to revert back to afterwards. Your can find your current Java version by typing `java -version`. Make sure to `source` after.
-
-Then, you can switch Java version by using the alias. e.g.
-```
-$ j8
-java version "1.8.0_201"
-Java(TM) SE Runtime Environment (build 1.8.0_201-b09)
-Java HotSpot(TM) 64-Bit Server VM (build 25.201-b09, mixed mode)
-```
-
-Note that this only temporarily sets your Java version. If you have downloaded Java 8 but do not want it to be your default, you can add the `export ...` part of the command to your `~/.bashrc` or `~/.bash_profile`.
+**\*You must be using Java 8 in order to compile WALA. If you need help switching to Java 8, please see our [guide](https://github.com/themaplelab/swan/wiki/Switching-to-Java-8) on it.**
 
 ### Download Projects
 
