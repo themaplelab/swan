@@ -29,6 +29,7 @@ public class EntityPrinter {
 
     public static void print(AbstractCodeEntity entity) {
         boolean printMapping = false; // The mapping output can be large and annoying.
+        boolean printVariables = false; // Variables can also be annoying.
 
         System.out.println("====================");
         if (entity instanceof ScriptEntity) {
@@ -59,7 +60,7 @@ public class EntityPrinter {
             System.out.println("</ARGUMENTS>");
         }
 
-        if (entity.getNodeTypeMap().keySet().size() > 0) {
+        if (entity.getNodeTypeMap().keySet().size() > 0 && printVariables) {
             System.out.println("\t<VARIABLES>");
             for (CAstNode node: entity.getNodeTypeMap().keySet()) {
                 System.out.println("\t\t<NAME>" + node.getChild(0) + "</NAME>");

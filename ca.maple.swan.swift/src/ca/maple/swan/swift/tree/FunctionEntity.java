@@ -94,7 +94,7 @@ public class FunctionEntity extends AbstractCodeEntity {
 
     @Override
     public String toString() {
-        return "<Swift function " + getName() + ">";
+        return getName();
     }
 
     @Override

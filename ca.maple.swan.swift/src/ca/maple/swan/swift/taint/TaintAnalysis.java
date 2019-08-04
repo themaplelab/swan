@@ -112,8 +112,10 @@ public class TaintAnalysis {
                 CallSiteReference cs = ((NormalReturnCaller)s).getInstruction().getCallSite();
                 CGNode node = s.getNode();
                 Set<CGNode> it = CG.getPossibleTargets(node, cs);
+                String testSource = "function Lscript testTaint.swift/out.source() -> Swift.String";
                 for (CGNode target: it) {
-                    if (target.getMethod().getDeclaringClass().toString().equals("function Lscript testTaint.swift/out.source() -> Swift.String")) {
+                    if (target.getMethod().getDeclaringClass().toString().equals(testSource)) {
+                        System.out.println("FOUND SOURCE:" + testSource);
                         return true;
                     }
                 }
@@ -127,7 +129,9 @@ public class TaintAnalysis {
         public boolean endpoint(Statement s) {
             if (s.getKind()== Statement.Kind.PARAM_CALLEE) {
                 String ref = ((ParamCallee)s).getNode().getMethod().toString();
-                if (ref.equals("<Code body of function Lscript testTaint.swift/out.sink(sunk: Swift.String) -> ()>")) {
+                String testSink = "<Code body of function Lscript testTaint.swift/out.sink(sunk: Swift.String) -> ()>";
+                if (ref.equals(testSink)) {
+                    System.out.println("FOUND SINK:" + testSink);
                     return true;
                 }
             }

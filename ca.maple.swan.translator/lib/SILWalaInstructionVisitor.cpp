@@ -58,6 +58,10 @@ void SILWalaInstructionVisitor::visitModule(SILModule *M) {
       continue;
     }
 
+    if (Print) {
+      llvm::outs() << "Analyzing function: " + Demangle::demangleSymbolAsString(F.getName()) + "\n";
+    }
+
     // Clear current entity information since we make an entity for each function.
     currentEntity = std::make_unique<CAstEntityInfo>();
     // Create a new source position recorder for this entity.
