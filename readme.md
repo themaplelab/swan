@@ -23,11 +23,10 @@ We are currently working on the following:
 
 ## Getting Started
 
-First, you should consider that the final build may be as large as ~70GB.
+First, you should consider that the final build may be as large as ~70GB. Also, please read Swift's [README](https://github.com/apple/swift/blob/master/README.md) for the latest dependencies (e.g. Xcode beta version).
 
 ### Release support
-Supported Swift (incl. dependencies) and WALA releases on SWAN's `master` branch.
-
+Supported Swift (incl. dependencies) and WALA releases on SWAN's `master` branch. 
 
 | OS | Swift Release Tag | WALA Release Tag* | 
 | -----------|:-------:|:-----:|
