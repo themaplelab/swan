@@ -108,6 +108,9 @@ You must run the analysis by running the following in the **root** directory. Ho
 ./gradlew run --args="YOUR_SWIFT_FILE"
 ```
 
+## Contributing
+Please see the (page)[https://github.com/themaplelab/swan/wiki/Contributing] on contributing.
+
 --------------------
 
 **You should expect exceptions on this branch as it is WIP and not fully functional.**
