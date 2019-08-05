@@ -84,14 +84,15 @@ void SILWalaInstructionVisitor::visitSILFunction(SILFunction *F) {
   currentEntity->functionName = Demangle::demangleSymbolAsString(F->getName());
 
   int fl = -1 , fc = -1, ll = -1, lc = -1;
-  // TODO: Should probably do some better error checking here.
   if (!F->getLocation().isNull()) {
     SourceManager &srcMgr = F->getModule().getSourceManager();
     SourceRange srcRange = F->getLocation().getSourceRange();
     SourceLoc srcStart = srcRange.Start;
     SourceLoc srcEnd = srcRange.End;
-    if (!srcStart.isValid() || !srcEnd.isValid()) {
-      llvm::errs() << "Source information invalid for " << currentEntity->functionName;
+    if (!srcStart.isValid()) {
+      llvm::errs() << "Source start invalid for " << currentEntity->functionName;
+    } else if (!srcEnd.isValid()) {
+      llvm::errs() << "Source end invalid for " << currentEntity->functionName;
     } else {
       auto startLineCol = srcMgr.getLineAndColumn(srcStart);
       fl = startLineCol.first;
@@ -123,7 +124,7 @@ void SILWalaInstructionVisitor::visitSILFunction(SILFunction *F) {
   if (F->getLoweredFunctionType()->getNumResults() == 1) {
     currentEntity->returnType = F->getLoweredFunctionType()->getSingleResult().getSILStorageType().getAsString();
   } else {
-    currentEntity->returnType = "MultiResultType"; // TODO: Replace with appropriate Tuple/Struct/Etc?
+    currentEntity->returnType = "MultiResultType"; // TODO: Replace with array of types or something?
   }
 
   for (auto &param: F->getLoweredFunctionType()->getParameters()) {
@@ -193,7 +194,6 @@ void SILWalaInstructionVisitor::beforeVisit(SILInstruction *I) {
   instrInfo->memBehavior = I->getMemoryBehavior();
   instrInfo->relBehavior = I->getReleasingBehavior();
 
-  // FixMe: replace with weak pointer.
   instrInfo->modInfo = moduleInfo.get();
   instrInfo->funcInfo = functionInfo.get();
   instrInfo->instrKind = I->getKind();
@@ -224,34 +224,26 @@ void SILWalaInstructionVisitor::updateInstrSourceInfo(SILInstruction *I) {
 
   instrInfo->Filename = debugInfo.Filename;
 
-  if (I->getLoc().isNull()) {
-    instrInfo->srcType = -1;
-  } else {
-
+  if (!I->getLoc().isNull()) {
     SourceRange srcRange = I->getLoc().getSourceRange();
     SourceLoc srcStart = srcRange.Start;
     SourceLoc srcEnd = srcRange.End;
 
     if (srcStart.isValid()) {
-
-      instrInfo->srcType = 0;
-
+      instrInfo->srcType = sourceType::STARTONLY;
       auto startLineCol = srcMgr.getLineAndColumn(srcStart);
       instrInfo->startLine = startLineCol.first;
       instrInfo->startCol = startLineCol.second;
-
     } else {
       instrInfo->startLine = debugInfo.Line;
       instrInfo->startCol = debugInfo.Column;
     }
 
     if (srcEnd.isValid()) {
-
       auto endLineCol = srcMgr.getLineAndColumn(srcEnd);
       instrInfo->endLine = endLineCol.first;
       instrInfo->endCol = endLineCol.second;
-    } else {
-      instrInfo->srcType = 1;
+      instrInfo->srcType = sourceType::FULL;
     }
   }
 }
@@ -262,15 +254,14 @@ void SILWalaInstructionVisitor::perInstruction() {
     llvm::outs() << ", [OPNUM] " << instrInfo->id << "\n";
     llvm::outs() << "\t --> File: " << instrInfo->Filename << "\n";
 
-    if (instrInfo->srcType == -1) { // Has no location information.
+    if (instrInfo->srcType == sourceType::INVALID) {
       llvm::outs() << "\t **** No source information. \n";
-    } else { // Has start information.
+    } else { // Has at least start information.
       llvm::outs() << "\t ++++ Start - Line " << instrInfo->startLine << ":"
                    << instrInfo->startCol << "\n";
     }
-
     // Has end information.
-    if (instrInfo->srcType == 0) {
+    if (instrInfo->srcType == sourceType::FULL) {
       llvm::outs() << "\t ---- End - Line " << instrInfo->endLine;
       llvm::outs() << ":" << instrInfo->endCol << "\n";
     }
@@ -342,8 +333,7 @@ jobject SILWalaInstructionVisitor::findAndRemoveCAstNode(void *Key) {
       NodeList.erase(it);
     }
   } else {
-    // TODO: Replace with a better exit (JVM exception using JNI?).
-    llvm::errs() << "ERROR: Returning nullptr from findAndRemoveCAstNode. Exiting...\n";
+    llvm::errs() << "ERROR: Returning nullptr from findAndRemoveCAstNode. Key: " << Key << " Exiting...\n";
     exit(1);
   }
   return node;
@@ -882,6 +872,7 @@ jobject SILWalaInstructionVisitor::visitMarkUninitializedInst(MarkUninitializedI
   if (Print) {
     llvm::outs() << "\t [MARK]: " << AddressToBeMarked.getOpaqueValue() << " AS " << KindOfMark << "\n";
   }
+  NodeMap.insert(std::make_pair(static_cast<ValueBase *>(MUI), findAndRemoveCAstNode(AddressToBeMarked.getOpaqueValue())));
   return Instance->CAst->makeNode(CAstWrapper::EMPTY);
 }
 
@@ -2844,7 +2835,6 @@ jobject SILWalaInstructionVisitor::visitBranchInst(BranchInst *BI) {
     SymbolTable.insert(Dest->getArgument(Idx), BI->getArg(Idx)->getType().getAsString(), ("argument" + std::to_string(Idx)));
 
     jobject varName = Instance->CAst->makeConstant(SymbolTable.get(Dest->getArgument(Idx)).c_str());
-
 
     jobject declNode = Instance->CAst->makeNode(CAstWrapper::DECL_STMT,
                            Instance->CAst->makeConstant(SymbolTable.get(Dest->getArgument(Idx)).c_str()),

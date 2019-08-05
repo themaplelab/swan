@@ -40,6 +40,8 @@ struct FunctionInfo {
   llvm::StringRef demangled;
 };
 
+enum sourceType {INVALID, STARTONLY, FULL};
+
 /// InstrInfo is used for storing source information into the CAst.
 struct InstrInfo {
   unsigned num;
@@ -49,7 +51,7 @@ struct InstrInfo {
   swift::SILInstruction::MemoryBehavior memBehavior;
   swift::SILInstruction::ReleasingBehavior relBehavior;
 
-  short srcType = -1;
+  short srcType = sourceType::INVALID;
   std::string Filename;
   unsigned startLine;
   unsigned startCol;

@@ -241,10 +241,10 @@ void WALAInstance::addSourceInfo(jobject CAstNode, InstrInfo* instrInfo) {
       CAstSourcePositionRecorderClass, "setPosition", "(Lcom/ibm/wala/cast/tree/CAstNode;Lcom/ibm/wala/cast/tree/CAstSourcePositionMap$Position;)V");
     THROW_ANY_EXCEPTION(Exception);
     switch (instrInfo->srcType) {
-      case -1: { // No Location.
+      case sourceType::INVALID: {
         break;
       }
-      case 0: { // Valid start and end.
+      case sourceType::FULL: {
         int fl = instrInfo->startLine;
         int fc = instrInfo->startCol;
         int ll = instrInfo->endLine;
@@ -255,7 +255,7 @@ void WALAInstance::addSourceInfo(jobject CAstNode, InstrInfo* instrInfo) {
         THROW_ANY_EXCEPTION(Exception);
         break;
       }
-      case 1: { // Valid start but not valid end.
+      case sourceType::STARTONLY: {
         int fl = instrInfo->startLine;
         int fc = instrInfo->startCol;
         int ll = instrInfo->startLine; // Workaround
