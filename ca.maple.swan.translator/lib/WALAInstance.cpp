@@ -233,7 +233,7 @@ void WALAInstance::createCAstSourcePositionRecorder() {
   CATCH()
 }
 
-void WALAInstance::addSourceInfo(jobject CAstNode, std::shared_ptr<InstrInfo> instrInfo) {
+void WALAInstance::addSourceInfo(jobject CAstNode, InstrInfo* instrInfo) {
   TRY(Exception, JavaEnv)
     auto CAstSourcePositionRecorderClass = JavaEnv->FindClass("com/ibm/wala/cast/tree/impl/CAstSourcePositionRecorder");
     THROW_ANY_EXCEPTION(Exception);

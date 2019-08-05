@@ -91,11 +91,11 @@ private:
   bool AddEmptyNodes = false;
 
   /// Source information about the SILInstruction.
-  std::shared_ptr<InstrInfo> instrInfo;
+  std::unique_ptr<InstrInfo> instrInfo;
   /// Source information about the SILFunction.
-  std::shared_ptr<FunctionInfo> functionInfo;
+  std::unique_ptr<FunctionInfo> functionInfo;
   /// Source information about the SILModule.
-  std::shared_ptr<ModuleInfo> moduleInfo;
+  std::unique_ptr<ModuleInfo> moduleInfo;
 
   SymbolTable SymbolTable;
 

@@ -39,7 +39,7 @@ void SILWalaInstructionVisitor::visitModule(SILModule *M) {
 
   // Give the module file a name if it doesn't have one (for source information use).
   // Why would the module not have a name?
-  moduleInfo = std::make_shared<ModuleInfo>(M->getSwiftModule()->getModuleFilename());
+  moduleInfo = std::make_unique<ModuleInfo>(M->getSwiftModule()->getModuleFilename());
   if (moduleInfo->sourcefile.empty()) {
     moduleInfo->sourcefile = "N/A";
   }
@@ -79,26 +79,28 @@ void SILWalaInstructionVisitor::visitModule(SILModule *M) {
 void SILWalaInstructionVisitor::visitSILFunction(SILFunction *F) {
 
   functionInfo =
-      std::make_shared<FunctionInfo>(F->getName(), Demangle::demangleSymbolAsString(F->getName()));
+      std::make_unique<FunctionInfo>(F->getName(), Demangle::demangleSymbolAsString(F->getName()));
 
   currentEntity->functionName = Demangle::demangleSymbolAsString(F->getName());
 
-  int fl, fc, ll, lc;
+  int fl = -1 , fc = -1, ll = -1, lc = -1;
   // TODO: Should probably do some better error checking here.
   if (!F->getLocation().isNull()) {
     SourceManager &srcMgr = F->getModule().getSourceManager();
     SourceRange srcRange = F->getLocation().getSourceRange();
     SourceLoc srcStart = srcRange.Start;
     SourceLoc srcEnd = srcRange.End;
-    assert(srcStart.isValid());
-    assert(srcEnd.isValid());
-    auto startLineCol = srcMgr.getLineAndColumn(srcStart);
-    fl = startLineCol.first;
-    fc = startLineCol.second;
-    auto endLineCol = srcMgr.getLineAndColumn(srcEnd);
-    ll = endLineCol.first;
-    lc = endLineCol.second;
-    currentEntity->functionPosition = Instance->CAst->makeLocation(fl, fc, ll, lc);
+    if (!srcStart.isValid() || !srcEnd.isValid()) {
+      llvm::errs() << "Source information invalid for " << currentEntity->functionName;
+    } else {
+      auto startLineCol = srcMgr.getLineAndColumn(srcStart);
+      fl = startLineCol.first;
+      fc = startLineCol.second;
+      auto endLineCol = srcMgr.getLineAndColumn(srcEnd);
+      ll = endLineCol.first;
+      lc = endLineCol.second;
+      currentEntity->functionPosition = Instance->CAst->makeLocation(fl, fc, ll, lc);
+    }
   }
 
   if (!F->empty()) {
@@ -162,7 +164,7 @@ void SILWalaInstructionVisitor::visitSILBasicBlock(SILBasicBlock *BB) {
         continue;
       } else {
         NodeList.push_back(Node);
-        Instance->addSourceInfo(Node, instrInfo);
+        Instance->addSourceInfo(Node, instrInfo.get());
       }
     }
   }
@@ -183,7 +185,7 @@ void SILWalaInstructionVisitor::visitSILBasicBlock(SILBasicBlock *BB) {
 }
 
 void SILWalaInstructionVisitor::beforeVisit(SILInstruction *I) {
-  instrInfo = std::make_shared<InstrInfo>();
+  instrInfo = std::make_unique<InstrInfo>();
 
   updateInstrSourceInfo(I);
 

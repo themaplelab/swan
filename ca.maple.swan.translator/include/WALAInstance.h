@@ -86,7 +86,7 @@ public:
   void createCAstSourcePositionRecorder();
 
   /// Calls setPosition on the CurrentCAstSourcePositionRecorder using the given info and CAstNode.
-  void addSourceInfo(jobject CAstNode, std::shared_ptr<InstrInfo> instrInfo);
+  void addSourceInfo(jobject CAstNode, InstrInfo* instrInfo);
 
   /// Returns the current source position recorder (presumably to add it to the currentEntity).
   jobject getCurrentCAstSourcePositionRecorder();
