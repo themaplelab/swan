@@ -109,7 +109,7 @@ You must run the analysis by running the following in the **root** directory. Ho
 ```
 
 ## Contributing
-Please see the (page)[https://github.com/themaplelab/swan/wiki/Contributing] on contributing.
+Please see the [page](https://github.com/themaplelab/swan/wiki/Contributing) on contributing.
 
 --------------------
 
