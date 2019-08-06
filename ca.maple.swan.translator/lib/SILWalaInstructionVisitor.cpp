@@ -390,7 +390,7 @@ jobject SILWalaInstructionVisitor::getOperatorCAstType(Identifier Name) {
 
 jobject SILWalaInstructionVisitor::visitApplySite(ApplySite Apply) {
   jobject Node = Instance->CAst->makeNode(CAstWrapper::EMPTY);
-  auto *Callee = Apply.getReferencedFunction();
+  auto *Callee = Apply.getReferencedFunctionOrNull();
 
   if (!Callee) {
     llvm::errs() << "ERROR: Apply site's Callee is empty! \n";
@@ -1079,12 +1079,12 @@ jobject SILWalaInstructionVisitor::visitMarkDependenceInst(MarkDependenceInst *M
 
 jobject SILWalaInstructionVisitor::visitFunctionRefInst(FunctionRefInst *FRI) {
   // Cast the instr to access methods.
-  std::string FuncName = Demangle::demangleSymbolAsString(FRI->getReferencedFunction()->getName());
+  std::string FuncName = Demangle::demangleSymbolAsString(FRI->getReferencedFunctionOrNull()->getName());
   jobject NameNode = Instance->CAst->makeConstant(FuncName.c_str());
 
   if (builtinFunctions.find(FuncName) != builtinFunctions.end()) {
     jobject constantNode = Instance->CAst->makeConstant(FuncName.c_str());
-    NodeMap.insert(std::make_pair(FRI->getReferencedFunction(), constantNode));
+    NodeMap.insert(std::make_pair(FRI->getReferencedFunctionOrNull(), constantNode));
     NodeMap.insert(std::make_pair(static_cast<ValueBase *>(FRI), constantNode));
     if (Print) {
       llvm::outs() << "\t [BUILT IN FUNCTION]: " << FuncName << "\n";
@@ -1100,7 +1100,7 @@ jobject SILWalaInstructionVisitor::visitFunctionRefInst(FunctionRefInst *FRI) {
 
   // Here we do NOT use an ASSIGN because then we would have to look up what variables
   // are assigned to in order to find the call site in ScriptEntityBuilder's findCallee method.
-  NodeMap.insert(std::make_pair(FRI->getReferencedFunction(), FuncExprNode));
+  NodeMap.insert(std::make_pair(FRI->getReferencedFunctionOrNull(), FuncExprNode));
   NodeMap.insert(std::make_pair(static_cast<ValueBase *>(FRI), FuncExprNode));
   return Instance->CAst->makeNode(CAstWrapper::EMPTY);
 }
