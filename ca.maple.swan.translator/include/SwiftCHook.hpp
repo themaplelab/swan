@@ -38,7 +38,7 @@
 
 using namespace swift;
 
-namespace swift_wala {
+namespace swan {
 
 /// Observer class implements virtual callback methods (that the Frontend
 /// calls) of the FrontendObserver, so that desired objects (such as the
@@ -70,6 +70,6 @@ std::string getExecutablePath(const char *FirstArg) {
   return llvm::sys::fs::getMainExecutable(FirstArg, P);
 }
 
-} // end swift_wala namespace
+} // end swan namespace
 
 #endif // SWAN_SWIFTCHOOK_H

@@ -18,8 +18,6 @@
 ///
 //===---------------------------------------------------------------------===//
 
-// TODO: Class/method Doxygen comments and thorough functionality comments.
-
 #ifndef SWAN_SILWALAINSTRUCTIONVISITOR_H
 #define SWAN_SILWALAINSTRUCTIONVISITOR_H
 
@@ -31,10 +29,11 @@
 #include <jni.h>
 #include <list>
 #include <unordered_map>
+#include <unordered_set>
 
 using namespace swift;
 
-namespace swift_wala {
+namespace swan {
 
 class WALAInstance;
 
@@ -68,6 +67,9 @@ private:
   /// Current 'Cast Entity' being worked on.
   std::unique_ptr<CAstEntityInfo> currentEntity;
 
+  /// Set of all opaque values already declared (so we do not redeclare a value).
+  std::unordered_set<void *> declaredValues;
+
   /// Update instrInfo with the given SILInstruction information.
   void updateInstrSourceInfo(SILInstruction *I);
   /// Called by beforeVisit. Prints debug info about the instrInfo (in our case). It can also handle any other
@@ -77,21 +79,24 @@ private:
   /// Import call that all instructions directly pertaining to function calls lead to. It will create a
   /// CAstNode that will be mapped to the function site (CAstEntity).
   jobject visitApplySite(ApplySite Apply);
-  /// TODO: What is this used for exactly?
+  /// Returns a CAstNode given a key (OpaqueValue). The function first looks up the key in the symbol table, and then
+  /// the NodeMap.
   jobject findAndRemoveCAstNode(void *Key);
   /// Returns CAstNode with appropriate operator kind.
   jobject getOperatorCAstType(Identifier Name);
 
   unsigned int InstructionCount = 0;
 
-  /// Source information about the SILInstruction.
-  std::shared_ptr<InstrInfo> instrInfo;
-  /// Source information about the SILFunction.
-  std::shared_ptr<FunctionInfo> functionInfo;
-  /// Source information about the SILModule.
-  std::shared_ptr<ModuleInfo> moduleInfo;
+  /// Enable/Disable adding EMPTY nodes to the AST (useful for debugging but otherwise unnecessary).
+  bool AddEmptyNodes = false;
 
-  /// TODO: Why is this needed?
+  /// Source information about the SILInstruction.
+  std::unique_ptr<InstrInfo> instrInfo;
+  /// Source information about the SILFunction.
+  std::unique_ptr<FunctionInfo> functionInfo;
+  /// Source information about the SILModule.
+  std::unique_ptr<ModuleInfo> moduleInfo;
+
   SymbolTable SymbolTable;
 
   /// Map of Instr* (various SIL instruction types) to the CAstNode representing it.
@@ -305,6 +310,6 @@ public:
 
 };
 
-} // end swift_wala namespace
+} // end swan namespace
 
 #endif // SWAN_SILWALAINSTRUCTIONVISITOR_H

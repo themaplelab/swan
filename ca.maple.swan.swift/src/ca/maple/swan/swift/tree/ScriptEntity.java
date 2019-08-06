@@ -1,33 +1,45 @@
+//===--- ScriptEntity.java -----------------------------------------------===//
+//
+// This source file is part of the SWAN open source project
+//
+// Copyright (c) 2019 Maple @ University of Alberta
+// All rights reserved. This program and the accompanying materials (unless
+// otherwise specified by a license inside of the accompanying material)
+// are made available under the terms of the Eclipse Public License v2.0
+// which accompanies this distribution, and is available at
+// http://www.eclipse.org/legal/epl-v20.html
+//
+//===---------------------------------------------------------------------===//
+
 package ca.maple.swan.swift.tree;
 
 import com.ibm.wala.cast.ir.translator.AbstractScriptEntity;
 import com.ibm.wala.cast.tree.*;
+import com.ibm.wala.cast.tree.impl.CAstNodeTypeMapRecorder;
+import com.ibm.wala.cast.tree.impl.CAstSourcePositionRecorder;
 
 import java.io.File;
+import java.util.Collection;
 
-
+/*
+ * This class represents the translated "main" SIL function.
+ */
 public class ScriptEntity extends AbstractScriptEntity {
 
-    // WORK IN PROGRESS
+    // TODO: Is it necessary to implement getNamePosition(), getPosition(int[] arg), getPosition()?
 
-    // ScriptEntity -> AbstractScriptEntity -> AbstractCodeEntity -> AbstractEntity -> CAstEntity
-    // AbstractScriptEntity:
-    //      Handles basic filename, kind, name, etc
-    // AbstractCodeEntity:
-    //      Handles AST, CFG, types
-    // AbstractEntity:
-    //      Handles scoped entities.
-    // CAstEntity:
-    //      Defines types and methods, which are all implemented by the above so we don't deal with
-    //      this class directly.
+    CAstSourcePositionRecorder sourcePositionRecorder;
+    String scriptName;
 
-    // What this class expects from the C++ translator:
-    //      Map<String, CAstNode>
-    //      String - Function name, first entry should be "main"
-    //      CAstNode - Basic Block #0 of the SILFunction
-
-    public ScriptEntity(File file) {
+    public ScriptEntity(String scriptName, File file, CAstSourcePositionRecorder cAstSourcePositionRecorder) {
         super(file, new SwiftScriptType());
+        this.sourcePositionRecorder = cAstSourcePositionRecorder;
+        this.scriptName = scriptName;
+    }
+
+    @Override
+    public int getKind() {
+        return CAstEntity.SCRIPT_ENTITY;
     }
 
     @Override
@@ -42,6 +54,16 @@ public class ScriptEntity extends AbstractScriptEntity {
 
     @Override
     public String getName() {
-        return "main";
+        return scriptName;
+    }
+
+    @Override
+    public CAstSourcePositionRecorder getSourceMap() {
+        return this.sourcePositionRecorder;
+    }
+
+    @Override
+    public String toString() {
+        return "<Swift script " + getName() + ">";
     }
 }

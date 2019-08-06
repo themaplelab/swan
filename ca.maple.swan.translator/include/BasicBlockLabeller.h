@@ -24,7 +24,7 @@
 
 using std::string;
 
-namespace swift_wala {
+namespace swan {
 
 /// This class contains a single static method that returns the block # of
 /// the given SILBasicBlock.
@@ -34,6 +34,6 @@ public:
   static string label(swift::SILBasicBlock* basicBlock);
 };
 
-} // end swift_wala namespace
+} // end swan namespace
 
 #endif // SWAN_BASICBLOCKLABELLER_H

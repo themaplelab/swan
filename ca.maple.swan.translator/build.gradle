@@ -26,7 +26,8 @@ project(":ca.maple.swan.translator") {
                     redirectOutput = false
 
                     cmakeRoot '.'
-                    cmakeArgs "-DCMAKE_INSTALL_PREFIX=${outputDir}",
+                    cmakeArgs "-DSWAN=true",
+                            "-DCMAKE_INSTALL_PREFIX=${outputDir}",
                             "-DCMAKE_C_COMPILER=clang",
                             "-DCMAKE_CXX_COMPILER=clang++",
                             "-DClang_DIR=${SWIFT_PATH_TO_LLVM_BUILD}/lib/cmake/clang",

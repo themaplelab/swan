@@ -25,7 +25,7 @@
 
 using namespace swift;
 
-namespace swift_wala {
+namespace swan {
 
 /// ModuleInfo is used for storing source information into the CAst.
 struct ModuleInfo {
@@ -40,6 +40,8 @@ struct FunctionInfo {
   llvm::StringRef demangled;
 };
 
+enum sourceType {INVALID, STARTONLY, FULL};
+
 /// InstrInfo is used for storing source information into the CAst.
 struct InstrInfo {
   unsigned num;
@@ -49,7 +51,7 @@ struct InstrInfo {
   swift::SILInstruction::MemoryBehavior memBehavior;
   swift::SILInstruction::ReleasingBehavior relBehavior;
 
-  short srcType;
+  short srcType = sourceType::INVALID;
   std::string Filename;
   unsigned startLine;
   unsigned startCol;
@@ -70,9 +72,15 @@ struct CAstEntityInfo {
   std::vector<jobject> cfNodes; // Instructions that impact intra-function control flow.
   std::string returnType; // Return type of the function as a string. e.g. "@convention(thin) (Int) -> Int"
   std::vector<std::string> argumentTypes; // Vector of argument type names of the function.
+  std::vector<std::string> argumentNames; // Vector of argument names corresponding to those referenced in the AST.
+  std::map<jobject, std::string> variableTypes; // Map of jobject (VAR CAstNode) to a string representing its type.
+  jobject CAstSourcePositionRecorder; // Maps CAstNodes to source information.
+  std::vector<jobject> declNodes; // These are DECL_STMTs which need to be mutated on the Java side later.
+  jobject functionPosition; // The Position of the function (for `getNamePosition()`).
+  std::vector<jobject> argumentPositions; // The Positions of the function arguments (for `getPosition(int arg)`);
 
   void print() {
-      llvm::outs() << "-*- CAST ENTITY INFO -*-" << "\n";
+      llvm::outs() << "\n\n" << "-*- CAST ENTITY INFO -*-" << "\n";
       llvm::outs() << "\tFUNCTION NAME: " << functionName << "\n";
       // If we print the blocks using CAstWrapper, they won't print where expected to the terminal.
       // There is probably a way to solve this but is not necessary for now.
@@ -80,10 +88,20 @@ struct CAstEntityInfo {
       llvm::outs() << "\t# OF CALL NODES: " << callNodes.size() << "\n";
       llvm::outs() << "\t# OF CONTROL FLOW NODES: " << cfNodes.size() << "\n";
       llvm::outs() << "\tRETURN TYPE: " << returnType << "\n";
-      llvm::outs() << "\t# OF ARGUMENT TYPES: " << argumentTypes.size() << "\n";
+      for (auto argType: argumentTypes) {
+        llvm::outs() << "\tARGUMENT TYPE: " << argType << "\n";
+      }
+      for (auto argName: argumentNames) {
+        llvm::outs() << "\tARGUMENT NAME: " << argName << "\n";
+      }
+      for (auto it = variableTypes.begin(); it != variableTypes.end(); ++it) {
+        // Can't provide name unless using JNI which would not be in sync.
+        llvm::outs() << "\tVARIABLE TYPE: " << it->second << "\n";
+      }
+      llvm::outs() << "=*= CAST ENTITY INFO =*=" << "\n\n";
     }
 };
 
-} // end swift_wala namespace
+} // end swan namespace
 
 #endif // SWAN_INFOSTRUCTURES_HPP

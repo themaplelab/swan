@@ -1,8 +1,18 @@
 cmake_minimum_required(VERSION 3.5.1)
 project(SwiftWalaTranslator)
 
-list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake/modules")
+# CHANGE THESE
+if(NOT SWAN)
+set(WALA_DIR "/home/bob/swift-source/WALA")
+set(WALA_PATH_TO_SWIFT_BUILD "/home/bob/swift-source/build/Ninja-DebugAssert/swift-linux-x86_64")
+set(SWIFT_PATH_TO_LLVM_SOURCE "/home/bob/swift-source/llvm")
+set(SWIFT_PATH_TO_LLVM_BUILD "/home/bob/swift-source/build/Ninja-DebugAssert/llvm-linux-x86_64")
+set(SWIFT_PATH_TO_CMARK_BUILD "/home/bob/swift-source/build/Ninja-DebugAssert/cmark-linux-x86_64")
+endif()
 
+list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake/modules")
+set(Clang_DIR "${SWIFT_PATH_TO_LLVM_BUILD}/lib/cmake/clang")
+set(LLVM_DIR "${SWIFT_PATH_TO_LLVM_BUILD}/lib/cmake/llvm")
 set(CMAKE_C_COMPILER "clang" CACHE STRING "C Compiler")
 set(CMAKE_CXX_COMPILER "clang++" CACHE STRING "C++ Compiler")
 set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)

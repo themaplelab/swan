@@ -31,7 +31,7 @@
 
 class CAstWrapper;
 
-namespace swift_wala {
+namespace swan {
 
 /// This class serves as a bridge between the JNI bridge and the
 /// SILWalaInstructionVisitor. It is effectively the framework's
@@ -42,6 +42,7 @@ private:
   jobject Translator; // Java translator object.
   std::string File; // Swift file to analyze.
   std::vector<std::unique_ptr<CAstEntityInfo>> castEntities; // Entity info needed to make the CAstEntities on the Java side.
+  jobject CurrentCAstSourcePositionRecorder = nullptr;
 
 public:
   CAstWrapper *CAst; // For handling JNI calls (WALA).
@@ -55,9 +56,6 @@ public:
 
   /// Returns copy of translated nodes as a jobject (ArrayList<CastNode>).
   jobject getCAstNodes();
-
-  /// Used for debugging jobjects.
-  void print(jobject Object);
 
   /// Used for debugging CAst nodes, as jobjects. Not synchronous with llvm::outs()!
   void printNode(jobject Node);
@@ -75,13 +73,30 @@ public:
   /// Returns ArrayList<CAstEntityInfo> as jobject.
   jobject getCAstEntityInfo();
 
-  /// Used to turn fields of CAstEntityInfo into ArrayList<CAstNode> as jobject.
-  jobject getCAstNodesOfEntityInfo(const std::vector<jobject> &nodes);
+  /// Converts C++ std::vector<jobject> to Java ArrayList.
+  jobject vectorToArrayList(const std::vector<jobject> &v);
 
   /// Used to turn the std::vector<std::string> of argument types to ArrayList<String> as jobject.
   jobject getArgumentTypesOfEntityInfo(const std::vector<std::string> &argumentTypes);
+
+  /// Converts a given C++ map to a Java LinkedHashMap and returns it as jobject.
+  jobject mapToLinkedHashMap(const std::map<jobject, std::string> &map);
+
+  /// Creates a CAstSourcePositionRecorder object and returns it as jobject. Every CAstEntity needs one.
+  void createCAstSourcePositionRecorder();
+
+  /// Calls setPosition on the CurrentCAstSourcePositionRecorder using the given info and CAstNode.
+  void addSourceInfo(jobject CAstNode, InstrInfo* instrInfo);
+
+  /// Returns the current source position recorder (presumably to add it to the currentEntity).
+  jobject getCurrentCAstSourcePositionRecorder();
+
+  /// Used to keep track of the currentBlock index so we know when to add the basic block arguments to the
+  /// entity argument names. There is probably a better way to do this such as looking up the basic block
+  /// the instruction lies in, but this is good enough for now.
+  unsigned int currentBlock = 0;
 };
 
-} // end swift_wala namespace
+} // end swan namespace
 
 #endif // SWAN_WALAINSTANCE_H

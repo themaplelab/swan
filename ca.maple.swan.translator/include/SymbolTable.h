@@ -23,21 +23,24 @@
 #include <string>
 #include <unordered_map>
 
-namespace swift_wala {
+namespace swan {
 
 /// This class is used as a data structure utility by the
-/// SILWalaInstructionVisitor to keep track of allocation sites.
+/// SILWalaInstructionVisitor to keep track of allocation sites (variables).
 class SymbolTable {
 public:
   bool has(void* key);
+  bool hasType(void* key);
   std::string get(void* key);
-  void insert(void* key, const std::string& name);
-  void duplicate(void* key, const std::string& name);
+  std::string getType(void* key);
+  void insert(void* key, const std::string& type, const std::string& name = std::string(""));
+  void duplicate(void* key, const std::string& type, const std::string& name);
   bool remove(void* key);
 private:
-  std::unordered_map<void*, std::string> table;
+  std::unordered_map<void*, std::string> nameTable;
+  std::unordered_map<void*, std::string> typeTable;
 };
 
-} // end swift_wala namespace
+} // end swan namespace
 
 #endif // SWAN_SYMBOLTABLE_H

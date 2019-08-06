@@ -22,7 +22,7 @@
 #include <memory>
 #include <WALAInstance.h>
 
-using namespace swift_wala;
+using namespace swan;
 
 JNIEXPORT jobject JNICALL
 Java_ca_maple_swan_swift_translator_SwiftToCAstTranslator_translateToCAstNodes(JNIEnv *env, jobject obj)

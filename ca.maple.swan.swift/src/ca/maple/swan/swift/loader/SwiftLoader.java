@@ -1,78 +1,42 @@
+//===--- SwiftLoader.java ------------------------------------------------===//
+//
+// This source file is part of the SWAN open source project
+//
+// Copyright (c) 2019 Maple @ University of Alberta
+// All rights reserved. This program and the accompanying materials (unless
+// otherwise specified by a license inside of the accompanying material)
+// are made available under the terms of the Eclipse Public License v2.0
+// which accompanies this distribution, and is available at
+// http://www.eclipse.org/legal/epl-v20.html
+//
+//===---------------------------------------------------------------------===//
+
 package ca.maple.swan.swift.loader;
 
-import ca.maple.swan.swift.ir.SwiftLanguage;
-import ca.maple.swan.swift.translator.SwiftCAstToIRTranslator;
-import ca.maple.swan.swift.translator.SwiftTranslatorFactory;
-import ca.maple.swan.swift.types.SwiftTypes;
-import com.ibm.wala.cast.ir.translator.TranslatorToCAst;
+import ca.maple.swan.swift.translator.SwiftAstTranslator;
 import com.ibm.wala.cast.ir.translator.TranslatorToIR;
-import com.ibm.wala.cast.loader.CAstAbstractModuleLoader;
-import com.ibm.wala.cast.tree.CAst;
-import com.ibm.wala.cast.tree.CAstEntity;
+import com.ibm.wala.cast.js.loader.JavaScriptLoader;
+import com.ibm.wala.cast.js.translator.JavaScriptTranslatorFactory;
 import com.ibm.wala.cast.tree.rewrite.CAstRewriterFactory;
-import com.ibm.wala.classLoader.Language;
-import com.ibm.wala.classLoader.ModuleEntry;
 import com.ibm.wala.ipa.cha.IClassHierarchy;
-import com.ibm.wala.ssa.SSAInstructionFactory;
-import com.ibm.wala.types.ClassLoaderReference;
 
-import java.io.IOException;
-
-public class SwiftLoader extends CAstAbstractModuleLoader {
-
-    private final SwiftTranslatorFactory translatorFactory;
-
-    private final CAstRewriterFactory<?, ?> preprocessor;
-
-    public SwiftLoader(IClassHierarchy cha, SwiftTranslatorFactory translatorFactory) {
+/*
+ * For now, we use a custom loader to use our own AstTranslator in the JS code.
+ */
+public class SwiftLoader extends JavaScriptLoader {
+    public SwiftLoader(IClassHierarchy cha, JavaScriptTranslatorFactory translatorFactory) {
         this(cha, translatorFactory, null);
     }
 
     public SwiftLoader(
             IClassHierarchy cha,
-            SwiftTranslatorFactory translatorFactory,
+            JavaScriptTranslatorFactory translatorFactory,
             CAstRewriterFactory<?, ?> preprocessor) {
-        super(cha);
-        this.translatorFactory = translatorFactory;
-        this.preprocessor = preprocessor;
-    }
-
-    @Override
-    protected TranslatorToCAst getTranslatorToCAst(CAst ast, ModuleEntry module) throws IOException {
-        TranslatorToCAst translator = translatorFactory.make(ast, module);
-        if (preprocessor != null) translator.addRewriter(preprocessor, true);
-        return translator;
-    }
-
-    @Override
-    protected boolean shouldTranslate(CAstEntity cAstEntity) {
-        return true;
+        super(cha,  translatorFactory, preprocessor);
     }
 
     @Override
     protected TranslatorToIR initTranslator() {
-        return new SwiftCAstToIRTranslator(this);
+        return new SwiftAstTranslator(this);
     }
-
-    @Override
-    public ClassLoaderReference getReference() {
-        return SwiftTypes.swiftLoader;
-    }
-
-    @Override
-    public Language getLanguage() {
-        return SwiftLanguage.Swift;
-    }
-
-    @Override
-    public SSAInstructionFactory getInstructionFactory() {
-        return SwiftLanguage.Swift.instructionFactory();
-    }
-
-    final CoreClass ROOT = new CoreClass(SwiftTypes.rootTypeName, null, this, null);
-
-    final CoreClass SCRIPT = new CoreClass(SwiftTypes.Script.getName(), SwiftTypes.rootTypeName, this, null);
-
-    final CoreClass CODE_BODY = new CoreClass(SwiftTypes.CodeBody.getName(), SwiftTypes.Script.getName(), this, null);
-
 }

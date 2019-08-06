@@ -14,16 +14,18 @@ repositories {
 sourceSets.main.java.srcDirs = ['src/']
 
 apply plugin: 'application'
-mainClassName = "ca.maple.swan.swift.test.TestSwiftCallGraphShape"
+mainClassName = "ca.maple.swan.swift.test.TestSwiftCallGraphShapeUsingJS"
 
 dependencies {
     implementation project(":ca.maple.swan.swift")
     compile fileTree(dir: "${WALA_DIR}/com.ibm.wala.core/build/libs", include: '*.jar')
     compile fileTree(dir: "${WALA_DIR}/com.ibm.wala.shrike/build/libs", include: '*.jar')
     compile fileTree(dir: "${WALA_DIR}/com.ibm.wala.cast/build/libs", include: '*.jar')
+    compile fileTree(dir: "${WALA_DIR}/com.ibm.wala.cast.js/build/libs", include: '*.jar')
     compile fileTree(dir: "${WALA_DIR}/com.ibm.wala.util/build/libs", include: '*.jar')
 }
 
 run {
     enableAssertions = true
+    standardInput = System.in;
 }
