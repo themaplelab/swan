@@ -203,9 +203,9 @@ void SILWalaInstructionVisitor::beforeVisit(SILInstruction *I) {
     vals.push_back(op.get());
   }
   instrInfo->ops = llvm::ArrayRef<SILValue>(vals);
-  perInstruction();
 
   if (Print) {
+    if (printSource) { perInstruction(); }
     llvm::outs() << "<< " << getSILInstructionName(I->getKind()) << " >>\n";
   }
 }
@@ -249,64 +249,63 @@ void SILWalaInstructionVisitor::updateInstrSourceInfo(SILInstruction *I) {
 }
 
 void SILWalaInstructionVisitor::perInstruction() {
-  if (Print) {
-    llvm::outs() << "\t [INSTR] #" << instrInfo->num;
-    llvm::outs() << ", [OPNUM] " << instrInfo->id << "\n";
-    llvm::outs() << "\t --> File: " << instrInfo->Filename << "\n";
+  llvm::outs() << "\t [INSTR] #" << instrInfo->num;
+  llvm::outs() << ", [OPNUM] " << instrInfo->id << "\n";
+  llvm::outs() << "\t --> File: " << instrInfo->Filename << "\n";
 
-    if (instrInfo->srcType == sourceType::INVALID) {
-      llvm::outs() << "\t **** No source information. \n";
-    } else { // Has at least start information.
-      llvm::outs() << "\t ++++ Start - Line " << instrInfo->startLine << ":"
-                   << instrInfo->startCol << "\n";
-    }
-    // Has end information.
-    if (instrInfo->srcType == sourceType::FULL) {
-      llvm::outs() << "\t ---- End - Line " << instrInfo->endLine;
-      llvm::outs() << ":" << instrInfo->endCol << "\n";
-    }
-
-    // Memory Behavior.
-    switch (instrInfo->memBehavior) {
-      case SILInstruction::MemoryBehavior::None: {
-        break;
-      }
-      case SILInstruction::MemoryBehavior::MayRead: {
-        llvm::outs() << "\t\t +++ [MEM-R]: May read from memory. \n";
-        break;
-      }
-      case SILInstruction::MemoryBehavior::MayWrite: {
-        llvm::outs() << "\t\t +++ [MEM-W]: May write to memory. \n";
-        break;
-      }
-      case SILInstruction::MemoryBehavior::MayReadWrite: {
-        llvm::outs() << "\t\t +++ [MEM-RW]: May read or write memory. \n";
-        break;
-      }
-      case SILInstruction::MemoryBehavior::MayHaveSideEffects: {
-        llvm::outs() << "\t\t +++ [MEM-F]: May have side effects. \n";
-      }
-    }
-
-    // Releasing Behavior.
-    switch (instrInfo->relBehavior) {
-      case SILInstruction::ReleasingBehavior::DoesNotRelease: {
-        llvm::outs() << "\t\t [REL]: Does not release memory. \n";
-        break;
-      }
-      case SILInstruction::ReleasingBehavior::MayRelease: {
-        llvm::outs() << "\t\t [REL]: May release memory. \n";
-        break;
-      }
-    }
-
-    // Show operands, if they exist.
-    for (SILValue op : instrInfo->ops) {
-      llvm::outs() << "\t\t [OPER]: " << op;
-    }
-
-    llvm::outs() << "\n";
+  if (instrInfo->srcType == sourceType::INVALID) {
+    llvm::outs() << "\t **** No source information. \n";
+  } else { // Has at least start information.
+    llvm::outs() << "\t ++++ Start - Line " << instrInfo->startLine << ":"
+                 << instrInfo->startCol << "\n";
   }
+  // Has end information.
+  if (instrInfo->srcType == sourceType::FULL) {
+    llvm::outs() << "\t ---- End - Line " << instrInfo->endLine;
+    llvm::outs() << ":" << instrInfo->endCol << "\n";
+  }
+
+  // Memory Behavior.
+  switch (instrInfo->memBehavior) {
+    case SILInstruction::MemoryBehavior::None: {
+      break;
+    }
+    case SILInstruction::MemoryBehavior::MayRead: {
+      llvm::outs() << "\t\t +++ [MEM-R]: May read from memory. \n";
+      break;
+    }
+    case SILInstruction::MemoryBehavior::MayWrite: {
+      llvm::outs() << "\t\t +++ [MEM-W]: May write to memory. \n";
+      break;
+    }
+    case SILInstruction::MemoryBehavior::MayReadWrite: {
+      llvm::outs() << "\t\t +++ [MEM-RW]: May read or write memory. \n";
+      break;
+    }
+    case SILInstruction::MemoryBehavior::MayHaveSideEffects: {
+      llvm::outs() << "\t\t +++ [MEM-F]: May have side effects. \n";
+    }
+  }
+
+  // Releasing Behavior.
+  switch (instrInfo->relBehavior) {
+    case SILInstruction::ReleasingBehavior::DoesNotRelease: {
+      llvm::outs() << "\t\t [REL]: Does not release memory. \n";
+      break;
+    }
+    case SILInstruction::ReleasingBehavior::MayRelease: {
+      llvm::outs() << "\t\t [REL]: May release memory. \n";
+      break;
+    }
+  }
+
+  // Show operands, if they exist.
+  for (SILValue op : instrInfo->ops) {
+    llvm::outs() << "\t\t [OPER]: " << op;
+  }
+
+  llvm::outs() << "\n";
+
 }
 
 jobject SILWalaInstructionVisitor::findAndRemoveCAstNode(void *Key) {
@@ -393,7 +392,7 @@ jobject SILWalaInstructionVisitor::visitApplySite(ApplySite Apply) {
   auto *Callee = Apply.getReferencedFunctionOrNull();
 
   if (!Callee) {
-    llvm::outs() << "Apply site's Callee is empty! \n";
+    llvm::outs() << "\t Apply site's Callee is empty! \n";
     return Node;
   }
 
@@ -519,8 +518,7 @@ jobject SILWalaInstructionVisitor::visitAllocRefInst(AllocRefInst *ARI) {
 
   ArrayRef<SILType> Types = ARI->getTailAllocatedTypes();
   ArrayRef<Operand> Counts = ARI->getTailAllocatedCounts();
-
-  for (unsigned Idx = 0, NumTypes = Types.size(); Idx < NumTypes; ++Idx) {
+  for (unsigned Idx = 0; Idx < Types.size(); ++Idx) {
     SILValue OperandValue = Counts[Idx].get();
     std::string OperandTypeName = Types[Idx].getAsString();
 
@@ -908,7 +906,7 @@ jobject SILWalaInstructionVisitor::visitCopyAddrInst(CopyAddrInst *CAI) {
 
 jobject SILWalaInstructionVisitor::visitDestroyAddrInst(DestroyAddrInst *DAI) {
 
-    SILValue DestroyAddr = DAI->getOperand();
+  SILValue DestroyAddr = DAI->getOperand();
 
   if (Print) {
       llvm::outs() << "\t [ADDR TO DESTROY]: " << DestroyAddr.getOpaqueValue() << "\n";
@@ -3059,6 +3057,7 @@ jobject SILWalaInstructionVisitor::visitSwitchEnumInst(SwitchEnumInst *SWI) {
     Children.push_back(GotoCaseNode);
     currentEntity->cfNodes.push_back(GotoCaseNode);
   }
+
 
   auto SwitchCasesNode = Instance->CAst->makeNode(CAstWrapper::BLOCK_STMT,  Instance->CAst->makeArray(&Children));
   auto SwitchNode = Instance->CAst->makeNode(CAstWrapper::SWITCH, CondNode, SwitchCasesNode);
