@@ -393,23 +393,7 @@ jobject SILWalaInstructionVisitor::visitApplySite(ApplySite Apply) {
   auto *Callee = Apply.getReferencedFunctionOrNull();
 
   if (!Callee) {
-    llvm::outs() << "Apply site's Callee is empty! Kind: ";
-    // This switch case helps to narrow down which is the offending instruction, since the print output is often
-    // misaligned so it is not clear who's apply site's callee is empty.
-    switch (Apply.getKind().value) {
-      case swift::ApplySiteKind::TryApplyInst:
-        llvm::outs() << "[TRY_APPLY] \n";
-        break;
-      case swift::ApplySiteKind::ApplyInst:
-        llvm::outs() << "[APPLY] \n";
-        break;
-      case swift::ApplySiteKind::BeginApplyInst:
-        llvm::outs() << "[BEGIN_APPLY] \n";
-        break;
-      case swift::ApplySiteKind::PartialApplyInst:
-        llvm::outs() << "[PARTIAL_APPLY] \n";
-        break;
-    }
+    llvm::outs() << "Apply site's Callee is empty! \n";
     return Node;
   }
 
