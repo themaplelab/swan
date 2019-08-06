@@ -2675,6 +2675,29 @@ jobject SILWalaInstructionVisitor::visitObjCToThickMetatypeInst(ObjCToThickMetat
   return CastedNode;
 }
 
+jobject SILWalaInstructionVisitor::visitConvertEscapeToNoEscapeInst(ConvertEscapeToNoEscapeInst *CVT) {
+  // Here, a simple ASSIGN is sufficient.
+  if (Print) {
+    llvm::outs() << "\t [SOURCE]: " << CVT->getOperand().getOpaqueValue() << "\n";
+    llvm::outs() << "\t [DEST]: " << static_cast<ValueBase *>(CVT) << "\n";
+  }
+  jobject Src = findAndRemoveCAstNode(CVT->getOperand().getOpaqueValue());
+
+  SymbolTable.insert(static_cast<ValueBase *>(CVT), CVT->getType().getAsString());
+
+  jobject declNode = Instance->CAst->makeNode(CAstWrapper::DECL_STMT,
+                                              Instance->CAst->makeConstant(SymbolTable.get(static_cast<ValueBase *>(CVT)).c_str()),
+                                              Instance->CAst->makeConstant("UNKNOWN"));
+  NodeList.push_back(declNode);
+  currentEntity->declNodes.push_back(declNode);
+
+  jobject Dest = findAndRemoveCAstNode(static_cast<ValueBase *>(CVT));
+
+  jobject Node = Instance->CAst->makeNode(CAstWrapper::ASSIGN, Dest, Src);
+  NodeMap.insert(std::make_pair(static_cast<ValueBase *>(CVT), Src));
+  return Node;
+}
+
 /*******************************************************************************/
 /*                   CHECKED CONVERSIONS                                       */
 /*******************************************************************************/

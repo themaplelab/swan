@@ -276,8 +276,9 @@ public:
   jobject visitThinToThickFunctionInst(ThinToThickFunctionInst *TTFI);
   jobject visitThickToObjCMetatypeInst(ThickToObjCMetatypeInst *TTOMI);
   jobject visitObjCToThickMetatypeInst(ObjCToThickMetatypeInst *OTTMI);
+  jobject visitConvertEscapeToNoEscapeInst(ConvertEscapeToNoEscapeInst *CVT);
 
-  /*******************************************************************************/
+    /*******************************************************************************/
   /*                          Checked Conversions                                */
   /*******************************************************************************/
 
