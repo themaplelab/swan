@@ -393,8 +393,24 @@ jobject SILWalaInstructionVisitor::visitApplySite(ApplySite Apply) {
   auto *Callee = Apply.getReferencedFunctionOrNull();
 
   if (!Callee) {
-    llvm::errs() << "ERROR: Apply site's Callee is empty! \n";
-    return Instance->CAst->makeNode(CAstWrapper::EMPTY);
+    llvm::outs() << "Apply site's Callee is empty! Kind: ";
+    // This switch case helps to narrow down which is the offending instruction, since the print output is often
+    // misaligned so it is not clear who's apply site's callee is empty.
+    switch (Apply.getKind().value) {
+      case swift::ApplySiteKind::TryApplyInst:
+        llvm::errs() << "[TRY_APPLY] \n";
+        break;
+      case swift::ApplySiteKind::ApplyInst:
+        llvm::errs() << "[APPLY] \n";
+        break;
+      case swift::ApplySiteKind::BeginApplyInst:
+        llvm::errs() << "[BEGIN_APPLY] \n";
+        break;
+      case swift::ApplySiteKind::PartialApplyInst:
+        llvm::errs() << "[PARTIAL_APPLY] \n";
+        break;
+    }
+    return Node;
   }
 
   auto *FD = Callee->getLocation().getAsASTNode<FuncDecl>();
@@ -1356,7 +1372,8 @@ jobject SILWalaInstructionVisitor::visitWitnessMethodInst(WitnessMethodInst *WMI
 /*******************************************************************************/
 
 jobject SILWalaInstructionVisitor::visitApplyInst(ApplyInst *AI) {
-  if (auto ApplyNode = visitApplySite(AI)) {
+  auto ApplyNode = visitApplySite(AI);
+  if (Instance->CAst->getKind(ApplyNode) != CAstWrapper::EMPTY) {
     SILValue result = AI->getResult(0);
     if (result) {
       SymbolTable.insert(result.getOpaqueValue(), result->getType().getAsString());
@@ -1369,6 +1386,8 @@ jobject SILWalaInstructionVisitor::visitApplyInst(ApplyInst *AI) {
       NodeMap.insert(std::make_pair(static_cast<ValueBase *>(AI), ApplyNode));
       return ApplyNode;
     }
+  } else {
+    llvm::outs() << "\t [NO APPLY SITE FOUND] \n";
   }
   return Instance->CAst->makeNode(CAstWrapper::EMPTY);
 }
@@ -2659,6 +2678,29 @@ jobject SILWalaInstructionVisitor::visitObjCToThickMetatypeInst(ObjCToThickMetat
   return CastedNode;
 }
 
+jobject SILWalaInstructionVisitor::visitConvertEscapeToNoEscapeInst(ConvertEscapeToNoEscapeInst *CVT) {
+  // Here, a simple ASSIGN is sufficient.
+  if (Print) {
+    llvm::outs() << "\t [SOURCE]: " << CVT->getOperand().getOpaqueValue() << "\n";
+    llvm::outs() << "\t [DEST]: " << static_cast<ValueBase *>(CVT) << "\n";
+  }
+  jobject Src = findAndRemoveCAstNode(CVT->getOperand().getOpaqueValue());
+
+  SymbolTable.insert(static_cast<ValueBase *>(CVT), CVT->getType().getAsString());
+
+  jobject declNode = Instance->CAst->makeNode(CAstWrapper::DECL_STMT,
+                             Instance->CAst->makeConstant(SymbolTable.get(static_cast<ValueBase *>(CVT)).c_str()),
+                             Instance->CAst->makeConstant("UNKNOWN"));
+  NodeList.push_back(declNode);
+  currentEntity->declNodes.push_back(declNode);
+
+  jobject Dest = findAndRemoveCAstNode(static_cast<ValueBase *>(CVT));
+
+  jobject Node = Instance->CAst->makeNode(CAstWrapper::ASSIGN, Dest, Src);
+  NodeMap.insert(std::make_pair(static_cast<ValueBase *>(CVT), Src));
+  return Node;
+}
+
 /*******************************************************************************/
 /*                   CHECKED CONVERSIONS                                       */
 /*******************************************************************************/
@@ -2812,14 +2854,17 @@ jobject SILWalaInstructionVisitor::visitBranchInst(BranchInst *BI) {
   jobject GotoNode = Instance->CAst->makeNode(CAstWrapper::EMPTY);
 
   // Destination block
-  int I = 0;
+
   SILBasicBlock *Dest = BI->getDestBB();
   if (Print) {
     llvm::outs() << "\t [DESTBB]: " << Dest << "\n";
     if (Dest != nullptr) {
+      /*
+      int I = 0;
       for (auto &Instr : *Dest) {
         llvm::outs() << "\t [INST" << I++ << "]: " << &Instr << "\n";
       }
+      */
     }
   }
   if (Dest != nullptr) {
@@ -3001,11 +3046,35 @@ jobject SILWalaInstructionVisitor::visitSwitchEnumInst(SwitchEnumInst *SWI) {
         // Not Default Node.
         llvm::outs() << "\t [CASE]: DECL = " << CaseDecl << " " << LabelNodeName << " => " << *CaseBasicBlock << "\n";
       }
-
+      /*
       int I = 0;
       for (auto &Instr : *CaseBasicBlock) {
         llvm::outs() << "\t [INST" << I++ << "]: " << &Instr << "\n";
       }
+      */
+    }
+
+    for (unsigned Idx = 0; Idx < CaseBasicBlock->getNumArguments(); Idx++) {
+      SymbolTable.insert(CaseBasicBlock->getArgument(Idx), Cond->getType().getAsString(), ("argument" + std::to_string(Idx)));
+      jobject varName = Instance->CAst->makeConstant(SymbolTable.get(CaseBasicBlock->getArgument(Idx)).c_str());
+
+      jobject declNode = Instance->CAst->makeNode(CAstWrapper::DECL_STMT,
+                                                  Instance->CAst->makeConstant(SymbolTable.get(CaseBasicBlock->getArgument(Idx)).c_str()),
+                                                  Instance->CAst->makeConstant("UNKNOWN"));
+      NodeList.push_back(declNode);
+      currentEntity->declNodes.push_back(declNode);
+      jobject var = Instance->CAst->makeNode(CAstWrapper::VAR, varName);
+      currentEntity->variableTypes.insert({var, SymbolTable.getType(CaseBasicBlock->getArgument(Idx))});
+      auto argTypeIt = currentEntity->variableTypes.find(CondNode);
+      if (argTypeIt != currentEntity->variableTypes.end()) {
+        currentEntity->variableTypes.insert({var, argTypeIt->second});
+      } else {
+        llvm::errs() << "ERROR: Could not find type for basic block argument SRC!\n";
+      }
+      // Here, CondNode enum itself is used (not its value) as a parameter. This doesn't make sense type-wise,
+      // but it is good enough for data flow analysis.
+      jobject assign = Instance->CAst->makeNode(CAstWrapper::ASSIGN, var, CondNode);
+      NodeList.push_back(assign);
     }
 
     auto GotoCaseNode = Instance->CAst->makeNode(CAstWrapper::GOTO, LabelNode);
@@ -3170,6 +3239,9 @@ jobject SILWalaInstructionVisitor::visitCheckedCastAddrBranchInst(CheckedCastAdd
 }
 
 jobject SILWalaInstructionVisitor::visitTryApplyInst(TryApplyInst *TAI) {
+  if (Print) {
+    llvm::outs() << "\t [INST]: " << TAI << "\n";
+  }
   auto Call = visitApplySite(ApplySite(TAI));
   jobject TryFunc = Instance->CAst->makeNode(CAstWrapper::TRY, Call);
   jobject VarName = Instance->CAst->makeConstant("result_of_try");

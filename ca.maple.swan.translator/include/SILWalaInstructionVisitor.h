@@ -54,7 +54,7 @@ public:
 
   /// If we do not have a callback handler implemented for a SILInstruction, it will fire this method.
   jobject visitSILInstruction(SILInstruction *I) {
-    llvm::outs() << "Not handled instruction: \n" << *I << "\n";
+    llvm::errs() << "WARNING: Instruction not handled: \n" << *I << "\n";
     return nullptr;
   }
 
@@ -276,6 +276,7 @@ public:
   jobject visitThinToThickFunctionInst(ThinToThickFunctionInst *TTFI);
   jobject visitThickToObjCMetatypeInst(ThickToObjCMetatypeInst *TTOMI);
   jobject visitObjCToThickMetatypeInst(ObjCToThickMetatypeInst *OTTMI);
+  jobject visitConvertEscapeToNoEscapeInst(ConvertEscapeToNoEscapeInst *CVT);
 
   /*******************************************************************************/
   /*                          Checked Conversions                                */
