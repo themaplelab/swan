@@ -14,6 +14,7 @@
 package ca.maple.swan.swift.tree;
 
 import ca.maple.swan.swift.types.AnyCAstType;
+import ca.maple.swan.swift.visualization.ASTtoDot;
 import com.ibm.wala.cast.ir.translator.AbstractCodeEntity;
 import com.ibm.wala.cast.tree.CAstEntity;
 import com.ibm.wala.cast.tree.CAstNode;
@@ -121,13 +122,14 @@ public class ScriptEntityBuilder {
                  *  generating an entire new AST is inefficient and is not needed for a simple mutation like this.
                  */
                 declNode.getChildren().set(0, symbol);
-                declNode.getChildren().set(1, Ast.makeNode(CAstNode.CONSTANT,  Ast.makeConstant("Any")));
+                declNode.getChildren().set(1, Ast.makeConstant("Any"));
             }
 
             // Map every node in the AST to itself.
             ReflexiveMapper.mapEntity(entity);
             if (DEBUG) EntityPrinter.print(entity);
         }
+        ASTtoDot.print(functionEntities);
         if (DEBUG) System.out.println("\n==========END=OF=CAST=ENTITIES=========\n\n");
         return scriptEntity;
     }
