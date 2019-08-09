@@ -127,9 +127,11 @@ void InstructionVisitor::visitSILBasicBlock(SILBasicBlock *BB) {
     llvm::outs() << "Parent SILFunction: " << BB->getParent() << "\n";
   }
 
-  // Clear information from previous basic block.
+  // Clear information from previous basic block. Symbols in the ValueTable
+  // are persistent across the module due to scoped access instructions.
   InstructionCounter = 0;
   valueTable->clearNodes();
+  valueTable->clearDeclNodes();
   nodeList.clear();
 
   // Visit every instruction of the basic block.
@@ -144,6 +146,12 @@ void InstructionVisitor::visitSILBasicBlock(SILBasicBlock *BB) {
         Instance->addSourceInfo(Node, instrInfo.get());
       }
     }
+  }
+
+  // Add all DECL_STMT nodes from the ValueTable to the beginning of the basic block.
+  for (jobject declNode: valueTable->getDeclNodes()) {
+    nodeList.push_front(declNode);
+    currentEntity->declNodes.push_back(declNode);
   }
 
   // Make a new LABEL_STMT node with the SILBasicBlock # as the name, and add that node as the root
@@ -271,193 +279,173 @@ void InstructionVisitor::printSILInstructionInfo() {
 
 //===-------------------SPECIFIC INSTRUCTION VISITORS ----------------------===//
 
-/*
- * Instructions are categorized by category and class. X-Y* where X is the
- * category identifier and Y* is the class identifier.
- *
- * Categories:
- *
- * DIRECT (D):
- *  - An instruction that is directly translated (returns a non-EMPTY CAstNode).
- *
- * INDIRECT (I):
- *  - An instruction that is not directly translated, but generates a node that
- *    is added to the ValueTable to be used later. Visit function returns EMPTY.
- *
- * INTERNAL (C):
- *  - An internal change that occurs to the translator.
- *
- * IGNORED (X):
- *  - An instruction that is completely ignored. Nothing is added to the
- *    ValueTable and EMPTY is returned. We might still print debug info.
- *
- * Classes:
- *
- * MIXED (M):
- *  - Instruction which has mixed functionality.
- *
- * DATA TRANSFER (DT):
- *  - Data is transferred in some way from the operand(s) to the result.
- *
- * DATA ENTRYPOINT (DE):
- *  - No operand.
- *  - Generates a result.
- *
- * SEVERED DATA ENTRYPOINT (SDE)
- *  - Operand(s) are ignored.
- *  - Generates a result.
- *
- * DATA COPY (DC):
- *  - Result references the same data as the operand in the ValueTable.
- *
- * DATA DESTROY (DD):
- *  - Data is removed from the ValueTable.
- *
- * Note: "operand" here means an actual value or "register" (not a type, for instance).
- *
- * An example instruction specification may look like "D-DE" which would mean
- * it is a DIRECT and DATA ENTRYPOINT instruction.
- */
-
 /*******************************************************************************/
 /*                         ALLOCATION AND DEALLOCATION                         */
 /*******************************************************************************/
 
 /* ============================================================================
- * TYPE: I-DE
  * DESC: Allocates memory, so all we care about is creating a new VAR node
  *       (of correct type) to represent the result, which may be used later.
  */
 jobject InstructionVisitor::visitAllocStackInst(AllocStackInst *ASI) {
   std::string type = ASI->getType().getAsString();
   if (SWAN_PRINT) {
-    llvm::outs() << "\t [SIL TYPE]: " << type << "\n";
+    llvm::outs() << "\t [ALLOC TYPE]: " << type << "\n";
   }
   valueTable->createAndAddSymbol(static_cast<ValueBase*>(ASI), type);
   return Instance->CAst->makeNode(CAstWrapper::EMPTY);
 }
 
 /* ============================================================================
- *  TYPE: I-DE
  * DESC: Allocates memory, so all we care about is creating a new VAR node
  *       (of correct type) to represent the result, which may be used later.
  */
 jobject InstructionVisitor::visitAllocRefInst(AllocRefInst *ARI) {
   std::string type = ARI->getType().getAsString();
   if (SWAN_PRINT) {
-    llvm::outs() << "\t [SIL TYPE]: " << type << "\n";
+    llvm::outs() << "\t [ALLOC TYPE]: " << type << "\n";
   }
   valueTable->createAndAddSymbol(static_cast<ValueBase*>(ARI), type);
   return Instance->CAst->makeNode(CAstWrapper::EMPTY);
 }
 
 /* ============================================================================
- *  TYPE: I-DE
  * DESC: Allocates memory, so all we care about is creating a new VAR node
  *       (of correct type) to represent the result, which may be used later.
  */
 jobject InstructionVisitor::visitAllocRefDynamicInst(AllocRefDynamicInst *ARDI) {
   std::string type = ARDI->getType().getAsString();
   if (SWAN_PRINT) {
-    llvm::outs() << "\t [SIL TYPE]: " << type << "\n";
+    llvm::outs() << "\t [ALLOC TYPE]: " << type << "\n";
   }
   valueTable->createAndAddSymbol(static_cast<ValueBase*>(ARDI), type);
   return Instance->CAst->makeNode(CAstWrapper::EMPTY);
 }
 
 /* ============================================================================
- * TYPE: I-DE
  * DESC: Allocates memory, so all we care about is creating a new VAR node
  *       (of correct type) to represent the result, which may be used later.
  */
 jobject InstructionVisitor::visitAllocBoxInst(AllocBoxInst *ABI){
   std::string type = ABI->getType().getAsString();
   if (SWAN_PRINT) {
-    llvm::outs() << "\t [SIL TYPE]: " << type << "\n";
+    llvm::outs() << "\t [ALLOC TYPE]: " << type << "\n";
   }
   valueTable->createAndAddSymbol(static_cast<ValueBase*>(ABI), type);
   return Instance->CAst->makeNode(CAstWrapper::EMPTY);
 }
 
 /* ============================================================================
- * TYPE: I-DC
  * DESC: Allocates space in the given address.
  */
 jobject InstructionVisitor::visitAllocValueBufferInst(AllocValueBufferInst *AVBI) {
-  valueTable->duplicate(AVBI->getOperand().getOpaqueValue(), static_cast<ValueBase*>(AVBI));
-  return Instance->CAst->makeNode(CAstWrapper::EMPTY);
+  void* src = AVBI->getOperand().getOpaqueValue();
+  void* dest = static_cast<ValueBase*>(AVBI);
+  if (SWAN_PRINT) {
+    llvm::outs() << "\t Assignment\n";
+    llvm::outs() << "\t [SRC ADDR]: " << src<< "\n";
+    llvm::outs() << "\t [DEST ADDR]: " << dest << "\n";
+  }
+  return Instance->CAst->makeNode(CAstWrapper::ASSIGN,
+    valueTable->get(src), valueTable->get(dest));
 }
 
 /* ============================================================================
- * TYPE: X
  * DESC: Initializes storage for a global variable. Has no result or value
  * operand so we don't do anything except print some debug info.
  */
 jobject InstructionVisitor::visitAllocGlobalInst(AllocGlobalInst *AGI) {
   SILGlobalVariable *Var = AGI->getReferencedGlobal();
   if (SWAN_PRINT) {
-    llvm::outs() << "\t [VAR NAME]:" << Demangle::demangleSymbolAsString(Var->getName()) << "\n";
-    llvm::outs() << "\t [VAR TYPE]:" << Var->getLoweredType().getAsString() << "\n";
+    llvm::outs() << "\t [ALLOC NAME]:" << Demangle::demangleSymbolAsString(Var->getName()) << "\n";
+    llvm::outs() << "\t [ALLOC TYPE]:" << Var->getLoweredType().getAsString() << "\n";
   }
   return Instance->CAst->makeNode(CAstWrapper::EMPTY);
 }
 
 /* ============================================================================
- * TYPE: X
- * DESC: Deallocates memory. We don't care about this.
+ * DESC: Deallocates memory.
  */
-jobject InstructionVisitor::visitDeallocStackInst(__attribute__((unused)) DeallocStackInst *DSI) {
+jobject InstructionVisitor::visitDeallocStackInst(DeallocStackInst *DSI) {
+  void* toRemove = DSI->getOperand().getOpaqueValue();
+  (valueTable->tryRemove(toRemove))
+    ? llvm::outs() << "\t [REMOVED ADDR]: " << toRemove << "\n"
+    : llvm::outs() << "\t [NOP]\n";
   return Instance->CAst->makeNode(CAstWrapper::EMPTY);
 }
 
 /* ============================================================================
- * TYPE: X
- * DESC: Deallocates memory. We don't care about this.
+ * DESC: Deallocates memory.
  */
-jobject InstructionVisitor::visitDeallocBoxInst(__attribute__((unused)) DeallocBoxInst *DBI) {
+jobject InstructionVisitor::visitDeallocBoxInst(DeallocBoxInst *DBI) {
+  void* toRemove = DBI->getOperand().getOpaqueValue();
+  (valueTable->tryRemove(toRemove))
+    ? llvm::outs() << "\t [REMOVED ADDR]: " << toRemove << "\n"
+    : llvm::outs() << "\t [NOP]\n";
   return Instance->CAst->makeNode(CAstWrapper::EMPTY);
 }
 
 /* ============================================================================
- * TYPE: I-DC
- * DESC: Gets an address from @box reference. We treat references and addresses
- *       as the same thing.
+ * DESC: Gets an address from @box reference.
  */
 jobject InstructionVisitor::visitProjectBoxInst(ProjectBoxInst *PBI) {
-  valueTable->duplicate(PBI->getOperand().getOpaqueValue(), static_cast<ValueBase*>(PBI));
+  void* src = PBI->getOperand().getOpaqueValue();
+  void* dest = static_cast<ValueBase*>(PBI);
+  if (SWAN_PRINT) {
+    llvm::outs() << "\t Assignment\n";
+    llvm::outs() << "\t [SRC ADDR]: " << src<< "\n";
+    llvm::outs() << "\t [DEST ADDR]: " << dest << "\n";
+  }
+  return Instance->CAst->makeNode(CAstWrapper::ASSIGN,
+    valueTable->get(src), valueTable->get(dest));
+}
+
+/* ============================================================================
+ * DESC: Deallocates memory.
+ */
+jobject InstructionVisitor::visitDeallocRefInst(DeallocRefInst *DRI) {
+  void* toRemove = DRI->getOperand().getOpaqueValue();
+  (valueTable->tryRemove(toRemove))
+    ? llvm::outs() << "\t [REMOVED ADDR]: " << toRemove << "\n"
+    : llvm::outs() << "\t [NOP]\n";
   return Instance->CAst->makeNode(CAstWrapper::EMPTY);
 }
 
 /* ============================================================================
- * TYPE: X
- * DESC: Deallocates memory. We don't care about this.
+ * DESC: Deallocates memory. TODO: What to do about sil-metatype operand?
  */
-jobject InstructionVisitor::visitDeallocRefInst(__attribute__((unused)) DeallocRefInst *DRI) {
+jobject InstructionVisitor::visitDeallocPartialRefInst(DeallocPartialRefInst *DPRI) {
+  void* toRemove = DPRI->getOperand(0).getOpaqueValue();
+  (valueTable->tryRemove(toRemove))
+    ? llvm::outs() << "\t [REMOVED ADDR]: " << toRemove << "\n"
+    : llvm::outs() << "\t [NOP]\n";
   return Instance->CAst->makeNode(CAstWrapper::EMPTY);
 }
 
 /* ============================================================================
- * TYPE: X
- * DESC: Deallocates memory. We don't care about this.
+ * DESC: Deallocates memory.
  */
-jobject InstructionVisitor::visitDeallocPartialRefInst(__attribute__((unused)) DeallocPartialRefInst *DPRI) {
+jobject InstructionVisitor::visitDeallocValueBufferInst(DeallocValueBufferInst *DVBI) {
+  void* toRemove = DVBI->getOperand().getOpaqueValue();
+  (valueTable->tryRemove(toRemove))
+    ? llvm::outs() << "\t [REMOVED ADDR]: " << toRemove << "\n"
+    : llvm::outs() << "\t [NOP]\n";
   return Instance->CAst->makeNode(CAstWrapper::EMPTY);
 }
 
 /* ============================================================================
- * TYPE: X
- * DESC: Deallocates memory. We don't care about this.
+ * DESC: Deallocates memory.
  */
-jobject InstructionVisitor::visitDeallocValueBufferInst(__attribute__((unused)) DeallocValueBufferInst *DVBI) {
-  return Instance->CAst->makeNode(CAstWrapper::EMPTY);
-}
-
-/* ============================================================================
- * TYPE: X
- * DESC: Deallocates memory. We don't care about this.
- */
-jobject InstructionVisitor::visitProjectValueBufferInst(__attribute__((unused)) ProjectValueBufferInst *PVBI) {
-  return Instance->CAst->makeNode(CAstWrapper::EMPTY);
+jobject InstructionVisitor::visitProjectValueBufferInst(ProjectValueBufferInst *PVBI) {
+  void* src = PVBI->getOperand().getOpaqueValue();
+  void* dest = static_cast<ValueBase*>(PVBI);
+  if (SWAN_PRINT) {
+    llvm::outs() << "\t Assignment\n";
+    llvm::outs() << "\t [SRC ADDR]: " << src<< "\n";
+    llvm::outs() << "\t [DEST ADDR]: " << dest << "\n";
+  }
+  return Instance->CAst->makeNode(CAstWrapper::ASSIGN,
+    valueTable->get(src), valueTable->get(dest));
 }
 
 /*******************************************************************************/
@@ -465,18 +453,18 @@ jobject InstructionVisitor::visitProjectValueBufferInst(__attribute__((unused)) 
 /*******************************************************************************/
 
 /* ============================================================================
- * TYPE: X
- * DESC: This indicates a value has changed. We don't care about this.
+ * DESC: This indicates a value has changed.
  */
 jobject InstructionVisitor::visitDebugValueInst(__attribute__((unused)) DebugValueInst *DBI) {
+  llvm::outs() << "\t [NOP]\n";
   return Instance->CAst->makeNode(CAstWrapper::EMPTY);
 }
 
 /* ============================================================================
- * TYPE: X
  * DESC: This indicates a value has changed. We don't care about this.
  */
 jobject InstructionVisitor::visitDebugValueAddrInst(__attribute__((unused)) DebugValueAddrInst *DVAI) {
+  llvm::outs() << "\t [NOP]\n";
   return Instance->CAst->makeNode(CAstWrapper::EMPTY);
 }
 
@@ -485,22 +473,28 @@ jobject InstructionVisitor::visitDebugValueAddrInst(__attribute__((unused)) Debu
 /*******************************************************************************/
 
 /* ============================================================================
- * TYPE: I-DC
  * DESC: Loads a value from the operand address.
  */
 jobject InstructionVisitor::visitLoadInst(LoadInst *LI) {
-  valueTable->duplicate(LI->getOperand().getOpaqueValue(), static_cast<ValueBase*>(LI));
-  return Instance->CAst->makeNode(CAstWrapper::EMPTY);
+  void* src = LI->getOperand().getOpaqueValue();
+  void* dest = static_cast<ValueBase*>(LI);
+  if (SWAN_PRINT) {
+    llvm::outs() << "\t Assignment\n";
+    llvm::outs() << "\t [SRC ADDR]: " << src<< "\n";
+    llvm::outs() << "\t [DEST ADDR]: " << dest << "\n";
+  }
+  return Instance->CAst->makeNode(CAstWrapper::ASSIGN,
+    valueTable->get(src), valueTable->get(dest));
 }
 
 /* ============================================================================
- * TYPE: D-DT
  * DESC: Stores a value to a memory address. This is just an ASSIGN.
  */
 jobject InstructionVisitor::visitStoreInst(StoreInst *SI) {
   void* src = SI->getSrc().getOpaqueValue();
   void* dest = SI->getDest().getOpaqueValue();
   if (SWAN_PRINT) {
+    llvm::outs() << "\t Assignment\n";
     llvm::outs() << "\t [SRC ADDR]: " << src<< "\n";
     llvm::outs() << "\t [DEST ADDR]: " << dest << "\n";
   }
@@ -509,32 +503,40 @@ jobject InstructionVisitor::visitStoreInst(StoreInst *SI) {
 }
 
 /* ============================================================================
- * TYPE: I-DC
  * DESC: Similar to borrow, but creates a scope. We don't care about the scope
  *       since our ValueTable is persistent across the whole module.
  */
 jobject InstructionVisitor::visitLoadBorrowInst(LoadBorrowInst *LBI) {
-  valueTable->duplicate(LBI->getOperand().getOpaqueValue(), static_cast<ValueBase*>(LBI));
-  return Instance->CAst->makeNode(CAstWrapper::EMPTY);
+  void* src = LBI->getOperand().getOpaqueValue();
+  void* dest = static_cast<ValueBase*>(LBI);
+  if (SWAN_PRINT) {
+    llvm::outs() << "\t Assignment\n";
+    llvm::outs() << "\t [SRC ADDR]: " << src<< "\n";
+    llvm::outs() << "\t [DEST ADDR]: " << dest << "\n";
+  }
+  return Instance->CAst->makeNode(CAstWrapper::ASSIGN,
+    valueTable->get(src), valueTable->get(dest));
 }
 
 /* ============================================================================
- * TYPE: C-DD
  * DESC: Ends the borrowed scope. We should remove the associated data.
  */
 jobject InstructionVisitor::visitEndBorrowInst(EndBorrowInst *EBI) {
-  valueTable->tryRemove(EBI->getOperand().getOpaqueValue());
+  void* toRemove = EBI->getOperand().getOpaqueValue();
+  (valueTable->tryRemove(toRemove))
+    ? llvm::outs() << "\t [REMOVED ADDR]: " << toRemove << "\n"
+    : llvm::outs() << "\t [NOP]\n";
   return Instance->CAst->makeNode(CAstWrapper::EMPTY);
 }
 
 /* ============================================================================
- * TYPE: D-DT
  * DESC: Similar to store. This is just an ASSIGN.
  */
 jobject InstructionVisitor::visitAssignInst(AssignInst *AI) {
   void* src = AI->getSrc().getOpaqueValue();
   void* dest = AI->getDest().getOpaqueValue();
   if (SWAN_PRINT) {
+    llvm::outs() << "\t Assignment\n";
     llvm::outs() << "\t [SRC ADDR]: " << src<< "\n";
     llvm::outs() << "\t [DEST ADDR]: " << dest << "\n";
   }
@@ -543,7 +545,6 @@ jobject InstructionVisitor::visitAssignInst(AssignInst *AI) {
 }
 
 /* ============================================================================
- * TYPE: D-M
  * DESC: Delegates an assignment with a conditional functional call. The condition
  *       here is implicit in the SIL, so we just make an arbitrary condition.
  */
@@ -558,6 +559,7 @@ jobject InstructionVisitor::visitAssignByWrapperInst(AssignByWrapperInst *ABWI) 
   jobject setCall = Instance->CAst->makeNode(CAstWrapper::CALL, setFunc, DO_NODE, param);
   jobject initAssign = Instance->CAst->makeNode(CAstWrapper::ASSIGN, dest, initCall);
   jobject setAssign = Instance->CAst->makeNode(CAstWrapper::ASSIGN, dest, setCall);
+  // TODO: Replace with custom operator. (e.g. OP_IS_INIT)
   jobject arbCondition = Instance->CAst->makeConstant("initOrSet");
   if (SWAN_PRINT) {
     llvm::outs() << "\t [SRC ADDR]: " << ABWI->getOperand(0).getOpaqueValue() << "\n";
@@ -569,34 +571,13 @@ jobject InstructionVisitor::visitAssignByWrapperInst(AssignByWrapperInst *ABWI) 
 }
 
 /* ============================================================================
- * TYPE: I-DC
  * DESC: Just marks a memory location is unitialized.
  */
 jobject InstructionVisitor::visitMarkUninitializedInst(MarkUninitializedInst *MUI) {
-  valueTable->duplicate(MUI->getOperand().getOpaqueValue(), static_cast<ValueBase*>(MUI));
-  return Instance->CAst->makeNode(CAstWrapper::EMPTY);
-}
-
-/* ============================================================================
- * TYPE: I-DC
- * DESC: Similar to mark_unitialized, and all that's different (that we care
- *      about) here is that is has multiple operands.
- */
-jobject InstructionVisitor::visitMarkFunctionEscapeInst(MarkFunctionEscapeInst *MFEI) {
-  for (Operand &op: MFEI->getAllOperands()) {
-      valueTable->duplicate(op.get().getOpaqueValue(), MFEI->getResult(0).getOpaqueValue());
-  }
-  return Instance->CAst->makeNode(CAstWrapper::EMPTY);
-}
-
-/* ============================================================================
- * TYPE: D-DT
- * DESC: Basically a compilcated (under-the-hood) store.
- */
-jobject InstructionVisitor::visitCopyAddrInst(CopyAddrInst *CAI) {
-  void* src = CAI->getSrc().getOpaqueValue();
-  void* dest = CAI->getDest().getOpaqueValue();
+  void* src = MUI->getOperand().getOpaqueValue();
+  void* dest = static_cast<ValueBase*>(MUI);
   if (SWAN_PRINT) {
+    llvm::outs() << "\t Assignment\n";
     llvm::outs() << "\t [SRC ADDR]: " << src<< "\n";
     llvm::outs() << "\t [DEST ADDR]: " << dest << "\n";
   }
@@ -605,34 +586,71 @@ jobject InstructionVisitor::visitCopyAddrInst(CopyAddrInst *CAI) {
 }
 
 /* ============================================================================
- * TYPE: C-DD
- * DESC: Destroys a valuein memory at the operand address. We should probably
- *       remove any data associated with this address from the ValueTable.
+ * DESC: Similar to mark_unitialized, and all that's different (that we care
+ *      about) here is that is has multiple operands.
  */
-jobject InstructionVisitor::visitDestroyAddrInst(DestroyAddrInst *DAI) {
-  void* operand = DAI->getOperand().getOpaqueValue();
+jobject InstructionVisitor::visitMarkFunctionEscapeInst(MarkFunctionEscapeInst *MFEI) {
+  void* dest = MFEI->getResult(0).getOpaqueValue();
   if (SWAN_PRINT) {
-      llvm::outs() << "\t [ADDR TO DESTROY]: " << operand << "\n";
+    llvm::outs() << "\t Assignment\n";  }
+  for (Operand &op: MFEI->getAllOperands()) {
+    void* src = op.get().getOpaqueValue();
+    if (SWAN_PRINT) {
+      llvm::outs() << "\t [SRC ADDR]: " << src<< "\n";
+    }
+    jobject assign = Instance->CAst->makeNode(CAstWrapper::ASSIGN,
+      valueTable->get(src), valueTable->get(dest));
+    nodeList.push_back(assign);
   }
-  valueTable->tryRemove(operand);
+  if (SWAN_PRINT) {
+    llvm::outs() << "\t\t [DEST ADDR]: " << dest << "\n";
+  }
   return Instance->CAst->makeNode(CAstWrapper::EMPTY);
 }
 
 /* ============================================================================
- * TYPE: D-M
- * DESC: Index a given address (array of values). This is an ASSIGN + ARRAY_REF.
+ * DESC: Basically a compilcated (under-the-hood) store.
+ */
+jobject InstructionVisitor::visitCopyAddrInst(CopyAddrInst *CAI) {
+  void* src = CAI->getSrc().getOpaqueValue();
+  void* dest = CAI->getDest().getOpaqueValue();
+  if (SWAN_PRINT) {
+    llvm::outs() << "\t Assignment\n";
+    llvm::outs() << "\t [SRC ADDR]: " << src<< "\n";
+    llvm::outs() << "\t [DEST ADDR]: " << dest << "\n";
+  }
+  return Instance->CAst->makeNode(CAstWrapper::ASSIGN,
+    valueTable->get(src), valueTable->get(dest));
+}
+
+/* ============================================================================
+ * DESC: Destroys a value in memory at the operand address.
+ */
+jobject InstructionVisitor::visitDestroyAddrInst(DestroyAddrInst *DAI) {
+  void* toRemove = DAI->getOperand().getOpaqueValue();
+  (valueTable->tryRemove(toRemove))
+    ? llvm::outs() << "\t [REMOVED ADDR]: " << toRemove << "\n"
+    : llvm::outs() << "\t [NOP]\n";
+  return Instance->CAst->makeNode(CAstWrapper::EMPTY);
+}
+
+/* ============================================================================
+ * DESC: Index a given address (array of values). This is an ASSIGN + OBJECT_REF.
  */
 jobject InstructionVisitor::visitIndexAddrInst(IndexAddrInst *IAI) {
   void* baseAddr = IAI->getBase().getOpaqueValue();
   void* indexAddr = IAI->getIndex().getOpaqueValue();
+  void* result = static_cast<ValueBase*>(IAI);
   jobject ArrayObj = valueTable->get(baseAddr);
-  assert(Instance->CAst->getKind(ArrayObj) == CAstWrapper::ARRAY_LITERAL);
+  assert(Instance->CAst->getKind(ArrayObj) == CAstWrapper::OBJECT_LITERAL);
   jobject IndexVar = valueTable->get(indexAddr);
   assert(Instance->CAst->getKind(IndexVar) == CAstWrapper::VAR);
-  jobject ArrayRef = Instance->CAst->makeNode(CAstWrapper::ARRAY_REF, ArrayObj, IndexVar);
-  valueTable->createAndAddSymbol(IAI->getOperand(0), IAI->getType().getAsString());
-  jobject ResultNode = valueTable->get(IAI->getOperand(0));
+  jobject ArrayRef = Instance->CAst->makeNode(CAstWrapper::OBJECT_REF, ArrayObj, IndexVar);
+  valueTable->createAndAddSymbol(result, IAI->getType().getAsString());
+  jobject ResultNode = valueTable->get(result);
   if (SWAN_PRINT) {
+    llvm::outs() << "\t Assignment\n";
+    llvm::outs() << "\t [DEST ADDR]: " << result << "\n";
     llvm::outs() << "\t [BASE ADDR]" << baseAddr << "\n";
     llvm::outs() << "\t [INDEX ADDR]" << indexAddr << "\n";
   }
@@ -640,22 +658,24 @@ jobject InstructionVisitor::visitIndexAddrInst(IndexAddrInst *IAI) {
 }
 
 /* ============================================================================
- * TYPE: D-M
  * DESC: Similar to index_addr. We don't care about memory alignment so this is
  *      this same as index_addr as far as we are concerned.
- *      Again, this is an ASSIGN + ARRAY_REF.
+ *      Again, this is an ASSIGN + OBJECT_REF.
  */
 jobject InstructionVisitor::visitTailAddrInst(TailAddrInst *TAI) {
   void* baseAddr = TAI->getBase().getOpaqueValue();
   void* indexAddr = TAI->getIndex().getOpaqueValue();
+  void* result = static_cast<ValueBase*>(TAI);
   jobject ArrayObj = valueTable->get(baseAddr);
-  assert(Instance->CAst->getKind(ArrayObj) == CAstWrapper::ARRAY_LITERAL);
+  assert(Instance->CAst->getKind(ArrayObj) == CAstWrapper::OBJECT_LITERAL);
   jobject IndexVar = valueTable->get(indexAddr);
   assert(Instance->CAst->getKind(IndexVar) == CAstWrapper::VAR);
-  jobject ArrayRef = Instance->CAst->makeNode(CAstWrapper::ARRAY_REF, ArrayObj, IndexVar);
-  valueTable->createAndAddSymbol(TAI->getOperand(0), TAI->getType().getAsString());
-  jobject ResultNode = valueTable->get(TAI->getOperand(0));
+  jobject ArrayRef = Instance->CAst->makeNode(CAstWrapper::OBJECT_REF, ArrayObj, IndexVar);
+  valueTable->createAndAddSymbol(result, TAI->getType().getAsString());
+  jobject ResultNode = valueTable->get(result);
   if (SWAN_PRINT) {
+    llvm::outs() << "\t Assignment\n";
+    llvm::outs() << "\t [DEST ADDR]: " << result << "\n";
     llvm::outs() << "\t [BASE ADDR]" << baseAddr << "\n";
     llvm::outs() << "\t [INDEX ADDR]" << indexAddr << "\n";
   }
@@ -663,64 +683,79 @@ jobject InstructionVisitor::visitTailAddrInst(TailAddrInst *TAI) {
 }
 
 /* ============================================================================
- * TYPE: I-DC
- * DESC: Returns a pointer value at a given byte offset. We don't care about
- *       this offset.
+ * DESC: Returns a pointer value at a given byte offset. The offset is irrelevant.
  */
 jobject InstructionVisitor::visitIndexRawPointerInst(IndexRawPointerInst *IRPI) {
-  valueTable->duplicate(IRPI->getOperand(0).getOpaqueValue(), IRPI->getResult(0).getOpaqueValue());
-  return Instance->CAst->makeNode(CAstWrapper::EMPTY);
+  void* src = IRPI->getOperand(0).getOpaqueValue();
+  void* dest = IRPI->getResult(0).getOpaqueValue();
+  if (SWAN_PRINT) {
+    llvm::outs() << "\t Assignment\n";
+    llvm::outs() << "\t [SRC ADDR]: " << src<< "\n";
+    llvm::outs() << "\t [DEST ADDR]: " << dest << "\n";
+  }
+  return Instance->CAst->makeNode(CAstWrapper::ASSIGN,
+    valueTable->get(src), valueTable->get(dest));
 }
 
 /* ============================================================================
- * TYPE: X
- * DESC: Binds memory to a type to hold a given capacity. We don't care about this.
+ * DESC: Binds memory to a type to hold a given capacity.
  */
 jobject InstructionVisitor::visitBindMemoryInst(__attribute__((unused)) BindMemoryInst *BMI) {
+  llvm::outs() << "\t [NOP]\n";
   return Instance->CAst->makeNode(CAstWrapper::EMPTY);
 }
 
 /* ============================================================================
- * TYPE: I-DC
  * DESC: Similar to load_borrow.
  */
 jobject InstructionVisitor::visitBeginAccessInst(BeginAccessInst *BAI) {
-  valueTable->duplicate(BAI->getOperand().getOpaqueValue(), static_cast<ValueBase*>(BAI));
-  return Instance->CAst->makeNode(CAstWrapper::EMPTY);
+  void* src = BAI->getOperand().getOpaqueValue();
+  void* dest = static_cast<ValueBase*>(BAI);
+  if (SWAN_PRINT) {
+    llvm::outs() << "\t Assignment\n";
+    llvm::outs() << "\t [SRC ADDR]: " << src<< "\n";
+    llvm::outs() << "\t [DEST ADDR]: " << dest << "\n";
+  }
+  return Instance->CAst->makeNode(CAstWrapper::ASSIGN,
+    valueTable->get(src), valueTable->get(dest));
 }
 
 /* ============================================================================
- * TYPE: C-DD
  * DESC: Ends the access. Similar to end_borrow.
  */
 jobject InstructionVisitor::visitEndAccessInst(EndAccessInst *EAI) {
-  valueTable->tryRemove(EAI->getOperand().getOpaqueValue());
+  void* toRemove = EAI->getOperand().getOpaqueValue();
+  (valueTable->tryRemove(toRemove))
+    ? llvm::outs() << "\t [REMOVED ADDR]: " << toRemove << "\n"
+    : llvm::outs() << "\t [NOP]\n";
   return Instance->CAst->makeNode(CAstWrapper::EMPTY);
 }
 
 /* ============================================================================
- * TYPE: I-DC
  * DESC: Slightly more complicated begin_access.
  * TODO: What is the result used for?
  */
 jobject InstructionVisitor::visitBeginUnpairedAccessInst(BeginUnpairedAccessInst *BUI) {
   void* source = BUI->getSource().getOpaqueValue();
   void* buffer = BUI->getBuffer().getOpaqueValue();
-  valueTable->duplicate(source, buffer);
   if (SWAN_PRINT) {
-    llvm::outs() << "\t [ACCESSING]: " << source << "\n";
-    llvm::outs() << "\t [BUFFER ID]: " << buffer << "\n";
+    llvm::outs() << "\t Assignment\n";
+    llvm::outs() << "\t [SOURCE ADDR]: " << source << "\n";
+    llvm::outs() << "\t [BUFFER ADDR]: " << buffer << "\n";
   }
-  return Instance->CAst->makeNode(CAstWrapper::EMPTY);
+  return Instance->CAst->makeNode(CAstWrapper::ASSIGN,
+    valueTable->get(source), valueTable->get(buffer));
 }
 
 /* ============================================================================
- * TYPE: C-DD
  * DESC: Similar to end_borrow/end_access. We want to remove associated data.
  * TODO: What is the result used for?
  */
 jobject InstructionVisitor::visitEndUnpairedAccessInst(EndUnpairedAccessInst *EUAI) {
-  valueTable->tryRemove(EUAI->getOperand().getOpaqueValue());
+  void* toRemove = EUAI->getOperand().getOpaqueValue();
+  (valueTable->tryRemove(toRemove))
+    ? llvm::outs() << "\t [REMOVED ADDR]: " << toRemove << "\n"
+    : llvm::outs() << "\t [NOP]\n";
   return Instance->CAst->makeNode(CAstWrapper::EMPTY);
 }
 
@@ -729,62 +764,55 @@ jobject InstructionVisitor::visitEndUnpairedAccessInst(EndUnpairedAccessInst *EU
 /*******************************************************************************/
 
 /* ============================================================================
- * TYPE: X
  */
 jobject InstructionVisitor::visitStrongRetainInst(__attribute__((unused)) StrongRetainInst *SRTI) {
   return Instance->CAst->makeNode(CAstWrapper::EMPTY);
 }
 
 /* ============================================================================
- * TYPE: X
  */
 jobject InstructionVisitor::visitStrongReleaseInst(__attribute__((unused)) StrongReleaseInst *SRLI) {
   return Instance->CAst->makeNode(CAstWrapper::EMPTY);
 }
 
 /* ============================================================================
- * TYPE: X
  */
 jobject InstructionVisitor::visitSetDeallocatingInst(__attribute__((unused)) SetDeallocatingInst *SDI) {
   return Instance->CAst->makeNode(CAstWrapper::EMPTY);
 }
 
 /* ============================================================================
- * TYPE: X
  */
 jobject InstructionVisitor::visitStrongRetainUnownedInst(__attribute__((unused)) StrongRetainUnownedInst *SRUI) {
   return Instance->CAst->makeNode(CAstWrapper::EMPTY);
 }
 
 /* ============================================================================
- * TYPE: X
  */
 jobject InstructionVisitor::visitUnownedRetainInst(__attribute__((unused)) UnownedRetainInst *URTI) {
   return Instance->CAst->makeNode(CAstWrapper::EMPTY);
 }
 
 /* ============================================================================
- * TYPE: X
  */
 jobject InstructionVisitor::visitUnownedReleaseInst(__attribute__((unused)) UnownedReleaseInst *URLI) {
   return Instance->CAst->makeNode(CAstWrapper::EMPTY);
 }
 
 /* ============================================================================
- * TYPE: X
  */
 jobject InstructionVisitor::visitLoadWeakInst(__attribute__((unused)) LoadWeakInst *LWI) {
   return Instance->CAst->makeNode(CAstWrapper::EMPTY);
 }
 
 /* ============================================================================
- * TYPE: D-DT
  * DESC: Similar to store.
  */
 jobject InstructionVisitor::visitStoreWeakInst(StoreWeakInst *SWI) {
   void* src = SWI->getSrc().getOpaqueValue();
   void* dest = SWI->getDest().getOpaqueValue();
   if (SWAN_PRINT) {
+    llvm::outs() << "\t Assignment\n";
     llvm::outs() << "\t [SRC ADDR]: " << src<< "\n";
     llvm::outs() << "\t [DEST ADDR]: " << dest << "\n";
   }
@@ -793,21 +821,28 @@ jobject InstructionVisitor::visitStoreWeakInst(StoreWeakInst *SWI) {
 }
 
 /* ============================================================================
- * TYPE: X
  * NOTE: No description in SIL.rst so may be incorrect.
  */
-jobject InstructionVisitor::visitLoadUnownedInst(__attribute__((unused)) LoadUnownedInst *LUI) {
-  return Instance->CAst->makeNode(CAstWrapper::EMPTY);
+jobject InstructionVisitor::visitLoadUnownedInst(LoadUnownedInst *LUI) {
+  void* src = LUI->getOperand().getOpaqueValue();
+  void* dest = static_cast<ValueBase*>(LUI);
+  if (SWAN_PRINT) {
+    llvm::outs() << "\t Assignment\n";
+    llvm::outs() << "\t [SRC ADDR]: " << src<< "\n";
+    llvm::outs() << "\t [DEST ADDR]: " << dest << "\n";
+  }
+  return Instance->CAst->makeNode(CAstWrapper::ASSIGN,
+    valueTable->get(src), valueTable->get(dest));
 }
 
 /* ============================================================================
- * TYPE: X
  * NOTE: No description in SIL.rst so may be incorrect.
  */
 jobject InstructionVisitor::visitStoreUnownedInst(StoreUnownedInst *SUI) {
   void* src = SUI->getSrc().getOpaqueValue();
   void* dest = SUI->getDest().getOpaqueValue();
   if (SWAN_PRINT) {
+    llvm::outs() << "\t Assignment\n";
     llvm::outs() << "\t [SRC ADDR]: " << src<< "\n";
     llvm::outs() << "\t [DEST ADDR]: " << dest << "\n";
   }
@@ -816,68 +851,102 @@ jobject InstructionVisitor::visitStoreUnownedInst(StoreUnownedInst *SUI) {
 }
 
 /* ============================================================================
- * TYPE: X
  */
 jobject InstructionVisitor::visitFixLifetimeInst(__attribute__((unused)) FixLifetimeInst *FLI) {
   return Instance->CAst->makeNode(CAstWrapper::EMPTY);
 }
 
 /* ============================================================================
- * TYPE: I-DC
  * DESC: Marks dependency between two operands, but we don't care. We just know
- *       that the result is always equal to the first operand. So we duplicate.
+ *       that the result is always equal to the first operand.
  */
 jobject InstructionVisitor::visitMarkDependenceInst(MarkDependenceInst *MDI) {
-  valueTable->duplicate(MDI->getOperand(0).getOpaqueValue(), static_cast<ValueBase*>(MDI));
-  return Instance->CAst->makeNode(CAstWrapper::EMPTY);
+  void* src = MDI->getOperand(0).getOpaqueValue();
+  void* dest = static_cast<ValueBase*>(MDI);
+  if (SWAN_PRINT) {
+    llvm::outs() << "\t Assignment\n";
+    llvm::outs() << "\t [SRC ADDR]: " << src<< "\n";
+    llvm::outs() << "\t [DEST ADDR]: " << dest << "\n";
+  }
+  return Instance->CAst->makeNode(CAstWrapper::ASSIGN,
+    valueTable->get(src), valueTable->get(dest));
 }
 
 /* ============================================================================
- * TYPE: I-DC
  * DESC: The result is a boolean based on if the operand is a unique reference.
- *       As far as data flow analysis is concerned, and because the boolean is
- *       directly dependent on the operand, the result is equal to the operand.
  */
 jobject InstructionVisitor::visitIsUniqueInst(IsUniqueInst *IUI) {
-  valueTable->duplicate(IUI->getOperand().getOpaqueValue(), static_cast<ValueBase*>(IUI));
-  return Instance->CAst->makeNode(CAstWrapper::EMPTY);
+  // TODO: replace with custom operator that checks reference count. (e.g. OP_REF_CNT)
+  void* src = IUI->getOperand().getOpaqueValue();
+  void* dest = static_cast<ValueBase*>(IUI);
+  if (SWAN_PRINT) {
+    llvm::outs() << "\t Assignment\n";
+    llvm::outs() << "\t [SRC ADDR]: " << src<< "\n";
+    llvm::outs() << "\t [DEST ADDR]: " << dest << "\n";
+  }
+  return Instance->CAst->makeNode(CAstWrapper::ASSIGN,
+    valueTable->get(src), valueTable->get(dest));
 }
 
 /* ============================================================================
- * TYPE: I-DC
- * DESC: Once again, boolean based off operand. Duplicate.
+ * DESC: Once again, boolean based off operand.
  */
 jobject InstructionVisitor::visitIsEscapingClosureInst(IsEscapingClosureInst *IECI) {
-  valueTable->duplicate(IECI->getOperand().getOpaqueValue(), static_cast<ValueBase*>(IECI));
-  return Instance->CAst->makeNode(CAstWrapper::EMPTY);
+  // TODO: replace with custom operator that checks reference count. (e.g. OP_REF_CNT)
+  void* src = IECI->getOperand().getOpaqueValue();
+  void* dest = static_cast<ValueBase*>(IECI);
+  if (SWAN_PRINT) {
+    llvm::outs() << "\t Assignment\n";
+    llvm::outs() << "\t [SRC ADDR]: " << src<< "\n";
+    llvm::outs() << "\t [DEST ADDR]: " << dest << "\n";
+  }
+  return Instance->CAst->makeNode(CAstWrapper::ASSIGN,
+    valueTable->get(src), valueTable->get(dest));
 }
 
 /* ============================================================================
- * TYPE: I-DC
- * DESC: Copies Obj-C block. Duplicate.
+ * DESC: Copies Obj-C block.
  */
 jobject InstructionVisitor::visitCopyBlockInst(CopyBlockInst *CBI) {
-  valueTable->duplicate(CBI->getOperand().getOpaqueValue(), static_cast<ValueBase*>(CBI));
-  return Instance->CAst->makeNode(CAstWrapper::EMPTY);
+  void* src = CBI->getOperand().getOpaqueValue();
+  void* dest = static_cast<ValueBase*>(CBI);
+  if (SWAN_PRINT) {
+    llvm::outs() << "\t Assignment\n";
+    llvm::outs() << "\t [SRC ADDR]: " << src<< "\n";
+    llvm::outs() << "\t [DEST ADDR]: " << dest << "\n";
+  }
+  return Instance->CAst->makeNode(CAstWrapper::ASSIGN,
+    valueTable->get(src), valueTable->get(dest));
 }
 
 /* ============================================================================
- * TYPE: I-M
  * DESC: Similar to copy_block, but also consumes the second operand.
  */
 jobject InstructionVisitor::visitCopyBlockWithoutEscapingInst(CopyBlockWithoutEscapingInst *CBWEI) {
-  valueTable->duplicate(CBWEI->getOperand(0).getOpaqueValue(), static_cast<ValueBase*>(CBWEI));
-  valueTable->tryRemove(CBWEI->getOperand(1).getOpaqueValue());
-  return Instance->CAst->makeNode(CAstWrapper::EMPTY);
+  void* src = CBWEI->getOperand(0).getOpaqueValue();
+  void* dest = static_cast<ValueBase*>(CBWEI);
+  if (SWAN_PRINT) {
+    llvm::outs() << "\t Assignment\n";
+    llvm::outs() << "\t [SRC ADDR]: " << src<< "\n";
+    llvm::outs() << "\t [DEST ADDR]: " << dest << "\n";
+  }
+  void* toRemove = CBWEI->getOperand(1).getOpaqueValue();
+  (valueTable->tryRemove(toRemove))
+    ? llvm::outs() << "\t [REMOVED ADDR]: " << toRemove << "\n"
+    : llvm::outs() << "\t [NOP]\n";
+  return Instance->CAst->makeNode(CAstWrapper::ASSIGN,
+    valueTable->get(src), valueTable->get(dest));
 }
 
 /* ============================================================================
- * TYPE: C-DD
  * DESC: Not in SIL.rst. Assume we just need to destroy the data associated
  *       with the operand.
  */
 jobject InstructionVisitor::visitEndLifetimeInst(EndLifetimeInst *ELI) {
-  valueTable->tryRemove(ELI->getOperand().getOpaqueValue());
+  void* toRemove = ELI->getOperand().getOpaqueValue();
+  (valueTable->tryRemove(toRemove))
+    ? llvm::outs() << "\t [REMOVED ADDR]: " << toRemove << "\n"
+    : llvm::outs() << "\t [NOP]\n";
   return Instance->CAst->makeNode(CAstWrapper::EMPTY);
 }
 
@@ -890,7 +959,23 @@ jobject InstructionVisitor::visitFunctionRefInst(FunctionRefInst *FRI) {
   return Instance->CAst->makeNode(CAstWrapper::EMPTY);
 }
 
+jobject InstructionVisitor::visitDynamicFunctionRefInst(DynamicFunctionRefInst *DFRI) {
+  // TODO: UNIMPLEMENTED
+  return Instance->CAst->makeNode(CAstWrapper::EMPTY);
+}
+
+jobject InstructionVisitor::visitPreviousDynamicFunctionRefInst(PreviousDynamicFunctionRefInst *PDFRI)
+{
+  // TODO: UNIMPLEMENTED
+  return Instance->CAst->makeNode(CAstWrapper::EMPTY);
+}
+
 jobject InstructionVisitor::visitGlobalAddrInst(GlobalAddrInst *GAI) {
+  // TODO: UNIMPLEMENTED
+  return Instance->CAst->makeNode(CAstWrapper::EMPTY);
+}
+
+jobject InstructionVisitor::visitGlobalValueInst(GlobalValueInst *GVI) {
   // TODO: UNIMPLEMENTED
   return Instance->CAst->makeNode(CAstWrapper::EMPTY);
 }
@@ -925,6 +1010,11 @@ jobject InstructionVisitor::visitObjCMethodInst(ObjCMethodInst *AMI) {
 }
 
 jobject InstructionVisitor::visitSuperMethodInst(SuperMethodInst *SMI) {
+  // TODO: UNIMPLEMENTED
+  return Instance->CAst->makeNode(CAstWrapper::EMPTY);
+}
+
+jobject InstructionVisitor::visitObjCSuperMethodInst(ObjCSuperMethodInst *ASMI) {
   // TODO: UNIMPLEMENTED
   return Instance->CAst->makeNode(CAstWrapper::EMPTY);
 }

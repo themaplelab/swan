@@ -120,7 +120,7 @@ inline std::string addressToString(void* const a) {
 class ValueTable {
 public:
   ValueTable(CAstWrapper *wrapper) : wrapper(wrapper) {}
-  bool has(void* key) {
+  bool has(void* key) const {
     return ((symbols.find(key) != symbols.end()) || (nodes.find(key) != nodes.end()));
   }
   jobject get(void* const key) {
@@ -129,8 +129,11 @@ public:
     } else if (isNode(key)) {
       return nodes.at(key);
     } else {
-      llvm::outs() << "\t ERROR: Requested key (" << key << ") not found. Fatal, exiting...";
-      exit(1);
+      createAndAddSymbol(key, "Unimplemented");
+      llvm::outs() << "\t DEBUG: Requested key (" << key << ") not found.\n";
+      return get(key);
+      // llvm::outs() << "\t ERROR: Requested key (" << key << ") not found. Fatal, exiting...";
+      // exit(1);
     }
   }
   void createAndAddSymbol(void* const key, std::string const &type) {
@@ -141,7 +144,7 @@ public:
     if (symbols.find(key) == symbols.end()) {
       symbols.insert({key, std::make_tuple(symbol, type)});
       declNodes.push_back(wrapper->makeNode(CAstWrapper::DECL_STMT,
-        wrapper->makeConstant(symbol), wrapper->makeConstant(type.c_str())));
+        wrapper->makeConstant(addressToString(key).c_str()), wrapper->makeConstant(type.c_str())));
     } else {
       llvm::outs() << "\t WARNING: Attmped to re-add symbol to ValueTable: " << key << "\n";
     }
@@ -150,8 +153,10 @@ public:
     if (symbols.find(source) != symbols.end()) {
       symbols.insert({target, symbols.at(source)});
     } else {
-      llvm::outs() << "\t ERROR: Requested key (" << source << ") not found while duplicating. Fatal, exiting...";
-      exit(1);
+      createAndAddSymbol(source, "Unimplemented");
+      symbols.insert({target, symbols.at(source)});
+      // llvm::outs() << "\t ERROR: Requested key (" << source << ") not found while duplicating. Fatal, exiting...";
+      // exit(1);
     }
   }
   void addNode(void* const key, jobject const node) {
@@ -164,6 +169,12 @@ public:
   void clearNodes() {
     nodes.clear();
   }
+  void clearSymbols() {
+    symbols.clear();
+  }
+  void clearDeclNodes() {
+    declNodes.clear();
+  }
   void remove(void* const key) {
     if (isSymbol(key)) {
       symbols.erase(symbols.find(key));
@@ -173,18 +184,24 @@ public:
       llvm::outs() << "\t WARNING: Attempted to remove key (" << key << ") which does not exist.";
     }
   }
-  void tryRemove(void* const key) {
+  bool tryRemove(void* const key) {
     if (isSymbol(key)) {
       symbols.erase(symbols.find(key));
+      return true;
     } else if (isNode(key)) {
       nodes.erase(nodes.find(key));
+      return true;
     }
+    return false;
   }
-  bool isSymbol(void* const key) {
+  bool isSymbol(void* const key) const {
     return symbols.find(key) != symbols.end();
   }
-  bool isNode(void* const key) {
+  bool isNode(void* const key) const {
     return nodes.find(key) != nodes.end();
+  }
+  std::list<jobject> getDeclNodes() const {
+    return declNodes;
   }
 private:
   CAstWrapper *wrapper;
