@@ -19,14 +19,13 @@
 #ifndef SWAN_WALAINSTANCE_H
 #define SWAN_WALAINSTANCE_H
 
+#include "InfoStructures.hpp"
 #include <jni.h>
 #include <string>
 #include <sstream>
 #include <cstring>
 #include <memory>
 #include <vector>
-
-#include "InfoStructures.hpp"
 #include "swift/SIL/SILModule.h"
 
 class CAstWrapper;
@@ -41,7 +40,7 @@ private:
   JNIEnv *JavaEnv; // JVM.
   jobject Translator; // Java translator object.
   std::string File; // Swift file to analyze.
-  std::vector<std::unique_ptr<CAstEntityInfo>> castEntities; // Entity info needed to make the CAstEntities on the Java side.
+  std::vector<std::unique_ptr<WALACAstEntityInfo>> castEntities; // Entity info needed to make the CAstEntities on the Java side.
   jobject CurrentCAstSourcePositionRecorder = nullptr;
 
 public:
@@ -68,7 +67,7 @@ public:
   void analyzeSILModule(swift::SILModule &SM);
 
   /// Add the translated entity to the instance to later pass to the Java side.
-  void addCAstEntityInfo(std::unique_ptr<CAstEntityInfo> entity);
+  void addCAstEntityInfo(std::unique_ptr<WALACAstEntityInfo> entity);
 
   /// Returns ArrayList<CAstEntityInfo> as jobject.
   jobject getCAstEntityInfo();
@@ -86,7 +85,7 @@ public:
   void createCAstSourcePositionRecorder();
 
   /// Calls setPosition on the CurrentCAstSourcePositionRecorder using the given info and CAstNode.
-  void addSourceInfo(jobject CAstNode, InstrInfo* instrInfo);
+  void addSourceInfo(jobject CAstNode, SILInstructionInfo* instrInfo);
 
   /// Returns the current source position recorder (presumably to add it to the currentEntity).
   jobject getCurrentCAstSourcePositionRecorder();

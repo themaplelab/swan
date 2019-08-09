@@ -22,7 +22,7 @@
 #ifndef SWAN_SWIFTCHOOK_H
 #define SWAN_SWIFTCHOOK_H
 
-#include "SILWalaInstructionVisitor.h"
+#include "InstructionVisitor.h"
 #include "WALAInstance.h"
 #include "llvm/Support/FileSystem.h"
 #include "llvm/Support/Path.h"

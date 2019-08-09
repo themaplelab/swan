@@ -18,7 +18,6 @@
 //===---------------------------------------------------------------------===//
 
 #include "WALAInstance.h"
-#include "SILWalaInstructionVisitor.h"
 #include "SwiftCHook.hpp"
 #include "swift/AST/Module.h"
 #include "swift/Frontend/Frontend.h"
@@ -42,8 +41,8 @@ void WALAInstance::printNode(jobject Node) {
 }
 
 void WALAInstance::analyzeSILModule(SILModule &SM) {
-  SILWalaInstructionVisitor Visitor(this, true); // Bool is for enabling translator printing (for debug).
-  Visitor.visitModule(&SM);
+  InstructionVisitor Visitor(this); // Bool is for enabling translator printing (for debug).
+  Visitor.visitSILModule(&SM);
 }
 
 void WALAInstance::analyze() {
@@ -84,9 +83,9 @@ WALAInstance::WALAInstance(JNIEnv *Env, jobject Obj) : JavaEnv(Env), Translator(
       // Get the file to analyze.
       auto GetLocalFile = JavaEnv->GetMethodID(TranslatorClass, "getLocalFile", "()Ljava/lang/String;");
       THROW_ANY_EXCEPTION(Exception);
-      auto LocalFile = (jstring)(JavaEnv->CallObjectMethod(Translator, GetLocalFile, 0));
+      auto LocalFile = static_cast<jstring>(JavaEnv->CallObjectMethod(Translator, GetLocalFile, 0));
       THROW_ANY_EXCEPTION(Exception);
-      auto LocalFileStr = JavaEnv->GetStringUTFChars(LocalFile, 0);
+      auto LocalFileStr = JavaEnv->GetStringUTFChars(LocalFile, nullptr);
       THROW_ANY_EXCEPTION(Exception);
       File = std::string(LocalFileStr);
       JavaEnv->ReleaseStringUTFChars(LocalFile, LocalFileStr);
@@ -96,7 +95,7 @@ WALAInstance::WALAInstance(JNIEnv *Env, jobject Obj) : JavaEnv(Env), Translator(
 }
 
 jobject WALAInstance::makeBigDecimal(const char *strData, int strLen) {
-  char *safeData = strndup(strData, strLen);
+  char *safeData = strndup(strData, static_cast<size_t>(strLen));
   jobject val = JavaEnv->NewStringUTF(safeData);
   delete safeData;
   jclass bigDecimalCls = JavaEnv->FindClass("java/math/BigDecimal");
@@ -121,7 +120,7 @@ jobject WALAInstance::getCAstNodes() {
   return result;
 }
 
-void WALAInstance::addCAstEntityInfo(std::unique_ptr<CAstEntityInfo> entity) {
+void WALAInstance::addCAstEntityInfo(std::unique_ptr<WALACAstEntityInfo> entity) {
   castEntities.push_back(std::move(entity));
 }
 
@@ -233,7 +232,7 @@ void WALAInstance::createCAstSourcePositionRecorder() {
   CATCH()
 }
 
-void WALAInstance::addSourceInfo(jobject CAstNode, InstrInfo* instrInfo) {
+void WALAInstance::addSourceInfo(jobject CAstNode, SILInstructionInfo* instrInfo) {
   TRY(Exception, JavaEnv)
     auto CAstSourcePositionRecorderClass = JavaEnv->FindClass("com/ibm/wala/cast/tree/impl/CAstSourcePositionRecorder");
     THROW_ANY_EXCEPTION(Exception);
@@ -241,25 +240,25 @@ void WALAInstance::addSourceInfo(jobject CAstNode, InstrInfo* instrInfo) {
       CAstSourcePositionRecorderClass, "setPosition", "(Lcom/ibm/wala/cast/tree/CAstNode;Lcom/ibm/wala/cast/tree/CAstSourcePositionMap$Position;)V");
     THROW_ANY_EXCEPTION(Exception);
     switch (instrInfo->srcType) {
-      case sourceType::INVALID: {
+      case SILSourceType::INVALID: {
         break;
       }
-      case sourceType::FULL: {
-        int fl = instrInfo->startLine;
-        int fc = instrInfo->startCol;
-        int ll = instrInfo->endLine;
-        int lc = instrInfo->endCol;
+      case SILSourceType::FULL: {
+        unsigned fl = instrInfo->startLine;
+        unsigned fc = instrInfo->startCol;
+        unsigned ll = instrInfo->endLine;
+        unsigned lc = instrInfo->endCol;
 
         JavaEnv->CallVoidMethod(CurrentCAstSourcePositionRecorder, CAstSourcePositionRecorderClassSetPositionMethod,
           CAstNode, CAst->makeLocation(fl, fc, ll, lc));
         THROW_ANY_EXCEPTION(Exception);
         break;
       }
-      case sourceType::STARTONLY: {
-        int fl = instrInfo->startLine;
-        int fc = instrInfo->startCol;
-        int ll = instrInfo->startLine; // Workaround
-        int lc = instrInfo->startCol; // Workaround
+      case SILSourceType::STARTONLY: {
+        unsigned fl = instrInfo->startLine;
+        unsigned fc = instrInfo->startCol;
+        unsigned ll = instrInfo->startLine; // Workaround
+        unsigned lc = instrInfo->startCol; // Workaround
 
         JavaEnv->CallVoidMethod(CurrentCAstSourcePositionRecorder, CAstSourcePositionRecorderClassSetPositionMethod,
           CAstNode, CAst->makeLocation(fl, fc, ll, lc));

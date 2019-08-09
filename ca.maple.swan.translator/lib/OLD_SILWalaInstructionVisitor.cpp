@@ -382,7 +382,7 @@ jobject SILWalaInstructionVisitor::getOperatorCAstType(Identifier Name) {
   } else if (Name.is("^")) {
     return CAstWrapper::OP_BIT_XOR;
   } else {
-    llvm::outs() << "ERROR: Unhandled operator detected! \n";
+    llvm::outs() << "ERROR: Unhandled operator: " << Name << " detected! \n";
     return nullptr;
   }
 }
@@ -405,11 +405,13 @@ jobject SILWalaInstructionVisitor::visitApplySite(ApplySite Apply) {
       llvm::outs() << "\t [ARG] #" << I << ": " << V;
       llvm::outs() << "\t [ADDR] #" << I << ": " << V.getOpaqueValue() << "\n";
     }
+    /*
     auto result = Apply.getInstruction()->getResult(0);
     if (result) {
       llvm::outs() << "\t [RESULT]: " << result.getOpaqueValue() << "\n";
       llvm::outs() << "\t [RESULT TYPE]: " << result->getType().getAsString() << "\n";
     }
+    */
   }
 
   // Handle if the function is an operator function (representing a built in operator).
