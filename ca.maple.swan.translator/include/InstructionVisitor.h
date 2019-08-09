@@ -40,6 +40,8 @@ namespace swan {
   static bool SWAN_PRINT_SOURCE = true;
   /// Enable/Disable adding EMPTY nodes to the AST (useful for debugging but otherwise unnecessary).
   static bool SWAN_ADD_EMPTY_NODES = false;
+  /// Disable printing memory and file information.
+  static bool SWAN_PRINT_FILE_AND_MEMORY = false;
 
 
   /// This class translates SIL to CAst by using Swift's SILInstructionVisitor which has callbacks, including

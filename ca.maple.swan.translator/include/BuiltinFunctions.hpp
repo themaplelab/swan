@@ -44,7 +44,9 @@ static std::unordered_set<std::string> builtinFunctions({
   "Swift.DefaultStringInterpolation.appendInterpolation<A where A: Swift.CustomStringConvertible>(A) -> ()",
   "static Swift.Int./ infix(Swift.Int, Swift.Int) -> Swift.Int",
   "Swift.Double.init(Swift.Int) -> Swift.Double",
-  "static Swift.Double./ infix(Swift.Double, Swift.Double) -> Swift.Double"
+  "static Swift.Double./ infix(Swift.Double, Swift.Double) -> Swift.Double",
+  "Swift.DefaultStringInterpolation.appendInterpolation<A>(A) -> ()",
+  "Swift.UInt.init(_builtinIntegerLiteral: Builtin.IntLiteral) -> Swift.UInt"
 
 
   // Add more builtin functions here...

@@ -172,7 +172,7 @@ void InstructionVisitor::beforeVisit(SILInstruction *I) {
     SourceLoc const &srcEnd = srcRange.End;
 
     if (srcStart.isInvalid() && srcEnd.isInvalid()) {
-      llvm::outs() << "WARNING: Source information is invalid for instruction: " << I;
+      llvm::outs() << "\t NOTE: Source information is invalid\n";
     } else {
       if (srcStart.isValid()) {
         instrInfo->srcType = SILSourceType::STARTONLY;
@@ -199,14 +199,17 @@ void InstructionVisitor::beforeVisit(SILInstruction *I) {
   instrInfo->instrKind = I->getKind();
 
   // Set instruction operands.
-  std::vector<SILValue> vals;
+  std::vector<void *> vals;
   for (const auto &op: I->getAllOperands()) {
-    vals.push_back(op.get());
+    vals.push_back(op.get().getOpaqueValue());
   }
-  instrInfo->ops = llvm::ArrayRef<SILValue>(vals);
+  instrInfo->ops = llvm::ArrayRef<void *>(vals);
 
   if (SWAN_PRINT) {
-    if (SWAN_PRINT_SOURCE) { printSILInstructionInfo(); }
+    if (SWAN_PRINT_SOURCE) {
+      llvm::outs() << "\t [VALUE BASE]: " << I << "\n";
+      printSILInstructionInfo();
+    }
     llvm::outs() << "<< " << getSILInstructionName(I->getKind()) << " >>\n";
   }
 }
@@ -214,98 +217,176 @@ void InstructionVisitor::beforeVisit(SILInstruction *I) {
 void InstructionVisitor::printSILInstructionInfo() {
   llvm::outs() << "\t [INSTR] #" << instrInfo->num;
   llvm::outs() << ", [OPNUM] " << instrInfo->id << "\n";
-  llvm::outs() << "\t --> File: " << instrInfo->Filename << "\n";
-  if (instrInfo->srcType == SILSourceType::INVALID) {
-    llvm::outs() << "\t **** No source information. \n";
-  } else { // Has at least start information.
-    llvm::outs() << "\t ++++ Start - Line " << instrInfo->startLine << ":"
-                 << instrInfo->startCol << "\n";
-  }
-  // Has end information.
-  if (instrInfo->srcType == SILSourceType::FULL) {
-    llvm::outs() << "\t ---- End - Line " << instrInfo->endLine;
-    llvm::outs() << ":" << instrInfo->endCol << "\n";
-  }
-  // Memory Behavior.
-  switch (instrInfo->memBehavior) {
-    case SILInstruction::MemoryBehavior::None: {
-      break;
+  if (SWAN_PRINT_FILE_AND_MEMORY) {
+    llvm::outs() << "\t --> File: " << instrInfo->Filename << "\n";
+    if (instrInfo->srcType == SILSourceType::INVALID) {
+      llvm::outs() << "\t **** No source information. \n";
+    } else { // Has at least start information.
+      llvm::outs() << "\t ++++ Start - Line " << instrInfo->startLine << ":"
+                   << instrInfo->startCol << "\n";
     }
-    case SILInstruction::MemoryBehavior::MayRead: {
-      llvm::outs() << "\t\t +++ [MEM-R]: May read from memory. \n";
-      break;
+    // Has end information.
+    if (instrInfo->srcType == SILSourceType::FULL) {
+      llvm::outs() << "\t ---- End - Line " << instrInfo->endLine;
+      llvm::outs() << ":" << instrInfo->endCol << "\n";
     }
-    case SILInstruction::MemoryBehavior::MayWrite: {
-      llvm::outs() << "\t\t +++ [MEM-W]: May write to memory. \n";
-      break;
+    // Memory Behavior.
+    switch (instrInfo->memBehavior) {
+      case SILInstruction::MemoryBehavior::None: {
+        break;
+      }
+      case SILInstruction::MemoryBehavior::MayRead: {
+        llvm::outs() << "\t +++ [MEM-R]: May read from memory. \n";
+        break;
+      }
+      case SILInstruction::MemoryBehavior::MayWrite: {
+        llvm::outs() << "\t +++ [MEM-W]: May write to memory. \n";
+        break;
+      }
+      case SILInstruction::MemoryBehavior::MayReadWrite: {
+        llvm::outs() << "\t +++ [MEM-RW]: May read or write memory. \n";
+        break;
+      }
+      case SILInstruction::MemoryBehavior::MayHaveSideEffects: {
+        llvm::outs() << "\t +++ [MEM-F]: May have side effects. \n";
+      }
     }
-    case SILInstruction::MemoryBehavior::MayReadWrite: {
-      llvm::outs() << "\t\t +++ [MEM-RW]: May read or write memory. \n";
-      break;
-    }
-    case SILInstruction::MemoryBehavior::MayHaveSideEffects: {
-      llvm::outs() << "\t\t +++ [MEM-F]: May have side effects. \n";
-    }
-  }
-  // Releasing Behavior.
-  switch (instrInfo->relBehavior) {
-    case SILInstruction::ReleasingBehavior::DoesNotRelease: {
-      llvm::outs() << "\t\t [REL]: Does not release memory. \n";
-      break;
-    }
-    case SILInstruction::ReleasingBehavior::MayRelease: {
-      llvm::outs() << "\t\t [REL]: May release memory. \n";
-      break;
+    // Releasing Behavior.
+    switch (instrInfo->relBehavior) {
+      case SILInstruction::ReleasingBehavior::DoesNotRelease: {
+        llvm::outs() << "\t [REL]: Does not release memory. \n";
+        break;
+      }
+      case SILInstruction::ReleasingBehavior::MayRelease: {
+        llvm::outs() << "\t [REL]: May release memory. \n";
+        break;
+      }
     }
   }
   // Show operands, if they exist.
-  for (SILValue const &op : instrInfo->ops) {
-    llvm::outs() << "\t\t [OPER]: " << op;
+  for (void * const &op : instrInfo->ops) {
+    llvm::outs() << "\t [OPER]: " << op << "\n";
   }
-  llvm::outs() << "\n";
 }
 
 //===-------------------SPECIFIC INSTRUCTION VISITORS ----------------------===//
+
+/*
+ * Instructions are categorized by category and class. X-Y* where X is the
+ * category identifier and Y* is the class identifier.
+ *
+ * Categories:
+ *
+ * DIRECT (D):
+ *  - An instruction that is directly translated (returns a non-EMPTY CAstNode).
+ *
+ * INDIRECT (I):
+ *  - An instruction that is not directly translated, but generates a node that
+ *    is added to the ValueTable to be used later. Visit function returns EMPTY.
+ *
+ * IGNORED (X):
+ *  - An instruction that is completely ignored. Nothing is added to the
+ *    ValueTable and EMPTY is returned. We might still print debug info.
+ *
+ * Classes:
+ *
+ * DATA ENTRYPOINT (DE):
+ *  - No operand.
+ *  - Generates a result.
+ *
+ * SEVERED DATA ENTRYPOINT (SDE)
+ *  - Operand(s) are ignored.
+ *  - Generates a result.
+ *
+ * DIRECT DATA PASS (DP):
+ *  - Result is directly assigned to the operand. Nothing else occurs.
+ *
+ *
+ * Note: "operand" here means an actual value or "register" (not a type, for instance).
+ *
+ * An example instruction specification may look like "D-DE" which would mean
+ * it is a DIRECT and DATA ENTRYPOINT instruction.
+ */
 
 /*******************************************************************************/
 /*                         ALLOCATION AND DEALLOCATION                         */
 /*******************************************************************************/
 
+/* TYPE: I-DE
+ * DESC: Allocates memory, so all we care about is creating a new VAR node
+ *       (of correct type) to represent the result, which may be used later.
+ */
 jobject InstructionVisitor::visitAllocStackInst(AllocStackInst *ASI) {
-  // TODO: UNIMPLEMENTED
+  std::string operandType = ASI->getType().getAsString();
+  if (SWAN_PRINT) {
+    llvm::outs() << "\t [OPER SIL TYPE]: " << operandType << "\n";
+  }
+  valueTable->createAndAddSymbol(static_cast<ValueBase*>(ASI), operandType);
   return Instance->CAst->makeNode(CAstWrapper::EMPTY);
 }
 
+/* TYPE: I-DE
+ * DESC: Allocates memory, so all we care about is creating a new VAR node
+ *       (of correct type) to represent the result, which may be used later.
+ */
 jobject InstructionVisitor::visitAllocBoxInst(AllocBoxInst *ABI){
-  // TODO: UNIMPLEMENTED
+  std::string operandType = ABI->getType().getAsString();
+  if (SWAN_PRINT) {
+    llvm::outs() << "\t [OPER SIL TYPE]: " << operandType << "\n";
+  }
+  valueTable->createAndAddSymbol(static_cast<ValueBase*>(ABI), operandType);
   return Instance->CAst->makeNode(CAstWrapper::EMPTY);
 }
 
+/* TYPE: I-DE
+ * DESC: Allocates memory, so all we care about is creating a new VAR node
+ *       (of correct type) to represent the result, which may be used later.
+ */
 jobject InstructionVisitor::visitAllocRefInst(AllocRefInst *ARI) {
+  std::string operandType = ARI->getType().getAsString();
+  if (SWAN_PRINT) {
+    llvm::outs() << "\t [OPER SIL TYPE]: " << operandType << "\n";
+  }
+  valueTable->createAndAddSymbol(static_cast<ValueBase*>(ARI), operandType);
+  return Instance->CAst->makeNode(CAstWrapper::EMPTY);
+}
+
+/* TYPE: X
+ * DESC: Deallocates memory. We don't care about this.
+ */
+jobject InstructionVisitor::visitDeallocStackInst(__attribute__((unused)) DeallocStackInst *DSI) {
+  return Instance->CAst->makeNode(CAstWrapper::EMPTY);
+}
+
+/* TYPE: X
+ * DESC: Deallocates memory. We don't care about this.
+ */
+jobject InstructionVisitor::visitDeallocBoxInst(__attribute__((unused)) DeallocBoxInst *DBI) {
+  return Instance->CAst->makeNode(CAstWrapper::EMPTY);
+}
+
+jobject InstructionVisitor::visitDeallocRefInst(__attribute__((unused)) DeallocRefInst *DRI) {
   // TODO: UNIMPLEMENTED
   return Instance->CAst->makeNode(CAstWrapper::EMPTY);
 }
 
-jobject InstructionVisitor::visitDeallocStackInst(DeallocStackInst *DSI) {
-  // TODO: UNIMPLEMENTED
-  return Instance->CAst->makeNode(CAstWrapper::EMPTY);
-}
-
-jobject InstructionVisitor::visitDeallocBoxInst(DeallocBoxInst *DBI) {
-  // TODO: UNIMPLEMENTED
-  return Instance->CAst->makeNode(CAstWrapper::EMPTY);
-}
-
-jobject InstructionVisitor::visitDeallocRefInst(DeallocRefInst *DRI) {
-  // TODO: UNIMPLEMENTED
-  return Instance->CAst->makeNode(CAstWrapper::EMPTY);
-}
-
+/* TYPE: X
+ * DESC: Initializes storage for a global variable. Has no result or value
+ * operand so we don't do anything except print some debug info.
+ */
 jobject InstructionVisitor::visitAllocGlobalInst(AllocGlobalInst *AGI) {
-  // TODO: UNIMPLEMENTED
+  SILGlobalVariable *Var = AGI->getReferencedGlobal();
+  if (SWAN_PRINT) {
+    llvm::outs() << "\t [VAR NAME]:" << Demangle::demangleSymbolAsString(Var->getName()) << "\n";
+    llvm::outs() << "\t [VAR TYPE]:" << Var->getLoweredType().getAsString() << "\n";
+  }
   return Instance->CAst->makeNode(CAstWrapper::EMPTY);
 }
 
+/* TYPE: I-DP
+ * DESC: Gets an address from @box reference. We treat references and addresses
+ *       as the same thing, so we just assign them.
+ */
 jobject InstructionVisitor::visitProjectBoxInst(ProjectBoxInst *PBI) {
   // TODO: UNIMPLEMENTED
   return Instance->CAst->makeNode(CAstWrapper::EMPTY);

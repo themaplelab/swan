@@ -38,15 +38,15 @@ class ValueTable;
 
 /// SILModuleInfo is used for storing source information into the CAst.
 struct SILModuleInfo {
-  explicit SILModuleInfo(llvm::StringRef sourcefile) : sourcefile(sourcefile) {}
-  llvm::StringRef sourcefile;
+  explicit SILModuleInfo(llvm::StringRef const &sourcefile) : sourcefile(sourcefile) {}
+  llvm::StringRef const sourcefile;
 };
 
 /// SILFunctionInfo is used for storing source information into the CAst.
 struct SILFunctionInfo {
-  SILFunctionInfo(llvm::StringRef name, llvm::StringRef demangled) : name(name), demangled(demangled) {}
-  llvm::StringRef name;
-  llvm::StringRef demangled;
+  SILFunctionInfo(llvm::StringRef const &name, llvm::StringRef const &demangled) : name(name), demangled(demangled) {}
+  llvm::StringRef const name;
+  llvm::StringRef const demangled;
   short srcType = SILSourceType::INVALID;
 };
 
@@ -63,7 +63,7 @@ struct SILInstructionInfo {
   unsigned startCol;
   unsigned endLine;
   unsigned endCol;
-  llvm::ArrayRef<swift::SILValue> ops;
+  llvm::ArrayRef<void *> ops;
   SILModuleInfo *modInfo;
   SILFunctionInfo *funcInfo;
 };
@@ -107,11 +107,11 @@ struct WALACAstEntityInfo {
   }
 };
 
-inline std::string labelBasicBlock(swift::SILBasicBlock* basicBlock) {
+inline std::string labelBasicBlock(swift::SILBasicBlock* const basicBlock) {
     return (std::string("BLOCK #") + std::to_string(basicBlock->getDebugID()));
   }
 
-inline std::string addressToString(void* a) {
+inline std::string addressToString(void* const a) {
   char buff[80];
   std::sprintf(buff, "%p", a);
   return buff;
@@ -123,43 +123,52 @@ public:
   bool has(void* key) {
     return ((symbols.find(key) != symbols.end()) || (nodes.find(key) != nodes.end()));
   }
-  jobject get(void* key) {
+  jobject get(void* const key) {
     if (isSymbol(key)) {
       return std::get<0>(symbols.at(key));
     } else if (isNode(key)) {
       return nodes.at(key);
     } else {
-      llvm::outs() << "ERROR: Requested key (" << key << ") not found. Fatal, exiting...";
+      llvm::outs() << "\t ERROR: Requested key (" << key << ") not found. Fatal, exiting...";
       exit(1);
     }
   }
-  void createAndAddSymbol(void* key, std::string type) {
+  void createAndAddSymbol(void* const key, std::string const &type) {
     jobject Var = wrapper->makeNode(CAstWrapper::VAR, wrapper->makeConstant(addressToString(key).c_str()));
     addSymbol(key, Var, type);
   }
-  void addSymbol(void* key, jobject symbol, std::string type) {
-    if (symbols.find(key) != symbols.end()) {
+  void addSymbol(void* const key, jobject const symbol, std::string const &type) {
+    if (symbols.find(key) == symbols.end()) {
       symbols.insert({key, std::make_tuple(symbol, type)});
       declNodes.push_back(wrapper->makeNode(CAstWrapper::DECL_STMT,
         wrapper->makeConstant(symbol), wrapper->makeConstant(type.c_str())));
     } else {
-      llvm::outs() << "WARNING: Attmped to re-add symbol to ValueTable: " << key << "\n";
+      llvm::outs() << "\t WARNING: Attmped to re-add symbol to ValueTable: " << key << "\n";
     }
   }
-  void addNode(void *key, jobject node) {
-    if (nodes.find(key) != nodes.end()) {
+  void addNode(void* const key, jobject const node) {
+    if (nodes.find(key) == nodes.end()) {
       nodes.insert({key, node});
     } else {
-      llvm::outs() << "WARNING: Attmped to re-add node to ValueTable: " << key << "\n";
+      llvm::outs() << "\t WARNING: Attmped to re-add node to ValueTable: " << key << "\n";
     }
   }
   void clearNodes() {
     nodes.clear();
   }
-  bool isSymbol(void* key) {
+  void remove(void* const key) {
+    if (isSymbol(key)) {
+      symbols.erase(symbols.find(key));
+    } else if (isNode(key)) {
+      nodes.erase(nodes.find(key));
+    } else {
+      llvm::outs() << "\t WARNING: Attempted to remove key (" << key << ") which does not exist.";
+    }
+  }
+  bool isSymbol(void* const key) {
     return symbols.find(key) != symbols.end();
   }
-  bool isNode(void* key) {
+  bool isNode(void* const key) {
     return nodes.find(key) != nodes.end();
   }
 private:
