@@ -25,6 +25,9 @@ public class ASTtoDot {
             if (!dir.exists()) {
                 dir.mkdir();
             } else {
+                for(String f: dir.list()) {
+                    new File(dir.getPath(), f).delete();
+                }
                 dir.delete();
                 dir.mkdir();
             }
