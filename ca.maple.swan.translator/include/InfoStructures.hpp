@@ -146,6 +146,14 @@ public:
       llvm::outs() << "\t WARNING: Attmped to re-add symbol to ValueTable: " << key << "\n";
     }
   }
+  void duplicate(void* const source, void* const target) {
+    if (symbols.find(source) != symbols.end()) {
+      symbols.insert({target, symbols.at(source)});
+    } else {
+      llvm::outs() << "\t ERROR: Requested key (" << source << ") not found while duplicating. Fatal, exiting...";
+      exit(1);
+    }
+  }
   void addNode(void* const key, jobject const node) {
     if (nodes.find(key) == nodes.end()) {
       nodes.insert({key, node});
@@ -163,6 +171,13 @@ public:
       nodes.erase(nodes.find(key));
     } else {
       llvm::outs() << "\t WARNING: Attempted to remove key (" << key << ") which does not exist.";
+    }
+  }
+  void tryRemove(void* const key) {
+    if (isSymbol(key)) {
+      symbols.erase(symbols.find(key));
+    } else if (isNode(key)) {
+      nodes.erase(nodes.find(key));
     }
   }
   bool isSymbol(void* const key) {

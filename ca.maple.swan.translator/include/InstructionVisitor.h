@@ -48,7 +48,9 @@ namespace swan {
   /// ones for every type of SILInstruction. This makes translating simple.
   class InstructionVisitor : public SILInstructionVisitor<InstructionVisitor, jobject> {
   public:
-    InstructionVisitor(WALAInstance *Instance) : Instance(Instance) {}
+    InstructionVisitor(WALAInstance *Instance) : Instance(Instance) {
+      DO_NODE = Instance->CAst->makeConstant("do");
+    }
 
     /// Visit the SILModule of the swift file that holds the SILFunctions.
     void visitSILModule(SILModule *M);
@@ -95,6 +97,11 @@ namespace swan {
     /// Scoped to the current SILFunction.
     std::list<jobject> blockStmtList;
 
+    /// Sometimes we have multiple ways to keep track
+
+    /// "do" is required in every CALL so we just have it readily available here.
+    jobject DO_NODE;
+
   public:
     // SIL INSTRUCTION VISITOR CALLBACKS (TRANSLATE EACH INSTRUCTION TO CAST NODE)
 
@@ -103,16 +110,18 @@ namespace swan {
     /*******************************************************************************/
 
     jobject visitAllocStackInst(AllocStackInst *ASI);
-    jobject visitAllocBoxInst(AllocBoxInst *ABI);
     jobject visitAllocRefInst(AllocRefInst *ARI);
+    jobject visitAllocRefDynamicInst(AllocRefDynamicInst *ARDI);
+    jobject visitAllocBoxInst(AllocBoxInst *ABI);
+    jobject visitAllocValueBufferInst(AllocValueBufferInst *AVBI);
+    jobject visitAllocGlobalInst(AllocGlobalInst *AGI);
     jobject visitDeallocStackInst(DeallocStackInst *DSI);
     jobject visitDeallocBoxInst(DeallocBoxInst *DBI);
-    jobject visitDeallocRefInst(DeallocRefInst *DRI);
-    jobject visitAllocGlobalInst(AllocGlobalInst *AGI);
     jobject visitProjectBoxInst(ProjectBoxInst *PBI);
-    jobject visitAllocValueBufferInst(AllocValueBufferInst *AVBI);
-    jobject visitProjectValueBufferInst(ProjectValueBufferInst *PVBI);
+    jobject visitDeallocRefInst(DeallocRefInst *DRI);
+    jobject visitDeallocPartialRefInst(DeallocPartialRefInst *DPRI);
     jobject visitDeallocValueBufferInst(DeallocValueBufferInst *DVBI);
+    jobject visitProjectValueBufferInst(ProjectValueBufferInst *PVBI);
 
     /*******************************************************************************/
     /*                        Debug Information                                    */
@@ -127,17 +136,18 @@ namespace swan {
 
     jobject visitLoadInst(LoadInst *LI);
     jobject visitStoreInst(StoreInst *SI);
-    jobject visitBeginBorrowInst(BeginBorrowInst *BBI);
     jobject visitLoadBorrowInst(LoadBorrowInst *LBI);
     jobject visitEndBorrowInst(EndBorrowInst *EBI);
     jobject visitAssignInst(AssignInst *AI);
-    jobject visitStoreBorrowInst(StoreBorrowInst *SBI);
+    jobject visitAssignByWrapperInst(AssignByWrapperInst *ABWI);
     jobject visitMarkUninitializedInst(MarkUninitializedInst *MUI);
     jobject visitMarkFunctionEscapeInst(MarkFunctionEscapeInst *MFEI);
     jobject visitCopyAddrInst(CopyAddrInst *CAI);
     jobject visitDestroyAddrInst(DestroyAddrInst *DAI);
     jobject visitIndexAddrInst(IndexAddrInst *IAI);
     jobject visitTailAddrInst(TailAddrInst *TAI);
+    jobject visitIndexRawPointerInst(IndexRawPointerInst *IRPI);
+    jobject visitBindMemoryInst(BindMemoryInst *BMI);
     jobject visitBeginAccessInst(BeginAccessInst *BAI);
     jobject visitEndAccessInst(EndAccessInst *EAI);
     jobject visitBeginUnpairedAccessInst(BeginUnpairedAccessInst *BUI);
@@ -147,15 +157,34 @@ namespace swan {
     /*                        Reference Counting                                   */
     /*******************************************************************************/
 
-    jobject visitEndLifetimeInst(EndLifetimeInst *ELI);
+    jobject visitStrongRetainInst(StrongRetainInst *SRTI);
+    jobject visitStrongReleaseInst(StrongReleaseInst *SRLI);
+    jobject visitSetDeallocatingInst(SetDeallocatingInst *SDI);
+    jobject visitStrongRetainUnownedInst(StrongRetainUnownedInst *SRUI);
+    jobject visitUnownedRetainInst(UnownedRetainInst *URTI);
+    jobject visitUnownedReleaseInst(UnownedReleaseInst *URLI);
+    jobject visitLoadWeakInst(LoadWeakInst *LWI);
+    jobject visitStoreWeakInst(StoreWeakInst *SWI);
+    jobject visitLoadUnownedInst(LoadUnownedInst *LUI);
+    jobject visitStoreUnownedInst(StoreUnownedInst *SUI);
+    jobject visitFixLifetimeInst(FixLifetimeInst *FLI);
     jobject visitMarkDependenceInst(MarkDependenceInst *MDI);
+    jobject visitIsUniqueInst(IsUniqueInst *IUI);
+    jobject visitIsEscapingClosureInst(IsEscapingClosureInst *IECI);
+    jobject visitCopyBlockInst(CopyBlockInst *CBI);
+    jobject visitCopyBlockWithoutEscapingInst(CopyBlockWithoutEscapingInst *CBWEI);
+    jobject visitEndLifetimeInst(EndLifetimeInst *ELI);
+    // TODO? builtin "unsafeGuaranteed" & builtin "unsafeGuaranteedEnd"
 
     /*******************************************************************************/
     /*                         Literals                                            */
     /*******************************************************************************/
 
     jobject visitFunctionRefInst(FunctionRefInst *FRI);
+    jobject visitDynamicFunctionRefInst(DynamicFunctionRefInst *DFRI);
+    jobject visitPreviousDynamicFunctionRefInst(PreviousDynamicFunctionRefInst *PDFRI);
     jobject visitGlobalAddrInst(GlobalAddrInst *GAI);
+    jobject visitGlobalValueInst(GlobalValueInst *GVI);
     jobject visitIntegerLiteralInst(IntegerLiteralInst *ILI);
     jobject visitFloatLiteralInst(FloatLiteralInst *FLI);
     jobject visitStringLiteralInst(StringLiteralInst *SLI);
@@ -167,6 +196,7 @@ namespace swan {
     jobject visitClassMethodInst(ClassMethodInst *CMI);
     jobject visitObjCMethodInst(ObjCMethodInst *AMI);
     jobject visitSuperMethodInst(SuperMethodInst *SMI);
+    jobject visitObjCSuperMethodInst(ObjCSuperMethodInst *ASMI);
     jobject visitWitnessMethodInst(WitnessMethodInst *WMI);
 
     /*******************************************************************************/
@@ -175,8 +205,8 @@ namespace swan {
 
     jobject visitApplyInst(ApplyInst *AI);
     jobject visitBeginApplyInst(BeginApplyInst *BAI);
-    jobject visitEndApplyInst(EndApplyInst *EAI);
     jobject visitAbortApplyInst(AbortApplyInst *AAI);
+    jobject visitEndApplyInst(EndApplyInst *EAI);
     jobject visitPartialApplyInst(PartialApplyInst *PAI);
     jobject visitBuiltinInst(BuiltinInst *BI);
 
