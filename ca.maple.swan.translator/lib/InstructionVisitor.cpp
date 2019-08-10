@@ -19,7 +19,6 @@
 //===---------------------------------------------------------------------===//
 
 #include "InstructionVisitor.h"
-#include "BuiltinFunctions.hpp"
 #include "swift/AST/Module.h"
 #include "swift/AST/Types.h"
 #include "swift/Demangling/Demangle.h"
@@ -37,11 +36,8 @@ void InstructionVisitor::visitSILModule(SILModule *M) {
   for (SILFunction &F: *M) {
     // Make sure it is valid to procede in analyzing this function.
     std::string const &demangledFunctionName = Demangle::demangleSymbolAsString(F.getName());
-    if (builtinFunctions.find(demangledFunctionName) != builtinFunctions.end()) {
-      continue;
-    }
-    if (F.empty()) {
-      llvm::outs() << "WARNING: Function with empty body: " << Demangle::demangleSymbolAsString(F.getName()) << "\n";
+
+    if (F.empty()) { // Most likely a builtin, so we ignore it.
       continue;
     }
 
@@ -953,9 +949,6 @@ jobject InstructionVisitor::visitEndLifetimeInst(EndLifetimeInst *ELI) {
 jobject InstructionVisitor::visitFunctionRefInst(FunctionRefInst *FRI) {
   std::string FuncName = Demangle::demangleSymbolAsString(FRI->getReferencedFunctionOrNull()->getName());
   jobject NameNode = Instance->CAst->makeConstant(FuncName.c_str());
-  if (builtinFunctions.find(FuncName) != builtinFunctions.end()) {
-
-  }
   return Instance->CAst->makeNode(CAstWrapper::EMPTY);
 }
 
