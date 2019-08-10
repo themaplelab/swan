@@ -13,7 +13,6 @@
 package ca.maple.swan.swift.translator;
 
 import ca.maple.swan.swift.tree.CAstEntityInfo;
-import ca.maple.swan.swift.tree.ScriptEntityBuilder;
 import java.io.File;
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -61,6 +60,6 @@ public class SwiftToCAstTranslator extends NativeTranslatorToCAst {
 
 	@Override
 	public CAstEntity translateToCAst() {
-		return ScriptEntityBuilder.buildScriptEntity(new File(getFile()), translateToCAstNodes());
+		return RawAstTranslator.translate(new File(getFile()), translateToCAstNodes());
 	}
 }

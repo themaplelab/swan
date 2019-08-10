@@ -93,9 +93,6 @@ namespace swan {
     std::unique_ptr<ValueTable> valueTable;
     /// List of CAstNodes in the current SILBasicBlock.
     std::list<jobject> nodeList;
-    /// List of BLOCK_STMT CAstNodes that hold the AST for the SILBasicBlock.
-    /// Scoped to the current SILFunction.
-    std::list<jobject> blockStmtList;
 
     /// Sometimes we have multiple ways to keep track
 

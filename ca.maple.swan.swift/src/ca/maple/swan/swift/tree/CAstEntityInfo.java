@@ -32,34 +32,28 @@ public class CAstEntityInfo {
 
     public String functionName;
     public ArrayList<CAstNode> basicBlocks;
-    public ArrayList<CAstNode> funcNodes;
-    public ArrayList<CAstNode> cfNodes;
     public String returnType;
     public ArrayList<String> argumentTypes;
     public ArrayList<String> argumentNames;
     public LinkedHashMap<CAstNode, String> variableTypes;
     public CAstSourcePositionRecorder sourcePositionRecorder;
-    public ArrayList<CAstNode> declNodes;
     public CAstSourcePositionMap.Position functionPosition;
     public ArrayList<CAstSourcePositionMap.Position> argumentPositions;
 
     CAstEntityInfo(String functionName, ArrayList<CAstNode> basicBlocks,
-                   ArrayList<CAstNode> funcNodes, ArrayList<CAstNode> cfNodes,
                    String returnType, ArrayList<String> argumentTypes,
                    ArrayList<String> argumentNames, LinkedHashMap<CAstNode,
                    String> variableTypes, CAstSourcePositionRecorder sourcePositionRecorder,
-                   ArrayList<CAstNode> declNodes, CAstSourcePositionMap.Position functionPosition,
+                   CAstSourcePositionMap.Position functionPosition,
                    ArrayList<CAstSourcePositionMap.Position> argumentPositions) {
         this.functionName = functionName;
         this.basicBlocks = basicBlocks;
-        this.funcNodes = funcNodes;
-        this.cfNodes = cfNodes;
+
         this.returnType = returnType;
         this.argumentTypes = argumentTypes; // These are currently discarded.
         this.argumentNames = argumentNames;
         this.variableTypes = variableTypes; // These are currently discarded.
         this.sourcePositionRecorder = sourcePositionRecorder;
-        this.declNodes = declNodes;
         this.functionPosition = functionPosition;
         this.argumentPositions = argumentPositions;
     }

@@ -183,17 +183,13 @@ jobject WALAInstance::getCAstEntityInfo() {
 
       THROW_ANY_EXCEPTION(Exception);
       jmethodID CAstEntityInfoConstructor = JavaEnv->GetMethodID(CAstEntityInfoClass, "<init>",
-        "(Ljava/lang/String;Ljava/util/ArrayList;Ljava/util/ArrayList;Ljava/util/ArrayList;Ljava/lang/String;Ljava/util/ArrayList;Ljava/util/ArrayList;Ljava/util/LinkedHashMap;Lcom/ibm/wala/cast/tree/impl/CAstSourcePositionRecorder;Ljava/util/ArrayList;Lcom/ibm/wala/cast/tree/CAstSourcePositionMap$Position;Ljava/util/ArrayList;)V");
+        "(Ljava/lang/String;Ljava/util/ArrayList;Ljava/lang/String;Ljava/util/ArrayList;Ljava/util/ArrayList;Ljava/util/LinkedHashMap;Lcom/ibm/wala/cast/tree/impl/CAstSourcePositionRecorder;Lcom/ibm/wala/cast/tree/CAstSourcePositionMap$Position;Ljava/util/ArrayList;)V");
       THROW_ANY_EXCEPTION(Exception);
 
       // get CAstEntityInfo constructor arguments
       jstring FunctionName = JavaEnv->NewStringUTF(info->functionName.c_str());
       THROW_ANY_EXCEPTION(Exception);
       jobject BasicBlocks = vectorToArrayList(info->basicBlocks);
-      THROW_ANY_EXCEPTION(Exception);
-      jobject FuncNodes = vectorToArrayList(info->funcNodes);
-      THROW_ANY_EXCEPTION(Exception);
-      jobject CFNodes = vectorToArrayList(info->cfNodes);
       THROW_ANY_EXCEPTION(Exception);
       jstring ReturnType = JavaEnv->NewStringUTF(info->returnType.c_str());
       THROW_ANY_EXCEPTION(Exception);
@@ -203,15 +199,13 @@ jobject WALAInstance::getCAstEntityInfo() {
       THROW_ANY_EXCEPTION(Exception);
       jobject VariableTypes = mapToLinkedHashMap(info->variableTypes);
       THROW_ANY_EXCEPTION(Exception);
-      jobject DeclNodes = vectorToArrayList(info->declNodes);
-      THROW_ANY_EXCEPTION(Exception);
       jobject ArgumentPositions = vectorToArrayList(info->argumentPositions);
       THROW_ANY_EXCEPTION(Exception);
 
       // create the CAstEntity object and add it to the ArrayList
       auto CAstEntityInfoObject = JavaEnv->NewObject(CAstEntityInfoClass, CAstEntityInfoConstructor,
-        FunctionName, BasicBlocks, FuncNodes, CFNodes, ReturnType, ArgumentTypes, ArgumentNames,
-        VariableTypes, info->CAstSourcePositionRecorder, DeclNodes, info->functionPosition, ArgumentPositions);
+        FunctionName, BasicBlocks, ReturnType, ArgumentTypes, ArgumentNames,
+        VariableTypes, info->CAstSourcePositionRecorder, info->functionPosition, ArgumentPositions);
       JavaEnv->CallBooleanMethod(ArrayListCAstEntityInfo, ArrayListAdd, CAstEntityInfoObject);
     }
     return ArrayListCAstEntityInfo;
