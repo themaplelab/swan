@@ -35,6 +35,8 @@ public class ASTtoDot {
 
     private static boolean dirFlag = true;
 
+    private static MutableNode currentRoot;
+
     public static void print(ArrayList<AbstractCodeEntity> entities) {
         try {
             String dotDirStr = "dot/";
@@ -57,6 +59,7 @@ public class ASTtoDot {
 
             for (AbstractCodeEntity entity: entities) {
                 MutableNode mNode = mutNode(entity.getName()).add(Color.RED);
+                currentRoot = mNode;
                 buildGraph(mNode, entity.getAST());
                 g.add(mNode);
             }
@@ -80,7 +83,7 @@ public class ASTtoDot {
             }
             case CAstNode.BLOCK_STMT: {
                 newNode = mutNode(hash + cNode.getChild(0).getChild(0).getValue());
-                mNode.addLink(newNode);
+                currentRoot.addLink(newNode);
                 for (CAstNode child: cNode.getChildren()) {
                     buildGraph(newNode, child);
                 }
