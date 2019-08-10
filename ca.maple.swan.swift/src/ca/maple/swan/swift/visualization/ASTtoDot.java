@@ -1,11 +1,25 @@
+//===--- ASTtoDot.java ---------------------------------------------------===//
+//
+// This source file is part of the SWAN open source project
+//
+// Copyright (c) 2019 Maple @ University of Alberta
+// All rights reserved. This program and the accompanying materials (unless
+// otherwise specified by a license inside of the accompanying material)
+// are made available under the terms of the Eclipse Public License v2.0
+// which accompanies this distribution, and is available at
+// http://www.eclipse.org/legal/epl-v20.html
+//
+// This particular source file uses graphviz-java which is licensed under the
+// Apache License 2.0
+//
+//===---------------------------------------------------------------------===//
+
 package ca.maple.swan.swift.visualization;
 
 import com.ibm.wala.cast.ir.translator.AbstractCodeEntity;
 import com.ibm.wala.cast.tree.CAstNode;
 import com.ibm.wala.cast.util.CAstPrinter;
-import guru.nidi.graphviz.attribute.Attributes;
 import guru.nidi.graphviz.attribute.Color;
-import guru.nidi.graphviz.attribute.Label;
 import guru.nidi.graphviz.engine.Format;
 import guru.nidi.graphviz.engine.Graphviz;
 import guru.nidi.graphviz.model.MutableGraph;
@@ -19,19 +33,25 @@ import static guru.nidi.graphviz.model.Factory.mutNode;
 
 public class ASTtoDot {
 
+    private static boolean dirFlag = true;
+
     public static void print(ArrayList<AbstractCodeEntity> entities) {
         try {
-            File dir = new File("dot/");
-            if (!dir.exists()) {
-                dir.mkdir();
-            } else {
-                for(String f: dir.list()) {
-                    new File(dir.getPath(), f).delete();
+            String dotDirStr = "dot/";
+            if (dirFlag) { // Make sure we only initialize the directory once in the lifetime of the program.
+                File dir = new File(dotDirStr);
+                if (!dir.exists()) {
+                    dir.mkdir();
+                } else {
+                    for (String f : dir.list()) {
+                        new File(dir.getPath(), f).delete();
+                    }
+                    dir.delete();
+                    dir.mkdir();
                 }
-                dir.delete();
-                dir.mkdir();
+                dirFlag = false;
             }
-            File dotFile = new File("dot/" + entities.get(0).getName().replaceAll(" ", "_") + ".png");
+            File dotFile = new File(dotDirStr + entities.get(0).getName().replaceAll(" ", "_") + ".png");
             dotFile.createNewFile();
             MutableGraph g = mutGraph(entities.get(0).getName()).setDirected(true);
 
