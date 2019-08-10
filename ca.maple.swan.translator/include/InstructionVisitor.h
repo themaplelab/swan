@@ -54,14 +54,6 @@ namespace swan {
 
     /// Visit the SILModule of the swift file that holds the SILFunctions.
     void visitSILModule(SILModule *M);
-    /// Visit the SILFunction that holds the SILBasicBlocks.
-    void visitSILFunction(SILFunction *F);
-    /// Visit the SILBasicBlock that holds the SILInstructions.
-    void visitSILBasicBlock(SILBasicBlock *BB);
-    /// Before visiting the SILInstruction, this callback is fired and here we set up the source info of the instruction.
-    void beforeVisit(SILInstruction *I);
-    /// Prints the SILInstructionInfo
-    void printSILInstructionInfo();
 
     /// If we do not have a callback handler implemented for a SILInstruction, it will fire this method.
     jobject visitSILInstruction(SILInstruction *I) {
@@ -70,6 +62,16 @@ namespace swan {
     }
 
   private:
+    /// Visit the SILFunction that holds the SILBasicBlocks.
+    void visitSILFunction(SILFunction *F);
+    /// Visit the SILBasicBlock that holds the SILInstructions.
+    void visitSILBasicBlock(SILBasicBlock *BB);
+    /// Prints the SILInstructionInfo
+    void printSILInstructionInfo();
+
+    /// Returns CAstNode with appropriate operator kind.
+    jobject getOperatorCAstType(Identifier &Name);
+
     /// The WALAInstance that holds the resultant CAst.
     WALAInstance *Instance;
 
@@ -100,7 +102,11 @@ namespace swan {
     jobject DO_NODE;
 
   public:
+
     // SIL INSTRUCTION VISITOR CALLBACKS (TRANSLATE EACH INSTRUCTION TO CAST NODE)
+
+    /// Before visiting the SILInstruction, this callback is fired and here we set up the source info of the instruction.
+    void beforeVisit(SILInstruction *I);
 
     /*******************************************************************************/
     /*                      Allocation and Deallocation                            */

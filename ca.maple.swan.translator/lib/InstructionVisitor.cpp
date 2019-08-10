@@ -28,6 +28,8 @@
 
 using namespace swan;
 
+//===------------------- MODULE/FUNCTION/BLOCK VISITORS ------------------===//
+
 void InstructionVisitor::visitSILModule(SILModule *M) {
   moduleInfo = std::make_unique<SILModuleInfo>(M->getSwiftModule()->getModuleFilename());
 
@@ -157,6 +159,8 @@ void InstructionVisitor::visitSILBasicBlock(SILBasicBlock *BB) {
   currentEntity->basicBlocks.push_back(BlockStmt);
 }
 
+//===----------- INSTRUCTION SOURCE INFORMATION PROCESSING ---------------===//
+
 void InstructionVisitor::beforeVisit(SILInstruction *I) {
   // Set instruction source information.
   instrInfo = std::make_unique<SILInstructionInfo>();
@@ -266,6 +270,57 @@ void InstructionVisitor::printSILInstructionInfo() {
   // Show operands, if they exist.
   for (void * const &op : instrInfo->ops) {
     llvm::outs() << "\t [OPER]: " << op << "\n";
+  }
+}
+
+//===------------------------- UTLITY FUNCTIONS ----------------------------===//
+
+jobject InstructionVisitor::getOperatorCAstType(Identifier &Name) {
+  if (Name.is("==")) {
+    return CAstWrapper::OP_EQ;
+  } else if (Name.is("!=")) {
+    return CAstWrapper::OP_NE;
+  } else if (Name.is("+")) {
+    return CAstWrapper::OP_ADD;
+  } else if (Name.is("/")) {
+    return CAstWrapper::OP_DIV;
+  } else if (Name.is("<<")) {
+    return CAstWrapper::OP_LSH;
+  } else if (Name.is("*")) {
+    return CAstWrapper::OP_MUL;
+  } else if (Name.is(">>")) {
+    return CAstWrapper::OP_RSH;
+  } else if (Name.is("-")) {
+    return CAstWrapper::OP_SUB;
+  } else if (Name.is(">=")) {
+    return CAstWrapper::OP_GE;
+  } else if (Name.is(">")) {
+    return CAstWrapper::OP_GT;
+  } else if (Name.is("<=")) {
+    return CAstWrapper::OP_LE;
+  } else if (Name.is("<")) {
+    return CAstWrapper::OP_LT;
+  } else if (Name.is("!")) {
+    return CAstWrapper::OP_NOT;
+  } else if (Name.is("~")) {
+    return CAstWrapper::OP_BITNOT;
+  } else if (Name.is("&")) {
+    return CAstWrapper::OP_BIT_AND;
+  } else if (Name.is("&&")) {
+    // TODO: Why is this not handled?
+    // OLD: return CAstWrapper::OP_REL_AND;
+    return nullptr; // OLD: && and || are handled separately because they involve short circuits
+  } else if (Name.is("|")) {
+    return CAstWrapper::OP_BIT_OR;
+  } else if (Name.is("||")) {
+    // TODO: Why is this not handled?
+    // OLD: return CAstWrapper::OP_REL_OR;
+    return nullptr; // OLD: && and || are handled separatedly because they involve short circuits
+  } else if (Name.is("^")) {
+    return CAstWrapper::OP_BIT_XOR;
+  } else {
+    llvm::outs() << "WARNING: Unhandled operator: " << Name << " detected! \n";
+    return nullptr;
   }
 }
 
