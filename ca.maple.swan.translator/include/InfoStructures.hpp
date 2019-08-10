@@ -73,7 +73,7 @@ struct SILInstructionInfo {
 struct WALACAstEntityInfo {
   std::string functionName; // This should be "main" for the SCRIPT_ENTITY.
   std::vector<jobject> basicBlocks; // Every basic block belonging to this entity.
-  std::vector<jobject> callNodes; // Instructions that call other functions (entities).
+  std::vector<jobject> funcNodes; // Instructions that call other functions (entities).
   std::vector<jobject> cfNodes; // Instructions that impact intra-function control flow.
   std::string returnType; // Return type of the function as a string. e.g. "@convention(thin) (Int) -> Int"
   std::vector<std::string> argumentTypes; // Vector of argument type names of the function.
@@ -90,7 +90,7 @@ struct WALACAstEntityInfo {
     // If we print the blocks using CAstWrapper, they won't print where expected to the terminal.
     // There is probably a way to solve this but is not necessary for now.
     llvm::outs() << "\t# OF BASIC BLOCKS: " << basicBlocks.size() << "\n";
-    llvm::outs() << "\t# OF CALL NODES: " << callNodes.size() << "\n";
+    llvm::outs() << "\t# OF CALL NODES: " << funcNodes.size() << "\n";
     llvm::outs() << "\t# OF CONTROL FLOW NODES: " << cfNodes.size() << "\n";
     llvm::outs() << "\tRETURN TYPE: " << returnType << "\n";
     for (auto argType: argumentTypes) {
