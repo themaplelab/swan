@@ -88,13 +88,12 @@ public class ScriptEntityBuilder {
         // Do post-processing on the entities.
         for (AbstractCodeEntity entity : functionEntities) {
             // Add scoped entities.
-            for (CAstNode caller : mappedInfo.get(entity.getName()).callNodes) {
+            for (CAstNode caller : mappedInfo.get(entity.getName()).funcNodes) {
                 CAstEntity target = findCallee(caller, functionEntities);
                 assert(target != null) : "could not find a target";
                 entity.addScopedEntity(null, target);
                 assert(target.getAST() != null) : "target's AST is null";
                 entity.setGotoTarget(caller, target.getAST());
-                // caller.getChildren().set(0, Ast.makeNode(CAstNode.FUNCTION_EXPR, Ast.makeConstant(target)));
             }
 
             // Add the CFG targets.
@@ -134,15 +133,14 @@ public class ScriptEntityBuilder {
         return scriptEntity;
     }
 
-    // Finds the entity a CALL node calls by looking up the function name.
+    // Finds the entity a FUNCTION_EXPR node calls by looking up the function name.
     private static CAstEntity findCallee(CAstNode node, ArrayList<AbstractCodeEntity> entities) {
-        assert(node.getKind() == CAstNode.CALL) : "node is not a CALL node";
-        assert(node.getChild(0).getKind() == CAstNode.FUNCTION_EXPR) : "node's first child is not a FUNCTION_EXPR";
+        assert(node.getKind() == CAstNode.FUNCTION_EXPR) : "node is not a FUNCTION_EXPR node";
         CAstImpl Ast = new CAstImpl();
-        String functionName = (String)node.getChild(0).getChild(0).getValue();
+        String functionName = (String)node.getChild(0).getValue();
         for (CAstEntity entity : entities) {
             if (entity.getName().equals(functionName)) {
-                node.getChildren().set(0, Ast.makeNode(CAstNode.FUNCTION_EXPR, Ast.makeConstant(entity)));
+                // node.getChildren().set(0, Ast.makeNode(CAstNode.FUNCTION_EXPR, Ast.makeConstant(entity)));
                 return entity;
             }
         }

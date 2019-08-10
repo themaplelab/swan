@@ -191,7 +191,7 @@ jobject WALAInstance::getCAstEntityInfo() {
       THROW_ANY_EXCEPTION(Exception);
       jobject BasicBlocks = vectorToArrayList(info->basicBlocks);
       THROW_ANY_EXCEPTION(Exception);
-      jobject CallNodes = vectorToArrayList(info->callNodes);
+      jobject FuncNodes = vectorToArrayList(info->funcNodes);
       THROW_ANY_EXCEPTION(Exception);
       jobject CFNodes = vectorToArrayList(info->cfNodes);
       THROW_ANY_EXCEPTION(Exception);
@@ -210,7 +210,7 @@ jobject WALAInstance::getCAstEntityInfo() {
 
       // create the CAstEntity object and add it to the ArrayList
       auto CAstEntityInfoObject = JavaEnv->NewObject(CAstEntityInfoClass, CAstEntityInfoConstructor,
-        FunctionName, BasicBlocks, CallNodes, CFNodes, ReturnType, ArgumentTypes, ArgumentNames,
+        FunctionName, BasicBlocks, FuncNodes, CFNodes, ReturnType, ArgumentTypes, ArgumentNames,
         VariableTypes, info->CAstSourcePositionRecorder, DeclNodes, info->functionPosition, ArgumentPositions);
       JavaEnv->CallBooleanMethod(ArrayListCAstEntityInfo, ArrayListAdd, CAstEntityInfoObject);
     }

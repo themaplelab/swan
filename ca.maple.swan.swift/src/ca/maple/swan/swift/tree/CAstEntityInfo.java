@@ -32,7 +32,7 @@ public class CAstEntityInfo {
 
     public String functionName;
     public ArrayList<CAstNode> basicBlocks;
-    public ArrayList<CAstNode> callNodes;
+    public ArrayList<CAstNode> funcNodes;
     public ArrayList<CAstNode> cfNodes;
     public String returnType;
     public ArrayList<String> argumentTypes;
@@ -44,7 +44,7 @@ public class CAstEntityInfo {
     public ArrayList<CAstSourcePositionMap.Position> argumentPositions;
 
     CAstEntityInfo(String functionName, ArrayList<CAstNode> basicBlocks,
-                   ArrayList<CAstNode> callNodes, ArrayList<CAstNode> cfNodes,
+                   ArrayList<CAstNode> funcNodes, ArrayList<CAstNode> cfNodes,
                    String returnType, ArrayList<String> argumentTypes,
                    ArrayList<String> argumentNames, LinkedHashMap<CAstNode,
                    String> variableTypes, CAstSourcePositionRecorder sourcePositionRecorder,
@@ -52,7 +52,7 @@ public class CAstEntityInfo {
                    ArrayList<CAstSourcePositionMap.Position> argumentPositions) {
         this.functionName = functionName;
         this.basicBlocks = basicBlocks;
-        this.callNodes = callNodes;
+        this.funcNodes = funcNodes;
         this.cfNodes = cfNodes;
         this.returnType = returnType;
         this.argumentTypes = argumentTypes; // These are currently discarded.
