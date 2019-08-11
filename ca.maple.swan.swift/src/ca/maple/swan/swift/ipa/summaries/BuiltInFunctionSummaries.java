@@ -29,7 +29,11 @@ public class BuiltInFunctionSummaries {
             /*************** LITERALS ****************/
             case "Swift.Int.init(_builtinIntegerLiteral: Builtin.IntLiteral) -> Swift.Int": {
                 // (Builtin.IntLiteral, @thin Int.Type)
-                assert(cAstNode.getChild(2).getKind() == CAstNode.VAR);
+                assert(cAstNode.getChild(2).getKind() == CAstNode.CONSTANT);
+                return cAstNode.getChild(2);
+            }
+            case "Swift.Double.init(_builtinFloatLiteral: Builtin.FPIEEE80) -> Swift.Double": {
+                assert(cAstNode.getChild(2).getKind() == CAstNode.CONSTANT);
                 return cAstNode.getChild(2);
             }
 
