@@ -211,7 +211,7 @@ void InstructionVisitor::beforeVisit(SILInstruction *I) {
 
   if (SWAN_PRINT) {
     if (SWAN_PRINT_SOURCE) {
-      llvm::outs() << "\t [VALUE BASE]: " << I << "\n";
+      llvm::outs() << "\t\t [VALUE BASE]: " << I << "\n";
       printSILInstructionInfo();
     }
     llvm::outs() << "<< " << getSILInstructionName(I->getKind()) << " >>\n";
@@ -219,19 +219,19 @@ void InstructionVisitor::beforeVisit(SILInstruction *I) {
 }
 
 void InstructionVisitor::printSILInstructionInfo() {
-  llvm::outs() << "\t [INSTR] #" << instrInfo->num;
+  llvm::outs() << "\t\t [INSTR] #" << instrInfo->num;
   llvm::outs() << ", [OPNUM] " << instrInfo->id << "\n";
   if (SWAN_PRINT_FILE_AND_MEMORY) {
-    llvm::outs() << "\t --> File: " << instrInfo->Filename << "\n";
+    llvm::outs() << "\t\t --> File: " << instrInfo->Filename << "\n";
     if (instrInfo->srcType == SILSourceType::INVALID) {
-      llvm::outs() << "\t **** No source information. \n";
+      llvm::outs() << "\t\t **** No source information. \n";
     } else { // Has at least start information.
-      llvm::outs() << "\t ++++ Start - Line " << instrInfo->startLine << ":"
+      llvm::outs() << "\t\t\t ++++ Start - Line " << instrInfo->startLine << ":"
                    << instrInfo->startCol << "\n";
     }
     // Has end information.
     if (instrInfo->srcType == SILSourceType::FULL) {
-      llvm::outs() << "\t ---- End - Line " << instrInfo->endLine;
+      llvm::outs() << "\t\t\t ---- End - Line " << instrInfo->endLine;
       llvm::outs() << ":" << instrInfo->endCol << "\n";
     }
     // Memory Behavior.
@@ -399,7 +399,7 @@ jobject InstructionVisitor::visitAllocValueBufferInst(AllocValueBufferInst *AVBI
 
 /* ============================================================================
  * DESC: Initializes storage for a global variable. Has no result or value
- * operand so we don't do anything except print some debug info.
+ *       operand so we don't do anything except print some debug info.
  */
 jobject InstructionVisitor::visitAllocGlobalInst(AllocGlobalInst *AGI) {
   SILGlobalVariable *Var = AGI->getReferencedGlobal();
@@ -1001,45 +1001,165 @@ jobject InstructionVisitor::visitEndLifetimeInst(EndLifetimeInst *ELI) {
 /*                         Literals                                            */
 /*******************************************************************************/
 
+/* ============================================================================
+ * DESC: Get a reference to a function and store it in the result. This function
+ *       reference can be used in a call or simply be stored to a value.
+ */
 jobject InstructionVisitor::visitFunctionRefInst(FunctionRefInst *FRI) {
-  std::string FuncName = Demangle::demangleSymbolAsString(FRI->getReferencedFunctionOrNull()->getName());
+  SILFunction *referencedFunction = FRI->getReferencedFunctionOrNull();
+  assert(referencedFunction != nullptr);
+  std::string FuncName = Demangle::demangleSymbolAsString(referencedFunction->getName());
   jobject NameNode = Instance->CAst->makeConstant(FuncName.c_str());
+  jobject FuncExprNode = Instance->CAst->makeNode(CAstWrapper::FUNCTION_EXPR, NameNode);
+  if (SWAN_PRINT) {
+    llvm::outs() << "\t [FUNCTION]: " << FuncName << "\n";
+  }
+  valueTable->addNode(static_cast<ValueBase*>(FRI), FuncExprNode);
   return Instance->CAst->makeNode(CAstWrapper::EMPTY);
 }
 
+/* ============================================================================
+ * DESC: Similar to function_ref, but doesn't always have a referenced function.
+ */
 jobject InstructionVisitor::visitDynamicFunctionRefInst(DynamicFunctionRefInst *DFRI) {
-  // TODO: UNIMPLEMENTED
+  SILFunction *referencedFunction = DFRI->getReferencedFunctionOrNull();
+  std::string FuncName = "UNKNOWN_DNYAMIC_REF";
+  if (referencedFunction != nullptr) {
+    FuncName = Demangle::demangleSymbolAsString(referencedFunction->getName());
+  }
+  jobject NameNode = Instance->CAst->makeConstant(FuncName.c_str());
+  jobject FuncExprNode = Instance->CAst->makeNode(CAstWrapper::FUNCTION_EXPR, NameNode);
+  if (SWAN_PRINT) {
+    llvm::outs() << "\t [FUNCTION]: " << FuncName << "\n";
+  }
+  valueTable->addNode(static_cast<ValueBase*>(DFRI), FuncExprNode);
   return Instance->CAst->makeNode(CAstWrapper::EMPTY);
 }
 
+/* ============================================================================
+ * DESC: References previous implementation of a dynamic_replacement SIL function.
+ *       We will treat this one the same as dynamic_function_ref for now.
+ */
 jobject InstructionVisitor::visitPreviousDynamicFunctionRefInst(PreviousDynamicFunctionRefInst *PDFRI)
 {
-  // TODO: UNIMPLEMENTED
+  SILFunction *referencedFunction = PDFRI->getReferencedFunctionOrNull();
+  std::string FuncName = "UNKNOWN_DNYAMIC_REF";
+  if (referencedFunction != nullptr) {
+    FuncName = Demangle::demangleSymbolAsString(referencedFunction->getName());
+  }
+  jobject NameNode = Instance->CAst->makeConstant(FuncName.c_str());
+  jobject FuncExprNode = Instance->CAst->makeNode(CAstWrapper::FUNCTION_EXPR, NameNode);
+  if (SWAN_PRINT) {
+    llvm::outs() << "\t [FUNCTION]: " << FuncName << "\n";
+  }
+  valueTable->addNode(static_cast<ValueBase*>(PDFRI), FuncExprNode);
   return Instance->CAst->makeNode(CAstWrapper::EMPTY);
 }
 
+/* ============================================================================
+ * DESC: Creates a reference to a global variable previously allocated by
+ *       alloc_global. Here, we can actually create a VAR for it now.
+ */
 jobject InstructionVisitor::visitGlobalAddrInst(GlobalAddrInst *GAI) {
-  // TODO: UNIMPLEMENTED
+  SILGlobalVariable *variable = GAI->getReferencedGlobal();
+  if (SWAN_PRINT) {
+    llvm::outs() << "\t [VAR NAME]:" << Demangle::demangleSymbolAsString(variable->getName()) << "\n";
+  }
+  valueTable->createAndAddSymbol(static_cast<ValueBase*>(GAI), variable->getLoweredType().getAsString());
   return Instance->CAst->makeNode(CAstWrapper::EMPTY);
 }
 
+/* ============================================================================
+ * DESC: Gets the value of a global variable (as opposed to a reference), but
+ *       we will treat it the same as global_addr.
+ */
 jobject InstructionVisitor::visitGlobalValueInst(GlobalValueInst *GVI) {
-  // TODO: UNIMPLEMENTED
+  SILGlobalVariable *variable = GVI->getReferencedGlobal();
+  if (SWAN_PRINT) {
+    llvm::outs() << "\t [VAR NAME]:" << Demangle::demangleSymbolAsString(variable->getName()) << "\n";
+  }
+  valueTable->createAndAddSymbol(static_cast<ValueBase*>(GVI), variable->getLoweredType().getAsString());
   return Instance->CAst->makeNode(CAstWrapper::EMPTY);
 }
 
+/* ============================================================================
+ * DESC: Integer literal value which simply gets translated to a CONSTANT.
+ */
 jobject InstructionVisitor::visitIntegerLiteralInst(IntegerLiteralInst *ILI) {
-  // TODO: UNIMPLEMENTED
+  APInt Value = ILI->getValue();
+  jobject Node = nullptr;
+  if (Value.isNegative()) {
+    if (Value.getMinSignedBits() <= 32) {
+      Node = Instance->CAst->makeConstant(static_cast<int>(Value.getSExtValue()));
+    } else if (Value.getMinSignedBits() <= 64) {
+      Node = Instance->CAst->makeConstant(static_cast<long>(Value.getSExtValue()));
+    }
+  } else {
+    if (Value.getActiveBits() <= 32) {
+      Node = Instance->CAst->makeConstant(static_cast<int>(Value.getZExtValue()));
+    } else if (Value.getActiveBits() <= 64) {
+      Node = Instance->CAst->makeConstant(static_cast<long>(Value.getZExtValue()));
+    }
+  }
+  if (Node != nullptr) {
+    if (SWAN_PRINT) {
+       llvm::outs() << "\t [VALUE]:" << Value.getZExtValue() << "\n";
+    }
+    valueTable->addNode(static_cast<ValueBase*>(ILI), Node);
+  } else {
+    llvm::outs() << "WARNING: Undefined integer_literal behaviour\n";
+  }
   return Instance->CAst->makeNode(CAstWrapper::EMPTY);
 }
 
+/* ============================================================================
+ * DESC: Float literal value which simply gets translated to a CONSTANT.
+ */
 jobject InstructionVisitor::visitFloatLiteralInst(FloatLiteralInst *FLI) {
-  // TODO: UNIMPLEMENTED
+  APFloat Value = FLI->getValue();
+  jobject Node = nullptr;
+  if (&Value.getSemantics() == &APFloat::IEEEsingle()) {
+    Node = Instance->CAst->makeConstant(Value.convertToFloat());
+    if (SWAN_PRINT) {
+      llvm::outs() << "\t [VALUE]:" << static_cast<double>(Value.convertToFloat()) << "\n";
+    }
+  }
+  else if (&Value.getSemantics() == &APFloat::IEEEdouble()) {
+    Node = Instance->CAst->makeConstant(Value.convertToDouble());
+    if (SWAN_PRINT) {
+      llvm::outs() << "\t [VALUE]:" << Value.convertToDouble() << "\n";
+    }
+  }
+  else if (Value.isFinite()) {
+    SmallVector<char, 128> buf;
+    Value.toString(buf);
+    jobject BigDecimal = Instance->makeBigDecimal(buf.data(), static_cast<int>(buf.size()));
+    Node = Instance->CAst->makeConstant(BigDecimal);
+    if (SWAN_PRINT) {
+      llvm::outs() << "\t [VALUE]:" << buf << "\n";
+    }
+  }
+  else {
+    bool APFLosesInfo;
+    Value.convert(APFloat::IEEEdouble(), APFloat::rmNearestTiesToEven, &APFLosesInfo);
+    Node = Instance->CAst->makeConstant(Value.convertToDouble());
+    if (SWAN_PRINT) {
+      llvm::outs() << "\t [VALUE]:" << Value.convertToDouble() << "\n";
+    }
+  }
+  valueTable->addNode(static_cast<ValueBase *>(FLI), Node);
   return Instance->CAst->makeNode(CAstWrapper::EMPTY);
 }
 
+/* ============================================================================
+ * DESC: String literal value which simply gets translated to a CONSTANT.
+ */
 jobject InstructionVisitor::visitStringLiteralInst(StringLiteralInst *SLI) {
-  // TODO: UNIMPLEMENTED
+  StringRef Value = SLI->getValue();
+  if (SWAN_PRINT) {
+    llvm::outs() << "\t [VALUE]: " << Value << "\n";
+  }
+  valueTable->addNode(static_cast<ValueBase *>(SLI), Instance->CAst->makeConstant((Value.str()).c_str()));
   return Instance->CAst->makeNode(CAstWrapper::EMPTY);
 }
 
