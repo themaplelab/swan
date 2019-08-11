@@ -76,7 +76,6 @@ struct WALACAstEntityInfo {
   std::string returnType; // Return type of the function as a string. e.g. "@convention(thin) (Int) -> Int"
   std::vector<std::string> argumentTypes; // Vector of argument type names of the function.
   std::vector<std::string> argumentNames; // Vector of argument names corresponding to those referenced in the AST.
-  std::map<jobject, std::string> variableTypes; // Map of jobject (VAR CAstNode) to a string representing its type.
   jobject CAstSourcePositionRecorder; // Maps CAstNodes to source information.
   jobject functionPosition = nullptr; // The Position of the function (for `getNamePosition()`).
   std::vector<jobject> argumentPositions; // The Positions of the function arguments (for `getPosition(int arg)`);
@@ -93,10 +92,6 @@ struct WALACAstEntityInfo {
     }
     for (auto argName: argumentNames) {
       llvm::outs() << "\tARGUMENT NAME: " << argName << "\n";
-    }
-    for (auto it = variableTypes.begin(); it != variableTypes.end(); ++it) {
-      // Can't provide name unless using JNI which would not be in sync.
-      llvm::outs() << "\tVARIABLE TYPE: " << it->second << "\n";
     }
     llvm::outs() << "=*= CAST ENTITY INFO =*=" << "\n\n";
   }

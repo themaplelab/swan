@@ -183,7 +183,7 @@ jobject WALAInstance::getCAstEntityInfo() {
 
       THROW_ANY_EXCEPTION(Exception);
       jmethodID CAstEntityInfoConstructor = JavaEnv->GetMethodID(CAstEntityInfoClass, "<init>",
-        "(Ljava/lang/String;Ljava/util/ArrayList;Ljava/lang/String;Ljava/util/ArrayList;Ljava/util/ArrayList;Ljava/util/LinkedHashMap;Lcom/ibm/wala/cast/tree/impl/CAstSourcePositionRecorder;Lcom/ibm/wala/cast/tree/CAstSourcePositionMap$Position;Ljava/util/ArrayList;)V");
+        "(Ljava/lang/String;Ljava/util/ArrayList;Ljava/lang/String;Ljava/util/ArrayList;Ljava/util/ArrayList;Lcom/ibm/wala/cast/tree/impl/CAstSourcePositionRecorder;Lcom/ibm/wala/cast/tree/CAstSourcePositionMap$Position;Ljava/util/ArrayList;)V");
       THROW_ANY_EXCEPTION(Exception);
 
       // get CAstEntityInfo constructor arguments
@@ -197,15 +197,13 @@ jobject WALAInstance::getCAstEntityInfo() {
       THROW_ANY_EXCEPTION(Exception);
       jobject ArgumentNames = getArgumentTypesOfEntityInfo(info->argumentNames);
       THROW_ANY_EXCEPTION(Exception);
-      jobject VariableTypes = mapToLinkedHashMap(info->variableTypes);
-      THROW_ANY_EXCEPTION(Exception);
       jobject ArgumentPositions = vectorToArrayList(info->argumentPositions);
       THROW_ANY_EXCEPTION(Exception);
 
       // create the CAstEntity object and add it to the ArrayList
       auto CAstEntityInfoObject = JavaEnv->NewObject(CAstEntityInfoClass, CAstEntityInfoConstructor,
         FunctionName, BasicBlocks, ReturnType, ArgumentTypes, ArgumentNames,
-        VariableTypes, info->CAstSourcePositionRecorder, info->functionPosition, ArgumentPositions);
+        info->CAstSourcePositionRecorder, info->functionPosition, ArgumentPositions);
       JavaEnv->CallBooleanMethod(ArrayListCAstEntityInfo, ArrayListAdd, CAstEntityInfoObject);
     }
     return ArrayListCAstEntityInfo;
