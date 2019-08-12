@@ -1291,13 +1291,57 @@ jobject InstructionVisitor::visitBuiltinInst(BuiltinInst *BI) {
 /*                          Metatypes                                          */
 /*******************************************************************************/
 
+/* ============================================================================
+ * DESC: Reference to metatype. Theoretically, the operand shouldn't matter
+ *       because the compiler will know the instruction's result's type.
+ */
 jobject InstructionVisitor::visitMetatypeInst(MetatypeInst *MI) {
-  // TODO: UNIMPLEMENTED
+  std::string MetatypeName = MI->getType().getAsString();
+  if (SWAN_PRINT) {
+    llvm::outs() << "\t [METATYPE]: " << MetatypeName << "\n";
+  }
+  jobject Node = Instance->CAst->makeConstant(MetatypeName.c_str());
+  valueTable->addNode(static_cast<ValueBase*>(MI), Node);
   return Instance->CAst->makeNode(CAstWrapper::EMPTY);
 }
 
+/* ============================================================================
+ * DESC: It seems we can treat this instruction the same way as metatype.
+ */
 jobject InstructionVisitor::visitValueMetatypeInst(ValueMetatypeInst *VMI) {
-  // TODO: UNIMPLEMENTED
+  std::string MetatypeName = VMI->getType().getAsString();
+  if (SWAN_PRINT) {
+    llvm::outs() << "\t [METATYPE]: " << MetatypeName << "\n";
+  }
+  jobject Node = Instance->CAst->makeConstant(MetatypeName.c_str());
+  valueTable->addNode(static_cast<ValueBase*>(VMI), Node);
+  return Instance->CAst->makeNode(CAstWrapper::EMPTY);
+}
+
+/* ============================================================================
+ * DESC: It seems we can treat this instruction the same way as metatype.
+ */
+jobject InstructionVisitor::visitExistentialMetatypeInst(ExistentialMetatypeInst *EMI) {
+  std::string MetatypeName = EMI->getType().getAsString();
+  if (SWAN_PRINT) {
+    llvm::outs() << "\t [METATYPE]: " << MetatypeName << "\n";
+  }
+  jobject Node = Instance->CAst->makeConstant(MetatypeName.c_str());
+  valueTable->addNode(static_cast<ValueBase*>(EMI), Node);
+  return Instance->CAst->makeNode(CAstWrapper::EMPTY);
+}
+
+/* ============================================================================
+ * DESC: No description in SIL.rst, but lets just treat it the same as the
+ *       others for now.
+ */
+jobject InstructionVisitor::visitObjCProtocolInst(ObjCProtocolInst *OPI) {
+  std::string MetatypeName = OPI->getType().getAsString();
+  if (SWAN_PRINT) {
+    llvm::outs() << "\t [METATYPE]: " << MetatypeName << "\n";
+  }
+  jobject Node = Instance->CAst->makeConstant(MetatypeName.c_str());
+  valueTable->addNode(static_cast<ValueBase*>(OPI), Node);
   return Instance->CAst->makeNode(CAstWrapper::EMPTY);
 }
 
