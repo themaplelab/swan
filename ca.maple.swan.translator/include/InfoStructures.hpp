@@ -184,6 +184,11 @@ public:
     }
     return false;
   }
+  void copySymbol(void* const src, void* const dest) {
+    assert(has(src));
+    jobject Var = wrapper->makeNode(CAstWrapper::VAR, wrapper->getNthChild(get(src), 0));
+    addSymbol(dest, Var, std::get<1>(symbols.at(src)));
+  }
   bool isSymbol(void* const key) const {
     return symbols.find(key) != symbols.end();
   }

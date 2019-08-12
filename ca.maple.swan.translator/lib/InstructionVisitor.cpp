@@ -1349,13 +1349,94 @@ jobject InstructionVisitor::visitObjCProtocolInst(ObjCProtocolInst *OPI) {
 /*                          Aggregate Types                                    */
 /*******************************************************************************/
 
-jobject InstructionVisitor::visitCopyValueInst(CopyValueInst *CVI) {
-  // TODO: UNIMPLEMENTED
+/* ============================================================================
+ * DESC: Retains a loadable value, which is a nop for us.
+ */
+jobject InstructionVisitor::visitRetainValueInst(__attribute__((unused)) RetainValueInst *RVI) {
   return Instance->CAst->makeNode(CAstWrapper::EMPTY);
 }
 
+/* ============================================================================
+ * DESC: Retains a loadable value inside given address, which is a nop for us.
+ */
+jobject InstructionVisitor::visitRetainValueAddrInst(__attribute__((unused)) RetainValueAddrInst *RVAI) {
+  return Instance->CAst->makeNode(CAstWrapper::EMPTY);
+}
+
+/* ============================================================================
+ * DESC: Similar to retain_value - nop.
+ */
+jobject InstructionVisitor::visitUnmanagedRetainValueInst(__attribute__((unused)) UnmanagedRetainValueInst *URVI) {
+  return Instance->CAst->makeNode(CAstWrapper::EMPTY);
+}
+
+/* ============================================================================
+ * DESC: Copies loadable value. Therefore, it is not just a direct ASSIGN.
+ */
+jobject InstructionVisitor::visitCopyValueInst(CopyValueInst *CVI) {
+  void* src = CVI->getOperand().getOpaqueValue();
+  void* dest = static_cast<ValueBase*>(CVI);
+  if (SWAN_PRINT) {
+    llvm::outs() << "\t Copy\n";
+    llvm::outs() << "\t [SRC ADDR]: " << src << "\n";
+    llvm::outs() << "\t [DEST ADDR]: " << dest << "\n";
+  }
+  valueTable->copySymbol(src, dest);
+  return Instance->CAst->makeNode(CAstWrapper::EMPTY);
+}
+
+/* ============================================================================
+ * DESC: Destroys a loadable value.
+ */
+jobject InstructionVisitor::visitReleaseValueInst(ReleaseValueInst *REVI) {
+  void* toRemove = REVI->getOperand().getOpaqueValue();
+  (valueTable->tryRemove(toRemove))
+    ? llvm::outs() << "\t [REMOVED ADDR]: " << toRemove << "\n"
+    : llvm::outs() << "\t [NOP]\n";
+  return Instance->CAst->makeNode(CAstWrapper::EMPTY);
+}
+
+/* ============================================================================
+ * DESC: Destroys a loadable value inside given address.
+ */
+jobject InstructionVisitor::visitReleaseValueAddrInst(ReleaseValueAddrInst *REVAI) {
+  void* toRemove = REVAI->getOperand().getOpaqueValue();
+  (valueTable->tryRemove(toRemove))
+    ? llvm::outs() << "\t [REMOVED ADDR]: " << toRemove << "\n"
+    : llvm::outs() << "\t [NOP]\n";
+  return Instance->CAst->makeNode(CAstWrapper::EMPTY);
+}
+
+/* ============================================================================
+ * DESC: Destroys a loadable value.
+ */
+jobject InstructionVisitor::visitUnmanagedReleaseValueInst(UnmanagedReleaseValueInst *UREVI) {
+  void* toRemove = UREVI->getOperand().getOpaqueValue();
+  (valueTable->tryRemove(toRemove))
+    ? llvm::outs() << "\t [REMOVED ADDR]: " << toRemove << "\n"
+    : llvm::outs() << "\t [NOP]\n";
+  return Instance->CAst->makeNode(CAstWrapper::EMPTY);
+}
+
+/* ============================================================================
+ * DESC: Destroys a loadable value.
+ */
 jobject InstructionVisitor::visitDestroyValueInst(DestroyValueInst *DVI) {
-  // TODO: UNIMPLEMENTED
+  void* toRemove = DVI->getOperand().getOpaqueValue();
+  (valueTable->tryRemove(toRemove))
+    ? llvm::outs() << "\t [REMOVED ADDR]: " << toRemove << "\n"
+    : llvm::outs() << "\t [NOP]\n";
+  return Instance->CAst->makeNode(CAstWrapper::EMPTY);
+}
+
+/* ============================================================================
+ * DESC: No description in SIL.rst, but we will treat it the same as the others.
+ */
+jobject InstructionVisitor::visitAutoreleaseValueInst(AutoreleaseValueInst *AREVI) {
+  void* toRemove = AREVI->getOperand().getOpaqueValue();
+  (valueTable->tryRemove(toRemove))
+    ? llvm::outs() << "\t [REMOVED ADDR]: " << toRemove << "\n"
+    : llvm::outs() << "\t [NOP]\n";
   return Instance->CAst->makeNode(CAstWrapper::EMPTY);
 }
 
@@ -1390,6 +1471,16 @@ jobject InstructionVisitor::visitStructExtractInst(StructExtractInst *SEI) {
 }
 
 jobject InstructionVisitor::visitStructElementAddrInst(StructElementAddrInst *SEAI) {
+  // TODO: UNIMPLEMENTED
+  return Instance->CAst->makeNode(CAstWrapper::EMPTY);
+}
+
+jobject InstructionVisitor::visitDestructureStructInst(DestructureStructInst *DSI) {
+  // TODO: UNIMPLEMENTED
+  return Instance->CAst->makeNode(CAstWrapper::EMPTY);
+}
+
+jobject InstructionVisitor::visitObjectInst(ObjectInst *OI) {
   // TODO: UNIMPLEMENTED
   return Instance->CAst->makeNode(CAstWrapper::EMPTY);
 }

@@ -216,13 +216,23 @@ namespace swan {
 
     jobject visitMetatypeInst(MetatypeInst *MI);
     jobject visitValueMetatypeInst(ValueMetatypeInst *VMI);
+    jobject visitExistentialMetatypeInst(ExistentialMetatypeInst *EMI);
+    jobject visitObjCProtocolInst(ObjCProtocolInst *OPI);
 
     /*******************************************************************************/
     /*                          Aggregate Types                                    */
     /*******************************************************************************/
 
+    jobject visitRetainValueInst(RetainValueInst *RVI);
+    jobject visitRetainValueAddrInst(RetainValueAddrInst *RVAI);
+    jobject visitUnmanagedRetainValueInst(UnmanagedRetainValueInst *URVI);
     jobject visitCopyValueInst(CopyValueInst *CVI);
+    jobject visitReleaseValueInst(ReleaseValueInst *REVI);
+    jobject visitReleaseValueAddrInst(ReleaseValueAddrInst *REVAI);
+    jobject visitUnmanagedReleaseValueInst(UnmanagedReleaseValueInst *UREVI);
     jobject visitDestroyValueInst(DestroyValueInst *DVI);
+    jobject visitAutoreleaseValueInst(AutoreleaseValueInst *AREVI);
+
     jobject visitTupleInst(TupleInst *TI);
     jobject visitTupleExtractInst(TupleExtractInst *TEI);
     jobject visitTupleElementAddrInst(TupleElementAddrInst *TEAI);
@@ -230,6 +240,8 @@ namespace swan {
     jobject visitStructInst(StructInst *SI);
     jobject visitStructExtractInst(StructExtractInst *SEI);
     jobject visitStructElementAddrInst(StructElementAddrInst *SEAI);
+    jobject visitDestructureStructInst(DestructureStructInst *DSI);
+    jobject visitObjectInst(ObjectInst *OI);
     jobject visitRefElementAddrInst(RefElementAddrInst *REAI);
     jobject visitRefTailAddrInst(RefTailAddrInst *RTAI);
 
