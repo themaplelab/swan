@@ -32,7 +32,6 @@ using namespace swan;
 
 void InstructionVisitor::visitSILModule(SILModule *M) {
   moduleInfo = std::make_unique<SILModuleInfo>(M->getSwiftModule()->getModuleFilename());
-
   valueTable = std::make_unique<ValueTable>(Instance->CAst);
 
   for (SILFunction &F: *M) {
@@ -1167,28 +1166,90 @@ jobject InstructionVisitor::visitStringLiteralInst(StringLiteralInst *SLI) {
 /*                         Dynamic Dispatch                                    */
 /*******************************************************************************/
 
+/* ============================================================================
+ * DESC: Class method function reference. We don't care about the operand
+ *       (class object) since we have no notion of such and treat methods
+ *       as any other function, but with the first parameter being the class object.
+ */
 jobject InstructionVisitor::visitClassMethodInst(ClassMethodInst *CMI) {
-  // TODO: UNIMPLEMENTED
+  if (SWAN_PRINT) {
+    llvm::outs() << "\t [CLASS]: " << CMI->getMember().getDecl()->getInterfaceType().getString() << "\n";
+  }
+  std::string FuncName = Demangle::demangleSymbolAsString(CMI->getMember().mangle());
+  jobject NameNode = Instance->CAst->makeConstant(FuncName.c_str());
+  jobject FuncExprNode = Instance->CAst->makeNode(CAstWrapper::FUNCTION_EXPR, NameNode);
+  if (SWAN_PRINT) {
+    llvm::outs() << "\t [FUNCTION]: " << FuncName << "\n";
+  }
+  valueTable->addNode(static_cast<ValueBase*>(CMI), FuncExprNode);
   return Instance->CAst->makeNode(CAstWrapper::EMPTY);
 }
 
+/* ============================================================================
+ * DESC: It seems we can treat this instruction just like class_method.
+ */
 jobject InstructionVisitor::visitObjCMethodInst(ObjCMethodInst *AMI) {
-  // TODO: UNIMPLEMENTED
+  if (SWAN_PRINT) {
+    llvm::outs() << "\t [INTERFACE]: " << AMI->getMember().getDecl()->getInterfaceType().getString() << "\n";
+  }
+  std::string FuncName = Demangle::demangleSymbolAsString(AMI->getMember().mangle());
+  jobject NameNode = Instance->CAst->makeConstant(FuncName.c_str());
+  jobject FuncExprNode = Instance->CAst->makeNode(CAstWrapper::FUNCTION_EXPR, NameNode);
+  if (SWAN_PRINT) {
+    llvm::outs() << "\t [OBJC MEMBER]: " << FuncName << "\n";
+  }
+  valueTable->addNode(static_cast<ValueBase*>(AMI), FuncExprNode);
   return Instance->CAst->makeNode(CAstWrapper::EMPTY);
 }
 
+/* ============================================================================
+ * DESC: It seems we can treat this instruction just like class_method.
+ */
 jobject InstructionVisitor::visitSuperMethodInst(SuperMethodInst *SMI) {
-  // TODO: UNIMPLEMENTED
+  if (SWAN_PRINT) {
+    llvm::outs() << "\t [CLASS]: " << SMI->getMember().getDecl()->getInterfaceType().getString() << "\n";
+  }
+  std::string FuncName = Demangle::demangleSymbolAsString(SMI->getMember().mangle());
+  jobject NameNode = Instance->CAst->makeConstant(FuncName.c_str());
+  jobject FuncExprNode = Instance->CAst->makeNode(CAstWrapper::FUNCTION_EXPR, NameNode);
+  if (SWAN_PRINT) {
+    llvm::outs() << "\t [FUNCTION]: " << FuncName << "\n";
+  }
+  valueTable->addNode(static_cast<ValueBase*>(SMI), FuncExprNode);
   return Instance->CAst->makeNode(CAstWrapper::EMPTY);
 }
 
+/* ============================================================================
+ * DESC: It seems we can treat this instruction just like class_method.
+ */
 jobject InstructionVisitor::visitObjCSuperMethodInst(ObjCSuperMethodInst *ASMI) {
-  // TODO: UNIMPLEMENTED
+  if (SWAN_PRINT) {
+    llvm::outs() << "\t [INTERFACE]: " << ASMI->getMember().getDecl()->getInterfaceType().getString() << "\n";
+  }
+  std::string FuncName = Demangle::demangleSymbolAsString(ASMI->getMember().mangle());
+  jobject NameNode = Instance->CAst->makeConstant(FuncName.c_str());
+  jobject FuncExprNode = Instance->CAst->makeNode(CAstWrapper::FUNCTION_EXPR, NameNode);
+  if (SWAN_PRINT) {
+    llvm::outs() << "\t [OBJC MEMBER]: " << FuncName << "\n";
+  }
+  valueTable->addNode(static_cast<ValueBase*>(ASMI), FuncExprNode);
   return Instance->CAst->makeNode(CAstWrapper::EMPTY);
 }
 
+/* ============================================================================
+ * DESC: It seems we can treat this instruction just like class_method.
+ */
 jobject InstructionVisitor::visitWitnessMethodInst(WitnessMethodInst *WMI) {
-  // TODO: UNIMPLEMENTED
+  if (SWAN_PRINT) {
+    llvm::outs() << "\t [PROTOCOL]: " << WMI->getMember().getDecl()->getInterfaceType().getString() << "\n";
+  }
+  std::string FuncName = Demangle::demangleSymbolAsString(WMI->getMember().mangle());
+  jobject NameNode = Instance->CAst->makeConstant(FuncName.c_str());
+  jobject FuncExprNode = Instance->CAst->makeNode(CAstWrapper::FUNCTION_EXPR, NameNode);
+  if (SWAN_PRINT) {
+    llvm::outs() << "\t [MEMBER]: " << FuncName << "\n";
+  }
+  valueTable->addNode(static_cast<ValueBase*>(WMI), FuncExprNode);
   return Instance->CAst->makeNode(CAstWrapper::EMPTY);
 }
 
