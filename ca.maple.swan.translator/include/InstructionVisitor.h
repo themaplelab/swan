@@ -43,7 +43,6 @@ namespace swan {
   /// Disable printing memory and file information.
   static bool SWAN_PRINT_FILE_AND_MEMORY = false;
 
-
   /// This class translates SIL to CAst by using Swift's SILInstructionVisitor which has callbacks, including
   /// ones for every type of SILInstruction. This makes translating simple.
   class InstructionVisitor : public SILInstructionVisitor<InstructionVisitor, jobject> {
@@ -95,8 +94,6 @@ namespace swan {
     std::unique_ptr<ValueTable> valueTable;
     /// List of CAstNodes in the current SILBasicBlock.
     std::list<jobject> nodeList;
-
-    /// Sometimes we have multiple ways to keep track
 
     /// "do" is required in every CALL so we just have it readily available here.
     jobject DO_NODE;
