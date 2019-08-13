@@ -233,7 +233,6 @@ namespace swan {
     jobject visitUnmanagedReleaseValueInst(UnmanagedReleaseValueInst *UREVI);
     jobject visitDestroyValueInst(DestroyValueInst *DVI);
     jobject visitAutoreleaseValueInst(AutoreleaseValueInst *AREVI);
-
     jobject visitTupleInst(TupleInst *TI);
     jobject visitTupleExtractInst(TupleExtractInst *TEI);
     jobject visitTupleElementAddrInst(TupleElementAddrInst *TEAI);

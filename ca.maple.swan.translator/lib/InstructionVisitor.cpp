@@ -35,9 +35,6 @@ void InstructionVisitor::visitSILModule(SILModule *M) {
   valueTable = std::make_unique<ValueTable>(Instance->CAst);
 
   for (SILFunction &F: *M) {
-    // Make sure it is valid to procede in analyzing this function.
-    std::string const &demangledFunctionName = Demangle::demangleSymbolAsString(F.getName());
-
     if (F.empty()) { // Most likely a builtin, so we ignore it.
       continue;
     }
@@ -1476,29 +1473,108 @@ jobject InstructionVisitor::visitAutoreleaseValueInst(AutoreleaseValueInst *AREV
   return Instance->CAst->makeNode(CAstWrapper::EMPTY);
 }
 
+/* ============================================================================
+ * DESC: Creates a tuple. We treat all non-literal data structures
+ *       as OBJECT_LITERALs with the tuple indices as field identifiers.
+ */
 jobject InstructionVisitor::visitTupleInst(TupleInst *TI) {
-  // TODO: UNIMPLEMENTED
-  return Instance->CAst->makeNode(CAstWrapper::EMPTY);
+  std::list<jobject> Fields;
+  Fields.push_back(Instance->CAst->makeConstant("TUPLE"));
+  for (Operand &op : TI->getElementOperands()) {
+    SILValue opValue = op.get();
+    unsigned int opPos = op.getOperandNumber();
+    if (SWAN_PRINT) {
+      llvm::outs() << "\t [POS]: " << opPos << " [VALUE]: " << opValue.getOpaqueValue() << "\n";
+    }
+    Fields.push_back(Instance->CAst->makeConstant(std::to_string(opPos).c_str()));
+    Fields.push_back(valueTable->get(opValue.getOpaqueValue()));
+  }
+  jobject TupleNode = Instance->CAst->makeNode(CAstWrapper::OBJECT_LITERAL, Instance->CAst->makeArray(&Fields));
+  valueTable->createAndAddSymbol(static_cast<ValueBase*>(TI), TI->getType().getAsString());
+  return Instance->CAst->makeNode(CAstWrapper::ASSIGN,
+    valueTable->get(static_cast<ValueBase*>(TI)), TupleNode);
 }
 
+/* ============================================================================
+ * DESC: Extracts an element from a tuple value. We just need to know the
+ *       field number so that we can use it as an OBJECT_REF field identifier.
+ */
 jobject InstructionVisitor::visitTupleExtractInst(TupleExtractInst *TEI) {
-  // TODO: UNIMPLEMENTED
-  return Instance->CAst->makeNode(CAstWrapper::EMPTY);
+  SILValue tuple = TEI->getOperand();
+  jobject TupleNode = valueTable->get(tuple.getOpaqueValue());
+  unsigned int index = TEI->getFieldNo();
+  jobject TupleRef = Instance->CAst->makeNode(CAstWrapper::OBJECT_REF,
+    TupleNode, Instance->CAst->makeConstant(std::to_string(index).c_str()));
+  valueTable->createAndAddSymbol(static_cast<ValueBase*>(TEI), TEI->getType().getAsString());
+  if (SWAN_PRINT) {
+    llvm::outs() << "\t [POS]: " << index << "\n";
+  }
+  return Instance->CAst->makeNode(CAstWrapper::ASSIGN,
+      valueTable->get(static_cast<ValueBase*>(TEI)), TupleRef);
 }
 
+/* ============================================================================
+ * DESC: Extracts an element's address from a given tuple's address. We treat
+ *       addresses and values the same, so we treat this instruction the same
+ *       as tuple_extract.
+ */
 jobject InstructionVisitor::visitTupleElementAddrInst(TupleElementAddrInst *TEAI) {
-  // TODO: UNIMPLEMENTED
-  return Instance->CAst->makeNode(CAstWrapper::EMPTY);
+  SILValue tuple = TEAI->getOperand();
+  jobject TupleNode = valueTable->get(tuple.getOpaqueValue());
+  unsigned int index = TEAI->getFieldNo();
+  jobject TupleRef = Instance->CAst->makeNode(CAstWrapper::OBJECT_REF,
+    TupleNode, Instance->CAst->makeConstant(std::to_string(index).c_str()));
+  valueTable->createAndAddSymbol(static_cast<ValueBase*>(TEAI), TEAI->getType().getAsString());
+  if (SWAN_PRINT) {
+    llvm::outs() << "\t [POS]: " << index << "\n";
+  }
+  return Instance->CAst->makeNode(CAstWrapper::ASSIGN,
+      valueTable->get(static_cast<ValueBase*>(TEAI)), TupleRef);
 }
 
+/* ============================================================================
+ * DESC: Extracts all elements of a tuple into multiple results.
+ *       This is effectively a tuple_extract instruction, just for every element.
+ *       We assume the tuple is still accessible afterwards (it is not destroyed).
+ */
 jobject InstructionVisitor::visitDestructureTupleInst(DestructureTupleInst *DTI) {
-  // TODO: UNIMPLEMENTED
+  SILValue tuple = DTI->getOperand();
+  jobject TupleNode = valueTable->get(tuple.getOpaqueValue());
+  unsigned int index = 0;
+  for (auto result : DTI->getAllResults()) {
+      valueTable->createAndAddSymbol(result.getOpaqueValue(), result->getType().getAsString());
+      jobject TupleRef = Instance->CAst->makeNode(CAstWrapper::OBJECT_REF,
+        TupleNode, Instance->CAst->makeConstant(std::to_string(index).c_str()));
+      nodeList.push_back(Instance->CAst->makeNode(CAstWrapper::ASSIGN,
+        valueTable->get(result.getOpaqueValue()), TupleRef));
+      ++index;
+  }
   return Instance->CAst->makeNode(CAstWrapper::EMPTY);
 }
 
+/* ============================================================================
+ * DESC: Creates a struct by aggregating multiple values (operands).
+ *       Similar to tuple, but fields are identified by actual names, not #s.
+ */
 jobject InstructionVisitor::visitStructInst(StructInst *SI) {
-  // TODO: UNIMPLEMENTED
-  return Instance->CAst->makeNode(CAstWrapper::EMPTY);
+  std::list<jobject> Fields;
+  Fields.push_back(Instance->CAst->makeConstant("STRUCT"));
+  ArrayRef<VarDecl*>::iterator property = SI->getStructDecl()->getStoredProperties().begin();
+  for (Operand &op : SI->getElementOperands()) {
+    assert(property != SI->getStructDecl()->getStoredProperties().end());
+    VarDecl *field = *property;
+    SILValue opValue = op.get();
+    if (SWAN_PRINT) {
+      llvm::outs() << "\t [FIELD]: " << field->getNameStr() << " [VALUE]: " << opValue.getOpaqueValue() << "\n";
+    }
+    Fields.push_back(Instance->CAst->makeConstant(field->getNameStr().str().c_str()));
+    Fields.push_back(valueTable->get(opValue.getOpaqueValue()));
+    ++property;
+  }
+  jobject TupleNode = Instance->CAst->makeNode(CAstWrapper::OBJECT_LITERAL, Instance->CAst->makeArray(&Fields));
+  valueTable->createAndAddSymbol(static_cast<ValueBase*>(SI), SI->getType().getAsString());
+  return Instance->CAst->makeNode(CAstWrapper::ASSIGN,
+    valueTable->get(static_cast<ValueBase*>(SI)), TupleNode);
 }
 
 jobject InstructionVisitor::visitStructExtractInst(StructExtractInst *SEI) {
