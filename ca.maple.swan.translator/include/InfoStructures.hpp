@@ -136,13 +136,14 @@ public:
       declNodes.push_front(wrapper->makeNode(CAstWrapper::DECL_STMT,
         wrapper->makeConstant(addressToString(key).c_str()), wrapper->makeConstant(type.c_str())));
     } else {
-      llvm::outs() << "\t WARNING: Attmped to re-add symbol to ValueTable: " << key << "\n";
+      llvm::outs() << "\t WARNING: Attempted to re-add symbol to ValueTable: " << key << "\n";
     }
   }
   void duplicate(void* const source, void* const target) {
     if (symbols.find(source) != symbols.end()) {
       symbols.insert({target, symbols.at(source)});
     } else {
+      /* DEBUG */
       createAndAddSymbol(source, "Unimplemented");
       symbols.insert({target, symbols.at(source)});
       // llvm::outs() << "\t ERROR: Requested key (" << source << ") not found while duplicating. Fatal, exiting...";
@@ -153,7 +154,7 @@ public:
     if (nodes.find(key) == nodes.end()) {
       nodes.insert({key, node});
     } else {
-      llvm::outs() << "\t WARNING: Attmped to re-add node to ValueTable: " << key << "\n";
+      llvm::outs() << "\t WARNING: Attempted to re-add node to ValueTable: " << key << "\n";
     }
   }
   void clearNodes() {
@@ -185,7 +186,10 @@ public:
     return false;
   }
   void copySymbol(void* const src, void* const dest) {
-    assert(has(src));
+    /* DEBUG */ // assert(has(src));
+    if (!has(src)) {
+      createAndAddSymbol(src, "Unimplemented");
+    }
     jobject Var = wrapper->makeNode(CAstWrapper::VAR, wrapper->getNthChild(get(src), 0));
     addSymbol(dest, Var, std::get<1>(symbols.at(src)));
   }
