@@ -392,6 +392,7 @@ jobject InstructionVisitor::visitAllocValueBufferInst(AllocValueBufferInst *AVBI
     llvm::outs() << "\t [SRC ADDR]: " << src<< "\n";
     llvm::outs() << "\t [DEST ADDR]: " << dest << "\n";
   }
+  valueTable->createAndAddSymbol(dest, AVBI->getType().getAsString());
   return Instance->CAst->makeNode(CAstWrapper::ASSIGN,
     valueTable->get(dest), valueTable->get(src));
 }
@@ -442,6 +443,7 @@ jobject InstructionVisitor::visitProjectBoxInst(ProjectBoxInst *PBI) {
     llvm::outs() << "\t [SRC ADDR]: " << src<< "\n";
     llvm::outs() << "\t [DEST ADDR]: " << dest << "\n";
   }
+  valueTable->createAndAddSymbol(dest, PBI->getType().getAsString());
   return Instance->CAst->makeNode(CAstWrapper::ASSIGN,
     valueTable->get(dest), valueTable->get(src));
 }
@@ -490,6 +492,7 @@ jobject InstructionVisitor::visitProjectValueBufferInst(ProjectValueBufferInst *
     llvm::outs() << "\t [SRC ADDR]: " << src<< "\n";
     llvm::outs() << "\t [DEST ADDR]: " << dest << "\n";
   }
+  valueTable->createAndAddSymbol(dest, PVBI->getType().getAsString());
   return Instance->CAst->makeNode(CAstWrapper::ASSIGN,
     valueTable->get(dest), valueTable->get(src));
 }
@@ -529,6 +532,7 @@ jobject InstructionVisitor::visitLoadInst(LoadInst *LI) {
     llvm::outs() << "\t [SRC ADDR]: " << src<< "\n";
     llvm::outs() << "\t [DEST ADDR]: " << dest << "\n";
   }
+  valueTable->createAndAddSymbol(dest, LI->getType().getAsString());
   return Instance->CAst->makeNode(CAstWrapper::ASSIGN,
     valueTable->get(dest), valueTable->get(src));
 }
@@ -560,6 +564,24 @@ jobject InstructionVisitor::visitLoadBorrowInst(LoadBorrowInst *LBI) {
     llvm::outs() << "\t [SRC ADDR]: " << src<< "\n";
     llvm::outs() << "\t [DEST ADDR]: " << dest << "\n";
   }
+  valueTable->createAndAddSymbol(dest, LBI->getType().getAsString());
+  return Instance->CAst->makeNode(CAstWrapper::ASSIGN,
+    valueTable->get(dest), valueTable->get(src));
+}
+
+/* ============================================================================
+ * DESC: There is nothing in SIL.rst, but this instruction appears in SIL.
+ *       We are going to assume it is similar to load_borrow.
+ */
+jobject InstructionVisitor::visitBeginBorrowInst(BeginBorrowInst *BBI) {
+  void* src = BBI->getOperand().getOpaqueValue();
+  void* dest = static_cast<ValueBase*>(BBI);
+  if (SWAN_PRINT) {
+    llvm::outs() << "\t Assignment\n";
+    llvm::outs() << "\t [SRC ADDR]: " << src<< "\n";
+    llvm::outs() << "\t [DEST ADDR]: " << dest << "\n";
+  }
+  valueTable->createAndAddSymbol(dest, BBI->getType().getAsString());
   return Instance->CAst->makeNode(CAstWrapper::ASSIGN,
     valueTable->get(dest), valueTable->get(src));
 }
@@ -600,6 +622,8 @@ jobject InstructionVisitor::visitAssignByWrapperInst(AssignByWrapperInst *ABWI) 
   jobject setFunc = valueTable->get(ABWI->getSetter().getOpaqueValue());
   assert(Instance->CAst->getKind(setFunc) == CAstWrapper::FUNCTION_EXPR);
   jobject param = valueTable->get(ABWI->getOperand(0).getOpaqueValue());
+  valueTable->createAndAddSymbol(ABWI->getOperand(1).getOpaqueValue(),
+    ABWI->getOperand(1)->getType().getAsString());
   jobject dest = valueTable->get(ABWI->getOperand(1).getOpaqueValue());
   jobject initCall = Instance->CAst->makeNode(CAstWrapper::CALL, initFunc, DO_NODE, param);
   jobject setCall = Instance->CAst->makeNode(CAstWrapper::CALL, setFunc, DO_NODE, param);
@@ -627,6 +651,7 @@ jobject InstructionVisitor::visitMarkUninitializedInst(MarkUninitializedInst *MU
     llvm::outs() << "\t [SRC ADDR]: " << src<< "\n";
     llvm::outs() << "\t [DEST ADDR]: " << dest << "\n";
   }
+  valueTable->createAndAddSymbol(dest, MUI->getType().getAsString());
   return Instance->CAst->makeNode(CAstWrapper::ASSIGN,
     valueTable->get(dest), valueTable->get(src));
 }
@@ -637,6 +662,7 @@ jobject InstructionVisitor::visitMarkUninitializedInst(MarkUninitializedInst *MU
  */
 jobject InstructionVisitor::visitMarkFunctionEscapeInst(MarkFunctionEscapeInst *MFEI) {
   void* dest = MFEI->getResult(0).getOpaqueValue();
+  valueTable->createAndAddSymbol(dest, MFEI->getResult(0)->getType().getAsString());
   if (SWAN_PRINT) {
     llvm::outs() << "\t Assignment\n";  }
   for (Operand &op: MFEI->getAllOperands()) {
@@ -665,6 +691,7 @@ jobject InstructionVisitor::visitCopyAddrInst(CopyAddrInst *CAI) {
     llvm::outs() << "\t [SRC ADDR]: " << src<< "\n";
     llvm::outs() << "\t [DEST ADDR]: " << dest << "\n";
   }
+  valueTable->createAndAddSymbol(dest, CAI->getDest()->getType().getAsString());
   return Instance->CAst->makeNode(CAstWrapper::ASSIGN,
     valueTable->get(dest), valueTable->get(src));
 }
@@ -739,6 +766,7 @@ jobject InstructionVisitor::visitIndexRawPointerInst(IndexRawPointerInst *IRPI) 
     llvm::outs() << "\t [SRC ADDR]: " << src<< "\n";
     llvm::outs() << "\t [DEST ADDR]: " << dest << "\n";
   }
+  valueTable->createAndAddSymbol(dest, IRPI->getResult(0)->getType().getAsString());
   return Instance->CAst->makeNode(CAstWrapper::ASSIGN,
     valueTable->get(dest), valueTable->get(src));
 }
@@ -762,6 +790,7 @@ jobject InstructionVisitor::visitBeginAccessInst(BeginAccessInst *BAI) {
     llvm::outs() << "\t [SRC ADDR]: " << src<< "\n";
     llvm::outs() << "\t [DEST ADDR]: " << dest << "\n";
   }
+  valueTable->createAndAddSymbol(dest, BAI->getType().getAsString());
   return Instance->CAst->makeNode(CAstWrapper::ASSIGN,
     valueTable->get(dest), valueTable->get(src));
 }
@@ -789,6 +818,7 @@ jobject InstructionVisitor::visitBeginUnpairedAccessInst(BeginUnpairedAccessInst
     llvm::outs() << "\t [SOURCE ADDR]: " << source << "\n";
     llvm::outs() << "\t [BUFFER ADDR]: " << buffer << "\n";
   }
+  valueTable->createAndAddSymbol(buffer, BUI->getBuffer()->getType().getAsString());
   return Instance->CAst->makeNode(CAstWrapper::ASSIGN,
     valueTable->get(source), valueTable->get(buffer));
 }
@@ -877,6 +907,7 @@ jobject InstructionVisitor::visitLoadUnownedInst(LoadUnownedInst *LUI) {
     llvm::outs() << "\t [SRC ADDR]: " << src<< "\n";
     llvm::outs() << "\t [DEST ADDR]: " << dest << "\n";
   }
+  valueTable->createAndAddSymbol(dest, LUI->getType().getAsString());
   return Instance->CAst->makeNode(CAstWrapper::ASSIGN,
     valueTable->get(dest), valueTable->get(src));
 }
@@ -914,6 +945,7 @@ jobject InstructionVisitor::visitMarkDependenceInst(MarkDependenceInst *MDI) {
     llvm::outs() << "\t [SRC ADDR]: " << src<< "\n";
     llvm::outs() << "\t [DEST ADDR]: " << dest << "\n";
   }
+  valueTable->createAndAddSymbol(dest, MDI->getType().getAsString());
   return Instance->CAst->makeNode(CAstWrapper::ASSIGN,
     valueTable->get(dest), valueTable->get(src));
 }
@@ -930,6 +962,7 @@ jobject InstructionVisitor::visitIsUniqueInst(IsUniqueInst *IUI) {
     llvm::outs() << "\t [SRC ADDR]: " << src<< "\n";
     llvm::outs() << "\t [DEST ADDR]: " << dest << "\n";
   }
+  valueTable->createAndAddSymbol(dest, IUI->getType().getAsString());
   return Instance->CAst->makeNode(CAstWrapper::ASSIGN,
     valueTable->get(dest), valueTable->get(src));
 }
@@ -946,6 +979,7 @@ jobject InstructionVisitor::visitIsEscapingClosureInst(IsEscapingClosureInst *IE
     llvm::outs() << "\t [SRC ADDR]: " << src<< "\n";
     llvm::outs() << "\t [DEST ADDR]: " << dest << "\n";
   }
+  valueTable->createAndAddSymbol(dest, IECI->getType().getAsString());
   return Instance->CAst->makeNode(CAstWrapper::ASSIGN,
     valueTable->get(dest), valueTable->get(src));
 }
@@ -961,6 +995,7 @@ jobject InstructionVisitor::visitCopyBlockInst(CopyBlockInst *CBI) {
     llvm::outs() << "\t [SRC ADDR]: " << src<< "\n";
     llvm::outs() << "\t [DEST ADDR]: " << dest << "\n";
   }
+  valueTable->createAndAddSymbol(dest, CBI->getType().getAsString());
   return Instance->CAst->makeNode(CAstWrapper::ASSIGN,
     valueTable->get(dest), valueTable->get(src));
 }
@@ -980,6 +1015,7 @@ jobject InstructionVisitor::visitCopyBlockWithoutEscapingInst(CopyBlockWithoutEs
   (valueTable->tryRemove(toRemove))
     ? llvm::outs() << "\t [REMOVED ADDR]: " << toRemove << "\n"
     : llvm::outs() << "\t [NOP]\n";
+  valueTable->createAndAddSymbol(dest, CBWEI->getType().getAsString());
   return Instance->CAst->makeNode(CAstWrapper::ASSIGN,
     valueTable->get(dest), valueTable->get(src));
 }

@@ -137,6 +137,7 @@ namespace swan {
     jobject visitLoadInst(LoadInst *LI);
     jobject visitStoreInst(StoreInst *SI);
     jobject visitLoadBorrowInst(LoadBorrowInst *LBI);
+    jobject visitBeginBorrowInst(BeginBorrowInst *BBI);
     jobject visitEndBorrowInst(EndBorrowInst *EBI);
     jobject visitAssignInst(AssignInst *AI);
     jobject visitAssignByWrapperInst(AssignByWrapperInst *ABWI);
