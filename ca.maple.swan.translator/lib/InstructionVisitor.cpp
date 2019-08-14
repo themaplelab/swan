@@ -236,36 +236,36 @@ void InstructionVisitor::printSILInstructionInfo() {
         break;
       }
       case SILInstruction::MemoryBehavior::MayRead: {
-        llvm::outs() << "\t +++ [MEM-R]: May read from memory. \n";
+        llvm::outs() << "\t\t +++ [MEM-R]: May read from memory. \n";
         break;
       }
       case SILInstruction::MemoryBehavior::MayWrite: {
-        llvm::outs() << "\t +++ [MEM-W]: May write to memory. \n";
+        llvm::outs() << "\t\t +++ [MEM-W]: May write to memory. \n";
         break;
       }
       case SILInstruction::MemoryBehavior::MayReadWrite: {
-        llvm::outs() << "\t +++ [MEM-RW]: May read or write memory. \n";
+        llvm::outs() << "\t\t +++ [MEM-RW]: May read or write memory. \n";
         break;
       }
       case SILInstruction::MemoryBehavior::MayHaveSideEffects: {
-        llvm::outs() << "\t +++ [MEM-F]: May have side effects. \n";
+        llvm::outs() << "\t\t +++ [MEM-F]: May have side effects. \n";
       }
     }
     // Releasing Behavior.
     switch (instrInfo->relBehavior) {
       case SILInstruction::ReleasingBehavior::DoesNotRelease: {
-        llvm::outs() << "\t [REL]: Does not release memory. \n";
+        llvm::outs() << "\t\t [REL]: Does not release memory. \n";
         break;
       }
       case SILInstruction::ReleasingBehavior::MayRelease: {
-        llvm::outs() << "\t [REL]: May release memory. \n";
+        llvm::outs() << "\t\t [REL]: May release memory. \n";
         break;
       }
     }
   }
   // Show operands, if they exist.
   for (void * const &op : instrInfo->ops) {
-    llvm::outs() << "\t [OPER]: " << op << "\n";
+    llvm::outs() << "\t\t [OPER]: " << op << "\n";
   }
 }
 
@@ -1571,40 +1571,113 @@ jobject InstructionVisitor::visitStructInst(StructInst *SI) {
     Fields.push_back(valueTable->get(opValue.getOpaqueValue()));
     ++property;
   }
-  jobject TupleNode = Instance->CAst->makeNode(CAstWrapper::OBJECT_LITERAL, Instance->CAst->makeArray(&Fields));
+  jobject StructNode = Instance->CAst->makeNode(CAstWrapper::OBJECT_LITERAL, Instance->CAst->makeArray(&Fields));
   valueTable->createAndAddSymbol(static_cast<ValueBase*>(SI), SI->getType().getAsString());
   return Instance->CAst->makeNode(CAstWrapper::ASSIGN,
-    valueTable->get(static_cast<ValueBase*>(SI)), TupleNode);
+    valueTable->get(static_cast<ValueBase*>(SI)), StructNode);
 }
 
+/* ============================================================================
+ * DESC: Extract field from struct value. We create an OBJECT_REF with the
+ *       field name as the identifier.
+ */
 jobject InstructionVisitor::visitStructExtractInst(StructExtractInst *SEI) {
-  // TODO: UNIMPLEMENTED
-  return Instance->CAst->makeNode(CAstWrapper::EMPTY);
+  SILValue structValue = SEI->getOperand();
+  jobject StructNode = valueTable->get(structValue.getOpaqueValue());
+  jobject StructRef = Instance->CAst->makeNode(CAstWrapper::OBJECT_REF,
+    StructNode, Instance->CAst->makeConstant(SEI->getField()->getNameStr().str().c_str()));
+  valueTable->createAndAddSymbol(static_cast<ValueBase*>(SEI), SEI->getType().getAsString());
+  if (SWAN_PRINT) {
+    llvm::outs() << "\t [FIELD]: " << SEI->getField()->getNameStr() << "\n";
+  }
+  return Instance->CAst->makeNode(CAstWrapper::ASSIGN,
+      valueTable->get(static_cast<ValueBase*>(SEI)), StructRef);
 }
 
+/* ============================================================================
+ * DESC: Gets address of a field given address of a struct. We treat this the
+ *       same as struct_extract.
+ */
 jobject InstructionVisitor::visitStructElementAddrInst(StructElementAddrInst *SEAI) {
-  // TODO: UNIMPLEMENTED
-  return Instance->CAst->makeNode(CAstWrapper::EMPTY);
+  SILValue structValue = SEAI->getOperand();
+  jobject StructNode = valueTable->get(structValue.getOpaqueValue());
+  jobject StructRef = Instance->CAst->makeNode(CAstWrapper::OBJECT_REF,
+    StructNode, Instance->CAst->makeConstant(SEAI->getField()->getNameStr().str().c_str()));
+  valueTable->createAndAddSymbol(static_cast<ValueBase*>(SEAI), SEAI->getType().getAsString());
+  if (SWAN_PRINT) {
+    llvm::outs() << "\t [FIELD]: " << SEAI->getField()->getNameStr() << "\n";
+  }
+  return Instance->CAst->makeNode(CAstWrapper::ASSIGN,
+      valueTable->get(static_cast<ValueBase*>(SEAI)), StructRef);
 }
 
+/* ============================================================================
+ * DESC: Extracts all elements of a struct into multiple results.
+ *       This is effectively a struct_extract instruction, just for every element.
+ *       We assume the struct is still accessible afterwards (it is not destroyed).
+ */
 jobject InstructionVisitor::visitDestructureStructInst(DestructureStructInst *DSI) {
-  // TODO: UNIMPLEMENTED
+  SILValue structValue = DSI->getOperand();
+  jobject StructNode = valueTable->get(structValue.getOpaqueValue());
+  unsigned int index = 0;
+  auto *Struct = dyn_cast<StructInst>(DSI->getOperand());
+  auto fieldIt = Struct->getStructDecl()->getStoredProperties().begin();
+  for (auto result : DSI->getAllResults()) {
+      assert(fieldIt != Struct->getStructDecl()->getStoredProperties().end());
+      VarDecl *field = *fieldIt;
+      valueTable->createAndAddSymbol(result.getOpaqueValue(), result->getType().getAsString());
+      jobject StructRef = Instance->CAst->makeNode(CAstWrapper::OBJECT_REF,
+        StructNode, Instance->CAst->makeConstant(field->getNameStr().str().c_str()));
+      nodeList.push_back(Instance->CAst->makeNode(CAstWrapper::ASSIGN,
+        valueTable->get(result.getOpaqueValue()), StructRef));
+      ++index;
+  }
   return Instance->CAst->makeNode(CAstWrapper::EMPTY);
 }
 
+/* ============================================================================
+ * DESC: Constructs a static object.
+ */
 jobject InstructionVisitor::visitObjectInst(ObjectInst *OI) {
-  // TODO: UNIMPLEMENTED
-  return Instance->CAst->makeNode(CAstWrapper::EMPTY);
+    // TODO: UNIMPLEMENTED
+
+    return Instance->CAst->makeNode(CAstWrapper::EMPTY);
 }
 
+/* ============================================================================
+ * DESC: Extract field from class value. We treat it the same as struct_extract.
+ */
 jobject InstructionVisitor::visitRefElementAddrInst(RefElementAddrInst *REAI) {
-  // TODO: UNIMPLEMENTED
-  return Instance->CAst->makeNode(CAstWrapper::EMPTY);
+  SILValue classValue = REAI->getOperand();
+  jobject ClassNode = valueTable->get(classValue.getOpaqueValue());
+  jobject ClassRef = Instance->CAst->makeNode(CAstWrapper::OBJECT_REF,
+    ClassNode, Instance->CAst->makeConstant(REAI->getField()->getNameStr().str().c_str()));
+  valueTable->createAndAddSymbol(static_cast<ValueBase*>(REAI), REAI->getType().getAsString());
+  if (SWAN_PRINT) {
+    llvm::outs() << "\t [FIELD]: " << REAI->getField()->getNameStr() << "\n";
+  }
+  return Instance->CAst->makeNode(CAstWrapper::ASSIGN,
+      valueTable->get(static_cast<ValueBase*>(REAI)), ClassRef);
 }
 
+/* ============================================================================
+ * DESC: Derives address of the first element of a given class instance with a
+ *       tail-allocated array. For now, we will treat this as an assignment as
+ *       it is currently uncertain how to translate this instruction. (TODO)
+ */
 jobject InstructionVisitor::visitRefTailAddrInst(RefTailAddrInst *RTAI) {
-  // TODO: UNIMPLEMENTED
-  return Instance->CAst->makeNode(CAstWrapper::EMPTY);
+  // Perhaps we can cast this to a different instruction to get
+  // TailAllocatedElements?
+  void* src = RTAI->getOperand().getOpaqueValue();
+  void* dest = static_cast<ValueBase*>(RTAI);
+  if (SWAN_PRINT) {
+    llvm::outs() << "\t Assignment\n";
+    llvm::outs() << "\t [SRC ADDR]: " << src<< "\n";
+    llvm::outs() << "\t [DEST ADDR]: " << dest << "\n";
+  }
+  valueTable->createAndAddSymbol(dest, RTAI->getType().getAsString());
+  return Instance->CAst->makeNode(CAstWrapper::ASSIGN,
+    valueTable->get(dest), valueTable->get(src));
 }
 
 /*******************************************************************************/
