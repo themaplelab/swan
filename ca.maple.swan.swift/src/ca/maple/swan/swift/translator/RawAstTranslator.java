@@ -13,11 +13,9 @@
 
 package ca.maple.swan.swift.translator;
 
-import ca.maple.swan.swift.tree.EntityPrinter;
 import ca.maple.swan.swift.tree.FunctionEntity;
 import ca.maple.swan.swift.tree.ScriptEntity;
 import com.ibm.wala.cast.ir.translator.AbstractCodeEntity;
-import com.ibm.wala.cast.ir.translator.NativeTranslatorToCAst;
 import com.ibm.wala.cast.tree.CAstEntity;
 import com.ibm.wala.cast.tree.CAstNode;
 import com.ibm.wala.cast.tree.CAstSourcePositionMap;
@@ -51,11 +49,7 @@ import java.util.HashMap;
 
     NAME (CONSTANT)
     RETURN_TYPE (CONSTANT)
-    PRIMITIVE <-- FUNCTION_POSITION
-        FL
-        FC
-        LL
-        LC
+    JOBJECT <-- FUNCTION_POSITION
     PRIMITIVE <--- ARGUMENTS
         PRIMITIVE <--- ARGUMENT
             NAME
@@ -67,11 +61,7 @@ import java.util.HashMap;
 
     PRIMITIVE <-- INSTRUCTION_INFORMATION
         NAME
-        PRIMITIVE <-- INSTRUCTION_POSITION
-            FL
-            FC
-            LL
-            LC
+        JOBJECT <-- INSTRUCTION_POSITION
         ... <-- ANYTHING_NEEDED_TO_TRANSLATE_INSTRUCTION
     ...
 
@@ -85,17 +75,13 @@ import java.util.HashMap;
 public class RawAstTranslator extends SILInstructionVisitor<CAstNode, SILInstructionContext> {
 
     static CAstImpl Ast = new CAstImpl();
-    private SwiftToCAstTranslator translator;
-
-    public RawAstTranslator(SwiftToCAstTranslator translator) {
-        this.translator = translator;
-    }
 
     public CAstEntity translate(File file, CAstNode n) {
+
         /* DEBUG */
-        System.out.println("\n\n<<<<<< DEBUG >>>>>\n");
+        System.out.println("<<<<<< DEBUG >>>>>\n");
         System.out.println(n);
-        System.out.println("<<<<<< DEBUG >>>>>\n\n");
+        System.out.println("\n<<<<<< DEBUG >>>>>\n\n");
         /* DEBUG */
 
         // 1. Create CAstEntity for each function.
@@ -126,7 +112,6 @@ public class RawAstTranslator extends SILInstructionVisitor<CAstNode, SILInstruc
         /* DEBUG */
         for (AbstractCodeEntity e : allEntities) {
             e.setAst(Ast.makeNode(CAstNode.EMPTY));
-            EntityPrinter.print(e);
         }
 
         /* DEBUG */
@@ -134,32 +119,21 @@ public class RawAstTranslator extends SILInstructionVisitor<CAstNode, SILInstruc
         return allEntities.get(0);
     }
 
-    private ScriptEntity makeScriptEntity(File file) {
+    private static ScriptEntity makeScriptEntity(File file) {
         return new ScriptEntity(file.getName(), file);
     }
 
-    private FunctionEntity makeFunctionEntity(CAstNode n) {
+    private static FunctionEntity makeFunctionEntity(CAstNode n) {
         String name = (String)n.getChild(0).getValue();
         String returnType = (String)n.getChild(1).getValue();
-        CAstNode fp = n.getChild(2);
-        CAstSourcePositionMap.Position functionPosition =
-                translator.makePosition(
-                        (int)fp.getChild(0).getValue(),
-                        (int)fp.getChild(1).getValue(),
-                        (int)fp.getChild(2).getValue(),
-                        (int)fp.getChild(3).getValue());
+        CAstSourcePositionMap.Position functionPosition = (CAstSourcePositionMap.Position)n.getChild(2).getValue();
         ArrayList<String> argumentNames = new ArrayList<>();
         ArrayList<String> argumentTypes = new ArrayList<>();
         ArrayList<CAstSourcePositionMap.Position> argumentPositions = new ArrayList<>();
         for (CAstNode arg : n.getChild(3).getChildren()) {
             argumentNames.add((String)arg.getChild(0).getValue());
             argumentTypes.add((String)arg.getChild(1).getValue());
-            CAstNode p = arg.getChild(2);
-            argumentPositions.add(translator.makePosition(
-                    (int)p.getChild(0).getValue(),
-                    (int)p.getChild(1).getValue(),
-                    (int)p.getChild(2).getValue(),
-                    (int)p.getChild(3).getValue()));
+            argumentPositions.add((CAstSourcePositionMap.Position)arg.getChild(3).getValue());
         }
         return new FunctionEntity(name, returnType, argumentTypes, argumentNames, functionPosition, argumentPositions);
     }

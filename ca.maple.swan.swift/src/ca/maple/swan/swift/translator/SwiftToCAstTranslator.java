@@ -20,7 +20,6 @@ import com.ibm.wala.cast.ir.translator.NativeTranslatorToCAst;
 import com.ibm.wala.cast.tree.CAst;
 import com.ibm.wala.cast.tree.CAstEntity;
 import com.ibm.wala.cast.tree.CAstNode;
-import com.ibm.wala.cast.tree.CAstSourcePositionMap;
 import com.ibm.wala.cast.tree.impl.CAstImpl;
 import com.ibm.wala.cast.tree.rewrite.CAstRewriter.CopyKey;
 import com.ibm.wala.cast.tree.rewrite.CAstRewriter.RewriteContext;
@@ -49,11 +48,6 @@ public class SwiftToCAstTranslator extends NativeTranslatorToCAst {
 		super(Ast, sourceURL, sourceFileName);
 	}
 
-	// Expose makeLocation.
-	public CAstSourcePositionMap.Position makePosition(int fl, int fc, int ll, int lc) {
-    	return this.makeLocation(fl, fc, ll, lc);
-	}
-
 	@Override
 	public <C extends RewriteContext<K>, K extends CopyKey<K>> void addRewriter(CAstRewriterFactory<C, K> factory,
 			boolean prepend) {
@@ -64,6 +58,6 @@ public class SwiftToCAstTranslator extends NativeTranslatorToCAst {
 
 	@Override
 	public CAstEntity translateToCAst() {
-		return new RawAstTranslator(this).translate(new File(getFile()), translateToCAstNodes());
+		return new RawAstTranslator().translate(new File(getFile()), translateToCAstNodes());
 	}
 }
