@@ -71,10 +71,10 @@ void InstructionVisitor::visitSILFunction(SILFunction *F) {
       ll = endLineCol.first;
       lc = endLineCol.second;
     }
-    currentFunction->setFunctionSourceInfo(fl, fc, ll, lc);
   } else {
     llvm::outs() << "WARNING: Source information is null for function: " << demangledFunctionName << "\n";
   }
+  currentFunction->setFunctionSourceInfo(fl, fc, ll, lc);
 
   // Handle function arguments.
   for (SILArgument *arg: F->getArguments()) {
