@@ -120,18 +120,11 @@ void InstructionVisitor::visitSILBasicBlock(SILBasicBlock *BB) {
   // Visit every instruction of the basic block.
   for (auto &I: *BB) {
     currentInstruction = std::make_unique<RootInstructionInfo>(Instance->CAst);
-    auto Node = visit(&I);
-    if (Node != nullptr) {
-      if (Instance->CAst->getKind(Node) == CAstWrapper::EMPTY)
-      {
-        continue;
-      } else {
-        currentInstruction->instructionName = getSILInstructionName(I.getKind());
-        currentInstruction->setInstructionSourceInfo(instrInfo->startLine, instrInfo->startCol,
-          instrInfo->endLine, instrInfo->endCol);
-        currentBasicBlock->addInstruction(currentInstruction.get());
-      }
-    }
+    visit(&I);
+    currentInstruction->instructionName = getSILInstructionName(I.getKind());
+    currentInstruction->setInstructionSourceInfo(instrInfo->startLine, instrInfo->startCol,
+      instrInfo->endLine, instrInfo->endCol);
+    currentBasicBlock->addInstruction(currentInstruction.get());
   }
 
   currentFunction->addBlock(currentBasicBlock.get());
@@ -308,619 +301,623 @@ jobject InstructionVisitor::getOperatorCAstType(Identifier &Name) {
 /*                         ALLOCATION AND DEALLOCATION                         */
 /*******************************************************************************/
 
-jobject InstructionVisitor::visitAllocStackInst(AllocStackInst *ASI) {
+void InstructionVisitor::visitAllocStackInst(AllocStackInst *ASI) {
   // TODO: UNIMPLEMENTED
-  return Instance->CAst->makeNode(CAstWrapper::EMPTY);
+  
 }
 
-jobject InstructionVisitor::visitAllocRefInst(AllocRefInst *ARI) {
+void InstructionVisitor::visitAllocRefInst(AllocRefInst *ARI) {
   // TODO: UNIMPLEMENTED
-  return Instance->CAst->makeNode(CAstWrapper::EMPTY);
+  
 }
 
-jobject InstructionVisitor::visitAllocRefDynamicInst(AllocRefDynamicInst *ARDI) {
+void InstructionVisitor::visitAllocRefDynamicInst(AllocRefDynamicInst *ARDI) {
   // TODO: UNIMPLEMENTED
-  return Instance->CAst->makeNode(CAstWrapper::EMPTY);
+  
 }
 
-jobject InstructionVisitor::visitAllocBoxInst(AllocBoxInst *ABI){
+void InstructionVisitor::visitAllocBoxInst(AllocBoxInst *ABI){
   // TODO: UNIMPLEMENTED
-  return Instance->CAst->makeNode(CAstWrapper::EMPTY);
+  
 }
 
-jobject InstructionVisitor::visitAllocValueBufferInst(AllocValueBufferInst *AVBI) {
+void InstructionVisitor::visitAllocValueBufferInst(AllocValueBufferInst *AVBI) {
   // TODO: UNIMPLEMENTED
-  return Instance->CAst->makeNode(CAstWrapper::EMPTY);
+  
 }
 
-jobject InstructionVisitor::visitAllocGlobalInst(AllocGlobalInst *AGI) {
-  // TODO: UNIMPLEMENTED
-  return Instance->CAst->makeNode(CAstWrapper::EMPTY);
+void InstructionVisitor::visitAllocGlobalInst(AllocGlobalInst *AGI) {
+  SILGlobalVariable *Var = AGI->getReferencedGlobal();
+  if (SWAN_PRINT) {
+    llvm::outs() << "\t [ALLOC NAME]:" << Demangle::demangleSymbolAsString(Var->getName()) << "\n";
+    llvm::outs() << "\t [ALLOC TYPE]:" << Var->getLoweredType().getAsString() << "\n";
+  }
+  
 }
 
-jobject InstructionVisitor::visitDeallocStackInst(DeallocStackInst *DSI) {
+void InstructionVisitor::visitDeallocStackInst(DeallocStackInst *DSI) {
   // TODO: UNIMPLEMENTED
-  return Instance->CAst->makeNode(CAstWrapper::EMPTY);
+  
 }
 
-jobject InstructionVisitor::visitDeallocBoxInst(DeallocBoxInst *DBI) {
+void InstructionVisitor::visitDeallocBoxInst(DeallocBoxInst *DBI) {
   // TODO: UNIMPLEMENTED
-  return Instance->CAst->makeNode(CAstWrapper::EMPTY);
+  
 }
 
-jobject InstructionVisitor::visitProjectBoxInst(ProjectBoxInst *PBI) {
+void InstructionVisitor::visitProjectBoxInst(ProjectBoxInst *PBI) {
   // TODO: UNIMPLEMENTED
-  return Instance->CAst->makeNode(CAstWrapper::EMPTY);
+  
 }
 
-jobject InstructionVisitor::visitDeallocRefInst(DeallocRefInst *DRI) {
+void InstructionVisitor::visitDeallocRefInst(DeallocRefInst *DRI) {
   // TODO: UNIMPLEMENTED
-  return Instance->CAst->makeNode(CAstWrapper::EMPTY);
+  
 }
 
-jobject InstructionVisitor::visitDeallocPartialRefInst(DeallocPartialRefInst *DPRI) {
+void InstructionVisitor::visitDeallocPartialRefInst(DeallocPartialRefInst *DPRI) {
   // TODO: UNIMPLEMENTED
-  return Instance->CAst->makeNode(CAstWrapper::EMPTY);
+  
 }
 
-jobject InstructionVisitor::visitDeallocValueBufferInst(DeallocValueBufferInst *DVBI) {
+void InstructionVisitor::visitDeallocValueBufferInst(DeallocValueBufferInst *DVBI) {
   // TODO: UNIMPLEMENTED
-  return Instance->CAst->makeNode(CAstWrapper::EMPTY);
+  
 }
 
-jobject InstructionVisitor::visitProjectValueBufferInst(ProjectValueBufferInst *PVBI) {
+void InstructionVisitor::visitProjectValueBufferInst(ProjectValueBufferInst *PVBI) {
   // TODO: UNIMPLEMENTED
-  return Instance->CAst->makeNode(CAstWrapper::EMPTY);
+  
 }
 
 /*******************************************************************************/
 /*                        DEBUG INFROMATION                                    */
 /*******************************************************************************/
 
-jobject InstructionVisitor::visitDebugValueInst(DebugValueInst *DBI) {
+void InstructionVisitor::visitDebugValueInst(DebugValueInst *DBI) {
   // TODO: UNIMPLEMENTED
-  return Instance->CAst->makeNode(CAstWrapper::EMPTY);
+  
 }
 
-jobject InstructionVisitor::visitDebugValueAddrInst(DebugValueAddrInst *DVAI) {
+void InstructionVisitor::visitDebugValueAddrInst(DebugValueAddrInst *DVAI) {
   // TODO: UNIMPLEMENTED
-  return Instance->CAst->makeNode(CAstWrapper::EMPTY);
+  
 }
 
 /*******************************************************************************/
 /*                        Accessing Memory                                     */
 /*******************************************************************************/
 
-jobject InstructionVisitor::visitLoadInst(LoadInst *LI) {
+void InstructionVisitor::visitLoadInst(LoadInst *LI) {
   // TODO: UNIMPLEMENTED
-  return Instance->CAst->makeNode(CAstWrapper::EMPTY);
+  
 }
 
-jobject InstructionVisitor::visitStoreInst(StoreInst *SI) {
+void InstructionVisitor::visitStoreInst(StoreInst *SI) {
   // TODO: UNIMPLEMENTED
-  return Instance->CAst->makeNode(CAstWrapper::EMPTY);
+  
 }
 
-jobject InstructionVisitor::visitLoadBorrowInst(LoadBorrowInst *LBI) {
+void InstructionVisitor::visitLoadBorrowInst(LoadBorrowInst *LBI) {
   // TODO: UNIMPLEMENTED
-  return Instance->CAst->makeNode(CAstWrapper::EMPTY);
+  
 }
 
-jobject InstructionVisitor::visitBeginBorrowInst(BeginBorrowInst *BBI) {
+void InstructionVisitor::visitBeginBorrowInst(BeginBorrowInst *BBI) {
   // TODO: UNIMPLEMENTED
-  return Instance->CAst->makeNode(CAstWrapper::EMPTY);
+  
 }
 
-jobject InstructionVisitor::visitEndBorrowInst(EndBorrowInst *EBI) {
+void InstructionVisitor::visitEndBorrowInst(EndBorrowInst *EBI) {
   // TODO: UNIMPLEMENTED
-  return Instance->CAst->makeNode(CAstWrapper::EMPTY);
+  
 }
 
-jobject InstructionVisitor::visitAssignInst(AssignInst *AI) {
+void InstructionVisitor::visitAssignInst(AssignInst *AI) {
   // TODO: UNIMPLEMENTED
-  return Instance->CAst->makeNode(CAstWrapper::EMPTY);
+  
 }
 
-jobject InstructionVisitor::visitAssignByWrapperInst(AssignByWrapperInst *ABWI) {
+void InstructionVisitor::visitAssignByWrapperInst(AssignByWrapperInst *ABWI) {
   // TODO: UNIMPLEMENTED
-  return Instance->CAst->makeNode(CAstWrapper::EMPTY);
+  
 }
 
-jobject InstructionVisitor::visitMarkUninitializedInst(MarkUninitializedInst *MUI) {
+void InstructionVisitor::visitMarkUninitializedInst(MarkUninitializedInst *MUI) {
   // TODO: UNIMPLEMENTED
-  return Instance->CAst->makeNode(CAstWrapper::EMPTY);
+  
 }
 
-jobject InstructionVisitor::visitMarkFunctionEscapeInst(MarkFunctionEscapeInst *MFEI) {
+void InstructionVisitor::visitMarkFunctionEscapeInst(MarkFunctionEscapeInst *MFEI) {
   // TODO: UNIMPLEMENTED
-  return Instance->CAst->makeNode(CAstWrapper::EMPTY);
+  
 }
 
-jobject InstructionVisitor::visitCopyAddrInst(CopyAddrInst *CAI) {
+void InstructionVisitor::visitCopyAddrInst(CopyAddrInst *CAI) {
   // TODO: UNIMPLEMENTED
-  return Instance->CAst->makeNode(CAstWrapper::EMPTY);
+  
 }
 
-jobject InstructionVisitor::visitDestroyAddrInst(DestroyAddrInst *DAI) {
+void InstructionVisitor::visitDestroyAddrInst(DestroyAddrInst *DAI) {
   // TODO: UNIMPLEMENTED
-  return Instance->CAst->makeNode(CAstWrapper::EMPTY);
+  
 }
 
-jobject InstructionVisitor::visitIndexAddrInst(IndexAddrInst *IAI) {
+void InstructionVisitor::visitIndexAddrInst(IndexAddrInst *IAI) {
   // TODO: UNIMPLEMENTED
-  return Instance->CAst->makeNode(CAstWrapper::EMPTY);
+  
 }
 
-jobject InstructionVisitor::visitTailAddrInst(TailAddrInst *TAI) {
+void InstructionVisitor::visitTailAddrInst(TailAddrInst *TAI) {
   // TODO: UNIMPLEMENTED
-  return Instance->CAst->makeNode(CAstWrapper::EMPTY);
+  
 }
 
-jobject InstructionVisitor::visitIndexRawPointerInst(IndexRawPointerInst *IRPI) {
+void InstructionVisitor::visitIndexRawPointerInst(IndexRawPointerInst *IRPI) {
   // TODO: UNIMPLEMENTED
-  return Instance->CAst->makeNode(CAstWrapper::EMPTY);
+  
 }
 
-jobject InstructionVisitor::visitBindMemoryInst(BindMemoryInst *BMI) {
+void InstructionVisitor::visitBindMemoryInst(BindMemoryInst *BMI) {
   // TODO: UNIMPLEMENTED
-  return Instance->CAst->makeNode(CAstWrapper::EMPTY);
+  
 }
 
-jobject InstructionVisitor::visitBeginAccessInst(BeginAccessInst *BAI) {
+void InstructionVisitor::visitBeginAccessInst(BeginAccessInst *BAI) {
   // TODO: UNIMPLEMENTED
-  return Instance->CAst->makeNode(CAstWrapper::EMPTY);
+  
 }
 
-jobject InstructionVisitor::visitEndAccessInst(EndAccessInst *EAI) {
+void InstructionVisitor::visitEndAccessInst(EndAccessInst *EAI) {
   // TODO: UNIMPLEMENTED
-  return Instance->CAst->makeNode(CAstWrapper::EMPTY);
+  
 }
 
-jobject InstructionVisitor::visitBeginUnpairedAccessInst(BeginUnpairedAccessInst *BUI) {
+void InstructionVisitor::visitBeginUnpairedAccessInst(BeginUnpairedAccessInst *BUI) {
   // TODO: UNIMPLEMENTED
-  return Instance->CAst->makeNode(CAstWrapper::EMPTY);
+  
 }
 
-jobject InstructionVisitor::visitEndUnpairedAccessInst(EndUnpairedAccessInst *EUAI) {
+void InstructionVisitor::visitEndUnpairedAccessInst(EndUnpairedAccessInst *EUAI) {
   // TODO: UNIMPLEMENTED
-  return Instance->CAst->makeNode(CAstWrapper::EMPTY);
+  
 }
 
 /*******************************************************************************/
 /*                        Reference Counting                                   */
 /*******************************************************************************/
 
-jobject InstructionVisitor::visitStrongRetainInst(StrongRetainInst *SRTI) {
+void InstructionVisitor::visitStrongRetainInst(StrongRetainInst *SRTI) {
   // TODO: UNIMPLEMENTED
-  return Instance->CAst->makeNode(CAstWrapper::EMPTY);
+  
 }
 
-jobject InstructionVisitor::visitStrongReleaseInst(StrongReleaseInst *SRLI) {
+void InstructionVisitor::visitStrongReleaseInst(StrongReleaseInst *SRLI) {
   // TODO: UNIMPLEMENTED
-  return Instance->CAst->makeNode(CAstWrapper::EMPTY);
+  
 }
 
-jobject InstructionVisitor::visitSetDeallocatingInst(SetDeallocatingInst *SDI)  {
+void InstructionVisitor::visitSetDeallocatingInst(SetDeallocatingInst *SDI)  {
   // TODO: UNIMPLEMENTED
-  return Instance->CAst->makeNode(CAstWrapper::EMPTY);
+  
 }
 
-jobject InstructionVisitor::visitStrongRetainUnownedInst(StrongRetainUnownedInst *SRUI) {
+void InstructionVisitor::visitStrongRetainUnownedInst(StrongRetainUnownedInst *SRUI) {
   // TODO: UNIMPLEMENTED
-  return Instance->CAst->makeNode(CAstWrapper::EMPTY);
+  
 }
 
-jobject InstructionVisitor::visitUnownedRetainInst(UnownedRetainInst *URTI) {
+void InstructionVisitor::visitUnownedRetainInst(UnownedRetainInst *URTI) {
   // TODO: UNIMPLEMENTED
-  return Instance->CAst->makeNode(CAstWrapper::EMPTY);
+  
 }
 
-jobject InstructionVisitor::visitUnownedReleaseInst(UnownedReleaseInst *URLI) {
+void InstructionVisitor::visitUnownedReleaseInst(UnownedReleaseInst *URLI) {
   // TODO: UNIMPLEMENTED
-  return Instance->CAst->makeNode(CAstWrapper::EMPTY);
+  
 }
 
-jobject InstructionVisitor::visitLoadWeakInst(LoadWeakInst *LWI) {
+void InstructionVisitor::visitLoadWeakInst(LoadWeakInst *LWI) {
   // TODO: UNIMPLEMENTED
-  return Instance->CAst->makeNode(CAstWrapper::EMPTY);
+  
 }
 
-jobject InstructionVisitor::visitStoreWeakInst(StoreWeakInst *SWI) {
+void InstructionVisitor::visitStoreWeakInst(StoreWeakInst *SWI) {
   // TODO: UNIMPLEMENTED
-  return Instance->CAst->makeNode(CAstWrapper::EMPTY);
+  
 }
 
-jobject InstructionVisitor::visitLoadUnownedInst(LoadUnownedInst *LUI) {
+void InstructionVisitor::visitLoadUnownedInst(LoadUnownedInst *LUI) {
   // TODO: UNIMPLEMENTED
-  return Instance->CAst->makeNode(CAstWrapper::EMPTY);
+  
 }
 
-jobject InstructionVisitor::visitStoreUnownedInst(StoreUnownedInst *SUI) {
+void InstructionVisitor::visitStoreUnownedInst(StoreUnownedInst *SUI) {
   // TODO: UNIMPLEMENTED
-  return Instance->CAst->makeNode(CAstWrapper::EMPTY);
+  
 }
 
-jobject InstructionVisitor::visitFixLifetimeInst(FixLifetimeInst *FLI) {
+void InstructionVisitor::visitFixLifetimeInst(FixLifetimeInst *FLI) {
   // TODO: UNIMPLEMENTED
-  return Instance->CAst->makeNode(CAstWrapper::EMPTY);
+  
 }
 
-jobject InstructionVisitor::visitEndLifetimeInst(EndLifetimeInst *ELI) {
+void InstructionVisitor::visitEndLifetimeInst(EndLifetimeInst *ELI) {
   // TODO: UNIMPLEMENTED
-  return Instance->CAst->makeNode(CAstWrapper::EMPTY);
+  
 }
 
-jobject InstructionVisitor::visitMarkDependenceInst(MarkDependenceInst *MDI) {
+void InstructionVisitor::visitMarkDependenceInst(MarkDependenceInst *MDI) {
   // TODO: UNIMPLEMENTED
-  return Instance->CAst->makeNode(CAstWrapper::EMPTY);
+  
 }
 
-jobject InstructionVisitor::visitIsUniqueInst(IsUniqueInst *IUI) {
+void InstructionVisitor::visitIsUniqueInst(IsUniqueInst *IUI) {
   // TODO: UNIMPLEMENTED
-  return Instance->CAst->makeNode(CAstWrapper::EMPTY);
+  
 }
 
-jobject InstructionVisitor::visitIsEscapingClosureInst(IsEscapingClosureInst *IECI) {
+void InstructionVisitor::visitIsEscapingClosureInst(IsEscapingClosureInst *IECI) {
   // TODO: UNIMPLEMENTED
-  return Instance->CAst->makeNode(CAstWrapper::EMPTY);
+  
 }
 
-jobject InstructionVisitor::visitCopyBlockInst(CopyBlockInst *CBI) {
+void InstructionVisitor::visitCopyBlockInst(CopyBlockInst *CBI) {
   // TODO: UNIMPLEMENTED
-  return Instance->CAst->makeNode(CAstWrapper::EMPTY);
+  
 }
 
-jobject InstructionVisitor::visitCopyBlockWithoutEscapingInst(CopyBlockWithoutEscapingInst *CBWEI) {
+void InstructionVisitor::visitCopyBlockWithoutEscapingInst(CopyBlockWithoutEscapingInst *CBWEI) {
   // TODO: UNIMPLEMENTED
-  return Instance->CAst->makeNode(CAstWrapper::EMPTY);
+  
 }
 
 /*******************************************************************************/
 /*                         Literals                                            */
 /*******************************************************************************/
 
-jobject InstructionVisitor::visitFunctionRefInst(FunctionRefInst *FRI) {
+void InstructionVisitor::visitFunctionRefInst(FunctionRefInst *FRI) {
   // TODO: UNIMPLEMENTED
-  return Instance->CAst->makeNode(CAstWrapper::EMPTY);
+  
 }
 
-jobject InstructionVisitor::visitDynamicFunctionRefInst(DynamicFunctionRefInst *DFRI) {
+void InstructionVisitor::visitDynamicFunctionRefInst(DynamicFunctionRefInst *DFRI) {
   // TODO: UNIMPLEMENTED
-  return Instance->CAst->makeNode(CAstWrapper::EMPTY);
+  
 }
 
-jobject InstructionVisitor::visitPreviousDynamicFunctionRefInst(PreviousDynamicFunctionRefInst *PDFRI) {
+void InstructionVisitor::visitPreviousDynamicFunctionRefInst(PreviousDynamicFunctionRefInst *PDFRI) {
   // TODO: UNIMPLEMENTED
-  return Instance->CAst->makeNode(CAstWrapper::EMPTY);
+  
 }
 
-jobject InstructionVisitor::visitGlobalAddrInst(GlobalAddrInst *GAI) {
+void InstructionVisitor::visitGlobalAddrInst(GlobalAddrInst *GAI) {
   // TODO: UNIMPLEMENTED
-  return Instance->CAst->makeNode(CAstWrapper::EMPTY);
+  
 }
 
-jobject InstructionVisitor::visitGlobalValueInst(GlobalValueInst *GVI) {
+void InstructionVisitor::visitGlobalValueInst(GlobalValueInst *GVI) {
   // TODO: UNIMPLEMENTED
-  return Instance->CAst->makeNode(CAstWrapper::EMPTY);
+  
 }
 
-jobject InstructionVisitor::visitIntegerLiteralInst(IntegerLiteralInst *ILI) {
+void InstructionVisitor::visitIntegerLiteralInst(IntegerLiteralInst *ILI) {
   // TODO: UNIMPLEMENTED
-  return Instance->CAst->makeNode(CAstWrapper::EMPTY);
+  
 }
 
-jobject InstructionVisitor::visitFloatLiteralInst(FloatLiteralInst *FLI) {
+void InstructionVisitor::visitFloatLiteralInst(FloatLiteralInst *FLI) {
   // TODO: UNIMPLEMENTED
-  return Instance->CAst->makeNode(CAstWrapper::EMPTY);
+  
 }
 
-jobject InstructionVisitor::visitStringLiteralInst(StringLiteralInst *SLI) {
+void InstructionVisitor::visitStringLiteralInst(StringLiteralInst *SLI) {
   // TODO: UNIMPLEMENTED
-  return Instance->CAst->makeNode(CAstWrapper::EMPTY);
+  
 }
 
 /*******************************************************************************/
 /*                         Dynamic Dispatch                                    */
 /*******************************************************************************/
 
-jobject InstructionVisitor::visitClassMethodInst(ClassMethodInst *CMI) {
+void InstructionVisitor::visitClassMethodInst(ClassMethodInst *CMI) {
   // TODO: UNIMPLEMENTED
-  return Instance->CAst->makeNode(CAstWrapper::EMPTY);
+  
 }
 
-jobject InstructionVisitor::visitObjCMethodInst(ObjCMethodInst *AMI) {
+void InstructionVisitor::visitObjCMethodInst(ObjCMethodInst *AMI) {
   // TODO: UNIMPLEMENTED
-  return Instance->CAst->makeNode(CAstWrapper::EMPTY);
+  
 }
 
-jobject InstructionVisitor::visitSuperMethodInst(SuperMethodInst *SMI) {
+void InstructionVisitor::visitSuperMethodInst(SuperMethodInst *SMI) {
   // TODO: UNIMPLEMENTED
-  return Instance->CAst->makeNode(CAstWrapper::EMPTY);
+  
 }
 
-jobject InstructionVisitor::visitObjCSuperMethodInst(ObjCSuperMethodInst *ASMI) {
+void InstructionVisitor::visitObjCSuperMethodInst(ObjCSuperMethodInst *ASMI) {
   // TODO: UNIMPLEMENTED
-  return Instance->CAst->makeNode(CAstWrapper::EMPTY);
+  
 }
 
-jobject InstructionVisitor::visitWitnessMethodInst(WitnessMethodInst *WMI) {
+void InstructionVisitor::visitWitnessMethodInst(WitnessMethodInst *WMI) {
   // TODO: UNIMPLEMENTED
-  return Instance->CAst->makeNode(CAstWrapper::EMPTY);
+  
 }
 
 /*******************************************************************************/
 /*                         Function Application                                */
 /*******************************************************************************/
 
-jobject InstructionVisitor::visitApplyInst(ApplyInst *AI) {
+void InstructionVisitor::visitApplyInst(ApplyInst *AI) {
   // TODO: UNIMPLEMENTED
-  return Instance->CAst->makeNode(CAstWrapper::EMPTY);
+  
 }
 
-jobject InstructionVisitor::visitBeginApplyInst(BeginApplyInst *BAI) {
+void InstructionVisitor::visitBeginApplyInst(BeginApplyInst *BAI) {
   // TODO: UNIMPLEMENTED
-  return Instance->CAst->makeNode(CAstWrapper::EMPTY);
+  
 }
 
-jobject InstructionVisitor::visitAbortApplyInst(AbortApplyInst *AAI) {
+void InstructionVisitor::visitAbortApplyInst(AbortApplyInst *AAI) {
   // TODO: UNIMPLEMENTED
-  return Instance->CAst->makeNode(CAstWrapper::EMPTY);
+  
 }
 
-jobject InstructionVisitor::visitEndApplyInst(EndApplyInst *EAI) {
+void InstructionVisitor::visitEndApplyInst(EndApplyInst *EAI) {
   // TODO: UNIMPLEMENTED
-  return Instance->CAst->makeNode(CAstWrapper::EMPTY);
+  
 }
 
-jobject InstructionVisitor::visitPartialApplyInst(PartialApplyInst *PAI) {
+void InstructionVisitor::visitPartialApplyInst(PartialApplyInst *PAI) {
   // TODO: UNIMPLEMENTED
-  return Instance->CAst->makeNode(CAstWrapper::EMPTY);
+  
 }
 
-jobject InstructionVisitor::visitBuiltinInst(BuiltinInst *BI) {
+void InstructionVisitor::visitBuiltinInst(BuiltinInst *BI) {
   // TODO: UNIMPLEMENTED
-  return Instance->CAst->makeNode(CAstWrapper::EMPTY);
+  
 }
 
 /*******************************************************************************/
 /*                          Metatypes                                          */
 /*******************************************************************************/
 
-jobject InstructionVisitor::visitMetatypeInst(MetatypeInst *MI) {
+void InstructionVisitor::visitMetatypeInst(MetatypeInst *MI) {
   // TODO: UNIMPLEMENTED
-  return Instance->CAst->makeNode(CAstWrapper::EMPTY);
+  
 }
 
-jobject InstructionVisitor::visitValueMetatypeInst(ValueMetatypeInst *VMI) {
+void InstructionVisitor::visitValueMetatypeInst(ValueMetatypeInst *VMI) {
   // TODO: UNIMPLEMENTED
-  return Instance->CAst->makeNode(CAstWrapper::EMPTY);
+  
 }
 
-jobject InstructionVisitor::visitExistentialMetatypeInst(ExistentialMetatypeInst *EMI) {
+void InstructionVisitor::visitExistentialMetatypeInst(ExistentialMetatypeInst *EMI) {
   // TODO: UNIMPLEMENTED
-  return Instance->CAst->makeNode(CAstWrapper::EMPTY);
+  
 }
 
-jobject InstructionVisitor::visitObjCProtocolInst(ObjCProtocolInst *OPI) {
+void InstructionVisitor::visitObjCProtocolInst(ObjCProtocolInst *OPI) {
   // TODO: UNIMPLEMENTED
-  return Instance->CAst->makeNode(CAstWrapper::EMPTY);
+  
 }
 
 /*******************************************************************************/
 /*                          Aggregate Types                                    */
 /*******************************************************************************/
 
-jobject InstructionVisitor::visitRetainValueInst(RetainValueInst *RVI) {
+void InstructionVisitor::visitRetainValueInst(RetainValueInst *RVI) {
   // TODO: UNIMPLEMENTED
-  return Instance->CAst->makeNode(CAstWrapper::EMPTY);
+  
 }
 
-jobject InstructionVisitor::visitRetainValueAddrInst(RetainValueAddrInst *RVAI) {
+void InstructionVisitor::visitRetainValueAddrInst(RetainValueAddrInst *RVAI) {
   // TODO: UNIMPLEMENTED
-  return Instance->CAst->makeNode(CAstWrapper::EMPTY);
+  
 }
 
-jobject InstructionVisitor::visitUnmanagedRetainValueInst(UnmanagedRetainValueInst *URVI) {
+void InstructionVisitor::visitUnmanagedRetainValueInst(UnmanagedRetainValueInst *URVI) {
   // TODO: UNIMPLEMENTED
-  return Instance->CAst->makeNode(CAstWrapper::EMPTY);
+  
 }
 
-jobject InstructionVisitor::visitCopyValueInst(CopyValueInst *CVI) {
+void InstructionVisitor::visitCopyValueInst(CopyValueInst *CVI) {
   // TODO: UNIMPLEMENTED
-  return Instance->CAst->makeNode(CAstWrapper::EMPTY);
+  
 }
 
-jobject InstructionVisitor::visitReleaseValueInst(ReleaseValueInst *REVI) {
+void InstructionVisitor::visitReleaseValueInst(ReleaseValueInst *REVI) {
   // TODO: UNIMPLEMENTED
-  return Instance->CAst->makeNode(CAstWrapper::EMPTY);
+  
 }
 
-jobject InstructionVisitor::visitReleaseValueAddrInst(ReleaseValueAddrInst *REVAI) {
+void InstructionVisitor::visitReleaseValueAddrInst(ReleaseValueAddrInst *REVAI) {
   // TODO: UNIMPLEMENTED
-  return Instance->CAst->makeNode(CAstWrapper::EMPTY);
+  
 }
 
-jobject InstructionVisitor::visitUnmanagedReleaseValueInst(UnmanagedReleaseValueInst *UREVI) {
+void InstructionVisitor::visitUnmanagedReleaseValueInst(UnmanagedReleaseValueInst *UREVI) {
   // TODO: UNIMPLEMENTED
-  return Instance->CAst->makeNode(CAstWrapper::EMPTY);
+  
 }
 
-jobject InstructionVisitor::visitDestroyValueInst(DestroyValueInst *DVI) {
+void InstructionVisitor::visitDestroyValueInst(DestroyValueInst *DVI) {
   // TODO: UNIMPLEMENTED
-  return Instance->CAst->makeNode(CAstWrapper::EMPTY);
+  
 }
 
-jobject InstructionVisitor::visitAutoreleaseValueInst(AutoreleaseValueInst *AREVI) {
+void InstructionVisitor::visitAutoreleaseValueInst(AutoreleaseValueInst *AREVI) {
   // TODO: UNIMPLEMENTED
-  return Instance->CAst->makeNode(CAstWrapper::EMPTY);
+  
 }
 
-jobject InstructionVisitor::visitTupleInst(TupleInst *TI) {
+void InstructionVisitor::visitTupleInst(TupleInst *TI) {
   // TODO: UNIMPLEMENTED
-  return Instance->CAst->makeNode(CAstWrapper::EMPTY);
+  
 }
 
-jobject InstructionVisitor::visitTupleExtractInst(TupleExtractInst *TEI) {
+void InstructionVisitor::visitTupleExtractInst(TupleExtractInst *TEI) {
   // TODO: UNIMPLEMENTED
-  return Instance->CAst->makeNode(CAstWrapper::EMPTY);
+  
 }
 
-jobject InstructionVisitor::visitTupleElementAddrInst(TupleElementAddrInst *TEAI) {
+void InstructionVisitor::visitTupleElementAddrInst(TupleElementAddrInst *TEAI) {
   // TODO: UNIMPLEMENTED
-  return Instance->CAst->makeNode(CAstWrapper::EMPTY);
+  
 }
 
-jobject InstructionVisitor::visitDestructureTupleInst(DestructureTupleInst *DTI) {
+void InstructionVisitor::visitDestructureTupleInst(DestructureTupleInst *DTI) {
   // TODO: UNIMPLEMENTED
-  return Instance->CAst->makeNode(CAstWrapper::EMPTY);
+  
 }
 
-jobject InstructionVisitor::visitStructInst(StructInst *SI) {
+void InstructionVisitor::visitStructInst(StructInst *SI) {
   // TODO: UNIMPLEMENTED
-  return Instance->CAst->makeNode(CAstWrapper::EMPTY);
+  
 }
 
-jobject InstructionVisitor::visitStructExtractInst(StructExtractInst *SEI) {
+void InstructionVisitor::visitStructExtractInst(StructExtractInst *SEI) {
   // TODO: UNIMPLEMENTED
-  return Instance->CAst->makeNode(CAstWrapper::EMPTY);
+  
 }
 
-jobject InstructionVisitor::visitStructElementAddrInst(StructElementAddrInst *SEAI) {
+void InstructionVisitor::visitStructElementAddrInst(StructElementAddrInst *SEAI) {
   // TODO: UNIMPLEMENTED
-  return Instance->CAst->makeNode(CAstWrapper::EMPTY);
+  
 }
 
-jobject InstructionVisitor::visitDestructureStructInst(DestructureStructInst *DSI) {
+void InstructionVisitor::visitDestructureStructInst(DestructureStructInst *DSI) {
   // TODO: UNIMPLEMENTED
-  return Instance->CAst->makeNode(CAstWrapper::EMPTY);
+  
 }
 
-jobject InstructionVisitor::visitObjectInst(ObjectInst *OI) {
+void InstructionVisitor::visitObjectInst(ObjectInst *OI) {
   // TODO: UNIMPLEMENTED
-  return Instance->CAst->makeNode(CAstWrapper::EMPTY);
+  
 }
 
-jobject InstructionVisitor::visitRefElementAddrInst(RefElementAddrInst *REAI) {
+void InstructionVisitor::visitRefElementAddrInst(RefElementAddrInst *REAI) {
   // TODO: UNIMPLEMENTED
-  return Instance->CAst->makeNode(CAstWrapper::EMPTY);
+  
 }
 
-jobject InstructionVisitor::visitRefTailAddrInst(RefTailAddrInst *RTAI) {
+void InstructionVisitor::visitRefTailAddrInst(RefTailAddrInst *RTAI) {
   // TODO: UNIMPLEMENTED
-  return Instance->CAst->makeNode(CAstWrapper::EMPTY);
+  
 }
 
 /*******************************************************************************/
 /*                          Enums                                              */
 /*******************************************************************************/
 
-jobject InstructionVisitor::visitEnumInst(EnumInst *EI) {
+void InstructionVisitor::visitEnumInst(EnumInst *EI) {
   // TODO: UNIMPLEMENTED
-  return Instance->CAst->makeNode(CAstWrapper::EMPTY);
+  
 }
 
-jobject InstructionVisitor::visitUncheckedEnumDataInst(UncheckedEnumDataInst *UED) {
+void InstructionVisitor::visitUncheckedEnumDataInst(UncheckedEnumDataInst *UED) {
   // TODO: UNIMPLEMENTED
-  return Instance->CAst->makeNode(CAstWrapper::EMPTY);
+  
 }
 
-jobject InstructionVisitor::visitInjectEnumAddrInst(InjectEnumAddrInst *IUAI) {
+void InstructionVisitor::visitInjectEnumAddrInst(InjectEnumAddrInst *IUAI) {
   // TODO: UNIMPLEMENTED
-  return Instance->CAst->makeNode(CAstWrapper::EMPTY);
+  
 }
 
-jobject InstructionVisitor::visitInitEnumDataAddrInst(InitEnumDataAddrInst *UDAI) {
+void InstructionVisitor::visitInitEnumDataAddrInst(InitEnumDataAddrInst *UDAI) {
   // TODO: UNIMPLEMENTED
-  return Instance->CAst->makeNode(CAstWrapper::EMPTY);
+  
 }
 
-jobject InstructionVisitor::visitUncheckedTakeEnumDataAddrInst(UncheckedTakeEnumDataAddrInst *UDAI) {
+void InstructionVisitor::visitUncheckedTakeEnumDataAddrInst(UncheckedTakeEnumDataAddrInst *UDAI) {
   // TODO: UNIMPLEMENTED
-  return Instance->CAst->makeNode(CAstWrapper::EMPTY);
+  
 }
 
-jobject InstructionVisitor::visitSelectEnumInst(SelectEnumInst *SEI) {
+void InstructionVisitor::visitSelectEnumInst(SelectEnumInst *SEI) {
   // TODO: UNIMPLEMENTED
-  return Instance->CAst->makeNode(CAstWrapper::EMPTY);
+  
 }
 
 /*******************************************************************************/
 /*                          Protocol and Protocol Composition Types            */
 /*******************************************************************************/
 
-jobject InstructionVisitor::visitInitExistentialAddrInst(InitExistentialAddrInst *IEAI) {
+void InstructionVisitor::visitInitExistentialAddrInst(InitExistentialAddrInst *IEAI) {
   // TODO: UNIMPLEMENTED
-  return Instance->CAst->makeNode(CAstWrapper::EMPTY);
+  
 }
 
-jobject InstructionVisitor::visitDeinitExistentialAddrInst(DeinitExistentialAddrInst *DEAI) {
+void InstructionVisitor::visitDeinitExistentialAddrInst(DeinitExistentialAddrInst *DEAI) {
   // TODO: UNIMPLEMENTED
-  return Instance->CAst->makeNode(CAstWrapper::EMPTY);
+  
 }
 
-jobject InstructionVisitor::visitInitExistentialValueInst(InitExistentialValueInst *IEVI) {
+void InstructionVisitor::visitInitExistentialValueInst(InitExistentialValueInst *IEVI) {
   // TODO: UNIMPLEMENTED
-  return Instance->CAst->makeNode(CAstWrapper::EMPTY);
+  
 }
 
-jobject InstructionVisitor::visitDeinitExistentialValueInst(DeinitExistentialValueInst *DEVI) {
+void InstructionVisitor::visitDeinitExistentialValueInst(DeinitExistentialValueInst *DEVI) {
   // TODO: UNIMPLEMENTED
-  return Instance->CAst->makeNode(CAstWrapper::EMPTY);
+  
 }
 
-jobject InstructionVisitor::visitOpenExistentialAddrInst(OpenExistentialAddrInst *OEAI) {
+void InstructionVisitor::visitOpenExistentialAddrInst(OpenExistentialAddrInst *OEAI) {
   // TODO: UNIMPLEMENTED
-  return Instance->CAst->makeNode(CAstWrapper::EMPTY);
+  
 }
 
-jobject InstructionVisitor::visitOpenExistentialValueInst(OpenExistentialValueInst *OEVI) {
+void InstructionVisitor::visitOpenExistentialValueInst(OpenExistentialValueInst *OEVI) {
   // TODO: UNIMPLEMENTED
-  return Instance->CAst->makeNode(CAstWrapper::EMPTY);
+  
 }
 
-jobject InstructionVisitor::visitInitExistentialMetatypeInst(InitExistentialMetatypeInst *IEMI) {
+void InstructionVisitor::visitInitExistentialMetatypeInst(InitExistentialMetatypeInst *IEMI) {
   // TODO: UNIMPLEMENTED
-  return Instance->CAst->makeNode(CAstWrapper::EMPTY);
+  
 }
 
-jobject InstructionVisitor::visitOpenExistentialMetatypeInst(OpenExistentialMetatypeInst *OEMI) {
+void InstructionVisitor::visitOpenExistentialMetatypeInst(OpenExistentialMetatypeInst *OEMI) {
   // TODO: UNIMPLEMENTED
-  return Instance->CAst->makeNode(CAstWrapper::EMPTY);
+  
 }
 
-jobject InstructionVisitor::visitInitExistentialRefInst(InitExistentialRefInst *IERI) {
+void InstructionVisitor::visitInitExistentialRefInst(InitExistentialRefInst *IERI) {
   // TODO: UNIMPLEMENTED
-  return Instance->CAst->makeNode(CAstWrapper::EMPTY);
+  
 }
 
-jobject InstructionVisitor::visitOpenExistentialRefInst(OpenExistentialRefInst *OERI) {
+void InstructionVisitor::visitOpenExistentialRefInst(OpenExistentialRefInst *OERI) {
   // TODO: UNIMPLEMENTED
-  return Instance->CAst->makeNode(CAstWrapper::EMPTY);
+  
 }
 
-jobject InstructionVisitor::visitAllocExistentialBoxInst(AllocExistentialBoxInst *AEBI) {
+void InstructionVisitor::visitAllocExistentialBoxInst(AllocExistentialBoxInst *AEBI) {
   // TODO: UNIMPLEMENTED
-  return Instance->CAst->makeNode(CAstWrapper::EMPTY);
+  
 }
 
-jobject InstructionVisitor::visitProjectExistentialBoxInst(ProjectExistentialBoxInst *PEBI) {
+void InstructionVisitor::visitProjectExistentialBoxInst(ProjectExistentialBoxInst *PEBI) {
   // TODO: UNIMPLEMENTED
-  return Instance->CAst->makeNode(CAstWrapper::EMPTY);
+  
 }
 
-jobject InstructionVisitor::visitOpenExistentialBoxInst(OpenExistentialBoxInst *OEBI) {
+void InstructionVisitor::visitOpenExistentialBoxInst(OpenExistentialBoxInst *OEBI) {
   // TODO: UNIMPLEMENTED
-  return Instance->CAst->makeNode(CAstWrapper::EMPTY);
+  
 }
 
-jobject InstructionVisitor::visitOpenExistentialBoxValueInst(OpenExistentialBoxValueInst *OEBVI) {
+void InstructionVisitor::visitOpenExistentialBoxValueInst(OpenExistentialBoxValueInst *OEBVI) {
   // TODO: UNIMPLEMENTED
-  return Instance->CAst->makeNode(CAstWrapper::EMPTY);
+  
 }
 
-jobject InstructionVisitor::visitDeallocExistentialBoxInst(DeallocExistentialBoxInst *DEBI) {
+void InstructionVisitor::visitDeallocExistentialBoxInst(DeallocExistentialBoxInst *DEBI) {
   // TODO: UNIMPLEMENTED
-  return Instance->CAst->makeNode(CAstWrapper::EMPTY);
+  
 }
 
 /*******************************************************************************/
@@ -931,179 +928,179 @@ jobject InstructionVisitor::visitDeallocExistentialBoxInst(DeallocExistentialBox
 /*                          Unchecked Conversions                              */
 /*******************************************************************************/
 
-jobject InstructionVisitor::visitUpcastInst(UpcastInst *UI) {
+void InstructionVisitor::visitUpcastInst(UpcastInst *UI) {
   // TODO: UNIMPLEMENTED
-  return Instance->CAst->makeNode(CAstWrapper::EMPTY);
+  
 }
 
-jobject InstructionVisitor::visitAddressToPointerInst(AddressToPointerInst *ATPI) {
+void InstructionVisitor::visitAddressToPointerInst(AddressToPointerInst *ATPI) {
   // TODO: UNIMPLEMENTED
-  return Instance->CAst->makeNode(CAstWrapper::EMPTY);
+  
 }
 
-jobject InstructionVisitor::visitPointerToAddressInst(PointerToAddressInst *PTAI) {
+void InstructionVisitor::visitPointerToAddressInst(PointerToAddressInst *PTAI) {
   // TODO: UNIMPLEMENTED
-  return Instance->CAst->makeNode(CAstWrapper::EMPTY);
+  
 }
 
-jobject InstructionVisitor::visitUncheckedRefCastInst(UncheckedRefCastInst *URCI) {
+void InstructionVisitor::visitUncheckedRefCastInst(UncheckedRefCastInst *URCI) {
   // TODO: UNIMPLEMENTED
-  return Instance->CAst->makeNode(CAstWrapper::EMPTY);
+  
 }
 
-jobject InstructionVisitor::visitUncheckedAddrCastInst(UncheckedAddrCastInst *UACI) {
+void InstructionVisitor::visitUncheckedAddrCastInst(UncheckedAddrCastInst *UACI) {
   // TODO: UNIMPLEMENTED
-  return Instance->CAst->makeNode(CAstWrapper::EMPTY);
+  
 }
 
-jobject InstructionVisitor::visitUncheckedTrivialBitCastInst(UncheckedTrivialBitCastInst *BI) {
+void InstructionVisitor::visitUncheckedTrivialBitCastInst(UncheckedTrivialBitCastInst *BI) {
   // TODO: UNIMPLEMENTED
-  return Instance->CAst->makeNode(CAstWrapper::EMPTY);
+  
 }
 
-jobject InstructionVisitor::visitUncheckedOwnershipConversionInst(UncheckedOwnershipConversionInst *UOCI) {
+void InstructionVisitor::visitUncheckedOwnershipConversionInst(UncheckedOwnershipConversionInst *UOCI) {
   // TODO: UNIMPLEMENTED
-  return Instance->CAst->makeNode(CAstWrapper::EMPTY);
+  
 }
 
-jobject InstructionVisitor::visitRefToRawPointerInst(RefToRawPointerInst *CI) {
+void InstructionVisitor::visitRefToRawPointerInst(RefToRawPointerInst *CI) {
   // TODO: UNIMPLEMENTED
-  return Instance->CAst->makeNode(CAstWrapper::EMPTY);
+  
 }
 
-jobject InstructionVisitor::visitRawPointerToRefInst(RawPointerToRefInst *CI) {
+void InstructionVisitor::visitRawPointerToRefInst(RawPointerToRefInst *CI) {
   // TODO: UNIMPLEMENTED
-  return Instance->CAst->makeNode(CAstWrapper::EMPTY);
+  
 }
 
-jobject InstructionVisitor::visitUnmanagedToRefInst(UnmanagedToRefInst *CI) {
+void InstructionVisitor::visitUnmanagedToRefInst(UnmanagedToRefInst *CI) {
   // TODO: UNIMPLEMENTED
-  return Instance->CAst->makeNode(CAstWrapper::EMPTY);
+  
 }
 
-jobject InstructionVisitor::visitConvertFunctionInst(ConvertFunctionInst *CFI) {
+void InstructionVisitor::visitConvertFunctionInst(ConvertFunctionInst *CFI) {
   // TODO: UNIMPLEMENTED
-  return Instance->CAst->makeNode(CAstWrapper::EMPTY);
+  
 }
 
-jobject InstructionVisitor::visitThinFunctionToPointerInst(ThinFunctionToPointerInst *TFPI) {
+void InstructionVisitor::visitThinFunctionToPointerInst(ThinFunctionToPointerInst *TFPI) {
   // TODO: UNIMPLEMENTED
-  return Instance->CAst->makeNode(CAstWrapper::EMPTY);
+  
 }
 
-jobject InstructionVisitor::visitPointerToThinFunctionInst(PointerToThinFunctionInst *CI) {
+void InstructionVisitor::visitPointerToThinFunctionInst(PointerToThinFunctionInst *CI) {
   // TODO: UNIMPLEMENTED
-  return Instance->CAst->makeNode(CAstWrapper::EMPTY);
+  
 }
 
-jobject InstructionVisitor::visitThinToThickFunctionInst(ThinToThickFunctionInst *TTFI) {
+void InstructionVisitor::visitThinToThickFunctionInst(ThinToThickFunctionInst *TTFI) {
   // TODO: UNIMPLEMENTED
-  return Instance->CAst->makeNode(CAstWrapper::EMPTY);
+  
 }
 
-jobject InstructionVisitor::visitThickToObjCMetatypeInst(ThickToObjCMetatypeInst *TTOMI) {
+void InstructionVisitor::visitThickToObjCMetatypeInst(ThickToObjCMetatypeInst *TTOMI) {
   // TODO: UNIMPLEMENTED
-  return Instance->CAst->makeNode(CAstWrapper::EMPTY);
+  
 }
 
-jobject InstructionVisitor::visitObjCToThickMetatypeInst(ObjCToThickMetatypeInst *OTTMI) {
+void InstructionVisitor::visitObjCToThickMetatypeInst(ObjCToThickMetatypeInst *OTTMI) {
   // TODO: UNIMPLEMENTED
-  return Instance->CAst->makeNode(CAstWrapper::EMPTY);
+  
 }
 
-jobject InstructionVisitor::visitConvertEscapeToNoEscapeInst(ConvertEscapeToNoEscapeInst *CVT) {
+void InstructionVisitor::visitConvertEscapeToNoEscapeInst(ConvertEscapeToNoEscapeInst *CVT) {
   // TODO: UNIMPLEMENTED
-  return Instance->CAst->makeNode(CAstWrapper::EMPTY);
+  
 }
 
 /*******************************************************************************/
 /*                          Checked Conversions                                */
 /*******************************************************************************/
 
-jobject InstructionVisitor::visitUnconditionalCheckedCastAddrInst(UnconditionalCheckedCastAddrInst *CI) {
+void InstructionVisitor::visitUnconditionalCheckedCastAddrInst(UnconditionalCheckedCastAddrInst *CI) {
   // TODO: UNIMPLEMENTED
-  return Instance->CAst->makeNode(CAstWrapper::EMPTY);
+  
 }
 
 /*******************************************************************************/
 /*                          Runtime Failures                                   */
 /*******************************************************************************/
 
-jobject InstructionVisitor::visitCondFailInst(CondFailInst *FI) {
+void InstructionVisitor::visitCondFailInst(CondFailInst *FI) {
   // TODO: UNIMPLEMENTED
-  return Instance->CAst->makeNode(CAstWrapper::EMPTY);
+  
 }
 
 /*******************************************************************************/
 /*                           Terminators                                       */
 /*******************************************************************************/
 
-jobject InstructionVisitor::visitUnreachableInst(UnreachableInst *UI) {
+void InstructionVisitor::visitUnreachableInst(UnreachableInst *UI) {
   // TODO: UNIMPLEMENTED
-  return Instance->CAst->makeNode(CAstWrapper::EMPTY);
+  
 }
 
-jobject InstructionVisitor::visitReturnInst(ReturnInst *RI) {
+void InstructionVisitor::visitReturnInst(ReturnInst *RI) {
   // TODO: UNIMPLEMENTED
-  return Instance->CAst->makeNode(CAstWrapper::EMPTY);
+  
 }
 
-jobject InstructionVisitor::visitThrowInst(ThrowInst *TI) {
+void InstructionVisitor::visitThrowInst(ThrowInst *TI) {
   // TODO: UNIMPLEMENTED
-  return Instance->CAst->makeNode(CAstWrapper::EMPTY);
+  
 }
 
-jobject InstructionVisitor::visitYieldInst(YieldInst *YI) {
+void InstructionVisitor::visitYieldInst(YieldInst *YI) {
   // TODO: UNIMPLEMENTED
-  return Instance->CAst->makeNode(CAstWrapper::EMPTY);
+  
 }
 
-jobject InstructionVisitor::visitUnwindInst(UnwindInst *UI) {
+void InstructionVisitor::visitUnwindInst(UnwindInst *UI) {
   // TODO: UNIMPLEMENTED
-  return Instance->CAst->makeNode(CAstWrapper::EMPTY);
+  
 }
 
-jobject InstructionVisitor::visitBranchInst(BranchInst *BI) {
+void InstructionVisitor::visitBranchInst(BranchInst *BI) {
   // TODO: UNIMPLEMENTED
-  return Instance->CAst->makeNode(CAstWrapper::EMPTY);
+  
 }
 
-jobject InstructionVisitor::visitCondBranchInst(CondBranchInst *CBI) {
+void InstructionVisitor::visitCondBranchInst(CondBranchInst *CBI) {
   // TODO: UNIMPLEMENTED
-  return Instance->CAst->makeNode(CAstWrapper::EMPTY);
+  
 }
 
-jobject InstructionVisitor::visitSwitchValueInst(SwitchValueInst *SVI) {
+void InstructionVisitor::visitSwitchValueInst(SwitchValueInst *SVI) {
   // TODO: UNIMPLEMENTED
-  return Instance->CAst->makeNode(CAstWrapper::EMPTY);
+  
 }
 
-jobject InstructionVisitor::visitSelectValueInst(SelectValueInst *SVI) {
+void InstructionVisitor::visitSelectValueInst(SelectValueInst *SVI) {
   // TODO: UNIMPLEMENTED
-  return Instance->CAst->makeNode(CAstWrapper::EMPTY);
+  
 }
 
-jobject InstructionVisitor::visitSwitchEnumInst(SwitchEnumInst *SWI) {
+void InstructionVisitor::visitSwitchEnumInst(SwitchEnumInst *SWI) {
   // TODO: UNIMPLEMENTED
-  return Instance->CAst->makeNode(CAstWrapper::EMPTY);
+  
 }
 
-jobject InstructionVisitor::visitSwitchEnumAddrInst(SwitchEnumAddrInst *SEAI) {
+void InstructionVisitor::visitSwitchEnumAddrInst(SwitchEnumAddrInst *SEAI) {
   // TODO: UNIMPLEMENTED
-  return Instance->CAst->makeNode(CAstWrapper::EMPTY);
+  
 }
 
-jobject InstructionVisitor::visitCheckedCastBranchInst(CheckedCastBranchInst *CI) {
+void InstructionVisitor::visitCheckedCastBranchInst(CheckedCastBranchInst *CI) {
   // TODO: UNIMPLEMENTED
-  return Instance->CAst->makeNode(CAstWrapper::EMPTY);
+  
 }
 
-jobject InstructionVisitor::visitCheckedCastAddrBranchInst(CheckedCastAddrBranchInst *CI) {
+void InstructionVisitor::visitCheckedCastAddrBranchInst(CheckedCastAddrBranchInst *CI) {
   // TODO: UNIMPLEMENTED
-  return Instance->CAst->makeNode(CAstWrapper::EMPTY);
+  
 }
 
-jobject InstructionVisitor::visitTryApplyInst(TryApplyInst *TAI) {
+void InstructionVisitor::visitTryApplyInst(TryApplyInst *TAI) {
   // TODO: UNIMPLEMENTED
-  return Instance->CAst->makeNode(CAstWrapper::EMPTY);
+  
 }

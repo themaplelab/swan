@@ -43,7 +43,7 @@ namespace swan {
 
   /// This class translates SIL to CAst by using Swift's SILInstructionVisitor which has callbacks, including
   /// ones for every type of SILInstruction. This makes translating simple.
-  class InstructionVisitor : public SILInstructionVisitor<InstructionVisitor, jobject> {
+  class InstructionVisitor : public SILInstructionVisitor<InstructionVisitor, void> {
   public:
     InstructionVisitor(WALAInstance *Instance) : Instance(Instance) {}
 
@@ -51,9 +51,8 @@ namespace swan {
     void visitSILModule(SILModule *M);
 
     /// If we do not have a callback handler implemented for a SILInstruction, it will fire this method.
-    jobject visitSILInstruction(SILInstruction *I) {
+    void visitSILInstruction(SILInstruction *I) {
       llvm::outs() << "Instruction not handled: \n\t" << *I << "\n";
-      return nullptr;
     }
 
   private:
@@ -85,9 +84,6 @@ namespace swan {
      /// Contains all of the raw data of the module.
     std::unique_ptr<RootModuleInfo> currentModule;
 
-    /// Returns CAstNode with appropriate operator kind.
-    jobject getOperatorCAstType(Identifier Name);
-
     /// Source information about the SILInstruction.
     std::unique_ptr<SILInstructionInfo> instrInfo;
     /// Source information about the SILFunction.
@@ -106,172 +102,172 @@ namespace swan {
     /*                      Allocation and Deallocation                            */
     /*******************************************************************************/
 
-    jobject visitAllocStackInst(AllocStackInst *ASI);
-    jobject visitAllocRefInst(AllocRefInst *ARI);
-    jobject visitAllocRefDynamicInst(AllocRefDynamicInst *ARDI);
-    jobject visitAllocBoxInst(AllocBoxInst *ABI);
-    jobject visitAllocValueBufferInst(AllocValueBufferInst *AVBI);
-    jobject visitAllocGlobalInst(AllocGlobalInst *AGI);
-    jobject visitDeallocStackInst(DeallocStackInst *DSI);
-    jobject visitDeallocBoxInst(DeallocBoxInst *DBI);
-    jobject visitProjectBoxInst(ProjectBoxInst *PBI);
-    jobject visitDeallocRefInst(DeallocRefInst *DRI);
-    jobject visitDeallocPartialRefInst(DeallocPartialRefInst *DPRI);
-    jobject visitDeallocValueBufferInst(DeallocValueBufferInst *DVBI);
-    jobject visitProjectValueBufferInst(ProjectValueBufferInst *PVBI);
+    void visitAllocStackInst(AllocStackInst *ASI);
+    void visitAllocRefInst(AllocRefInst *ARI);
+    void visitAllocRefDynamicInst(AllocRefDynamicInst *ARDI);
+    void visitAllocBoxInst(AllocBoxInst *ABI);
+    void visitAllocValueBufferInst(AllocValueBufferInst *AVBI);
+    void visitAllocGlobalInst(AllocGlobalInst *AGI);
+    void visitDeallocStackInst(DeallocStackInst *DSI);
+    void visitDeallocBoxInst(DeallocBoxInst *DBI);
+    void visitProjectBoxInst(ProjectBoxInst *PBI);
+    void visitDeallocRefInst(DeallocRefInst *DRI);
+    void visitDeallocPartialRefInst(DeallocPartialRefInst *DPRI);
+    void visitDeallocValueBufferInst(DeallocValueBufferInst *DVBI);
+    void visitProjectValueBufferInst(ProjectValueBufferInst *PVBI);
 
     /*******************************************************************************/
     /*                        Debug Information                                    */
     /*******************************************************************************/
 
-    jobject visitDebugValueInst(DebugValueInst *DBI);
-    jobject visitDebugValueAddrInst(DebugValueAddrInst *DVAI);
+    void visitDebugValueInst(DebugValueInst *DBI);
+    void visitDebugValueAddrInst(DebugValueAddrInst *DVAI);
 
     /*******************************************************************************/
     /*                        Accessing Memory                                     */
     /*******************************************************************************/
 
-    jobject visitLoadInst(LoadInst *LI);
-    jobject visitStoreInst(StoreInst *SI);
-    jobject visitLoadBorrowInst(LoadBorrowInst *LBI);
-    jobject visitBeginBorrowInst(BeginBorrowInst *BBI);
-    jobject visitEndBorrowInst(EndBorrowInst *EBI);
-    jobject visitAssignInst(AssignInst *AI);
-    jobject visitAssignByWrapperInst(AssignByWrapperInst *ABWI);
-    jobject visitMarkUninitializedInst(MarkUninitializedInst *MUI);
-    jobject visitMarkFunctionEscapeInst(MarkFunctionEscapeInst *MFEI);
-    jobject visitCopyAddrInst(CopyAddrInst *CAI);
-    jobject visitDestroyAddrInst(DestroyAddrInst *DAI);
-    jobject visitIndexAddrInst(IndexAddrInst *IAI);
-    jobject visitTailAddrInst(TailAddrInst *TAI);
-    jobject visitIndexRawPointerInst(IndexRawPointerInst *IRPI);
-    jobject visitBindMemoryInst(BindMemoryInst *BMI);
-    jobject visitBeginAccessInst(BeginAccessInst *BAI);
-    jobject visitEndAccessInst(EndAccessInst *EAI);
-    jobject visitBeginUnpairedAccessInst(BeginUnpairedAccessInst *BUI);
-    jobject visitEndUnpairedAccessInst(EndUnpairedAccessInst *EUAI);
+    void visitLoadInst(LoadInst *LI);
+    void visitStoreInst(StoreInst *SI);
+    void visitLoadBorrowInst(LoadBorrowInst *LBI);
+    void visitBeginBorrowInst(BeginBorrowInst *BBI);
+    void visitEndBorrowInst(EndBorrowInst *EBI);
+    void visitAssignInst(AssignInst *AI);
+    void visitAssignByWrapperInst(AssignByWrapperInst *ABWI);
+    void visitMarkUninitializedInst(MarkUninitializedInst *MUI);
+    void visitMarkFunctionEscapeInst(MarkFunctionEscapeInst *MFEI);
+    void visitCopyAddrInst(CopyAddrInst *CAI);
+    void visitDestroyAddrInst(DestroyAddrInst *DAI);
+    void visitIndexAddrInst(IndexAddrInst *IAI);
+    void visitTailAddrInst(TailAddrInst *TAI);
+    void visitIndexRawPointerInst(IndexRawPointerInst *IRPI);
+    void visitBindMemoryInst(BindMemoryInst *BMI);
+    void visitBeginAccessInst(BeginAccessInst *BAI);
+    void visitEndAccessInst(EndAccessInst *EAI);
+    void visitBeginUnpairedAccessInst(BeginUnpairedAccessInst *BUI);
+    void visitEndUnpairedAccessInst(EndUnpairedAccessInst *EUAI);
 
     /*******************************************************************************/
     /*                        Reference Counting                                   */
     /*******************************************************************************/
 
-    jobject visitStrongRetainInst(StrongRetainInst *SRTI);
-    jobject visitStrongReleaseInst(StrongReleaseInst *SRLI);
-    jobject visitSetDeallocatingInst(SetDeallocatingInst *SDI);
-    jobject visitStrongRetainUnownedInst(StrongRetainUnownedInst *SRUI);
-    jobject visitUnownedRetainInst(UnownedRetainInst *URTI);
-    jobject visitUnownedReleaseInst(UnownedReleaseInst *URLI);
-    jobject visitLoadWeakInst(LoadWeakInst *LWI);
-    jobject visitStoreWeakInst(StoreWeakInst *SWI);
-    jobject visitLoadUnownedInst(LoadUnownedInst *LUI);
-    jobject visitStoreUnownedInst(StoreUnownedInst *SUI);
-    jobject visitFixLifetimeInst(FixLifetimeInst *FLI);
-    jobject visitEndLifetimeInst(EndLifetimeInst *ELI);
-    jobject visitMarkDependenceInst(MarkDependenceInst *MDI);
-    jobject visitIsUniqueInst(IsUniqueInst *IUI);
-    jobject visitIsEscapingClosureInst(IsEscapingClosureInst *IECI);
-    jobject visitCopyBlockInst(CopyBlockInst *CBI);
-    jobject visitCopyBlockWithoutEscapingInst(CopyBlockWithoutEscapingInst *CBWEI);
+    void visitStrongRetainInst(StrongRetainInst *SRTI);
+    void visitStrongReleaseInst(StrongReleaseInst *SRLI);
+    void visitSetDeallocatingInst(SetDeallocatingInst *SDI);
+    void visitStrongRetainUnownedInst(StrongRetainUnownedInst *SRUI);
+    void visitUnownedRetainInst(UnownedRetainInst *URTI);
+    void visitUnownedReleaseInst(UnownedReleaseInst *URLI);
+    void visitLoadWeakInst(LoadWeakInst *LWI);
+    void visitStoreWeakInst(StoreWeakInst *SWI);
+    void visitLoadUnownedInst(LoadUnownedInst *LUI);
+    void visitStoreUnownedInst(StoreUnownedInst *SUI);
+    void visitFixLifetimeInst(FixLifetimeInst *FLI);
+    void visitEndLifetimeInst(EndLifetimeInst *ELI);
+    void visitMarkDependenceInst(MarkDependenceInst *MDI);
+    void visitIsUniqueInst(IsUniqueInst *IUI);
+    void visitIsEscapingClosureInst(IsEscapingClosureInst *IECI);
+    void visitCopyBlockInst(CopyBlockInst *CBI);
+    void visitCopyBlockWithoutEscapingInst(CopyBlockWithoutEscapingInst *CBWEI);
     // TODO? builtin "unsafeGuaranteed" & builtin "unsafeGuaranteedEnd"
 
     /*******************************************************************************/
     /*                         Literals                                            */
     /*******************************************************************************/
 
-    jobject visitFunctionRefInst(FunctionRefInst *FRI);
-    jobject visitDynamicFunctionRefInst(DynamicFunctionRefInst *DFRI);
-    jobject visitPreviousDynamicFunctionRefInst(PreviousDynamicFunctionRefInst *PDFRI);
-    jobject visitGlobalAddrInst(GlobalAddrInst *GAI);
-    jobject visitGlobalValueInst(GlobalValueInst *GVI);
-    jobject visitIntegerLiteralInst(IntegerLiteralInst *ILI);
-    jobject visitFloatLiteralInst(FloatLiteralInst *FLI);
-    jobject visitStringLiteralInst(StringLiteralInst *SLI);
+    void visitFunctionRefInst(FunctionRefInst *FRI);
+    void visitDynamicFunctionRefInst(DynamicFunctionRefInst *DFRI);
+    void visitPreviousDynamicFunctionRefInst(PreviousDynamicFunctionRefInst *PDFRI);
+    void visitGlobalAddrInst(GlobalAddrInst *GAI);
+    void visitGlobalValueInst(GlobalValueInst *GVI);
+    void visitIntegerLiteralInst(IntegerLiteralInst *ILI);
+    void visitFloatLiteralInst(FloatLiteralInst *FLI);
+    void visitStringLiteralInst(StringLiteralInst *SLI);
 
     /*******************************************************************************/
     /*                         Dynamic Dispatch                                    */
     /*******************************************************************************/
 
-    jobject visitClassMethodInst(ClassMethodInst *CMI);
-    jobject visitObjCMethodInst(ObjCMethodInst *AMI);
-    jobject visitSuperMethodInst(SuperMethodInst *SMI);
-    jobject visitObjCSuperMethodInst(ObjCSuperMethodInst *ASMI);
-    jobject visitWitnessMethodInst(WitnessMethodInst *WMI);
+    void visitClassMethodInst(ClassMethodInst *CMI);
+    void visitObjCMethodInst(ObjCMethodInst *AMI);
+    void visitSuperMethodInst(SuperMethodInst *SMI);
+    void visitObjCSuperMethodInst(ObjCSuperMethodInst *ASMI);
+    void visitWitnessMethodInst(WitnessMethodInst *WMI);
 
     /*******************************************************************************/
     /*                         Function Application                                */
     /*******************************************************************************/
 
-    jobject visitApplyInst(ApplyInst *AI);
-    jobject visitBeginApplyInst(BeginApplyInst *BAI);
-    jobject visitAbortApplyInst(AbortApplyInst *AAI);
-    jobject visitEndApplyInst(EndApplyInst *EAI);
-    jobject visitPartialApplyInst(PartialApplyInst *PAI);
-    jobject visitBuiltinInst(BuiltinInst *BI);
+    void visitApplyInst(ApplyInst *AI);
+    void visitBeginApplyInst(BeginApplyInst *BAI);
+    void visitAbortApplyInst(AbortApplyInst *AAI);
+    void visitEndApplyInst(EndApplyInst *EAI);
+    void visitPartialApplyInst(PartialApplyInst *PAI);
+    void visitBuiltinInst(BuiltinInst *BI);
 
     /*******************************************************************************/
     /*                          Metatypes                                          */
     /*******************************************************************************/
 
-    jobject visitMetatypeInst(MetatypeInst *MI);
-    jobject visitValueMetatypeInst(ValueMetatypeInst *VMI);
-    jobject visitExistentialMetatypeInst(ExistentialMetatypeInst *EMI);
-    jobject visitObjCProtocolInst(ObjCProtocolInst *OPI);
+    void visitMetatypeInst(MetatypeInst *MI);
+    void visitValueMetatypeInst(ValueMetatypeInst *VMI);
+    void visitExistentialMetatypeInst(ExistentialMetatypeInst *EMI);
+    void visitObjCProtocolInst(ObjCProtocolInst *OPI);
 
     /*******************************************************************************/
     /*                          Aggregate Types                                    */
     /*******************************************************************************/
 
-    jobject visitRetainValueInst(RetainValueInst *RVI);
-    jobject visitRetainValueAddrInst(RetainValueAddrInst *RVAI);
-    jobject visitUnmanagedRetainValueInst(UnmanagedRetainValueInst *URVI);
-    jobject visitCopyValueInst(CopyValueInst *CVI);
-    jobject visitReleaseValueInst(ReleaseValueInst *REVI);
-    jobject visitReleaseValueAddrInst(ReleaseValueAddrInst *REVAI);
-    jobject visitUnmanagedReleaseValueInst(UnmanagedReleaseValueInst *UREVI);
-    jobject visitDestroyValueInst(DestroyValueInst *DVI);
-    jobject visitAutoreleaseValueInst(AutoreleaseValueInst *AREVI);
-    jobject visitTupleInst(TupleInst *TI);
-    jobject visitTupleExtractInst(TupleExtractInst *TEI);
-    jobject visitTupleElementAddrInst(TupleElementAddrInst *TEAI);
-    jobject visitDestructureTupleInst(DestructureTupleInst *DTI);
-    jobject visitStructInst(StructInst *SI);
-    jobject visitStructExtractInst(StructExtractInst *SEI);
-    jobject visitStructElementAddrInst(StructElementAddrInst *SEAI);
-    jobject visitDestructureStructInst(DestructureStructInst *DSI);
-    jobject visitObjectInst(ObjectInst *OI);
-    jobject visitRefElementAddrInst(RefElementAddrInst *REAI);
-    jobject visitRefTailAddrInst(RefTailAddrInst *RTAI);
+    void visitRetainValueInst(RetainValueInst *RVI);
+    void visitRetainValueAddrInst(RetainValueAddrInst *RVAI);
+    void visitUnmanagedRetainValueInst(UnmanagedRetainValueInst *URVI);
+    void visitCopyValueInst(CopyValueInst *CVI);
+    void visitReleaseValueInst(ReleaseValueInst *REVI);
+    void visitReleaseValueAddrInst(ReleaseValueAddrInst *REVAI);
+    void visitUnmanagedReleaseValueInst(UnmanagedReleaseValueInst *UREVI);
+    void visitDestroyValueInst(DestroyValueInst *DVI);
+    void visitAutoreleaseValueInst(AutoreleaseValueInst *AREVI);
+    void visitTupleInst(TupleInst *TI);
+    void visitTupleExtractInst(TupleExtractInst *TEI);
+    void visitTupleElementAddrInst(TupleElementAddrInst *TEAI);
+    void visitDestructureTupleInst(DestructureTupleInst *DTI);
+    void visitStructInst(StructInst *SI);
+    void visitStructExtractInst(StructExtractInst *SEI);
+    void visitStructElementAddrInst(StructElementAddrInst *SEAI);
+    void visitDestructureStructInst(DestructureStructInst *DSI);
+    void visitObjectInst(ObjectInst *OI);
+    void visitRefElementAddrInst(RefElementAddrInst *REAI);
+    void visitRefTailAddrInst(RefTailAddrInst *RTAI);
 
     /*******************************************************************************/
     /*                          Enums                                              */
     /*******************************************************************************/
 
-    jobject visitEnumInst(EnumInst *EI);
-    jobject visitUncheckedEnumDataInst(UncheckedEnumDataInst *UED);
-    jobject visitInjectEnumAddrInst(InjectEnumAddrInst *IUAI);
-    jobject visitInitEnumDataAddrInst(InitEnumDataAddrInst *UDAI);
-    jobject visitUncheckedTakeEnumDataAddrInst(UncheckedTakeEnumDataAddrInst *UDAI);
-    jobject visitSelectEnumInst(SelectEnumInst *SEI);
+    void visitEnumInst(EnumInst *EI);
+    void visitUncheckedEnumDataInst(UncheckedEnumDataInst *UED);
+    void visitInjectEnumAddrInst(InjectEnumAddrInst *IUAI);
+    void visitInitEnumDataAddrInst(InitEnumDataAddrInst *UDAI);
+    void visitUncheckedTakeEnumDataAddrInst(UncheckedTakeEnumDataAddrInst *UDAI);
+    void visitSelectEnumInst(SelectEnumInst *SEI);
 
     /*******************************************************************************/
     /*                          Protocol and Protocol Composition Types            */
     /*******************************************************************************/
 
-    jobject visitInitExistentialAddrInst(InitExistentialAddrInst *IEAI);
-    jobject visitDeinitExistentialAddrInst(DeinitExistentialAddrInst *DEAI);
-    jobject visitInitExistentialValueInst(InitExistentialValueInst *IEVI);
-    jobject visitDeinitExistentialValueInst(DeinitExistentialValueInst *DEVI);
-    jobject visitOpenExistentialAddrInst(OpenExistentialAddrInst *OEAI);
-    jobject visitOpenExistentialValueInst(OpenExistentialValueInst *OEVI);
-    jobject visitInitExistentialMetatypeInst(InitExistentialMetatypeInst *IEMI);
-    jobject visitOpenExistentialMetatypeInst(OpenExistentialMetatypeInst *OEMI);
-    jobject visitInitExistentialRefInst(InitExistentialRefInst *IERI);
-    jobject visitOpenExistentialRefInst(OpenExistentialRefInst *OERI);
-    jobject visitAllocExistentialBoxInst(AllocExistentialBoxInst *AEBI);
-    jobject visitProjectExistentialBoxInst(ProjectExistentialBoxInst *PEBI);
-    jobject visitOpenExistentialBoxInst(OpenExistentialBoxInst *OEBI);
-    jobject visitOpenExistentialBoxValueInst(OpenExistentialBoxValueInst *OEBVI);
-    jobject visitDeallocExistentialBoxInst(DeallocExistentialBoxInst *DEBI);
+    void visitInitExistentialAddrInst(InitExistentialAddrInst *IEAI);
+    void visitDeinitExistentialAddrInst(DeinitExistentialAddrInst *DEAI);
+    void visitInitExistentialValueInst(InitExistentialValueInst *IEVI);
+    void visitDeinitExistentialValueInst(DeinitExistentialValueInst *DEVI);
+    void visitOpenExistentialAddrInst(OpenExistentialAddrInst *OEAI);
+    void visitOpenExistentialValueInst(OpenExistentialValueInst *OEVI);
+    void visitInitExistentialMetatypeInst(InitExistentialMetatypeInst *IEMI);
+    void visitOpenExistentialMetatypeInst(OpenExistentialMetatypeInst *OEMI);
+    void visitInitExistentialRefInst(InitExistentialRefInst *IERI);
+    void visitOpenExistentialRefInst(OpenExistentialRefInst *OERI);
+    void visitAllocExistentialBoxInst(AllocExistentialBoxInst *AEBI);
+    void visitProjectExistentialBoxInst(ProjectExistentialBoxInst *PEBI);
+    void visitOpenExistentialBoxInst(OpenExistentialBoxInst *OEBI);
+    void visitOpenExistentialBoxValueInst(OpenExistentialBoxValueInst *OEBVI);
+    void visitDeallocExistentialBoxInst(DeallocExistentialBoxInst *DEBI);
 
     /*******************************************************************************/
     /*                          Blocks                                             */
@@ -281,54 +277,54 @@ namespace swan {
     /*                          Unchecked Conversions                              */
     /*******************************************************************************/
 
-    jobject visitUpcastInst(UpcastInst *UI);
-    jobject visitAddressToPointerInst(AddressToPointerInst *ATPI);
-    jobject visitPointerToAddressInst(PointerToAddressInst *PTAI);
-    jobject visitUncheckedRefCastInst(UncheckedRefCastInst *URCI);
-    jobject visitUncheckedAddrCastInst(UncheckedAddrCastInst *UACI);
-    jobject visitUncheckedTrivialBitCastInst(UncheckedTrivialBitCastInst *BI);
-    jobject visitUncheckedOwnershipConversionInst(UncheckedOwnershipConversionInst *UOCI);
-    jobject visitRefToRawPointerInst(RefToRawPointerInst *CI);
-    jobject visitRawPointerToRefInst(RawPointerToRefInst *CI);
-    jobject visitUnmanagedToRefInst(UnmanagedToRefInst *CI);
-    jobject visitConvertFunctionInst(ConvertFunctionInst *CFI);
-    jobject visitThinFunctionToPointerInst(ThinFunctionToPointerInst *TFPI);
-    jobject visitPointerToThinFunctionInst(PointerToThinFunctionInst *CI);
-    jobject visitThinToThickFunctionInst(ThinToThickFunctionInst *TTFI);
-    jobject visitThickToObjCMetatypeInst(ThickToObjCMetatypeInst *TTOMI);
-    jobject visitObjCToThickMetatypeInst(ObjCToThickMetatypeInst *OTTMI);
-    jobject visitConvertEscapeToNoEscapeInst(ConvertEscapeToNoEscapeInst *CVT);
+    void visitUpcastInst(UpcastInst *UI);
+    void visitAddressToPointerInst(AddressToPointerInst *ATPI);
+    void visitPointerToAddressInst(PointerToAddressInst *PTAI);
+    void visitUncheckedRefCastInst(UncheckedRefCastInst *URCI);
+    void visitUncheckedAddrCastInst(UncheckedAddrCastInst *UACI);
+    void visitUncheckedTrivialBitCastInst(UncheckedTrivialBitCastInst *BI);
+    void visitUncheckedOwnershipConversionInst(UncheckedOwnershipConversionInst *UOCI);
+    void visitRefToRawPointerInst(RefToRawPointerInst *CI);
+    void visitRawPointerToRefInst(RawPointerToRefInst *CI);
+    void visitUnmanagedToRefInst(UnmanagedToRefInst *CI);
+    void visitConvertFunctionInst(ConvertFunctionInst *CFI);
+    void visitThinFunctionToPointerInst(ThinFunctionToPointerInst *TFPI);
+    void visitPointerToThinFunctionInst(PointerToThinFunctionInst *CI);
+    void visitThinToThickFunctionInst(ThinToThickFunctionInst *TTFI);
+    void visitThickToObjCMetatypeInst(ThickToObjCMetatypeInst *TTOMI);
+    void visitObjCToThickMetatypeInst(ObjCToThickMetatypeInst *OTTMI);
+    void visitConvertEscapeToNoEscapeInst(ConvertEscapeToNoEscapeInst *CVT);
 
     /*******************************************************************************/
     /*                          Checked Conversions                                */
     /*******************************************************************************/
 
-    jobject visitUnconditionalCheckedCastAddrInst(UnconditionalCheckedCastAddrInst *CI);
+    void visitUnconditionalCheckedCastAddrInst(UnconditionalCheckedCastAddrInst *CI);
 
     /*******************************************************************************/
     /*                          Runtime Failures                                   */
     /*******************************************************************************/
 
-    jobject visitCondFailInst(CondFailInst *FI);
+    void visitCondFailInst(CondFailInst *FI);
 
     /*******************************************************************************/
     /*                           Terminators                                       */
     /*******************************************************************************/
 
-    jobject visitUnreachableInst(UnreachableInst *UI);
-    jobject visitReturnInst(ReturnInst *RI);
-    jobject visitThrowInst(ThrowInst *TI);
-    jobject visitYieldInst(YieldInst *YI);
-    jobject visitUnwindInst(UnwindInst *UI);
-    jobject visitBranchInst(BranchInst *BI);
-    jobject visitCondBranchInst(CondBranchInst *CBI);
-    jobject visitSwitchValueInst(SwitchValueInst *SVI);
-    jobject visitSelectValueInst(SelectValueInst *SVI);
-    jobject visitSwitchEnumInst(SwitchEnumInst *SWI);
-    jobject visitSwitchEnumAddrInst(SwitchEnumAddrInst *SEAI);
-    jobject visitCheckedCastBranchInst(CheckedCastBranchInst *CI);
-    jobject visitCheckedCastAddrBranchInst(CheckedCastAddrBranchInst *CI);
-    jobject visitTryApplyInst(TryApplyInst *TAI);
+    void visitUnreachableInst(UnreachableInst *UI);
+    void visitReturnInst(ReturnInst *RI);
+    void visitThrowInst(ThrowInst *TI);
+    void visitYieldInst(YieldInst *YI);
+    void visitUnwindInst(UnwindInst *UI);
+    void visitBranchInst(BranchInst *BI);
+    void visitCondBranchInst(CondBranchInst *CBI);
+    void visitSwitchValueInst(SwitchValueInst *SVI);
+    void visitSelectValueInst(SelectValueInst *SVI);
+    void visitSwitchEnumInst(SwitchEnumInst *SWI);
+    void visitSwitchEnumAddrInst(SwitchEnumAddrInst *SEAI);
+    void visitCheckedCastBranchInst(CheckedCastBranchInst *CI);
+    void visitCheckedCastAddrBranchInst(CheckedCastAddrBranchInst *CI);
+    void visitTryApplyInst(TryApplyInst *TAI);
 
   };
 
