@@ -68,6 +68,10 @@ import java.util.HashMap;
 
  *****************************************************************************/
 
+/*
+ * Translates a raw, custom formatted AST into a complete AST. The result
+ * is the root entity of the file being analyzed.
+ */
 public class RawAstTranslator extends SILInstructionVisitor<CAstNode, SILInstructionContext> {
 
     static CAstImpl Ast = new CAstImpl();
