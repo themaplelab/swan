@@ -68,147 +68,150 @@ struct SILInstructionInfo {
   SILFunctionInfo *funcInfo;
 };
 
-/// WALACAstEntityInfo is used to later build the CAstEntities. The translator populates this struct to avoid
-/// traversing the whole AST later to build the scopedEntities map and create the CAstControlFlowMap.
-struct WALACAstEntityInfo {
-  std::string functionName; // This should be "main" for the SCRIPT_ENTITY.
-  std::vector<jobject> basicBlocks; // Every basic block belonging to this entity.
-  std::string returnType; // Return type of the function as a string. e.g. "@convention(thin) (Int) -> Int"
-  std::vector<std::string> argumentTypes; // Vector of argument type names of the function.
-  std::vector<std::string> argumentNames; // Vector of argument names corresponding to those referenced in the AST.
-  jobject CAstSourcePositionRecorder; // Maps CAstNodes to source information.
-  jobject functionPosition = nullptr; // The Position of the function (for `getNamePosition()`).
-  std::vector<jobject> argumentPositions; // The Positions of the function arguments (for `getPosition(int arg)`);
+struct RootInstructionInfo {
+  RootInstructionInfo(CAstWrapper *wrapper) : wrapper(wrapper) {}
+  CAstWrapper *wrapper;
+  std::string instructionName;
+  jobject instructionSourceInfo;
+  std::list<jobject> properties;
 
-  void print() {
-    llvm::outs() << "\n\n" << "-*- CAST ENTITY INFO -*-" << "\n";
-    llvm::outs() << "\tFUNCTION NAME: " << functionName << "\n";
-    // If we print the blocks using CAstWrapper, they won't print where expected to the terminal.
-    // There is probably a way to solve this but is not necessary for now.
-    llvm::outs() << "\t# OF BASIC BLOCKS: " << basicBlocks.size() << "\n";
-    llvm::outs() << "\tRETURN TYPE: " << returnType << "\n";
-    for (auto argType: argumentTypes) {
-      llvm::outs() << "\tARGUMENT TYPE: " << argType << "\n";
+  void setInstructionSourceInfo(unsigned int fl, unsigned int fc, unsigned int ll, unsigned int lc) {
+    instructionSourceInfo = wrapper->makeLocation(static_cast<int>(fl), static_cast<int>(fc),
+      static_cast<int>(ll), static_cast<int>(lc));
+  }
+
+  void addProperties(std::list<jobject> givenProperties) {
+    for (jobject p : givenProperties) {
+      properties.push_back(p);
     }
-    for (auto argName: argumentNames) {
-      llvm::outs() << "\tARGUMENT NAME: " << argName << "\n";
-    }
-    llvm::outs() << "=*= CAST ENTITY INFO =*=" << "\n\n";
+  }
+
+  void addProperty(jobject property) {
+    properties.push_back(property);
+  }
+
+  jobject make() {
+    /*
+     *  PRIMITIVE
+     *    NAME
+     *    JOBJECT <-- LOCATION
+     *    PRIMITIVE
+     *      ... <-- ANY PROPERTIES
+     */
+    return wrapper->makeNode(CAstWrapper::PRIMITIVE,
+      wrapper->makeConstant(instructionName.c_str()),
+      instructionSourceInfo,
+      wrapper->makeNode(
+        CAstWrapper::PRIMITIVE, wrapper->makeArray(&properties)));
   }
 };
 
-inline std::string labelBasicBlock(swift::SILBasicBlock* const basicBlock) {
-    return (std::string("BLOCK #") + std::to_string(basicBlock->getDebugID()));
+/// Contains raw basic block information.
+struct RootBasicBlockInfo {
+  RootBasicBlockInfo(CAstWrapper *wrapper) : wrapper(wrapper) {}
+  CAstWrapper *wrapper;
+  std::list<jobject> instructions;
+
+  void addInstruction(RootInstructionInfo *instruction) {
+    instructions.push_back(instruction->make());
   }
+
+  void addInstruction(jobject instruction) {
+    instructions.push_back(instruction);
+  }
+
+  jobject make() {
+    /*
+     *  PRIMITIVE
+     *    PRIMTIVE <-- INSTRUCTION
+     *    ...
+     */
+    return wrapper->makeNode(CAstWrapper::PRIMITIVE, wrapper->makeArray(&instructions));
+  }
+};
+
+/// Contains raw function information.
+struct RootFunctionInfo {
+  RootFunctionInfo(CAstWrapper *wrapper) : wrapper(wrapper) {}
+  CAstWrapper *wrapper;
+  std::string functionName;
+  std::string returnType;
+  jobject functionSourceInfo;
+  std::list<jobject> arguments;
+  std::list<jobject> blocks;
+
+  void setFunctionSourceInfo(unsigned int fl, unsigned int fc, unsigned int ll, unsigned int lc) {
+    functionSourceInfo = wrapper->makeLocation(static_cast<int>(fl), static_cast<int>(fc),
+      static_cast<int>(ll), static_cast<int>(lc));
+  }
+
+  void addArgument(std::string name, std::string type, unsigned int fl, unsigned int fc, unsigned int ll, unsigned int lc) {
+    jobject argumentSourceInfo = wrapper->makeLocation(static_cast<int>(fl), static_cast<int>(fc),
+      static_cast<int>(ll), static_cast<int>(lc));
+    jobject newArgument = wrapper->makeNode(CAstWrapper::PRIMITIVE,
+      wrapper->makeConstant(name.c_str()), wrapper->makeConstant(type.c_str()), argumentSourceInfo);
+    arguments.push_back(newArgument);
+  }
+
+  void addBlock(RootBasicBlockInfo *basicBlock) {
+    blocks.push_back(basicBlock->make());
+  }
+
+  void addBlock(std::list<jobject> instructions) {
+    blocks.push_back(wrapper->makeNode(CAstWrapper::PRIMITIVE, wrapper->makeArray(&instructions)));
+  }
+
+  jobject make() {
+    /*
+     *  PRIMITIVE
+     *    PRIMITIVE
+     *      NAME
+     *      TYPE
+     *      JOBJECT <-- LOCATION
+     *    PRIMITIVE
+     *      PRIMTIVE <-- ARGUMENT
+     *      ...
+     *    PRIMITIVE
+     *      PRIMITIVE <-- BLOCK
+     *      ...
+     */
+    return wrapper->makeNode(CAstWrapper::PRIMITIVE,
+      wrapper->makeNode(CAstWrapper::PRIMITIVE, wrapper->makeConstant(functionName.c_str()),
+        wrapper->makeConstant(returnType.c_str()),
+      functionSourceInfo), wrapper->makeNode(CAstWrapper::PRIMITIVE, wrapper->makeArray(&arguments)),
+      wrapper->makeNode(CAstWrapper::PRIMITIVE, wrapper->makeArray(&blocks)));
+  }
+};
+
+/// Contains all raw function information.
+struct RootModuleInfo {
+  RootModuleInfo(CAstWrapper *wrapper) : wrapper(wrapper) {}
+  CAstWrapper *wrapper;
+  std::list<jobject> functions;
+
+  void addFunction(RootFunctionInfo *function) {
+    functions.push_back(function->make());
+  }
+
+  void addFunction(jobject function) {
+    functions.push_back(function);
+  }
+
+  jobject make() {
+    /*
+     *  PRIMITIVE
+     *    PRIMTIVE <-- FUNCTION
+     *    ...
+     */
+    return wrapper->makeNode(CAstWrapper::PRIMITIVE, wrapper->makeArray(&functions));
+  }
+};
 
 inline std::string addressToString(void* const a) {
   char buff[80];
   std::sprintf(buff, "%p", a);
   return buff;
 }
-
-class ValueTable {
-public:
-  ValueTable(CAstWrapper *wrapper) : wrapper(wrapper) {}
-  bool has(void* key) const {
-    return ((symbols.find(key) != symbols.end()) || (nodes.find(key) != nodes.end()));
-  }
-  jobject get(void* const key) {
-    if (isSymbol(key)) {
-      return std::get<0>(symbols.at(key));
-    } else if (isNode(key)) {
-      return nodes.at(key);
-    } else {
-      createAndAddSymbol(key, "Unimplemented");
-      llvm::outs() << "\t DEBUG: Requested key (" << key << ") not found.\n";
-      return get(key);
-      // llvm::outs() << "\t ERROR: Requested key (" << key << ") not found. Fatal, exiting...";
-      // exit(1);
-    }
-  }
-  void createAndAddSymbol(void* const key, std::string const &type) {
-    jobject Var = wrapper->makeNode(CAstWrapper::VAR, wrapper->makeConstant(addressToString(key).c_str()));
-    addSymbol(key, Var, type);
-  }
-  void addSymbol(void* const key, jobject const symbol, std::string const &type) {
-    if (symbols.find(key) == symbols.end()) {
-      symbols.insert({key, std::make_tuple(symbol, type)});
-      declNodes.push_front(wrapper->makeNode(CAstWrapper::DECL_STMT,
-        wrapper->makeConstant(addressToString(key).c_str()), wrapper->makeConstant(type.c_str())));
-    } else {
-      llvm::outs() << "\t WARNING: Attempted to re-add symbol to ValueTable: " << key << "\n";
-    }
-  }
-  void duplicate(void* const source, void* const target) {
-    if (symbols.find(source) != symbols.end()) {
-      symbols.insert({target, symbols.at(source)});
-    } else {
-      /* DEBUG */
-      createAndAddSymbol(source, "Unimplemented");
-      symbols.insert({target, symbols.at(source)});
-      // llvm::outs() << "\t ERROR: Requested key (" << source << ") not found while duplicating. Fatal, exiting...";
-      // exit(1);
-    }
-  }
-  void addNode(void* const key, jobject const node) {
-    if (nodes.find(key) == nodes.end()) {
-      nodes.insert({key, node});
-    } else {
-      llvm::outs() << "\t WARNING: Attempted to re-add node to ValueTable: " << key << "\n";
-    }
-  }
-  void clearNodes() {
-    nodes.clear();
-  }
-  void clearSymbols() {
-    symbols.clear();
-  }
-  void clearDeclNodes() {
-    declNodes.clear();
-  }
-  void remove(void* const key) {
-    if (isSymbol(key)) {
-      symbols.erase(symbols.find(key));
-    } else if (isNode(key)) {
-      nodes.erase(nodes.find(key));
-    } else {
-      llvm::outs() << "\t WARNING: Attempted to remove key (" << key << ") which does not exist.";
-    }
-  }
-  bool tryRemove(void* const key) {
-    if (isSymbol(key)) {
-      symbols.erase(symbols.find(key));
-      return true;
-    } else if (isNode(key)) {
-      nodes.erase(nodes.find(key));
-      return true;
-    }
-    return false;
-  }
-  void copySymbol(void* const src, void* const dest) {
-    /* DEBUG */ // assert(has(src));
-    if (!has(src)) {
-      createAndAddSymbol(src, "Unimplemented");
-    }
-    jobject Var = wrapper->makeNode(CAstWrapper::VAR, wrapper->getNthChild(get(src), 0));
-    addSymbol(dest, Var, std::get<1>(symbols.at(src)));
-  }
-  bool isSymbol(void* const key) const {
-    return symbols.find(key) != symbols.end();
-  }
-  bool isNode(void* const key) const {
-    return nodes.find(key) != nodes.end();
-  }
-  std::list<jobject> getDeclNodes() const {
-    return declNodes;
-  }
-private:
-  CAstWrapper *wrapper;
-  std::unordered_map<void*, std::tuple<jobject, std::string>> symbols;
-  std::unordered_map<void*, jobject> nodes;
-  std::list<jobject> declNodes;
-};
-
 
 } // end swan namespace
 

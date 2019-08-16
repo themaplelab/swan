@@ -13,177 +13,964 @@
 
 package ca.maple.swan.swift.translator;
 
-import ca.maple.swan.swift.ipa.summaries.BuiltInFunctionSummaries;
-import ca.maple.swan.swift.tree.*;
-import ca.maple.swan.swift.types.AnyCAstType;
-import ca.maple.swan.swift.visualization.ASTtoDot;
+import ca.maple.swan.swift.tree.FunctionEntity;
+import ca.maple.swan.swift.tree.ScriptEntity;
 import com.ibm.wala.cast.ir.translator.AbstractCodeEntity;
-import com.ibm.wala.cast.ir.translator.AbstractEntity;
+import com.ibm.wala.cast.tree.CAstEntity;
 import com.ibm.wala.cast.tree.CAstNode;
+import com.ibm.wala.cast.tree.CAstSourcePositionMap;
 import com.ibm.wala.cast.tree.impl.CAstImpl;
-import com.ibm.wala.cast.tree.impl.CAstSymbolImpl;
-import com.ibm.wala.util.debug.Assertions;
+import com.ibm.wala.cast.util.CAstPrinter;
 
 import java.io.File;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 
-import static com.ibm.wala.cast.tree.CAstNode.*;
+/*****************************  AST FORMAT ************************************
 
-public class RawAstTranslator {
+    Note: "node" here means PRIMITIVE.
 
-    private static CAstImpl Ast = new CAstImpl();
+    Every function is represented by one parent node. The C++ translator
+    returns a single CAstNode with every one of these "parent" nodes as
+    children.
 
-    // WARNING: Coupled with C++ string for unknown refs.
-    private static String unhandledRefName = "UNKNOWN_DYNAMIC_REF";
+    The first child of the function contains the basic block nodes.
 
-    public static ScriptEntity translate(File file, ArrayList<CAstEntityInfo> CAstEntityInfos) {
-        boolean DEBUG = true;
-        ScriptEntity scriptEntity = null;
-        ArrayList<AbstractCodeEntity> functionEntities = new ArrayList<>();
-        HashMap<String, CAstEntityInfo> mappedInfo = new HashMap<>();
+    The second node under a function node has the meta information.
 
-        if (DEBUG) System.out.println("\n\n=============CAST=ENTITIES=============\n\n");
+    Under every basic block node there is a node representing an instruction.
 
-        for (CAstEntityInfo info : CAstEntityInfos) {
-            AbstractCodeEntity newEntity;
-            if ((info.functionName.equals("main")) && (scriptEntity == null)) {
-                String scriptName = "script " + file.getName();
-                newEntity = new ScriptEntity(scriptName, file, info.sourcePositionRecorder);
-                scriptEntity = (ScriptEntity)newEntity;
-                info.functionName = scriptName;
-            } else {
-                newEntity = new FunctionEntity(info.functionName, info.returnType, info.argumentTypes,
-                        info.argumentNames, info.sourcePositionRecorder, info.functionPosition, info.argumentPositions);
-            }
-            functionEntities.add(newEntity);
+    ### GENERAL PROCEDURE:
 
-            mappedInfo.put(info.functionName, info);
+    1. Create a CAstEntity for each function.
+    2. Analyze each CAstEntity's corresponding root node on a new thread.
 
+    ### Function meta information format:
+
+    NAME (CONSTANT)
+    RETURN_TYPE (CONSTANT)
+    JOBJECT <-- FUNCTION_POSITION
+    PRIMITIVE <--- ARGUMENTS
+        PRIMITIVE <--- ARGUMENT
+            NAME
+            TYPE
+            JOBJECT <-- ARGUMENT_POSITION
+        ...
+
+    ### Basic block format:
+
+    PRIMITIVE <-- INSTRUCTION_INFORMATION
+        NAME
+        JOBJECT <-- INSTRUCTION_POSITION
+        ... <-- ANYTHING_NEEDED_TO_TRANSLATE_INSTRUCTION
+    ...
+
+
+ *****************************************************************************/
+
+public class RawAstTranslator extends SILInstructionVisitor<CAstNode, SILInstructionContext> {
+
+    static CAstImpl Ast = new CAstImpl();
+
+    public CAstEntity translate(File file, CAstNode n) {
+
+        /* DEBUG */
+        System.out.println("<<<<<< DEBUG >>>>>\n");
+        System.out.println(n);
+        System.out.println("\n<<<<<< DEBUG >>>>>\n\n");
+        /* DEBUG */
+
+        // 1. Create CAstEntity for each function.
+        ArrayList<AbstractCodeEntity> allEntities = new ArrayList<>();
+        HashMap<CAstNode, AbstractCodeEntity>  mappedEntities = new HashMap<>();
+
+        AbstractCodeEntity newEntity = makeScriptEntity(file);
+        allEntities.add(newEntity);
+        mappedEntities.put(n.getChild(0), newEntity);
+
+        for (CAstNode function : n.getChildren().subList(1, n.getChildren().size())) {
+            newEntity = makeFunctionEntity(function);
+            allEntities.add(newEntity);
+            mappedEntities.put(function, newEntity);
         }
 
-        for (AbstractCodeEntity entity : functionEntities) {
-            translateEntity(entity, mappedInfo.get(entity.getName()).basicBlocks, functionEntities);
-            if (DEBUG) EntityPrinter.print(entity);
-        }
+        // 2. Analyze each entity. (TODO)
+        for (CAstNode function: mappedEntities.keySet()) {
+            ArrayList<CAstNode> basicBlocks = new ArrayList<>();
+            for (CAstNode block: function.getChild(2).getChildren()) {
+                ArrayList<CAstNode> instructions = new ArrayList<>();
+                for (CAstNode instruction: block.getChildren()) {
 
-        assert(scriptEntity != null) : "Script Entity was not created most likely due to no \"main\" function found.";
-
-        if (DEBUG) ASTtoDot.print(functionEntities);
-        if (DEBUG) System.out.println("\n==========END=OF=CAST=ENTITIES=========\n\n");
-
-        return scriptEntity;
-    }
-
-    private static void translateEntity(AbstractCodeEntity entity, ArrayList<CAstNode> basicBlocks,
-                                        ArrayList<AbstractCodeEntity> allEntities) {
-        ArrayList<CAstNode> newBasicBlocks = new ArrayList<>();
-        for (CAstNode block : basicBlocks) {
-            newBasicBlocks.add(translateBasicBlock(entity, block, allEntities));
-        }
-        List<CAstNode> body = new ArrayList<>(newBasicBlocks.get(0).getChildren());
-        for (int i = 1; i < newBasicBlocks.size(); i++) {
-            body.add(newBasicBlocks.get(i));
-        }
-        CAstNode parentBlock = Ast.makeNode(CAstNode.BLOCK_STMT, body);
-        entity.setAst(parentBlock);
-    }
-
-    private static CAstNode translateBasicBlock(AbstractCodeEntity entity, CAstNode BB,
-                                                ArrayList<AbstractCodeEntity> allEntities) {
-        assert(BB.getKind() == BLOCK_STMT);
-        assert(BB.getChild(0).getKind() == LABEL_STMT);
-        assert(BB.getChild(0).getChild(0).getKind() == CONSTANT);
-        ArrayList<CAstNode> newAst = new ArrayList<>();
-        for (CAstNode n : BB.getChildren()) {
-            switch (n.getKind()) {
-                case DECL_STMT: {
-                    assert(n.getChild(0).getKind() == CONSTANT);
-                    assert(n.getChild(1).getKind() == CONSTANT);
-                    CAstNode symbol = Ast.makeConstant(
-                            new CAstSymbolImpl((String)n.getChild(0).getValue(), new AnyCAstType())
-                    );
-                    newAst.add(Ast.makeNode(DECL_STMT, Ast.makeConstant(symbol.getValue())));
-                    break;
-                }
-                case ASSIGN: {
-                    assert(n.getChild(0) != null);
-                    assert(n.getChild(1) != null);
-                    CAstNode src = n.getChild(1);
-                    switch(src.getKind()) {
-                        case CALL: {
-                            assert (src.getKind() == FUNCTION_EXPR);
-                            assert (src.getChild(0).getKind() == CONSTANT);
-                            String funcName = (String)src.getChild(0).getValue();
-                            CAstNode summary = BuiltInFunctionSummaries.findSummary(src);
-                            if (summary != null) {
-                                // We have a summary for this CALL we can use instead.
-                                newAst.add(Ast.makeNode(ASSIGN, n.getChild(0), summary));
-                                continue;
-                            } else if (funcName.equals(unhandledRefName)) {
-                                // We don't know which function we are referencing, so we will replace it with a constant.
-                                newAst.add(Ast.makeNode(ASSIGN, n.getChild(0), Ast.makeConstant(unhandledRefName)));
-                                continue;
-                            } else if (BuiltInFunctionSummaries.isBuiltIn(funcName)) {
-                                // The function is a builtin, that we evidently don't have a summary for, so we replace
-                                // the CALL with a constant.
-                                newAst.add(Ast.makeNode(ASSIGN, n.getChild(0), Ast.makeConstant("UNHANDLED_BUILTIN")));
-                                continue;
-                            } else {
-                                // We are calling a function which is represented by an entity.
-                                entity.addScopedEntity(null, findCallee(funcName, allEntities));
-                            }
-                            break;
-                        }
-                        case FUNCTION_EXPR: {
-                            assert(n.getChild(0).getKind() == CONSTANT);
-                            String funcName = (String)n.getChild(0).getValue();
-                            if (BuiltInFunctionSummaries.findSummary(src) != null) {
-                                // We don't create an entity for a summary, so if this FUNC_EXPR is used, WALA
-                                // will try to find a corresponding entity.
-                                Assertions.UNREACHABLE("Undefined behavior: Functions with summaries should only be used in calls.");
-                            } else if (funcName.equals(unhandledRefName)) {
-                                // We don't know which function we are referencing, so we will replace it with a constant.
-                                newAst.add(Ast.makeNode(ASSIGN, n.getChild(0), Ast.makeConstant(unhandledRefName)));
-                                continue;
-                            } else if (BuiltInFunctionSummaries.isBuiltIn(funcName)) {
-                                // The function is a builtin, that we evidently don't have a summary for, so we replace
-                                // the FUNCTION_EXPR with a constant.
-                                newAst.add(Ast.makeNode(ASSIGN, n.getChild(0), Ast.makeConstant("UNHANDLED_BUILTIN")));
-                                continue;
-                            } else {
-                                // We are referencing a function which is represented by an entity.
-                                entity.addScopedEntity(null, findCallee(funcName, allEntities));
-                            }
-                            break;
-                        }
-                    }
-                    newAst.add(n);
-                    break;
-                }
-                case CALL: {
-                    Assertions.UNREACHABLE("CALL should not be a root node.");
-                }
-                case FUNCTION_EXPR: {
-                    Assertions.UNREACHABLE("FUNCTION_EXPR should not be a root node.");
-                }
-                default: {
-                    newAst.add(n);
                 }
             }
         }
-        return Ast.makeNode(BLOCK_STMT, newAst);
+
+        /* DEBUG */
+        for (AbstractCodeEntity e : allEntities) {
+            e.setAst(Ast.makeNode(CAstNode.EMPTY));
+        }
+
+        /* DEBUG */
+
+        return allEntities.get(0);
     }
 
-    private static AbstractEntity findCallee(String functionName , ArrayList<AbstractCodeEntity> entities) {
-        CAstImpl Ast = new CAstImpl();
-        for (AbstractEntity entity : entities) {
-            if (entity.getName().equals(functionName)) {
-                return entity;
-            }
+    private static ScriptEntity makeScriptEntity(File file) {
+        return new ScriptEntity(file.getName(), file);
+    }
+
+    private static FunctionEntity makeFunctionEntity(CAstNode n) {
+        String name = (String)n.getChild(0).getValue();
+        String returnType = (String)n.getChild(1).getValue();
+        CAstSourcePositionMap.Position functionPosition = (CAstSourcePositionMap.Position)n.getChild(2).getValue();
+        ArrayList<String> argumentNames = new ArrayList<>();
+        ArrayList<String> argumentTypes = new ArrayList<>();
+        ArrayList<CAstSourcePositionMap.Position> argumentPositions = new ArrayList<>();
+        for (CAstNode arg : n.getChild(3).getChildren()) {
+            argumentNames.add((String)arg.getChild(0).getValue());
+            argumentTypes.add((String)arg.getChild(1).getValue());
+            argumentPositions.add((CAstSourcePositionMap.Position)arg.getChild(3).getValue());
         }
-        Assertions.UNREACHABLE("could not find callee for: " + functionName);
+        return new FunctionEntity(name, returnType, argumentTypes, argumentNames, functionPosition, argumentPositions);
+    }
+
+    @Override
+    protected CAstSourcePositionMap.Position getInstructionPosition(CAstNode N) {
+        return (CAstSourcePositionMap.Position)N.getChild(1).getValue();
+    }
+
+    @Override
+    protected CAstNode visitAllocStack(CAstNode N, SILInstructionContext C) {
+        return null;
+    }
+
+    @Override
+    protected CAstNode visitAllocRef(CAstNode N, SILInstructionContext C) {
+        return null;
+    }
+
+    @Override
+    protected CAstNode visitAllocRefDynamic(CAstNode N, SILInstructionContext C) {
+        return null;
+    }
+
+    @Override
+    protected CAstNode visitAllocBox(CAstNode N, SILInstructionContext C) {
+        return null;
+    }
+
+    @Override
+    protected CAstNode visitAllocValueBuffer(CAstNode N, SILInstructionContext C) {
+        return null;
+    }
+
+    @Override
+    protected CAstNode visitAllocGlobal(CAstNode N, SILInstructionContext C) {
+        return null;
+    }
+
+    @Override
+    protected CAstNode visitDeallocStack(CAstNode N, SILInstructionContext C) {
+        return null;
+    }
+
+    @Override
+    protected CAstNode visitDeallocBox(CAstNode N, SILInstructionContext C) {
+        return null;
+    }
+
+    @Override
+    protected CAstNode visitProjectBox(CAstNode N, SILInstructionContext C) {
+        return null;
+    }
+
+    @Override
+    protected CAstNode visitDeallocRef(CAstNode N, SILInstructionContext C) {
+        return null;
+    }
+
+    @Override
+    protected CAstNode visitDeallocPartialRef(CAstNode N, SILInstructionContext C) {
+        return null;
+    }
+
+    @Override
+    protected CAstNode visitDeallocValueBuffer(CAstNode N, SILInstructionContext C) {
+        return null;
+    }
+
+    @Override
+    protected CAstNode visitProjectValueBuffer(CAstNode N, SILInstructionContext C) {
+        return null;
+    }
+
+    @Override
+    protected CAstNode visitDebugValue(CAstNode N, SILInstructionContext C) {
+        return null;
+    }
+
+    @Override
+    protected CAstNode visitDebugValueAddr(CAstNode N, SILInstructionContext C) {
+        return null;
+    }
+
+    @Override
+    protected CAstNode visitLoad(CAstNode N, SILInstructionContext C) {
+        return null;
+    }
+
+    @Override
+    protected CAstNode visitStore(CAstNode N, SILInstructionContext C) {
+        return null;
+    }
+
+    @Override
+    protected CAstNode visitLoadBorrow(CAstNode N, SILInstructionContext C) {
+        return null;
+    }
+
+    @Override
+    protected CAstNode visitBeginBorrow(CAstNode N, SILInstructionContext C) {
+        return null;
+    }
+
+    @Override
+    protected CAstNode visitEndBorrow(CAstNode N, SILInstructionContext C) {
+        return null;
+    }
+
+    @Override
+    protected CAstNode visitAssign(CAstNode N, SILInstructionContext C) {
+        return null;
+    }
+
+    @Override
+    protected CAstNode visitAssignByWrapper(CAstNode N, SILInstructionContext C) {
+        return null;
+    }
+
+    @Override
+    protected CAstNode visitMarkUninitialized(CAstNode N, SILInstructionContext C) {
+        return null;
+    }
+
+    @Override
+    protected CAstNode visitMarkFunctionEscape(CAstNode N, SILInstructionContext C) {
+        return null;
+    }
+
+    @Override
+    protected CAstNode visitMarkUninitializedBehavior(CAstNode N, SILInstructionContext C) {
+        return null;
+    }
+
+    @Override
+    protected CAstNode visitCopyAddr(CAstNode N, SILInstructionContext C) {
+        return null;
+    }
+
+    @Override
+    protected CAstNode visitDestroyAddr(CAstNode N, SILInstructionContext C) {
+        return null;
+    }
+
+    @Override
+    protected CAstNode visitIndexAddr(CAstNode N, SILInstructionContext C) {
+        return null;
+    }
+
+    @Override
+    protected CAstNode visitTailAddr(CAstNode N, SILInstructionContext C) {
+        return null;
+    }
+
+    @Override
+    protected CAstNode visitIndexRawPointer(CAstNode N, SILInstructionContext C) {
+        return null;
+    }
+
+    @Override
+    protected CAstNode visitBindMemory(CAstNode N, SILInstructionContext C) {
+        return null;
+    }
+
+    @Override
+    protected CAstNode visitBeginAccess(CAstNode N, SILInstructionContext C) {
+        return null;
+    }
+
+    @Override
+    protected CAstNode visitEndAccess(CAstNode N, SILInstructionContext C) {
+        return null;
+    }
+
+    @Override
+    protected CAstNode visitBeginUnpairedAccess(CAstNode N, SILInstructionContext C) {
+        return null;
+    }
+
+    @Override
+    protected CAstNode visitEndUnpairedAccess(CAstNode N, SILInstructionContext C) {
+        return null;
+    }
+
+    @Override
+    protected CAstNode visitStrongRetain(CAstNode N, SILInstructionContext C) {
+        return null;
+    }
+
+    @Override
+    protected CAstNode visitStrongRelease(CAstNode N, SILInstructionContext C) {
+        return null;
+    }
+
+    @Override
+    protected CAstNode visitSetDeallocating(CAstNode N, SILInstructionContext C) {
+        return null;
+    }
+
+    @Override
+    protected CAstNode visitStrongRetainUnowned(CAstNode N, SILInstructionContext C) {
+        return null;
+    }
+
+    @Override
+    protected CAstNode visitUnownedRetain(CAstNode N, SILInstructionContext C) {
+        return null;
+    }
+
+    @Override
+    protected CAstNode visitUnownedRelease(CAstNode N, SILInstructionContext C) {
+        return null;
+    }
+
+    @Override
+    protected CAstNode visitLoadWeak(CAstNode N, SILInstructionContext C) {
+        return null;
+    }
+
+    @Override
+    protected CAstNode visitStoreWeak(CAstNode N, SILInstructionContext C) {
+        return null;
+    }
+
+    @Override
+    protected CAstNode visitLoadUnowned(CAstNode N, SILInstructionContext C) {
+        return null;
+    }
+
+    @Override
+    protected CAstNode visitStoreUnowned(CAstNode N, SILInstructionContext C) {
+        return null;
+    }
+
+    @Override
+    protected CAstNode visitFixLifetime(CAstNode N, SILInstructionContext C) {
+        return null;
+    }
+
+    @Override
+    protected CAstNode visitEndLifetime(CAstNode N, SILInstructionContext C) {
+        return null;
+    }
+
+    @Override
+    protected CAstNode visitMarkDependence(CAstNode N, SILInstructionContext C) {
+        return null;
+    }
+
+    @Override
+    protected CAstNode visitIsUnique(CAstNode N, SILInstructionContext C) {
+        return null;
+    }
+
+    @Override
+    protected CAstNode visitIsEscapingClosure(CAstNode N, SILInstructionContext C) {
+        return null;
+    }
+
+    @Override
+    protected CAstNode visitCopyBlock(CAstNode N, SILInstructionContext C) {
+        return null;
+    }
+
+    @Override
+    protected CAstNode visitCopyBlockWithoutEscaping(CAstNode N, SILInstructionContext C) {
+        return null;
+    }
+
+    @Override
+    protected CAstNode visitFunctionRef(CAstNode N, SILInstructionContext C) {
+        return null;
+    }
+
+    @Override
+    protected CAstNode visitDynamicFunctionRef(CAstNode N, SILInstructionContext C) {
+        return null;
+    }
+
+    @Override
+    protected CAstNode visitPrevDynamicFunctionRef(CAstNode N, SILInstructionContext C) {
+        return null;
+    }
+
+    @Override
+    protected CAstNode visitGlobalAddr(CAstNode N, SILInstructionContext C) {
+        return null;
+    }
+
+    @Override
+    protected CAstNode visitGlobalValue(CAstNode N, SILInstructionContext C) {
+        return null;
+    }
+
+    @Override
+    protected CAstNode visitIntegerLiteral(CAstNode N, SILInstructionContext C) {
+        return null;
+    }
+
+    @Override
+    protected CAstNode visitFloatLiteral(CAstNode N, SILInstructionContext C) {
+        return null;
+    }
+
+    @Override
+    protected CAstNode visitStringLiteral(CAstNode N, SILInstructionContext C) {
+        return null;
+    }
+
+    @Override
+    protected CAstNode visitClassMethod(CAstNode N, SILInstructionContext C) {
+        return null;
+    }
+
+    @Override
+    protected CAstNode visitObjCMethod(CAstNode N, SILInstructionContext C) {
+        return null;
+    }
+
+    @Override
+    protected CAstNode visitSuperMethod(CAstNode N, SILInstructionContext C) {
+        return null;
+    }
+
+    @Override
+    protected CAstNode visitObjCSuperMethod(CAstNode N, SILInstructionContext C) {
+        return null;
+    }
+
+    @Override
+    protected CAstNode visitWitnessMethod(CAstNode N, SILInstructionContext C) {
+        return null;
+    }
+
+    @Override
+    protected CAstNode visitApply(CAstNode N, SILInstructionContext C) {
+        return null;
+    }
+
+    @Override
+    protected CAstNode visitBeginApply(CAstNode N, SILInstructionContext C) {
+        return null;
+    }
+
+    @Override
+    protected CAstNode visitAbortApply(CAstNode N, SILInstructionContext C) {
+        return null;
+    }
+
+    @Override
+    protected CAstNode visitEndApply(CAstNode N, SILInstructionContext C) {
+        return null;
+    }
+
+    @Override
+    protected CAstNode visitPartialApply(CAstNode N, SILInstructionContext C) {
+        return null;
+    }
+
+    @Override
+    protected CAstNode visitBuiltin(CAstNode N, SILInstructionContext C) {
+        return null;
+    }
+
+    @Override
+    protected CAstNode visitMetatype(CAstNode N, SILInstructionContext C) {
+        return null;
+    }
+
+    @Override
+    protected CAstNode visitValueMetatype(CAstNode N, SILInstructionContext C) {
+        return null;
+    }
+
+    @Override
+    protected CAstNode visitExistentialMetatype(CAstNode N, SILInstructionContext C) {
+        return null;
+    }
+
+    @Override
+    protected CAstNode visitObjCProtocol(CAstNode N, SILInstructionContext C) {
+        return null;
+    }
+
+    @Override
+    protected CAstNode visitRetainValue(CAstNode N, SILInstructionContext C) {
+        return null;
+    }
+
+    @Override
+    protected CAstNode visitRetainValueAddr(CAstNode N, SILInstructionContext C) {
+        return null;
+    }
+
+    @Override
+    protected CAstNode visitUnmanagedRetainValue(CAstNode N, SILInstructionContext C) {
+        return null;
+    }
+
+    @Override
+    protected CAstNode visitCopyValue(CAstNode N, SILInstructionContext C) {
+        return null;
+    }
+
+    @Override
+    protected CAstNode visitReleaseValue(CAstNode N, SILInstructionContext C) {
+        return null;
+    }
+
+    @Override
+    protected CAstNode visitReleaseValueAddr(CAstNode N, SILInstructionContext C) {
+        return null;
+    }
+
+    @Override
+    protected CAstNode visitUnmanagedReleaseValue(CAstNode N, SILInstructionContext C) {
+        return null;
+    }
+
+    @Override
+    protected CAstNode visitDestroyValue(CAstNode N, SILInstructionContext C) {
+        return null;
+    }
+
+    @Override
+    protected CAstNode visitAutoreleaseValue(CAstNode N, SILInstructionContext C) {
+        return null;
+    }
+
+    @Override
+    protected CAstNode visitTuple(CAstNode N, SILInstructionContext C) {
+        return null;
+    }
+
+    @Override
+    protected CAstNode visitTupleExtract(CAstNode N, SILInstructionContext C) {
+        return null;
+    }
+
+    @Override
+    protected CAstNode visitTupleElementAddr(CAstNode N, SILInstructionContext C) {
+        return null;
+    }
+
+    @Override
+    protected CAstNode visitDestructureTuple(CAstNode N, SILInstructionContext C) {
+        return null;
+    }
+
+    @Override
+    protected CAstNode visitStruct(CAstNode N, SILInstructionContext C) {
+        return null;
+    }
+
+    @Override
+    protected CAstNode visitStructExtract(CAstNode N, SILInstructionContext C) {
+        return null;
+    }
+
+    @Override
+    protected CAstNode visitStructElementAddr(CAstNode N, SILInstructionContext C) {
+        return null;
+    }
+
+    @Override
+    protected CAstNode visitDestructureStruct(CAstNode N, SILInstructionContext C) {
+        return null;
+    }
+
+    @Override
+    protected CAstNode visitObject(CAstNode N, SILInstructionContext C) {
+        return null;
+    }
+
+    @Override
+    protected CAstNode visitRefElementAddr(CAstNode N, SILInstructionContext C) {
+        return null;
+    }
+
+    @Override
+    protected CAstNode visitRefTailAddr(CAstNode N, SILInstructionContext C) {
+        return null;
+    }
+
+    @Override
+    protected CAstNode visitEnum(CAstNode N, SILInstructionContext C) {
+        return null;
+    }
+
+    @Override
+    protected CAstNode visitUncheckedEnumData(CAstNode N, SILInstructionContext C) {
+        return null;
+    }
+
+    @Override
+    protected CAstNode visitInitEnumDataAddr(CAstNode N, SILInstructionContext C) {
+        return null;
+    }
+
+    @Override
+    protected CAstNode visitInjectEnumAddr(CAstNode N, SILInstructionContext C) {
+        return null;
+    }
+
+    @Override
+    protected CAstNode visitUncheckedTakeEnumDataAddr(CAstNode N, SILInstructionContext C) {
+        return null;
+    }
+
+    @Override
+    protected CAstNode visitSelectEnum(CAstNode N, SILInstructionContext C) {
+        return null;
+    }
+
+    @Override
+    protected CAstNode visitSelectEnumAddr(CAstNode N, SILInstructionContext C) {
+        return null;
+    }
+
+    @Override
+    protected CAstNode visitInitExistentialAddr(CAstNode N, SILInstructionContext C) {
+        return null;
+    }
+
+    @Override
+    protected CAstNode visitInitExistentialValue(CAstNode N, SILInstructionContext C) {
+        return null;
+    }
+
+    @Override
+    protected CAstNode visitDeinitExistentialAddr(CAstNode N, SILInstructionContext C) {
+        return null;
+    }
+
+    @Override
+    protected CAstNode visitDeinitExistentialValue(CAstNode N, SILInstructionContext C) {
+        return null;
+    }
+
+    @Override
+    protected CAstNode visitOpenExistentialAddr(CAstNode N, SILInstructionContext C) {
+        return null;
+    }
+
+    @Override
+    protected CAstNode visitOpenExistentialValue(CAstNode N, SILInstructionContext C) {
+        return null;
+    }
+
+    @Override
+    protected CAstNode visitInitExistentialRef(CAstNode N, SILInstructionContext C) {
+        return null;
+    }
+
+    @Override
+    protected CAstNode visitOpenExistentialRef(CAstNode N, SILInstructionContext C) {
+        return null;
+    }
+
+    @Override
+    protected CAstNode visitInitExistentialMetatype(CAstNode N, SILInstructionContext C) {
+        return null;
+    }
+
+    @Override
+    protected CAstNode visitOpenExistentialMetatype(CAstNode N, SILInstructionContext C) {
+        return null;
+    }
+
+    @Override
+    protected CAstNode visitAllocExistentialBox(CAstNode N, SILInstructionContext C) {
+        return null;
+    }
+
+    @Override
+    protected CAstNode visitProjectExistentialBox(CAstNode N, SILInstructionContext C) {
+        return null;
+    }
+
+    @Override
+    protected CAstNode visitOpenExistentialBox(CAstNode N, SILInstructionContext C) {
+        return null;
+    }
+
+    @Override
+    protected CAstNode visitOpenExistentialBoxValue(CAstNode N, SILInstructionContext C) {
+        return null;
+    }
+
+    @Override
+    protected CAstNode visitDeallocExistentialBox(CAstNode N, SILInstructionContext C) {
+        return null;
+    }
+
+    @Override
+    protected CAstNode visitProjectBlockStorage(CAstNode N, SILInstructionContext C) {
+        return null;
+    }
+
+    @Override
+    protected CAstNode visitInitBlockStorageHeader(CAstNode N, SILInstructionContext C) {
+        return null;
+    }
+
+    @Override
+    protected CAstNode visitUpcast(CAstNode N, SILInstructionContext C) {
+        return null;
+    }
+
+    @Override
+    protected CAstNode visitAddressToPointer(CAstNode N, SILInstructionContext C) {
+        return null;
+    }
+
+    @Override
+    protected CAstNode visitPointerToAddress(CAstNode N, SILInstructionContext C) {
+        return null;
+    }
+
+    @Override
+    protected CAstNode visitUncheckedRefCast(CAstNode N, SILInstructionContext C) {
+        return null;
+    }
+
+    @Override
+    protected CAstNode visitUncheckedRefCastAddr(CAstNode N, SILInstructionContext C) {
+        return null;
+    }
+
+    @Override
+    protected CAstNode visitUncheckedAddrCast(CAstNode N, SILInstructionContext C) {
+        return null;
+    }
+
+    @Override
+    protected CAstNode visitUncheckedTrivialBitCast(CAstNode N, SILInstructionContext C) {
+        return null;
+    }
+
+    @Override
+    protected CAstNode visitUncheckedBitwiseCast(CAstNode N, SILInstructionContext C) {
+        return null;
+    }
+
+    @Override
+    protected CAstNode visitRefToRawPointer(CAstNode N, SILInstructionContext C) {
+        return null;
+    }
+
+    @Override
+    protected CAstNode visitRawPointerToRef(CAstNode N, SILInstructionContext C) {
+        return null;
+    }
+
+    @Override
+    protected CAstNode visitRefToUnowned(CAstNode N, SILInstructionContext C) {
+        return null;
+    }
+
+    @Override
+    protected CAstNode visitUnownedToRef(CAstNode N, SILInstructionContext C) {
+        return null;
+    }
+
+    @Override
+    protected CAstNode visitRefToUnmanaged(CAstNode N, SILInstructionContext C) {
+        return null;
+    }
+
+    @Override
+    protected CAstNode visitUnmanagedToRef(CAstNode N, SILInstructionContext C) {
+        return null;
+    }
+
+    @Override
+    protected CAstNode visitConvertFunction(CAstNode N, SILInstructionContext C) {
+        return null;
+    }
+
+    @Override
+    protected CAstNode visitConvertEscapeToNoEscape(CAstNode N, SILInstructionContext C) {
+        return null;
+    }
+
+    @Override
+    protected CAstNode visitThinFunctionToPointer(CAstNode N, SILInstructionContext C) {
+        return null;
+    }
+
+    @Override
+    protected CAstNode visitPointerToThinFunction(CAstNode N, SILInstructionContext C) {
+        return null;
+    }
+
+    @Override
+    protected CAstNode visitClassifyBridgeObject(CAstNode N, SILInstructionContext C) {
+        return null;
+    }
+
+    @Override
+    protected CAstNode visitValueToBridgeObject(CAstNode N, SILInstructionContext C) {
+        return null;
+    }
+
+    @Override
+    protected CAstNode visitRefToBridgeObject(CAstNode N, SILInstructionContext C) {
+        return null;
+    }
+
+    @Override
+    protected CAstNode visitBridgeObjectToRef(CAstNode N, SILInstructionContext C) {
+        return null;
+    }
+
+    @Override
+    protected CAstNode visitBridgeObjectToWord(CAstNode N, SILInstructionContext C) {
+        return null;
+    }
+
+    @Override
+    protected CAstNode visitThinToThickFunction(CAstNode N, SILInstructionContext C) {
+        return null;
+    }
+
+    @Override
+    protected CAstNode visitThickToObjCMetatype(CAstNode N, SILInstructionContext C) {
+        return null;
+    }
+
+    @Override
+    protected CAstNode visitObjCToThickMetatype(CAstNode N, SILInstructionContext C) {
+        return null;
+    }
+
+    @Override
+    protected CAstNode visitObjCMetatypeToObject(CAstNode N, SILInstructionContext C) {
+        return null;
+    }
+
+    @Override
+    protected CAstNode visitObjCExistentialMetatypeToObject(CAstNode N, SILInstructionContext C) {
+        return null;
+    }
+
+    @Override
+    protected CAstNode visitUnconditionalCheckedCast(CAstNode N, SILInstructionContext C) {
+        return null;
+    }
+
+    @Override
+    protected CAstNode visitUnconditionalCheckedCastAddr(CAstNode N, SILInstructionContext C) {
+        return null;
+    }
+
+    @Override
+    protected CAstNode visitUnconditionalCheckedCastValue(CAstNode N, SILInstructionContext C) {
+        return null;
+    }
+
+    @Override
+    protected CAstNode visitCondFail(CAstNode N, SILInstructionContext C) {
+        return null;
+    }
+
+    @Override
+    protected CAstNode visitUnreachable(CAstNode N, SILInstructionContext C) {
+        return null;
+    }
+
+    @Override
+    protected CAstNode visitReturn(CAstNode N, SILInstructionContext C) {
+        return null;
+    }
+
+    @Override
+    protected CAstNode visitThrow(CAstNode N, SILInstructionContext C) {
+        return null;
+    }
+
+    @Override
+    protected CAstNode visitYield(CAstNode N, SILInstructionContext C) {
+        return null;
+    }
+
+    @Override
+    protected CAstNode visitUnwind(CAstNode N, SILInstructionContext C) {
+        return null;
+    }
+
+    @Override
+    protected CAstNode visitBr(CAstNode N, SILInstructionContext C) {
+        return null;
+    }
+
+    @Override
+    protected CAstNode visitCondBr(CAstNode N, SILInstructionContext C) {
+        return null;
+    }
+
+    @Override
+    protected CAstNode visitSwitchValue(CAstNode N, SILInstructionContext C) {
+        return null;
+    }
+
+    @Override
+    protected CAstNode visitSelectValue(CAstNode N, SILInstructionContext C) {
+        return null;
+    }
+
+    @Override
+    protected CAstNode visitSwitchEnum(CAstNode N, SILInstructionContext C) {
+        return null;
+    }
+
+    @Override
+    protected CAstNode visitSwitchEnumAddr(CAstNode N, SILInstructionContext C) {
+        return null;
+    }
+
+    @Override
+    protected CAstNode visitDynamicMethodBr(CAstNode N, SILInstructionContext C) {
+        return null;
+    }
+
+    @Override
+    protected CAstNode visitCheckedCastBr(CAstNode N, SILInstructionContext C) {
+        return null;
+    }
+
+    @Override
+    protected CAstNode visitCheckedCastValueBr(CAstNode N, SILInstructionContext C) {
+        return null;
+    }
+
+    @Override
+    protected CAstNode visitCheckedCastAddrBr(CAstNode N, SILInstructionContext C) {
+        return null;
+    }
+
+    @Override
+    protected CAstNode visitTryApply(CAstNode N, SILInstructionContext C) {
         return null;
     }
 }

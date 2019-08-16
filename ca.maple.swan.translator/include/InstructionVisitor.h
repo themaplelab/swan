@@ -38,8 +38,6 @@ namespace swan {
   static bool SWAN_PRINT = true;
   /// Source information can be annoying/unnecessary for debugging, so there is an option to disable it.
   static bool SWAN_PRINT_SOURCE = true;
-  /// Enable/Disable adding EMPTY nodes to the AST (useful for debugging but otherwise unnecessary).
-  static bool SWAN_ADD_EMPTY_NODES = false;
   /// Disable printing memory and file information.
   static bool SWAN_PRINT_FILE_AND_MEMORY = false;
 
@@ -47,9 +45,7 @@ namespace swan {
   /// ones for every type of SILInstruction. This makes translating simple.
   class InstructionVisitor : public SILInstructionVisitor<InstructionVisitor, jobject> {
   public:
-    InstructionVisitor(WALAInstance *Instance) : Instance(Instance) {
-      DO_NODE = Instance->CAst->makeConstant("do");
-    }
+    InstructionVisitor(WALAInstance *Instance) : Instance(Instance) {}
 
     /// Visit the SILModule of the swift file that holds the SILFunctions.
     void visitSILModule(SILModule *M);
@@ -77,8 +73,17 @@ namespace swan {
     /// Current instruction number.
     unsigned InstructionCounter = 0;
 
+    /// Raw data of current instruction begin translated.
+    std::unique_ptr<RootInstructionInfo> currentInstruction;
+
+    /// Raw data of current basic block.
+    std::unique_ptr<RootBasicBlockInfo> currentBasicBlock;
+
     /// Current 'Cast Entity' which contains info necessary to later create the CAstEntity for the current function.
-    std::unique_ptr<WALACAstEntityInfo> currentEntity;
+    std::unique_ptr<RootFunctionInfo> currentFunction;
+
+     /// Contains all of the raw data of the module.
+    std::unique_ptr<RootModuleInfo> currentModule;
 
     /// Returns CAstNode with appropriate operator kind.
     jobject getOperatorCAstType(Identifier Name);
@@ -89,14 +94,6 @@ namespace swan {
     std::unique_ptr<SILFunctionInfo> functionInfo;
     /// Source information about the SILModule.
     std::unique_ptr<SILModuleInfo> moduleInfo;
-
-    /// ValueTable hold all symbols and nodes.
-    std::unique_ptr<ValueTable> valueTable;
-    /// List of CAstNodes in the current SILBasicBlock.
-    std::list<jobject> nodeList;
-
-    /// "do" is required in every CALL so we just have it readily available here.
-    jobject DO_NODE;
 
   public:
 
@@ -169,12 +166,12 @@ namespace swan {
     jobject visitLoadUnownedInst(LoadUnownedInst *LUI);
     jobject visitStoreUnownedInst(StoreUnownedInst *SUI);
     jobject visitFixLifetimeInst(FixLifetimeInst *FLI);
+    jobject visitEndLifetimeInst(EndLifetimeInst *ELI);
     jobject visitMarkDependenceInst(MarkDependenceInst *MDI);
     jobject visitIsUniqueInst(IsUniqueInst *IUI);
     jobject visitIsEscapingClosureInst(IsEscapingClosureInst *IECI);
     jobject visitCopyBlockInst(CopyBlockInst *CBI);
     jobject visitCopyBlockWithoutEscapingInst(CopyBlockWithoutEscapingInst *CBWEI);
-    jobject visitEndLifetimeInst(EndLifetimeInst *ELI);
     // TODO? builtin "unsafeGuaranteed" & builtin "unsafeGuaranteedEnd"
 
     /*******************************************************************************/

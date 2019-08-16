@@ -2,9 +2,9 @@
 <project version="4">
   <component name="CMakeRunConfigurationManager" shouldGenerate="true" shouldDeleteObsolete="true">
     <generated>
-      <config projectName="SwiftWalaTranslator" targetName="clang-tablegen-targets" />
       <config projectName="SwiftWalaTranslator" targetName="intrinsics_gen" />
       <config projectName="SwiftWalaTranslator" targetName="swiftWala" />
+      <config projectName="SwiftWalaTranslator" targetName="clang-tablegen-targets" />
     </generated>
   </component>
   <component name="CMakeSettings" AUTO_RELOAD="true">
@@ -14,13 +14,23 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="5425f59f-e99a-476d-b5a6-2146456cea01" name="Default Changelist" comment="">
+      <change afterPath="$PROJECT_DIR$/../ca.maple.swan.swift/src/ca/maple/swan/swift/translator/SILInstructionContext.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../ca.maple.swan.swift/src/ca/maple/swan/swift/translator/SILInstructionVisitor.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../ca.maple.swan.swift/src/ca/maple/swan/swift/translator/SILValue.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/../.idea/modules.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../ca.maple.swan.swift/src/ca/maple/swan/swift/translator/RawAstTranslator.java" beforeDir="false" afterPath="$PROJECT_DIR$/../ca.maple.swan.swift/src/ca/maple/swan/swift/translator/RawAstTranslator.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../ca.maple.swan.swift/src/ca/maple/swan/swift/translator/SwiftToCAstTranslator.java" beforeDir="false" afterPath="$PROJECT_DIR$/../ca.maple.swan.swift/src/ca/maple/swan/swift/translator/SwiftToCAstTranslator.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../ca.maple.swan.swift/src/ca/maple/swan/swift/tree/CAstEntityInfo.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../ca.maple.swan.swift/src/ca/maple/swan/swift/tree/FunctionEntity.java" beforeDir="false" afterPath="$PROJECT_DIR$/../ca.maple.swan.swift/src/ca/maple/swan/swift/tree/FunctionEntity.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../ca.maple.swan.swift/src/ca/maple/swan/swift/tree/ScriptEntity.java" beforeDir="false" afterPath="$PROJECT_DIR$/../ca.maple.swan.swift/src/ca/maple/swan/swift/tree/ScriptEntity.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/CMakeLists.txt" beforeDir="false" afterPath="$PROJECT_DIR$/CMakeLists.txt" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/include/InfoStructures.hpp" beforeDir="false" afterPath="$PROJECT_DIR$/include/InfoStructures.hpp" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/lib/SILWalaInstructionVisitor.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/lib/SILWalaInstructionVisitor.cpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/include/InstructionVisitor.h" beforeDir="false" afterPath="$PROJECT_DIR$/include/InstructionVisitor.h" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/include/WALAInstance.h" beforeDir="false" afterPath="$PROJECT_DIR$/include/WALAInstance.h" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/lib/InstructionVisitor.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/lib/InstructionVisitor.cpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/lib/SwiftToCAstTranslatorJNIWrapper.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/lib/SwiftToCAstTranslatorJNIWrapper.cpp" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/lib/WALAInstance.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/lib/WALAInstance.cpp" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../gradle.properties.example" beforeDir="false" afterPath="$PROJECT_DIR$/../gradle.properties.example" afterDir="false" />
     </list>
     <ignored path="$PROJECT_DIR$/cmake-build-debug/" />
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
@@ -31,77 +41,48 @@
   </component>
   <component name="ClangdSettings">
     <option name="formatViaClangd" value="false" />
+    <option name="clangdEnabled" value="false" />
+  </component>
+  <component name="DatabaseView">
+    <option name="SHOW_INTERMEDIATE" value="true" />
+    <option name="GROUP_DATA_SOURCES" value="true" />
+    <option name="GROUP_SCHEMA" value="true" />
+    <option name="GROUP_CONTENTS" value="false" />
+    <option name="SORT_POSITIONED" value="false" />
+    <option name="SHOW_EMPTY_GROUPS" value="false" />
+    <option name="AUTO_SCROLL_FROM_SOURCE" value="false" />
+    <option name="HIDDEN_KINDS">
+      <set />
+    </option>
+    <expand />
+    <select />
   </component>
   <component name="ExecutionTargetManager" SELECTED_TARGET="CMakeBuildProfile:Debug" />
   <component name="FileEditorManager">
     <leaf SIDE_TABS_SIZE_LIMIT_KEY="300">
       <file pinned="false" current-in-tab="true">
-        <entry file="file://$PROJECT_DIR$/lib/SILWalaInstructionVisitor.cpp">
+        <entry file="file://$PROJECT_DIR$/lib/InstructionVisitor.cpp">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="383">
-              <caret line="3003" selection-start-line="3003" selection-end-line="3003" />
+            <state relative-caret-position="195">
+              <caret line="435" lean-forward="true" selection-start-line="435" selection-end-line="435" />
             </state>
           </provider>
         </entry>
       </file>
       <file pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/include/WALAInstance.h">
+        <entry file="file://$PROJECT_DIR$/include/InstructionVisitor.h">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="1320">
-              <caret line="88" column="39" selection-start-line="88" selection-start-column="39" selection-end-line="88" selection-end-column="39" />
+            <state relative-caret-position="257">
+              <caret line="111" column="22" selection-start-line="111" selection-start-column="22" selection-end-line="111" selection-end-column="22" />
             </state>
           </provider>
-        </entry>
-      </file>
-      <file pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/lib/WALAInstance.cpp">
-          <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="3855">
-              <caret line="257" column="11" selection-start-line="257" selection-start-column="11" selection-end-line="257" selection-end-column="11" />
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/lib/CMakeLists.txt">
-          <provider selected="true" editor-type-id="text-editor" />
         </entry>
       </file>
       <file pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/include/InfoStructures.hpp">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="630">
-              <caret line="42" column="41" selection-start-line="42" selection-start-column="41" selection-end-line="42" selection-end-column="41" />
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/include/SILWalaInstructionVisitor.h">
-          <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="1380">
-              <caret line="92" column="23" selection-start-line="92" selection-start-column="23" selection-end-line="92" selection-end-column="23" />
-              <folding>
-                <element signature="e#1042#1071#0" expanded="true" />
-              </folding>
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/CMakeLists.txt">
-          <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="60">
-              <caret line="4" column="61" selection-start-line="4" selection-start-column="61" selection-end-line="4" selection-end-column="61" />
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/build.gradle">
-          <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="420">
-              <caret line="28" column="44" selection-start-line="28" selection-start-column="44" selection-end-line="28" selection-end-column="44" />
+            <state relative-caret-position="660">
+              <caret line="44" column="41" selection-start-line="44" selection-start-column="41" selection-end-line="44" selection-end-column="41" />
             </state>
           </provider>
         </entry>
@@ -110,25 +91,41 @@
   </component>
   <component name="FindInProjectRecents">
     <findStrings>
-      <find>WALA_DIR</find>
-      <find>InstructionCount</find>
-      <find>instrinfo</find>
-      <find>instrInfo</find>
-      <find>functionInfo</find>
-      <find>instrInfo-&gt;</find>
-      <find>make_shared</find>
-      <find>shared</find>
-      <find>functioninfo</find>
       <find>moduleInfo</find>
-      <find>visitapplysite</find>
       <find>visitcopyvalueinst</find>
       <find>visitcopyvalue</find>
       <find>visitstoreinst</find>
+      <find>visitbranchinst</find>
       <find>visitenuminst</find>
+      <find>visitbranchin</find>
+      <find>visitswitchenum</find>
+      <find>visitConvertEscapeToNoEscape</find>
+      <find>objc</find>
+      <find>symboltable.insert</find>
+      <find>INST]</find>
+      <find>llvm::errs()</find>
+      <find>int I = 0</find>
+      <find>visitobj</find>
+      <find>getResult</find>
+      <find>[</find>
+      <find>[^  &quot;]\[</find>
+      <find>visitapplysite</find>
+      <find>getallres</find>
+      <find>getyieldedvalues</find>
+      <find>visittryapply</find>
+      <find>::visit(.{0,})[{](\n(.){0,};){0,}(\n)}</find>
+      <find>::visit.{0,}[{](\n(.){0,};){0,}(\n)}</find>
+      <find>[{](\n(.){0,};){0,}(\n)}</find>
+      <find>[{](\n(.){0,}){0,}(\n)}</find>
+      <find>[{](\n(.){0,}){0,}(\n)}\n</find>
+      <find>[ {]((\n){0,}(.){0,}){0,}(\n)[}]</find>
+      <find>[ {]((\n){0,}(.){0,})(\n)[}]</find>
+      <find>[{]((\n){0,}(.){0,})(\n)[}]</find>
     </findStrings>
     <replaceStrings>
       <replace>moduleInfo.</replace>
       <replace>instrInfo.</replace>
+      <replace>llvm::outs()</replace>
     </replaceStrings>
   </component>
   <component name="Git.Settings">
@@ -138,17 +135,22 @@
     <option name="CHANGED_PATHS">
       <list>
         <option value="$PROJECT_DIR$/build.gradle" />
-        <option value="$PROJECT_DIR$/CMakeLists.txt" />
-        <option value="$PROJECT_DIR$/include/SILWalaInstructionVisitor.h" />
         <option value="$PROJECT_DIR$/include/WALAInstance.h" />
         <option value="$PROJECT_DIR$/include/InfoStructures.hpp" />
         <option value="$PROJECT_DIR$/lib/WALAInstance.cpp" />
+        <option value="$PROJECT_DIR$/lib/testRunner.cpp" />
+        <option value="$PROJECT_DIR$/lib/CMakeLists.txt" />
         <option value="$PROJECT_DIR$/lib/SILWalaInstructionVisitor.cpp" />
+        <option value="$PROJECT_DIR$/CMakeLists.txt" />
+        <option value="$PROJECT_DIR$/include/SILWalaInstructionVisitor.h" />
+        <option value="$PROJECT_DIR$/include/InstructionVisitor.h" />
+        <option value="$PROJECT_DIR$/lib/InstructionVisitor.cpp" />
       </list>
     </option>
   </component>
+  <component name="OCFindUsagesOptions" text="true" ivars="false" properties="true" derivedClasses="false" />
   <component name="ProjectFrameBounds" fullScreen="true">
-    <option name="width" value="1440" />
+    <option name="width" value="714" />
     <option name="height" value="900" />
   </component>
   <component name="ProjectLevelVcsManager" settingsEditedManually="true" />
@@ -185,10 +187,16 @@
     <property name="ASKED_SHARE_PROJECT_CONFIGURATION_FILES" value="true" />
     <property name="SHARE_PROJECT_CONFIGURATION_FILES" value="true" />
     <property name="WebServerToolWindowFactoryState" value="false" />
+    <property name="cf.advertisement.text.has.clang-format" value="true" />
     <property name="last_opened_file_path" value="$PROJECT_DIR$" />
     <property name="nodejs_interpreter_path.stuck_in_default_project" value="undefined stuck path" />
     <property name="nodejs_npm_path_reset_for_default_project" value="true" />
-    <property name="settings.editor.selected.configurable" value="preferences.sourceCode.C/C++" />
+    <property name="settings.editor.selected.configurable" value="language.cpp.clangd" />
+  </component>
+  <component name="RecentsManager">
+    <key name="MoveFile.RECENT_KEYS">
+      <recent name="$PROJECT_DIR$/include" />
+    </key>
   </component>
   <component name="RunDashboard">
     <option name="ruleStates">
@@ -238,16 +246,23 @@
       <workItem from="1564966893403" duration="14000" />
       <workItem from="1564967787874" duration="5833000" />
       <workItem from="1564979120299" duration="70000" />
+      <workItem from="1565114707716" duration="3737000" />
+      <workItem from="1565124289127" duration="49000" />
+      <workItem from="1565124894645" duration="85000" />
+      <workItem from="1565125555839" duration="6831000" />
+      <workItem from="1565296950088" duration="2516000" />
+      <workItem from="1565917418230" duration="600000" />
     </task>
     <servers />
   </component>
   <component name="TimeTrackingManager">
-    <option name="totallyTimeSpent" value="7161000" />
+    <option name="totallyTimeSpent" value="20979000" />
   </component>
   <component name="ToolWindowManager">
     <frame x="0" y="0" width="1440" height="900" extended-state="0" />
+    <editor active="true" />
     <layout>
-      <window_info content_ui="combo" id="Project" order="0" visible="true" weight="0.26037195" />
+      <window_info active="true" content_ui="combo" id="Project" order="0" visible="true" weight="0.27110156" />
       <window_info id="Structure" order="1" side_tool="true" weight="0.25" />
       <window_info id="Favorites" order="2" side_tool="true" />
       <window_info anchor="bottom" id="Message" order="0" />
@@ -258,73 +273,170 @@
       <window_info anchor="bottom" id="Inspection" order="5" weight="0.4" />
       <window_info anchor="bottom" id="TODO" order="6" />
       <window_info anchor="bottom" id="Database Changes" order="7" />
-      <window_info active="true" anchor="bottom" id="Messages" order="8" visible="true" weight="0.3120482" />
+      <window_info anchor="bottom" id="Messages" order="8" weight="0.3120482" />
       <window_info anchor="bottom" id="Terminal" order="9" />
       <window_info anchor="bottom" id="Event Log" order="10" side_tool="true" />
       <window_info anchor="bottom" id="Version Control" order="11" weight="0.3299363" />
-      <window_info active="true" anchor="bottom" id="CMake" order="12" visible="true" weight="0.32891566" />
+      <window_info anchor="bottom" id="CMake" order="12" weight="0.32891566" />
       <window_info anchor="right" id="Commander" internal_type="SLIDING" order="0" type="SLIDING" weight="0.4" />
       <window_info anchor="right" id="Ant Build" order="1" weight="0.25" />
       <window_info anchor="right" content_ui="combo" id="Hierarchy" order="2" weight="0.25" />
-      <window_info anchor="right" id="Database" order="3" />
+      <window_info anchor="right" id="Database" order="3" weight="0.3297568" />
     </layout>
   </component>
   <component name="TypeScriptGeneratedFilesManager">
     <option name="version" value="1" />
   </component>
   <component name="editorHistoryManager">
-    <entry file="file://$PROJECT_DIR$/lib/SILWalaInstructionVisitor.cpp">
+    <entry file="file://$PROJECT_DIR$/../../swift/include/swift/AST/Decl.h">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="383">
-          <caret line="3003" selection-start-line="3003" selection-end-line="3003" />
+        <state relative-caret-position="62">
+          <caret line="5140" column="6" selection-start-line="5140" selection-start-column="6" selection-end-line="5140" selection-end-column="6" />
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/include/WALAInstance.h">
+    <entry file="file://$PROJECT_DIR$/lib/testRunner.cpp" />
+    <entry file="file://$PROJECT_DIR$/../../swift/include/swift/SIL/ApplySite.h">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="1320">
-          <caret line="88" column="39" selection-start-line="88" selection-start-column="39" selection-end-line="88" selection-end-column="39" />
+        <state relative-caret-position="3750">
+          <caret line="250" column="21" selection-start-line="250" selection-start-column="21" selection-end-line="250" selection-end-column="21" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/lib/SwiftToCAstTranslatorJNIWrapper.cpp">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="435">
+          <caret line="29" selection-start-line="29" selection-end-line="31" selection-end-column="40" />
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/lib/WALAInstance.cpp">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="3855">
-          <caret line="257" column="11" selection-start-line="257" selection-start-column="11" selection-end-line="257" selection-end-column="11" />
+        <state relative-caret-position="450">
+          <caret line="30" selection-start-line="30" selection-end-line="30" selection-end-column="37" />
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/lib/CMakeLists.txt">
+    <entry file="file://$PROJECT_DIR$/include/WALAInstance.h">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="495">
+          <caret line="33" selection-start-line="33" selection-end-line="33" selection-end-column="16" />
+          <folding>
+            <element signature="e#910#926#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$USER_HOME$/Downloads/Xcode-beta.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.15.sdk/System/Library/Frameworks/JavaVM.framework/Headers/jni.h">
       <provider selected="true" editor-type-id="text-editor" />
     </entry>
-    <entry file="file://$PROJECT_DIR$/include/InfoStructures.hpp">
+    <entry file="file://$PROJECT_DIR$/build.gradle">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="630">
-          <caret line="42" column="41" selection-start-line="42" selection-start-column="41" selection-end-line="42" selection-end-column="41" />
+        <state relative-caret-position="420">
+          <caret line="28" column="44" selection-start-line="28" selection-start-column="44" selection-end-line="28" selection-end-column="44" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/../../swift/include/swift/SIL/SILInstruction.h">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="8430">
+          <caret line="562" column="79" selection-start-line="562" selection-start-column="79" selection-end-line="562" selection-end-column="79" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/../../swift/include/swift/SIL/SILDebugScope.h">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="570">
+          <caret line="38" column="6" selection-start-line="38" selection-start-column="6" selection-end-line="38" selection-end-column="6" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/include/SwiftToCAstTranslatorJNIWrapper.h">
+      <provider selected="true" editor-type-id="text-editor" />
+    </entry>
+    <entry file="file://$PROJECT_DIR$/include/SwiftCHook.hpp">
+      <provider selected="true" editor-type-id="text-editor" />
+    </entry>
+    <entry file="file://$PROJECT_DIR$/lib/CMakeLists.txt">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="270">
+          <caret line="18" selection-start-line="18" selection-end-line="18" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/../../swift/include/swift/SIL/SILValue.h">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="134">
+          <caret line="507" selection-start-line="507" selection-end-line="507" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/../../swift/include/swift/AST/ParameterList.h">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="375">
+          <caret line="27" column="19" selection-start-line="27" selection-start-column="19" selection-end-line="27" selection-end-column="19" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/CMakeLists.txt">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="195">
+          <caret line="13" column="40" selection-start-line="13" selection-start-column="40" selection-end-line="13" selection-end-column="40" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/lib/SILWalaInstructionVisitor.cpp">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="135">
+          <caret line="9" column="14" selection-start-line="9" selection-start-column="14" selection-end-line="9" selection-end-column="14" />
+          <folding>
+            <element signature="e#1116#1154#0" expanded="true" />
+          </folding>
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/include/SILWalaInstructionVisitor.h">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="1380">
-          <caret line="92" column="23" selection-start-line="92" selection-start-column="23" selection-end-line="92" selection-end-column="23" />
+        <state relative-caret-position="585">
+          <caret line="39" column="43" selection-start-line="39" selection-start-column="43" selection-end-line="39" selection-end-column="43" />
           <folding>
             <element signature="e#1042#1071#0" expanded="true" />
           </folding>
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/CMakeLists.txt">
+    <entry file="file://$PROJECT_DIR$/include/InfoStructures.hpp">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="60">
-          <caret line="4" column="61" selection-start-line="4" selection-start-column="61" selection-end-line="4" selection-end-column="61" />
+        <state relative-caret-position="660">
+          <caret line="44" column="41" selection-start-line="44" selection-start-column="41" selection-end-line="44" selection-end-column="41" />
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/build.gradle">
+    <entry file="file://$PROJECT_DIR$/include/SymbolTable.h">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="420">
-          <caret line="28" column="44" selection-start-line="28" selection-start-column="44" selection-end-line="28" selection-end-column="44" />
+        <state relative-caret-position="570">
+          <caret line="38" selection-start-line="38" selection-end-line="40" selection-end-column="51" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/lib/SymbolTable.cpp">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="330">
+          <caret line="22" selection-start-line="22" selection-end-line="67" selection-end-column="1" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/include/InstructionVisitor.h">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="257">
+          <caret line="111" column="22" selection-start-line="111" selection-start-column="22" selection-end-line="111" selection-end-column="22" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/lib/InstructionVisitor.cpp">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="195">
+          <caret line="435" lean-forward="true" selection-start-line="435" selection-end-line="435" />
         </state>
       </provider>
     </entry>

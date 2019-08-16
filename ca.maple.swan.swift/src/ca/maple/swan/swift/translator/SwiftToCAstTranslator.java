@@ -12,7 +12,6 @@
 //===---------------------------------------------------------------------===//
 package ca.maple.swan.swift.translator;
 
-import ca.maple.swan.swift.tree.CAstEntityInfo;
 import java.io.File;
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -20,13 +19,12 @@ import java.net.URL;
 import com.ibm.wala.cast.ir.translator.NativeTranslatorToCAst;
 import com.ibm.wala.cast.tree.CAst;
 import com.ibm.wala.cast.tree.CAstEntity;
+import com.ibm.wala.cast.tree.CAstNode;
 import com.ibm.wala.cast.tree.impl.CAstImpl;
 import com.ibm.wala.cast.tree.rewrite.CAstRewriter.CopyKey;
 import com.ibm.wala.cast.tree.rewrite.CAstRewriter.RewriteContext;
 import com.ibm.wala.cast.tree.rewrite.CAstRewriterFactory;
 import com.ibm.wala.classLoader.ModuleEntry;
-
-import java.util.ArrayList;
 
 /*
  * This class translates the Swift code to a single CAstEntity (the "main" ScriptEntity) by calling a JNI method
@@ -56,10 +54,10 @@ public class SwiftToCAstTranslator extends NativeTranslatorToCAst {
 		assert false;
 	}
 
-	public native ArrayList<CAstEntityInfo> translateToCAstNodes();
+	public native CAstNode translateToCAstNodes();
 
 	@Override
 	public CAstEntity translateToCAst() {
-		return RawAstTranslator.translate(new File(getFile()), translateToCAstNodes());
+		return new RawAstTranslator().translate(new File(getFile()), translateToCAstNodes());
 	}
 }

@@ -35,7 +35,7 @@ public class FunctionEntity extends AbstractCodeEntity {
 
     public FunctionEntity(String name, String returnType,
                           ArrayList<String> argumentTypes,
-                          ArrayList<String> argumentNames, CAstSourcePositionRecorder sourcePositionRecorder,
+                          ArrayList<String> argumentNames,
                           CAstSourcePositionMap.Position functionPosition,
                           ArrayList<CAstSourcePositionMap.Position> argumentPositions) {
         super(new SwiftFunctionType(returnType, argumentTypes));
@@ -43,7 +43,7 @@ public class FunctionEntity extends AbstractCodeEntity {
                 : "Function: " + name + " :argument information is not parallel";
         this.functionName = name;
         this.arguments = argumentNames.toArray(new String[0]);
-        this.sourcePositionRecorder = sourcePositionRecorder;
+        this.sourcePositionRecorder = new CAstSourcePositionRecorder();
         this.functionPosition = functionPosition;
         this.argumentPositions = argumentPositions;
         this.setPosition(functionPosition);

@@ -31,9 +31,9 @@ public class ScriptEntity extends AbstractScriptEntity {
     CAstSourcePositionRecorder sourcePositionRecorder;
     String scriptName;
 
-    public ScriptEntity(String scriptName, File file, CAstSourcePositionRecorder cAstSourcePositionRecorder) {
+    public ScriptEntity(String scriptName, File file) {
         super(file, new SwiftScriptType());
-        this.sourcePositionRecorder = cAstSourcePositionRecorder;
+        this.sourcePositionRecorder = new CAstSourcePositionRecorder();
         this.scriptName = scriptName;
     }
 
