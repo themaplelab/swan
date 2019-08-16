@@ -13,6 +13,7 @@
 
 package ca.maple.swan.swift.translator;
 
+import ca.maple.swan.swift.tree.EntityPrinter;
 import ca.maple.swan.swift.tree.FunctionEntity;
 import ca.maple.swan.swift.tree.ScriptEntity;
 import com.ibm.wala.cast.ir.translator.AbstractCodeEntity;
@@ -79,9 +80,9 @@ public class RawAstTranslator extends SILInstructionVisitor<CAstNode, SILInstruc
     public CAstEntity translate(File file, CAstNode n) {
 
         /* DEBUG */
-        System.out.println("<<<<<< DEBUG >>>>>\n");
+        System.out.println("\n\n<<<<<< DEBUG >>>>>\n");
         System.out.println(n);
-        System.out.println("\n<<<<<< DEBUG >>>>>\n\n");
+        System.out.println("<<<<<< DEBUG >>>>>\n\n");
         /* DEBUG */
 
         // 1. Create CAstEntity for each function.
@@ -112,6 +113,7 @@ public class RawAstTranslator extends SILInstructionVisitor<CAstNode, SILInstruc
         /* DEBUG */
         for (AbstractCodeEntity e : allEntities) {
             e.setAst(Ast.makeNode(CAstNode.EMPTY));
+            EntityPrinter.print(e);
         }
 
         /* DEBUG */
@@ -133,7 +135,7 @@ public class RawAstTranslator extends SILInstructionVisitor<CAstNode, SILInstruc
         for (CAstNode arg : n.getChild(3).getChildren()) {
             argumentNames.add((String)arg.getChild(0).getValue());
             argumentTypes.add((String)arg.getChild(1).getValue());
-            argumentPositions.add((CAstSourcePositionMap.Position)arg.getChild(3).getValue());
+            argumentPositions.add((CAstSourcePositionMap.Position)arg.getChild(2).getValue());
         }
         return new FunctionEntity(name, returnType, argumentTypes, argumentNames, functionPosition, argumentPositions);
     }

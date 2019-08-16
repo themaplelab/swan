@@ -100,7 +100,7 @@ struct RootInstructionInfo {
      */
     return wrapper->makeNode(CAstWrapper::PRIMITIVE,
       wrapper->makeConstant(instructionName.c_str()),
-      instructionSourceInfo,
+      wrapper->makeConstant(instructionSourceInfo),
       wrapper->makeNode(
         CAstWrapper::PRIMITIVE, wrapper->makeArray(&properties)));
   }
@@ -149,7 +149,8 @@ struct RootFunctionInfo {
     jobject argumentSourceInfo = wrapper->makeLocation(static_cast<int>(fl), static_cast<int>(fc),
       static_cast<int>(ll), static_cast<int>(lc));
     jobject newArgument = wrapper->makeNode(CAstWrapper::PRIMITIVE,
-      wrapper->makeConstant(name.c_str()), wrapper->makeConstant(type.c_str()), argumentSourceInfo);
+      wrapper->makeConstant(name.c_str()), wrapper->makeConstant(type.c_str()),
+      wrapper->makeConstant(argumentSourceInfo));
     arguments.push_back(newArgument);
   }
 
@@ -164,10 +165,9 @@ struct RootFunctionInfo {
   jobject make() {
     /*
      *  PRIMITIVE
-     *    PRIMITIVE
-     *      NAME
-     *      TYPE
-     *      JOBJECT <-- LOCATION
+     *    NAME
+     *    TYPE
+     *    JOBJECT <-- LOCATION
      *    PRIMITIVE
      *      PRIMTIVE <-- ARGUMENT
      *      ...
@@ -176,9 +176,10 @@ struct RootFunctionInfo {
      *      ...
      */
     return wrapper->makeNode(CAstWrapper::PRIMITIVE,
-      wrapper->makeNode(CAstWrapper::PRIMITIVE, wrapper->makeConstant(functionName.c_str()),
-        wrapper->makeConstant(returnType.c_str()),
-      functionSourceInfo), wrapper->makeNode(CAstWrapper::PRIMITIVE, wrapper->makeArray(&arguments)),
+      wrapper->makeConstant(functionName.c_str()),
+      wrapper->makeConstant(returnType.c_str()),
+      wrapper->makeConstant(functionSourceInfo),
+      wrapper->makeNode(CAstWrapper::PRIMITIVE, wrapper->makeArray(&arguments)),
       wrapper->makeNode(CAstWrapper::PRIMITIVE, wrapper->makeArray(&blocks)));
   }
 };
