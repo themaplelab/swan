@@ -13,6 +13,7 @@
 
 package ca.maple.swan.swift.translator;
 
+import ca.maple.swan.swift.translator.values.SILValue;
 import ca.maple.swan.swift.tree.EntityPrinter;
 import ca.maple.swan.swift.tree.FunctionEntity;
 import ca.maple.swan.swift.tree.ScriptEntity;
@@ -110,7 +111,7 @@ public class RawAstTranslator extends SILInstructionVisitor<CAstNode, SILInstruc
             for (CAstNode block: function.getChild(4).getChildren()) {
                 ArrayList<CAstNode> instructions = new ArrayList<>();
                 for (CAstNode instruction: block.getChildren()) {
-                    CAstNode Node = this.visit(instruction.getChild(0), C);
+                    CAstNode Node = this.visit(instruction, C);
                     if ((Node != null) && (Node.getKind() != CAstNode.EMPTY)) {
                         instructions.add(Node);
                     }
@@ -181,14 +182,12 @@ public class RawAstTranslator extends SILInstructionVisitor<CAstNode, SILInstruc
         return null;
     }
 
-    /* ============================================================================
-     * DESC: Initializes storage for a global variable. Has no result or value
-     *       operand so we don't do anything.
-     */
     @Override
     protected CAstNode visitAllocGlobal(CAstNode N, SILInstructionContext C) {
-        // String GlobalName = (String)N.getChild(0).getValue();
-        // String GlobalType = (String)N.getChild(1).getValue();
+        String GlobalName = (String)N.getChild(0).getValue();
+        String GlobalType = (String)N.getChild(1).getValue();
+        C.valueTable.addValue(
+                new SILValue(GlobalName, GlobalType, C.parent.getNodeTypeMap()));
         return null;
     }
 

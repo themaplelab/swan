@@ -19,7 +19,7 @@ import ca.maple.swan.swift.translator.types.SILTypes;
 import com.ibm.wala.cast.tree.CAstNode;
 import com.ibm.wala.cast.tree.impl.CAstNodeTypeMapRecorder;
 
-public abstract class SILValue {
+public class SILValue {
 
     protected final String name;
     protected final SILType type;

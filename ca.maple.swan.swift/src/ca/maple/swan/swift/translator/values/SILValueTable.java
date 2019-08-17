@@ -6,14 +6,16 @@ public class SILValueTable {
 
     private HashMap<String, SILValue> values;
 
-    public SILValueTable() { }
+    public SILValueTable() {
+        values = new HashMap<>();
+    }
 
-    SILValue getValue(String valueName) {
+    public SILValue getValue(String valueName) {
         assert(values.containsValue(valueName));
         return values.get(valueName);
     }
 
-    void addValue(SILValue v) {
+    public void addValue(SILValue v) {
         values.put(v.name, v);
     }
 
