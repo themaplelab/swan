@@ -17,6 +17,7 @@ import ca.maple.swan.swift.translator.RawAstTranslator;
 import ca.maple.swan.swift.translator.types.SILType;
 import ca.maple.swan.swift.translator.types.SILTypes;
 import com.ibm.wala.cast.tree.CAstNode;
+import com.ibm.wala.cast.tree.impl.CAstImpl;
 import com.ibm.wala.cast.tree.impl.CAstNodeTypeMapRecorder;
 
 public class SILValue {
@@ -25,6 +26,8 @@ public class SILValue {
     protected final SILType type;
     private final CAstNode varNode;
 
+    protected static final CAstImpl Ast = RawAstTranslator.Ast;
+
     public SILValue(String name, String type, CAstNodeTypeMapRecorder typeRecorder) {
         this(name, SILTypes.getType(type), typeRecorder);
     }
@@ -32,15 +35,12 @@ public class SILValue {
     public SILValue(String name, SILType type, CAstNodeTypeMapRecorder typeRecorder) {
         this.name = name;
         this.type = type;
-        this.varNode = RawAstTranslator.Ast.makeNode(CAstNode.VAR,
-                RawAstTranslator.Ast.makeConstant(this.name));
+        this.varNode = Ast.makeNode(CAstNode.VAR, Ast.makeConstant(this.name));
         typeRecorder.add(varNode, this.type);
     }
 
     public CAstNode assignTo(SILValue to) {
-        return RawAstTranslator.Ast.makeNode(CAstNode.ASSIGN,
-                RawAstTranslator.Ast.makeConstant(to.name),
-                RawAstTranslator.Ast.makeConstant(this.name));
+        return Ast.makeNode(CAstNode.ASSIGN, Ast.makeConstant(to.name), Ast.makeConstant(this.name));
     }
 
     public CAstNode getVarNode() {

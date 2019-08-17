@@ -1,5 +1,8 @@
 package ca.maple.swan.swift.translator.values;
 
+import ca.maple.swan.swift.translator.RawAstTranslator;
+import com.ibm.wala.cast.tree.CAstNode;
+import com.ibm.wala.cast.tree.impl.CAstImpl;
 import com.ibm.wala.cast.tree.impl.CAstNodeTypeMapRecorder;
 
 public class SILFunctionRef extends SILValue {
@@ -13,5 +16,10 @@ public class SILFunctionRef extends SILValue {
 
     public String getFunctionName() {
         return functionName;
+    }
+
+    public CAstNode getFunctionRef() {
+        return Ast.makeNode(CAstNode.FUNCTION_EXPR,
+                Ast.makeConstant(functionName));
     }
 }

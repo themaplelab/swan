@@ -1,6 +1,5 @@
 package ca.maple.swan.swift.translator.values;
 
-import ca.maple.swan.swift.translator.RawAstTranslator;
 import ca.maple.swan.swift.translator.types.SILType;
 import ca.maple.swan.swift.translator.types.SILTypes;
 import com.ibm.wala.cast.tree.CAstNode;
@@ -25,9 +24,9 @@ public class SILStruct extends SILValue {
         try {
             for (Pair<String, SILType> p : fields) {
                 if (p.fst.equals(fieldName)) {
-                    CAstNode objectRef = RawAstTranslator.Ast.makeNode(OBJECT_REF,
-                            RawAstTranslator.Ast.makeConstant(this.name),
-                            RawAstTranslator.Ast.makeConstant(fieldName));
+                    CAstNode objectRef = Ast.makeNode(OBJECT_REF,
+                            Ast.makeConstant(this.name),
+                            Ast.makeConstant(fieldName));
                     typeMap.add(objectRef, p.snd);
                     return objectRef;
                 }
@@ -41,9 +40,9 @@ public class SILStruct extends SILValue {
 
     public CAstNode createObjectRef(CAstNodeTypeMapRecorder typeMap, int index) {
         try {
-            CAstNode objectRef = RawAstTranslator.Ast.makeNode(OBJECT_REF,
-                    RawAstTranslator.Ast.makeConstant(this.name),
-                    RawAstTranslator.Ast.makeConstant(fields.get(index).fst));
+            CAstNode objectRef = Ast.makeNode(OBJECT_REF,
+                    Ast.makeConstant(this.name),
+                    Ast.makeConstant(fields.get(index).fst));
             typeMap.add(objectRef, fields.get(index).snd);
             return objectRef;
         } catch (IndexOutOfBoundsException e) {

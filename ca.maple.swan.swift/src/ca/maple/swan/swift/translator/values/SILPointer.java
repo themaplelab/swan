@@ -1,5 +1,6 @@
 package ca.maple.swan.swift.translator.values;
 
+import com.ibm.wala.cast.tree.CAstNode;
 import com.ibm.wala.cast.tree.impl.CAstNodeTypeMapRecorder;
 
 public class SILPointer extends SILValue {
@@ -13,5 +14,9 @@ public class SILPointer extends SILValue {
 
     public SILValue dereference() {
         return pointsTo;
+    }
+
+    public CAstNode getUnderlyingVar() {
+        return pointsTo.getVarNode();
     }
 }
