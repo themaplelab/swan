@@ -2,12 +2,12 @@ package ca.maple.swan.swift.translator.values;
 
 import com.ibm.wala.cast.tree.impl.CAstNodeTypeMapRecorder;
 
-public class Field extends SILValue {
+public class SILField extends SILValue {
 
     private final SILValue object;
     private final Object field;
 
-    public Field(String name, String type, CAstNodeTypeMapRecorder typeRecorder, SILValue object, Object fieldName) {
+    public SILField(String name, String type, CAstNodeTypeMapRecorder typeRecorder, SILValue object, Object fieldName) {
         super(name, type, typeRecorder);
         this.object = object;
         this.field = fieldName;

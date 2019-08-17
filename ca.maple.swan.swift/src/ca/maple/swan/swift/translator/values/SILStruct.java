@@ -11,10 +11,10 @@ import java.util.ArrayList;
 
 import static com.ibm.wala.cast.tree.CAstNode.OBJECT_REF;
 
-public class Struct extends SILValue {
+public class SILStruct extends SILValue {
     private ArrayList<Pair<String, SILType>> fields;
 
-    public Struct(String name, String type, CAstNodeTypeMapRecorder typeRecorder, ArrayList<Pair<String, String>> fields) {
+    public SILStruct(String name, String type, CAstNodeTypeMapRecorder typeRecorder, ArrayList<Pair<String, String>> fields) {
         super(name, type, typeRecorder);
         for (Pair<String, String> field : fields) {
             this.fields.add(Pair.make(field.fst, SILTypes.getType(field.snd)));
@@ -52,11 +52,11 @@ public class Struct extends SILValue {
         return null;
     }
 
-    public Field createField(String name, String fieldName, CAstNodeTypeMapRecorder typeRecorder) {
+    public SILField createField(String name, String fieldName, CAstNodeTypeMapRecorder typeRecorder) {
         try {
             for (Pair<String, SILType> p : fields) {
                 if (p.fst.equals(fieldName)) {
-                    return new Field(name, p.snd.getName(), typeRecorder, this, fieldName);
+                    return new SILField(name, p.snd.getName(), typeRecorder, this, fieldName);
                 }
             }
             throw new Exception("fieldName not valid");
@@ -66,9 +66,9 @@ public class Struct extends SILValue {
         return null;
     }
 
-    public Field createField(String name, int index, CAstNodeTypeMapRecorder typeRecorder) {
+    public SILField createField(String name, int index, CAstNodeTypeMapRecorder typeRecorder) {
         try {
-            return new Field(name, fields.get(index).snd.getName(), typeRecorder, this, index);
+            return new SILField(name, fields.get(index).snd.getName(), typeRecorder, this, index);
         } catch (IndexOutOfBoundsException e) {
             e.printStackTrace();
         }

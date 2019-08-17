@@ -11,7 +11,7 @@ public class SILValueTable {
     }
 
     public SILValue getValue(String valueName) {
-        assert(values.containsValue(valueName));
+        assert(values.containsKey(valueName));
         return values.get(valueName);
     }
 

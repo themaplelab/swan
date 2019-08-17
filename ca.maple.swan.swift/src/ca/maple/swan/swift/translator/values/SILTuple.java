@@ -10,10 +10,10 @@ import java.util.ArrayList;
 
 import static com.ibm.wala.cast.tree.CAstNode.OBJECT_REF;
 
-public class Tuple extends SILValue {
+public class SILTuple extends SILValue {
     ArrayList<SILType> fieldTypes;
 
-    public Tuple(String name, String type, CAstNodeTypeMapRecorder typeRecorder, String... types) {
+    public SILTuple(String name, String type, CAstNodeTypeMapRecorder typeRecorder, String... types) {
         super(name, type, typeRecorder);
         for (String s : types) {
             fieldTypes.add(SILTypes.getType(s));
@@ -27,7 +27,7 @@ public class Tuple extends SILValue {
         return objectRef;
     }
 
-    public Field createField(String name, int index, CAstNodeTypeMapRecorder typeRecorder) {
-        return new Field(name, fieldTypes.get(index).getName(), typeRecorder, this, index);
+    public SILField createField(String name, int index, CAstNodeTypeMapRecorder typeRecorder) {
+        return new SILField(name, fieldTypes.get(index).getName(), typeRecorder, this, index);
     }
 }

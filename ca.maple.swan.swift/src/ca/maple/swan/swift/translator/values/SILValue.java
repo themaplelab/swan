@@ -47,4 +47,8 @@ public class SILValue {
         return varNode;
     }
 
+    public SILPointer makePointer(String name, String type, CAstNodeTypeMapRecorder typeRecorder) {
+        return new SILPointer(name, type, typeRecorder, this);
+    }
+
 }
