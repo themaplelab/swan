@@ -2,9 +2,9 @@
 <project version="4">
   <component name="CMakeRunConfigurationManager" shouldGenerate="true" shouldDeleteObsolete="true">
     <generated>
+      <config projectName="SwiftWalaTranslator" targetName="clang-tablegen-targets" />
       <config projectName="SwiftWalaTranslator" targetName="intrinsics_gen" />
       <config projectName="SwiftWalaTranslator" targetName="swiftWala" />
-      <config projectName="SwiftWalaTranslator" targetName="clang-tablegen-targets" />
     </generated>
   </component>
   <component name="CMakeSettings" AUTO_RELOAD="true">
@@ -14,23 +14,13 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="5425f59f-e99a-476d-b5a6-2146456cea01" name="Default Changelist" comment="">
-      <change afterPath="$PROJECT_DIR$/../ca.maple.swan.swift/src/ca/maple/swan/swift/translator/SILInstructionContext.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/../ca.maple.swan.swift/src/ca/maple/swan/swift/translator/SILInstructionVisitor.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/../ca.maple.swan.swift/src/ca/maple/swan/swift/translator/SILValue.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/../.idea/modules.xml" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/../ca.maple.swan.swift/src/ca/maple/swan/swift/translator/RawAstTranslator.java" beforeDir="false" afterPath="$PROJECT_DIR$/../ca.maple.swan.swift/src/ca/maple/swan/swift/translator/RawAstTranslator.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../ca.maple.swan.swift/src/ca/maple/swan/swift/translator/SwiftToCAstTranslator.java" beforeDir="false" afterPath="$PROJECT_DIR$/../ca.maple.swan.swift/src/ca/maple/swan/swift/translator/SwiftToCAstTranslator.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../ca.maple.swan.swift/src/ca/maple/swan/swift/tree/CAstEntityInfo.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../ca.maple.swan.swift/src/ca/maple/swan/swift/tree/FunctionEntity.java" beforeDir="false" afterPath="$PROJECT_DIR$/../ca.maple.swan.swift/src/ca/maple/swan/swift/tree/FunctionEntity.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../ca.maple.swan.swift/src/ca/maple/swan/swift/tree/ScriptEntity.java" beforeDir="false" afterPath="$PROJECT_DIR$/../ca.maple.swan.swift/src/ca/maple/swan/swift/tree/ScriptEntity.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../ca.maple.swan.swift/src/ca/maple/swan/swift/tree/SwiftFunctionType.java" beforeDir="false" afterPath="$PROJECT_DIR$/../ca.maple.swan.swift/src/ca/maple/swan/swift/tree/SwiftFunctionType.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/CMakeLists.txt" beforeDir="false" afterPath="$PROJECT_DIR$/CMakeLists.txt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/include/InfoStructures.hpp" beforeDir="false" afterPath="$PROJECT_DIR$/include/InfoStructures.hpp" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/include/InstructionVisitor.h" beforeDir="false" afterPath="$PROJECT_DIR$/include/InstructionVisitor.h" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/include/WALAInstance.h" beforeDir="false" afterPath="$PROJECT_DIR$/include/WALAInstance.h" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/lib/InstructionVisitor.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/lib/InstructionVisitor.cpp" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/lib/SwiftToCAstTranslatorJNIWrapper.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/lib/SwiftToCAstTranslatorJNIWrapper.cpp" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/lib/WALAInstance.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/lib/WALAInstance.cpp" afterDir="false" />
     </list>
     <ignored path="$PROJECT_DIR$/cmake-build-debug/" />
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
@@ -63,8 +53,8 @@
       <file pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/lib/InstructionVisitor.cpp">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="195">
-              <caret line="435" lean-forward="true" selection-start-line="435" selection-end-line="435" />
+            <state relative-caret-position="138">
+              <caret line="1069" column="2" selection-start-line="1069" selection-start-column="2" selection-end-line="1069" selection-end-column="2" />
             </state>
           </provider>
         </entry>
@@ -72,8 +62,8 @@
       <file pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/include/InstructionVisitor.h">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="257">
-              <caret line="111" column="22" selection-start-line="111" selection-start-column="22" selection-end-line="111" selection-end-column="22" />
+            <state relative-caret-position="1530">
+              <caret line="102" column="40" selection-start-line="102" selection-start-column="40" selection-end-line="102" selection-end-column="40" />
             </state>
           </provider>
         </entry>
@@ -91,7 +81,6 @@
   </component>
   <component name="FindInProjectRecents">
     <findStrings>
-      <find>moduleInfo</find>
       <find>visitcopyvalueinst</find>
       <find>visitcopyvalue</find>
       <find>visitstoreinst</find>
@@ -121,11 +110,13 @@
       <find>[ {]((\n){0,}(.){0,}){0,}(\n)[}]</find>
       <find>[ {]((\n){0,}(.){0,})(\n)[}]</find>
       <find>[{]((\n){0,}(.){0,})(\n)[}]</find>
+      <find>jobject</find>
     </findStrings>
     <replaceStrings>
       <replace>moduleInfo.</replace>
       <replace>instrInfo.</replace>
       <replace>llvm::outs()</replace>
+      <replace>void</replace>
     </replaceStrings>
   </component>
   <component name="Git.Settings">
@@ -159,7 +150,6 @@
       <foldersAlwaysOnTop value="true" />
     </navigator>
     <panes>
-      <pane id="Scope" />
       <pane id="ProjectPane">
         <subPane>
           <expand>
@@ -181,6 +171,7 @@
           <select />
         </subPane>
       </pane>
+      <pane id="Scope" />
     </panes>
   </component>
   <component name="PropertiesComponent">
@@ -252,17 +243,19 @@
       <workItem from="1565125555839" duration="6831000" />
       <workItem from="1565296950088" duration="2516000" />
       <workItem from="1565917418230" duration="600000" />
+      <workItem from="1565994129513" duration="74000" />
+      <workItem from="1565994234928" duration="58000" />
     </task>
     <servers />
   </component>
   <component name="TimeTrackingManager">
-    <option name="totallyTimeSpent" value="20979000" />
+    <option name="totallyTimeSpent" value="21111000" />
   </component>
   <component name="ToolWindowManager">
     <frame x="0" y="0" width="1440" height="900" extended-state="0" />
     <editor active="true" />
     <layout>
-      <window_info active="true" content_ui="combo" id="Project" order="0" visible="true" weight="0.27110156" />
+      <window_info active="true" content_ui="combo" id="Project" order="0" visible="true" weight="0.27825466" />
       <window_info id="Structure" order="1" side_tool="true" weight="0.25" />
       <window_info id="Favorites" order="2" side_tool="true" />
       <window_info anchor="bottom" id="Message" order="0" />
@@ -385,23 +378,21 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/lib/SILWalaInstructionVisitor.cpp">
+    <entry file="file://$PROJECT_DIR$/lib/SILWalaInstructionVisitor.cpp" />
+    <entry file="file://$PROJECT_DIR$/include/SILWalaInstructionVisitor.h" />
+    <entry file="file://$PROJECT_DIR$/include/SymbolTable.h" />
+    <entry file="file://$PROJECT_DIR$/lib/SymbolTable.cpp" />
+    <entry file="file://$PROJECT_DIR$/lib/InstructionVisitor.cpp">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="135">
-          <caret line="9" column="14" selection-start-line="9" selection-start-column="14" selection-end-line="9" selection-end-column="14" />
-          <folding>
-            <element signature="e#1116#1154#0" expanded="true" />
-          </folding>
+        <state relative-caret-position="138">
+          <caret line="1069" column="2" selection-start-line="1069" selection-start-column="2" selection-end-line="1069" selection-end-column="2" />
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/include/SILWalaInstructionVisitor.h">
+    <entry file="file://$PROJECT_DIR$/include/InstructionVisitor.h">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="585">
-          <caret line="39" column="43" selection-start-line="39" selection-start-column="43" selection-end-line="39" selection-end-column="43" />
-          <folding>
-            <element signature="e#1042#1071#0" expanded="true" />
-          </folding>
+        <state relative-caret-position="1530">
+          <caret line="102" column="40" selection-start-line="102" selection-start-column="40" selection-end-line="102" selection-end-column="40" />
         </state>
       </provider>
     </entry>
@@ -409,34 +400,6 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="660">
           <caret line="44" column="41" selection-start-line="44" selection-start-column="41" selection-end-line="44" selection-end-column="41" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/include/SymbolTable.h">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="570">
-          <caret line="38" selection-start-line="38" selection-end-line="40" selection-end-column="51" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/lib/SymbolTable.cpp">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="330">
-          <caret line="22" selection-start-line="22" selection-end-line="67" selection-end-column="1" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/include/InstructionVisitor.h">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="257">
-          <caret line="111" column="22" selection-start-line="111" selection-start-column="22" selection-end-line="111" selection-end-column="22" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/lib/InstructionVisitor.cpp">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="195">
-          <caret line="435" lean-forward="true" selection-start-line="435" selection-end-line="435" />
         </state>
       </provider>
     </entry>

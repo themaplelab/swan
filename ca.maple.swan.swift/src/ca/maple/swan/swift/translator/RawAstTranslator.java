@@ -17,10 +17,12 @@ import ca.maple.swan.swift.tree.EntityPrinter;
 import ca.maple.swan.swift.tree.FunctionEntity;
 import ca.maple.swan.swift.tree.ScriptEntity;
 import com.ibm.wala.cast.ir.translator.AbstractCodeEntity;
+import com.ibm.wala.cast.js.types.JavaScriptTypes;
 import com.ibm.wala.cast.tree.CAstEntity;
 import com.ibm.wala.cast.tree.CAstNode;
 import com.ibm.wala.cast.tree.CAstSourcePositionMap;
 import com.ibm.wala.cast.tree.impl.CAstImpl;
+import com.ibm.wala.cast.tree.impl.CAstNodeTypeMapRecorder;
 import com.ibm.wala.cast.util.CAstPrinter;
 
 import java.io.File;
@@ -75,7 +77,7 @@ import java.util.HashMap;
  */
 public class RawAstTranslator extends SILInstructionVisitor<CAstNode, SILInstructionContext> {
 
-    static CAstImpl Ast = new CAstImpl();
+    public static CAstImpl Ast = new CAstImpl();
 
     public CAstEntity translate(File file, CAstNode n) {
 
@@ -101,18 +103,28 @@ public class RawAstTranslator extends SILInstructionVisitor<CAstNode, SILInstruc
 
         // 2. Analyze each entity. (TODO)
         for (CAstNode function: mappedEntities.keySet()) {
-            ArrayList<CAstNode> basicBlocks = new ArrayList<>();
-            for (CAstNode block: function.getChild(2).getChildren()) {
+            ArrayList<CAstNode> blocks = new ArrayList<>();
+            SILInstructionContext C = new SILInstructionContext(mappedEntities.get(function), allEntities);
+            int blockNo =  0;
+            for (CAstNode block: function.getChild(4).getChildren()) {
                 ArrayList<CAstNode> instructions = new ArrayList<>();
                 for (CAstNode instruction: block.getChildren()) {
-
+                    CAstNode Node = this.visit(instruction.getChild(0), C);
+                    if ((Node != null) && (Node.getKind() != CAstNode.EMPTY)) {
+                        instructions.add(Node);
+                    }
                 }
+                instructions.add(0, Ast.makeNode(CAstNode.LABEL_STMT,
+                        Ast.makeConstant(blockNo)));
+                CAstNode bb = Ast.makeNode(CAstNode.BLOCK_STMT, instructions);
+                blocks.add(bb);
             }
+            mappedEntities.get(function).setAst(blocks.get(0));
         }
 
         /* DEBUG */
         for (AbstractCodeEntity e : allEntities) {
-            e.setAst(Ast.makeNode(CAstNode.EMPTY));
+            //e.setAst(Ast.makeNode(CAstNode.EMPTY));
             EntityPrinter.print(e);
         }
 
@@ -170,8 +182,14 @@ public class RawAstTranslator extends SILInstructionVisitor<CAstNode, SILInstruc
         return null;
     }
 
+    /* ============================================================================
+     * DESC: Initializes storage for a global variable. Has no result or value
+     *       operand so we don't do anything.
+     */
     @Override
     protected CAstNode visitAllocGlobal(CAstNode N, SILInstructionContext C) {
+        // String GlobalName = (String)N.getChild(0).getValue();
+        // String GlobalType = (String)N.getChild(1).getValue();
         return null;
     }
 

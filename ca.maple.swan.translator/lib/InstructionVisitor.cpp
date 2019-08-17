@@ -26,6 +26,10 @@
 #include <fstream>
 #include <memory>
 
+#define makeNode(x) Instance->CAst->makeNode(x)
+#define makeConst(x) Instance->CAst->makeConstant(x)
+#define addProp(x) currentInstruction->addProperty(x)
+
 using namespace swan;
 
 //===------------------- MODULE/FUNCTION/BLOCK VISITORS ------------------===//
@@ -328,11 +332,14 @@ void InstructionVisitor::visitAllocValueBufferInst(AllocValueBufferInst *AVBI) {
 
 void InstructionVisitor::visitAllocGlobalInst(AllocGlobalInst *AGI) {
   SILGlobalVariable *Var = AGI->getReferencedGlobal();
+  std::string VarName = Demangle::demangleSymbolAsString(Var->getName());
+  std::string VarType = Var->getLoweredType().getAsString();
   if (SWAN_PRINT) {
-    llvm::outs() << "\t [ALLOC NAME]:" << Demangle::demangleSymbolAsString(Var->getName()) << "\n";
-    llvm::outs() << "\t [ALLOC TYPE]:" << Var->getLoweredType().getAsString() << "\n";
+    llvm::outs() << "\t [ALLOC NAME]:" << VarName << "\n";
+    llvm::outs() << "\t [ALLOC TYPE]:" << VarType << "\n";
   }
-  
+  addProp(makeConst(VarName.c_str()));
+  addProp(makeConst(VarType.c_str()));
 }
 
 void InstructionVisitor::visitDeallocStackInst(DeallocStackInst *DSI) {
