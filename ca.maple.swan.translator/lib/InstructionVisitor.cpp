@@ -186,7 +186,6 @@ void InstructionVisitor::beforeVisit(SILInstruction *I) {
 
   if (SWAN_PRINT) {
     if (SWAN_PRINT_SOURCE) {
-      llvm::outs() << "\t\t [VALUE BASE]: " << I << "\n";
       printSILInstructionInfo();
     }
     llvm::outs() << "<< " << getSILInstructionName(I->getKind()) << " >>\n";
@@ -194,8 +193,8 @@ void InstructionVisitor::beforeVisit(SILInstruction *I) {
 }
 
 void InstructionVisitor::printSILInstructionInfo() {
-  llvm::outs() << "\t\t [INSTR] #" << instrInfo->num;
-  llvm::outs() << ", [OPNUM] " << instrInfo->id << "\n";
+  // llvm::outs() << "\t\t [INSTR] #" << instrInfo->num;
+  // llvm::outs() << ", [OPNUM] " << instrInfo->id << "\n";
   if (SWAN_PRINT_FILE_AND_MEMORY) {
     llvm::outs() << "\t\t --> File: " << instrInfo->Filename << "\n";
     if (instrInfo->srcType == SILSourceType::INVALID) {
@@ -241,10 +240,6 @@ void InstructionVisitor::printSILInstructionInfo() {
         break;
       }
     }
-  }
-  // Show operands, if they exist.
-  for (void * const &op : instrInfo->ops) {
-    llvm::outs() << "\t\t [OPER]: " << op << "\n";
   }
 }
 
@@ -599,8 +594,18 @@ void InstructionVisitor::visitPreviousDynamicFunctionRefInst(PreviousDynamicFunc
 }
 
 void InstructionVisitor::visitGlobalAddrInst(GlobalAddrInst *GAI) {
-  // TODO: UNIMPLEMENTED
-  
+  SILGlobalVariable *Var = GAI->getReferencedGlobal();
+  std::string VarName = Demangle::demangleSymbolAsString(Var->getName());
+  std::string ResultName = addressToString(static_cast<ValueBase*>(GAI));
+  std::string ResultType = GAI->getType().getAsString();
+  if (SWAN_PRINT) {
+    llvm::outs() << "\t [GLOBAL NAME]:" << VarName << "\n";
+    llvm::outs() << "\t [RESULT NAME]:" << ResultName << "\n";
+    llvm::outs() << "\t [RESULT TYPE]:" << ResultType << "\n";
+  }
+  addProp(makeConst(VarName.c_str()));
+  addProp(makeConst(ResultName.c_str()));
+  addProp(makeConst(ResultType.c_str()));
 }
 
 void InstructionVisitor::visitGlobalValueInst(GlobalValueInst *GVI) {

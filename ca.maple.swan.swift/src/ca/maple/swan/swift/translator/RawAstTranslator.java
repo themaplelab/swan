@@ -13,19 +13,17 @@
 
 package ca.maple.swan.swift.translator;
 
+import ca.maple.swan.swift.translator.values.SILPointer;
 import ca.maple.swan.swift.translator.values.SILValue;
 import ca.maple.swan.swift.tree.EntityPrinter;
 import ca.maple.swan.swift.tree.FunctionEntity;
 import ca.maple.swan.swift.tree.ScriptEntity;
 import ca.maple.swan.swift.visualization.ASTtoDot;
 import com.ibm.wala.cast.ir.translator.AbstractCodeEntity;
-import com.ibm.wala.cast.js.types.JavaScriptTypes;
 import com.ibm.wala.cast.tree.CAstEntity;
 import com.ibm.wala.cast.tree.CAstNode;
 import com.ibm.wala.cast.tree.CAstSourcePositionMap;
 import com.ibm.wala.cast.tree.impl.CAstImpl;
-import com.ibm.wala.cast.tree.impl.CAstNodeTypeMapRecorder;
-import com.ibm.wala.cast.util.CAstPrinter;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -438,6 +436,12 @@ public class RawAstTranslator extends SILInstructionVisitor<CAstNode, SILInstruc
 
     @Override
     protected CAstNode visitGlobalAddr(CAstNode N, SILInstructionContext C) {
+        String GlobalName = (String)N.getChild(0).getValue();
+        String ResultName = (String)N.getChild(1).getValue();
+        String ResultType = (String)N.getChild(2).getValue();
+        SILPointer GlobalRef = C.valueTable.getValue(GlobalName)
+                .makePointer(ResultName, ResultType, C.parent.getNodeTypeMap());
+        C.valueTable.addValue(GlobalRef);
         return null;
     }
 
