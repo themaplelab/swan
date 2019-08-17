@@ -92,6 +92,8 @@ void InstructionVisitor::visitSILFunction(SILFunction *F) {
   // Set function result type.
   if (F->getLoweredFunctionType()->getNumResults() == 1) {
     currentFunction->returnType = F->getLoweredFunctionType()->getSingleResult().getSILStorageType().getAsString();
+  } else if (F->getLoweredFunctionType()->getNumResults() == 0) {
+    currentFunction->returnType = "void";
   } else {
     currentFunction->returnType = "MultiResultType"; // TODO: Replace with array of types or something?
   }
