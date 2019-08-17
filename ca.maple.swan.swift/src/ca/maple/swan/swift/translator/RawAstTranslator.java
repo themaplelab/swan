@@ -16,6 +16,7 @@ package ca.maple.swan.swift.translator;
 import ca.maple.swan.swift.tree.EntityPrinter;
 import ca.maple.swan.swift.tree.FunctionEntity;
 import ca.maple.swan.swift.tree.ScriptEntity;
+import ca.maple.swan.swift.visualization.ASTtoDot;
 import com.ibm.wala.cast.ir.translator.AbstractCodeEntity;
 import com.ibm.wala.cast.js.types.JavaScriptTypes;
 import com.ibm.wala.cast.tree.CAstEntity;
@@ -103,7 +104,7 @@ public class RawAstTranslator extends SILInstructionVisitor<CAstNode, SILInstruc
 
         // 2. Analyze each entity. (TODO)
         for (CAstNode function: mappedEntities.keySet()) {
-            ArrayList<CAstNode> blocks = new ArrayList<>();
+            ArrayList<ArrayList<CAstNode>> blocks = new ArrayList<>();
             SILInstructionContext C = new SILInstructionContext(mappedEntities.get(function), allEntities);
             int blockNo =  0;
             for (CAstNode block: function.getChild(4).getChildren()) {
@@ -116,19 +117,17 @@ public class RawAstTranslator extends SILInstructionVisitor<CAstNode, SILInstruc
                 }
                 instructions.add(0, Ast.makeNode(CAstNode.LABEL_STMT,
                         Ast.makeConstant(blockNo)));
-                CAstNode bb = Ast.makeNode(CAstNode.BLOCK_STMT, instructions);
-                blocks.add(bb);
+                blocks.add(instructions);
+                ++blockNo;
             }
-            mappedEntities.get(function).setAst(blocks.get(0));
+            for (ArrayList<CAstNode> block : blocks.subList(1, blocks.size())) {
+                blocks.get(0).add(Ast.makeNode(CAstNode.BLOCK_STMT, block));
+            }
+            mappedEntities.get(function).setAst(Ast.makeNode(CAstNode.BLOCK_STMT, blocks.get(0)));
+            EntityPrinter.print(mappedEntities.get(function));
         }
 
-        /* DEBUG */
-        for (AbstractCodeEntity e : allEntities) {
-            //e.setAst(Ast.makeNode(CAstNode.EMPTY));
-            EntityPrinter.print(e);
-        }
-
-        /* DEBUG */
+        ASTtoDot.print(allEntities);
 
         return allEntities.get(0);
     }
