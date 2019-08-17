@@ -13,6 +13,7 @@
 
 package ca.maple.swan.swift.tree;
 
+import ca.maple.swan.swift.translator.types.SILTypes;
 import ca.maple.swan.swift.types.AnyCAstType;
 import com.ibm.wala.cast.tree.CAstType;
 
@@ -26,9 +27,9 @@ import java.util.List;
 public class SwiftFunctionType implements CAstType.Function {
 
     SwiftFunctionType(String returnType, ArrayList<String> argumentTypes) {
-        this.cAstType = new AnyCAstType();
+        this.cAstType = SILTypes.getType(returnType);
         for (String argumentType : argumentTypes) {
-            argumentCAstTypes.add(new AnyCAstType());
+            argumentCAstTypes.add(SILTypes.getType(argumentType));
         }
     }
 
