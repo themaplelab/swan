@@ -13,6 +13,7 @@
 
 package ca.maple.swan.swift.translator;
 
+import ca.maple.swan.swift.translator.values.SILFunctionRef;
 import ca.maple.swan.swift.translator.values.SILPointer;
 import ca.maple.swan.swift.translator.values.SILValue;
 import ca.maple.swan.swift.tree.EntityPrinter;
@@ -80,12 +81,6 @@ public class RawAstTranslator extends SILInstructionVisitor<CAstNode, SILInstruc
     public static CAstImpl Ast = new CAstImpl();
 
     public CAstEntity translate(File file, CAstNode n) {
-
-        /* DEBUG */
-        System.out.println("\n\n<<<<<< DEBUG >>>>>\n");
-        System.out.println(n);
-        System.out.println("<<<<<< DEBUG >>>>>\n\n");
-        /* DEBUG */
 
         // 1. Create CAstEntity for each function.
         ArrayList<AbstractCodeEntity> allEntities = new ArrayList<>();
@@ -421,8 +416,14 @@ public class RawAstTranslator extends SILInstructionVisitor<CAstNode, SILInstruc
 
     @Override
     protected CAstNode visitFunctionRef(CAstNode N, SILInstructionContext C) {
+        String FuncName = (String)N.getChild(0).getValue();
+        String ResultName = (String)N.getChild(1).getValue();
+        String ResultType = (String)N.getChild(2).getValue();
+        SILFunctionRef FuncRef = new SILFunctionRef(ResultName, ResultType,
+                C.parent.getNodeTypeMap(), FuncName);
+        C.valueTable.addValue(FuncRef);
         return null;
-    }
+}
 
     @Override
     protected CAstNode visitDynamicFunctionRef(CAstNode N, SILInstructionContext C) {

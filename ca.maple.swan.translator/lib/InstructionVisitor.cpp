@@ -581,8 +581,18 @@ void InstructionVisitor::visitCopyBlockWithoutEscapingInst(CopyBlockWithoutEscap
 /*******************************************************************************/
 
 void InstructionVisitor::visitFunctionRefInst(FunctionRefInst *FRI) {
-  // TODO: UNIMPLEMENTED
-  
+  SILFunction *referencedFunction = FRI->getReferencedFunctionOrNull();
+  std::string FuncName = Demangle::demangleSymbolAsString(referencedFunction->getName());
+  std::string ResultName = addressToString(static_cast<ValueBase*>(FRI));
+  std::string ResultType = FRI->getType().getAsString();
+  if (SWAN_PRINT) {
+    llvm::outs() << "\t [FUNC NAME]:" << FuncName << "\n";
+    llvm::outs() << "\t [RESULT NAME]:" << ResultName << "\n";
+    llvm::outs() << "\t [RESULT TYPE]:" << ResultType << "\n";
+  }
+  addProp(makeConst(FuncName.c_str()));
+  addProp(makeConst(ResultName.c_str()));
+  addProp(makeConst(ResultType.c_str()));
 }
 
 void InstructionVisitor::visitDynamicFunctionRefInst(DynamicFunctionRefInst *DFRI) {
