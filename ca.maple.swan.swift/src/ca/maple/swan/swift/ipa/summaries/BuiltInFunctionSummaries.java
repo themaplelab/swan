@@ -13,43 +13,54 @@
 
 package ca.maple.swan.swift.ipa.summaries;
 
+import ca.maple.swan.swift.translator.RawAstTranslator;
+import ca.maple.swan.swift.translator.SILInstructionContext;
+import ca.maple.swan.swift.translator.values.SILTuple;
 import com.ibm.wala.cast.tree.CAstNode;
+import com.ibm.wala.util.debug.Assertions;
 
+import java.util.ArrayList;
 import java.util.Arrays;
+
+import static com.ibm.wala.cast.tree.CAstNode.OBJECT_LITERAL;
 
 public class BuiltInFunctionSummaries {
 
-    public static CAstNode findSummary(CAstNode cAstNode) {
-        assert(cAstNode.getKind() == CAstNode.CALL);
-        assert(cAstNode.getChild(0).getKind() == CAstNode.FUNCTION_EXPR);
-        assert(cAstNode.getChild(1).getValue().equals("do"));
+    public static CAstNode findSummary(String funcName, String resultName, String resultType, SILInstructionContext C, ArrayList<CAstNode> params) {
 
-        switch((String)cAstNode.getChild(0).getValue()) {
+        switch(funcName) {
 
             /*************** LITERALS ****************/
-            case "Swift.Int.init(_builtinIntegerLiteral: Builtin.IntLiteral) -> Swift.Int": {
-                // (Builtin.IntLiteral, @thin Int.Type)
-                assert(cAstNode.getChild(2).getKind() == CAstNode.CONSTANT);
-                return cAstNode.getChild(2);
-            }
-            case "Swift.Double.init(_builtinFloatLiteral: Builtin.FPIEEE80) -> Swift.Double": {
-                assert(cAstNode.getChild(2).getKind() == CAstNode.CONSTANT);
-                return cAstNode.getChild(2);
+            case "Swift._allocateUninitializedArray<A>(Builtin.Word) -> (Swift.Array<A>, Builtin.RawPointer)" : {
+                /*
+                 * Known use cases:
+                 * 1. Initialize memory for a Stringß
+                 *
+                 * Result: SILBuiltinTuple with elements
+                 * 1. SILValue representing the array
+                 * 2. SILPointer pointing to the SILValue
+                 *
+                 * We return an empty node because there is no point of representing the operation
+                 * in the CAst. When destructure_tuple is called later, the elements will "appear".
+                 */
+                SILTuple.SILBuiltinPointerTuple resultTuple = new SILTuple.SILBuiltinPointerTuple(resultName, resultType, C);
+                C.valueTable.addValue(resultTuple);
+                return RawAstTranslator.Ast.makeNode(CAstNode.EMPTY);
             }
 
-            /********** OPERATOR FUNCTIONS ***********/
-            // These are here in case we want to change how operator functions are
-            // handled later. For now, the translator itself takes care of them.
-
-            case "static Swift.Int.+ infix(Swift.Int, Swift.Int) -> Swift.Int": {
-                // (Int, Int, @thin Int.Type)
-                return null;
-
-            }
             default: {
+                Assertions.UNREACHABLE("Should not be called without checking isBuiltIn(): " + funcName);
                 return null;
             }
         }
+    }
+
+    private static String[] summarizedBuiltins = new String[] {
+            "Swift._allocateUninitializedArray<A>(Builtin.Word) -> (Swift.Array<A>, Builtin.RawPointer)"
+    };
+
+    public static boolean isSummarized(String name) {
+        return Arrays.stream(summarizedBuiltins).anyMatch(name::equals);
     }
 
     private static String[] builtins = new String[] {
@@ -59,7 +70,6 @@ public class BuiltInFunctionSummaries {
             "default argument 1 of Swift.print(_: Any..., separator: Swift.String, terminator: Swift.String) -> ()",
             "Swift.print(_: Any..., separator: Swift.String, terminator: Swift.String) -> ()",
             "default argument 2 of Swift.print(_: Any..., separator: Swift.String, terminator: Swift.String) -> ()",
-            "Swift._allocateUninitializedArray<A>(Builtin.Word) -> (Swift.Array<A>, Builtin.RawPointer)",
             "static Swift.Int.- infix(Swift.Int, Swift.Int) -> Swift.Int",
             "static Swift.Int.+ infix(Swift.Int, Swift.Int) -> Swift.Int",
             "static Swift.Double.* infix(Swift.Double, Swift.Double) -> Swift.Double",

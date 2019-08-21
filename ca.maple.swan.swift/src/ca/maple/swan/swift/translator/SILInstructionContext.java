@@ -15,6 +15,7 @@ package ca.maple.swan.swift.translator;
 
 import ca.maple.swan.swift.translator.values.SILValueTable;
 import com.ibm.wala.cast.ir.translator.AbstractCodeEntity;
+import com.ibm.wala.cast.tree.CAstNode;
 
 import java.util.ArrayList;
 
@@ -25,6 +26,7 @@ public class SILInstructionContext {
     public final AbstractCodeEntity parent;
     public final ArrayList<AbstractCodeEntity> allEntities;
     public final SILValueTable valueTable;
+    public ArrayList<CAstNode> instructions;
 
     public SILInstructionContext(AbstractCodeEntity parent, ArrayList<AbstractCodeEntity> allEntities) {
         this.parent = parent;

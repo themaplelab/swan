@@ -7,8 +7,10 @@ public class SILTypes {
     static HashMap<String, SILType> types = new HashMap<>();
 
     public static SILType getType(String name) {
-        if (!types.containsKey(name)) {
-            types.put(name, new SILType(name));
+        // TEMPORARY
+        String tempName = "Any";
+        if (!types.containsKey(tempName/*name*/)) {
+            types.put(name, new SILType(tempName));
         }
         return types.get(name);
     }

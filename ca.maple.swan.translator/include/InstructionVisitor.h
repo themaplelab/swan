@@ -64,7 +64,7 @@ namespace swan {
     void printSILInstructionInfo();
 
     /// Returns CAstNode with appropriate operator kind.
-    jobject getOperatorCAstType(Identifier &Name);
+    jobject getOperatorCAstType(const Identifier &Name);
 
     /// The WALAInstance that holds the resultant CAst.
     WALAInstance *Instance;

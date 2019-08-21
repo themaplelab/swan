@@ -1,9 +1,8 @@
 package ca.maple.swan.swift.translator.values;
 
+import ca.maple.swan.swift.translator.SILInstructionContext;
 import ca.maple.swan.swift.translator.types.SILType;
-import ca.maple.swan.swift.translator.types.SILTypes;
 import com.ibm.wala.cast.tree.CAstNode;
-import com.ibm.wala.cast.tree.impl.CAstNodeTypeMapRecorder;
 import com.ibm.wala.util.collections.Pair;
 
 import java.util.ArrayList;
@@ -11,23 +10,25 @@ import java.util.ArrayList;
 import static com.ibm.wala.cast.tree.CAstNode.OBJECT_REF;
 
 public class SILStruct extends SILValue {
+
     private ArrayList<Pair<String, SILType>> fields;
 
-    public SILStruct(String name, String type, CAstNodeTypeMapRecorder typeRecorder, ArrayList<Pair<String, String>> fields) {
-        super(name, type, typeRecorder);
-        for (Pair<String, String> field : fields) {
-            this.fields.add(Pair.make(field.fst, SILTypes.getType(field.snd)));
+    public SILStruct(String name, String type, SILInstructionContext C, ArrayList<Pair<String, String>> givenFields) {
+        super(name, type, C);
+        fields = new ArrayList<>();
+        for (Pair<String, String> field : givenFields) {
+            this.fields.add(Pair.make(field.fst, C.valueTable.getValue(field.snd).getType()));
         }
     }
 
-    public CAstNode createObjectRef(CAstNodeTypeMapRecorder typeMap, String fieldName) {
+    public CAstNode createObjectRef(String fieldName) {
         try {
             for (Pair<String, SILType> p : fields) {
                 if (p.fst.equals(fieldName)) {
                     CAstNode objectRef = Ast.makeNode(OBJECT_REF,
-                            Ast.makeConstant(this.name),
+                            getVarNode(),
                             Ast.makeConstant(fieldName));
-                    typeMap.add(objectRef, p.snd);
+                    C.parent.getNodeTypeMap().add(objectRef, p.snd);
                     return objectRef;
                 }
             }
@@ -38,12 +39,12 @@ public class SILStruct extends SILValue {
         return null;
     }
 
-    public CAstNode createObjectRef(CAstNodeTypeMapRecorder typeMap, int index) {
+    public CAstNode createObjectRef(int index) {
         try {
             CAstNode objectRef = Ast.makeNode(OBJECT_REF,
-                    Ast.makeConstant(this.name),
+                    getVarNode(),
                     Ast.makeConstant(fields.get(index).fst));
-            typeMap.add(objectRef, fields.get(index).snd);
+            C.parent.getNodeTypeMap().add(objectRef, fields.get(index).snd);
             return objectRef;
         } catch (IndexOutOfBoundsException e) {
             e.printStackTrace();
@@ -51,11 +52,11 @@ public class SILStruct extends SILValue {
         return null;
     }
 
-    public SILField createField(String name, String fieldName, CAstNodeTypeMapRecorder typeRecorder) {
+    public SILField createField(String name, String fieldName) {
         try {
             for (Pair<String, SILType> p : fields) {
                 if (p.fst.equals(fieldName)) {
-                    return new SILField(name, p.snd.getName(), typeRecorder, this, fieldName);
+                    return new SILField(name, p.snd.getName(), C, this, fieldName);
                 }
             }
             throw new Exception("fieldName not valid");
@@ -65,12 +66,13 @@ public class SILStruct extends SILValue {
         return null;
     }
 
-    public SILField createField(String name, int index, CAstNodeTypeMapRecorder typeRecorder) {
+    public SILField createField(String name, int index) {
         try {
-            return new SILField(name, fields.get(index).snd.getName(), typeRecorder, this, index);
+            return new SILField(name, fields.get(index).snd.getName(), C, this, index);
         } catch (IndexOutOfBoundsException e) {
             e.printStackTrace();
         }
         return null;
     }
+
 }

@@ -14,41 +14,60 @@
 package ca.maple.swan.swift.translator.values;
 
 import ca.maple.swan.swift.translator.RawAstTranslator;
+import ca.maple.swan.swift.translator.SILInstructionContext;
 import ca.maple.swan.swift.translator.types.SILType;
 import ca.maple.swan.swift.translator.types.SILTypes;
 import com.ibm.wala.cast.tree.CAstNode;
 import com.ibm.wala.cast.tree.impl.CAstImpl;
-import com.ibm.wala.cast.tree.impl.CAstNodeTypeMapRecorder;
+import com.ibm.wala.cast.tree.impl.CAstSymbolImpl;
 
 public class SILValue {
 
     protected final String name;
-    protected final SILType type;
+    protected SILType type;
     private final CAstNode varNode;
+    protected final SILInstructionContext C;
 
     protected static final CAstImpl Ast = RawAstTranslator.Ast;
 
-    public SILValue(String name, String type, CAstNodeTypeMapRecorder typeRecorder) {
-        this(name, SILTypes.getType(type), typeRecorder);
+    public SILValue(String name, String type, SILInstructionContext C) {
+        this(name, SILTypes.getType(type), C);
     }
 
-    public SILValue(String name, SILType type, CAstNodeTypeMapRecorder typeRecorder) {
+    public SILValue(String name, SILType type, SILInstructionContext C) {
         this.name = name;
         this.type = type;
         this.varNode = Ast.makeNode(CAstNode.VAR, Ast.makeConstant(this.name));
-        typeRecorder.add(varNode, this.type);
+        this.C = C;
+        C.parent.getNodeTypeMap().add(varNode, this.type);
     }
 
     public CAstNode assignTo(SILValue to) {
-        return Ast.makeNode(CAstNode.ASSIGN, Ast.makeConstant(to.name), Ast.makeConstant(this.name));
+        return Ast.makeNode(CAstNode.ASSIGN, to.getVarNode(), getVarNode());
+    }
+
+    public SILType getType() {
+        return this.type;
+    }
+
+    public CAstNode getDecl() {
+        return Ast.makeNode(CAstNode.DECL_STMT, Ast.makeConstant(new CAstSymbolImpl(this.name, this.type)));
     }
 
     public CAstNode getVarNode() {
         return varNode;
     }
 
-    public SILPointer makePointer(String name, String type, CAstNodeTypeMapRecorder typeRecorder) {
-        return new SILPointer(name, type, typeRecorder, this);
+    public SILPointer makePointer(String name, String type) {
+        return new SILPointer(name, type, C, this);
+    }
+
+    public void castTo(String type) {
+        this.type = SILTypes.getType(type);
+    }
+
+    public void castTo(SILType type) {
+        this.type = type;
     }
 
 }
