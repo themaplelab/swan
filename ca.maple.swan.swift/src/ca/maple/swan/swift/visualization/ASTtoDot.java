@@ -79,6 +79,8 @@ public class ASTtoDot {
             }
             case CAstNode.CONSTANT: {
                 newNode = mutNode(hash + cNode.toString());
+                int color[] = hashColor(cNode.toString());
+                newNode.add(Color.rgb(color[0], color[1], color[2]));
                 break;
             }
             case CAstNode.BLOCK_STMT: {
@@ -96,17 +98,6 @@ public class ASTtoDot {
                 newNode = mutNode(hash + CAstPrinter.kindAsString(cNode.getKind()));
                 break;
             }
-            case CAstNode.ASSIGN: {
-                if ((cNode.getChild(0).getKind() == CAstNode.VAR) && (cNode.getChild(1).getKind() == CAstNode.VAR)) {
-                    newNode = mutNode(hash + CAstPrinter.kindAsString(cNode.getKind()) +
-                            "\n" + cNode.getChild(0).getChild(0).getValue() + "  <-- " + cNode.getChild(1).getChild(0).getValue());
-                    mNode.addLink(newNode);
-                    return;
-                } else {
-                    newNode = mutNode(hash + CAstPrinter.kindAsString(cNode.getKind()));
-                }
-                break;
-            }
             default: {
                 newNode = mutNode(hash + CAstPrinter.kindAsString(cNode.getKind()));
                 break;
@@ -116,5 +107,14 @@ public class ASTtoDot {
         for (CAstNode child: cNode.getChildren()) {
             buildGraph(newNode, child);
         }
+    }
+
+    private static int[] hashColor(String name) {
+        int hash = name.hashCode();
+        int returnRGB[] = new int[3];
+        returnRGB[0] = (hash & 0xFF0000) >> 16;
+        returnRGB[1] = (hash & 0x00FF00) >> 8;
+        returnRGB[2] = hash & 0x0000FF;
+        return returnRGB;
     }
 }

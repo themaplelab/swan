@@ -40,12 +40,12 @@ public class BuiltInFunctionSummaries {
                  * 1. Initialize memory for a String
                  */
                 ArrayList<CAstNode> Fields = new ArrayList<>();
-                Fields.add(Ast.makeConstant("0"));
                 // Since the second element points to the first, it is sufficient to have both elements
                 // be the same VAR.
                 SILValue allocatedArray = new SILValue(resultName + "_value/pointer", "Any", C);
                 C.valueTable.addValue(allocatedArray);
                 Fields.add(Ast.makeConstant("TUPLE"));
+                Fields.add(Ast.makeConstant("0"));
                 Fields.add(allocatedArray.getVarNode());
                 Fields.add(Ast.makeConstant("1"));
                 Fields.add(allocatedArray.getVarNode());
