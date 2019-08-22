@@ -954,8 +954,8 @@ void InstructionVisitor::visitDestructureTupleInst(DestructureTupleInst *DTI) {
   if (SWAN_PRINT) {
     llvm::outs() << "\t [RESULT1 NAME]:" << Result1Name << "\n";
     llvm::outs() << "\t [RESULT1 TYPE]:" << Result1Type << "\n";
-    llvm::outs() << "\t [RESULT1 NAME]:" << Result2Name << "\n";
-    llvm::outs() << "\t [RESULT1 TYPE]:" << Result2Type << "\n";
+    llvm::outs() << "\t [RESULT2 NAME]:" << Result2Name << "\n";
+    llvm::outs() << "\t [RESULT2 TYPE]:" << Result2Type << "\n";
     llvm::outs() << "\t [OPER NAME]:" << OperandName << "\n";
   }
   ADD_PROP(MAKE_CONST(Result1Name.c_str()));

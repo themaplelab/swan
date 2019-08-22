@@ -586,6 +586,7 @@ public class RawAstTranslator extends SILInstructionVisitor<CAstNode, SILInstruc
                 } else if (FuncRef instanceof SILFunctionRef.SILSummarizedFunctionRef) {
                     ArrayList<CAstNode> Params = new ArrayList<>();
                     Params.addAll(FuncNode.getChildren().subList(1, FuncNode.getChildren().size()));
+                    C.valueTable.addValue(new SILValue(ResultName, ResultType, C));
                     Source = BuiltInFunctionSummaries.findSummary(
                             ((SILFunctionRef.SILSummarizedFunctionRef)FuncRef).getFunctionName(),
                             ResultName, ResultType, C, Params);
@@ -744,9 +745,7 @@ public class RawAstTranslator extends SILInstructionVisitor<CAstNode, SILInstruc
         String Result2Type = (String)N.getChild(3).getValue();
         String OperandName = (String)N.getChild(4).getValue();
         SILValue ResultValue = C.valueTable.getValue(OperandName);
-        if (ResultValue instanceof SILTuple.SILBuiltinPointerTuple) {
-            ((SILTuple.SILBuiltinPointerTuple)ResultValue).destructure(Result1Name, Result1Type, Result2Name, Result2Type, C);
-        } else if (ResultValue instanceof SILTuple) {
+        if (ResultValue instanceof SILTuple) {
             SILValue element1 = new SILValue(Result1Name, Result1Type, C);
             C.valueTable.addValue(element1);
             SILValue element2 = new SILValue(Result2Name, Result2Type, C);
@@ -758,7 +757,7 @@ public class RawAstTranslator extends SILInstructionVisitor<CAstNode, SILInstruc
             C.instructions.add(firstAssign);
             CAstNode secondAssign = Ast.makeNode(
                     CAstNode.ASSIGN,
-                    element1.getVarNode(),
+                    element2.getVarNode(),
                     ((SILTuple)ResultValue).createObjectRef(1));
             C.instructions.add(secondAssign);
         } else {

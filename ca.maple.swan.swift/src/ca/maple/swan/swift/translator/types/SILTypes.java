@@ -10,8 +10,8 @@ public class SILTypes {
         // TEMPORARY
         String tempName = "Any";
         if (!types.containsKey(tempName/*name*/)) {
-            types.put(name, new SILType(tempName));
+            types.put(tempName, new SILType(tempName));
         }
-        return types.get(name);
+        return types.get(tempName);
     }
 }

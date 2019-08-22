@@ -13,15 +13,17 @@
 
 package ca.maple.swan.swift.ipa.summaries;
 
-import ca.maple.swan.swift.translator.RawAstTranslator;
 import ca.maple.swan.swift.translator.SILInstructionContext;
 import ca.maple.swan.swift.translator.values.SILTuple;
+import ca.maple.swan.swift.translator.values.SILValue;
+import com.ibm.wala.cast.tree.CAst;
 import com.ibm.wala.cast.tree.CAstNode;
 import com.ibm.wala.util.debug.Assertions;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 
+import static ca.maple.swan.swift.translator.RawAstTranslator.Ast;
 import static com.ibm.wala.cast.tree.CAstNode.OBJECT_LITERAL;
 
 public class BuiltInFunctionSummaries {
@@ -34,18 +36,26 @@ public class BuiltInFunctionSummaries {
             case "Swift._allocateUninitializedArray<A>(Builtin.Word) -> (Swift.Array<A>, Builtin.RawPointer)" : {
                 /*
                  * Known use cases:
-                 * 1. Initialize memory for a Stringß
-                 *
-                 * Result: SILBuiltinTuple with elements
-                 * 1. SILValue representing the array
-                 * 2. SILPointer pointing to the SILValue
-                 *
-                 * We return an empty node because there is no point of representing the operation
-                 * in the CAst. When destructure_tuple is called later, the elements will "appear".
+                 * 1. Initialize memory for a String
                  */
-                SILTuple.SILBuiltinPointerTuple resultTuple = new SILTuple.SILBuiltinPointerTuple(resultName, resultType, C);
+                ArrayList<CAstNode> Fields = new ArrayList<>();
+                Fields.add(Ast.makeConstant("0"));
+                // Since the second element points to the first, it is sufficient to have both elements
+                // be the same VAR.
+                SILValue allocatedArray = new SILValue(resultName + "_value/pointer", "Any", C);
+                C.valueTable.addValue(allocatedArray);
+                Fields.add(Ast.makeConstant("TUPLE"));
+                Fields.add(allocatedArray.getVarNode());
+                Fields.add(Ast.makeConstant("1"));
+                Fields.add(allocatedArray.getVarNode());
+                ArrayList<String> types = new ArrayList<>();
+                types.add("Any");
+                types.add("Any");
+                SILTuple resultTuple = new SILTuple(resultName, resultType, C, types);
                 C.valueTable.addValue(resultTuple);
-                return RawAstTranslator.Ast.makeNode(CAstNode.EMPTY);
+                CAstNode resultNode = Ast.makeNode(OBJECT_LITERAL, Fields);
+                C.parent.setGotoTarget(resultNode, resultNode);
+                return resultNode;
             }
 
             default: {
