@@ -14,9 +14,9 @@
 package ca.maple.swan.swift.ipa.summaries;
 
 import ca.maple.swan.swift.translator.SILInstructionContext;
+import ca.maple.swan.swift.translator.values.SILConstant;
 import ca.maple.swan.swift.translator.values.SILTuple;
 import ca.maple.swan.swift.translator.values.SILValue;
-import com.ibm.wala.cast.tree.CAst;
 import com.ibm.wala.cast.tree.CAstNode;
 import com.ibm.wala.util.debug.Assertions;
 
@@ -24,6 +24,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 
 import static ca.maple.swan.swift.translator.RawAstTranslator.Ast;
+import static com.ibm.wala.cast.tree.CAstNode.ASSIGN;
 import static com.ibm.wala.cast.tree.CAstNode.OBJECT_LITERAL;
 
 public class BuiltInFunctionSummaries {
@@ -57,7 +58,33 @@ public class BuiltInFunctionSummaries {
                 C.parent.setGotoTarget(resultNode, resultNode);
                 return resultNode;
             }
-
+            case "default argument 1 of Swift.print(_: Any..., separator: Swift.String, terminator: Swift.String) -> ()": {
+                // We can just treat this whole call as a regular variable creation.
+                SILValue resultValue = new SILValue(resultName, resultType, C);
+                C.valueTable.addValue(resultValue);
+                return Ast.makeNode(CAstNode.EMPTY);
+            }
+            case "default argument 2 of Swift.print(_: Any..., separator: Swift.String, terminator: Swift.String) -> ()": {
+                // We can just treat this whole call as a regular variable creation.
+                SILValue resultValue = new SILValue(resultName, resultType, C);
+                C.valueTable.addValue(resultValue);
+                return Ast.makeNode(CAstNode.EMPTY);
+            }
+            case "Swift.print(_: Any..., separator: Swift.String, terminator: Swift.String) -> ()": {
+                // Here it is sufficient to assign the value/address to be printed to the result.
+                SILValue resultValue = new SILValue(resultName, resultType, C);
+                C.valueTable.addValue(resultValue);
+                return Ast.makeNode(ASSIGN,
+                        resultValue.getVarNode(),
+                        C.valueTable.getValue((String)params.get(0).getValue()).getVarNode());
+            }
+            case "Swift.String.init(_builtinStringLiteral: Builtin.RawPointer, utf8CodeUnitCount: Builtin.Word, isASCII: Builtin.Int1) -> Swift.String": {
+                SILValue resultValue = new SILValue(resultName, resultType, C);
+                C.valueTable.addValue(resultValue);
+                return Ast.makeNode(ASSIGN,
+                        resultValue.getVarNode(),
+                        ((SILConstant)C.valueTable.getValue((String)params.get(0).getValue())).getVarNode());
+            }
             default: {
                 Assertions.UNREACHABLE("Should not be called without checking isBuiltIn(): " + funcName);
                 return null;
@@ -66,7 +93,11 @@ public class BuiltInFunctionSummaries {
     }
 
     private static String[] summarizedBuiltins = new String[] {
-            "Swift._allocateUninitializedArray<A>(Builtin.Word) -> (Swift.Array<A>, Builtin.RawPointer)"
+            "Swift._allocateUninitializedArray<A>(Builtin.Word) -> (Swift.Array<A>, Builtin.RawPointer)",
+            "default argument 1 of Swift.print(_: Any..., separator: Swift.String, terminator: Swift.String) -> ()",
+            "default argument 2 of Swift.print(_: Any..., separator: Swift.String, terminator: Swift.String) -> ()",
+            "Swift.print(_: Any..., separator: Swift.String, terminator: Swift.String) -> ()",
+            "Swift.String.init(_builtinStringLiteral: Builtin.RawPointer, utf8CodeUnitCount: Builtin.Word, isASCII: Builtin.Int1) -> Swift.String"
     };
 
     public static boolean isSummarized(String name) {
