@@ -103,6 +103,7 @@ public class ASTtoDot {
                 break;
             }
         }
+        // TODO: Fix the ordering of nodes (fork graphviz-java and remove adjustLinks?)
         mNode.addLink(newNode);
         for (CAstNode child: cNode.getChildren()) {
             buildGraph(newNode, child);

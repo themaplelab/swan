@@ -592,6 +592,9 @@ public class RawAstTranslator extends SILInstructionVisitor<CAstNode, SILInstruc
                             ResultName, ResultType, C, Params);
                     if (Source == null || Source.getKind() == CAstNode.EMPTY) {
                         return Ast.makeNode(CAstNode.EMPTY);
+                    } else if (Source.getKind() == CAstNode.VAR) {
+                        C.valueTable.addValue(new SILValue(ResultName, ResultType, C));
+                        return Ast.makeNode(CAstNode.EMPTY);
                     }
                 } else {
                     Source = Ast.makeConstant("UNKNOWN");
@@ -746,20 +749,10 @@ public class RawAstTranslator extends SILInstructionVisitor<CAstNode, SILInstruc
         String OperandName = (String)N.getChild(4).getValue();
         SILValue ResultValue = C.valueTable.getValue(OperandName);
         if (ResultValue instanceof SILTuple) {
-            SILValue element1 = new SILValue(Result1Name, Result1Type, C);
+            SILField element1 = new SILField(Result1Name, Result1Type, C, ResultValue, "0");
+            SILField element2 = new SILField(Result2Name, Result2Type, C, ResultValue, "1");
             C.valueTable.addValue(element1);
-            SILValue element2 = new SILValue(Result2Name, Result2Type, C);
             C.valueTable.addValue(element2);
-            CAstNode firstAssign = Ast.makeNode(
-                    CAstNode.ASSIGN,
-                    element1.getVarNode(),
-                    ((SILTuple)ResultValue).createObjectRef(0));
-            C.instructions.add(firstAssign);
-            CAstNode secondAssign = Ast.makeNode(
-                    CAstNode.ASSIGN,
-                    element2.getVarNode(),
-                    ((SILTuple)ResultValue).createObjectRef(1));
-            C.instructions.add(secondAssign);
         } else {
             Assertions.UNREACHABLE("Operation undefined for non-tuple types");
         }

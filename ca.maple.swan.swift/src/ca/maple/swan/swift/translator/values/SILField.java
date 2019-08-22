@@ -7,25 +7,31 @@ import com.ibm.wala.util.debug.Assertions;
 public class SILField extends SILValue {
 
     private final SILValue object;
-    private final Object field;
+    private final Object fieldName;
 
     public SILField(String name, String type, SILInstructionContext C, SILValue object, Object fieldName) {
         super(name, type, C);
         this.object = object;
-        this.field = fieldName;
+        this.fieldName = fieldName;
     }
 
     public SILValue getObject() {
         return object;
     }
 
-    public Object getField() {
-        return field;
+    public Object getFieldName() {
+        return fieldName;
     }
 
     @Override
     public CAstNode getVarNode() {
-        Assertions.UNREACHABLE("This is undefined behavior, for now");
+        if (object instanceof SILTuple) {
+            return ((SILTuple) object).createObjectRef(Integer.parseInt((String)fieldName));
+        } else if (object instanceof SILStruct) {
+            return ((SILStruct) object).createObjectRef((String)fieldName);
+        } else {
+            Assertions.UNREACHABLE("Field must be from Struct or Tuple");
+        }
         return null;
     }
 }
