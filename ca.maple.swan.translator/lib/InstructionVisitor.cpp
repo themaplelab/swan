@@ -308,8 +308,14 @@ jobject InstructionVisitor::getOperatorCAstType(const Identifier &Name) {
 /*******************************************************************************/
 
 void InstructionVisitor::visitAllocStackInst(AllocStackInst *ASI) {
-  // TODO: UNIMPLEMENTED
-  
+  std::string ResultName = addressToString(static_cast<ValueBase*>(ASI));
+  std::string ResultType = ASI->getType().getAsString();
+  if (SWAN_PRINT) {
+    llvm::outs() << "\t [RESULT NAME]: " << ResultName << "\n";
+    llvm::outs() << "\t [RESULT NAME]: " << ResultType << "\n";
+  }
+  ADD_PROP(MAKE_CONST(ResultName.c_str()));
+  ADD_PROP(MAKE_CONST(ResultType.c_str()));
 }
 
 void InstructionVisitor::visitAllocRefInst(AllocRefInst *ARI) {
@@ -323,8 +329,14 @@ void InstructionVisitor::visitAllocRefDynamicInst(AllocRefDynamicInst *ARDI) {
 }
 
 void InstructionVisitor::visitAllocBoxInst(AllocBoxInst *ABI){
-  // TODO: UNIMPLEMENTED
-  
+  std::string ResultName = addressToString(static_cast<ValueBase*>(ABI));
+  std::string ResultType = ABI->getType().getAsString();
+  if (SWAN_PRINT) {
+    llvm::outs() << "\t [RESULT NAME]: " << ResultName << "\n";
+    llvm::outs() << "\t [RESULT TYPE]: " << ResultType << "\n";
+  }
+  ADD_PROP(MAKE_CONST(ResultName.c_str()));
+  ADD_PROP(MAKE_CONST(ResultType.c_str()));
 }
 
 void InstructionVisitor::visitAllocValueBufferInst(AllocValueBufferInst *AVBI) {
@@ -345,8 +357,11 @@ void InstructionVisitor::visitAllocGlobalInst(AllocGlobalInst *AGI) {
 }
 
 void InstructionVisitor::visitDeallocStackInst(DeallocStackInst *DSI) {
-  // TODO: UNIMPLEMENTED
-  
+  std::string OperandName = addressToString(DSI->getOperand().getOpaqueValue());
+  if (SWAN_PRINT) {
+    llvm::outs() << "\t [OPER NAME]:" << OperandName << "\n";
+  }
+  ADD_PROP(MAKE_CONST(OperandName.c_str()));
 }
 
 void InstructionVisitor::visitDeallocBoxInst(DeallocBoxInst *DBI) {
@@ -355,8 +370,17 @@ void InstructionVisitor::visitDeallocBoxInst(DeallocBoxInst *DBI) {
 }
 
 void InstructionVisitor::visitProjectBoxInst(ProjectBoxInst *PBI) {
-  // TODO: UNIMPLEMENTED
-  
+  std::string OperandName = addressToString(PBI->getOperand().getOpaqueValue());
+  std::string ResultName = addressToString(static_cast<ValueBase*>(PBI));
+  std::string ResultType = PBI->getType().getAsString();
+  if (SWAN_PRINT) {
+    llvm::outs() << "\t [OPER NAME]: " << OperandName << "\n";
+    llvm::outs() << "\t [RESULT NAME]: " << ResultName << "\n";
+    llvm::outs() << "\t [RESULT TYPE]: " << ResultType << "\n";
+  }
+  ADD_PROP(MAKE_CONST(OperandName.c_str()));
+  ADD_PROP(MAKE_CONST(ResultName.c_str()));
+  ADD_PROP(MAKE_CONST(ResultType.c_str()));
 }
 
 void InstructionVisitor::visitDeallocRefInst(DeallocRefInst *DRI) {
@@ -405,8 +429,17 @@ void InstructionVisitor::visitDebugValueAddrInst(DebugValueAddrInst *DVAI) {
 /*******************************************************************************/
 
 void InstructionVisitor::visitLoadInst(LoadInst *LI) {
-  // TODO: UNIMPLEMENTED
-  
+  std::string OperandName = addressToString(LI->getOperand().getOpaqueValue());
+  std::string ResultName = addressToString(static_cast<ValueBase*>(LI));
+  std::string ResultType = LI->getType().getAsString();
+  if (SWAN_PRINT) {
+    llvm::outs() << "\t [OPER NAME]: " << OperandName << "\n";
+    llvm::outs() << "\t [RESULT NAME]: " << ResultName << "\n";
+    llvm::outs() << "\t [RESULT TYPE]: " << ResultType << "\n";
+  }
+  ADD_PROP(MAKE_CONST(OperandName.c_str()));
+  ADD_PROP(MAKE_CONST(ResultName.c_str()));
+  ADD_PROP(MAKE_CONST(ResultType.c_str()));
 }
 
 void InstructionVisitor::visitStoreInst(StoreInst *SI) {
@@ -427,7 +460,7 @@ void InstructionVisitor::visitLoadBorrowInst(LoadBorrowInst *LBI) {
   if (SWAN_PRINT) {
     llvm::outs() << "\t [OPER NAME]: " << OperandName << "\n";
     llvm::outs() << "\t [RESULT NAME]: " << ResultName << "\n";
-    llvm::outs() << "\t [RESULT NAME]: " << ResultType << "\n";
+    llvm::outs() << "\t [RESULT TYPE]: " << ResultType << "\n";
   }
   ADD_PROP(MAKE_CONST(OperandName.c_str()));
   ADD_PROP(MAKE_CONST(ResultName.c_str()));
@@ -473,8 +506,11 @@ void InstructionVisitor::visitCopyAddrInst(CopyAddrInst *CAI) {
 }
 
 void InstructionVisitor::visitDestroyAddrInst(DestroyAddrInst *DAI) {
-  // TODO: UNIMPLEMENTED
-  
+  std::string OperandName = addressToString(DAI->getOperand().getOpaqueValue());
+  if (SWAN_PRINT) {
+    llvm::outs() << "\t [OPER NAME]:" << OperandName << "\n";
+  }
+  ADD_PROP(MAKE_CONST(OperandName.c_str()));
 }
 
 void InstructionVisitor::visitIndexAddrInst(IndexAddrInst *IAI) {
@@ -498,13 +534,25 @@ void InstructionVisitor::visitBindMemoryInst(BindMemoryInst *BMI) {
 }
 
 void InstructionVisitor::visitBeginAccessInst(BeginAccessInst *BAI) {
-  // TODO: UNIMPLEMENTED
-  
+  std::string OperandName = addressToString(BAI->getOperand().getOpaqueValue());
+  std::string ResultName = addressToString(static_cast<ValueBase*>(BAI));
+  std::string ResultType = BAI->getType().getAsString();
+  if (SWAN_PRINT) {
+    llvm::outs() << "\t [OPER NAME]: " << OperandName << "\n";
+    llvm::outs() << "\t [RESULT NAME]: " << ResultName << "\n";
+    llvm::outs() << "\t [RESULT TYPE]: " << ResultType << "\n";
+  }
+  ADD_PROP(MAKE_CONST(OperandName.c_str()));
+  ADD_PROP(MAKE_CONST(ResultName.c_str()));
+  ADD_PROP(MAKE_CONST(ResultType.c_str()));
 }
 
 void InstructionVisitor::visitEndAccessInst(EndAccessInst *EAI) {
-  // TODO: UNIMPLEMENTED
-  
+  std::string OperandName = addressToString(EAI->getOperand().getOpaqueValue());
+  if (SWAN_PRINT) {
+    llvm::outs() << "\t [OPER NAME]: " << OperandName << "\n";
+  }
+  ADD_PROP(MAKE_CONST(OperandName.c_str()));
 }
 
 void InstructionVisitor::visitBeginUnpairedAccessInst(BeginUnpairedAccessInst *BUI) {
@@ -690,8 +738,46 @@ void InstructionVisitor::visitIntegerLiteralInst(IntegerLiteralInst *ILI) {
 }
 
 void InstructionVisitor::visitFloatLiteralInst(FloatLiteralInst *FLI) {
-  // TODO: UNIMPLEMENTED
-  
+  APFloat Value = FLI->getValue();
+  jobject Node = nullptr;
+  if (&Value.getSemantics() == &APFloat::IEEEsingle()) {
+    Node = Instance->CAst->makeConstant(Value.convertToFloat());
+    if (SWAN_PRINT) {
+      llvm::outs() << "\t [VALUE]:" << static_cast<double>(Value.convertToFloat()) << "\n";
+    }
+  }
+  else if (&Value.getSemantics() == &APFloat::IEEEdouble()) {
+    Node = Instance->CAst->makeConstant(Value.convertToDouble());
+    if (SWAN_PRINT) {
+      llvm::outs() << "\t [VALUE]:" << Value.convertToDouble() << "\n";
+    }
+  }
+  else if (Value.isFinite()) {
+    SmallVector<char, 128> buf;
+    Value.toString(buf);
+    jobject BigDecimal = Instance->makeBigDecimal(buf.data(), static_cast<int>(buf.size()));
+    Node = Instance->CAst->makeConstant(BigDecimal);
+    if (SWAN_PRINT) {
+      llvm::outs() << "\t [VALUE]:" << buf << "\n";
+    }
+  }
+  else {
+    bool APFLosesInfo;
+    Value.convert(APFloat::IEEEdouble(), APFloat::rmNearestTiesToEven, &APFLosesInfo);
+    Node = Instance->CAst->makeConstant(Value.convertToDouble());
+    if (SWAN_PRINT) {
+      llvm::outs() << "\t [VALUE]:" << Value.convertToDouble() << "\n";
+    }
+  }
+  std::string ResultName = addressToString(static_cast<ValueBase*>(FLI));
+  std::string ResultType = FLI->getType().getAsString();
+  if (SWAN_PRINT) {
+    llvm::outs() << "\t [RESULT NAME]:" << ResultName << "\n";
+    llvm::outs() << "\t [RESULT TYPE]:" << ResultType << "\n";
+  }
+  ADD_PROP(Node);
+  ADD_PROP(MAKE_CONST(ResultName.c_str()));
+  ADD_PROP(MAKE_CONST(ResultType.c_str()));
 }
 
 void InstructionVisitor::visitStringLiteralInst(StringLiteralInst *SLI) {
@@ -1027,8 +1113,17 @@ void InstructionVisitor::visitRefTailAddrInst(RefTailAddrInst *RTAI) {
 /*******************************************************************************/
 
 void InstructionVisitor::visitEnumInst(EnumInst *EI) {
-  // TODO: UNIMPLEMENTED
-  
+  std::string ResultName = addressToString(static_cast<ValueBase*>(EI));
+  std::string ResultType = EI->getType().getAsString();
+  if (SWAN_PRINT) {
+    llvm::outs() << "\t [RESULT NAME]: " << ResultName << "\n";
+    llvm::outs() << "\t [RESULT TYPE]: " << ResultType << "\n";
+  }
+  ADD_PROP(MAKE_CONST(ResultName.c_str()));
+  ADD_PROP(MAKE_CONST(ResultType.c_str()));
+
+  EI
+
 }
 
 void InstructionVisitor::visitUncheckedEnumDataInst(UncheckedEnumDataInst *UED) {

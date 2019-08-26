@@ -28,6 +28,7 @@ import com.ibm.wala.util.collections.Pair;
 import com.ibm.wala.util.debug.Assertions;
 
 import java.io.File;
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.HashMap;
 
@@ -103,34 +104,43 @@ public class RawAstTranslator extends SILInstructionVisitor<CAstNode, SILInstruc
             mappedEntities.put(function, newEntity);
         }
 
-        // 2. Analyze each entity. (TODO)
+        // 2. Analyze each entity.
         for (CAstNode function: mappedEntities.keySet()) {
-            ArrayList<ArrayList<CAstNode>> blocks = new ArrayList<>();
             SILInstructionContext C = new SILInstructionContext(mappedEntities.get(function), allEntities);
             int blockNo =  0;
             for (CAstNode block: function.getChild(4).getChildren()) {
-                ArrayList<CAstNode> instructions = new ArrayList<>();
-                C.instructions = instructions;
+                C.clearInstructions();
                 for (CAstNode instruction: block.getChildren()) {
                     try {
                         CAstNode Node = this.visit(instruction, C);
                         if ((Node != null) && (Node.getKind() != CAstNode.EMPTY)) {
-                            instructions.add(Node);
+                            C.instructions.add(Node);
                         }
-                    } catch (Exception e) {
+                    } catch (Throwable e) {
+                        System.err.println("ERROR: " + instruction.getChild(0).getValue() + " failed to translate");
+                        System.err.println("\t Function: " + C.parent.getName() + " | " + "Block: #" + blockNo);
+                        System.err.println("\t" + instruction.toString().replaceAll("\n", "\n\t"));
                         e.printStackTrace();
                     }
                 }
-                instructions.addAll(0, C.valueTable.getDecls());
-                instructions.add(0, Ast.makeNode(CAstNode.LABEL_STMT,
+                C.instructions.addAll(0, C.valueTable.getDecls());
+                C.instructions.add(0, Ast.makeNode(CAstNode.LABEL_STMT,
                         Ast.makeConstant(blockNo)));
-                blocks.add(instructions);
+                C.blocks.add(C.instructions);
                 ++blockNo;
             }
-            for (ArrayList<CAstNode> block : blocks.subList(1, blocks.size())) {
-                blocks.get(0).add(Ast.makeNode(CAstNode.BLOCK_STMT, block));
+            int i = 1; // Assuming BB0 is never branched to.
+            for (ArrayList<CAstNode> block : C.blocks.subList(1, C.blocks.size())) {
+                CAstNode BlockStmt = Ast.makeNode(CAstNode.BLOCK_STMT, block);
+                if (C.danglingGOTOs.containsKey(i)) {
+                    for (CAstNode dangling : C.danglingGOTOs.get(i)) {
+                        C.parent.setGotoTarget(dangling, BlockStmt);
+                    }
+                }
+                C.blocks.get(0).add(BlockStmt);
+                ++i;
             }
-            mappedEntities.get(function).setAst(Ast.makeNode(CAstNode.BLOCK_STMT, blocks.get(0)));
+            mappedEntities.get(function).setAst(Ast.makeNode(CAstNode.BLOCK_STMT, C.blocks.get(0)));
             EntityPrinter.print(mappedEntities.get(function));
         }
 
@@ -175,6 +185,11 @@ public class RawAstTranslator extends SILInstructionVisitor<CAstNode, SILInstruc
 
     @Override
     protected CAstNode visitAllocStack(CAstNode N, SILInstructionContext C) {
+        // We treat this as a regular SILValue as we do not have a concrete value
+        // a SILPointer could point to.
+        String ResultName = (String)N.getChild(0).getValue();
+        String ResultType = (String)N.getChild(1).getValue();
+        C.valueTable.addValue(new SILValue(ResultName, ResultType, C));
         return null;
     }
 
@@ -190,6 +205,11 @@ public class RawAstTranslator extends SILInstructionVisitor<CAstNode, SILInstruc
 
     @Override
     protected CAstNode visitAllocBox(CAstNode N, SILInstructionContext C) {
+        // We treat this as a regular SILValue as we do not have a concrete value
+        // a SILPointer could point to.
+        String ResultName = (String)N.getChild(0).getValue();
+        String ResultType = (String)N.getChild(1).getValue();
+        C.valueTable.addValue(new SILValue(ResultName, ResultType, C));
         return null;
     }
 
@@ -209,6 +229,8 @@ public class RawAstTranslator extends SILInstructionVisitor<CAstNode, SILInstruc
 
     @Override
     protected CAstNode visitDeallocStack(CAstNode N, SILInstructionContext C) {
+        String OperandName = (String)N.getChild(0).getValue();
+        C.valueTable.removeValue(OperandName);
         return null;
     }
 
@@ -219,6 +241,11 @@ public class RawAstTranslator extends SILInstructionVisitor<CAstNode, SILInstruc
 
     @Override
     protected CAstNode visitProjectBox(CAstNode N, SILInstructionContext C) {
+        String OperandName = (String)N.getChild(0).getValue();
+        String ResultName = (String)N.getChild(1).getValue();
+        String ResultType = (String)N.getChild(2).getValue();
+        SILPointer ResultValue = new SILPointer(ResultName, ResultType, C, C.valueTable.getValue(OperandName));
+        C.valueTable.addValue(ResultValue);
         return null;
     }
 
@@ -258,15 +285,26 @@ public class RawAstTranslator extends SILInstructionVisitor<CAstNode, SILInstruc
 
     @Override
     protected CAstNode visitLoad(CAstNode N, SILInstructionContext C) {
-        return null;
+        String OperandName = (String)N.getChild(0).getValue();
+        String ResultName = (String)N.getChild(1).getValue();
+        String ResultType = (String)N.getChild(2).getValue();
+        SILValue ResultValue = new SILValue(ResultName, ResultType, C);
+        C.valueTable.addValue(ResultValue);
+        Assertions.productionAssertion(C.valueTable.getValue(OperandName) instanceof SILPointer);
+        CAstNode Assign = ((SILPointer)C.valueTable.getValue(OperandName)).dereference().assignTo(ResultValue);
+        return Assign;
     }
 
     @Override
     protected CAstNode visitStore(CAstNode N, SILInstructionContext C) {
         String SourceName = (String)N.getChild(0).getValue();
         String DestName = (String)N.getChild(1).getValue();
-        assert(C.valueTable.getValue(DestName) instanceof SILPointer);
-        return C.valueTable.getValue(SourceName).assignTo(((SILPointer)C.valueTable.getValue(DestName)).dereference());
+        SILValue DestValue = C.valueTable.getValue(DestName);
+        if (DestValue instanceof SILPointer) {
+            return C.valueTable.getValue(SourceName).assignTo(((SILPointer)C.valueTable.getValue(DestName)).dereference());
+        } else {
+            return C.valueTable.getValue(SourceName).assignTo(C.valueTable.getValue(DestName));
+        }
     }
 
     @Override
@@ -276,7 +314,7 @@ public class RawAstTranslator extends SILInstructionVisitor<CAstNode, SILInstruc
         String ResultType = (String)N.getChild(2).getValue();
         SILValue ResultValue = new SILValue(ResultName, ResultType, C);
         C.valueTable.addValue(ResultValue);
-        assert(C.valueTable.getValue(OperandName) instanceof SILPointer);
+        Assertions.productionAssertion(C.valueTable.getValue(OperandName) instanceof SILPointer);
         CAstNode Assign = ((SILPointer)C.valueTable.getValue(OperandName)).dereference().assignTo(ResultValue);
         return Assign;
     }
@@ -325,6 +363,9 @@ public class RawAstTranslator extends SILInstructionVisitor<CAstNode, SILInstruc
 
     @Override
     protected CAstNode visitDestroyAddr(CAstNode N, SILInstructionContext C) {
+        String OperandName = (String)N.getChild(0).getValue();
+        Assertions.productionAssertion(C.valueTable.getValue(OperandName) instanceof SILPointer);
+        C.valueTable.removeValue(((SILPointer) C.valueTable.getValue(OperandName)).dereference().getName());
         return null;
     }
 
@@ -350,11 +391,19 @@ public class RawAstTranslator extends SILInstructionVisitor<CAstNode, SILInstruc
 
     @Override
     protected CAstNode visitBeginAccess(CAstNode N, SILInstructionContext C) {
+        String OperandName = (String)N.getChild(0).getValue();
+        String ResultName = (String)N.getChild(1).getValue();
+        String ResultType = (String)N.getChild(2).getValue();
+        Assertions.productionAssertion(C.valueTable.getValue(OperandName) instanceof SILPointer);
+        SILValue ResultValue = ((SILPointer)C.valueTable.getValue(OperandName)).copyPointer(ResultName, ResultType);
+        C.valueTable.addValue(ResultValue);
         return null;
     }
 
     @Override
     protected CAstNode visitEndAccess(CAstNode N, SILInstructionContext C) {
+        String OperandName = (String)N.getChild(0).getValue();
+        C.valueTable.removeValue(OperandName);
         return null;
     }
 
@@ -510,6 +559,11 @@ public class RawAstTranslator extends SILInstructionVisitor<CAstNode, SILInstruc
 
     @Override
     protected CAstNode visitFloatLiteral(CAstNode N, SILInstructionContext C) {
+        float Float = ((BigDecimal)N.getChild(0).getValue()).floatValue();
+        String ResultName = (String)N.getChild(1).getValue();
+        String ResultType = (String)N.getChild(2).getValue();
+        SILConstant FloatValue = new SILConstant(ResultName, ResultType, C, Float);
+        C.valueTable.addValue(FloatValue);
         return null;
     }
 
@@ -559,12 +613,14 @@ public class RawAstTranslator extends SILInstructionVisitor<CAstNode, SILInstruc
             case CAstNode.UNARY_EXPR: {
                 CAstNode Oper = C.valueTable.getValue((String)FuncNode.getChild(1).getValue()).getVarNode();
                 Source = Ast.makeNode(CAstNode.UNARY_EXPR, FuncNode.getChild(0), Oper);
+                C.valueTable.addValue(new SILValue(ResultName, ResultType, C));
                 break;
             }
             case CAstNode.BINARY_EXPR: {
                 CAstNode Oper1 = C.valueTable.getValue((String)FuncNode.getChild(1).getValue()).getVarNode();
                 CAstNode Oper2 = C.valueTable.getValue((String)FuncNode.getChild(2).getValue()).getVarNode();
                 Source = Ast.makeNode(CAstNode.BINARY_EXPR, FuncNode.getChild(0), Oper1, Oper2);
+                C.valueTable.addValue(new SILValue(ResultName, ResultType, C));
                 break;
             }
             default: {
@@ -852,7 +908,7 @@ public class RawAstTranslator extends SILInstructionVisitor<CAstNode, SILInstruc
         String ResultName = (String)N.getChild(0).getValue();
         String ResultType = (String)N.getChild(1).getValue();
         String OperandName = (String)N.getChild(2).getValue();
-        assert(C.valueTable.getValue(OperandName) instanceof SILPointer);
+        Assertions.productionAssertion(C.valueTable.getValue(OperandName) instanceof SILPointer);
         SILPointer OperandPointer = (SILPointer)C.valueTable.getValue(OperandName);
         SILValue ValueReferenced = OperandPointer.dereference();
         SILPointer ResultPointer = new SILPointer(ResultName, ResultType, C, ValueReferenced);

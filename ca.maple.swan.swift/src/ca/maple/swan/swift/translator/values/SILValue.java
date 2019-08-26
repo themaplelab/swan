@@ -54,6 +54,10 @@ public class SILValue {
         return Ast.makeNode(CAstNode.DECL_STMT, Ast.makeConstant(new CAstSymbolImpl(this.name, this.type)));
     }
 
+    public String getName() {
+        return name;
+    }
+
     public CAstNode getVarNode() {
         return varNode;
     }

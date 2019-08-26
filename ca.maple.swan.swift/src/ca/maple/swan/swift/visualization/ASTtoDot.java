@@ -91,6 +91,10 @@ public class ASTtoDot {
                 }
                 return;
             }
+            case CAstNode.OPERATOR: {
+                newNode = mutNode(hash + cNode.getValue());
+                break;
+            }
             case CAstNode.LABEL_STMT: {
                 return;
             }

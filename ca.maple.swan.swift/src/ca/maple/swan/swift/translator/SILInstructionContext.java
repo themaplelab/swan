@@ -18,6 +18,7 @@ import com.ibm.wala.cast.ir.translator.AbstractCodeEntity;
 import com.ibm.wala.cast.tree.CAstNode;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 
 /*
  * This class contains any context needed for any node to be translated.
@@ -27,10 +28,26 @@ public class SILInstructionContext {
     public final ArrayList<AbstractCodeEntity> allEntities;
     public final SILValueTable valueTable;
     public ArrayList<CAstNode> instructions;
+    HashMap<Integer, ArrayList<CAstNode>> danglingGOTOs;
+    ArrayList<ArrayList<CAstNode>> blocks;
 
     public SILInstructionContext(AbstractCodeEntity parent, ArrayList<AbstractCodeEntity> allEntities) {
         this.parent = parent;
         this.allEntities = allEntities;
         valueTable =  new SILValueTable();
+        danglingGOTOs = new HashMap<>();
+        blocks = new ArrayList<>();
+    }
+
+    public void clearDanglingGOTOs() {
+        danglingGOTOs = new HashMap<>();
+    }
+
+    public void clearInstructions() {
+        instructions = new ArrayList<>();
+    }
+
+    public void clearBlocks() {
+        blocks = new ArrayList<>();
     }
 }

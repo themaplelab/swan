@@ -1,6 +1,8 @@
 package ca.maple.swan.swift.translator.values;
 
 import com.ibm.wala.cast.tree.CAstNode;
+import com.ibm.wala.util.debug.Assertions;
+import com.ibm.wala.util.debug.UnimplementedError;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -16,18 +18,17 @@ public class SILValueTable {
     }
 
     public SILValue getValue(String valueName) {
-        assert(values.containsKey(valueName));
+        Assertions.productionAssertion(values.containsKey(valueName));
         return values.get(valueName);
 
     }
 
     public void removeValue(String valueName) {
-        assert(values.containsKey(valueName));
         values.remove(valueName);
     }
 
     public SILValue getAndRemoveValue(String valueName) {
-        assert(values.containsKey(valueName));
+        Assertions.productionAssertion(values.containsKey(valueName));
         SILValue toReturn = values.get(valueName);
         values.remove(valueName);
         return toReturn;

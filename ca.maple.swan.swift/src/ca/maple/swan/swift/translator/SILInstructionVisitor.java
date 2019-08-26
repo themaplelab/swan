@@ -205,7 +205,7 @@ public abstract class SILInstructionVisitor<TR, TC> {
             case "try_apply": return visitTryApply(N.getChild(2), C);
 
             default:
-                System.err.println("UNKNOWN INSTRUCTION: " + (String)N.getValue());
+                System.err.println("ERROR: UNKNOWN INSTRUCTION: " + (String)N.getValue());
                 return null;
         }
     }
