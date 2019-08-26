@@ -214,6 +214,10 @@ inline std::string addressToString(void* const a) {
   return buff;
 }
 
+inline std::string label(swift::SILBasicBlock* basicBlock) {
+  return std::to_string(basicBlock->getDebugID());
+}
+
 } // end swan namespace
 
 #endif // SWAN_STRUCTURES_HPP

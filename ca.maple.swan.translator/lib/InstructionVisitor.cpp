@@ -384,8 +384,11 @@ void InstructionVisitor::visitProjectBoxInst(ProjectBoxInst *PBI) {
 }
 
 void InstructionVisitor::visitDeallocRefInst(DeallocRefInst *DRI) {
-  // TODO: UNIMPLEMENTED
-  
+  std::string OperandName = addressToString(DRI->getOperand().getOpaqueValue());
+  if (SWAN_PRINT) {
+    llvm::outs() << "\t [OPER NAME]:" << OperandName << "\n";
+  }
+  ADD_PROP(MAKE_CONST(OperandName.c_str()));
 }
 
 void InstructionVisitor::visitDeallocPartialRefInst(DeallocPartialRefInst *DPRI) {
@@ -481,8 +484,14 @@ void InstructionVisitor::visitEndBorrowInst(EndBorrowInst *EBI) {
 }
 
 void InstructionVisitor::visitAssignInst(AssignInst *AI) {
-  // TODO: UNIMPLEMENTED
-  
+  std::string SourceName = addressToString(AI->getSrc().getOpaqueValue());
+  std::string DestName = addressToString(AI->getDest().getOpaqueValue());
+  if (SWAN_PRINT) {
+    llvm::outs() << "\t [SRC ADDR]: " << SourceName << "\n";
+    llvm::outs() << "\t [DEST ADDR]: " << DestName << "\n";
+  }
+  ADD_PROP(MAKE_CONST(SourceName.c_str()));
+  ADD_PROP(MAKE_CONST(DestName.c_str()));
 }
 
 void InstructionVisitor::visitAssignByWrapperInst(AssignByWrapperInst *ABWI) {
@@ -625,8 +634,11 @@ void InstructionVisitor::visitFixLifetimeInst(FixLifetimeInst *FLI) {
 }
 
 void InstructionVisitor::visitEndLifetimeInst(EndLifetimeInst *ELI) {
-  // TODO: UNIMPLEMENTED
-  
+  std::string OperandName = addressToString(ELI->getOperand().getOpaqueValue());
+  if (SWAN_PRINT) {
+    llvm::outs() << "\t [OPER NAME]:" << OperandName << "\n";
+  }
+  ADD_PROP(MAKE_CONST(OperandName.c_str()));
 }
 
 void InstructionVisitor::visitMarkDependenceInst(MarkDependenceInst *MDI) {
@@ -1122,8 +1134,6 @@ void InstructionVisitor::visitEnumInst(EnumInst *EI) {
   ADD_PROP(MAKE_CONST(ResultName.c_str()));
   ADD_PROP(MAKE_CONST(ResultType.c_str()));
 
-  EI
-
 }
 
 void InstructionVisitor::visitUncheckedEnumDataInst(UncheckedEnumDataInst *UED) {
@@ -1272,8 +1282,17 @@ void InstructionVisitor::visitPointerToAddressInst(PointerToAddressInst *PTAI) {
 }
 
 void InstructionVisitor::visitUncheckedRefCastInst(UncheckedRefCastInst *URCI) {
-  // TODO: UNIMPLEMENTED
-  
+  std::string OperandName = addressToString(URCI->getOperand().getOpaqueValue());
+  std::string ResultName = addressToString(static_cast<ValueBase*>(URCI));
+  std::string ResultType = URCI->getType().getAsString();
+  if (SWAN_PRINT) {
+    llvm::outs() << "\t [OPER NAME]: " << OperandName << "\n";
+    llvm::outs() << "\t [RESULT NAME]: " << ResultName << "\n";
+    llvm::outs() << "\t [RESULT TYPE]: " << ResultType << "\n";
+  }
+  ADD_PROP(MAKE_CONST(OperandName.c_str()));
+  ADD_PROP(MAKE_CONST(ResultName.c_str()));
+  ADD_PROP(MAKE_CONST(ResultType.c_str()));
 }
 
 void InstructionVisitor::visitUncheckedAddrCastInst(UncheckedAddrCastInst *UACI) {
@@ -1382,14 +1401,27 @@ void InstructionVisitor::visitThrowInst(ThrowInst *TI) {
 }
 
 void InstructionVisitor::visitYieldInst(YieldInst *YI) {
-  // TODO: UNIMPLEMENTED
-  
+  SILBasicBlock *ResumeBB = YI->getResumeBB();
+  SILBasicBlock *UnwindBB = YI->getUnwindBB();
+  std::string ResumeLabel = label(ResumeBB);
+  std::string UnwindLabel = label(UnwindBB);
+  if (SWAN_PRINT) {
+    llvm::outs() << "\t [RESUME BB]: " << ResumeLabel << "\n";
+    llvm::outs() << "\t [UNWIND BB]: " << UnwindLabel << "\n";
+  }
+  ADD_PROP(MAKE_CONST(ResumeLabel.c_str()));
+  ADD_PROP(MAKE_CONST(UnwindLabel.c_str()));
+  list<jobject> yieldValues;
+  for (const auto &value : YI->getYieldedValues()) {
+    if (SWAN_PRINT) {
+      llvm::outs() << "\t [YIELD VALUE]: " << value << "\n";
+      yieldValues.push_back(MAKE_CONST(addressToString(value.getOpaqueValue()).c_str()));
+    }
+  }
+  ADD_PROP(MAKE_NODE2(CAstWrapper::PRIMITIVE, MAKE_ARRAY(&yieldValues)));
 }
 
-void InstructionVisitor::visitUnwindInst(UnwindInst *UI) {
-  // TODO: UNIMPLEMENTED
-  
-}
+void InstructionVisitor::visitUnwindInst(__attribute__((unused)) UnwindInst *UI) { }
 
 void InstructionVisitor::visitBranchInst(BranchInst *BI) {
   // TODO: UNIMPLEMENTED

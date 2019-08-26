@@ -6,7 +6,7 @@ import com.ibm.wala.util.debug.Assertions;
 
 public class SILPointer extends SILValue {
 
-    private final SILValue pointsTo;
+    private SILValue pointsTo;
 
     public SILPointer(String name, String type, SILInstructionContext C, SILValue pointsTo) {
         super(name, type, C);
@@ -28,5 +28,10 @@ public class SILPointer extends SILValue {
 
     public SILPointer copyPointer(String newName, String newType) {
         return new SILPointer(newName, newType, C, dereference());
+    }
+
+    public void replaceUnderlyingVar(SILValue to)  {
+        C.valueTable.removeValue(pointsTo.getName());
+        pointsTo = to;
     }
 }

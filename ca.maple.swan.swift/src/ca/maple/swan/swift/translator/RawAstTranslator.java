@@ -178,6 +178,13 @@ public class RawAstTranslator extends SILInstructionVisitor<CAstNode, SILInstruc
         return null;
     }
 
+    public static void tryGOTO(CAstNode n, String label, SILInstructionContext C) {
+        int bb = Integer.parseInt(label);
+        if (bb < C.blocks.size()) {
+            C.parent.setGotoTarget(n, C.blocks.get(bb).get(0));
+        }
+    }
+
     @Override
     protected CAstSourcePositionMap.Position getInstructionPosition(CAstNode N) {
         return (CAstSourcePositionMap.Position)N.getChild(1).getValue();
@@ -251,6 +258,8 @@ public class RawAstTranslator extends SILInstructionVisitor<CAstNode, SILInstruc
 
     @Override
     protected CAstNode visitDeallocRef(CAstNode N, SILInstructionContext C) {
+        String OperandName = (String)N.getChild(0).getValue();
+        C.valueTable.removeValue(OperandName);
         return null;
     }
 
@@ -333,6 +342,12 @@ public class RawAstTranslator extends SILInstructionVisitor<CAstNode, SILInstruc
 
     @Override
     protected CAstNode visitAssign(CAstNode N, SILInstructionContext C) {
+        String SourceName = (String)N.getChild(0).getValue();
+        String DestName = (String)N.getChild(1).getValue();
+        SILValue SourceValue = C.valueTable.getValue(SourceName);
+        SILValue DestValue = C.valueTable.getValue(DestName);
+        Assertions.productionAssertion(DestValue instanceof SILPointer);
+        ((SILPointer)DestValue).replaceUnderlyingVar(SourceValue);
         return null;
     }
 
@@ -474,6 +489,8 @@ public class RawAstTranslator extends SILInstructionVisitor<CAstNode, SILInstruc
 
     @Override
     protected CAstNode visitEndLifetime(CAstNode N, SILInstructionContext C) {
+        String OperandName = (String)N.getChild(0).getValue();
+        C.valueTable.removeValue(OperandName);
         return null;
     }
 
@@ -1019,7 +1036,12 @@ public class RawAstTranslator extends SILInstructionVisitor<CAstNode, SILInstruc
 
     @Override
     protected CAstNode visitUncheckedRefCast(CAstNode N, SILInstructionContext C) {
-        return null;
+        String OperandName = (String)N.getChild(0).getValue();
+        String ResultName = (String)N.getChild(1).getValue();
+        String ResultType = (String)N.getChild(2).getValue();
+        SILValue ToCastValue = C.valueTable.getValue(OperandName);
+        SILValue ResultValue = new SILValue(ResultName, ResultType, C);
+        return ToCastValue.assignTo(ResultValue);
     }
 
     @Override
@@ -1180,12 +1202,20 @@ public class RawAstTranslator extends SILInstructionVisitor<CAstNode, SILInstruc
 
     @Override
     protected CAstNode visitYield(CAstNode N, SILInstructionContext C) {
-        return null;
+        String ResumeLabel = (String)N.getChild(0).getValue();
+        String UnwindLabel = (String)N.getChild(1).getValue();
+        ArrayList<CAstNode> YieldValues = new ArrayList<>();
+        for (CAstNode value : N.getChild(2).getChildren()) {
+            YieldValues.add(C.valueTable.getValue((String)value.getValue()).getVarNode());
+        }
+        YieldValues.add(Ast.makeConstant(ResumeLabel));
+        YieldValues.add(Ast.makeConstant(UnwindLabel));
+        return Ast.makeNode(CAstNode.YIELD_STMT, YieldValues);
     }
 
     @Override
     protected CAstNode visitUnwind(CAstNode N, SILInstructionContext C) {
-        return null;
+        return Ast.makeNode(CAstNode.UNWIND);
     }
 
     @Override
