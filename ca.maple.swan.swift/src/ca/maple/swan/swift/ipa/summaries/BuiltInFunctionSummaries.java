@@ -153,7 +153,12 @@ public class BuiltInFunctionSummaries {
             "static Swift.Int./ infix(Swift.Int, Swift.Int) -> Swift.Int",
             "static Swift.Double./ infix(Swift.Double, Swift.Double) -> Swift.Double",
             "(extension in Swift):Swift.BinaryInteger.description.getter : Swift.String",
-            "Swift.?? infix<A>(Swift.Optional<A>, @autoclosure () throws -> A) throws -> A"
+            "Swift.?? infix<A>(Swift.Optional<A>, @autoclosure () throws -> A) throws -> A",
+            "Swift.~= infix<A where A: Swift.Equatable>(A, A) -> Swift.Bool",
+            "Swift.== infix<A where A: Swift.RawRepresentable, A.RawValue: Swift.Equatable>(A, A) -> Swift.Bool",
+            "(extension in Swift):Swift.RawRepresentable< where A: Swift.Hashable, A.RawValue: Swift.Hashable>.hashValue.getter : Swift.Int",
+            "(extension in Swift):Swift.RawRepresentable< where A: Swift.Hashable, A.RawValue: Swift.Hashable>.hash(into: inout Swift.Hasher) -> ()",
+            "(extension in Swift):Swift.RawRepresentable< where A: Swift.Hashable, A.RawValue: Swift.Hashable>._rawHashValue(seed: Swift.Int) -> Swift.Int"
     };
 
     public static boolean isBuiltIn(String name) {

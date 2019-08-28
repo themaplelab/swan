@@ -35,4 +35,8 @@ public class SILTuple extends SILValue {
         return new SILField(name, fieldTypes.get(index).getName(), C, this, index);
     }
 
+    public int getNoFields() {
+        return fieldTypes.size();
+    }
+
 }

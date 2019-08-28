@@ -84,11 +84,11 @@ public class RawAstTranslator extends SILInstructionVisitor<CAstNode, SILInstruc
 
     public CAstEntity translate(File file, CAstNode n) {
 
-        /* DEBUG */
+        /* DEBUG
         System.out.println("\n\n<<<<<< DEBUG >>>>>\n");
         System.out.println(n);
         System.out.println("<<<<<< DEBUG >>>>>\n\n");
-        /* DEBUG */
+         DEBUG */
 
         // 1. Create CAstEntity for each function.
         ArrayList<AbstractCodeEntity> allEntities = new ArrayList<>();
@@ -202,6 +202,9 @@ public class RawAstTranslator extends SILInstructionVisitor<CAstNode, SILInstruc
 
     @Override
     protected CAstNode visitAllocRef(CAstNode N, SILInstructionContext C) {
+        String ResultName = (String)N.getChild(0).getValue();
+        String ResultType = (String)N.getChild(1).getValue();
+        C.valueTable.addValue(new SILValue(ResultName, ResultType, C));
         return null;
     }
 
@@ -251,7 +254,7 @@ public class RawAstTranslator extends SILInstructionVisitor<CAstNode, SILInstruc
         String OperandName = (String)N.getChild(0).getValue();
         String ResultName = (String)N.getChild(1).getValue();
         String ResultType = (String)N.getChild(2).getValue();
-        SILPointer ResultValue = new SILPointer(ResultName, ResultType, C, C.valueTable.getValue(OperandName));
+        SILPointer ResultValue = C.valueTable.getValue(OperandName).makePointer(ResultName, ResultType);
         C.valueTable.addValue(ResultValue);
         return null;
     }
@@ -330,6 +333,11 @@ public class RawAstTranslator extends SILInstructionVisitor<CAstNode, SILInstruc
 
     @Override
     protected CAstNode visitBeginBorrow(CAstNode N, SILInstructionContext C) {
+        String OperandName = (String)N.getChild(0).getValue();
+        String ResultName = (String)N.getChild(1).getValue();
+        String ResultType = (String)N.getChild(2).getValue();
+        SILValue ResultValue = C.valueTable.getValue(OperandName).makePointer(ResultName, ResultType);
+        C.valueTable.addValue(ResultValue);
         return null;
     }
 
@@ -358,6 +366,11 @@ public class RawAstTranslator extends SILInstructionVisitor<CAstNode, SILInstruc
 
     @Override
     protected CAstNode visitMarkUninitialized(CAstNode N, SILInstructionContext C) {
+        String OperandName = (String)N.getChild(0).getValue();
+        String ResultName = (String)N.getChild(1).getValue();
+        String ResultType = (String)N.getChild(2).getValue();
+        SILPointer ResultValue = new SILPointer(ResultName, ResultType, C, C.valueTable.getValue(OperandName));
+        C.valueTable.addValue(ResultValue);
         return null;
     }
 
@@ -379,8 +392,10 @@ public class RawAstTranslator extends SILInstructionVisitor<CAstNode, SILInstruc
     @Override
     protected CAstNode visitDestroyAddr(CAstNode N, SILInstructionContext C) {
         String OperandName = (String)N.getChild(0).getValue();
-        Assertions.productionAssertion(C.valueTable.getValue(OperandName) instanceof SILPointer);
-        C.valueTable.removeValue(((SILPointer) C.valueTable.getValue(OperandName)).dereference().getName());
+        SILValue AddrToDestroy = C.valueTable.getValue(OperandName);
+        if  (AddrToDestroy instanceof  SILPointer) {
+            C.valueTable.removeValue(((SILPointer) C.valueTable.getValue(OperandName)).dereference().getName());
+        }
         return null;
     }
 
@@ -409,8 +424,13 @@ public class RawAstTranslator extends SILInstructionVisitor<CAstNode, SILInstruc
         String OperandName = (String)N.getChild(0).getValue();
         String ResultName = (String)N.getChild(1).getValue();
         String ResultType = (String)N.getChild(2).getValue();
-        Assertions.productionAssertion(C.valueTable.getValue(OperandName) instanceof SILPointer);
-        SILValue ResultValue = ((SILPointer)C.valueTable.getValue(OperandName)).copyPointer(ResultName, ResultType);
+        SILValue OperandValue = C.valueTable.getValue(OperandName);
+        SILValue ResultValue;
+        if (OperandValue instanceof SILPointer) {
+             ResultValue = ((SILPointer)C.valueTable.getValue(OperandName)).copyPointer(ResultName, ResultType);
+        } else {
+            ResultValue = OperandValue.makePointer(ResultName, ResultType);
+        }
         C.valueTable.addValue(ResultValue);
         return null;
     }
@@ -532,6 +552,7 @@ public class RawAstTranslator extends SILInstructionVisitor<CAstNode, SILInstruc
             SILFunctionRef.SILSummarizedFunctionRef FuncRef = new SILFunctionRef.SILSummarizedFunctionRef(ResultName, ResultType, C, FuncName);
             C.valueTable.addValue(FuncRef);
         } else {
+            System.err.println("ERROR: Unhandled builtin: " + FuncName);
             SILConstant Constant = new SILConstant(ResultName, ResultType, C, FuncName);
             C.valueTable.addValue(Constant);
         }
@@ -596,6 +617,12 @@ public class RawAstTranslator extends SILInstructionVisitor<CAstNode, SILInstruc
 
     @Override
     protected CAstNode visitClassMethod(CAstNode N, SILInstructionContext C) {
+        String OperandName = (String)N.getChild(0).getValue();
+        String ResultName = (String)N.getChild(1).getValue();
+        String ResultType = (String)N.getChild(2).getValue();
+        String FuncName = (String)N.getChild(3).getValue();
+        SILConstant Constant = new SILConstant(ResultName, ResultType, C, FuncName);
+        C.valueTable.addValue(Constant);
         return null;
     }
 
@@ -875,7 +902,19 @@ public class RawAstTranslator extends SILInstructionVisitor<CAstNode, SILInstruc
 
     @Override
     protected CAstNode visitRefElementAddr(CAstNode N, SILInstructionContext C) {
-        return null;
+        String OperandName = (String)N.getChild(0).getValue();
+        String FieldName = (String)N.getChild(1).getValue();
+        String ResultName = (String)N.getChild(2).getValue();
+        String ResultType = (String)N.getChild(2).getValue();
+        SILValue ResultValue = new SILValue(ResultName, ResultType, C);
+        C.valueTable.addValue(ResultValue);
+        CAstNode FieldRef =
+                Ast.makeNode(CAstNode.OBJECT_REF,
+                    C.valueTable.getValue(OperandName).getVarNode(),
+                    Ast.makeConstant(FieldName));
+        C.parent.setGotoTarget(FieldRef, FieldRef);
+        return Ast.makeNode(CAstNode.ASSIGN,
+                ResultValue.getVarNode(), FieldRef);
     }
 
     @Override
@@ -885,7 +924,21 @@ public class RawAstTranslator extends SILInstructionVisitor<CAstNode, SILInstruc
 
     @Override
     protected CAstNode visitEnum(CAstNode N, SILInstructionContext C) {
-        return null;
+        String ResultName = (String)N.getChild(0).getValue();
+        String ResultType = (String)N.getChild(1).getValue();
+        String OperName = (String)N.getChild(2).getValue();
+        String EnumName = (String)N.getChild(3).getValue();
+        String CaseName = (String)N.getChild(4).getValue();
+        SILValue OperandValue = C.valueTable.getValue(OperName);
+        ArrayList<CAstNode> Fields = new ArrayList<>();
+        Fields.add(Ast.makeConstant("ENUM"));
+        Fields.add(Ast.makeConstant("value"));
+        Fields.add(OperandValue.getVarNode());
+        SILValue ResultValue = new SILValue(ResultName, ResultType, C);
+        C.valueTable.addValue(ResultValue);
+        CAstNode EnumLiteral = Ast.makeNode(CAstNode.OBJECT_LITERAL, Fields);
+        C.parent.setGotoTarget(EnumLiteral, EnumLiteral);
+        return Ast.makeNode(CAstNode.ASSIGN, ResultValue.getVarNode(), EnumLiteral);
     }
 
     @Override
@@ -1040,8 +1093,9 @@ public class RawAstTranslator extends SILInstructionVisitor<CAstNode, SILInstruc
         String ResultName = (String)N.getChild(1).getValue();
         String ResultType = (String)N.getChild(2).getValue();
         SILValue ToCastValue = C.valueTable.getValue(OperandName);
-        SILValue ResultValue = new SILValue(ResultName, ResultType, C);
-        return ToCastValue.assignTo(ResultValue);
+        SILPointer ResultValue = ToCastValue.makePointer(ResultName, ResultType);
+        C.valueTable.addValue(ResultValue);
+        return null;
     }
 
     @Override
@@ -1061,6 +1115,17 @@ public class RawAstTranslator extends SILInstructionVisitor<CAstNode, SILInstruc
 
     @Override
     protected CAstNode visitUncheckedBitwiseCast(CAstNode N, SILInstructionContext C) {
+        return null;
+    }
+
+    @Override
+    protected CAstNode visitUncheckedOwnershipConversion(CAstNode N, SILInstructionContext C) {
+        String OperandName = (String)N.getChild(0).getValue();
+        String ResultName = (String)N.getChild(1).getValue();
+        String ResultType = (String)N.getChild(2).getValue();
+        SILValue ToCastValue = C.valueTable.getValue(OperandName);
+        SILPointer ResultValue = ToCastValue.makePointer(ResultName, ResultType);
+        C.valueTable.addValue(ResultValue);
         return null;
     }
 

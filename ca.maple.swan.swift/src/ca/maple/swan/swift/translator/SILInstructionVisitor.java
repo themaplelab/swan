@@ -13,6 +13,7 @@
 
 package ca.maple.swan.swift.translator;
 
+import com.ibm.wala.cast.tree.CAst;
 import com.ibm.wala.cast.tree.CAstNode;
 import com.ibm.wala.cast.tree.CAstSourcePositionMap;
 
@@ -162,6 +163,7 @@ public abstract class SILInstructionVisitor<TR, TC> {
             case "unchecked_addr_cast": return visitUncheckedAddrCast(N.getChild(2), C);
             case "unchecked_trivial_bit_cast": return visitUncheckedTrivialBitCast(N.getChild(2), C);
             case "unchecked_bitwise_cast": return visitUncheckedBitwiseCast(N.getChild(2), C);
+            case "unchecked_ownership_conversion": return visitUncheckedOwnershipConversion(N.getChild(2), C);
             case "ref_to_raw_pointer": return visitRefToRawPointer(N.getChild(2), C);
             case "raw_pointer_to_ref": return visitRawPointerToRef(N.getChild(2), C);
             case "ref_to_unowned": return visitRefToUnowned(N.getChild(2), C);
@@ -365,6 +367,7 @@ public abstract class SILInstructionVisitor<TR, TC> {
     protected abstract TR visitUncheckedAddrCast(CAstNode N, TC C);
     protected abstract TR visitUncheckedTrivialBitCast(CAstNode N, TC C);
     protected abstract TR visitUncheckedBitwiseCast(CAstNode N, TC C);
+    protected abstract TR visitUncheckedOwnershipConversion(CAstNode N, TC C);
     protected abstract TR visitRefToRawPointer(CAstNode N, TC C);
     protected abstract TR visitRawPointerToRef(CAstNode N, TC C);
     protected abstract TR visitRefToUnowned(CAstNode N, TC C);
