@@ -1159,8 +1159,20 @@ void InstructionVisitor::visitStructInst(StructInst *SI) {
 }
 
 void InstructionVisitor::visitStructExtractInst(StructExtractInst *SEI) {
-  // TODO: UNIMPLEMENTED
-  
+  std::string StructValueName = addressToString(SEI->getOperand().getOpaqueValue());
+  std::string FieldName = SEI->getField()->getNameStr().str();
+  std::string ResultName = addressToString(static_cast<ValueBase*>(SEI));
+  std::string ResultType = SEI->getType().getAsString();
+  if (SWAN_PRINT) {
+      llvm::outs() << "\t\t\t [STRUCT NAME]: " << StructValueName << "\n";
+      llvm::outs() << "\t\t\t [FIELD]: " << FieldName << "\n";
+      llvm::outs() << "\t [RESULT NAME]:" << ResultName << "\n";
+      llvm::outs() << "\t [RESULT TYPE]:" << ResultType << "\n";
+  }
+  ADD_PROP(MAKE_CONST(StructValueName.c_str()));
+  ADD_PROP(MAKE_CONST(FieldName.c_str()));
+  ADD_PROP(MAKE_CONST(ResultName.c_str()));
+  ADD_PROP(MAKE_CONST(ResultType.c_str()));
 }
 
 void InstructionVisitor::visitStructElementAddrInst(StructElementAddrInst *SEAI) {
@@ -1441,8 +1453,17 @@ void InstructionVisitor::visitPointerToThinFunctionInst(PointerToThinFunctionIns
 }
 
 void InstructionVisitor::visitThinToThickFunctionInst(ThinToThickFunctionInst *TTFI) {
-  // TODO: UNIMPLEMENTED
-  
+  std::string OperandName = addressToString(TTFI->getOperand().getOpaqueValue());
+  std::string ResultName = addressToString(static_cast<ValueBase*>(TTFI));
+  std::string ResultType = TTFI->getType().getAsString();
+  if (SWAN_PRINT) {
+    llvm::outs() << "\t [OPER NAME]: " << OperandName << "\n";
+    llvm::outs() << "\t [RESULT NAME]: " << ResultName << "\n";
+    llvm::outs() << "\t [RESULT TYPE]: " << ResultType << "\n";
+  }
+  ADD_PROP(MAKE_CONST(OperandName.c_str()));
+  ADD_PROP(MAKE_CONST(ResultName.c_str()));
+  ADD_PROP(MAKE_CONST(ResultType.c_str()));
 }
 
 void InstructionVisitor::visitThickToObjCMetatypeInst(ThickToObjCMetatypeInst *TTOMI) {
@@ -1489,10 +1510,13 @@ void InstructionVisitor::visitUnreachableInst(UnreachableInst *UI) {
 
 void InstructionVisitor::visitReturnInst(ReturnInst *RI) {
   std::string OperandName = addressToString(RI->getOperand().getOpaqueValue());
+  std::string OperandType = RI->getOperand()->getType().getAsString();
     if (SWAN_PRINT) {
     llvm::outs() << "\t [OPER NAME]:" << OperandName << "\n";
+    llvm::outs() << "\t [OPER TYPE]:" << OperandType << "\n";
   }
   ADD_PROP(MAKE_CONST(OperandName.c_str()));
+  ADD_PROP(MAKE_CONST(OperandType.c_str()));
 }
 
 void InstructionVisitor::visitThrowInst(ThrowInst *TI) {

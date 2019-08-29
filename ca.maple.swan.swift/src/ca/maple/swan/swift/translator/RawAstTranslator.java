@@ -27,7 +27,6 @@ import com.ibm.wala.cast.tree.impl.CAstImpl;
 import com.ibm.wala.cast.tree.impl.CAstOperator;
 import com.ibm.wala.util.collections.Pair;
 import com.ibm.wala.util.debug.Assertions;
-import sun.security.krb5.internal.crypto.Des;
 
 import java.io.File;
 import java.math.BigDecimal;
@@ -927,12 +926,27 @@ public class RawAstTranslator extends SILInstructionVisitor<CAstNode, SILInstruc
         C.valueTable.addValue(ResultStruct);
         CAstNode ObjLiteral = Ast.makeNode(CAstNode.OBJECT_LITERAL, NodeFields);
         C.parent.setGotoTarget(ObjLiteral, ObjLiteral);
-        return Ast.makeNode(CAstNode.ASSIGN, ResultStruct.getVarNode(), ObjLiteral);
+        return null;
     }
 
     @Override
     protected CAstNode visitStructExtract(CAstNode N, SILInstructionContext C) {
-        return null;
+        String StructName = (String)N.getChild(0).getValue();
+        String FieldName = (String)N.getChild(1).getValue();
+        String ResultName = (String)N.getChild(2).getValue();
+        String ResultType = (String)N.getChild(3).getValue();
+        SILValue StructValue = C.valueTable.getValue(StructName);
+        if (StructValue instanceof SILStruct) {
+            SILValue FieldValue = ((SILStruct)StructValue).createField(ResultName, ResultType, FieldName);
+            C.valueTable.addValue(FieldValue);
+            return null;
+        } else {
+            SILValue FieldValue = new SILValue(ResultName, ResultType, C);
+            C.valueTable.addValue(FieldValue);
+            return Ast.makeNode(CAstNode.ASSIGN,
+                    FieldValue.getVarNode(),
+                    C.valueTable.getValue(StructName).createObjectRef(FieldName));
+        }
     }
 
     @Override
@@ -1262,6 +1276,13 @@ public class RawAstTranslator extends SILInstructionVisitor<CAstNode, SILInstruc
 
     @Override
     protected CAstNode visitThinToThickFunction(CAstNode N, SILInstructionContext C) {
+        String OperandName = (String)N.getChild(0).getValue();
+        String ResultName = (String)N.getChild(1).getValue();
+        String ResultType = (String)N.getChild(2).getValue();
+        SILValue OperandValue = C.valueTable.getValue(OperandName);
+        Assertions.productionAssertion(OperandValue instanceof SILFunctionRef);
+        SILValue ResultValue = ((SILFunctionRef)OperandValue).copyFuncRef(ResultName, ResultType);
+        C.valueTable.addValue(ResultValue);
         return null;
     }
 
@@ -1313,6 +1334,11 @@ public class RawAstTranslator extends SILInstructionVisitor<CAstNode, SILInstruc
     @Override
     protected CAstNode visitReturn(CAstNode N, SILInstructionContext C) {
         String OperandName = (String)N.getChild(0).getValue();
+        String OperandType = (String)N.getChild(1).getValue();
+        if (!C.valueTable.hasValue(OperandName)) {
+            SILValue VarValue = new SILValue(OperandName, OperandType, C);
+            C.valueTable.addValue(VarValue);
+        }
         return Ast.makeNode(CAstNode.RETURN, C.valueTable.getValue(OperandName).getVarNode());
     }
 
@@ -1386,10 +1412,10 @@ public class RawAstTranslator extends SILInstructionVisitor<CAstNode, SILInstruc
         }
         CAstNode FalseGotoNode = Ast.makeNode(CAstNode.GOTO, Ast.makeConstant(FalseDestName));
         tryGOTO(FalseGotoNode, FalseDestName, C);
-        CAstNode TrueIfStmt = Ast.makeNode(CAstNode.IF_STMT,
-                Ast.makeNode(CAstNode.BINARY_EXPR, CAstOperator.OP_EQ, C.valueTable.getValue(CondOperandName).getVarNode(), Ast.makeConstant("1"),
-                TrueGotoNode, FalseGotoNode));
-        return TrueIfStmt;
+        CAstNode IfStmt = Ast.makeNode(CAstNode.IF_STMT,
+                Ast.makeNode(CAstNode.BINARY_EXPR, CAstOperator.OP_EQ, C.valueTable.getValue(CondOperandName).getVarNode(), Ast.makeConstant("1")),
+                TrueGotoNode, FalseGotoNode);
+        return IfStmt;
     }
 
     @Override

@@ -16,6 +16,10 @@ public class SILFunctionRef extends SILValue {
                 Ast.makeConstant(RawAstTranslator.findEntity(functionName, C.allEntities)));
     }
 
+    public SILFunctionRef copyFuncRef(String name, String type) {
+        return new SILFunctionRef(name, type, C, functionName);
+    }
+
     public String getFunctionName() {
         return functionName;
     }

@@ -79,4 +79,11 @@ public class SILValue {
         this.type = type;
     }
 
+    public CAstNode createObjectRef(String fieldName) {
+        CAstNode objectRef = Ast.makeNode(CAstNode.OBJECT_REF,
+                getVarNode(), Ast.makeConstant(fieldName));
+        C.parent.setGotoTarget(objectRef, objectRef);
+        return objectRef;
+    }
+
 }

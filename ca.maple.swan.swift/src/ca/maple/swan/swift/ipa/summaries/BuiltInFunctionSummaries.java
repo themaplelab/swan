@@ -15,10 +15,12 @@ package ca.maple.swan.swift.ipa.summaries;
 
 import ca.maple.swan.swift.translator.SILInstructionContext;
 import ca.maple.swan.swift.translator.values.SILConstant;
+import ca.maple.swan.swift.translator.values.SILStruct;
 import ca.maple.swan.swift.translator.values.SILTuple;
 import ca.maple.swan.swift.translator.values.SILValue;
 import com.ibm.wala.cast.tree.CAstNode;
 import com.ibm.wala.cast.tree.impl.CAstOperator;
+import com.ibm.wala.util.collections.Pair;
 import com.ibm.wala.util.debug.Assertions;
 
 import java.util.ArrayList;
@@ -69,7 +71,12 @@ public class BuiltInFunctionSummaries {
             }
             case "Swift.Bool.init(_builtinBooleanLiteral: Builtin.Int1) -> Swift.Bool": {
                 // For now, we will keep the numerical boolean representation (integer).
-                return C.valueTable.getValue((String)params.get(0).getValue()).getVarNode();
+                ArrayList<Pair<String, String>> fields = new ArrayList<>();
+                fields.add(Pair.make("_value", (String)params.get(0).getValue()));
+                SILStruct BoolValue = new SILStruct(resultName, resultType, C, fields);
+                C.valueTable.addValue(BoolValue);
+                C.parent.setGotoTarget(BoolValue.getVarNode(), BoolValue.getVarNode());
+                return null;
             }
             case "static Swift.String.+ infix(Swift.String, Swift.String) -> Swift.String": {
                 return Ast.makeConstant(
