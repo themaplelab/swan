@@ -23,6 +23,10 @@ public class SILValueTable {
 
     }
 
+    public boolean hasValue(String valueName) {
+        return values.containsKey(valueName);
+    }
+
     public void removeValue(String valueName) {
         values.remove(valueName);
     }

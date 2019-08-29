@@ -26,7 +26,7 @@ public class SILTuple extends SILValue {
     }
 
     public CAstNode createObjectRef(int index) {
-        CAstNode ref = Ast.makeNode(OBJECT_REF, Ast.makeConstant(this.name), Ast.makeConstant(index));
+        CAstNode ref = Ast.makeNode(OBJECT_REF, getVarNode(), Ast.makeConstant(index));
         C.parent.setGotoTarget(ref, ref);
         return ref;
     }
@@ -39,4 +39,9 @@ public class SILTuple extends SILValue {
         return fieldTypes.size();
     }
 
+    public static class SILUnitArrayTuple extends SILValue {
+        public SILUnitArrayTuple(String name, String type, SILInstructionContext C) {
+            super(name, type, C);
+        }
+    }
 }

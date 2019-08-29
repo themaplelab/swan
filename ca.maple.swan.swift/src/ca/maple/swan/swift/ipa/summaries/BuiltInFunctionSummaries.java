@@ -35,24 +35,8 @@ public class BuiltInFunctionSummaries {
 
             /*************** LITERALS ****************/
             case "Swift._allocateUninitializedArray<A>(Builtin.Word) -> (Swift.Array<A>, Builtin.RawPointer)" : {
-                ArrayList<CAstNode> Fields = new ArrayList<>();
-                SILValue allocatedArray = new SILValue(resultName + "_value/pointer", "Any", C);
-                C.valueTable.addValue(allocatedArray);
-                Fields.add(Ast.makeConstant("TUPLE"));
-                Fields.add(Ast.makeConstant("0"));
-                Fields.add(allocatedArray.getVarNode());
-                Fields.add(Ast.makeConstant("1"));
-                CAstNode PointerRef = Ast.makeNode(OBJECT_REF, Ast.makeNode(THIS), Ast.makeConstant("0"));
-                C.parent.setGotoTarget(PointerRef, PointerRef);
-                Fields.add(PointerRef);
-                ArrayList<String> types = new ArrayList<>();
-                types.add("Any");
-                types.add("Any");
-                SILTuple resultTuple = new SILTuple(resultName, resultType, C, types);
-                C.valueTable.addValue(resultTuple);
-                CAstNode resultNode = Ast.makeNode(OBJECT_LITERAL, Fields);
-                C.parent.setGotoTarget(resultNode, resultNode);
-                return resultNode;
+                C.valueTable.addValue(new SILTuple.SILUnitArrayTuple(resultName, resultType, C));
+                return null;
             }
             case "default argument 1 of Swift.print(_: Any..., separator: Swift.String, terminator: Swift.String) -> ()": {
                 return Ast.makeNode(CAstNode.VAR); // Signifies that we should just create a variable for the result.
@@ -61,7 +45,9 @@ public class BuiltInFunctionSummaries {
                 return Ast.makeNode(CAstNode.VAR);
             }
             case "Swift.print(_: Any..., separator: Swift.String, terminator: Swift.String) -> ()": {
-                return C.valueTable.getValue((String)params.get(0).getValue()).getVarNode();
+                C.instructions.add(Ast.makeNode(CAstNode.ECHO,
+                        C.valueTable.getValue((String)params.get(0).getValue()).getVarNode()));
+                return null;
             }
             case "Swift.String.init(_builtinStringLiteral: Builtin.RawPointer, utf8CodeUnitCount: Builtin.Word, isASCII: Builtin.Int1) -> Swift.String": {
                 return C.valueTable.getValue((String)params.get(0).getValue()).getVarNode();
@@ -158,7 +144,8 @@ public class BuiltInFunctionSummaries {
             "Swift.== infix<A where A: Swift.RawRepresentable, A.RawValue: Swift.Equatable>(A, A) -> Swift.Bool",
             "(extension in Swift):Swift.RawRepresentable< where A: Swift.Hashable, A.RawValue: Swift.Hashable>.hashValue.getter : Swift.Int",
             "(extension in Swift):Swift.RawRepresentable< where A: Swift.Hashable, A.RawValue: Swift.Hashable>.hash(into: inout Swift.Hasher) -> ()",
-            "(extension in Swift):Swift.RawRepresentable< where A: Swift.Hashable, A.RawValue: Swift.Hashable>._rawHashValue(seed: Swift.Int) -> Swift.Int"
+            "(extension in Swift):Swift.RawRepresentable< where A: Swift.Hashable, A.RawValue: Swift.Hashable>._rawHashValue(seed: Swift.Int) -> Swift.Int",
+            "Swift.?? infix<A>(Swift.Optional<A>, @autoclosure () throws -> A) throws -> A"
     };
 
     public static boolean isBuiltIn(String name) {

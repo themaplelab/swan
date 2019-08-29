@@ -30,6 +30,7 @@
 #define MAKE_NODE(x) Instance->CAst->makeNode(x)
 #define MAKE_NODE2(x, y) Instance->CAst->makeNode(x, y)
 #define MAKE_NODE3(x, y, z) Instance->CAst->makeNode(x, y, z)
+#define MAKE_NODE4(x, y, z, z2) Instance->CAst->makeNode(x, y, z, z2)
 #define MAKE_CONST(x) Instance->CAst->makeConstant(x)
 #define MAKE_ARRAY(x) Instance->CAst->makeArray(x)
 #define ADD_PROP(x) currentInstruction->addProperty(x)
@@ -468,6 +469,20 @@ void InstructionVisitor::visitStoreInst(StoreInst *SI) {
   ADD_PROP(MAKE_CONST(DestName.c_str()));
 }
 
+void InstructionVisitor::visitStoreBorrowInst(StoreBorrowInst *SBI)
+{
+  // It seems the result of this instruction is never used, but it does
+  // have one, unlike store. There is nothing in SIL.rst on this inst.
+  std::string SourceName = addressToString(SBI->getSrc().getOpaqueValue());
+  std::string DestName = addressToString(SBI->getDest().getOpaqueValue());
+  if (SWAN_PRINT) {
+    llvm::outs() << "\t [SRC ADDR]: " << SourceName << "\n";
+    llvm::outs() << "\t [DEST ADDR]: " << DestName << "\n";
+  }
+  ADD_PROP(MAKE_CONST(SourceName.c_str()));
+  ADD_PROP(MAKE_CONST(DestName.c_str()));
+}
+
 void InstructionVisitor::visitLoadBorrowInst(LoadBorrowInst *LBI) {
   std::string OperandName = addressToString(LBI->getOperand().getOpaqueValue());
   std::string ResultName = addressToString(static_cast<ValueBase*>(LBI));
@@ -873,8 +888,17 @@ void InstructionVisitor::visitObjCSuperMethodInst(ObjCSuperMethodInst *ASMI) {
 }
 
 void InstructionVisitor::visitWitnessMethodInst(WitnessMethodInst *WMI) {
-  // TODO: UNIMPLEMENTED
-  
+  std::string ResultName = addressToString(static_cast<ValueBase*>(WMI));
+  std::string ResultType = WMI->getType().getAsString();
+  std::string FunctionName = Demangle::demangleSymbolAsString(WMI->getMember().mangle());
+  if (SWAN_PRINT) {
+    llvm::outs() << "\t [RESULT NAME]: " << ResultName << "\n";
+    llvm::outs() << "\t [RESULT TYPE]: " << ResultType << "\n";
+    llvm::outs() << "\t [CLASS METHOD]: " << FunctionName << "\n";
+  }
+  ADD_PROP(MAKE_CONST(ResultName.c_str()));
+  ADD_PROP(MAKE_CONST(ResultType.c_str()));
+  ADD_PROP(MAKE_CONST(FunctionName.c_str()));
 }
 
 /*******************************************************************************/
@@ -1183,7 +1207,10 @@ void InstructionVisitor::visitRefTailAddrInst(RefTailAddrInst *RTAI) {
 void InstructionVisitor::visitEnumInst(EnumInst *EI) {
   std::string ResultName = addressToString(static_cast<ValueBase*>(EI));
   std::string ResultType = EI->getType().getAsString();
-  std::string OperandName = addressToString(EI->getOperand().getOpaqueValue());
+  std::string OperandName = "NO OPERAND";
+  if (EI->hasOperand()) {
+    OperandName = addressToString(EI->getOperand().getOpaqueValue());
+  }
   std::string EnumName = EI->getElement()->getParentEnum()->getName().str();
   std::string CaseName = EI->getElement()->getNameStr();
    if (SWAN_PRINT) {
@@ -1497,13 +1524,78 @@ void InstructionVisitor::visitYieldInst(YieldInst *YI) {
 void InstructionVisitor::visitUnwindInst(__attribute__((unused)) UnwindInst *UI) { }
 
 void InstructionVisitor::visitBranchInst(BranchInst *BI) {
-  // TODO: UNIMPLEMENTED
-  
+  std::string DestBranch = label(BI->getDestBB());
+  ADD_PROP(MAKE_CONST(DestBranch.c_str()));
+  if (SWAN_PRINT) {
+    llvm::outs() << "\t [DEST BB]: " << DestBranch << "\n";
+  }
+  std::list<jobject> Arguments;
+  for (unsigned int opIndex = 0; opIndex < BI->getNumArgs(); ++opIndex) {
+    std::string OperandName = addressToString(BI->getOperand(opIndex).getOpaqueValue());
+    std::string DestArgName = addressToString(BI->getDestBB()->getArgument(opIndex));
+    std::string DestArgType = BI->getDestBB()->getArgument(opIndex)->getType().getAsString();
+    if (SWAN_PRINT) {
+      llvm::outs() << "\t\t [OPER NAME]: " << OperandName << "\n";
+      llvm::outs() << "\t\t [DEST ARG NAME]: " << DestArgName << "\n";
+      llvm::outs() << "\t\t [DEST ARG TYPE]: " << DestArgType << "\n";
+      llvm::outs() << "\t\t -------\n";
+    }
+    Arguments.push_back(MAKE_NODE4(CAstWrapper::PRIMITIVE,
+      MAKE_CONST(OperandName.c_str()),
+      MAKE_CONST(DestArgName.c_str()),
+      MAKE_CONST(DestArgType.c_str())));
+  }
+  ADD_PROP(MAKE_NODE2(CAstWrapper::PRIMITIVE, MAKE_ARRAY(&Arguments)));
 }
 
 void InstructionVisitor::visitCondBranchInst(CondBranchInst *CBI) {
-  // TODO: UNIMPLEMENTED
-  
+  std::string CondOperandName = addressToString(CBI->getCondition().getOpaqueValue());
+  std::string TrueDestName = label(CBI->getTrueBB());
+  std::string FalseDestName = label(CBI->getFalseBB());
+  if (SWAN_PRINT) {
+    llvm::outs() << "\t [COND NAME]: " << CondOperandName << "\n";
+    llvm::outs() << "\t [TRUE DEST BB]: " << TrueDestName << "\n";
+    llvm::outs() << "\t [FALSE DEST BB]: " << FalseDestName << "\n";
+  }
+  ADD_PROP(MAKE_CONST(CondOperandName.c_str()));
+  ADD_PROP(MAKE_CONST(TrueDestName.c_str()));
+  ADD_PROP(MAKE_CONST(FalseDestName.c_str()));
+  std::list<jobject> TrueArguments;
+  llvm::outs() << "\t True Args \n";
+  for (unsigned int opIndex = 0; opIndex < CBI->getTrueOperands().size(); ++opIndex) {
+    std::string OperandName = addressToString(CBI->getTrueOperands()[opIndex].get().getOpaqueValue());
+    std::string DestArgName = addressToString(CBI->getTrueArgs()[opIndex]);
+    std::string DestArgType = CBI->getTrueArgs()[opIndex]->getType().getAsString();
+    if (SWAN_PRINT) {
+      llvm::outs() << "\t\t [OPER NAME]: " << OperandName << "\n";
+      llvm::outs() << "\t\t [DEST ARG NAME]: " << DestArgName << "\n";
+      llvm::outs() << "\t\t [DEST ARG TYPE]: " << DestArgType << "\n";
+      llvm::outs() << "\t\t -------\n";
+    }
+    TrueArguments.push_back(MAKE_NODE4(CAstWrapper::PRIMITIVE,
+      MAKE_CONST(OperandName.c_str()),
+      MAKE_CONST(DestArgName.c_str()),
+      MAKE_CONST(DestArgType.c_str())));
+  }
+  ADD_PROP(MAKE_NODE2(CAstWrapper::PRIMITIVE, MAKE_ARRAY(&TrueArguments)));
+  std::list<jobject> FalseArguments;
+  llvm::outs() << "\t False Args \n";
+  for (unsigned int opIndex = 0; opIndex < CBI->getFalseOperands().size(); ++opIndex) {
+    std::string OperandName = addressToString(CBI->getFalseOperands()[opIndex].get().getOpaqueValue());
+    std::string DestArgName = addressToString(CBI->getFalseArgs()[opIndex]);
+    std::string DestArgType = CBI->getFalseArgs()[opIndex]->getType().getAsString();
+    if (SWAN_PRINT) {
+      llvm::outs() << "\t\t [OPER NAME]: " << OperandName << "\n";
+      llvm::outs() << "\t\t [DEST ARG NAME]: " << DestArgName << "\n";
+      llvm::outs() << "\t\t [DEST ARG TYPE]: " << DestArgType << "\n";
+      llvm::outs() << "\t\t -------\n";
+    }
+    FalseArguments.push_back(MAKE_NODE4(CAstWrapper::PRIMITIVE,
+      MAKE_CONST(OperandName.c_str()),
+      MAKE_CONST(DestArgName.c_str()),
+      MAKE_CONST(DestArgType.c_str())));
+  }
+  ADD_PROP(MAKE_NODE2(CAstWrapper::PRIMITIVE, MAKE_ARRAY(&FalseArguments)));
 }
 
 void InstructionVisitor::visitSwitchValueInst(SwitchValueInst *SVI) {

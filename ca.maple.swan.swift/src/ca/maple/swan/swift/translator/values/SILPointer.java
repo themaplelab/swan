@@ -26,6 +26,12 @@ public class SILPointer extends SILValue {
         return getUnderlyingVar();
     }
 
+    @Override
+    public CAstNode copy(String ResultName, String ResultType) {
+        C.valueTable.addValue(this.copyPointer(ResultName, ResultType));
+        return null;
+    }
+
     public SILPointer copyPointer(String newName, String newType) {
         return new SILPointer(newName, newType, C, dereference());
     }

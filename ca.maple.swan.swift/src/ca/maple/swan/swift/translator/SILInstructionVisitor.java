@@ -43,7 +43,8 @@ public abstract class SILInstructionVisitor<TR, TC> {
             case "debug_value_addr": return visitDebugValueAddr(N.getChild(2), C); 
 
             case "load": return visitLoad(N.getChild(2), C); 
-            case "store": return visitStore(N.getChild(2), C); 
+            case "store": return visitStore(N.getChild(2), C);
+            case "store_borrow": return visitStoreBorrow(N.getChild(2), C);
             case "load_borrow": return visitLoadBorrow(N.getChild(2), C);
             case "begin_borrow": return visitBeginBorrow(N.getChild(2), C);
             case "end_borrow": return visitEndBorrow(N.getChild(2), C); 
@@ -236,6 +237,7 @@ public abstract class SILInstructionVisitor<TR, TC> {
     /* ACCESSING MEMORY */
     protected abstract TR visitLoad(CAstNode N, TC C);
     protected abstract TR visitStore(CAstNode N, TC C);
+    protected abstract TR visitStoreBorrow(CAstNode N, TC C);
     protected abstract TR visitLoadBorrow(CAstNode N, TC C);
     protected abstract TR visitBeginBorrow(CAstNode N, TC C);
     protected abstract TR visitEndBorrow(CAstNode N, TC C);

@@ -129,6 +129,7 @@ namespace swan {
 
     void visitLoadInst(LoadInst *LI);
     void visitStoreInst(StoreInst *SI);
+    void visitStoreBorrowInst(StoreBorrowInst *SBI);
     void visitLoadBorrowInst(LoadBorrowInst *LBI);
     void visitBeginBorrowInst(BeginBorrowInst *BBI);
     void visitEndBorrowInst(EndBorrowInst *EBI);
