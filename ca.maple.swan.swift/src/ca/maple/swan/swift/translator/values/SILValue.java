@@ -56,6 +56,7 @@ public class SILValue {
 
     public CAstNode copy(String ResultName, String ResultType) {
         SILValue newValue = new SILValue(ResultName, ResultType, C);
+        C.valueTable.addValue(newValue);
         return this.assignTo(newValue);
     }
 

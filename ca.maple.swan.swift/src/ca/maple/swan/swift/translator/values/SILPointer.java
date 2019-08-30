@@ -2,7 +2,6 @@ package ca.maple.swan.swift.translator.values;
 
 import ca.maple.swan.swift.translator.SILInstructionContext;
 import com.ibm.wala.cast.tree.CAstNode;
-import com.ibm.wala.util.debug.Assertions;
 
 public class SILPointer extends SILValue {
 

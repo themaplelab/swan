@@ -1633,8 +1633,39 @@ void InstructionVisitor::visitSelectValueInst(SelectValueInst *SVI) {
 }
 
 void InstructionVisitor::visitSwitchEnumInst(SwitchEnumInst *SWI) {
-  // TODO: UNIMPLEMENTED
-  
+  std::string EnumName = addressToString(SWI->getOperand().getOpaqueValue());
+  ADD_PROP(MAKE_CONST(EnumName.c_str()));
+  std::list<jobject> Cases;
+  for (unsigned int i = 0; i < SWI->getNumCases(); ++i) {
+    auto Case = SWI->getCase(i);
+    EnumElementDecl *CaseDecl = Case.first;
+    SILBasicBlock *CaseBasicBlock = Case.second;
+    std::string CaseName = CaseDecl->getNameStr().str();
+    std::string DestBlock = label(CaseBasicBlock);
+    std::list<jobject> Fields;
+    Fields.push_back(MAKE_CONST(CaseName.c_str()));
+    Fields.push_back(MAKE_CONST(DestBlock.c_str()));
+    if (CaseBasicBlock->getNumArguments() > 0) {
+      std::string ArgName = addressToString(CaseBasicBlock->getArgument(0));
+      std::string ArgType = CaseBasicBlock->getArgument(0)->getType().getAsString();
+      Fields.push_back(MAKE_CONST(ArgName.c_str()));
+      Fields.push_back(MAKE_CONST(ArgType.c_str()));
+    }
+    Cases.push_back(MAKE_NODE2(CAstWrapper::PRIMITIVE, MAKE_ARRAY(&Fields)));
+  }
+  ADD_PROP(MAKE_NODE2(CAstWrapper::PRIMITIVE, MAKE_ARRAY(&Cases)));
+  if (SWI->hasDefault()) {
+    SILBasicBlock *DefaultBasicBlock = SWI->getDefaultBB();
+    std::list<jobject> Fields;
+    Fields.push_back(MAKE_CONST(label(DefaultBasicBlock).c_str()));
+    if (DefaultBasicBlock->getNumArguments() > 0) {
+      std::string ArgName = addressToString(DefaultBasicBlock->getArgument(0));
+      std::string ArgType = DefaultBasicBlock->getArgument(0)->getType().getAsString();
+      Fields.push_back(MAKE_CONST(ArgName.c_str()));
+      Fields.push_back(MAKE_CONST(ArgType.c_str()));
+    }
+    ADD_PROP(MAKE_NODE2(CAstWrapper::PRIMITIVE, MAKE_ARRAY(&Fields)));
+  }
 }
 
 void InstructionVisitor::visitSwitchEnumAddrInst(SwitchEnumAddrInst *SEAI) {

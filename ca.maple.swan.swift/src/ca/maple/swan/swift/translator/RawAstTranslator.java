@@ -20,13 +20,13 @@ import ca.maple.swan.swift.tree.FunctionEntity;
 import ca.maple.swan.swift.tree.ScriptEntity;
 import ca.maple.swan.swift.visualization.ASTtoDot;
 import com.ibm.wala.cast.ir.translator.AbstractCodeEntity;
-import com.ibm.wala.cast.tree.CAstEntity;
-import com.ibm.wala.cast.tree.CAstNode;
-import com.ibm.wala.cast.tree.CAstSourcePositionMap;
+import com.ibm.wala.cast.tree.*;
+import com.ibm.wala.cast.tree.impl.CAstControlFlowRecorder;
 import com.ibm.wala.cast.tree.impl.CAstImpl;
 import com.ibm.wala.cast.tree.impl.CAstOperator;
 import com.ibm.wala.util.collections.Pair;
 import com.ibm.wala.util.debug.Assertions;
+import sun.security.krb5.internal.crypto.Des;
 
 import java.io.File;
 import java.math.BigDecimal;
@@ -1430,7 +1430,65 @@ public class RawAstTranslator extends SILInstructionVisitor<CAstNode, SILInstruc
 
     @Override
     protected CAstNode visitSwitchEnum(CAstNode N, SILInstructionContext C) {
-        return null;
+        String EnumName = (String)N.getChild(0).getValue();
+        SILValue EnumValue = C.valueTable.getValue(EnumName);
+        ArrayList<CAstNode> Fields = new ArrayList<>();
+        CAstNode DefaultNode = CAstControlFlowRecorder.EXCEPTION_TO_EXIT;
+        ArrayList<Pair<CAstNode, CAstNode>> labels = new ArrayList<>();
+        for (CAstNode Case : N.getChild(1).getChildren()) {
+            ArrayList<CAstNode> StmtNodes = new ArrayList<>();
+            String CaseName = (String)Case.getChild(0).getValue();
+            String DestBB = (String)Case.getChild(1).getValue();
+            if (N.getChildren().size() > 2) {
+                String ArgName = (String)N.getChild(2).getValue();
+                String ArgType = (String)N.getChild(3).getValue();
+                CAstNode Assign = EnumValue.copy(ArgName, ArgType);
+                if (Assign != null) {
+                    C.instructions.add(Assign);
+                }
+            }
+            CAstNode LabelStmt = Ast.makeNode(CAstNode.LABEL_STMT, Ast.makeConstant(CaseName));
+            CAstNode GotoNode = Ast.makeNode(CAstNode.GOTO, Ast.makeConstant(DestBB));
+            tryGOTO(GotoNode, DestBB, C);
+            StmtNodes.add(LabelStmt);
+            StmtNodes.add(GotoNode);
+            CAstNode BlockStmt = Ast.makeNode(CAstNode.BLOCK_STMT, StmtNodes);
+            labels.add(Pair.make(BlockStmt, LabelStmt));
+            Fields.add(BlockStmt);
+        }
+        if (N.getChildren().size() > 2) {
+            ArrayList<CAstNode> StmtNodes = new ArrayList<>();
+            CAstNode DefaultInfo = N.getChild(2);
+            String DestBB = (String)DefaultInfo.getChild(0).getValue();
+            if (DefaultInfo.getChildren().size() > 1) {
+                String ArgName = (String)DefaultInfo.getChild(1).getValue();
+                String ArgType = (String)DefaultInfo.getChild(2).getValue();
+                CAstNode Assign = EnumValue.copy(ArgName, ArgType);
+                if (Assign != null) {
+                    C.instructions.add(Assign);
+                }
+            }
+            CAstNode LabelStmt = Ast.makeNode(CAstNode.LABEL_STMT, Ast.makeConstant("default"));
+            CAstNode GotoNode = Ast.makeNode(CAstNode.GOTO, Ast.makeConstant(DestBB));
+            tryGOTO(GotoNode, DestBB, C);
+            StmtNodes.add(LabelStmt);
+            StmtNodes.add(GotoNode);
+            CAstNode BlockStmt = Ast.makeNode(CAstNode.BLOCK_STMT, StmtNodes);
+            DefaultNode = BlockStmt;
+            Fields.add(BlockStmt);
+        }
+        CAstNode Switch = Ast.makeNode(CAstNode.SWITCH,
+                EnumValue.getVarNode(),
+                Ast.makeNode(CAstNode.BLOCK_STMT, Fields));
+        //C.parent.setGotoTarget(Switch, Switch);
+        C.parent.setLabelledGotoTarget(Switch, DefaultNode, CAstControlFlowRecorder.SWITCH_DEFAULT);
+        for (Pair<CAstNode, CAstNode> l : labels) {
+            C.parent.setLabelledGotoTarget(Switch, l.fst, l.snd.getChild(0));
+        }
+        System.out.println("*********");
+        System.out.println(Switch);
+        System.out.println("*********");
+        return Switch;
     }
 
     @Override
