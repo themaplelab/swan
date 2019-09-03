@@ -816,9 +816,9 @@ public class RawAstTranslator extends SILInstructionVisitor<CAstNode, SILInstruc
 
     @Override
     protected CAstNode visitCopyValue(CAstNode N, SILInstructionContext C) {
-        String ResultName = (String)N.getChild(0).getValue();
-        String ResultType = (String)N.getChild(1).getValue();
-        String OperandName = (String)N.getChild(2).getValue();
+        String OperandName = (String)N.getChild(0).getValue();
+        String ResultName = (String)N.getChild(1).getValue();
+        String ResultType = (String)N.getChild(2).getValue();
         SILValue ResultValue = new SILValue(ResultName, ResultType, C);
         C.valueTable.addValue(ResultValue);
         return C.valueTable.getValue(OperandName).assignTo(ResultValue);
@@ -1045,9 +1045,9 @@ public class RawAstTranslator extends SILInstructionVisitor<CAstNode, SILInstruc
     protected CAstNode visitInitExistentialAddr(CAstNode N, SILInstructionContext C) {
         // TODO: Is it sufficient to say that the value pointed to by
         //       the result is the same value pointed to by the operand?
-        String ResultName = (String)N.getChild(0).getValue();
-        String ResultType = (String)N.getChild(1).getValue();
-        String OperandName = (String)N.getChild(2).getValue();
+        String OperandName = (String)N.getChild(0).getValue();
+        String ResultName = (String)N.getChild(1).getValue();
+        String ResultType = (String)N.getChild(2).getValue();
         Assertions.productionAssertion(C.valueTable.getValue(OperandName) instanceof SILPointer);
         SILPointer OperandPointer = (SILPointer)C.valueTable.getValue(OperandName);
         SILValue ValueReferenced = OperandPointer.dereference();
@@ -1149,9 +1149,9 @@ public class RawAstTranslator extends SILInstructionVisitor<CAstNode, SILInstruc
     @Override
     protected CAstNode visitPointerToAddress(CAstNode N, SILInstructionContext C) {
         // TODO: Is it sufficient to make the result point to the operand?
-        String ResultName = (String)N.getChild(0).getValue();
-        String ResultType = (String)N.getChild(1).getValue();
-        String OperandName = (String)N.getChild(2).getValue();
+        String OperandName = (String)N.getChild(0).getValue();
+        String ResultName = (String)N.getChild(1).getValue();
+        String ResultType = (String)N.getChild(2).getValue();
         SILPointer ResultPointer = new SILPointer(ResultName, ResultType, C, C.valueTable.getValue(OperandName));
         C.valueTable.addValue(ResultPointer);
         return null;

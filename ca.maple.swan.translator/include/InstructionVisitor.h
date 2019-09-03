@@ -91,6 +91,9 @@ namespace swan {
     /// Source information about the SILModule.
     std::unique_ptr<SILModuleInfo> moduleInfo;
 
+    /// Handles any instruction with at most a single operand and at most a single result.
+    void handleSimpleInstr(SILInstruction *UIB);
+
   public:
 
     // SIL INSTRUCTION VISITOR CALLBACKS (TRANSLATE EACH INSTRUCTION TO CAST NODE)
