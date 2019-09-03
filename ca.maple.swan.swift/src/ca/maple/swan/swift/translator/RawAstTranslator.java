@@ -1518,6 +1518,52 @@ public class RawAstTranslator extends SILInstructionVisitor<CAstNode, SILInstruc
 
     @Override
     protected CAstNode visitTryApply(CAstNode N, SILInstructionContext C) {
-        return null;
+        String FuncRefName = (String)N.getChild(0).getValue();
+        CAstNode Source;
+        CAstNode FuncNode = N.getChild(1);
+        switch (FuncNode.getKind()) {
+            case CAstNode.UNARY_EXPR: {
+                CAstNode Oper = C.valueTable.getValue((String)FuncNode.getChild(1).getValue()).getVarNode();
+                Source = Ast.makeNode(CAstNode.UNARY_EXPR, FuncNode.getChild(0), Oper);
+                break;
+            }
+            case CAstNode.BINARY_EXPR: {
+                CAstNode Oper1 = C.valueTable.getValue((String)FuncNode.getChild(1).getValue()).getVarNode();
+                CAstNode Oper2 = C.valueTable.getValue((String)FuncNode.getChild(2).getValue()).getVarNode();
+                Source = Ast.makeNode(CAstNode.BINARY_EXPR, FuncNode.getChild(0), Oper1, Oper2);
+                break;
+            }
+            default: {
+                String CalleeName = (String) FuncNode.getChild(0).getValue();
+                SILValue FuncRef = C.valueTable.getValue(FuncRefName);
+                if (FuncRef instanceof SILConstant) {
+                    Source = ((SILConstant) FuncRef).getCAst();
+                } else if (FuncRef instanceof SILFunctionRef) {
+                    ArrayList<CAstNode> Params = new ArrayList<>();
+                    Params.add(((SILFunctionRef) FuncRef).getFunctionRef());
+                    Params.add(Ast.makeConstant("do"));
+                    for (CAstNode RawParam : FuncNode.getChildren().subList(1, FuncNode.getChildren().size())) {
+                        Params.add(C.valueTable.getValue((String)RawParam.getValue()).getVarNode());
+                    }
+                    Source = Ast.makeNode(CAstNode.CALL, Params);
+                    C.parent.setGotoTarget(Source, Source);
+                } else if (FuncRef instanceof SILFunctionRef.SILSummarizedFunctionRef) {
+                    ArrayList<CAstNode> Params = new ArrayList<>();
+                    Params.addAll(FuncNode.getChildren().subList(1, FuncNode.getChildren().size()));
+                    Source = BuiltInFunctionSummaries.findSummary(
+                            ((SILFunctionRef.SILSummarizedFunctionRef)FuncRef).getFunctionName(),
+                            null, null, C, Params);
+                    if (Source == null || Source.getKind() == CAstNode.EMPTY) {
+                        return Ast.makeNode(CAstNode.EMPTY);
+                    } else if (Source.getKind() == CAstNode.VAR) {
+                        return Ast.makeNode(CAstNode.EMPTY);
+                    }
+                } else {
+                    Source = Ast.makeConstant("UNKNOWN");
+                }
+                break;
+            }
+        }
+        return Source;
     }
 }
