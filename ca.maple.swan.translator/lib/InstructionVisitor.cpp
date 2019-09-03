@@ -1592,13 +1592,37 @@ void InstructionVisitor::visitTupleInst(TupleInst *TI) {
 }
 
 void InstructionVisitor::visitTupleExtractInst(TupleExtractInst *TEI) {
-  // TODO: UNIMPLEMENTED
-  
+  std::string TupleValueName = addressToString(TEI->getOperand().getOpaqueValue());
+  unsigned int FieldName = TEI->getFieldNo();
+  std::string ResultName = addressToString(static_cast<ValueBase*>(TEI));
+  std::string ResultType = TEI->getType().getAsString();
+  if (SWAN_PRINT) {
+      llvm::outs() << "\t [TUPLE NAME]: " << TupleValueName << "\n";
+      llvm::outs() << "\t [FIELD NO]: " << FieldName << "\n";
+      llvm::outs() << "\t [RESULT NAME]:" << ResultName << "\n";
+      llvm::outs() << "\t [RESULT TYPE]:" << ResultType << "\n";
+  }
+  ADD_PROP(MAKE_CONST(TupleValueName.c_str()));
+  ADD_PROP(MAKE_CONST(static_cast<int>(FieldName)));
+  ADD_PROP(MAKE_CONST(ResultName.c_str()));
+  ADD_PROP(MAKE_CONST(ResultType.c_str()));
 }
 
 void InstructionVisitor::visitTupleElementAddrInst(TupleElementAddrInst *TEAI) {
-  // TODO: UNIMPLEMENTED
-  
+  std::string TupleValueName = addressToString(TEAI->getOperand().getOpaqueValue());
+  unsigned int FieldName = TEAI->getFieldNo();
+  std::string ResultName = addressToString(static_cast<ValueBase*>(TEAI));
+  std::string ResultType = TEAI->getType().getAsString();
+  if (SWAN_PRINT) {
+      llvm::outs() << "\t [TUPLE NAME]: " << TupleValueName << "\n";
+      llvm::outs() << "\t [FIELD NO]: " << FieldName << "\n";
+      llvm::outs() << "\t [RESULT NAME]:" << ResultName << "\n";
+      llvm::outs() << "\t [RESULT TYPE]:" << ResultType << "\n";
+  }
+  ADD_PROP(MAKE_CONST(TupleValueName.c_str()));
+  ADD_PROP(MAKE_CONST(static_cast<int>(FieldName)));
+  ADD_PROP(MAKE_CONST(ResultName.c_str()));
+  ADD_PROP(MAKE_CONST(ResultType.c_str()));
 }
 
 void InstructionVisitor::visitDestructureTupleInst(DestructureTupleInst *DTI) {
@@ -1656,8 +1680,8 @@ void InstructionVisitor::visitStructExtractInst(StructExtractInst *SEI) {
   std::string ResultName = addressToString(static_cast<ValueBase*>(SEI));
   std::string ResultType = SEI->getType().getAsString();
   if (SWAN_PRINT) {
-      llvm::outs() << "\t\t\t [STRUCT NAME]: " << StructValueName << "\n";
-      llvm::outs() << "\t\t\t [FIELD]: " << FieldName << "\n";
+      llvm::outs() << "\t [STRUCT NAME]: " << StructValueName << "\n";
+      llvm::outs() << "\t [FIELD]: " << FieldName << "\n";
       llvm::outs() << "\t [RESULT NAME]:" << ResultName << "\n";
       llvm::outs() << "\t [RESULT TYPE]:" << ResultType << "\n";
   }
@@ -1668,18 +1692,57 @@ void InstructionVisitor::visitStructExtractInst(StructExtractInst *SEI) {
 }
 
 void InstructionVisitor::visitStructElementAddrInst(StructElementAddrInst *SEAI) {
-  // TODO: UNIMPLEMENTED
-  
+  std::string StructValueName = addressToString(SEAI->getOperand().getOpaqueValue());
+  std::string FieldName = SEAI->getField()->getNameStr().str();
+  std::string ResultName = addressToString(static_cast<ValueBase*>(SEAI));
+  std::string ResultType = SEAI->getType().getAsString();
+  if (SWAN_PRINT) {
+      llvm::outs() << "\t [STRUCT NAME]: " << StructValueName << "\n";
+      llvm::outs() << "\t [FIELD]: " << FieldName << "\n";
+      llvm::outs() << "\t [RESULT NAME]:" << ResultName << "\n";
+      llvm::outs() << "\t [RESULT TYPE]:" << ResultType << "\n";
+  }
+  ADD_PROP(MAKE_CONST(StructValueName.c_str()));
+  ADD_PROP(MAKE_CONST(FieldName.c_str()));
+  ADD_PROP(MAKE_CONST(ResultName.c_str()));
+  ADD_PROP(MAKE_CONST(ResultType.c_str()));
 }
 
 void InstructionVisitor::visitDestructureStructInst(DestructureStructInst *DSI) {
-  // TODO: UNIMPLEMENTED
-  
+  std::string StructValueName = addressToString(DSI->getOperand().getOpaqueValue());
+  if (SWAN_PRINT) {
+      llvm::outs() << "\t [STRUCT NAME]: " << StructValueName << "\n";
+  }
+  ADD_PROP(MAKE_CONST(StructValueName.c_str()));
+  std::list<jobject> results;
+  for (auto result : DSI->getResults()) {
+    std::string ResultName = addressToString(result.getOpaqueValue());
+    std::string ResultType = result->getType().getAsString();
+    llvm::outs() << "\t\t [RESULT NAME]:" << ResultName << "\n";
+    llvm::outs() << "\t\t [RESULT TYPE]:" << ResultType << "\n";
+    results.push_back(MAKE_NODE3(CAstWrapper::PRIMITIVE,
+      MAKE_CONST(ResultName.c_str()),
+      MAKE_CONST(ResultType.c_str())));
+  }
+  ADD_PROP(MAKE_NODE2(CAstWrapper::PRIMITIVE, MAKE_ARRAY(&results)));
 }
 
 void InstructionVisitor::visitObjectInst(ObjectInst *OI) {
-  // TODO: UNIMPLEMENTED
-  
+  // TODO: No result according to docs, why?
+  std::list<jobject> properties;
+  for (auto &operand : OI->getElementOperands()) {
+    std::string PropertyName = addressToString(operand.get().getOpaqueValue());
+    if (SWAN_PRINT) {
+      llvm::outs() << "\t\t [RESULT NAME]:" << PropertyName << "\n";
+    }
+    properties.push_back(MAKE_CONST(PropertyName.c_str()));
+  }
+  // Unclear if getType() is actually the object type here.
+  std::string ObjectType = OI->getType().getAsString();
+  if (SWAN_PRINT) {
+    llvm::outs() << "\t\t [OBJECT TYPE]:" << ObjectType << "\n";
+  }
+  ADD_PROP(MAKE_CONST(ObjectType.c_str()));
 }
 
 void InstructionVisitor::visitRefElementAddrInst(RefElementAddrInst *REAI) {
@@ -1700,8 +1763,20 @@ void InstructionVisitor::visitRefElementAddrInst(RefElementAddrInst *REAI) {
 }
 
 void InstructionVisitor::visitRefTailAddrInst(RefTailAddrInst *RTAI) {
-  // TODO: UNIMPLEMENTED
-  
+  std::string OperandName = addressToString(RTAI->getOperand().getOpaqueValue());
+  std::string TailType = RTAI->getTailType().getAsString();
+  std::string ResultName = addressToString(static_cast<ValueBase*>(RTAI));
+  std::string ResultType = RTAI->getType().getAsString();
+  if (SWAN_PRINT) {
+    llvm::outs() << "\t [OPER NAME]: " << OperandName << "\n";
+    llvm::outs() << "\t [TAIL TYPE]: " << TailType << "\n";
+    llvm::outs() << "\t [RESULT NAME]: " << ResultName << "\n";
+    llvm::outs() << "\t [RESULT TYPE]: " << ResultType << "\n";
+  }
+  ADD_PROP(MAKE_CONST(OperandName.c_str()));
+  ADD_PROP(MAKE_CONST(TailType.c_str()));
+  ADD_PROP(MAKE_CONST(ResultName.c_str()));
+  ADD_PROP(MAKE_CONST(ResultType.c_str()));
 }
 
 /*******************************************************************************/
@@ -1731,29 +1806,152 @@ void InstructionVisitor::visitEnumInst(EnumInst *EI) {
   ADD_PROP(MAKE_CONST(CaseName.c_str()));
 }
 
-void InstructionVisitor::visitUncheckedEnumDataInst(UncheckedEnumDataInst *UED) {
-  // TODO: UNIMPLEMENTED
-  
-}
-
-void InstructionVisitor::visitInjectEnumAddrInst(InjectEnumAddrInst *IUAI) {
-  // TODO: UNIMPLEMENTED
-  
+void InstructionVisitor::visitUncheckedEnumDataInst(UncheckedEnumDataInst *UEDI) {
+  std::string ResultName = addressToString(static_cast<ValueBase*>(UEDI));
+  std::string ResultType = UEDI->getType().getAsString();
+  std::string OperandName = addressToString(UEDI->getOperand().getOpaqueValue());
+  std::string EnumName = UEDI->getElement()->getParentEnum()->getName().str();
+  std::string CaseName = UEDI->getElement()->getNameStr();
+   if (SWAN_PRINT) {
+    llvm::outs() << "\t [RESULT NAME]: " << ResultName << "\n";
+    llvm::outs() << "\t [RESULT TYPE]: " << ResultType << "\n";
+    llvm::outs() << "\t [OPER NAME]: " << OperandName << "\n";
+    llvm::outs() << "\t [ENUM NAME]: " << EnumName << "\n";
+    llvm::outs() << "\t [CASE NAME]: " << CaseName << "\n";
+  }
+  ADD_PROP(MAKE_CONST(ResultName.c_str()));
+  ADD_PROP(MAKE_CONST(ResultType.c_str()));
+  ADD_PROP(MAKE_CONST(OperandName.c_str()));
+  ADD_PROP(MAKE_CONST(EnumName.c_str()));
+  ADD_PROP(MAKE_CONST(CaseName.c_str()));
 }
 
 void InstructionVisitor::visitInitEnumDataAddrInst(InitEnumDataAddrInst *UDAI) {
-  // TODO: UNIMPLEMENTED
-  
+  std::string ResultName = addressToString(static_cast<ValueBase*>(UDAI));
+  std::string ResultType = UDAI->getType().getAsString();
+  std::string OperandName = addressToString(UDAI->getOperand().getOpaqueValue());
+  std::string EnumName = UDAI->getElement()->getParentEnum()->getName().str();
+  std::string CaseName = UDAI->getElement()->getNameStr();
+   if (SWAN_PRINT) {
+    llvm::outs() << "\t [RESULT NAME]: " << ResultName << "\n";
+    llvm::outs() << "\t [RESULT TYPE]: " << ResultType << "\n";
+    llvm::outs() << "\t [OPER NAME]: " << OperandName << "\n";
+    llvm::outs() << "\t [ENUM NAME]: " << EnumName << "\n";
+    llvm::outs() << "\t [CASE NAME]: " << CaseName << "\n";
+  }
+  ADD_PROP(MAKE_CONST(ResultName.c_str()));
+  ADD_PROP(MAKE_CONST(ResultType.c_str()));
+  ADD_PROP(MAKE_CONST(OperandName.c_str()));
+  ADD_PROP(MAKE_CONST(EnumName.c_str()));
+  ADD_PROP(MAKE_CONST(CaseName.c_str()));
+}
+
+void InstructionVisitor::visitInjectEnumAddrInst(InjectEnumAddrInst *IUAI) {
+  std::string OperandName = addressToString(IUAI->getOperand().getOpaqueValue());
+  std::string EnumName = IUAI->getElement()->getParentEnum()->getName().str();
+  std::string CaseName = IUAI->getElement()->getNameStr();
+   if (SWAN_PRINT) {
+    llvm::outs() << "\t [OPER NAME]: " << OperandName << "\n";
+    llvm::outs() << "\t [ENUM NAME]: " << EnumName << "\n";
+    llvm::outs() << "\t [CASE NAME]: " << CaseName << "\n";
+  }
+  ADD_PROP(MAKE_CONST(OperandName.c_str()));
+  ADD_PROP(MAKE_CONST(EnumName.c_str()));
+  ADD_PROP(MAKE_CONST(CaseName.c_str()));
 }
 
 void InstructionVisitor::visitUncheckedTakeEnumDataAddrInst(UncheckedTakeEnumDataAddrInst *UDAI) {
-  // TODO: UNIMPLEMENTED
-  
+  std::string ResultName = addressToString(static_cast<ValueBase*>(UDAI));
+  std::string ResultType = UDAI->getType().getAsString();
+  std::string OperandName = addressToString(UDAI->getOperand().getOpaqueValue());
+  std::string EnumName = UDAI->getElement()->getParentEnum()->getName().str();
+  std::string CaseName = UDAI->getElement()->getNameStr();
+   if (SWAN_PRINT) {
+    llvm::outs() << "\t [RESULT NAME]: " << ResultName << "\n";
+    llvm::outs() << "\t [RESULT TYPE]: " << ResultType << "\n";
+    llvm::outs() << "\t [OPER NAME]: " << OperandName << "\n";
+    llvm::outs() << "\t [ENUM NAME]: " << EnumName << "\n";
+    llvm::outs() << "\t [CASE NAME]: " << CaseName << "\n";
+  }
+  ADD_PROP(MAKE_CONST(ResultName.c_str()));
+  ADD_PROP(MAKE_CONST(ResultType.c_str()));
+  ADD_PROP(MAKE_CONST(OperandName.c_str()));
+  ADD_PROP(MAKE_CONST(EnumName.c_str()));
+  ADD_PROP(MAKE_CONST(CaseName.c_str()));
 }
 
 void InstructionVisitor::visitSelectEnumInst(SelectEnumInst *SEI) {
-  // TODO: UNIMPLEMENTED
-  
+  std::string ResultName = addressToString(static_cast<ValueBase*>(SEI));
+  std::string ResultType = SEI->getType().getAsString();
+  std::string OperandName = addressToString(SEI->getOperand().getOpaqueValue());
+   if (SWAN_PRINT) {
+    llvm::outs() << "\t [RESULT NAME]: " << ResultName << "\n";
+    llvm::outs() << "\t [RESULT TYPE]: " << ResultType << "\n";
+    llvm::outs() << "\t [OPER NAME]: " << OperandName << "\n";
+  }
+  ADD_PROP(MAKE_CONST(ResultName.c_str()));
+  ADD_PROP(MAKE_CONST(ResultType.c_str()));
+  ADD_PROP(MAKE_CONST(OperandName.c_str()));
+  std::list<jobject> cases;
+  for (unsigned int caseNo = 0; caseNo < SEI->getNumCases(); ++caseNo) {
+    auto Case = SEI->getCase(caseNo);
+    std::string CaseName = Case.first->getNameStr();
+    std::string DestValue = addressToString(Case.second.getOpaqueValue());
+    if (SWAN_PRINT) {
+      llvm::outs() << "\t\t [CASE NAME]: " << CaseName << "\n";
+      llvm::outs() << "\t\t [DEST VALUE]: " << DestValue << "\n";
+    }
+    cases.push_back(MAKE_NODE3(CAstWrapper::PRIMITIVE,
+      MAKE_CONST(CaseName.c_str()), MAKE_CONST(DestValue.c_str())));
+  }
+  if (SEI->hasDefault()) {
+    std::string DefaultName = "DEFAULT";
+    std::string DefaultValue = addressToString(SEI->getDefaultResult().getOpaqueValue());
+    if (SWAN_PRINT) {
+      llvm::outs() << "\t\t [DEFAULT CASE NAME]: " << DefaultName << "\n";
+      llvm::outs() << "\t\t [DEFAULT VALUE]: " << DefaultValue << "\n";
+    }
+    cases.push_back(MAKE_NODE3(CAstWrapper::PRIMITIVE,
+      MAKE_CONST(DefaultName.c_str()), MAKE_CONST(DefaultValue.c_str())));
+  }
+  ADD_PROP(MAKE_NODE2(CAstWrapper::PRIMITIVE, MAKE_ARRAY(&cases)));
+}
+
+void InstructionVisitor::visitSelectEnumAddrInst(SelectEnumAddrInst *SEAI) {
+  std::string ResultName = addressToString(static_cast<ValueBase*>(SEAI));
+  std::string ResultType = SEAI->getType().getAsString();
+  std::string OperandName = addressToString(SEAI->getOperand().getOpaqueValue());
+   if (SWAN_PRINT) {
+    llvm::outs() << "\t [RESULT NAME]: " << ResultName << "\n";
+    llvm::outs() << "\t [RESULT TYPE]: " << ResultType << "\n";
+    llvm::outs() << "\t [OPER NAME]: " << OperandName << "\n";
+  }
+  ADD_PROP(MAKE_CONST(ResultName.c_str()));
+  ADD_PROP(MAKE_CONST(ResultType.c_str()));
+  ADD_PROP(MAKE_CONST(OperandName.c_str()));
+  std::list<jobject> cases;
+  for (unsigned int caseNo = 0; caseNo < SEAI->getNumCases(); ++caseNo) {
+    auto Case = SEAI->getCase(caseNo);
+    std::string CaseName = Case.first->getNameStr();
+    std::string DestValue = addressToString(Case.second.getOpaqueValue());
+    if (SWAN_PRINT) {
+      llvm::outs() << "\t\t [CASE NAME]: " << CaseName << "\n";
+      llvm::outs() << "\t\t [DEST VALUE]: " << DestValue << "\n";
+    }
+    cases.push_back(MAKE_NODE3(CAstWrapper::PRIMITIVE,
+      MAKE_CONST(CaseName.c_str()), MAKE_CONST(DestValue.c_str())));
+  }
+  if (SEAI->hasDefault()) {
+    std::string DefaultName = "DEFAULT";
+    std::string DefaultValue = addressToString(SEAI->getDefaultResult().getOpaqueValue());
+    if (SWAN_PRINT) {
+      llvm::outs() << "\t\t [DEFAULT CASE NAME]: " << DefaultName << "\n";
+      llvm::outs() << "\t\t [DEFAULT VALUE]: " << DefaultValue << "\n";
+    }
+    cases.push_back(MAKE_NODE3(CAstWrapper::PRIMITIVE,
+      MAKE_CONST(DefaultName.c_str()), MAKE_CONST(DefaultValue.c_str())));
+  }
+  ADD_PROP(MAKE_NODE2(CAstWrapper::PRIMITIVE, MAKE_ARRAY(&cases)));
 }
 
 /*******************************************************************************/
@@ -1764,7 +1962,7 @@ void InstructionVisitor::visitInitExistentialAddrInst(InitExistentialAddrInst *I
   std::string ResultName = addressToString(static_cast<ValueBase*>(IEAI));
   std::string ResultType = IEAI->getType().getAsString();
   std::string OperandName = addressToString(IEAI->getOperand().getOpaqueValue());
-    if (SWAN_PRINT) {
+  if (SWAN_PRINT) {
     llvm::outs() << "\t [RESULT NAME]:" << ResultName << "\n";
     llvm::outs() << "\t [RESULT TYPE]:" << ResultType << "\n";
     llvm::outs() << "\t [OPER NAME]:" << OperandName << "\n";
@@ -1774,79 +1972,187 @@ void InstructionVisitor::visitInitExistentialAddrInst(InitExistentialAddrInst *I
   ADD_PROP(MAKE_CONST(OperandName.c_str()));
 }
 
-void InstructionVisitor::visitDeinitExistentialAddrInst(DeinitExistentialAddrInst *DEAI) {
-  // TODO: UNIMPLEMENTED
-  
+void InstructionVisitor::visitInitExistentialValueInst(InitExistentialValueInst *IEVI) {
+  std::string OperandName = addressToString(IEVI->getOperand().getOpaqueValue());
+  if (SWAN_PRINT) {
+    llvm::outs() << "\t [OPER NAME]:" << OperandName << "\n";
+  }
+  ADD_PROP(MAKE_CONST(OperandName.c_str()));
 }
 
-void InstructionVisitor::visitInitExistentialValueInst(InitExistentialValueInst *IEVI) {
-  // TODO: UNIMPLEMENTED
-  
+void InstructionVisitor::visitDeinitExistentialAddrInst(DeinitExistentialAddrInst *DEAI) {
+  std::string OperandName = addressToString(DEAI->getOperand().getOpaqueValue());
+  if (SWAN_PRINT) {
+    llvm::outs() << "\t [OPER NAME]:" << OperandName << "\n";
+  }
+  ADD_PROP(MAKE_CONST(OperandName.c_str()));
 }
 
 void InstructionVisitor::visitDeinitExistentialValueInst(DeinitExistentialValueInst *DEVI) {
-  // TODO: UNIMPLEMENTED
-  
+  // Note: Only one result but need to use getResult() for some reason.
+  std::string ResultName = addressToString(DEVI->getResult(0).getOpaqueValue());
+  std::string ResultType = DEVI->getResult(0)->getType().getAsString();
+  std::string OperandName = addressToString(DEVI->getOperand().getOpaqueValue());
+  if (SWAN_PRINT) {
+    llvm::outs() << "\t [RESULT NAME]:" << ResultName << "\n";
+    llvm::outs() << "\t [RESULT TYPE]:" << ResultType << "\n";
+    llvm::outs() << "\t [OPER NAME]:" << OperandName << "\n";
+  }
+  ADD_PROP(MAKE_CONST(ResultName.c_str()));
+  ADD_PROP(MAKE_CONST(ResultType.c_str()));
+  ADD_PROP(MAKE_CONST(OperandName.c_str()));
 }
 
 void InstructionVisitor::visitOpenExistentialAddrInst(OpenExistentialAddrInst *OEAI) {
-  // TODO: UNIMPLEMENTED
-  
+  std::string ResultName = addressToString(static_cast<ValueBase*>(OEAI));
+  std::string ResultType = OEAI->getType().getAsString();
+  std::string OperandName = addressToString(OEAI->getOperand().getOpaqueValue());
+  if (SWAN_PRINT) {
+    llvm::outs() << "\t [RESULT NAME]:" << ResultName << "\n";
+    llvm::outs() << "\t [RESULT TYPE]:" << ResultType << "\n";
+    llvm::outs() << "\t [OPER NAME]:" << OperandName << "\n";
+  }
+  ADD_PROP(MAKE_CONST(ResultName.c_str()));
+  ADD_PROP(MAKE_CONST(ResultType.c_str()));
+  ADD_PROP(MAKE_CONST(OperandName.c_str()));
 }
 
 void InstructionVisitor::visitOpenExistentialValueInst(OpenExistentialValueInst *OEVI) {
-  // TODO: UNIMPLEMENTED
-  
-}
-
-void InstructionVisitor::visitInitExistentialMetatypeInst(InitExistentialMetatypeInst *IEMI) {
-  // TODO: UNIMPLEMENTED
-  
-}
-
-void InstructionVisitor::visitOpenExistentialMetatypeInst(OpenExistentialMetatypeInst *OEMI) {
-  // TODO: UNIMPLEMENTED
-  
+  std::string ResultName = addressToString(static_cast<ValueBase*>(OEVI));
+  std::string ResultType = OEVI->getType().getAsString();
+  std::string OperandName = addressToString(OEVI->getOperand().getOpaqueValue());
+  if (SWAN_PRINT) {
+    llvm::outs() << "\t [RESULT NAME]:" << ResultName << "\n";
+    llvm::outs() << "\t [RESULT TYPE]:" << ResultType << "\n";
+    llvm::outs() << "\t [OPER NAME]:" << OperandName << "\n";
+  }
+  ADD_PROP(MAKE_CONST(ResultName.c_str()));
+  ADD_PROP(MAKE_CONST(ResultType.c_str()));
+  ADD_PROP(MAKE_CONST(OperandName.c_str()));
 }
 
 void InstructionVisitor::visitInitExistentialRefInst(InitExistentialRefInst *IERI) {
-  // TODO: UNIMPLEMENTED
-  
+  std::string ResultName = addressToString(static_cast<ValueBase*>(IERI));
+  std::string ResultType = IERI->getType().getAsString();
+  std::string OperandName = addressToString(IERI->getOperand().getOpaqueValue());
+  if (SWAN_PRINT) {
+    llvm::outs() << "\t [RESULT NAME]:" << ResultName << "\n";
+    llvm::outs() << "\t [RESULT TYPE]:" << ResultType << "\n";
+    llvm::outs() << "\t [OPER NAME]:" << OperandName << "\n";
+  }
+  ADD_PROP(MAKE_CONST(ResultName.c_str()));
+  ADD_PROP(MAKE_CONST(ResultType.c_str()));
+  ADD_PROP(MAKE_CONST(OperandName.c_str()));
 }
 
 void InstructionVisitor::visitOpenExistentialRefInst(OpenExistentialRefInst *OERI) {
-  // TODO: UNIMPLEMENTED
-  
+  std::string ResultName = addressToString(static_cast<ValueBase*>(OERI));
+  std::string ResultType = OERI->getType().getAsString();
+  std::string OperandName = addressToString(OERI->getOperand().getOpaqueValue());
+  if (SWAN_PRINT) {
+    llvm::outs() << "\t [RESULT NAME]:" << ResultName << "\n";
+    llvm::outs() << "\t [RESULT TYPE]:" << ResultType << "\n";
+    llvm::outs() << "\t [OPER NAME]:" << OperandName << "\n";
+  }
+  ADD_PROP(MAKE_CONST(ResultName.c_str()));
+  ADD_PROP(MAKE_CONST(ResultType.c_str()));
+  ADD_PROP(MAKE_CONST(OperandName.c_str()));
+}
+
+void InstructionVisitor::visitInitExistentialMetatypeInst(InitExistentialMetatypeInst *IEMI) {
+  std::string ResultName = addressToString(static_cast<ValueBase*>(IEMI));
+  std::string ResultType = IEMI->getType().getAsString();
+  std::string OperandName = addressToString(IEMI->getOperand().getOpaqueValue());
+  if (SWAN_PRINT) {
+    llvm::outs() << "\t [RESULT NAME]:" << ResultName << "\n";
+    llvm::outs() << "\t [RESULT TYPE]:" << ResultType << "\n";
+    llvm::outs() << "\t [OPER NAME]:" << OperandName << "\n";
+  }
+  ADD_PROP(MAKE_CONST(ResultName.c_str()));
+  ADD_PROP(MAKE_CONST(ResultType.c_str()));
+  ADD_PROP(MAKE_CONST(OperandName.c_str()));
+}
+
+void InstructionVisitor::visitOpenExistentialMetatypeInst(OpenExistentialMetatypeInst *OEMI) {
+  std::string ResultName = addressToString(static_cast<ValueBase*>(OEMI));
+  std::string ResultType = OEMI->getType().getAsString();
+  std::string OperandName = addressToString(OEMI->getOperand().getOpaqueValue());
+  if (SWAN_PRINT) {
+    llvm::outs() << "\t [RESULT NAME]:" << ResultName << "\n";
+    llvm::outs() << "\t [RESULT TYPE]:" << ResultType << "\n";
+    llvm::outs() << "\t [OPER NAME]:" << OperandName << "\n";
+  }
+  ADD_PROP(MAKE_CONST(ResultName.c_str()));
+  ADD_PROP(MAKE_CONST(ResultType.c_str()));
+  ADD_PROP(MAKE_CONST(OperandName.c_str()));
 }
 
 void InstructionVisitor::visitAllocExistentialBoxInst(AllocExistentialBoxInst *AEBI) {
-  // TODO: UNIMPLEMENTED
-  
+  std::string ResultName = addressToString(static_cast<ValueBase*>(AEBI));
+  std::string ResultType = AEBI->getType().getAsString();
+  if (SWAN_PRINT) {
+    llvm::outs() << "\t [RESULT NAME]:" << ResultName << "\n";
+    llvm::outs() << "\t [RESULT TYPE]:" << ResultType << "\n";
+  }
+  ADD_PROP(MAKE_CONST(ResultName.c_str()));
+  ADD_PROP(MAKE_CONST(ResultType.c_str()));
 }
 
 void InstructionVisitor::visitProjectExistentialBoxInst(ProjectExistentialBoxInst *PEBI) {
-  // TODO: UNIMPLEMENTED
-  
+  std::string ResultName = addressToString(static_cast<ValueBase*>(PEBI));
+  std::string ResultType = PEBI->getType().getAsString();
+  std::string OperandName = addressToString(PEBI->getOperand().getOpaqueValue());
+  if (SWAN_PRINT) {
+    llvm::outs() << "\t [RESULT NAME]:" << ResultName << "\n";
+    llvm::outs() << "\t [RESULT TYPE]:" << ResultType << "\n";
+    llvm::outs() << "\t [OPER NAME]:" << OperandName << "\n";
+  }
+  ADD_PROP(MAKE_CONST(ResultName.c_str()));
+  ADD_PROP(MAKE_CONST(ResultType.c_str()));
+  ADD_PROP(MAKE_CONST(OperandName.c_str()));
 }
 
 void InstructionVisitor::visitOpenExistentialBoxInst(OpenExistentialBoxInst *OEBI) {
-  // TODO: UNIMPLEMENTED
-  
+  std::string ResultName = addressToString(static_cast<ValueBase*>(OEBI));
+  std::string ResultType = OEBI->getType().getAsString();
+  std::string OperandName = addressToString(OEBI->getOperand().getOpaqueValue());
+  if (SWAN_PRINT) {
+    llvm::outs() << "\t [RESULT NAME]:" << ResultName << "\n";
+    llvm::outs() << "\t [RESULT TYPE]:" << ResultType << "\n";
+    llvm::outs() << "\t [OPER NAME]:" << OperandName << "\n";
+  }
+  ADD_PROP(MAKE_CONST(ResultName.c_str()));
+  ADD_PROP(MAKE_CONST(ResultType.c_str()));
+  ADD_PROP(MAKE_CONST(OperandName.c_str()));
 }
 
 void InstructionVisitor::visitOpenExistentialBoxValueInst(OpenExistentialBoxValueInst *OEBVI) {
-  // TODO: UNIMPLEMENTED
-  
+  std::string ResultName = addressToString(static_cast<ValueBase*>(OEBVI));
+  std::string ResultType = OEBVI->getType().getAsString();
+  std::string OperandName = addressToString(OEBVI->getOperand().getOpaqueValue());
+  if (SWAN_PRINT) {
+    llvm::outs() << "\t [RESULT NAME]:" << ResultName << "\n";
+    llvm::outs() << "\t [RESULT TYPE]:" << ResultType << "\n";
+    llvm::outs() << "\t [OPER NAME]:" << OperandName << "\n";
+  }
+  ADD_PROP(MAKE_CONST(ResultName.c_str()));
+  ADD_PROP(MAKE_CONST(ResultType.c_str()));
+  ADD_PROP(MAKE_CONST(OperandName.c_str()));
 }
 
 void InstructionVisitor::visitDeallocExistentialBoxInst(DeallocExistentialBoxInst *DEBI) {
-  // TODO: UNIMPLEMENTED
-  
+  std::string OperandName = addressToString(DEBI->getOperand().getOpaqueValue());
+  if (SWAN_PRINT) {
+    llvm::outs() << "\t [OPER NAME]:" << OperandName << "\n";
+  }
+  ADD_PROP(MAKE_CONST(OperandName.c_str()));
 }
 
 /*******************************************************************************/
 /*                          Blocks                                             */
 /*******************************************************************************/
+
+// Documentation incomplete for this section.
 
 /*******************************************************************************/
 /*                          Unchecked Conversions                              */

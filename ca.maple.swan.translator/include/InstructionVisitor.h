@@ -245,26 +245,27 @@ namespace swan {
     /*******************************************************************************/
 
     void visitEnumInst(EnumInst *EI);
-    void visitUncheckedEnumDataInst(UncheckedEnumDataInst *UED);
-    void visitInjectEnumAddrInst(InjectEnumAddrInst *IUAI);
+    void visitUncheckedEnumDataInst(UncheckedEnumDataInst *UEDI);
     void visitInitEnumDataAddrInst(InitEnumDataAddrInst *UDAI);
+    void visitInjectEnumAddrInst(InjectEnumAddrInst *IUAI);
     void visitUncheckedTakeEnumDataAddrInst(UncheckedTakeEnumDataAddrInst *UDAI);
     void visitSelectEnumInst(SelectEnumInst *SEI);
+    void visitSelectEnumAddrInst(SelectEnumAddrInst *SEAI);
 
     /*******************************************************************************/
     /*                          Protocol and Protocol Composition Types            */
     /*******************************************************************************/
 
     void visitInitExistentialAddrInst(InitExistentialAddrInst *IEAI);
-    void visitDeinitExistentialAddrInst(DeinitExistentialAddrInst *DEAI);
     void visitInitExistentialValueInst(InitExistentialValueInst *IEVI);
+    void visitDeinitExistentialAddrInst(DeinitExistentialAddrInst *DEAI);
     void visitDeinitExistentialValueInst(DeinitExistentialValueInst *DEVI);
     void visitOpenExistentialAddrInst(OpenExistentialAddrInst *OEAI);
     void visitOpenExistentialValueInst(OpenExistentialValueInst *OEVI);
-    void visitInitExistentialMetatypeInst(InitExistentialMetatypeInst *IEMI);
-    void visitOpenExistentialMetatypeInst(OpenExistentialMetatypeInst *OEMI);
     void visitInitExistentialRefInst(InitExistentialRefInst *IERI);
     void visitOpenExistentialRefInst(OpenExistentialRefInst *OERI);
+    void visitInitExistentialMetatypeInst(InitExistentialMetatypeInst *IEMI);
+    void visitOpenExistentialMetatypeInst(OpenExistentialMetatypeInst *OEMI);
     void visitAllocExistentialBoxInst(AllocExistentialBoxInst *AEBI);
     void visitProjectExistentialBoxInst(ProjectExistentialBoxInst *PEBI);
     void visitOpenExistentialBoxInst(OpenExistentialBoxInst *OEBI);
