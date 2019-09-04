@@ -1748,48 +1748,93 @@ void InstructionVisitor::visitUncheckedRefCastInst(UncheckedRefCastInst *URCI) {
   handleSimpleInstr(URCI);
 }
 
+void InstructionVisitor::visitUncheckedRefCastAddrInst(UncheckedRefCastAddrInst *URCAI) {
+  handleSimpleInstr(URCAI);
+}
+
 void InstructionVisitor::visitUncheckedAddrCastInst(UncheckedAddrCastInst *UACI) {
-  // TODO: UNIMPLEMENTED
-  
+  handleSimpleInstr(UACI);
 }
 
 void InstructionVisitor::visitUncheckedTrivialBitCastInst(UncheckedTrivialBitCastInst *BI) {
-  // TODO: UNIMPLEMENTED
-  
+  handleSimpleInstr(BI);
 }
 
-void InstructionVisitor::visitUncheckedOwnershipConversionInst(UncheckedOwnershipConversionInst *UOCI) {
-  handleSimpleInstr(UOCI);
+void InstructionVisitor::visitUncheckedBitwiseCase(UncheckedBitwiseCastInst *UBCI) {
+  handleSimpleInstr(UBCI);
 }
 
 void InstructionVisitor::visitRefToRawPointerInst(RefToRawPointerInst *CI) {
-  // TODO: UNIMPLEMENTED
-  
+  handleSimpleInstr(CI);
 }
 
 void InstructionVisitor::visitRawPointerToRefInst(RawPointerToRefInst *CI) {
-  // TODO: UNIMPLEMENTED
-  
+  handleSimpleInstr(CI);
+}
+
+void InstructionVisitor::visitRefToUnownedInst(RefToUnownedInst *RTUI) {
+  handleSimpleInstr(RTUI);
+}
+
+void InstructionVisitor::visitUnownedToRefInst(UnownedToRefInst *UTRI) {
+  handleSimpleInstr(UTRI);
+}
+
+void InstructionVisitor::visitRefToUnmanagedInst(RefToUnmanagedInst *RTUI) {
+  handleSimpleInstr(RTUI);
 }
 
 void InstructionVisitor::visitUnmanagedToRefInst(UnmanagedToRefInst *CI) {
-  // TODO: UNIMPLEMENTED
-  
+  handleSimpleInstr(CI);
 }
 
 void InstructionVisitor::visitConvertFunctionInst(ConvertFunctionInst *CFI) {
-  // TODO: UNIMPLEMENTED
-  
+  handleSimpleInstr(CFI);
+}
+
+void InstructionVisitor::visitConvertEscapeToNoEscapeInst(ConvertEscapeToNoEscapeInst *CVT) {
+  handleSimpleInstr(CVT);
 }
 
 void InstructionVisitor::visitThinFunctionToPointerInst(ThinFunctionToPointerInst *TFPI) {
-  // TODO: UNIMPLEMENTED
-  
+  handleSimpleInstr(TFPI);
 }
 
 void InstructionVisitor::visitPointerToThinFunctionInst(PointerToThinFunctionInst *CI) {
-  // TODO: UNIMPLEMENTED
-  
+  handleSimpleInstr(CI);
+}
+
+void InstructionVisitor::visitClassifyBridgeObjectInst(ClassifyBridgeObjectInst *CBOI) {
+  handleSimpleInstr(CBOI);
+}
+
+void InstructionVisitor::visitValueToBridgeObjectInst(ValueToBridgeObjectInst *CTBOI) {
+  handleSimpleInstr(CTBOI);
+}
+
+void InstructionVisitor::visitRefToBridgeObjectInst(RefToBridgeObjectInst *RTBOI) {
+  std::string Operand1Name = addressToString(RTBOI->getOperand(0).getOpaqueValue());
+  std::string Operand2Name = addressToString(RTBOI->getOperand(1).getOpaqueValue());
+  std::string ResultName = addressToString(static_cast<ValueBase*>(RTBOI));
+  std::string ResultType = RTBOI->getType().getAsString();
+  if (SWAN_PRINT) {
+    llvm::outs() << "\t [OPER1 NAME]: " << Operand1Name << "\n";
+    llvm::outs() << "\t [OPER2 NAME]: " << Operand2Name << "\n";
+    llvm::outs() << "\t [RESULT NAME]: " << ResultName << "\n";
+    llvm::outs() << "\t [RESULT TYPE]: " << ResultType << "\n";
+  }
+  ADD_PROP(MAKE_CONST(Operand1Name.c_str()));
+  ADD_PROP(MAKE_CONST(Operand2Name.c_str()));
+  ADD_PROP(MAKE_CONST(ResultName.c_str()));
+  ADD_PROP(MAKE_CONST(ResultType.c_str()));
+}
+
+void InstructionVisitor::visitBridgeObjectToRefInst(BridgeObjectToRefInst *BOTRI) {
+  handleSimpleInstr(BOTRI);
+}
+
+void InstructionVisitor::visitBridgeObjectToWordInst(BridgeObjectToWordInst *BOTWI) {
+  handleSimpleInstr(BOTWI);
 }
 
 void InstructionVisitor::visitThinToThickFunctionInst(ThinToThickFunctionInst *TTFI) {
@@ -1797,27 +1842,39 @@ void InstructionVisitor::visitThinToThickFunctionInst(ThinToThickFunctionInst *T
 }
 
 void InstructionVisitor::visitThickToObjCMetatypeInst(ThickToObjCMetatypeInst *TTOMI) {
-  // TODO: UNIMPLEMENTED
-  
+  handleSimpleInstr(TTOMI);
 }
 
 void InstructionVisitor::visitObjCToThickMetatypeInst(ObjCToThickMetatypeInst *OTTMI) {
-  // TODO: UNIMPLEMENTED
-  
+  handleSimpleInstr(OTTMI);
 }
 
-void InstructionVisitor::visitConvertEscapeToNoEscapeInst(ConvertEscapeToNoEscapeInst *CVT) {
-  // TODO: UNIMPLEMENTED
-  
+void InstructionVisitor::visitObjCMetatypeToObjectInst(ObjCMetatypeToObjectInst *OMTOI) {
+  handleSimpleInstr(OMTOI);
+}
+
+void InstructionVisitor::visitObjCExistentialMetatypeToObjectInst(ObjCExistentialMetatypeToObjectInst *OEMTOI) {
+  handleSimpleInstr(OEMTOI);
+}
+
+void InstructionVisitor::visitUncheckedOwnershipConversionInst(UncheckedOwnershipConversionInst *UOCI) {
+  handleSimpleInstr(UOCI);
 }
 
 /*******************************************************************************/
 /*                          Checked Conversions                                */
 /*******************************************************************************/
 
-void InstructionVisitor::visitUnconditionalCheckedCastAddrInst(UnconditionalCheckedCastAddrInst *CI) {
-  // TODO: UNIMPLEMENTED
-  
+void InstructionVisitor::visitUnconditionalCheckedCastInst(UnconditionalCheckedCastInst *UCCI) {
+  handleSimpleInstr(UCCI);
+}
+
+void InstructionVisitor::visitUnconditionalCheckedCastAddrInst(UnconditionalCheckedCastAddrInst *UCCAI) {
+  handleSimpleInstr(UCCAI);
+}
+
+void InstructionVisitor::visitUnconditionalCheckedCastValueInst(UnconditionalCheckedCastValueInst *UCCVI) {
+  handleSimpleInstr(UCCVI);
 }
 
 /*******************************************************************************/
@@ -1825,18 +1882,14 @@ void InstructionVisitor::visitUnconditionalCheckedCastAddrInst(UnconditionalChec
 /*******************************************************************************/
 
 void InstructionVisitor::visitCondFailInst(CondFailInst *FI) {
-  // TODO: UNIMPLEMENTED
-  
+  handleSimpleInstr(FI);
 }
 
 /*******************************************************************************/
 /*                           Terminators                                       */
 /*******************************************************************************/
 
-void InstructionVisitor::visitUnreachableInst(UnreachableInst *UI) {
-  // TODO: UNIMPLEMENTED
-  
-}
+void InstructionVisitor::visitUnreachableInst(__attribute__((unused)) UnreachableInst *UI) { }
 
 void InstructionVisitor::visitReturnInst(ReturnInst *RI) {
   std::string OperandName = addressToString(RI->getOperand().getOpaqueValue());
@@ -1850,8 +1903,7 @@ void InstructionVisitor::visitReturnInst(ReturnInst *RI) {
 }
 
 void InstructionVisitor::visitThrowInst(ThrowInst *TI) {
-  // TODO: UNIMPLEMENTED
-  
+  handleSimpleInstr(TI);
 }
 
 void InstructionVisitor::visitYieldInst(YieldInst *YI) {
@@ -1866,7 +1918,7 @@ void InstructionVisitor::visitYieldInst(YieldInst *YI) {
   ADD_PROP(MAKE_CONST(ResumeLabel.c_str()));
   ADD_PROP(MAKE_CONST(UnwindLabel.c_str()));
   list<jobject> yieldValues;
-  for (const auto &value : YI->getYieldedValues()) {
+  for (const auto value : YI->getYieldedValues()) {
     if (SWAN_PRINT) {
       llvm::outs() << "\t [YIELD VALUE]: " << value << "\n";
       yieldValues.push_back(MAKE_CONST(addressToString(value.getOpaqueValue()).c_str()));

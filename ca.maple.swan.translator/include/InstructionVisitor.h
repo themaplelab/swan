@@ -287,25 +287,41 @@ namespace swan {
     void visitAddressToPointerInst(AddressToPointerInst *ATPI);
     void visitPointerToAddressInst(PointerToAddressInst *PTAI);
     void visitUncheckedRefCastInst(UncheckedRefCastInst *URCI);
+    void visitUncheckedRefCastAddrInst(UncheckedRefCastAddrInst *URCAI);
     void visitUncheckedAddrCastInst(UncheckedAddrCastInst *UACI);
     void visitUncheckedTrivialBitCastInst(UncheckedTrivialBitCastInst *BI);
-    void visitUncheckedOwnershipConversionInst(UncheckedOwnershipConversionInst *UOCI);
+    void visitUncheckedBitwiseCase(UncheckedBitwiseCastInst *UBCI);
     void visitRefToRawPointerInst(RefToRawPointerInst *CI);
     void visitRawPointerToRefInst(RawPointerToRefInst *CI);
-    void visitUnmanagedToRefInst(UnmanagedToRefInst *CI);
+    void visitRefToUnownedInst(RefToUnownedInst *RTUI);
+    void visitUnownedToRefInst(UnownedToRefInst *UTRI);
+    void visitRefToUnmanagedInst(RefToUnmanagedInst *RTUI);
+    void visitUnmanagedToRefInst(UnmanagedToRefInst *UTRI);
     void visitConvertFunctionInst(ConvertFunctionInst *CFI);
+    void visitConvertEscapeToNoEscapeInst(ConvertEscapeToNoEscapeInst *CETNEI);
     void visitThinFunctionToPointerInst(ThinFunctionToPointerInst *TFPI);
     void visitPointerToThinFunctionInst(PointerToThinFunctionInst *CI);
+    void visitClassifyBridgeObjectInst(ClassifyBridgeObjectInst *CBOI);
+    void visitValueToBridgeObjectInst(ValueToBridgeObjectInst *CTBOI);
+    void visitRefToBridgeObjectInst(RefToBridgeObjectInst *RTBOI);
+    void visitBridgeObjectToRefInst(BridgeObjectToRefInst *BOTRI);
+    void visitBridgeObjectToWordInst(BridgeObjectToWordInst *BOTWI);
     void visitThinToThickFunctionInst(ThinToThickFunctionInst *TTFI);
     void visitThickToObjCMetatypeInst(ThickToObjCMetatypeInst *TTOMI);
     void visitObjCToThickMetatypeInst(ObjCToThickMetatypeInst *OTTMI);
-    void visitConvertEscapeToNoEscapeInst(ConvertEscapeToNoEscapeInst *CVT);
+    void visitObjCMetatypeToObjectInst(ObjCMetatypeToObjectInst *OMTOI);
+    void visitObjCExistentialMetatypeToObjectInst(ObjCExistentialMetatypeToObjectInst *OEMTOI);
+
+    // Not in documentation, but will leave here.
+    void visitUncheckedOwnershipConversionInst(UncheckedOwnershipConversionInst *UOCI);
 
     /*******************************************************************************/
     /*                          Checked Conversions                                */
     /*******************************************************************************/
 
-    void visitUnconditionalCheckedCastAddrInst(UnconditionalCheckedCastAddrInst *CI);
+    void visitUnconditionalCheckedCastInst(UnconditionalCheckedCastInst *UCCI);
+    void visitUnconditionalCheckedCastAddrInst(UnconditionalCheckedCastAddrInst *UCCAI);
+    void visitUnconditionalCheckedCastValueInst(UnconditionalCheckedCastValueInst *UCCVI);
 
     /*******************************************************************************/
     /*                          Runtime Failures                                   */
