@@ -25,7 +25,7 @@ public class SILValue {
 
     protected final String name;
     protected SILType type;
-    private final CAstNode varNode;
+    protected final CAstNode varNode;
     protected final SILInstructionContext C;
 
     protected static final CAstImpl Ast = RawAstTranslator.Ast;
