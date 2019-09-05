@@ -111,6 +111,11 @@ struct RootBasicBlockInfo {
   RootBasicBlockInfo(CAstWrapper *wrapper) : wrapper(wrapper) {}
   CAstWrapper *wrapper;
   std::list<jobject> instructions;
+  std::list<jobject> arguments;
+
+  void addArg(jobject arg) {
+    arguments.push_back(arg);
+  }
 
   void addInstruction(RootInstructionInfo *instruction) {
     instructions.push_back(instruction->make());
@@ -126,6 +131,7 @@ struct RootBasicBlockInfo {
      *    PRIMTIVE <-- INSTRUCTION
      *    ...
      */
+    instructions.push_front(wrapper->makeNode(CAstWrapper::PRIMITIVE, wrapper->makeArray(&arguments)));
     return wrapper->makeNode(CAstWrapper::PRIMITIVE, wrapper->makeArray(&instructions));
   }
 };

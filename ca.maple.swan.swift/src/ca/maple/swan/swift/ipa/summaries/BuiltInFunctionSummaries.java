@@ -17,7 +17,6 @@ import ca.maple.swan.swift.translator.SILInstructionContext;
 import ca.maple.swan.swift.translator.values.SILConstant;
 import ca.maple.swan.swift.translator.values.SILStruct;
 import ca.maple.swan.swift.translator.values.SILTuple;
-import ca.maple.swan.swift.translator.values.SILValue;
 import com.ibm.wala.cast.tree.CAstNode;
 import com.ibm.wala.cast.tree.impl.CAstOperator;
 import com.ibm.wala.util.collections.Pair;

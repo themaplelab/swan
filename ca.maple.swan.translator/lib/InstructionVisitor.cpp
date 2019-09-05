@@ -131,6 +131,11 @@ void InstructionVisitor::visitSILBasicBlock(SILBasicBlock *BB) {
   InstructionCounter = 0;
   currentBasicBlock = std::make_unique<RootBasicBlockInfo>(Instance->CAst);
 
+  for (auto arg : BB->getArguments()) {
+    currentBasicBlock->addArg(MAKE_NODE3(CAstWrapper::PRIMITIVE,
+      MAKE_CONST(addressToString(static_cast<ValueBase*>(arg)).c_str()), MAKE_CONST(arg->getType().getAsString().c_str())));
+  }
+
   // Visit every instruction of the basic block.
   for (auto &I: *BB) {
     currentInstruction = std::make_unique<RootInstructionInfo>(Instance->CAst);

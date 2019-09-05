@@ -30,13 +30,15 @@ public class SILInstructionContext {
     public ArrayList<CAstNode> instructions;
     HashMap<Integer, ArrayList<CAstNode>> danglingGOTOs;
     ArrayList<ArrayList<CAstNode>> blocks;
+    public final CAstNode currentFunction;
 
-    public SILInstructionContext(AbstractCodeEntity parent, ArrayList<AbstractCodeEntity> allEntities) {
+    public SILInstructionContext(AbstractCodeEntity parent, ArrayList<AbstractCodeEntity> allEntities, CAstNode currentFunction) {
         this.parent = parent;
         this.allEntities = allEntities;
         valueTable =  new SILValueTable();
         danglingGOTOs = new HashMap<>();
         blocks = new ArrayList<>();
+        this.currentFunction = currentFunction;
     }
 
     public void clearDanglingGOTOs() {

@@ -13,7 +13,6 @@
 
 package ca.maple.swan.swift.translator;
 
-import com.ibm.wala.cast.tree.CAst;
 import com.ibm.wala.cast.tree.CAstNode;
 import com.ibm.wala.cast.tree.CAstSourcePositionMap;
 
