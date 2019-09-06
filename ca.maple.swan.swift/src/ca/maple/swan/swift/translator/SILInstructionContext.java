@@ -13,6 +13,7 @@
 
 package ca.maple.swan.swift.translator;
 
+import ca.maple.swan.swift.translator.values.SILValue;
 import ca.maple.swan.swift.translator.values.SILValueTable;
 import com.ibm.wala.cast.ir.translator.AbstractCodeEntity;
 import com.ibm.wala.cast.tree.CAstNode;
@@ -26,11 +27,13 @@ import java.util.HashMap;
 public class SILInstructionContext {
     public final AbstractCodeEntity parent;
     public final ArrayList<AbstractCodeEntity> allEntities;
-    public final SILValueTable valueTable;
+    public SILValueTable valueTable;
     public ArrayList<CAstNode> instructions;
     HashMap<Integer, ArrayList<CAstNode>> danglingGOTOs;
     ArrayList<ArrayList<CAstNode>> blocks;
     public final CAstNode currentFunction;
+    public SILValue returnValue = null;
+    public boolean inliningParent = false;
 
     public SILInstructionContext(AbstractCodeEntity parent, ArrayList<AbstractCodeEntity> allEntities, CAstNode currentFunction) {
         this.parent = parent;

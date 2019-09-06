@@ -26,11 +26,14 @@ import java.util.List;
  */
 public class SwiftFunctionType implements CAstType.Function {
 
+    public final ArrayList<String> realTypes;
+
     SwiftFunctionType(String returnType, ArrayList<String> argumentTypes) {
         this.cAstType = SILTypes.getType(returnType);
         for (String argumentType : argumentTypes) {
             argumentCAstTypes.add(SILTypes.getType(argumentType));
         }
+        this.realTypes = argumentTypes;
     }
 
     private CAstType cAstType;

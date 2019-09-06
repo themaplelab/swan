@@ -18,6 +18,7 @@ import ca.maple.swan.swift.translator.values.*;
 import ca.maple.swan.swift.tree.EntityPrinter;
 import ca.maple.swan.swift.tree.FunctionEntity;
 import ca.maple.swan.swift.tree.ScriptEntity;
+import ca.maple.swan.swift.tree.SwiftFunctionType;
 import ca.maple.swan.swift.visualization.ASTtoDot;
 import com.ibm.wala.cast.ir.translator.AbstractCodeEntity;
 import com.ibm.wala.cast.tree.*;
@@ -167,11 +168,11 @@ public class RawAstTranslator extends SILInstructionVisitor<CAstNode, SILInstruc
 
     public CAstEntity translate(File file, CAstNode n) {
 
-        /* DEBUG
+        /*
         System.out.println("\n\n<<<<<< DEBUG >>>>>\n");
         System.out.println(n);
         System.out.println("<<<<<< DEBUG >>>>>\n\n");
-         */
+        */
 
         // 1. Create CAstEntity for each function.
         ArrayList<AbstractCodeEntity> allEntities = new ArrayList<>();
@@ -194,9 +195,19 @@ public class RawAstTranslator extends SILInstructionVisitor<CAstNode, SILInstruc
         // 2. Analyze each entity.
         for (CAstNode function: mappedEntities.keySet()) {
             SILInstructionContext C = new SILInstructionContext(mappedEntities.get(function), allEntities, function);
+            if (Inliner.shouldInlineFunction(C.parent.getName(), C)) { continue; }
+            // TODO: Script entity also has params.
+            if (C.parent instanceof FunctionEntity) {
+                int i = 0;
+                for (String argName : C.parent.getArgumentNames()) {
+                    String argType = ((SwiftFunctionType)C.parent.getType()).realTypes.get(i);
+                    C.valueTable.addValue(new SILValue(argName, argType, C));
+                    ++i;
+                }
+            }
             int blockNo =  0;
             for (CAstNode block: function.getChild(4).getChildren()) {
-                if (BlockInliner.shouldInline(blockNo, C)) { continue; }
+                if (Inliner.shouldInlineBlock(blockNo, C)) { continue; }
                 C.clearInstructions();
                 for (CAstNode instruction: block.getChildren().subList(1, block.getChildren().size())) {
                     try {
@@ -259,7 +270,7 @@ public class RawAstTranslator extends SILInstructionVisitor<CAstNode, SILInstruc
             argumentTypes.add(argType);
             argumentPositions.add((CAstSourcePositionMap.Position)arg.getChild(2).getValue());
         }
-        return new FunctionEntity(name, returnType, argumentTypes, argumentNames, functionPosition, argumentPositions);
+        return new FunctionEntity(name, returnType, argumentTypes, argumentNames, functionPosition, argumentPositions, n);
     }
 
     public static AbstractCodeEntity findEntity(String name, ArrayList<AbstractCodeEntity> entities) {
@@ -269,6 +280,7 @@ public class RawAstTranslator extends SILInstructionVisitor<CAstNode, SILInstruc
             }
         }
         System.err.println("ERROR: Entity with name " + name + " not found");
+        new Exception().printStackTrace();
         return null;
     }
 
@@ -489,15 +501,7 @@ public class RawAstTranslator extends SILInstructionVisitor<CAstNode, SILInstruc
 
     @Override
     protected CAstNode visitDebugValue(CAstNode N, SILInstructionContext C) {
-        // TODO: Without this instruction, function arguments would not be found, no?
-        //       So is this instruction optional or is it always called on function args?
-        // For now, we just create a value for the operand.
-        // We can always just look at the function entity's argument names/types and
-        // add them to the value table before looking at the function instructions.
-        // TODO: However, are the function arg names the same as bb0's names?
-        RawValue operand = getSingleOperand(N);
-        SILValue InitValue = new SILValue(operand.Name, operand.Type, C);
-        C.valueTable.addValue(InitValue);
+        // NOP
         return null;
     }
 
@@ -768,7 +772,9 @@ public class RawAstTranslator extends SILInstructionVisitor<CAstNode, SILInstruc
         if (!BuiltInFunctionSummaries.isBuiltIn(FuncName) && !BuiltInFunctionSummaries.isSummarized(FuncName)) {
             SILFunctionRef FuncRef = new SILFunctionRef(result.Name, result.Type, C, FuncName);
             C.valueTable.addValue(FuncRef);
-            C.parent.addScopedEntity(null, findEntity(FuncName, C.allEntities));
+            if (!Inliner.shouldInlineFunction(FuncName, C)) {
+                C.parent.addScopedEntity(null, findEntity(FuncName, C.allEntities));
+            }
         } else if (BuiltInFunctionSummaries.isSummarized(FuncName)) {
             SILFunctionRef.SILSummarizedFunctionRef FuncRef =
                     new SILFunctionRef.SILSummarizedFunctionRef(result.Name, result.Type, C, FuncName);
@@ -893,10 +899,18 @@ public class RawAstTranslator extends SILInstructionVisitor<CAstNode, SILInstruc
                     C.valueTable.addValue(new SILValue(result.Name, result.Type, C));
                 } else if (FuncRef instanceof SILFunctionRef) {
                     ArrayList<CAstNode> Params = new ArrayList<>();
+                    ArrayList<SILValue> ParamVals = new ArrayList<>();
                     Params.add(((SILFunctionRef) FuncRef).getFunctionRef());
                     Params.add(Ast.makeConstant("do"));
                     for (CAstNode RawParam : FuncNode.getChildren().subList(1, FuncNode.getChildren().size())) {
-                        Params.add(C.valueTable.getValue((String)RawParam.getValue()).getVarNode());
+                        String ParamName = (String)RawParam.getValue();
+                        Params.add(C.valueTable.getValue(ParamName).getVarNode());
+                        ParamVals.add(C.valueTable.getValue(ParamName));
+                    }
+                    if (Inliner.shouldInlineFunction(((SILFunctionRef) FuncRef).getFunctionName(), C)) {
+                        SILValue ReturnValue = Inliner.doFunctionInline(((SILFunctionRef) FuncRef).getFunctionName(), C, ParamVals, this);
+                        C.valueTable.copyValue(result.Name, ReturnValue.getName());
+                        return Ast.makeNode(CAstNode.EMPTY);
                     }
                     Source = Ast.makeNode(CAstNode.CALL, Params);
                     C.parent.setGotoTarget(Source, Source);
@@ -1494,11 +1508,12 @@ public class RawAstTranslator extends SILInstructionVisitor<CAstNode, SILInstruc
     @Override
     protected CAstNode visitReturn(CAstNode N, SILInstructionContext C) {
         RawValue operand = getSingleOperand(N);
-        if (!C.valueTable.hasValue(operand.Name)) {
-            SILValue VarValue = new SILValue(operand.Name, operand.Type, C);
-            C.valueTable.addValue(VarValue);
+        if (C.inliningParent) {
+            C.returnValue = C.valueTable.getValue(operand.Name);
+            return null;
+        } else {
+            return Ast.makeNode(CAstNode.RETURN, C.valueTable.getValue(operand.Name).getVarNode());
         }
-        return Ast.makeNode(CAstNode.RETURN, C.valueTable.getValue(operand.Name).getVarNode());
     }
 
     @Override
@@ -1528,14 +1543,14 @@ public class RawAstTranslator extends SILInstructionVisitor<CAstNode, SILInstruc
     protected CAstNode visitBr(CAstNode N, SILInstructionContext C) {
         String DestBranch = getStringValue(N, 0);
         int DestBlockNo = Integer.parseInt(DestBranch);
-        if (BlockInliner.shouldInline(DestBlockNo, C)) {
+        if (Inliner.shouldInlineBlock(DestBlockNo, C)) {
             ArrayList<SILValue> args = new ArrayList<>();
             for (CAstNode arg : N.getChild(1).getChildren()) {
                 String ArgName = getStringValue(arg, 0);
                 SILValue ArgValue = C.valueTable.getValue(ArgName);
                 args.add(ArgValue);
             }
-            BlockInliner.doInline(N, DestBlockNo, C, args, this);
+            Inliner.doBlockInline(N, DestBlockNo, C, args, this);
             return null;
         } else {
             for (CAstNode arg : N.getChild(1).getChildren()) {

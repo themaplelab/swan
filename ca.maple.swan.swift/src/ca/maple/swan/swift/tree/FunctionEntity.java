@@ -32,12 +32,14 @@ public class FunctionEntity extends AbstractCodeEntity {
     CAstSourcePositionMap.Position functionPosition;
     CAstSourcePositionMap.Position namePosition;
     ArrayList<CAstSourcePositionMap.Position> argumentPositions;
+    public final CAstNode rawInfo;
 
     public FunctionEntity(String name, String returnType,
                           ArrayList<String> argumentTypes,
                           ArrayList<String> argumentNames,
                           CAstSourcePositionMap.Position functionPosition,
-                          ArrayList<CAstSourcePositionMap.Position> argumentPositions) {
+                          ArrayList<CAstSourcePositionMap.Position> argumentPositions,
+                          CAstNode rawInfo) {
         super(new SwiftFunctionType(returnType, argumentTypes));
         assert((argumentNames.size() == argumentTypes.size()) && (argumentTypes.size() == argumentPositions.size()))
                 : "Function: " + name + " :argument information is not parallel";
@@ -50,6 +52,7 @@ public class FunctionEntity extends AbstractCodeEntity {
         // SILLocation/SILFunction doesn't have a way of getting the columns of the function name (AFAIK), so we just
         // grab the first line of the function.
         this.namePosition = new LineNumberPosition(functionPosition.getURL(), functionPosition.getURL(), functionPosition.getFirstLine());
+        this.rawInfo = rawInfo;
     }
 
     @Override

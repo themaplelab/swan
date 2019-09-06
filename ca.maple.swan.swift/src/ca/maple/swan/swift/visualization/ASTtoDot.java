@@ -71,6 +71,7 @@ public class ASTtoDot {
     }
 
     public static void buildGraph(MutableNode mNode, CAstNode cNode) {
+        if (cNode == null) { return; }
         MutableNode newNode;
         String hash = System.identityHashCode(cNode) + mNode.hashCode() + "\n";
         switch (cNode.getKind()) {
