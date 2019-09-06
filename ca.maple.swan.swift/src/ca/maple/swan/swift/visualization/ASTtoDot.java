@@ -84,20 +84,9 @@ public class ASTtoDot {
                 newNode.add(Color.rgb(color[0], color[1], color[2]));
                 break;
             }
-            case CAstNode.BLOCK_STMT: {
-                newNode = mutNode(hash + cNode.getChild(0).getChild(0).getValue());
-                currentRoot.addLink(newNode);
-                for (CAstNode child: cNode.getChildren()) {
-                    buildGraph(newNode, child);
-                }
-                return;
-            }
             case CAstNode.OPERATOR: {
                 newNode = mutNode(hash + cNode.getValue());
                 break;
-            }
-            case CAstNode.LABEL_STMT: {
-                return;
             }
             case CAstNode.VAR: {
                 newNode = mutNode(hash + CAstPrinter.kindAsString(cNode.getKind()));
