@@ -90,7 +90,7 @@ public class Inliner {
             //       declarations.
             C.instructions.addAll(0, C2.valueTable.getDecls());
             C2.instructions.add(0, Ast.makeNode(CAstNode.LABEL_STMT,
-                    Ast.makeConstant("block_" + blockNo + "_inlined_function_" + functionName)));
+                    Ast.makeConstant(blockNo)));
             C2.blocks.add(C2.instructions);
             ++blockNo;
         }
@@ -110,6 +110,7 @@ public class Inliner {
         for (CAstNode n : flatBlocks) {
             C.instructions.add(n);
         }
+        C.parent.getControlFlow().addAll(C2.parent.getControlFlow());
         return C2.returnValue;
     }
 

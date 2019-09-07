@@ -67,7 +67,9 @@ public class SILPointer extends SILValue {
     }
 
     public void replaceUnderlyingVar(SILValue to)  {
-        C.valueTable.removeValue(pointsTo.getName());
+        if (pointsTo != null) {
+            C.valueTable.removeValue(pointsTo.getName());
+        }
         pointsTo = to;
     }
 }

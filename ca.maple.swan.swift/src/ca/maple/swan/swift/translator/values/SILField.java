@@ -43,8 +43,10 @@ public class SILField extends SILValue {
         } else if (object instanceof SILStruct) {
             return ((SILStruct) object).createObjectRef((String)fieldName);
         } else {
-            Assertions.UNREACHABLE("Field must be from Struct or Tuple");
+            CAstNode ref = Ast.makeNode(CAstNode.OBJECT_REF, object.getVarNode(), Ast.makeConstant(fieldName));
+            C.parent.setGotoTarget(ref, ref);
+            return ref;
+
         }
-        return null;
     }
 }

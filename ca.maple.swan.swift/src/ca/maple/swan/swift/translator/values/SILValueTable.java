@@ -38,6 +38,10 @@ public class SILValueTable {
         values.put(newName, getValue(toCopy));
     }
 
+    public void copyValue(String newName, SILValue toCopy) {
+        values.put(newName, toCopy);
+    }
+
     public boolean hasValue(String valueName) {
         return values.containsKey(valueName);
     }

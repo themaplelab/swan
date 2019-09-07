@@ -149,12 +149,20 @@ import java.util.HashMap;
 
     Function args are equal to bb0 args.
 
-    Theoretically all basic block args are handled by the calling block.
+    Assignment folding is delicate as some instructions MUST be directly
+    represented in the CAst, such as `store`. In general, we need to
+    carefully consider what stays in the background, and what shows
+    in the CAst.
 
-    Problem: If a block with args is called by multiple blocks, then the
-    value table will contain the latest value for that block, meaning that
-    we have to handle that for each type. e.g. for a pointer, we would have
-    to assign
+    TODO:
+
+        - Function refs to inlined functions that are never called
+          are problematic because WALA will try to find a CAstEntity
+          (call site) for that function expression.
+
+        - Dynamic method dispatches to methods expecting a pointer as
+          a param are not inlineable. The best we can do here is pass
+          by value.
 
  *****************************************************************************/
 
@@ -397,10 +405,8 @@ public class RawAstTranslator extends SILInstructionVisitor<CAstNode, SILInstruc
 
     @Override
     protected CAstNode visitAllocBox(CAstNode N, SILInstructionContext C) {
-        // This instruction allocates a box and returns a reference to it.
-        // For now, we treat references as values.
         RawValue result = getSingleResult(N);
-        SILValue ResultValue = new SILValue(result.Name, result.Type, C);
+        SILPointer ResultValue = new SILPointer(result.Name, result.Type, C);
         C.valueTable.addValue(ResultValue);
         return Ast.makeNode(CAstNode.ASSIGN,
                 ResultValue.getVarNode(),
@@ -457,12 +463,10 @@ public class RawAstTranslator extends SILInstructionVisitor<CAstNode, SILInstruc
 
     @Override
     protected CAstNode visitProjectBox(CAstNode N, SILInstructionContext C) {
-        // Since we treat references as values, we create a pointer to the
-        // box value.
+        // A box's address and its underlying val's address are equal to us.
         RawValue result = getSingleResult(N);
         RawValue operand = getSingleOperand(N);
-        SILValue OperandValue = C.valueTable.getValue(operand.Name);
-        C.valueTable.addValue(OperandValue.makePointer(result.Name, result.Type));
+        C.valueTable.copyValue(result.Name, operand.Name);
         return null;
     }
 
@@ -514,11 +518,10 @@ public class RawAstTranslator extends SILInstructionVisitor<CAstNode, SILInstruc
     protected CAstNode visitLoad(CAstNode N, SILInstructionContext C) {
         RawValue operand = getSingleOperand(N);
         RawValue result = getSingleResult(N);
-        SILValue ResultValue = new SILValue(result.Name, result.Type, C);
-        C.valueTable.addValue(ResultValue);
-        Assertions.productionAssertion(C.valueTable.getValue(operand.Name) instanceof SILPointer);
-        CAstNode Assign = ((SILPointer)C.valueTable.getValue(operand.Name)).dereference().assignTo(ResultValue);
-        return Assign;
+        SILValue OperandValue = C.valueTable.getValue(operand.Name);
+        Assertions.productionAssertion(OperandValue instanceof SILPointer);
+        C.valueTable.copyValue(result.Name, ((SILPointer)OperandValue).dereference());
+        return null;
     }
 
     @Override
@@ -526,11 +529,9 @@ public class RawAstTranslator extends SILInstructionVisitor<CAstNode, SILInstruc
         String SourceName = getStringValue(N, 0);
         String DestName = getStringValue(N, 1);
         SILValue DestValue = C.valueTable.getValue(DestName);
-        if (DestValue instanceof SILPointer) {
-            return C.valueTable.getValue(SourceName).assignTo(((SILPointer)C.valueTable.getValue(DestName)).dereference());
-        } else {
-            return C.valueTable.getValue(SourceName).assignTo(C.valueTable.getValue(DestName));
-        }
+        Assertions.productionAssertion(DestValue instanceof SILPointer);
+        ((SILPointer) DestValue).replaceUnderlyingVar(C.valueTable.getValue(SourceName));
+        return null;
     }
 
     @Override
@@ -563,9 +564,7 @@ public class RawAstTranslator extends SILInstructionVisitor<CAstNode, SILInstruc
     protected CAstNode visitBeginBorrow(CAstNode N, SILInstructionContext C) {
         RawValue operand = getSingleOperand(N);
         RawValue result = getSingleResult(N);
-        SILValue ResultValue = C.valueTable.getValue(operand.Name)
-                .makePointer(result.Name, result.Type);
-        C.valueTable.addValue(ResultValue);
+        C.valueTable.copyValue(result.Name, operand.Name);
         return null;
     }
 
@@ -583,8 +582,10 @@ public class RawAstTranslator extends SILInstructionVisitor<CAstNode, SILInstruc
         SILValue SourceValue = C.valueTable.getValue(SourceName);
         SILValue DestValue = C.valueTable.getValue(DestName);
         Assertions.productionAssertion(DestValue instanceof SILPointer);
+        SILValue UnderlyingValue = ((SILPointer) DestValue).dereference();
         ((SILPointer)DestValue).replaceUnderlyingVar(SourceValue);
-        return null;
+        return SourceValue.assignTo(UnderlyingValue);
+
     }
 
     @Override
@@ -596,8 +597,7 @@ public class RawAstTranslator extends SILInstructionVisitor<CAstNode, SILInstruc
     protected CAstNode visitMarkUninitialized(CAstNode N, SILInstructionContext C) {
         RawValue operand = getSingleOperand(N);
         RawValue result = getSingleResult(N);
-        SILPointer ResultValue = new SILPointer(result.Name, result.Type, C, C.valueTable.getValue(operand.Name));
-        C.valueTable.addValue(ResultValue);
+        C.valueTable.copyValue(result.Name, operand.Name);
         return null;
     }
 
@@ -651,13 +651,8 @@ public class RawAstTranslator extends SILInstructionVisitor<CAstNode, SILInstruc
         RawValue operand = getSingleOperand(N);
         RawValue result = getSingleResult(N);
         SILValue OperandValue = C.valueTable.getValue(operand.Name);
-        SILValue ResultValue;
-        if (OperandValue instanceof SILPointer) {
-             ResultValue = ((SILPointer)C.valueTable.getValue(operand.Name)).copyPointer(result.Name, result.Type);
-        } else {
-            ResultValue = OperandValue.makePointer(result.Name, result.Type);
-        }
-        C.valueTable.addValue(ResultValue);
+        Assertions.productionAssertion(OperandValue instanceof SILPointer);
+        C.valueTable.copyValue(result.Name, operand.Name);
         return null;
     }
 
@@ -1005,9 +1000,8 @@ public class RawAstTranslator extends SILInstructionVisitor<CAstNode, SILInstruc
     protected CAstNode visitCopyValue(CAstNode N, SILInstructionContext C) {
         RawValue operand = getSingleOperand(N);
         RawValue result = getSingleResult(N);
-        SILValue ResultValue = new SILValue(result.Name, result.Type, C);
-        C.valueTable.addValue(ResultValue);
-        return C.valueTable.getValue(operand.Name).assignTo(ResultValue);
+        C.valueTable.copyValue(result.Name, operand.Name);
+        return null;
     }
 
     @Override
@@ -1132,6 +1126,16 @@ public class RawAstTranslator extends SILInstructionVisitor<CAstNode, SILInstruc
 
     @Override
     protected CAstNode visitStructElementAddr(CAstNode N, SILInstructionContext C) {
+        RawValue result = getSingleResult(N);
+        RawValue operand = getSingleOperand(N);
+        String StructName = getStringValue(N, 2);
+        String FieldName = getStringValue(N, 3);
+        SILValue OperandValue = C.valueTable.getValue(operand.Name);
+        Assertions.productionAssertion(OperandValue instanceof SILPointer);
+        SILValue UnderlyingValue = ((SILPointer)OperandValue).dereference();
+        SILField NewField = new SILField(null, null, C, UnderlyingValue, FieldName);
+        SILPointer ResultPointer = new SILPointer(result.Name, result.Type, C, NewField);
+        C.valueTable.addValue(ResultPointer);
         return null;
     }
 
@@ -1510,7 +1514,7 @@ public class RawAstTranslator extends SILInstructionVisitor<CAstNode, SILInstruc
         RawValue operand = getSingleOperand(N);
         if (C.inliningParent) {
             C.returnValue = C.valueTable.getValue(operand.Name);
-            return null;
+            return Ast.makeNode(CAstNode.LABEL_STMT, Ast.makeConstant("Returning " + C.returnValue.getName()));
         } else {
             return Ast.makeNode(CAstNode.RETURN, C.valueTable.getValue(operand.Name).getVarNode());
         }
