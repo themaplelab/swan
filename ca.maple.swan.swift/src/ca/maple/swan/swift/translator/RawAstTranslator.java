@@ -520,18 +520,22 @@ public class RawAstTranslator extends SILInstructionVisitor<CAstNode, SILInstruc
         RawValue result = getSingleResult(N);
         SILValue OperandValue = C.valueTable.getValue(operand.Name);
         Assertions.productionAssertion(OperandValue instanceof SILPointer);
-        C.valueTable.copyValue(result.Name, ((SILPointer)OperandValue).dereference());
-        return null;
+        SILValue UnderlyingValue = ((SILPointer)OperandValue).dereference();
+        SILValue ResultValue = new SILValue(result.Name, result.Type, C);
+        C.valueTable.addValue(ResultValue);
+        return UnderlyingValue.assignTo(ResultValue);
     }
 
     @Override
     protected CAstNode visitStore(CAstNode N, SILInstructionContext C) {
         String SourceName = getStringValue(N, 0);
         String DestName = getStringValue(N, 1);
+        SILValue SourceValue = C.valueTable.getValue(SourceName);
         SILValue DestValue = C.valueTable.getValue(DestName);
         Assertions.productionAssertion(DestValue instanceof SILPointer);
-        ((SILPointer) DestValue).replaceUnderlyingVar(C.valueTable.getValue(SourceName));
-        return null;
+        CAstNode AssignNode = SourceValue.assignTo(((SILPointer) DestValue).dereference());
+        ((SILPointer) DestValue).replaceUnderlyingVar(SourceValue);
+        return AssignNode;
     }
 
     @Override
@@ -1226,8 +1230,8 @@ public class RawAstTranslator extends SILInstructionVisitor<CAstNode, SILInstruc
 
     @Override
     protected CAstNode visitInitExistentialAddr(CAstNode N, SILInstructionContext C) {
-        // TODO: Is it sufficient to say that the value pointed to by
-        //       the result is the same value pointed to by the operand?
+        // The type changes so we create a new pointer to the same underlying
+        // value as the operand pointer.
         RawValue operand = getSingleOperand(N);
         RawValue result = getSingleResult(N);
         Assertions.productionAssertion(C.valueTable.getValue(operand.Name) instanceof SILPointer);
@@ -1331,6 +1335,7 @@ public class RawAstTranslator extends SILInstructionVisitor<CAstNode, SILInstruc
     @Override
     protected CAstNode visitPointerToAddress(CAstNode N, SILInstructionContext C) {
         // TODO: Is it sufficient to make the result point to the operand?
+        // Result type != operand type, so not sufficient to just copy.
         RawValue operand = getSingleOperand(N);
         RawValue result = getSingleResult(N);
         SILPointer ResultPointer = new SILPointer(result.Name, result.Type, C, C.valueTable.getValue(operand.Name));

@@ -57,6 +57,10 @@ public class SILValueTable {
         return toReturn;
     }
 
+    public void replaceValue(String name, SILValue newValue) {
+        values.replace(name, newValue);
+    }
+
     public void addValue(SILValue v) {
         values.put(v.name, v);
         undeclaredValues.add(v);

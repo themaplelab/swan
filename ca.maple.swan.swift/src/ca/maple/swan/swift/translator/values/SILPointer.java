@@ -35,6 +35,9 @@ public class SILPointer extends SILValue {
         if (pointsTo == null) { // This isn't ideal;
             return this;
         }
+        if (pointsTo instanceof SILPointer) {
+            return ((SILPointer) pointsTo).dereference();
+        }
         return pointsTo;
     }
 
@@ -67,9 +70,7 @@ public class SILPointer extends SILValue {
     }
 
     public void replaceUnderlyingVar(SILValue to)  {
-        if (pointsTo != null) {
-            C.valueTable.removeValue(pointsTo.getName());
-        }
+        C.valueTable.replaceValue(to.name, to);
         pointsTo = to;
     }
 }
