@@ -154,6 +154,16 @@ import java.util.HashMap;
     carefully consider what stays in the background, and what shows
     in the CAst.
 
+    We do support deallocation instructions for completeness, but this
+    theoretically has no effect as SIL opaque values are unique.
+
+    Type information may not be perfect due to careless assignment folding.
+    This just needs to be checked. Assignment folding should not be done
+    if the result type != operand type.
+
+    We do not keep track of fields concretely. This is difficult to do
+    statically as naturally fields are used in a dynamic matter.
+
     TODO:
 
         - Function refs to inlined functions that are never called
@@ -405,6 +415,8 @@ public class RawAstTranslator extends SILInstructionVisitor<CAstNode, SILInstruc
 
     @Override
     protected CAstNode visitAllocBox(CAstNode N, SILInstructionContext C) {
+        // We treat $@box as regular pointers, so its the same as the
+        // other pointer allocations.
         RawValue result = getSingleResult(N);
         SILPointer ResultValue = new SILPointer(result.Name, result.Type, C);
         C.valueTable.addValue(ResultValue);
@@ -416,8 +428,8 @@ public class RawAstTranslator extends SILInstructionVisitor<CAstNode, SILInstruc
     @Override
     protected CAstNode visitAllocValueBuffer(CAstNode N, SILInstructionContext C) {
         // Given a pointer, allocate space inside of it. So here we can just copy
-        // the pointer.
-        // We also allocate the new pointer.
+        // the pointer. We also allocate the new pointer.
+        // TODO: Is the result a tuple? If so, this can be a problem.
         RawValue result = getSingleResult(N);
         RawValue operand = getSingleOperand(N);
         SILValue OperandValue = C.valueTable.getValue(operand.Name);
@@ -431,9 +443,6 @@ public class RawAstTranslator extends SILInstructionVisitor<CAstNode, SILInstruc
     @Override
     protected CAstNode visitAllocGlobal(CAstNode N, SILInstructionContext C) {
         // Allocate a global which is identified by a name.
-        // CUSTOM NODE FORMAT:
-        //      NAME
-        //      TYPE
         String GlobalName = getStringValue(N, 0);
         String GlobalType = getStringValue(N, 1);
         SILValue ResultValue = new SILValue(GlobalName, GlobalType, C);
@@ -455,7 +464,8 @@ public class RawAstTranslator extends SILInstructionVisitor<CAstNode, SILInstruc
 
     @Override
     protected CAstNode visitDeallocBox(CAstNode N, SILInstructionContext C) {
-        // Deallocates a $@box. We just remove the value since it isn't a pointer.
+        // Deallocates a $@box. Does not destroy the contents of the box,
+        // so we only need to remove the value itself.
         RawValue operand = getSingleOperand(N);
         C.valueTable.removeValue(operand.Name);
         return null;
@@ -500,6 +510,9 @@ public class RawAstTranslator extends SILInstructionVisitor<CAstNode, SILInstruc
 
     @Override
     protected CAstNode visitProjectValueBuffer(CAstNode N, SILInstructionContext C) {
+        RawValue result = getSingleResult(N);
+        RawValue operand = getSingleOperand(N);
+        // TODO: Resolve alloc_value_buffer first (tuple question).
         return null;
     }
 
@@ -511,11 +524,14 @@ public class RawAstTranslator extends SILInstructionVisitor<CAstNode, SILInstruc
 
     @Override
     protected CAstNode visitDebugValueAddr(CAstNode N, SILInstructionContext C) {
+        // NOP
         return null;
     }
 
     @Override
     protected CAstNode visitLoad(CAstNode N, SILInstructionContext C) {
+        // Copies the underlying value of the operand pointer to the result value.
+        // This is an explicit copy so we do not copy anything on the value table side.
         RawValue operand = getSingleOperand(N);
         RawValue result = getSingleResult(N);
         SILValue OperandValue = C.valueTable.getValue(operand.Name);
@@ -528,6 +544,9 @@ public class RawAstTranslator extends SILInstructionVisitor<CAstNode, SILInstruc
 
     @Override
     protected CAstNode visitStore(CAstNode N, SILInstructionContext C) {
+        // Store the source value to the memory of the dest pointer.
+        // This is an explicit operation, but we still need to replace the
+        // underlying value of the dest pointer.
         String SourceName = getStringValue(N, 0);
         String DestName = getStringValue(N, 1);
         SILValue SourceValue = C.valueTable.getValue(SourceName);
@@ -540,32 +559,22 @@ public class RawAstTranslator extends SILInstructionVisitor<CAstNode, SILInstruc
 
     @Override
     protected CAstNode visitStoreBorrow(CAstNode N, SILInstructionContext C) {
-        String SourceName = getStringValue(N, 0);
-        String DestName = getStringValue(N, 1);
-        SILValue DestValue = C.valueTable.getValue(DestName);
-        if (DestValue instanceof SILPointer) {
-            return C.valueTable.getValue(SourceName).assignTo(((SILPointer)C.valueTable.getValue(DestName)).dereference());
-        } else {
-            return C.valueTable.getValue(SourceName).assignTo(C.valueTable.getValue(DestName));
-        }
+        // No documentation on this instruction, so we treat it the same as store.
+        return visitStore(N, C);
     }
 
     @Override
     protected CAstNode visitLoadBorrow(CAstNode N, SILInstructionContext C) {
-        RawValue operand = getSingleOperand(N);
-        RawValue result = getSingleResult(N);
-        SILValue ResultValue = new SILValue(result.Name, result.Type, C);
-        C.valueTable.addValue(ResultValue);
-        SILValue OperandValue = C.valueTable.getValue(operand.Name);
-        if (OperandValue instanceof SILPointer) {
-            return ((SILPointer)OperandValue).dereference().assignTo(ResultValue);
-        } else {
-            return OperandValue.assignTo(ResultValue);
-        }
+        // We can treat this the same as load because the borrowed scope is
+        // going to be within the function scope, which is the same as the
+        // value table scope.
+        return visitLoad(N, C);
     }
 
     @Override
     protected CAstNode visitBeginBorrow(CAstNode N, SILInstructionContext C) {
+        // No SIL.rst documentation. For now, we just copy the value but
+        // maybe we should have an explicit copy instead.
         RawValue operand = getSingleOperand(N);
         RawValue result = getSingleResult(N);
         C.valueTable.copyValue(result.Name, operand.Name);
@@ -574,6 +583,9 @@ public class RawAstTranslator extends SILInstructionVisitor<CAstNode, SILInstruc
 
     @Override
     protected CAstNode visitEndBorrow(CAstNode N, SILInstructionContext C) {
+        // While the value that's begin borrowed from is given, we don't
+        // care about it since we just want to make sure we don't use
+        // the borrowed value itself again, so we just remove it.
         RawValue operand = getSingleOperand(N);
         C.valueTable.removeValue(operand.Name);
         return null;
@@ -581,6 +593,8 @@ public class RawAstTranslator extends SILInstructionVisitor<CAstNode, SILInstruc
 
     @Override
     protected CAstNode visitAssign(CAstNode N, SILInstructionContext C) {
+        // Regular explicit assign to a pointer operand. We generate CAst and
+        // replace the SILPointer value, too.
         String SourceName = getStringValue(N, 0);
         String DestName = getStringValue(N, 1);
         SILValue SourceValue = C.valueTable.getValue(SourceName);
@@ -594,11 +608,37 @@ public class RawAstTranslator extends SILInstructionVisitor<CAstNode, SILInstruc
 
     @Override
     protected CAstNode visitAssignByWrapper(CAstNode N, SILInstructionContext C) {
-        return null;
+        // Assigns to the result through a conditional delegate. Two function refs
+        // are given and called based on if the value needs to be initialized or
+        // re-assigned. This is just an if-else call. The condition here could be
+        // done by a custom operation, but for now an arbitrary condition is set.
+        // TODO: Maybe summarized function/builtin stuff should be handled here?
+        // TODO: A CAst side translation is probably not enough, the value table
+        //       needs to be handled as well for the result assignment. This will
+        //       mean  inlining.
+        RawValue source = getOperand(N, 0);
+        RawValue dest = getOperand(N, 1);
+        RawValue initFunc = getOperand(N, 2);
+        RawValue setFunc = getOperand(N, 3);
+        CAstNode CondNode = Ast.makeConstant("init/set");
+        SILValue InitFuncRef = C.valueTable.getValue(initFunc.Name);
+        Assertions.productionAssertion(InitFuncRef instanceof SILFunctionRef);
+        SILValue SetFuncRef = C.valueTable.getValue(setFunc.Name);
+        Assertions.productionAssertion(SetFuncRef instanceof SILFunctionRef);
+        CAstNode InitCallNode = Ast.makeNode(CAstNode.CALL, InitFuncRef.getVarNode(),
+                Ast.makeConstant("do"), C.valueTable.getValue(source.Name).getVarNode());
+        CAstNode SetCallNode = Ast.makeNode(CAstNode.CALL, SetFuncRef.getVarNode(),
+                Ast.makeConstant("do"), C.valueTable.getValue(source.Name).getVarNode());
+        CAstNode DestNode = C.valueTable.getValue(dest.Name).getVarNode();
+        CAstNode InitAssign = Ast.makeNode(CAstNode.ASSIGN, DestNode, InitCallNode);
+        CAstNode SetAssign = Ast.makeNode(CAstNode.ASSIGN, DestNode, SetCallNode);
+        return Ast.makeNode(CAstNode.IF_STMT, CondNode, InitAssign, SetAssign);
     }
 
     @Override
     protected CAstNode visitMarkUninitialized(CAstNode N, SILInstructionContext C) {
+        // This instruction just marks memory location as unintialized, but the type
+        // doesn't change so we can just do a value table copy.
         RawValue operand = getSingleOperand(N);
         RawValue result = getSingleResult(N);
         C.valueTable.copyValue(result.Name, operand.Name);
@@ -607,51 +647,78 @@ public class RawAstTranslator extends SILInstructionVisitor<CAstNode, SILInstruc
 
     @Override
     protected CAstNode visitMarkFunctionEscape(CAstNode N, SILInstructionContext C) {
+        // This instruction annotates memory, so we can just copy the value.
+        RawValue operand = getSingleOperand(N);
+        RawValue result = getSingleResult(N);
+        C.valueTable.copyValue(result.Name, operand.Name);
         return null;
     }
 
     @Override
     protected CAstNode visitMarkUninitializedBehavior(CAstNode N, SILInstructionContext C) {
+        // TODO: Doesn't appear to have a result so probably a NOP but needs further investigating.
+        Assertions.UNREACHABLE("UNHANDLED INSTRUCTION");
         return null;
     }
 
     @Override
     protected CAstNode visitCopyAddr(CAstNode N, SILInstructionContext C) {
-        return null;
+        // Copies the underlying value of the source into the destination.
+        // This instruction is handled explicitly for now, but might be change
+        // to a simple copy later.
+        String SourceName = getStringValue(N, 0);
+        String DestName = getStringValue(N, 1);
+        SILValue SourceValue = C.valueTable.getValue(SourceName);
+        SILValue DestValue = C.valueTable.getValue(DestName);
+        Assertions.productionAssertion(SourceValue instanceof SILPointer);
+        Assertions.productionAssertion(DestValue instanceof SILPointer);
+        CAstNode AssignNode = SourceValue.assignTo(DestValue);
+        ((SILPointer)DestValue).replaceUnderlyingVar(SourceValue);
+        return AssignNode;
     }
 
     @Override
     protected CAstNode visitDestroyAddr(CAstNode N, SILInstructionContext C) {
+        // Destroys the underlying value at the given pointer.
         RawValue operand = getSingleOperand(N);
         SILValue AddrToDestroy = C.valueTable.getValue(operand.Name);
-        if  (AddrToDestroy instanceof  SILPointer) {
-            C.valueTable.removeValue(((SILPointer) AddrToDestroy).dereference().getName());
-        }
+        Assertions.productionAssertion(AddrToDestroy instanceof SILPointer);
+        C.valueTable.removeValue(((SILPointer)AddrToDestroy).dereference().getName());
         return null;
     }
 
     @Override
     protected CAstNode visitIndexAddr(CAstNode N, SILInstructionContext C) {
+        // TODO: Need to first see an example of the operand (i.e. how is this
+        //       array of values created - is in OBJECT_LITERAL?)
+        Assertions.UNREACHABLE("UNHANDLED INSTRUCTION");
         return null;
     }
 
     @Override
     protected CAstNode visitTailAddr(CAstNode N, SILInstructionContext C) {
+        // TODO: see visitIndexAddr
+        Assertions.UNREACHABLE("UNHANDLED INSTRUCTION");
         return null;
     }
 
     @Override
     protected CAstNode visitIndexRawPointer(CAstNode N, SILInstructionContext C) {
+        // TODO: Need to see in action. How is the result used?
+        Assertions.UNREACHABLE("UNHANDLED INSTRUCTION");
         return null;
     }
 
     @Override
     protected CAstNode visitBindMemory(CAstNode N, SILInstructionContext C) {
+        // TODO: Need to see if the operand changes type.
+        Assertions.UNREACHABLE("UNHANDLED INSTRUCTION");
         return null;
     }
 
     @Override
     protected CAstNode visitBeginAccess(CAstNode N, SILInstructionContext C) {
+        // Basically just copies the pointer given.
         RawValue operand = getSingleOperand(N);
         RawValue result = getSingleResult(N);
         SILValue OperandValue = C.valueTable.getValue(operand.Name);
@@ -662,6 +729,8 @@ public class RawAstTranslator extends SILInstructionVisitor<CAstNode, SILInstruc
 
     @Override
     protected CAstNode visitEndAccess(CAstNode N, SILInstructionContext C) {
+        // Ends an access to a memory location, and the operand is a copied
+        // pointer so we can remove it safely from the value table.
         RawValue operand = getSingleOperand(N);
         C.valueTable.removeValue(operand.Name);
         return null;
@@ -669,71 +738,102 @@ public class RawAstTranslator extends SILInstructionVisitor<CAstNode, SILInstruc
 
     @Override
     protected CAstNode visitBeginUnpairedAccess(CAstNode N, SILInstructionContext C) {
+        // Basically just copies the pointer given, but with an additional operand used
+        // to uniquely identify this access. We just copy the value with this identifier.
+        // TODO: Need to see how the additional operand is created.
+        RawValue operand = getSingleOperand(N);
+        RawValue result = getOperand(N, 0);
+        RawValue buffer = getOperand(N, 1);
+        SILValue OperandValue = C.valueTable.getValue(operand.Name);
+        SILValue BufferValue = C.valueTable.getValue(buffer.Name);
+        Assertions.productionAssertion(OperandValue instanceof SILPointer);
+        Assertions.productionAssertion(BufferValue instanceof SILPointer);
+        C.valueTable.copyValue(result.Name, operand.Name);
+        C.valueTable.copyValue(buffer.Name, operand.Name);
         return null;
     }
 
     @Override
     protected CAstNode visitEndUnpairedAccess(CAstNode N, SILInstructionContext C) {
+        // Ends an access. The operand is an identifier. We just remove the operand
+        // value from the symbol table.
+        // TODO: What is the result used for?
+        C.valueTable.removeValue(getSingleOperand(N).Name);
         return null;
     }
 
     @Override
     protected CAstNode visitStrongRetain(CAstNode N, SILInstructionContext C) {
+        // NOP
         return null;
     }
 
     @Override
     protected CAstNode visitStrongRelease(CAstNode N, SILInstructionContext C) {
+        // NOP
         return null;
     }
 
     @Override
     protected CAstNode visitSetDeallocating(CAstNode N, SILInstructionContext C) {
+        // NOP
         return null;
     }
 
     @Override
     protected CAstNode visitStrongRetainUnowned(CAstNode N, SILInstructionContext C) {
+        // NOP
         return null;
     }
 
     @Override
     protected CAstNode visitUnownedRetain(CAstNode N, SILInstructionContext C) {
+        // NOP
         return null;
     }
 
     @Override
     protected CAstNode visitUnownedRelease(CAstNode N, SILInstructionContext C) {
+        // NOP
         return null;
     }
 
     @Override
     protected CAstNode visitLoadWeak(CAstNode N, SILInstructionContext C) {
+        // NOP
         return null;
     }
 
     @Override
     protected CAstNode visitStoreWeak(CAstNode N, SILInstructionContext C) {
+        // It seems this is a regular store but with reference counting naunces.
+        visitStore(N, C);
         return null;
     }
 
     @Override
     protected CAstNode visitLoadUnowned(CAstNode N, SILInstructionContext C) {
+        // TODO: No SIL.rst documentation. How to handle?
+        Assertions.UNREACHABLE("UNHANDLED INSTRUCTION");
         return null;
     }
 
     @Override
     protected CAstNode visitStoreUnowned(CAstNode N, SILInstructionContext C) {
+        // TODO: No SIL.rst documentation. How to handle?
+        Assertions.UNREACHABLE("UNHANDLED INSTRUCTION");
         return null;
     }
 
     @Override
     protected CAstNode visitFixLifetime(CAstNode N, SILInstructionContext C) {
+        // NOP
         return null;
     }
 
     @Override
     protected CAstNode visitEndLifetime(CAstNode N, SILInstructionContext C) {
+        // No SIL.rst documentation. Assume we can just remove the value.
         RawValue operand = getSingleOperand(N);
         C.valueTable.removeValue(operand.Name);
         return null;
@@ -741,31 +841,58 @@ public class RawAstTranslator extends SILInstructionVisitor<CAstNode, SILInstruc
 
     @Override
     protected CAstNode visitMarkDependence(CAstNode N, SILInstructionContext C) {
+        // Indicates first operand depends on the second operand. We don't care about
+        // this, but we do care that the result is equal to the first operand.
+        C.valueTable.copyValue(getSingleResult(N).Name, getOperand(N, 0).Name);
         return null;
     }
 
     @Override
     protected CAstNode visitIsUnique(CAstNode N, SILInstructionContext C) {
+        // Returns a boolean (represented as an int) based on whether the operand
+        // is a unique reference. This doesn't matter to us so we can make the result
+        // a constant value. For data flow, while the result does rely on the operand,
+        // such a low level operation should not effect something like taint analysis.
+        RawValue result = getSingleResult(N);
+        SILConstant IsUniqueVal = new SILConstant(result.Name, result.Type, C, "bool");
+        C.valueTable.addValue(IsUniqueVal);
         return null;
     }
 
     @Override
     protected CAstNode visitIsEscapingClosure(CAstNode N, SILInstructionContext C) {
+        // Treated the same as is_unique.
+        RawValue result = getSingleResult(N);
+        SILConstant IsUniqueVal = new SILConstant(result.Name, result.Type, C, "bool");
+        C.valueTable.addValue(IsUniqueVal);
         return null;
     }
 
     @Override
     protected CAstNode visitCopyBlock(CAstNode N, SILInstructionContext C) {
-        return null;
+        // Copies an objc block. We can treat this as a regular explicit copy for now.
+        RawValue result = getSingleResult(N);
+        RawValue operand = getSingleOperand(N);
+        SILValue ResultValue = new SILValue(result.Name, result.Type, C);
+        return C.valueTable.getValue(operand.Name).assignTo(ResultValue);
     }
 
     @Override
     protected CAstNode visitCopyBlockWithoutEscaping(CAstNode N, SILInstructionContext C) {
-        return null;
+        // Same as copy_block for our purposes.
+        return visitCopyBlock(N, C);
     }
 
     @Override
     protected CAstNode visitFunctionRef(CAstNode N, SILInstructionContext C) {
+        // Creates a reference to a SIL function. Cases:
+        // 1. Not built or summarized (regular function) - has representing entity
+        // 2. Summarized (replaced when used in an apply) - representing entity
+        // 3. Builtin function - replace with a constant value (this should be
+        //    temporary until a summary is created for it)
+        // TODO: If a summarized function is never actually called, the FUNC_EXPR
+        //       might end up in the CAst and since there is no representing entity,
+        //       there will be an error.
         RawValue result = getSingleResult(N);
         String FuncName = getStringValue(N, 2);
         if (!BuiltInFunctionSummaries.isBuiltIn(FuncName) && !BuiltInFunctionSummaries.isSummarized(FuncName)) {
@@ -787,31 +914,42 @@ public class RawAstTranslator extends SILInstructionVisitor<CAstNode, SILInstruc
 
     @Override
     protected CAstNode visitDynamicFunctionRef(CAstNode N, SILInstructionContext C) {
+        // TODO: Ignoring dynamic dispatch for now.
+        Assertions.UNREACHABLE("UNHANDLED INSTRUCTION");
         return null;
     }
 
     @Override
     protected CAstNode visitPrevDynamicFunctionRef(CAstNode N, SILInstructionContext C) {
+        // TODO: Ignoring dynamic dispatch for now.
+        Assertions.UNREACHABLE("UNHANDLED INSTRUCTION");
         return null;
     }
 
     @Override
     protected CAstNode visitGlobalAddr(CAstNode N, SILInstructionContext C) {
+        // Creates a references to the address of a global var. The result
+        // is a pointer so we can just copy the value.
         RawValue result = getSingleResult(N);
         String GlobalName = getStringValue(N, 2);
-        SILPointer GlobalRef = C.valueTable.getValue(GlobalName)
-                .makePointer(result.Name, result.Type);
-        C.valueTable.addValue(GlobalRef);
+        C.valueTable.copyValue(result.Name, GlobalName);
         return null;
     }
 
     @Override
     protected CAstNode visitGlobalValue(CAstNode N, SILInstructionContext C) {
+        // Result is the value of a global var. Implicit copy is sufficient for now.
+        RawValue result = getSingleResult(N);
+        String GlobalName = getStringValue(N, 2);
+        SILValue GlobalValue = C.valueTable.getValue(GlobalName);
+        Assertions.productionAssertion(GlobalValue instanceof SILPointer);
+        C.valueTable.copyValue(result.Name, ((SILPointer)GlobalValue).dereference());
         return null;
     }
 
     @Override
     protected CAstNode visitIntegerLiteral(CAstNode N, SILInstructionContext C) {
+        // Creates an integer literal value.
         RawValue result = getSingleResult(N);
         int Integer = getIntValue(N, 2);
         SILConstant IntegerValue = new SILConstant(result.Name, result.Type, C, Integer);
@@ -821,6 +959,7 @@ public class RawAstTranslator extends SILInstructionVisitor<CAstNode, SILInstruc
 
     @Override
     protected CAstNode visitFloatLiteral(CAstNode N, SILInstructionContext C) {
+        // Creates a float literal value.
         RawValue result = getSingleResult(N);
         float Float = ((BigDecimal)N.getChild(2).getValue()).floatValue();
         SILConstant FloatValue = new SILConstant(result.Name, result.Type, C, Float);
@@ -830,6 +969,7 @@ public class RawAstTranslator extends SILInstructionVisitor<CAstNode, SILInstruc
 
     @Override
     protected CAstNode visitStringLiteral(CAstNode N, SILInstructionContext C) {
+        // Creates a string literal value.
         RawValue result = getSingleResult(N);
         String StringValue = getStringValue(N, 2);
         SILConstant Value = new SILConstant(result.Name, result.Type, C, StringValue);
@@ -839,39 +979,44 @@ public class RawAstTranslator extends SILInstructionVisitor<CAstNode, SILInstruc
 
     @Override
     protected CAstNode visitClassMethod(CAstNode N, SILInstructionContext C) {
-        RawValue result = getSingleResult(N);
-        String FuncName = getStringValue(N, 2);
-        SILConstant Constant = new SILConstant(result.Name, result.Type, C, FuncName);
-        C.valueTable.addValue(Constant);
+        // TODO: Ignoring dynamic dispatch for now.
+        Assertions.UNREACHABLE("UNHANDLED INSTRUCTION");
         return null;
     }
 
     @Override
     protected CAstNode visitObjCMethod(CAstNode N, SILInstructionContext C) {
+        // TODO: Ignoring dynamic dispatch for now.
+        Assertions.UNREACHABLE("UNHANDLED INSTRUCTION");
         return null;
     }
 
     @Override
     protected CAstNode visitSuperMethod(CAstNode N, SILInstructionContext C) {
+        // TODO: Ignoring dynamic dispatch for now.
+        Assertions.UNREACHABLE("UNHANDLED INSTRUCTION");
         return null;
     }
 
     @Override
     protected CAstNode visitObjCSuperMethod(CAstNode N, SILInstructionContext C) {
+        // TODO: Ignoring dynamic dispatch for now.
+        Assertions.UNREACHABLE("UNHANDLED INSTRUCTION");
         return null;
     }
 
     @Override
     protected CAstNode visitWitnessMethod(CAstNode N, SILInstructionContext C) {
-        RawValue result = getSingleResult(N);
-        String FuncName = getStringValue(N, 2);
-        SILConstant Constant = new SILConstant(result.Name, result.Type, C, FuncName);
-        C.valueTable.addValue(Constant);
+        // TODO: Ignoring dynamic dispatch for now.
+        Assertions.UNREACHABLE("UNHANDLED INSTRUCTION");
         return null;
     }
 
     @Override
     protected CAstNode visitApply(CAstNode N, SILInstructionContext C) {
+        // Apply a function. Behavior depends on the function expr and type of call
+        // If the C++ side has created a binary/unary expression then it is an
+        // operation, otherwise we treat it as a call. See visitFunctionRef.
         RawValue result = getSingleResult(N);
         String FuncRefName = getStringValue(N, 2);
         CAstNode Source;
@@ -939,31 +1084,42 @@ public class RawAstTranslator extends SILInstructionVisitor<CAstNode, SILInstruc
 
     @Override
     protected CAstNode visitBeginApply(CAstNode N, SILInstructionContext C) {
+        // TODO:
+        Assertions.UNREACHABLE("UNHANDLED INSTRUCTION");
         return null;
     }
 
     @Override
     protected CAstNode visitAbortApply(CAstNode N, SILInstructionContext C) {
+        // TODO:
+        Assertions.UNREACHABLE("UNHANDLED INSTRUCTION");
         return null;
     }
 
     @Override
     protected CAstNode visitEndApply(CAstNode N, SILInstructionContext C) {
+        // TODO:
+        Assertions.UNREACHABLE("UNHANDLED INSTRUCTION");
         return null;
     }
 
     @Override
     protected CAstNode visitPartialApply(CAstNode N, SILInstructionContext C) {
+        // TODO: Very weird instruction.
+        Assertions.UNREACHABLE("UNHANDLED INSTRUCTION");
         return null;
     }
 
     @Override
     protected CAstNode visitBuiltin(CAstNode N, SILInstructionContext C) {
+        // TODO:
+        Assertions.UNREACHABLE("UNHANDLED INSTRUCTION");
         return null;
     }
 
     @Override
     protected CAstNode visitMetatype(CAstNode N, SILInstructionContext C) {
+        // Creates a metatype value. A constant is sufficient to handle this.
         RawValue result = getSingleResult(N);
         SILConstant Value = new SILConstant(result.Name, result.Type, C, result.Type);
         C.valueTable.addValue(Value);
@@ -972,36 +1128,45 @@ public class RawAstTranslator extends SILInstructionVisitor<CAstNode, SILInstruc
 
     @Override
     protected CAstNode visitValueMetatype(CAstNode N, SILInstructionContext C) {
-        return null;
+        // Here, we can ignore the operand, even though the result is based on it.
+        // The result type != operand type so we just create a new value.
+        return visitMetatype(N, C);
     }
 
     @Override
     protected CAstNode visitExistentialMetatype(CAstNode N, SILInstructionContext C) {
-        return null;
+        // Similar to value_metatype.
+        return visitValueMetatype(N, C);
     }
 
     @Override
     protected CAstNode visitObjCProtocol(CAstNode N, SILInstructionContext C) {
+        // TODO: No SIL.rst info.
+        Assertions.UNREACHABLE("UNHANDLED INSTRUCTION");
         return null;
     }
 
     @Override
     protected CAstNode visitRetainValue(CAstNode N, SILInstructionContext C) {
+        // NOP
         return null;
     }
 
     @Override
     protected CAstNode visitRetainValueAddr(CAstNode N, SILInstructionContext C) {
+        // NOP
         return null;
     }
 
     @Override
     protected CAstNode visitUnmanagedRetainValue(CAstNode N, SILInstructionContext C) {
+        // NOP
         return null;
     }
 
     @Override
     protected CAstNode visitCopyValue(CAstNode N, SILInstructionContext C) {
+        // Regular copy operation. Implicit for now.
         RawValue operand = getSingleOperand(N);
         RawValue result = getSingleResult(N);
         C.valueTable.copyValue(result.Name, operand.Name);
@@ -1010,33 +1175,37 @@ public class RawAstTranslator extends SILInstructionVisitor<CAstNode, SILInstruc
 
     @Override
     protected CAstNode visitReleaseValue(CAstNode N, SILInstructionContext C) {
+        // TODO: NOP for now since unclear if we should remove from value table.
         return null;
     }
 
     @Override
     protected CAstNode visitReleaseValueAddr(CAstNode N, SILInstructionContext C) {
+        // TODO: NOP for now since unclear if we should remove from value table.
         return null;
     }
 
     @Override
     protected CAstNode visitUnmanagedReleaseValue(CAstNode N, SILInstructionContext C) {
+        // TODO: NOP for now since unclear if we should remove from value table.
         return null;
     }
 
     @Override
     protected CAstNode visitDestroyValue(CAstNode N, SILInstructionContext C) {
-        RawValue operand = getSingleOperand(N);
-        C.valueTable.removeValue(operand.Name);
+        // TODO: NOP for now since unclear if we should remove from value table.
         return null;
     }
 
     @Override
     protected CAstNode visitAutoreleaseValue(CAstNode N, SILInstructionContext C) {
+        // TODO: No SIL.rst documentation.
         return null;
     }
 
     @Override
     protected CAstNode visitTuple(CAstNode N, SILInstructionContext C) {
+        // Creates a tuple. We create a SILTuple to keep track of it.
         RawValue result = getSingleResult(N);
         ArrayList<CAstNode> NodeFields = new ArrayList<>();
         NodeFields.add(Ast.makeNode(CAstNode.NEW, Ast.makeConstant(result.Type)));
@@ -1059,16 +1228,38 @@ public class RawAstTranslator extends SILInstructionVisitor<CAstNode, SILInstruc
 
     @Override
     protected CAstNode visitTupleExtract(CAstNode N, SILInstructionContext C) {
+        // Given a tuple value, extract an element from it based on given index.
+        // Implicit for now.
+        RawValue result = getSingleResult(N);
+        RawValue operand = getSingleOperand(N);
+        int Index = Integer.parseInt(getStringValue(N, 2));
+        SILValue TupleValue = C.valueTable.getValue(operand.Name);
+        // TODO: Does this ever get called on a SILUnitArrayTuple?
+        Assertions.productionAssertion(TupleValue instanceof SILTuple);
+        SILValue ResultValue = ((SILTuple)TupleValue).createField(result.Name, Index);
+        C.valueTable.addValue(ResultValue);
         return null;
     }
 
     @Override
     protected CAstNode visitTupleElementAddr(CAstNode N, SILInstructionContext C) {
+        // Same as tuple_extract except the operand is a pointer to the tuple.
+        RawValue result = getSingleResult(N);
+        RawValue operand = getSingleOperand(N);
+        int Index = Integer.parseInt(getStringValue(N, 2));
+        SILValue TuplePointer = C.valueTable.getValue(operand.Name);
+        // TODO: Does this ever get called on a SILUnitArrayTuple?
+        Assertions.productionAssertion(TuplePointer instanceof SILPointer);
+        SILValue TupleValue = ((SILPointer)TuplePointer).dereference();
+        Assertions.productionAssertion(TupleValue instanceof SILTuple);
+        SILValue ResultValue = ((SILTuple)TupleValue).createField(result.Name, Index);
+        C.valueTable.addValue(ResultValue);
         return null;
     }
 
     @Override
     protected CAstNode visitDestructureTuple(CAstNode N, SILInstructionContext C) {
+        // Split the given tuple value into its constituents.
         RawValue result1 = getResult(N, 0);
         RawValue result2 = getResult(N, 1);
         RawValue operand = getSingleOperand(N);
@@ -1091,6 +1282,8 @@ public class RawAstTranslator extends SILInstructionVisitor<CAstNode, SILInstruc
 
     @Override
     protected CAstNode visitStruct(CAstNode N, SILInstructionContext C) {
+        // Creates a struct. We create a SILStruct to keep track of it.
+        // Unlike a tuple, the struct has field names instead of indexes.
         RawValue result = getSingleResult(N);
         ArrayList<CAstNode> NodeFields = new ArrayList<>();
         NodeFields.add(Ast.makeNode(CAstNode.NEW, Ast.makeConstant(result.Type)));
@@ -1111,6 +1304,7 @@ public class RawAstTranslator extends SILInstructionVisitor<CAstNode, SILInstruc
 
     @Override
     protected CAstNode visitStructExtract(CAstNode N, SILInstructionContext C) {
+        // Extracts an element from the given struct based on the given field name.
         RawValue result = getSingleResult(N);
         String StructName = getStringValue(N, 2);
         String FieldName = getStringValue(N, 3);
@@ -1130,6 +1324,7 @@ public class RawAstTranslator extends SILInstructionVisitor<CAstNode, SILInstruc
 
     @Override
     protected CAstNode visitStructElementAddr(CAstNode N, SILInstructionContext C) {
+        // Same as struct_extract except the operand is a pointer to the struct.
         RawValue result = getSingleResult(N);
         RawValue operand = getSingleOperand(N);
         String StructName = getStringValue(N, 2);
