@@ -46,6 +46,10 @@ public class SILStruct extends SILValue {
         return LiteralNode;
     }
 
+    public int getNumFields() {
+        return fields.size();
+    }
+
     @Override
     public CAstNode getVarNode() {
         return getLiteral();
@@ -72,6 +76,9 @@ public class SILStruct extends SILValue {
 
     public SILField createField(String name, String type, String fieldName) {
         return new SILField(name, type, C, this, fieldName);
+    }
 
+    public SILField createField(String name, String type, int fieldNo) {
+        return new SILField(name, type, C, this, fields.get(fieldNo).fst);
     }
 }

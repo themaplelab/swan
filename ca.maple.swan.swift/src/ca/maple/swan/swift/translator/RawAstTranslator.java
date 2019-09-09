@@ -929,10 +929,11 @@ public class RawAstTranslator extends SILInstructionVisitor<CAstNode, SILInstruc
     @Override
     protected CAstNode visitGlobalAddr(CAstNode N, SILInstructionContext C) {
         // Creates a references to the address of a global var. The result
-        // is a pointer so we can just copy the value.
+        // is a pointer to the global var.
         RawValue result = getSingleResult(N);
         String GlobalName = getStringValue(N, 2);
-        C.valueTable.copyValue(result.Name, GlobalName);
+        SILValue GlobalValue = C.valueTable.getValue(GlobalName);
+        C.valueTable.addValue(GlobalValue.makePointer(result.Name, result.Type));
         return null;
     }
 
@@ -979,8 +980,14 @@ public class RawAstTranslator extends SILInstructionVisitor<CAstNode, SILInstruc
 
     @Override
     protected CAstNode visitClassMethod(CAstNode N, SILInstructionContext C) {
+        /*
         // TODO: Ignoring dynamic dispatch for now.
         Assertions.UNREACHABLE("UNHANDLED INSTRUCTION");
+         */
+        RawValue result = getSingleResult(N);
+        String FuncName = getStringValue(N, 2);
+        SILConstant Constant = new SILConstant(result.Name, result.Type, C, FuncName);
+        C.valueTable.addValue(Constant);
         return null;
     }
 
@@ -1350,18 +1357,15 @@ public class RawAstTranslator extends SILInstructionVisitor<CAstNode, SILInstruc
 
     @Override
     protected CAstNode visitRefElementAddr(CAstNode N, SILInstructionContext C) {
+        // Given a class instance, return the address of the desired field.
         RawValue operand = getSingleOperand(N);
         RawValue result = getSingleResult(N);
         String FieldName = getStringValue(N, 2);
-        SILValue ResultValue = new SILValue(result.Name, result.Type, C);
-        C.valueTable.addValue(ResultValue);
-        CAstNode FieldRef =
-                Ast.makeNode(CAstNode.OBJECT_REF,
-                    C.valueTable.getValue(operand.Name).getVarNode(),
-                    Ast.makeConstant(FieldName));
-        C.parent.setGotoTarget(FieldRef, FieldRef);
-        return Ast.makeNode(CAstNode.ASSIGN,
-                ResultValue.getVarNode(), FieldRef);
+        SILValue OperandValue = C.valueTable.getValue(operand.Name);
+        SILValue FieldValue = new SILField(null, null, C, OperandValue, FieldName);
+        SILPointer ResultPointer = new SILPointer(result.Name, result.Type, C, FieldValue);
+        C.valueTable.addValue(ResultPointer);
+        return null;
     }
 
     @Override
