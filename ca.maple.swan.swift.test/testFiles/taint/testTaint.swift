@@ -3,7 +3,7 @@ func source() -> String {
 }
 
 func sink(sunk: String) {
-    print("security risk!");
+    print(sunk);
 }
 
 let sourced = source();

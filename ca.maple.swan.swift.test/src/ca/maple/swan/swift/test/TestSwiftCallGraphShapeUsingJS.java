@@ -38,8 +38,6 @@ import com.ibm.wala.ipa.callgraph.CallGraph;
 import com.ibm.wala.ipa.callgraph.CallGraphBuilder;
 import com.ibm.wala.ipa.callgraph.impl.Everywhere;
 import com.ibm.wala.ipa.callgraph.propagation.InstanceKey;
-import com.ibm.wala.ipa.cha.ClassHierarchy;
-import com.ibm.wala.ipa.cha.ClassHierarchyException;
 import com.ibm.wala.ipa.cha.IClassHierarchy;
 import com.ibm.wala.ipa.slicer.SDG;
 import com.ibm.wala.ipa.slicer.Slicer;
@@ -49,7 +47,6 @@ import com.ibm.wala.ssa.SSAOptions;
 import com.ibm.wala.types.MethodReference;
 import com.ibm.wala.types.TypeName;
 import com.ibm.wala.types.TypeReference;
-import com.ibm.wala.util.CancelException;
 import com.ibm.wala.util.NullProgressMonitor;
 import com.ibm.wala.util.collections.HashSetFactory;
 import com.ibm.wala.util.strings.Atom;
@@ -57,6 +54,7 @@ import com.ibm.wala.util.strings.Atom;
 /*
  * This class currently serves as a testing bed (entry-point) for SWAN.
  */
+
 public class TestSwiftCallGraphShapeUsingJS extends TestCallGraphShape {
 
     private static final SSAOptions options = new SSAOptions();
@@ -86,14 +84,14 @@ public class TestSwiftCallGraphShapeUsingJS extends TestCallGraphShape {
         }
     }
 
-    protected JavaScriptAnalysisEngine createEngine() throws ClassHierarchyException, IllegalArgumentException, CancelException, IOException {
+    protected JavaScriptAnalysisEngine createEngine() throws IllegalArgumentException {
         JavaScriptAnalysisEngine engine = new SwiftAnalysisEngine.SwiftPropagationJavaScriptAnalysisEngine();
         engine.setTranslatorFactory(new SwiftToCAstTranslatorFactory());
         return engine;
 
     }
 
-    protected JavaScriptAnalysisEngine makeEngine(JavaScriptAnalysisEngine engine, String... name) throws ClassHierarchyException, IllegalArgumentException, CancelException, IOException {
+    protected JavaScriptAnalysisEngine makeEngine(JavaScriptAnalysisEngine engine, String... name) throws IllegalArgumentException, IOException {
         Set<Module> modules = HashSetFactory.make();
         for(String n : name) {
             modules.add(getScript(n));
@@ -103,7 +101,7 @@ public class TestSwiftCallGraphShapeUsingJS extends TestCallGraphShape {
         return engine;
     }
 
-    protected JavaScriptAnalysisEngine makeEngine(String... name) throws ClassHierarchyException, IllegalArgumentException, CancelException, IOException {
+    protected JavaScriptAnalysisEngine makeEngine(String... name) throws IllegalArgumentException, IOException {
         return makeEngine(createEngine(), name);
     }
 
@@ -115,6 +113,7 @@ public class TestSwiftCallGraphShapeUsingJS extends TestCallGraphShape {
                 System.out.println("<METHOD>"+m+"</METHOD");
                 System.out.println("<# ARGUMENTS>"+m.getNumberOfParameters()+"</# ARGUMENTS>");
                 // TODO: This prints the CFG, we should just print the IR instructions here.
+                //noinspection unchecked
                 System.out.println(irFactory.makeIR(m, Everywhere.EVERYWHERE, options));
             }
         }
@@ -131,7 +130,7 @@ public class TestSwiftCallGraphShapeUsingJS extends TestCallGraphShape {
         System.out.println("*** ...FINISHED DUMPING CG ***");
     }
 
-    public static void main(String[] args) throws ClassHierarchyException, IllegalArgumentException, CancelException, IOException {
+    public static void main(String[] args) throws IllegalArgumentException {
 
         TestSwiftCallGraphShapeUsingJS driver = new TestSwiftCallGraphShapeUsingJS();
 
@@ -144,7 +143,7 @@ public class TestSwiftCallGraphShapeUsingJS extends TestCallGraphShape {
             dumpCHA(CG.getClassHierarchy());
             // dumpCG(CG);
 
-            SDG<InstanceKey> sdg = new SDG<InstanceKey>(CG, builder.getPointerAnalysis(), new JavaScriptModRef<InstanceKey>(), Slicer.DataDependenceOptions.NO_BASE_NO_HEAP_NO_EXCEPTIONS, Slicer.ControlDependenceOptions.NONE);
+            @SuppressWarnings("unchecked") SDG<InstanceKey> sdg = new SDG<InstanceKey>(CG, builder.getPointerAnalysis(), new JavaScriptModRef<>(), Slicer.DataDependenceOptions.NO_BASE_NO_HEAP_NO_EXCEPTIONS, Slicer.ControlDependenceOptions.NONE);
             Set<List<Statement>> paths = TaintAnalysis.getPaths(sdg, TaintAnalysis.swiftSources, TaintAnalysis.swiftSinks);
 
             if (paths.size() > 0) {

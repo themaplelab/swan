@@ -90,9 +90,9 @@ void SILWalaInstructionVisitor::visitSILFunction(SILFunction *F) {
     SourceLoc srcStart = srcRange.Start;
     SourceLoc srcEnd = srcRange.End;
     if (!srcStart.isValid()) {
-      llvm::errs() << "Source start invalid for " << currentEntity->functionName;
+      llvm::outs() << "Source start invalid for " << currentEntity->functionName;
     } else if (!srcEnd.isValid()) {
-      llvm::errs() << "Source end invalid for " << currentEntity->functionName;
+      llvm::outs() << "Source end invalid for " << currentEntity->functionName;
     } else {
       auto startLineCol = srcMgr.getLineAndColumn(srcStart);
       fl = startLineCol.first;
@@ -203,9 +203,9 @@ void SILWalaInstructionVisitor::beforeVisit(SILInstruction *I) {
     vals.push_back(op.get());
   }
   instrInfo->ops = llvm::ArrayRef<SILValue>(vals);
-  perInstruction();
 
   if (Print) {
+    if (printSource) { perInstruction(); }
     llvm::outs() << "<< " << getSILInstructionName(I->getKind()) << " >>\n";
   }
 }
@@ -249,64 +249,63 @@ void SILWalaInstructionVisitor::updateInstrSourceInfo(SILInstruction *I) {
 }
 
 void SILWalaInstructionVisitor::perInstruction() {
-  if (Print) {
-    llvm::outs() << "\t [INSTR] #" << instrInfo->num;
-    llvm::outs() << ", [OPNUM] " << instrInfo->id << "\n";
-    llvm::outs() << "\t --> File: " << instrInfo->Filename << "\n";
+  llvm::outs() << "\t [INSTR] #" << instrInfo->num;
+  llvm::outs() << ", [OPNUM] " << instrInfo->id << "\n";
+  llvm::outs() << "\t --> File: " << instrInfo->Filename << "\n";
 
-    if (instrInfo->srcType == sourceType::INVALID) {
-      llvm::outs() << "\t **** No source information. \n";
-    } else { // Has at least start information.
-      llvm::outs() << "\t ++++ Start - Line " << instrInfo->startLine << ":"
-                   << instrInfo->startCol << "\n";
-    }
-    // Has end information.
-    if (instrInfo->srcType == sourceType::FULL) {
-      llvm::outs() << "\t ---- End - Line " << instrInfo->endLine;
-      llvm::outs() << ":" << instrInfo->endCol << "\n";
-    }
-
-    // Memory Behavior.
-    switch (instrInfo->memBehavior) {
-      case SILInstruction::MemoryBehavior::None: {
-        break;
-      }
-      case SILInstruction::MemoryBehavior::MayRead: {
-        llvm::outs() << "\t\t +++ [MEM-R]: May read from memory. \n";
-        break;
-      }
-      case SILInstruction::MemoryBehavior::MayWrite: {
-        llvm::outs() << "\t\t +++ [MEM-W]: May write to memory. \n";
-        break;
-      }
-      case SILInstruction::MemoryBehavior::MayReadWrite: {
-        llvm::outs() << "\t\t +++ [MEM-RW]: May read or write memory. \n";
-        break;
-      }
-      case SILInstruction::MemoryBehavior::MayHaveSideEffects: {
-        llvm::outs() << "\t\t +++ [MEM-F]: May have side effects. \n";
-      }
-    }
-
-    // Releasing Behavior.
-    switch (instrInfo->relBehavior) {
-      case SILInstruction::ReleasingBehavior::DoesNotRelease: {
-        llvm::outs() << "\t\t [REL]: Does not release memory. \n";
-        break;
-      }
-      case SILInstruction::ReleasingBehavior::MayRelease: {
-        llvm::outs() << "\t\t [REL]: May release memory. \n";
-        break;
-      }
-    }
-
-    // Show operands, if they exist.
-    for (SILValue op : instrInfo->ops) {
-      llvm::outs() << "\t\t [OPER]: " << op;
-    }
-
-    llvm::outs() << "\n";
+  if (instrInfo->srcType == sourceType::INVALID) {
+    llvm::outs() << "\t **** No source information. \n";
+  } else { // Has at least start information.
+    llvm::outs() << "\t ++++ Start - Line " << instrInfo->startLine << ":"
+                 << instrInfo->startCol << "\n";
   }
+  // Has end information.
+  if (instrInfo->srcType == sourceType::FULL) {
+    llvm::outs() << "\t ---- End - Line " << instrInfo->endLine;
+    llvm::outs() << ":" << instrInfo->endCol << "\n";
+  }
+
+  // Memory Behavior.
+  switch (instrInfo->memBehavior) {
+    case SILInstruction::MemoryBehavior::None: {
+      break;
+    }
+    case SILInstruction::MemoryBehavior::MayRead: {
+      llvm::outs() << "\t\t +++ [MEM-R]: May read from memory. \n";
+      break;
+    }
+    case SILInstruction::MemoryBehavior::MayWrite: {
+      llvm::outs() << "\t\t +++ [MEM-W]: May write to memory. \n";
+      break;
+    }
+    case SILInstruction::MemoryBehavior::MayReadWrite: {
+      llvm::outs() << "\t\t +++ [MEM-RW]: May read or write memory. \n";
+      break;
+    }
+    case SILInstruction::MemoryBehavior::MayHaveSideEffects: {
+      llvm::outs() << "\t\t +++ [MEM-F]: May have side effects. \n";
+    }
+  }
+
+  // Releasing Behavior.
+  switch (instrInfo->relBehavior) {
+    case SILInstruction::ReleasingBehavior::DoesNotRelease: {
+      llvm::outs() << "\t\t [REL]: Does not release memory. \n";
+      break;
+    }
+    case SILInstruction::ReleasingBehavior::MayRelease: {
+      llvm::outs() << "\t\t [REL]: May release memory. \n";
+      break;
+    }
+  }
+
+  // Show operands, if they exist.
+  for (SILValue op : instrInfo->ops) {
+    llvm::outs() << "\t\t [OPER]: " << op;
+  }
+
+  llvm::outs() << "\n";
+
 }
 
 jobject SILWalaInstructionVisitor::findAndRemoveCAstNode(void *Key) {
@@ -333,7 +332,7 @@ jobject SILWalaInstructionVisitor::findAndRemoveCAstNode(void *Key) {
       NodeList.erase(it);
     }
   } else {
-    llvm::errs() << "ERROR: Returning nullptr from findAndRemoveCAstNode. Key: " << Key << " Exiting...\n";
+    llvm::outs() << "ERROR: Returning nullptr from findAndRemoveCAstNode. Key: " << Key << " Exiting...\n";
     exit(1);
   }
   return node;
@@ -383,7 +382,7 @@ jobject SILWalaInstructionVisitor::getOperatorCAstType(Identifier Name) {
   } else if (Name.is("^")) {
     return CAstWrapper::OP_BIT_XOR;
   } else {
-    llvm::errs() << "ERROR: Unhandled operator detected! \n";
+    llvm::outs() << "ERROR: Unhandled operator: " << Name << " detected! \n";
     return nullptr;
   }
 }
@@ -393,8 +392,8 @@ jobject SILWalaInstructionVisitor::visitApplySite(ApplySite Apply) {
   auto *Callee = Apply.getReferencedFunctionOrNull();
 
   if (!Callee) {
-    llvm::errs() << "ERROR: Apply site's Callee is empty! \n";
-    return Instance->CAst->makeNode(CAstWrapper::EMPTY);
+    llvm::outs() << "\t Apply site's Callee is empty! \n";
+    return Node;
   }
 
   auto *FD = Callee->getLocation().getAsASTNode<FuncDecl>();
@@ -406,11 +405,13 @@ jobject SILWalaInstructionVisitor::visitApplySite(ApplySite Apply) {
       llvm::outs() << "\t [ARG] #" << I << ": " << V;
       llvm::outs() << "\t [ADDR] #" << I << ": " << V.getOpaqueValue() << "\n";
     }
+    /*
     auto result = Apply.getInstruction()->getResult(0);
     if (result) {
       llvm::outs() << "\t [RESULT]: " << result.getOpaqueValue() << "\n";
       llvm::outs() << "\t [RESULT TYPE]: " << result->getType().getAsString() << "\n";
     }
+    */
   }
 
   // Handle if the function is an operator function (representing a built in operator).
@@ -519,8 +520,7 @@ jobject SILWalaInstructionVisitor::visitAllocRefInst(AllocRefInst *ARI) {
 
   ArrayRef<SILType> Types = ARI->getTailAllocatedTypes();
   ArrayRef<Operand> Counts = ARI->getTailAllocatedCounts();
-
-  for (unsigned Idx = 0, NumTypes = Types.size(); Idx < NumTypes; ++Idx) {
+  for (unsigned Idx = 0; Idx < Types.size(); ++Idx) {
     SILValue OperandValue = Counts[Idx].get();
     std::string OperandTypeName = Types[Idx].getAsString();
 
@@ -798,7 +798,7 @@ jobject SILWalaInstructionVisitor::visitLoadBorrowInst(LoadBorrowInst *LBI) {
     NodeMap.insert(std::make_pair(static_cast<ValueBase *>(LBI), Var));
     return Node;
   } else {
-    llvm::errs() << "ERROR: (visitLoadBorrowInst) Instruction has no result!" << "\n";
+    llvm::outs() << "ERROR: (visitLoadBorrowInst) Instruction has no result!" << "\n";
     NodeMap.insert(std::make_pair(static_cast<ValueBase *>(LBI), operandNode));
     return operandNode;
   }
@@ -908,7 +908,7 @@ jobject SILWalaInstructionVisitor::visitCopyAddrInst(CopyAddrInst *CAI) {
 
 jobject SILWalaInstructionVisitor::visitDestroyAddrInst(DestroyAddrInst *DAI) {
 
-    SILValue DestroyAddr = DAI->getOperand();
+  SILValue DestroyAddr = DAI->getOperand();
 
   if (Print) {
       llvm::outs() << "\t [ADDR TO DESTROY]: " << DestroyAddr.getOpaqueValue() << "\n";
@@ -942,7 +942,7 @@ jobject SILWalaInstructionVisitor::visitIndexAddrInst(IndexAddrInst *IAI) {
     NodeMap.insert(std::make_pair(static_cast<ValueBase *>(IAI), Var));
     return Node;
   } else {
-    llvm::errs() << "ERROR: (visitIndexAddrInst) Instruction has no result!" << "\n";
+    llvm::outs() << "ERROR: (visitIndexAddrInst) Instruction has no result!" << "\n";
     NodeMap.insert(std::make_pair(static_cast<ValueBase *>(IAI), ArrayRefNode));
     return ArrayRefNode;
   }
@@ -972,7 +972,7 @@ jobject SILWalaInstructionVisitor::visitTailAddrInst(TailAddrInst *TAI) {
     NodeMap.insert(std::make_pair(static_cast<ValueBase *>(TAI), Var));
     return Node;
   } else {
-    llvm::errs() << "ERROR: (visitIndexAddrInst) Instruction has no result!" << "\n";
+    llvm::outs() << "ERROR: (visitIndexAddrInst) Instruction has no result!" << "\n";
     NodeMap.insert(std::make_pair(static_cast<ValueBase *>(TAI), ArrayRefNode));
     return ArrayRefNode;
   }
@@ -1245,7 +1245,7 @@ jobject SILWalaInstructionVisitor::visitClassMethodInst(ClassMethodInst *CMI) {
     NodeMap.insert(std::make_pair(static_cast<ValueBase *>(CMI), Var));
     return Node;
   } else {
-    llvm::errs() << "ERROR: (visitClassMethodInst) Instruction has no result!" << "\n";
+    llvm::outs() << "ERROR: (visitClassMethodInst) Instruction has no result!" << "\n";
     NodeMap.insert(std::make_pair(static_cast<ValueBase *>(CMI), ClassMethodRefNode));
     return ClassMethodRefNode;
   }
@@ -1277,7 +1277,7 @@ jobject SILWalaInstructionVisitor::visitObjCMethodInst(ObjCMethodInst *AMI) {
     NodeMap.insert(std::make_pair(static_cast<ValueBase *>(AMI), Var));
     return Node;
   } else {
-    llvm::errs() << "ERROR: (visitObjCMethodInst) Instruction has no result!" << "\n";
+    llvm::outs() << "ERROR: (visitObjCMethodInst) Instruction has no result!" << "\n";
     NodeMap.insert(std::make_pair(static_cast<ValueBase *>(AMI), ObjCMethodRefNode));
     return ObjCMethodRefNode;
   }
@@ -1311,7 +1311,7 @@ jobject SILWalaInstructionVisitor::visitSuperMethodInst(SuperMethodInst *SMI) {
     NodeMap.insert(std::make_pair(static_cast<ValueBase *>(SMI), Var));
     return Node;
   } else {
-    llvm::errs() << "ERROR: (visitSuperMethodInst) Instruction has no result!" << "\n";
+    llvm::outs() << "ERROR: (visitSuperMethodInst) Instruction has no result!" << "\n";
     NodeMap.insert(std::make_pair(static_cast<ValueBase *>(SMI), SuperMethodRefNode));
     return SuperMethodRefNode;
   }
@@ -1345,7 +1345,7 @@ jobject SILWalaInstructionVisitor::visitWitnessMethodInst(WitnessMethodInst *WMI
     NodeMap.insert(std::make_pair(static_cast<ValueBase *>(WMI), Var));
     return Node;
   } else {
-    llvm::errs() << "ERROR: (visitWitnessMethodInst) Instruction has no result!" << "\n";
+    llvm::outs() << "ERROR: (visitWitnessMethodInst) Instruction has no result!" << "\n";
     NodeMap.insert(std::make_pair(static_cast<ValueBase *>(WMI), WitnessMethodRefNode));
     return WitnessMethodRefNode;
   }
@@ -1365,7 +1365,7 @@ jobject SILWalaInstructionVisitor::visitApplyInst(ApplyInst *AI) {
       NodeMap.insert(std::make_pair(static_cast<ValueBase *>(AI), Node));
       return Node;
     } else {
-      llvm::errs() << "ERROR: (visitApplyInst) Instruction has no result!" << "\n";
+      llvm::outs() << "ERROR: (visitApplyInst) Instruction has no result!" << "\n";
       NodeMap.insert(std::make_pair(static_cast<ValueBase *>(AI), ApplyNode));
       return ApplyNode;
     }
@@ -1542,7 +1542,7 @@ jobject SILWalaInstructionVisitor::visitTupleInst(TupleInst *TI) {
     NodeMap.insert(std::make_pair(static_cast<ValueBase *>(TI), Var));
     return Node;
   } else {
-    llvm::errs() << "ERROR: (visitTupleInst) Instruction has no result!" << "\n";
+    llvm::outs() << "ERROR: (visitTupleInst) Instruction has no result!" << "\n";
     NodeMap.insert(std::make_pair(static_cast<ValueBase *>(TI), VisitTupleNode));
     return VisitTupleNode;
   }
@@ -1591,7 +1591,7 @@ jobject SILWalaInstructionVisitor::visitTupleExtractInst(TupleExtractInst *TEI) 
     NodeMap.insert(std::make_pair(static_cast<ValueBase *>(TEI), Var));
     return Node;
   } else {
-    llvm::errs() << "ERROR: (visitTupleExtractInst) Instruction has no result!" << "\n";
+    llvm::outs() << "ERROR: (visitTupleExtractInst) Instruction has no result!" << "\n";
     NodeMap.insert(std::make_pair(static_cast<ValueBase *>(TEI), TupleExtractNode));
     return TupleExtractNode;
   }
@@ -1636,7 +1636,7 @@ jobject SILWalaInstructionVisitor::visitStructInst(StructInst *SI) {
     NodeMap.insert(std::make_pair(static_cast<ValueBase *>(SI), Var));
     return Node;
   } else {
-    llvm::errs() << "ERROR: (visitStructInst) Instruction has no result!" << "\n";
+    llvm::outs() << "ERROR: (visitStructInst) Instruction has no result!" << "\n";
     NodeMap.insert(std::make_pair(static_cast<ValueBase *>(SI), VisitStructNode));
     return VisitStructNode;
   }
@@ -1681,7 +1681,7 @@ jobject SILWalaInstructionVisitor::visitStructExtractInst(StructExtractInst *SEI
     NodeMap.insert(std::make_pair(static_cast<ValueBase *>(SEI), Var));
     return Node;
   } else {
-    llvm::errs() << "ERROR: (visitStructExtractInst) Instruction has no result!" << "\n";
+    llvm::outs() << "ERROR: (visitStructExtractInst) Instruction has no result!" << "\n";
     NodeMap.insert(std::make_pair(static_cast<ValueBase *>(SEI), StructExtractNode));
     return StructExtractNode;
   }
@@ -1726,7 +1726,7 @@ jobject SILWalaInstructionVisitor::visitTupleElementAddrInst(TupleElementAddrIns
     NodeMap.insert(std::make_pair(static_cast<ValueBase *>(TEAI), Var));
     return Node;
   } else {
-    llvm::errs() << "ERROR: (visitTupleElementAddrInst) Instruction has no result!" << "\n";
+    llvm::outs() << "ERROR: (visitTupleElementAddrInst) Instruction has no result!" << "\n";
     NodeMap.insert(std::make_pair(static_cast<ValueBase *>(TEAI), TupleElementAddrNode));
     return TupleElementAddrNode;
   }
@@ -1771,7 +1771,7 @@ jobject SILWalaInstructionVisitor::visitStructElementAddrInst(StructElementAddrI
     NodeMap.insert(std::make_pair(static_cast<ValueBase *>(SEAI), Var));
     return Node;
   } else {
-    llvm::errs() << "ERROR: (visitStructElementAddrInst) Instruction has no result!" << "\n";
+    llvm::outs() << "ERROR: (visitStructElementAddrInst) Instruction has no result!" << "\n";
     NodeMap.insert(std::make_pair(static_cast<ValueBase *>(SEAI), StructElementAddrNode));
     return StructElementAddrNode;
   }
@@ -1847,7 +1847,7 @@ jobject SILWalaInstructionVisitor::visitRefElementAddrInst(RefElementAddrInst *R
     NodeMap.insert(std::make_pair(static_cast<ValueBase *>(REAI), Var));
     return Node;
   } else {
-    llvm::errs() << "ERROR: (visitRefElementAddrInst) Instruction has no result!" << "\n";
+    llvm::outs() << "ERROR: (visitRefElementAddrInst) Instruction has no result!" << "\n";
     NodeMap.insert(std::make_pair(static_cast<ValueBase *>(REAI), RefElementAddrNode));
     return RefElementAddrNode;
   }
@@ -1881,7 +1881,7 @@ jobject SILWalaInstructionVisitor::visitRefTailAddrInst(RefTailAddrInst *RTAI) {
     NodeMap.insert(std::make_pair(static_cast<ValueBase *>(RTAI), Var));
     return Node;
   } else {
-    llvm::errs() << "ERROR: (visitRefTailAddrInst) Instruction has no result!" << "\n";
+    llvm::outs() << "ERROR: (visitRefTailAddrInst) Instruction has no result!" << "\n";
     NodeMap.insert(std::make_pair(static_cast<ValueBase *>(RTAI), RefTailAddrNode));
     return RefTailAddrNode;
   }
@@ -1934,7 +1934,7 @@ jobject SILWalaInstructionVisitor::visitEnumInst(EnumInst *EI) {
     NodeMap.insert(std::make_pair(static_cast<ValueBase *>(EI), Var));
     return Node;
   } else {
-    llvm::errs() << "ERROR: (visitEnumInst) Instruction has no result!" << "\n";
+    llvm::outs() << "ERROR: (visitEnumInst) Instruction has no result!" << "\n";
     NodeMap.insert(std::make_pair(static_cast<ValueBase *>(EI), VisitEnumNode));
     return VisitEnumNode;
   }
@@ -2006,7 +2006,7 @@ jobject SILWalaInstructionVisitor::visitInitEnumDataAddrInst(InitEnumDataAddrIns
     NodeMap.insert(std::make_pair(static_cast<ValueBase *>(UDAI), Var));
     return Node;
   } else {
-    llvm::errs() << "ERROR: (visitInitEnumDataAddrInst) Instruction has no result!" << "\n";
+    llvm::outs() << "ERROR: (visitInitEnumDataAddrInst) Instruction has no result!" << "\n";
     NodeMap.insert(std::make_pair(static_cast<ValueBase *>(UDAI), InitEnumNode));
     return InitEnumNode;
   }
@@ -2043,7 +2043,7 @@ jobject SILWalaInstructionVisitor::visitUncheckedTakeEnumDataAddrInst(UncheckedT
     NodeMap.insert(std::make_pair(static_cast<ValueBase *>(UDAI), Var));
     return Node;
   } else {
-    llvm::errs() << "ERROR: (visitUncheckedTakeEnumDataAddrInst) Instruction has no result!" << "\n";
+    llvm::outs() << "ERROR: (visitUncheckedTakeEnumDataAddrInst) Instruction has no result!" << "\n";
     NodeMap.insert(std::make_pair(static_cast<ValueBase *>(UDAI), ReferenceNode));
     return ReferenceNode;
   }
@@ -2659,6 +2659,29 @@ jobject SILWalaInstructionVisitor::visitObjCToThickMetatypeInst(ObjCToThickMetat
   return CastedNode;
 }
 
+jobject SILWalaInstructionVisitor::visitConvertEscapeToNoEscapeInst(ConvertEscapeToNoEscapeInst *CVT) {
+  // Here, a simple ASSIGN is sufficient.
+  if (Print) {
+    llvm::outs() << "\t [SOURCE]: " << CVT->getOperand().getOpaqueValue() << "\n";
+    llvm::outs() << "\t [DEST]: " << static_cast<ValueBase *>(CVT) << "\n";
+  }
+  jobject Src = findAndRemoveCAstNode(CVT->getOperand().getOpaqueValue());
+
+  SymbolTable.insert(static_cast<ValueBase *>(CVT), CVT->getType().getAsString());
+
+  jobject declNode = Instance->CAst->makeNode(CAstWrapper::DECL_STMT,
+                                              Instance->CAst->makeConstant(SymbolTable.get(static_cast<ValueBase *>(CVT)).c_str()),
+                                              Instance->CAst->makeConstant("UNKNOWN"));
+  NodeList.push_back(declNode);
+  currentEntity->declNodes.push_back(declNode);
+
+  jobject Dest = findAndRemoveCAstNode(static_cast<ValueBase *>(CVT));
+
+  jobject Node = Instance->CAst->makeNode(CAstWrapper::ASSIGN, Dest, Src);
+  NodeMap.insert(std::make_pair(static_cast<ValueBase *>(CVT), Src));
+  return Node;
+}
+
 /*******************************************************************************/
 /*                   CHECKED CONVERSIONS                                       */
 /*******************************************************************************/
@@ -2848,7 +2871,7 @@ jobject SILWalaInstructionVisitor::visitBranchInst(BranchInst *BI) {
     if (argTypeIt != currentEntity->variableTypes.end()) {
         currentEntity->variableTypes.insert({var, argTypeIt->second});
     } else {
-        llvm::errs() << "ERROR: Could not find type for basic block argument SRC!\n";
+        llvm::outs() << "ERROR: Could not find type for basic block argument SRC!\n";
     }
     jobject assign = Instance->CAst->makeNode(CAstWrapper::ASSIGN, var, Node);
     NodeList.push_back(assign);
@@ -3006,12 +3029,37 @@ jobject SILWalaInstructionVisitor::visitSwitchEnumInst(SwitchEnumInst *SWI) {
       for (auto &Instr : *CaseBasicBlock) {
         llvm::outs() << "\t [INST" << I++ << "]: " << &Instr << "\n";
       }
+
+    }
+
+    for (unsigned Idx = 0; Idx < CaseBasicBlock->getNumArguments(); Idx++) {
+      SymbolTable.insert(CaseBasicBlock->getArgument(Idx), Cond->getType().getAsString(), ("argument" + std::to_string(Idx)));
+      jobject varName = Instance->CAst->makeConstant(SymbolTable.get(CaseBasicBlock->getArgument(Idx)).c_str());
+
+      jobject declNode = Instance->CAst->makeNode(CAstWrapper::DECL_STMT,
+                                                  Instance->CAst->makeConstant(SymbolTable.get(CaseBasicBlock->getArgument(Idx)).c_str()),
+                                                  Instance->CAst->makeConstant("UNKNOWN"));
+      NodeList.push_back(declNode);
+      currentEntity->declNodes.push_back(declNode);
+      jobject var = Instance->CAst->makeNode(CAstWrapper::VAR, varName);
+      currentEntity->variableTypes.insert({var, SymbolTable.getType(CaseBasicBlock->getArgument(Idx))});
+      auto argTypeIt = currentEntity->variableTypes.find(CondNode);
+      if (argTypeIt != currentEntity->variableTypes.end()) {
+        currentEntity->variableTypes.insert({var, argTypeIt->second});
+      } else {
+        llvm::outs() << "ERROR: Could not find type for basic block argument SRC!\n";
+      }
+      // Here, CondNode enum itself is used (not its value) as a parameter. This doesn't make sense type-wise,
+      // but it is good enough for data flow analysis.
+      jobject assign = Instance->CAst->makeNode(CAstWrapper::ASSIGN, var, CondNode);
+      NodeList.push_back(assign);
     }
 
     auto GotoCaseNode = Instance->CAst->makeNode(CAstWrapper::GOTO, LabelNode);
     Children.push_back(GotoCaseNode);
     currentEntity->cfNodes.push_back(GotoCaseNode);
   }
+
 
   auto SwitchCasesNode = Instance->CAst->makeNode(CAstWrapper::BLOCK_STMT,  Instance->CAst->makeArray(&Children));
   auto SwitchNode = Instance->CAst->makeNode(CAstWrapper::SWITCH, CondNode, SwitchCasesNode);

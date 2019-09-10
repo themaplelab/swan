@@ -13,7 +13,7 @@
 
 package ca.maple.swan.swift.tree;
 
-import ca.maple.swan.swift.types.AnyCAstType;
+import ca.maple.swan.swift.translator.types.SILTypes;
 import com.ibm.wala.cast.tree.CAstType;
 
 import java.util.ArrayList;
@@ -23,17 +23,22 @@ import java.util.List;
 /*
  * This class is the CAstType that FunctionEntities are of.
  */
+
 public class SwiftFunctionType implements CAstType.Function {
 
-    SwiftFunctionType(String returnType, ArrayList<String> argumentTypes) {
-        this.cAstType = new AnyCAstType();
-        for (String argumentType : argumentTypes) {
-            argumentCAstTypes.add(new AnyCAstType());
-        }
-    }
+    // This is a temporary solution to JS not supported types other
+    // than "Any". So we save the real types.
+    public final ArrayList<String> realTypes;
+    private final CAstType cAstType;
+    private final ArrayList<CAstType> argumentCAstTypes = new ArrayList<>();
 
-    private CAstType cAstType;
-    private ArrayList<CAstType> argumentCAstTypes = new ArrayList<>();
+    SwiftFunctionType(String returnType, ArrayList<String> argumentTypes) {
+        this.cAstType = SILTypes.getType(returnType);
+        for (String argumentType : argumentTypes) {
+            argumentCAstTypes.add(SILTypes.getType(argumentType));
+        }
+        this.realTypes = argumentTypes;
+    }
 
     @Override
     public CAstType getReturnType() {

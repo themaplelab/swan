@@ -1,4 +1,4 @@
-//===--- BasicBlockLabeller.cpp - Returns ID of SIL basic block ----------===//
+//===--- SILType.java ----------------------------------------------------===//
 //
 // This source file is part of the SWAN open source project
 //
@@ -10,16 +10,32 @@
 // http://www.eclipse.org/legal/epl-v20.html
 //
 //===---------------------------------------------------------------------===//
-///
-/// This file contains the implementation of the method that returns the ID
-/// of a given SIL basic block. It is used by SILWalaInstructionVisitor.
-///
-//===---------------------------------------------------------------------===//
 
-#include "BasicBlockLabeller.h"
+package ca.maple.swan.swift.translator.types;
 
-using namespace swan;
+import com.ibm.wala.cast.tree.CAstType;
 
-string BasicBlockLabeller::label(swift::SILBasicBlock* basicBlock) {
-  return (string("BLOCK #") + std::to_string(basicBlock->getDebugID()));
+import java.util.Collection;
+
+/*
+ * Represents a type in SIL.
+ */
+
+public class SILType implements CAstType {
+
+    private final String Name;
+
+    SILType(String name) {
+        this.Name = name;
+    }
+
+    @Override
+    public String getName() {
+        return Name;
+    }
+
+    @Override
+    public Collection<CAstType> getSupertypes() {
+        return null;
+    }
 }
