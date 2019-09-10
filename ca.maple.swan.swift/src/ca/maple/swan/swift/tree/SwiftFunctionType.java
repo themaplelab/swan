@@ -14,7 +14,6 @@
 package ca.maple.swan.swift.tree;
 
 import ca.maple.swan.swift.translator.types.SILTypes;
-import ca.maple.swan.swift.types.AnyCAstType;
 import com.ibm.wala.cast.tree.CAstType;
 
 import java.util.ArrayList;
