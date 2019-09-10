@@ -64,6 +64,9 @@ private:
   /// Decides whether to print the translation debug info to terminal at runtime.
   bool Print;
 
+  /// Source information can be annoying/unnecessary for debugging, so there is an option to disable it.
+  bool printSource = false;
+
   /// Current 'Cast Entity' being worked on.
   std::unique_ptr<CAstEntityInfo> currentEntity;
 
@@ -278,7 +281,7 @@ public:
   jobject visitObjCToThickMetatypeInst(ObjCToThickMetatypeInst *OTTMI);
   jobject visitConvertEscapeToNoEscapeInst(ConvertEscapeToNoEscapeInst *CVT);
 
-  /*******************************************************************************/
+    /*******************************************************************************/
   /*                          Checked Conversions                                */
   /*******************************************************************************/
 

@@ -2,10 +2,8 @@ precondition(WALA_DIR)
 
 add_library(swiftWala SHARED
         WALAInstance.cpp
-        SymbolTable.cpp
-        BasicBlockLabeller.cpp
         SwiftToCAstTranslatorJNIWrapper.cpp
-        SILWalaInstructionVisitor.cpp)
+        InstructionVisitor.cpp )
 
 install(TARGETS swiftWala DESTINATION lib)
 

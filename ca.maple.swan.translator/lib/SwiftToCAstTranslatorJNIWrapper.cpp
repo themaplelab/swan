@@ -29,5 +29,5 @@ Java_ca_maple_swan_swift_translator_SwiftToCAstTranslator_translateToCAstNodes(J
 {
     WALAInstance Instance(env, obj);
     Instance.analyze();
-    return Instance.getCAstEntityInfo();
+    return Instance.getRoot();
 }

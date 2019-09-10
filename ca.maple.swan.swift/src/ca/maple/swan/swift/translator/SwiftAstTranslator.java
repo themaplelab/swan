@@ -23,9 +23,14 @@ import com.ibm.wala.types.TypeName;
 import com.ibm.wala.types.TypeReference;
 
 /*
- * Currently, we use this class to overwrite the doMaterializeFunction so that we don't use the "construct" instruction
- * the JSAstTranslator uses. Instead we use the "new" instruction.
+ * Currently, we use this class to overwrite the doMaterializeFunction so that
+ * we don't use the "construct" instruction the JSAstTranslator uses.
+ * Instead we use the "new" instruction.
+ *
+ * Most likely this class will be extended as problematic limitations or
+ * implications of the JS translator for Swift translation are discovered.
  */
+
 public class SwiftAstTranslator extends JSAstTranslator {
     public SwiftAstTranslator(JavaScriptLoader loader) {
         super(loader);
