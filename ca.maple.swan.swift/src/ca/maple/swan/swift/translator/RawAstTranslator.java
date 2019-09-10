@@ -166,6 +166,8 @@ import java.util.HashMap;
 
     TODO:
 
+        - Need a way of casting. e.g. x <-- y where x.type != y.type
+
         - Function refs to inlined functions that are never called
           are problematic because WALA will try to find a CAstEntity
           (call site) for that function expression.
@@ -1347,11 +1349,22 @@ public class RawAstTranslator extends SILInstructionVisitor<CAstNode, SILInstruc
 
     @Override
     protected CAstNode visitDestructureStruct(CAstNode N, SILInstructionContext C) {
+        // Split the given struct value into its constituents.
+        RawValue operand = getSingleOperand(N);
+        SILValue OperandValue = C.valueTable.getValue(operand.Name);
+        Assertions.productionAssertion(OperandValue instanceof SILStruct);
+        for (int i = 0; i < ((SILStruct)OperandValue).getNumFields(); ++i) {
+            RawValue result = getResult(N, i);
+            SILField field = ((SILStruct) OperandValue).createField(result.Name, result.Type, i);
+            C.valueTable.addValue(field);
+        }
         return null;
     }
 
     @Override
     protected CAstNode visitObject(CAstNode N, SILInstructionContext C) {
+        // TODO: Where is this object stored to?
+        Assertions.UNREACHABLE("UNHANDLED INSTRUCTION");
         return null;
     }
 
@@ -1370,60 +1383,91 @@ public class RawAstTranslator extends SILInstructionVisitor<CAstNode, SILInstruc
 
     @Override
     protected CAstNode visitRefTailAddr(CAstNode N, SILInstructionContext C) {
+        // TODO:
+        Assertions.UNREACHABLE("UNHANDLED INSTRUCTION");
         return null;
     }
 
     @Override
     protected CAstNode visitEnum(CAstNode N, SILInstructionContext C) {
-        RawValue operand = getSingleOperand(N);
+        // Creates an enum. We don't care about the exact case because it will
+        // be the result type. We don't care if the case has a data type because
+        // if we add the operand (if it even exists) to the enum incorrectly, it
+        // will never be used anyway.
         RawValue result = getSingleResult(N);
         String EnumName = getStringValue(N, 2);
         String CaseName = getStringValue(N, 3);
-        CAstNode FieldNode;
-        if (C.valueTable.hasValue(operand.Name)) {
-            SILValue OperandValue = C.valueTable.getValue(operand.Name);
-            FieldNode = OperandValue.getVarNode();
-        } else {
-            FieldNode = Ast.makeConstant(CaseName);
-        }
-        ArrayList<CAstNode> Fields = new ArrayList<>();
-        Fields.add(Ast.makeNode(CAstNode.NEW, Ast.makeConstant(result.Type)));
-        Fields.add(Ast.makeConstant("value"));
-        Fields.add(FieldNode);
-        SILValue ResultValue = new SILValue(result.Name, result.Type, C);
-        C.valueTable.addValue(ResultValue);
-        CAstNode EnumLiteral = Ast.makeNode(CAstNode.OBJECT_LITERAL, Fields);
-        C.parent.setGotoTarget(EnumLiteral, EnumLiteral);
-        return Ast.makeNode(CAstNode.ASSIGN, ResultValue.getVarNode(), EnumLiteral);
+        SILValue OperandValue = null;
+        try {
+            RawValue operand = getSingleOperand(N);
+            OperandValue = C.valueTable.getValue(operand.Name);
+        } catch (Exception e) {}
+        SILEnum EnumValue = new SILEnum(result.Name, result.Type, C, OperandValue);
+        C.valueTable.addValue(EnumValue);
+        return null;
     }
 
     @Override
     protected CAstNode visitUncheckedEnumData(CAstNode N, SILInstructionContext C) {
+        // Unsafely extract data from enum. Here we chose to use a field ref, but it
+        // could theoretically be a copy - it doesn't matter.
+        RawValue operand = getSingleOperand(N);
+        RawValue result = getSingleResult(N);
+        SILValue OperandValue = C.valueTable.getValue(operand.Name);
+        Assertions.productionAssertion(OperandValue instanceof SILEnum);
+        SILField FieldValue = ((SILEnum)OperandValue).createField(result.Name, result.Type);
+        C.valueTable.addValue(FieldValue);
         return null;
     }
 
     @Override
     protected CAstNode visitInitEnumDataAddr(CAstNode N, SILInstructionContext C) {
+        // Returns a pointer pointing to the enum's data.
+        RawValue operand = getSingleOperand(N);
+        RawValue result = getSingleResult(N);
+        SILValue OperandValue = C.valueTable.getValue(operand.Name);
+        Assertions.productionAssertion(OperandValue instanceof SILEnum);
+        SILField FieldValue = ((SILEnum)OperandValue).createField(null, null);
+        SILPointer ResultPointer = new SILPointer(result.Name, result.Type, C, FieldValue);
+        C.valueTable.addValue(ResultPointer);
         return null;
     }
 
     @Override
     protected CAstNode visitInjectEnumAddr(CAstNode N, SILInstructionContext C) {
+        // Inits the enum value by overlaying a tag for the given case.
+        // NOP
         return null;
     }
 
     @Override
     protected CAstNode visitUncheckedTakeEnumDataAddr(CAstNode N, SILInstructionContext C) {
+        // Given a pointer to an enum, invalidate the enum value and take the address
+        // of the payload for the given enum case.
+        RawValue operand = getSingleOperand(N);
+        RawValue result = getSingleResult(N);
+        SILValue OperandValue = C.valueTable.getValue(operand.Name);
+        Assertions.productionAssertion(OperandValue instanceof SILPointer);
+        SILValue EnumValue = ((SILPointer)OperandValue).dereference();
+        Assertions.productionAssertion(EnumValue instanceof SILEnum);
+        SILField FieldValue = ((SILEnum)EnumValue).createField(null, null);
+        SILPointer ResultPointer = new SILPointer(result.Name, result.Type, C, FieldValue);
+        C.valueTable.addValue(ResultPointer);
+        ((SILEnum)EnumValue).invalidateValue();
         return null;
     }
 
     @Override
     protected CAstNode visitSelectEnum(CAstNode N, SILInstructionContext C) {
+        // TODO: Switch problem
+        Assertions.UNREACHABLE("UNHANDLED INSTRUCTION");
         return null;
     }
 
     @Override
     protected CAstNode visitSelectEnumAddr(CAstNode N, SILInstructionContext C) {
+        // TODO: Switch problem
+        Assertions.UNREACHABLE("UNHANDLED INSTRUCTION");
         return null;
     }
 

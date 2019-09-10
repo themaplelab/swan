@@ -37,4 +37,8 @@ public class SILEnum extends SILValue {
         return new SILField(name, type, C, this, fieldName);
     }
 
+    public void invalidateValue() {
+        this.field = null;
+    }
+
 }
