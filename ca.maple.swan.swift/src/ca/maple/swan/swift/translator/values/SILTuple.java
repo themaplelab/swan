@@ -22,9 +22,14 @@ import java.util.ArrayList;
 
 import static com.ibm.wala.cast.tree.CAstNode.OBJECT_REF;
 
+/*
+ * Same as SILStruct but field names are (obviously) numbers.
+ * Holds 2 values.
+ */
+
 public class SILTuple extends SILValue {
 
-    ArrayList<SILType> fieldTypes;
+    private final ArrayList<SILType> fieldTypes;
 
     public SILTuple(String name, String type, SILInstructionContext C, ArrayList<String> types) {
         super(name, type, C);

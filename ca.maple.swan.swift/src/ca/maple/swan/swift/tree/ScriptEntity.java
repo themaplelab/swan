@@ -15,21 +15,20 @@ package ca.maple.swan.swift.tree;
 
 import com.ibm.wala.cast.ir.translator.AbstractScriptEntity;
 import com.ibm.wala.cast.tree.*;
-import com.ibm.wala.cast.tree.impl.CAstNodeTypeMapRecorder;
 import com.ibm.wala.cast.tree.impl.CAstSourcePositionRecorder;
 
 import java.io.File;
-import java.util.Collection;
 
 /*
- * This class represents the translated "main" SIL function.
+ * This class represents the translated "main" SIL function. It currently
+ * does not have any source information itself since "main" is generated
+ * by the compiler.
  */
+
 public class ScriptEntity extends AbstractScriptEntity {
 
-    // TODO: Is it necessary to implement getNamePosition(), getPosition(int[] arg), getPosition()?
-
-    CAstSourcePositionRecorder sourcePositionRecorder;
-    String scriptName;
+    private final CAstSourcePositionRecorder sourcePositionRecorder;
+    private final String scriptName;
 
     public ScriptEntity(String scriptName, File file) {
         super(file, new SwiftScriptType());

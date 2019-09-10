@@ -15,9 +15,16 @@ package ca.maple.swan.swift.translator.types;
 
 import java.util.HashMap;
 
+/*
+ * Used for dynamically creating and saving SIL types. Since there
+ * are so many of them, these aren't generally hardcoded.
+ *
+ * TODO: Solve the issue where JS only supports "Any" type.
+ */
+
 public class SILTypes {
 
-    static HashMap<String, SILType> types = new HashMap<>();
+    private static final HashMap<String, SILType> types = new HashMap<>();
 
     public static SILType getType(String name) {
         // TEMPORARY

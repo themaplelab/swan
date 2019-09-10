@@ -17,8 +17,13 @@ import com.ibm.wala.cast.tree.CAstType;
 
 import java.util.Collection;
 
+/*
+ * Represents a type in SIL.
+ */
+
 public class SILType implements CAstType {
-    private String Name;
+
+    private final String Name;
 
     SILType(String name) {
         this.Name = name;

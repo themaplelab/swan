@@ -23,10 +23,15 @@ import java.util.ArrayList;
 import static com.ibm.wala.cast.tree.CAstNode.OBJECT_LITERAL;
 import static com.ibm.wala.cast.tree.CAstNode.OBJECT_REF;
 
+/*
+ * Used to represent structs, but can really represent any object with
+ * named fields. Can generate SILFields.
+ */
+
 public class SILStruct extends SILValue {
 
-    private ArrayList<Pair<String, SILType>> fields;
-    private CAstNode LiteralNode;
+    private final ArrayList<Pair<String, SILType>> fields;
+    private final CAstNode LiteralNode;
 
     public SILStruct(String name, String type, SILInstructionContext C, ArrayList<Pair<String, String>> givenFields) {
         super(name, type, C);
@@ -64,6 +69,7 @@ public class SILStruct extends SILValue {
                             getVarNode(),
                             Ast.makeConstant(fieldName));
                     C.parent.getNodeTypeMap().add(objectRef, p.snd);
+                    C.parent.setGotoTarget(objectRef, objectRef);
                     return objectRef;
                 }
             }

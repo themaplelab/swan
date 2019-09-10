@@ -21,6 +21,10 @@ import com.ibm.wala.cast.tree.CAstNode;
 import com.ibm.wala.cast.tree.impl.CAstImpl;
 import com.ibm.wala.cast.tree.impl.CAstSymbolImpl;
 
+/*
+ * Base class that can also hold its own as a generic value.
+ */
+
 public class SILValue {
 
     protected final String name;

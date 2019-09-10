@@ -15,7 +15,11 @@ package ca.maple.swan.swift.translator.values;
 
 import ca.maple.swan.swift.translator.SILInstructionContext;
 import com.ibm.wala.cast.tree.CAstNode;
-import com.ibm.wala.util.debug.Assertions;
+
+/*
+ * Instead of holding a copy of a field, we can generate an OBJECT_REF
+ * each time we use the value.
+ */
 
 public class SILField extends SILValue {
 

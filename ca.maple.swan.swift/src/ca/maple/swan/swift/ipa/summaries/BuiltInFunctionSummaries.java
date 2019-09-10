@@ -28,6 +28,13 @@ import java.util.Arrays;
 import static ca.maple.swan.swift.translator.RawAstTranslator.Ast;
 import static com.ibm.wala.cast.tree.CAstNode.*;
 
+/*
+ * SIL has many builtin functions that can be nuanced and annoying.
+ * We try to handle them here as best as possible. If we can summarize one,
+ * we replace the whole CALL node with something else. We keep track of
+ * ones we can summarize, and builtins which we have yet to summarize.
+ */
+
 public class BuiltInFunctionSummaries {
 
     public static CAstNode findSummary(String funcName, String resultName, String resultType, SILInstructionContext C, ArrayList<CAstNode> params) {
@@ -39,32 +46,20 @@ public class BuiltInFunctionSummaries {
                 C.valueTable.addValue(new SILTuple.SILUnitArrayTuple(resultName, resultType, C));
                 return null;
             }
-            case "default argument 1 of Swift.print(_: Any..., separator: Swift.String, terminator: Swift.String) -> ()": {
-                return Ast.makeNode(CAstNode.VAR); // Signifies that we should just create a variable for the result.
-            }
+            case "default argument 1 of Swift.print(_: Any..., separator: Swift.String, terminator: Swift.String) -> ()":
             case "default argument 2 of Swift.print(_: Any..., separator: Swift.String, terminator: Swift.String) -> ()": {
-                return Ast.makeNode(CAstNode.VAR);
+                return Ast.makeNode(CAstNode.VAR); // Signifies that we should just create a variable for the result.
             }
             case "Swift.print(_: Any..., separator: Swift.String, terminator: Swift.String) -> ()": {
                 C.instructions.add(Ast.makeNode(CAstNode.ECHO,
                         C.valueTable.getValue((String)params.get(0).getValue()).getVarNode()));
                 return null;
             }
-            case "Swift.String.init(_builtinStringLiteral: Builtin.RawPointer, utf8CodeUnitCount: Builtin.Word, isASCII: Builtin.Int1) -> Swift.String": {
-                return C.valueTable.getValue((String)params.get(0).getValue()).getVarNode();
-            }
-            case "Swift.Int.init(_builtinIntegerLiteral: Builtin.IntLiteral) -> Swift.Int": {
-                return C.valueTable.getValue((String)params.get(0).getValue()).getVarNode();
-            }
-            case "Swift.Double.init(_builtinFloatLiteral: Builtin.FPIEEE80) -> Swift.Double": {
-                return C.valueTable.getValue((String)params.get(0).getValue()).getVarNode();
-            }
-            case "Swift.Double.init(_builtinIntegerLiteral: Builtin.IntLiteral) -> Swift.Double": {
-                return C.valueTable.getValue((String)params.get(0).getValue()).getVarNode();
-            }
-            case "Swift.UInt.init(_builtinIntegerLiteral: Builtin.IntLiteral) -> Swift.UInt": {
-                return C.valueTable.getValue((String)params.get(0).getValue()).getVarNode();
-            }
+            case "Swift.String.init(_builtinStringLiteral: Builtin.RawPointer, utf8CodeUnitCount: Builtin.Word, isASCII: Builtin.Int1) -> Swift.String":
+            case "Swift.Int.init(_builtinIntegerLiteral: Builtin.IntLiteral) -> Swift.Int":
+            case "Swift.Double.init(_builtinFloatLiteral: Builtin.FPIEEE80) -> Swift.Double":
+            case "Swift.Double.init(_builtinIntegerLiteral: Builtin.IntLiteral) -> Swift.Double":
+            case "Swift.UInt.init(_builtinIntegerLiteral: Builtin.IntLiteral) -> Swift.UInt":
             case "Swift.Double.init(Swift.Int) -> Swift.Double": {
                 return C.valueTable.getValue((String)params.get(0).getValue()).getVarNode();
             }
@@ -83,25 +78,14 @@ public class BuiltInFunctionSummaries {
                                 (String)((SILConstant)C.valueTable.getValue((String)params.get(1).getValue())).getValue()
                 );
             }
-            case "Swift.DefaultStringInterpolation.init(literalCapacity: Swift.Int, interpolationCount: Swift.Int) -> Swift.DefaultStringInterpolation": {
-                return Ast.makeConstant("StringInterpolation");
-            }
+            case "Swift.DefaultStringInterpolation.init(literalCapacity: Swift.Int, interpolationCount: Swift.Int) -> Swift.DefaultStringInterpolation":
             case "Swift.String.init(stringInterpolation: Swift.DefaultStringInterpolation) -> Swift.String": {
                 return Ast.makeConstant("StringInterpolation");
             }
-            case "Swift.DefaultStringInterpolation.appendLiteral(Swift.String) -> ()": {
-                return Ast.makeNode(BINARY_EXPR, CAstOperator.OP_ADD,
-                        params.get(0), params.get(1));
-            }
-            case "Swift.DefaultStringInterpolation.appendInterpolation<A>(A) -> ()": {
-                return Ast.makeNode(BINARY_EXPR, CAstOperator.OP_ADD,
-                        params.get(0), params.get(1));
-            }
+            case "Swift.DefaultStringInterpolation.appendLiteral(Swift.String) -> ()":
+            case "Swift.DefaultStringInterpolation.appendInterpolation<A>(A) -> ()":
+            case "Swift.DefaultStringInterpolation.appendInterpolation<A where A: Swift.CustomStringConvertible>(A) -> ()":
             case "Swift.DefaultStringInterpolation.appendInterpolation<A where A: Swift.CustomStringConvertible, A: Swift.TextOutputStreamable>(A) -> ()": {
-                return Ast.makeNode(BINARY_EXPR, CAstOperator.OP_ADD,
-                        params.get(0), params.get(1));
-            }
-            case "Swift.DefaultStringInterpolation.appendInterpolation<A where A: Swift.CustomStringConvertible>(A) -> ()": {
                 return Ast.makeNode(BINARY_EXPR, CAstOperator.OP_ADD,
                         params.get(0), params.get(1));
             }
@@ -112,7 +96,7 @@ public class BuiltInFunctionSummaries {
         }
     }
 
-    private static String[] summarizedBuiltins = new String[] {
+    private static final String[] summarizedBuiltins = new String[] {
             "Swift._allocateUninitializedArray<A>(Builtin.Word) -> (Swift.Array<A>, Builtin.RawPointer)",
             "default argument 1 of Swift.print(_: Any..., separator: Swift.String, terminator: Swift.String) -> ()",
             "default argument 2 of Swift.print(_: Any..., separator: Swift.String, terminator: Swift.String) -> ()",
@@ -134,10 +118,11 @@ public class BuiltInFunctionSummaries {
     };
 
     public static boolean isSummarized(String name) {
+        //noinspection SimplifyStreamApiCallChains
         return Arrays.stream(summarizedBuiltins).anyMatch(name::equals);
     }
 
-    private static String[] builtins = new String[] {
+    private static final String[] builtins = new String[] {
             "static Swift.Int.- infix(Swift.Int, Swift.Int) -> Swift.Int",
             "static Swift.Int.+ infix(Swift.Int, Swift.Int) -> Swift.Int",
             "static Swift.Int.* infix(Swift.Int, Swift.Int) -> Swift.Int",
@@ -155,6 +140,7 @@ public class BuiltInFunctionSummaries {
     };
 
     public static boolean isBuiltIn(String name) {
+        //noinspection SimplifyStreamApiCallChains
         return Arrays.stream(builtins).anyMatch(name::equals);
     }
 }

@@ -22,16 +22,20 @@ import java.util.ArrayList;
 import java.util.HashMap;
 
 /*
- * This class contains any context needed for any node to be translated.
+ * This class contains any context needed for any instruction to be translated.
  */
+
 public class SILInstructionContext {
     public final AbstractCodeEntity parent;
     public final ArrayList<AbstractCodeEntity> allEntities;
     public SILValueTable valueTable;
     public ArrayList<CAstNode> instructions;
+    // danglingGOTOs are GOTO nodes that need to be linked to their destination
+    // basic block, but could not be because that block doesn't exist yet.
     HashMap<Integer, ArrayList<CAstNode>> danglingGOTOs;
     ArrayList<ArrayList<CAstNode>> blocks;
     public final CAstNode currentFunction;
+    // For inlining, we will need to set the return value.
     public SILValue returnValue = null;
     public boolean inliningParent = false;
 

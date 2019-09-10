@@ -7,10 +7,16 @@ import java.util.ArrayList;
 
 import static com.ibm.wala.cast.tree.CAstNode.OBJECT_LITERAL;
 
+/*
+ * Used for keeping track of enums. An enum in SIL can have attached
+ * data, so we just store this under the arbitrary field name "value".
+ */
+
 public class SILEnum extends SILValue {
 
+    // TODO: Blow away "field" since it isn't used nor needed?
     private SILValue field;
-    private CAstNode LiteralNode;
+    private final CAstNode LiteralNode;
     private final String fieldName = "value";
 
     public SILEnum(String name, String type, SILInstructionContext C, SILValue field) {

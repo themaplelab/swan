@@ -17,6 +17,11 @@ import ca.maple.swan.swift.translator.RawAstTranslator;
 import ca.maple.swan.swift.translator.SILInstructionContext;
 import com.ibm.wala.cast.tree.CAstNode;
 
+/*
+ * Simply holds the name of a function, used for explicitness as
+ * opposed to SILConstant
+ */
+
 public class SILFunctionRef extends SILValue {
 
     private final String functionName;
@@ -45,6 +50,10 @@ public class SILFunctionRef extends SILValue {
     public CAstNode getVarNode() {
         return node;
     }
+
+    /*
+     * Used to explicitly mark functions as summarizable.
+     */
 
     public static class SILSummarizedFunctionRef extends SILValue {
         private final String functionName;

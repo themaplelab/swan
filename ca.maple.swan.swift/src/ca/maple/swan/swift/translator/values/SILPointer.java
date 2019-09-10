@@ -16,6 +16,18 @@ package ca.maple.swan.swift.translator.values;
 import ca.maple.swan.swift.translator.SILInstructionContext;
 import com.ibm.wala.cast.tree.CAstNode;
 
+/*
+ * We can keep track of a pointer's underlying value using this class.
+ * This class does not have to have an underlying value, so we need
+ * to check if it has an underlying value ( hasValue() ). This is so
+ * that instructions that create pointers such as alloc_stack can be
+ * handled explicitly. Typically any type starting with $*.
+
+ * We want as much as possibly 1:1 representation type wise. So if
+ * an instruction expects a pointer as an operand, we have to make sure
+ * it exists as a SILPointer in our table.
+ */
+
 public class SILPointer extends SILValue {
 
     private SILValue pointsTo;

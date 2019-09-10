@@ -20,6 +20,11 @@ import com.ibm.wala.classLoader.ModuleEntry;
 
 import java.net.MalformedURLException;
 
+/*
+ * This class creates SwiftToCAstTranslators. Used when a Swift file needs
+ * to be translated.
+ */
+
 public class SwiftToCAstTranslatorFactory implements JavaScriptTranslatorFactory {
 
     public TranslatorToCAst make(CAst ast, ModuleEntry M) {

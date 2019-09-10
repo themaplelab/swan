@@ -19,9 +19,17 @@ import com.ibm.wala.util.debug.Assertions;
 import java.util.ArrayList;
 import java.util.HashMap;
 
+/*
+ * Table that holds the SIL value information. The idea here is that
+ * we want to statically know and keep track of all SIL values ("registers")
+ * as much as possible so we can do away with things like pointers, and
+ * handle the many nuances of SIL.
+ */
+
 public class SILValueTable {
 
     private final HashMap<String, SILValue> values;
+    // For keeping track of which values need a DECL_STMT generated.
     private final ArrayList<SILValue> undeclaredValues;
 
     public SILValueTable() {

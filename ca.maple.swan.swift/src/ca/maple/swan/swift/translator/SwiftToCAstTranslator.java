@@ -10,6 +10,7 @@
 // http://www.eclipse.org/legal/epl-v20.html
 //
 //===---------------------------------------------------------------------===//
+
 package ca.maple.swan.swift.translator;
 
 import java.io.File;
@@ -27,9 +28,11 @@ import com.ibm.wala.cast.tree.rewrite.CAstRewriterFactory;
 import com.ibm.wala.classLoader.ModuleEntry;
 
 /*
- * This class translates the Swift code to a single CAstEntity (the "main" ScriptEntity) by calling a JNI method
- * that calls into the C++ translator code.
+ * This class translates the Swift code to a single CAstEntity
+ * (the "main" ScriptEntity) by calling a JNI method that calls into the
+ * C++ translator code.
  */
+
 public class SwiftToCAstTranslator extends NativeTranslatorToCAst {
 
     static {

@@ -19,6 +19,10 @@ import com.ibm.wala.cast.tree.rewrite.CAstRewriterFactory;
 import com.ibm.wala.classLoader.IClassLoader;
 import com.ibm.wala.ipa.cha.IClassHierarchy;
 
+/*
+ * Creates SwiftLoaders (needed for every Swift file).
+ */
+
 public class SwiftLoaderFactory extends JavaScriptLoaderFactory {
 
     public SwiftLoaderFactory(JavaScriptTranslatorFactory factory) {

@@ -17,8 +17,11 @@ import com.ibm.wala.cast.tree.CAstNode;
 import com.ibm.wala.cast.tree.CAstSourcePositionMap;
 
 /*
- * Class for visiting SIL instructions.
+ * Class for visiting SIL instructions. Relies on a CAstNode with the
+ * first child being a string representing the instruction name.
  */
+
+@SuppressWarnings("ALL")
 public abstract class SILInstructionVisitor<TR, TC> {
 
     public TR visit(CAstNode N, TC C) {

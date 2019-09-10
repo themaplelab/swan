@@ -27,16 +27,27 @@ import guru.nidi.graphviz.model.MutableNode;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.Objects;
 
 import static guru.nidi.graphviz.model.Factory.mutGraph;
 import static guru.nidi.graphviz.model.Factory.mutNode;
 
 public class ASTtoDot {
 
+    /*
+     * This class takes all of the AbstractCodeEntities representing a Swift file and
+     * converts them to the .dot format, and outputs the dot as a png.
+     * This is to make reading the output CAst easier.
+     *
+     * NOTES:
+     *      - The ordering can be incorrect do to how graphviz-java orders nodes.
+     *      - Some manipulation is done to make the AST more readable, so it may
+     *        not be exactly 1:1.
+     */
+
     private static boolean dirFlag = true;
 
-    private static MutableNode currentRoot;
-
+    @SuppressWarnings("ResultOfMethodCallIgnored")
     public static void print(ArrayList<AbstractCodeEntity> entities) {
         try {
             String dotDirStr = "dot/";
@@ -45,7 +56,7 @@ public class ASTtoDot {
                 if (!dir.exists()) {
                     dir.mkdir();
                 } else {
-                    for (String f : dir.list()) {
+                    for (String f : Objects.requireNonNull(dir.list())) {
                         new File(dir.getPath(), f).delete();
                     }
                     dir.delete();
@@ -59,7 +70,6 @@ public class ASTtoDot {
 
             for (AbstractCodeEntity entity: entities) {
                 MutableNode mNode = mutNode(entity.getName()).add(Color.RED);
-                currentRoot = mNode;
                 buildGraph(mNode, entity.getAST());
                 g.add(mNode);
             }
@@ -70,7 +80,7 @@ public class ASTtoDot {
         }
     }
 
-    public static void buildGraph(MutableNode mNode, CAstNode cNode) {
+    private static void buildGraph(MutableNode mNode, CAstNode cNode) {
         if (cNode == null) { return; }
         MutableNode newNode;
         String hash = System.identityHashCode(cNode) + mNode.hashCode() + "\n";
@@ -80,16 +90,12 @@ public class ASTtoDot {
             }
             case CAstNode.CONSTANT: {
                 newNode = mutNode(hash + cNode.toString());
-                int color[] = hashColor(cNode.toString());
+                int[] color = hashColor(cNode.toString());
                 newNode.add(Color.rgb(color[0], color[1], color[2]));
                 break;
             }
             case CAstNode.OPERATOR: {
                 newNode = mutNode(hash + cNode.getValue());
-                break;
-            }
-            case CAstNode.VAR: {
-                newNode = mutNode(hash + CAstPrinter.kindAsString(cNode.getKind()));
                 break;
             }
             default: {
@@ -106,7 +112,7 @@ public class ASTtoDot {
 
     private static int[] hashColor(String name) {
         int hash = name.hashCode();
-        int returnRGB[] = new int[3];
+        int[] returnRGB = new int[3];
         returnRGB[0] = (hash & 0xFF0000) >> 16;
         returnRGB[1] = (hash & 0x00FF00) >> 8;
         returnRGB[2] = hash & 0x0000FF;

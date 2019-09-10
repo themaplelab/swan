@@ -23,9 +23,14 @@ import java.util.List;
 /*
  * This class is the CAstType that FunctionEntities are of.
  */
+
 public class SwiftFunctionType implements CAstType.Function {
 
+    // This is a temporary solution to JS not supported types other
+    // than "Any". So we save the real types.
     public final ArrayList<String> realTypes;
+    private final CAstType cAstType;
+    private final ArrayList<CAstType> argumentCAstTypes = new ArrayList<>();
 
     SwiftFunctionType(String returnType, ArrayList<String> argumentTypes) {
         this.cAstType = SILTypes.getType(returnType);
@@ -34,9 +39,6 @@ public class SwiftFunctionType implements CAstType.Function {
         }
         this.realTypes = argumentTypes;
     }
-
-    private CAstType cAstType;
-    private ArrayList<CAstType> argumentCAstTypes = new ArrayList<>();
 
     @Override
     public CAstType getReturnType() {

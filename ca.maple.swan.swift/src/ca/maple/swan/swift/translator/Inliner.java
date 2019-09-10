@@ -27,6 +27,10 @@ import static ca.maple.swan.swift.translator.RawAstTranslator.getStringValue;
 import static com.ibm.wala.cast.tree.CAstNode.BLOCK_STMT;
 import static com.ibm.wala.cast.tree.CAstNode.LABEL_STMT;
 
+/*
+ * SIL basic block and function inliner.
+ */
+
 public class Inliner {
 
     public static boolean shouldInlineFunction(String functionName, SILInstructionContext C) {
@@ -61,6 +65,7 @@ public class Inliner {
 
     public static SILValue doFunctionInline(String functionName, SILInstructionContext C, ArrayList<SILValue> args, RawAstTranslator translator) {
         FunctionEntity function = (FunctionEntity)RawAstTranslator.findEntity(functionName, C.allEntities);
+        assert function != null;
         SILInstructionContext C2 = new SILInstructionContext(function, C.allEntities, function.rawInfo);
         C2.inliningParent = true;
         C2.valueTable = C.valueTable;
@@ -107,9 +112,7 @@ public class Inliner {
             }
             flatBlocks.add(BlockStmt);
         }
-        for (CAstNode n : flatBlocks) {
-            C.instructions.add(n);
-        }
+        C.instructions.addAll(flatBlocks);
         C.parent.getControlFlow().addAll(C2.parent.getControlFlow());
         return C2.returnValue;
     }
@@ -144,11 +147,11 @@ public class Inliner {
     }
 
     // Better safe than sorry, so we blacklist instead of whitelist.
-    private static String[] blackListInlineTypes = new String[] {
+    private static final String[] blackListInlineTypes = new String[] {
             "$Int",
             "$Int32",
             "$UInt",
-            "$Bool",
+            "$Bool", // This can exist as an OBJECT_LITERAL, but that's perfectly okay.
             "$Builtin.Word",
             "$Builtin.Int1",
             "$String"

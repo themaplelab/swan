@@ -34,6 +34,14 @@ import java.util.Set;
 
 import static com.ibm.wala.ipa.slicer.Statement.Kind.NORMAL_RET_CALLER;
 
+/*
+ * This code is mostly borrowed from https://github.com/wala/Examples.
+ * Currently, it can find the sources and sinks, but not a path in between. (TODO)
+ *
+ * TODO: Find a way to identify functions more generically (i.e. without the
+ *       filename, output filename, etc).
+ */
+
 public class TaintAnalysis {
 
     static CallGraph CG = null;
@@ -45,99 +53,73 @@ public class TaintAnalysis {
     }
 
     /************************************ EXAMPLES *************************************/
-    public static EndpointFinder sendMessageSink = new EndpointFinder() {
-        @Override
-        public boolean endpoint(Statement s) {
-            if (s.getKind()== Statement.Kind.PARAM_CALLER) {
-                MethodReference ref = ((ParamCaller)s).getInstruction().getCallSite().getDeclaredTarget();
-                if (ref.getName().toString().equals("sendTextMessage")) {
+    public static EndpointFinder sendMessageSink = s -> {
+        if (s.getKind()== Statement.Kind.PARAM_CALLER) {
+            MethodReference ref = ((ParamCaller)s).getInstruction().getCallSite().getDeclaredTarget();
+            return ref.getName().toString().equals("sendTextMessage");
+        }
+
+        return false;
+    };
+
+    public static EndpointFinder documentWriteSink = s -> {
+        if (s.getKind()== Statement.Kind.PARAM_CALLEE) {
+            String ref = s.getNode().getMethod().toString();
+            return ref.equals("<Code body of function Lpreamble.js/DOMDocument/Document_prototype_write>");
+        }
+
+        return false;
+    };
+
+    public static EndpointFinder getDeviceSource = s -> {
+        if (s.getKind()== NORMAL_RET_CALLER) {
+            MethodReference ref = ((NormalReturnCaller)s).getInstruction().getCallSite().getDeclaredTarget();
+            return ref.getName().toString().equals("getDeviceId");
+        }
+
+        return false;
+    };
+
+    public static EndpointFinder documentUrlSource = s -> {
+        if (s.getKind()== Statement.Kind.NORMAL) {
+            NormalStatement ns = (NormalStatement) s;
+            SSAInstruction inst = ns.getInstruction();
+            if (inst instanceof SSAGetInstruction) {
+                return ((SSAGetInstruction) inst).getDeclaredField().getName().toString().equals("URL");
+            }
+        }
+
+        return false;
+    };
+    /***************************** END OF EXAMPLES *************************************/
+
+    public static final EndpointFinder swiftSources = s -> {
+        if (s.getKind() == NORMAL_RET_CALLER) {
+            CallSiteReference cs = ((NormalReturnCaller)s).getInstruction().getCallSite();
+            CGNode node = s.getNode();
+            Set<CGNode> it = CG.getPossibleTargets(node, cs);
+            String testSource = "function Lmain/out.source() -> Swift.String";
+            for (CGNode target: it) {
+                if (target.getMethod().getDeclaringClass().toString().equals(testSource)) {
+                    System.out.println("FOUND SOURCE:" + testSource);
                     return true;
                 }
             }
-
-            return false;
         }
+        return false;
     };
 
-    public static EndpointFinder documentWriteSink = new EndpointFinder() {
-        @Override
-        public boolean endpoint(Statement s) {
-            if (s.getKind()== Statement.Kind.PARAM_CALLEE) {
-                String ref = ((ParamCallee)s).getNode().getMethod().toString();
-                if (ref.equals("<Code body of function Lpreamble.js/DOMDocument/Document_prototype_write>")) {
-                    return true;
-                }
+    public static final EndpointFinder swiftSinks = s -> {
+        if (s.getKind()== Statement.Kind.PARAM_CALLEE) {
+            String ref = s.getNode().getMethod().toString();
+            String testSink = "<Code body of function Lmain/out.sink(sunk: Swift.String) -> ()>";
+            if (ref.equals(testSink)) {
+                System.out.println("FOUND SINK:" + testSink);
+                return true;
             }
-
-            return false;
         }
-    };
 
-    public static EndpointFinder getDeviceSource = new EndpointFinder() {
-        @Override
-        public boolean endpoint(Statement s) {
-            if (s.getKind()== NORMAL_RET_CALLER) {
-                MethodReference ref = ((NormalReturnCaller)s).getInstruction().getCallSite().getDeclaredTarget();
-                if (ref.getName().toString().equals("getDeviceId")) {
-                    return true;
-                }
-            }
-
-            return false;
-        }
-    };
-
-    public static EndpointFinder documentUrlSource = new EndpointFinder() {
-        @Override
-        public boolean endpoint(Statement s) {
-            if (s.getKind()== Statement.Kind.NORMAL) {
-                NormalStatement ns = (NormalStatement) s;
-                SSAInstruction inst = ns.getInstruction();
-                if (inst instanceof SSAGetInstruction) {
-                    if (((SSAGetInstruction)inst).getDeclaredField().getName().toString().equals("URL")) {
-                        return true;
-                    }
-                }
-            }
-
-            return false;
-        }
-    };
-    /************************************ EXAMPLES *************************************/
-
-    public static EndpointFinder swiftSources = new EndpointFinder() {
-        @Override
-        public boolean endpoint(Statement s) {
-            if (s.getKind() == NORMAL_RET_CALLER) {
-                CallSiteReference cs = ((NormalReturnCaller)s).getInstruction().getCallSite();
-                CGNode node = s.getNode();
-                Set<CGNode> it = CG.getPossibleTargets(node, cs);
-                String testSource = "function Lmain/out.source() -> Swift.String";
-                for (CGNode target: it) {
-                    if (target.getMethod().getDeclaringClass().toString().equals(testSource)) {
-                        System.out.println("FOUND SOURCE:" + testSource);
-                        return true;
-                    }
-                }
-            }
-            return false;
-        }
-    };
-
-    public static EndpointFinder swiftSinks = new EndpointFinder() {
-        @Override
-        public boolean endpoint(Statement s) {
-            if (s.getKind()== Statement.Kind.PARAM_CALLEE) {
-                String ref = ((ParamCallee)s).getNode().getMethod().toString();
-                String testSink = "<Code body of function Lmain/out.sink(sunk: Swift.String) -> ()>";
-                if (ref.equals(testSink)) {
-                    System.out.println("FOUND SINK:" + testSink);
-                    return true;
-                }
-            }
-
-            return false;
-        }
+        return false;
     };
 
 
@@ -148,7 +130,7 @@ public class TaintAnalysis {
             if (sources.endpoint(src)) {
                 for(Statement dst : G) {
                     if (sinks.endpoint(dst)) {
-                        BFSPathFinder<Statement> paths = new BFSPathFinder<Statement>(G, src, dst);
+                        BFSPathFinder<Statement> paths = new BFSPathFinder<>(G, src, dst);
                         List<Statement> path = paths.find();
                         if (path != null) {
                             result.add(path);

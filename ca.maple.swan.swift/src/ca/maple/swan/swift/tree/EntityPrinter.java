@@ -25,8 +25,10 @@ import java.util.*;
 /*
  * This class prints out a CAstEntity, in an HTML-like format, for debugging.
  */
+
 public class EntityPrinter {
 
+    @SuppressWarnings("all")
     public static void print(AbstractCodeEntity entity) {
         boolean printMapping = false; // The mapping output can be large and annoying.
         boolean printVariables = false; // Variables can also be annoying.

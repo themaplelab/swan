@@ -23,6 +23,7 @@ import com.ibm.wala.ipa.cha.IClassHierarchy;
 /*
  * For now, we use a custom loader to use our own AstTranslator in the JS code.
  */
+
 public class SwiftLoader extends JavaScriptLoader {
     public SwiftLoader(IClassHierarchy cha, JavaScriptTranslatorFactory translatorFactory) {
         this(cha, translatorFactory, null);
