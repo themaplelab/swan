@@ -76,6 +76,8 @@ public class TestSwiftCallGraphShapeUsingJS extends TestCallGraphShape {
             File f = new File(name);
             if (f.exists()) {
                 return new SourceURLModule(f.toURI().toURL());
+            } else if (new File((name.substring(name.indexOf("/")+1).trim())).exists()) {
+                return new SourceURLModule((new File((name.substring(name.indexOf("/")+1).trim())).toURI().toURL()));
             } else {
                 throw new IOException("Script name is not a valid file!");
             }

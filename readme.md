@@ -102,7 +102,7 @@ There are some run configs ready to use.
  
 **From the terminal**
 
-You must run the analysis by running the following in the **root** directory. However, the test files must lie inside of `ca.maple.swan.swift.test/`. You may use the files under `testFiles/` there.
+You must run the analysis by running the following in the **root** directory. There are some test files in `ca.maple.swan.swift.test/testFiles`.
 ```
 ./gradlew run --args="YOUR_SWIFT_FILE"
 ```
