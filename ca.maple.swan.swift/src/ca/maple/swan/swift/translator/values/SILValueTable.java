@@ -29,6 +29,7 @@ import java.util.HashMap;
 public class SILValueTable {
 
     private final HashMap<String, SILValue> values;
+
     // For keeping track of which values need a DECL_STMT generated.
     private final ArrayList<SILValue> undeclaredValues;
 
@@ -72,6 +73,11 @@ public class SILValueTable {
     public void addValue(SILValue v) {
         values.put(v.name, v);
         undeclaredValues.add(v);
+    }
+
+    public void addArg(SILValue v) {
+        values.put(v.name, v);
+        // We don't want to redeclare an argument.
     }
 
     public void clearValues() {

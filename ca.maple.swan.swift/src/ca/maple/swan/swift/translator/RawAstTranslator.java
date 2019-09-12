@@ -234,7 +234,7 @@ public class RawAstTranslator extends SILInstructionVisitor<CAstNode, SILInstruc
                 int i = 0;
                 for (String argName : C.parent.getArgumentNames()) {
                     String argType = ((SwiftFunctionType)C.parent.getType()).realTypes.get(i);
-                    C.valueTable.addValue(new SILValue(argName, argType, C));
+                    C.valueTable.addArg(new SILValue(argName, argType, C));
                     ++i;
                 }
             }
@@ -996,10 +996,6 @@ public class RawAstTranslator extends SILInstructionVisitor<CAstNode, SILInstruc
 
     @Override
     protected CAstNode visitClassMethod(CAstNode N, SILInstructionContext C) {
-        /*
-        // TODO: Ignoring dynamic dispatch for now.
-        Assertions.UNREACHABLE("UNHANDLED INSTRUCTION");
-         */
         RawValue result = getSingleResult(N);
         String FuncName = getStringValue(N, 2);
         SILConstant Constant = new SILConstant(result.Name, result.Type, C, FuncName);
@@ -1940,9 +1936,6 @@ public class RawAstTranslator extends SILInstructionVisitor<CAstNode, SILInstruc
         for (Pair<CAstNode, CAstNode> l : labels) {
             C.parent.setLabelledGotoTarget(Switch, l.fst, l.snd.getChild(0));
         }
-        System.out.println("*********");
-        System.out.println(Switch);
-        System.out.println("*********");
         return Switch;
     }
 
@@ -1973,6 +1966,11 @@ public class RawAstTranslator extends SILInstructionVisitor<CAstNode, SILInstruc
 
     @Override
     protected CAstNode visitTryApply(CAstNode N, SILInstructionContext C) {
+        // There are two options to handling the control flow of a thrown error.
+        // 1. Return a value that is then checked in a conditional branch.
+        // 2. Use whatever JS has for throw semantics. This might require passing the
+        //    throw destination to the call site.
+
         String FuncRefName = (String)N.getChild(0).getValue();
         CAstNode Source;
         CAstNode FuncNode = N.getChild(1);
