@@ -90,11 +90,9 @@ void InstructionVisitor::visitSILFunction(SILFunction *F) {
 
   // Handle function arguments.
   for (SILArgument *arg: F->getArguments()) {
-    if (arg->getDecl() && arg->getDecl()->hasName()) {
-      // Currently the arguments do not have a specific position.
-      currentFunction->addArgument(addressToString(static_cast<ValueBase*>(arg)), arg->getType().getAsString(),
-        fl, fc, fl, fc);
-    }
+    // Currently the arguments do not have a specific position.
+    currentFunction->addArgument(addressToString(static_cast<ValueBase*>(arg)), arg->getType().getAsString(),
+      fl, fc, fl, fc);
   }
 
   // Set function result type.
@@ -108,6 +106,9 @@ void InstructionVisitor::visitSILFunction(SILFunction *F) {
 
   if (SWAN_PRINT) {
     llvm::outs() << "SILFunction: " << "ADDR: " << F << " , NAME: " << demangledFunctionName << "\n";
+    for (auto arg : F->getArguments()) {
+      llvm::outs() << "[ARG]: " << addressToString(static_cast<ValueBase*>(arg)) << "\n";
+    }
     llvm::outs() << "<RAW SIL BEGIN> \n\n";
     F->print(llvm::outs(), true);
     llvm::outs() << "\n</RAW SIL END> \n\n";
