@@ -194,10 +194,14 @@ for directory in sys.argv[1:]:
                     f = open(filePath, "r", errors="ignore")
                     for line in sil.splitlines():
                         line = line.split(':', 1)[0]
+                        line = line.split(" ")
+                        if line[0] == "//":
+                            continue
                         found = False
                         for s in instrs:
                             if s in line:
                                 found = s
+                                break
                         if (found != False):
                             instrCounts[found] = instrCounts[found] + 1
             except:
