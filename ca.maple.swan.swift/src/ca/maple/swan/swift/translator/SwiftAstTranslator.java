@@ -15,8 +15,10 @@ package ca.maple.swan.swift.translator;
 
 import com.ibm.wala.cast.js.loader.JavaScriptLoader;
 import com.ibm.wala.cast.js.translator.JSAstTranslator;
+import com.ibm.wala.cast.js.types.JavaScriptTypes;
 import com.ibm.wala.cast.tree.CAstEntity;
 import com.ibm.wala.cast.tree.CAstNode;
+import com.ibm.wala.cast.tree.CAstType;
 import com.ibm.wala.classLoader.IClass;
 import com.ibm.wala.classLoader.NewSiteReference;
 import com.ibm.wala.types.TypeName;
@@ -51,5 +53,10 @@ public class SwiftAstTranslator extends JSAstTranslator {
                                 result,
                                 new NewSiteReference(
                                         context.cfg().getCurrentInstruction(), type)));
+    }
+
+    @Override
+    protected TypeReference makeType(CAstType type) {
+        return TypeReference.findOrCreate(JavaScriptTypes.jsLoader, type.getName());
     }
 }

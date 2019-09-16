@@ -18,8 +18,6 @@ import java.util.HashMap;
 /*
  * Used for dynamically creating and saving SIL types. Since there
  * are so many of them, these aren't generally hardcoded.
- *
- * TODO: Solve the issue where JS only supports "Any" type.
  */
 
 public class SILTypes {
@@ -27,12 +25,10 @@ public class SILTypes {
     private static final HashMap<String, SILType> types = new HashMap<>();
 
     public static SILType getType(String name) {
-        // TEMPORARY
-        String tempName = "Any";
-        if (!types.containsKey(tempName/*name*/)) {
-            types.put(tempName, new SILType(tempName));
+        if (!types.containsKey(name)) {
+            types.put(name, new SILType(name));
         }
-        return types.get(tempName);
+        return types.get(name);
     }
 
 }
