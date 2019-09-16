@@ -176,6 +176,7 @@ public abstract class SILInstructionVisitor<TR, TC> {
             case "convert_function": return visitConvertFunction(N.getChild(2), C);
             case "convert_escape_to_noescape": return visitConvertEscapeToNoEscape(N.getChild(2), C);
             case "thin_function_to_pointer": return visitThinToThickFunction(N.getChild(2), C);
+            case "pointer_to_thin_function": return visitPointerToThinFunction(N.getChild(2), C);
             case "classify_bridge_object": return visitClassifyBridgeObject(N.getChild(2), C);
             case "value_to_bridge_object": return visitValueToBridgeObject(N.getChild(2), C);
             case "ref_to_bridge_object": return visitRefToBridgeObject(N.getChild(2), C);
@@ -183,6 +184,7 @@ public abstract class SILInstructionVisitor<TR, TC> {
             case "bridge_object_to_word": return visitBridgeObjectToWord(N.getChild(2), C);
             case "thin_to_thick_function": return visitThinToThickFunction(N.getChild(2), C);
             case "thick_to_objc_metatype": return visitThickToObjCMetatype(N.getChild(2), C);
+            case "objc_to_thick_metatype": return visitObjCToThickMetatype(N.getChild(2), C);
             case "objc_metatype_to_object": return visitObjCMetatypeToObject(N.getChild(2), C);
             case "objc_existential_metatype_to_object": return visitObjCExistentialMetatypeToObject(N.getChild(2), C);
 
