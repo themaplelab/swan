@@ -175,6 +175,9 @@ import java.util.HashMap;
     We do not keep track of fields concretely. This is difficult to do
     statically as naturally fields are used in a dynamic matter.
 
+    For now, any instruction that we have never seen before, we
+    don't translate.
+
     TODO:
 
         - Need a way of casting. e.g. x <-- y where x.type != y.type
@@ -392,7 +395,21 @@ public class RawAstTranslator extends SILInstructionVisitor<CAstNode, SILInstruc
         return (CAstSourcePositionMap.Position)N.getChild(1).getValue();
     }
 
+
+    /********************** INSTRUCTION TRANSLATION **********************
+     * Every instruction has some extra information commented before it.
+     *
+     * FREQUENCY: How often this instruction occurs in test cases. This is
+     *            just set relative to the frequency of other instructions.
+     *            VERY COMMON > COMMON > UNCOMMON > RARE > UNSEEN
+     * STATUS: Whether this instruction is translated.
+     * CONFIDENCE: Confidence level of translation. e.g. LOW would probably
+     *             mean its an initial translation based off SIL.rst but
+     *             could be wrong in practice.
+     */
+
     @Override
+    // FREQUENCY: VERY COMMON
     // STATUS: TRANSLATED
     // CONFIDENCE: HIGH
     protected CAstNode visitAllocStack(CAstNode N, SILInstructionContext C) {
@@ -406,6 +423,7 @@ public class RawAstTranslator extends SILInstructionVisitor<CAstNode, SILInstruc
     }
 
     @Override
+    // FREQUENCY: COMMON
     // STATUS: TRANSLATED
     // CONFIDENCE: HIGH
     protected CAstNode visitAllocRef(CAstNode N, SILInstructionContext C) {
@@ -420,6 +438,7 @@ public class RawAstTranslator extends SILInstructionVisitor<CAstNode, SILInstruc
     }
 
     @Override
+    // FREQUENCY: UNCOMMON
     // STATUS: TRANSLATED
     // CONFIDENCE: HIGH
     protected CAstNode visitAllocRefDynamic(CAstNode N, SILInstructionContext C) {
@@ -436,6 +455,7 @@ public class RawAstTranslator extends SILInstructionVisitor<CAstNode, SILInstruc
     }
 
     @Override
+    // FREQUENCY: VERY COMMON
     // STATUS: TRANSLATED
     // CONFIDENCE: HIGH
     protected CAstNode visitAllocBox(CAstNode N, SILInstructionContext C) {
@@ -450,27 +470,22 @@ public class RawAstTranslator extends SILInstructionVisitor<CAstNode, SILInstruc
     }
 
     @Override
-    // STATUS: TRANSLATED
-    // CONFIDENCE: LOW
+    // FREQUENCY: UNSEEN
+    // STATUS: UNHANDLED
+    // CONFIDENCE:
     protected CAstNode visitAllocValueBuffer(CAstNode N, SILInstructionContext C) {
-        // Given a pointer, allocate space inside of it. So here we can just copy
-        // the pointer. We also allocate the new pointer.
-        // TODO: Is the result a tuple? If so, this can be a problem.
-        RawValue result = getSingleResult(N);
-        RawValue operand = getSingleOperand(N);
-        SILValue OperandValue = C.valueTable.getValue(operand.Name);
-        Assertions.productionAssertion(OperandValue instanceof SILPointer);
-        SILValue ResultValue = ((SILPointer)OperandValue).copyPointer(result.Name, result.Type);
-        return Ast.makeNode(CAstNode.ASSIGN,
-                ResultValue.getVarNode(),
-                Ast.makeNode(CAstNode.NEW, Ast.makeConstant(result.Type)));
+        Assertions.UNREACHABLE("UNHANDLED INSTRUCTION");
+        return null;
     }
 
     @Override
+    // FREQUENCY: COMMON
     // STATUS: TRANSLATED
     // CONFIDENCE: HIGH
     protected CAstNode visitAllocGlobal(CAstNode N, SILInstructionContext C) {
-        // Allocate a global which is identified by a name.
+        // Allocate a global which is identified by a name. Should technically
+        // be a pointer, but doesn't matter for now since an empty pointer
+        // points to itself.
         String GlobalName = getStringValue(N, 0);
         String GlobalType = getStringValue(N, 1);
         SILValue ResultValue = new SILValue(GlobalName, GlobalType, C);
@@ -481,6 +496,7 @@ public class RawAstTranslator extends SILInstructionVisitor<CAstNode, SILInstruc
     }
 
     @Override
+    // FREQUENCY: VERY COMMON
     // STATUS: TRANSLATED
     // CONFIDENCE: HIGH
     protected CAstNode visitDeallocStack(CAstNode N, SILInstructionContext C) {
@@ -493,6 +509,7 @@ public class RawAstTranslator extends SILInstructionVisitor<CAstNode, SILInstruc
     }
 
     @Override
+    // FREQUENCY: RARE
     // STATUS: TRANSLATED
     // CONFIDENCE: HIGH
     protected CAstNode visitDeallocBox(CAstNode N, SILInstructionContext C) {
@@ -504,6 +521,7 @@ public class RawAstTranslator extends SILInstructionVisitor<CAstNode, SILInstruc
     }
 
     @Override
+    // FREQUENCY: VERY COMMON
     // STATUS: TRANSLATED
     // CONFIDENCE: HIGH
     protected CAstNode visitProjectBox(CAstNode N, SILInstructionContext C) {
@@ -515,6 +533,7 @@ public class RawAstTranslator extends SILInstructionVisitor<CAstNode, SILInstruc
     }
 
     @Override
+    // FREQUENCY: COMMON
     // STATUS: TRANSLATED
     // CONFIDENCE: HIGH
     protected CAstNode visitDeallocRef(CAstNode N, SILInstructionContext C) {
@@ -525,40 +544,34 @@ public class RawAstTranslator extends SILInstructionVisitor<CAstNode, SILInstruc
     }
 
     @Override
-    // STATUS: TRANSLATED
-    // CONFIDENCE: HIGH
-    protected CAstNode visitDeallocPartialRef(CAstNode N, SILInstructionContext C) {
-        // We ignore the second operand which is the metatype that seems to just
-        // be there to properly dealloc the value.
-        RawValue operand = getOperand(N, 0);
-        C.valueTable.removeValue(operand.Name);
-        return null;
-    }
-
-    @Override
-    // STATUS: TRANSLATED
-    // CONFIDENCE: LOW
-    protected CAstNode visitDeallocValueBuffer(CAstNode N, SILInstructionContext C) {
-        // Deallocates the storage in the given pointer. We do not delete the pointer
-        // itself (unless of course the pointer has no underlying value).
-        // TODO: Resolve alloc_value_buffer first (tuple question).
-        RawValue operand = getSingleOperand(N);
-        SILValue OperandValue = C.valueTable.getValue(operand.Name);
-        Assertions.productionAssertion(OperandValue instanceof SILPointer);
-        C.valueTable.removeValue(((SILPointer)OperandValue).dereference().getName());
-        return null;
-    }
-
-    @Override
+    // FREQUENCY: UNSEEN
     // STATUS: UNHANDLED
     // CONFIDENCE:
-    protected CAstNode visitProjectValueBuffer(CAstNode N, SILInstructionContext C) {
-        // TODO: Resolve alloc_value_buffer first (tuple question).
+    protected CAstNode visitDeallocPartialRef(CAstNode N, SILInstructionContext C) {
         Assertions.UNREACHABLE("UNHANDLED INSTRUCTION");
         return null;
     }
 
     @Override
+    // FREQUENCY: UNSEEN
+    // STATUS: UNHANDLED
+    // CONFIDENCE:
+    protected CAstNode visitDeallocValueBuffer(CAstNode N, SILInstructionContext C) {
+        Assertions.UNREACHABLE("UNHANDLED INSTRUCTION");
+        return null;
+    }
+
+    @Override
+    // FREQUENCY: UNSEEN
+    // STATUS: UNHANDLED
+    // CONFIDENCE:
+    protected CAstNode visitProjectValueBuffer(CAstNode N, SILInstructionContext C) {
+        Assertions.UNREACHABLE("UNHANDLED INSTRUCTION");
+        return null;
+    }
+
+    @Override
+    // FREQUENCY: VERY COMMON
     // STATUS: TRANSLATED
     // CONFIDENCE: HIGH
     protected CAstNode visitDebugValue(CAstNode N, SILInstructionContext C) {
@@ -567,6 +580,7 @@ public class RawAstTranslator extends SILInstructionVisitor<CAstNode, SILInstruc
     }
 
     @Override
+    // FREQUENCY: VERY COMMON
     // STATUS: TRANSLATED
     // CONFIDENCE: HIGH
     protected CAstNode visitDebugValueAddr(CAstNode N, SILInstructionContext C) {
@@ -575,6 +589,7 @@ public class RawAstTranslator extends SILInstructionVisitor<CAstNode, SILInstruc
     }
 
     @Override
+    // FREQUENCY: VERY COMMON
     // STATUS: TRANSLATED
     // CONFIDENCE: HIGH
     protected CAstNode visitLoad(CAstNode N, SILInstructionContext C) {
@@ -591,6 +606,7 @@ public class RawAstTranslator extends SILInstructionVisitor<CAstNode, SILInstruc
     }
 
     @Override
+    // FREQUENCY: VERY COMMON
     // STATUS: TRANSLATED
     // CONFIDENCE: HIGH
     protected CAstNode visitStore(CAstNode N, SILInstructionContext C) {
@@ -608,6 +624,7 @@ public class RawAstTranslator extends SILInstructionVisitor<CAstNode, SILInstruc
     }
 
     @Override
+    // FREQUENCY: COMMON
     // STATUS: TRANSLATED
     // CONFIDENCE: MED
     protected CAstNode visitStoreBorrow(CAstNode N, SILInstructionContext C) {
@@ -616,6 +633,7 @@ public class RawAstTranslator extends SILInstructionVisitor<CAstNode, SILInstruc
     }
 
     @Override
+    // FREQUENCY: COMMON
     // STATUS: TRANSLATED
     // CONFIDENCE: HIGH
     protected CAstNode visitLoadBorrow(CAstNode N, SILInstructionContext C) {
@@ -626,6 +644,7 @@ public class RawAstTranslator extends SILInstructionVisitor<CAstNode, SILInstruc
     }
 
     @Override
+    // FREQUENCY: VERY COMMON
     // STATUS: TRANSLATED
     // CONFIDENCE: MED
     protected CAstNode visitBeginBorrow(CAstNode N, SILInstructionContext C) {
@@ -634,6 +653,7 @@ public class RawAstTranslator extends SILInstructionVisitor<CAstNode, SILInstruc
     }
 
     @Override
+    // FREQUENCY: VERY COMMON
     // STATUS: TRANSLATED
     // CONFIDENCE: HIGH
     protected CAstNode visitEndBorrow(CAstNode N, SILInstructionContext C) {
@@ -646,6 +666,7 @@ public class RawAstTranslator extends SILInstructionVisitor<CAstNode, SILInstruc
     }
 
     @Override
+    // FREQUENCY: VERY COMMON
     // STATUS: TRANSLATED
     // CONFIDENCE: HIGH
     protected CAstNode visitAssign(CAstNode N, SILInstructionContext C) {
@@ -663,6 +684,7 @@ public class RawAstTranslator extends SILInstructionVisitor<CAstNode, SILInstruc
     }
 
     @Override
+    // FREQUENCY: RARE
     // STATUS: TRANSLATED
     // CONFIDENCE: LOW
     protected CAstNode visitAssignByWrapper(CAstNode N, SILInstructionContext C) {
@@ -694,6 +716,7 @@ public class RawAstTranslator extends SILInstructionVisitor<CAstNode, SILInstruc
     }
 
     @Override
+    // FREQUENCY: VERY COMMON
     // STATUS: TRANSLATED
     // CONFIDENCE: HIGH
     protected CAstNode visitMarkUninitialized(CAstNode N, SILInstructionContext C) {
@@ -706,6 +729,7 @@ public class RawAstTranslator extends SILInstructionVisitor<CAstNode, SILInstruc
     }
 
     @Override
+    // FREQUENCY: COMMON
     // STATUS: TRANSLATED
     // CONFIDENCE: HIGH
     protected CAstNode visitMarkFunctionEscape(CAstNode N, SILInstructionContext C) {
@@ -717,15 +741,16 @@ public class RawAstTranslator extends SILInstructionVisitor<CAstNode, SILInstruc
     }
 
     @Override
-    // STATUS: TRANSLATED
-    // CONFIDENCE: MED
+    // FREQUENCY: UNSEEN
+    // STATUS: UNHANDLED
+    // CONFIDENCE:
     protected CAstNode visitMarkUninitializedBehavior(CAstNode N, SILInstructionContext C) {
-        // Doesn't appear to have a result so probably a NOP but may need further investigating.
-        // NOP
+        Assertions.UNREACHABLE("UNHANDLED INSTRUCTION");
         return null;
     }
 
     @Override
+    // FREQUENCY: VERY COMMON
     // STATUS: TRANSLATED
     // CONFIDENCE: HIGH
     protected CAstNode visitCopyAddr(CAstNode N, SILInstructionContext C) {
@@ -744,6 +769,7 @@ public class RawAstTranslator extends SILInstructionVisitor<CAstNode, SILInstruc
     }
 
     @Override
+    // FREQUENCY: VERY COMMON
     // STATUS: TRANSLATED
     // CONFIDENCE: HIGH
     protected CAstNode visitDestroyAddr(CAstNode N, SILInstructionContext C) {
@@ -756,6 +782,7 @@ public class RawAstTranslator extends SILInstructionVisitor<CAstNode, SILInstruc
     }
 
     @Override
+    // FREQUENCY: VERY COMMON
     // STATUS: UNHANDLED
     // CONFIDENCE:
     protected CAstNode visitIndexAddr(CAstNode N, SILInstructionContext C) {
@@ -766,33 +793,34 @@ public class RawAstTranslator extends SILInstructionVisitor<CAstNode, SILInstruc
     }
 
     @Override
+    // FREQUENCY: UNSEEN
     // STATUS: UNHANDLED
     // CONFIDENCE:
     protected CAstNode visitTailAddr(CAstNode N, SILInstructionContext C) {
-        // TODO: see visitIndexAddr
         Assertions.UNREACHABLE("UNHANDLED INSTRUCTION");
         return null;
     }
 
     @Override
+    // FREQUENCY: UNSEEN
     // STATUS: UNHANDLED
     // CONFIDENCE:
     protected CAstNode visitIndexRawPointer(CAstNode N, SILInstructionContext C) {
-        // TODO: Need to see in action. How is the result used?
         Assertions.UNREACHABLE("UNHANDLED INSTRUCTION");
         return null;
     }
 
     @Override
+    // FREQUENCY: UNSEEN
     // STATUS: UNHANDLED
     // CONFIDENCE:
     protected CAstNode visitBindMemory(CAstNode N, SILInstructionContext C) {
-        // TODO: Need to see if the operand changes type.
         Assertions.UNREACHABLE("UNHANDLED INSTRUCTION");
         return null;
     }
 
     @Override
+    // FREQUENCY: VERY COMMON
     // STATUS: TRANSLATED
     // CONFIDENCE: HIGH
     protected CAstNode visitBeginAccess(CAstNode N, SILInstructionContext C) {
@@ -806,6 +834,7 @@ public class RawAstTranslator extends SILInstructionVisitor<CAstNode, SILInstruc
     }
 
     @Override
+    // FREQUENCY: VERY COMMON
     // STATUS: TRANSLATED
     // CONFIDENCE: HIGH
     protected CAstNode visitEndAccess(CAstNode N, SILInstructionContext C) {
@@ -817,84 +846,79 @@ public class RawAstTranslator extends SILInstructionVisitor<CAstNode, SILInstruc
     }
 
     @Override
-    // STATUS: TRANSLATED
-    // CONFIDENCE: MED
+    // FREQUENCY: UNSEEN
+    // STATUS: UNHANDLED
+    // CONFIDENCE:
     protected CAstNode visitBeginUnpairedAccess(CAstNode N, SILInstructionContext C) {
-        // Basically just copies the pointer given, but with an additional operand used
-        // to uniquely identify this access. We just copy the value with this identifier.
-        // TODO: Need to see how the additional operand is created.
-        RawValue operand = getSingleOperand(N);
-        RawValue result = getOperand(N, 0);
-        RawValue buffer = getOperand(N, 1);
-        SILValue OperandValue = C.valueTable.getValue(operand.Name);
-        SILValue BufferValue = C.valueTable.getValue(buffer.Name);
-        Assertions.productionAssertion(OperandValue instanceof SILPointer);
-        Assertions.productionAssertion(BufferValue instanceof SILPointer);
-        C.valueTable.copyValue(result.Name, operand.Name);
-        C.valueTable.copyValue(buffer.Name, operand.Name);
+        Assertions.UNREACHABLE("UNHANDLED INSTRUCTION");
         return null;
     }
 
     @Override
-    // STATUS: TRANSLATED
-    // CONFIDENCE: MED
+    // FREQUENCY: UNSEEN
+    // STATUS: UNHANDLED
+    // CONFIDENCE:
     protected CAstNode visitEndUnpairedAccess(CAstNode N, SILInstructionContext C) {
-        // Ends an access. The operand is an identifier. We just remove the operand
-        // value from the symbol table.
-        // TODO: What is the result used for?
-        C.valueTable.removeValue(getSingleOperand(N).Name);
+        Assertions.UNREACHABLE("UNHANDLED INSTRUCTION");
         return null;
     }
 
     @Override
-    // STATUS: TRANSLATED
-    // CONFIDENCE: HIGH
+    // FREQUENCY: UNSEEN
+    // STATUS: UNHANDLED
+    // CONFIDENCE:
     protected CAstNode visitStrongRetain(CAstNode N, SILInstructionContext C) {
-        // NOP
+        Assertions.UNREACHABLE("UNHANDLED INSTRUCTION");
         return null;
     }
 
     @Override
-    // STATUS: TRANSLATED
-    // CONFIDENCE: HIGH
+    // FREQUENCY: UNSEEN
+    // STATUS: UNHANDLED
+    // CONFIDENCE:
     protected CAstNode visitStrongRelease(CAstNode N, SILInstructionContext C) {
-        // NOP
+        Assertions.UNREACHABLE("UNHANDLED INSTRUCTION");
         return null;
     }
 
     @Override
-    // STATUS: TRANSLATED
-    // CONFIDENCE: HIGH
+    // FREQUENCY: UNSEEN
+    // STATUS: UNHANDLED
+    // CONFIDENCE:
     protected CAstNode visitSetDeallocating(CAstNode N, SILInstructionContext C) {
-        // NOP
+        Assertions.UNREACHABLE("UNHANDLED INSTRUCTION");
         return null;
     }
 
     @Override
-    // STATUS: TRANSLATED
-    // CONFIDENCE: HIGH
+    // FREQUENCY: UNSEEN
+    // STATUS: UNHANDLED
+    // CONFIDENCE:
     protected CAstNode visitStrongRetainUnowned(CAstNode N, SILInstructionContext C) {
-        // NOP
+        Assertions.UNREACHABLE("UNHANDLED INSTRUCTION");
         return null;
     }
 
     @Override
-    // STATUS: TRANSLATED
-    // CONFIDENCE: HIGH
+    // FREQUENCY: UNSEEN
+    // STATUS: UNHANDLED
+    // CONFIDENCE:
     protected CAstNode visitUnownedRetain(CAstNode N, SILInstructionContext C) {
-        // NOP
+        Assertions.UNREACHABLE("UNHANDLED INSTRUCTION");
         return null;
     }
 
     @Override
-    // STATUS: TRANSLATED
-    // CONFIDENCE: HIGH
+    // FREQUENCY: UNSEEN
+    // STATUS: UNHANDLED
+    // CONFIDENCE:
     protected CAstNode visitUnownedRelease(CAstNode N, SILInstructionContext C) {
-        // NOP
+        Assertions.UNREACHABLE("UNHANDLED INSTRUCTION");
         return null;
     }
 
     @Override
+    // FREQUENCY: COMMON
     // STATUS: TRANSLATED
     // CONFIDENCE: HIGH
     protected CAstNode visitLoadWeak(CAstNode N, SILInstructionContext C) {
@@ -903,6 +927,7 @@ public class RawAstTranslator extends SILInstructionVisitor<CAstNode, SILInstruc
     }
 
     @Override
+    // FREQUENCY: COMMON
     // STATUS: TRANSLATED
     // CONFIDENCE: MED
     protected CAstNode visitStoreWeak(CAstNode N, SILInstructionContext C) {
@@ -912,6 +937,7 @@ public class RawAstTranslator extends SILInstructionVisitor<CAstNode, SILInstruc
     }
 
     @Override
+    // FREQUENCY: RARE
     // STATUS: UNHANDLED
     // CONFIDENCE:
     protected CAstNode visitLoadUnowned(CAstNode N, SILInstructionContext C) {
@@ -921,6 +947,7 @@ public class RawAstTranslator extends SILInstructionVisitor<CAstNode, SILInstruc
     }
 
     @Override
+    // FREQUENCY: RARE
     // STATUS: UNHANDLED
     // CONFIDENCE: 
     protected CAstNode visitStoreUnowned(CAstNode N, SILInstructionContext C) {
@@ -930,14 +957,16 @@ public class RawAstTranslator extends SILInstructionVisitor<CAstNode, SILInstruc
     }
 
     @Override
-    // STATUS: TRANSLATED
-    // CONFIDENCE: HIGH
+    // FREQUENCY: UNSEEN
+    // STATUS: UNHANDLED
+    // CONFIDENCE:
     protected CAstNode visitFixLifetime(CAstNode N, SILInstructionContext C) {
-        // NOP
+        Assertions.UNREACHABLE("UNHANDLED INSTRUCTION");
         return null;
     }
 
     @Override
+    // FREQUENCY: VERY COMMON
     // STATUS: TRANSLATED
     // CONFIDENCE: MED
     protected CAstNode visitEndLifetime(CAstNode N, SILInstructionContext C) {
@@ -948,6 +977,7 @@ public class RawAstTranslator extends SILInstructionVisitor<CAstNode, SILInstruc
     }
 
     @Override
+    // FREQUENCY: COMMON
     // STATUS: TRANSLATED
     // CONFIDENCE: HIGH
     protected CAstNode visitMarkDependence(CAstNode N, SILInstructionContext C) {
@@ -958,20 +988,16 @@ public class RawAstTranslator extends SILInstructionVisitor<CAstNode, SILInstruc
     }
 
     @Override
-    // STATUS: TRANSLATED
-    // CONFIDENCE: HIGH
+    // FREQUENCY: UNSEEN
+    // STATUS: UNHANDLED
+    // CONFIDENCE:
     protected CAstNode visitIsUnique(CAstNode N, SILInstructionContext C) {
-        // Returns a boolean (represented as an int) based on whether the operand
-        // is a unique reference. This doesn't matter to us so we can make the result
-        // a constant value. For data flow, while the result does rely on the operand,
-        // such a low level operation should not effect something like taint analysis.
-        RawValue result = getSingleResult(N);
-        SILConstant IsUniqueVal = new SILConstant(result.Name, result.Type, C, "bool");
-        C.valueTable.addValue(IsUniqueVal);
+        Assertions.UNREACHABLE("UNHANDLED INSTRUCTION");
         return null;
     }
 
     @Override
+    // FREQUENCY: RARE
     // STATUS: TRANSLATED
     // CONFIDENCE: HIGH
     protected CAstNode visitIsEscapingClosure(CAstNode N, SILInstructionContext C) {
@@ -983,6 +1009,7 @@ public class RawAstTranslator extends SILInstructionVisitor<CAstNode, SILInstruc
     }
 
     @Override
+    // FREQUENCY: RARE
     // STATUS: TRANSLATED
     // CONFIDENCE: HIGH
     protected CAstNode visitCopyBlock(CAstNode N, SILInstructionContext C) {
@@ -994,6 +1021,7 @@ public class RawAstTranslator extends SILInstructionVisitor<CAstNode, SILInstruc
     }
 
     @Override
+    // FREQUENCY: RARE
     // STATUS: TRANSLATED
     // CONFIDENCE: HIGH
     protected CAstNode visitCopyBlockWithoutEscaping(CAstNode N, SILInstructionContext C) {
@@ -1002,6 +1030,7 @@ public class RawAstTranslator extends SILInstructionVisitor<CAstNode, SILInstruc
     }
 
     @Override
+    // FREQUENCY: VERY COMMON
     // STATUS: TRANSLATED
     // CONFIDENCE: HIGH
     protected CAstNode visitFunctionRef(CAstNode N, SILInstructionContext C) {
@@ -1033,6 +1062,7 @@ public class RawAstTranslator extends SILInstructionVisitor<CAstNode, SILInstruc
 }
 
     @Override
+    // FREQUENCY: COMMON
     // STATUS: UNHANDLED
     // CONFIDENCE:
     protected CAstNode visitDynamicFunctionRef(CAstNode N, SILInstructionContext C) {
@@ -1042,6 +1072,7 @@ public class RawAstTranslator extends SILInstructionVisitor<CAstNode, SILInstruc
     }
 
     @Override
+    // FREQUENCY: RARE
     // STATUS: UNHANDLED
     // CONFIDENCE:
     protected CAstNode visitPrevDynamicFunctionRef(CAstNode N, SILInstructionContext C) {
@@ -1051,6 +1082,7 @@ public class RawAstTranslator extends SILInstructionVisitor<CAstNode, SILInstruc
     }
 
     @Override
+    // FREQUENCY: VERY COMMON
     // STATUS: TRANSLATED
     // CONFIDENCE: HIGH
     protected CAstNode visitGlobalAddr(CAstNode N, SILInstructionContext C) {
@@ -1064,19 +1096,16 @@ public class RawAstTranslator extends SILInstructionVisitor<CAstNode, SILInstruc
     }
 
     @Override
-    // STATUS: TRANSLATED
-    // CONFIDENCE: HIGH
+    // FREQUENCY: UNSEEN
+    // STATUS: UNHANDLED
+    // CONFIDENCE:
     protected CAstNode visitGlobalValue(CAstNode N, SILInstructionContext C) {
-        // Result is the value of a global var. Implicit copy is sufficient for now.
-        RawValue result = getSingleResult(N);
-        String GlobalName = getStringValue(N, 2);
-        SILValue GlobalValue = C.valueTable.getValue(GlobalName);
-        Assertions.productionAssertion(GlobalValue instanceof SILPointer);
-        C.valueTable.copyValue(result.Name, ((SILPointer)GlobalValue).dereference());
+        Assertions.UNREACHABLE("UNHANDLED INSTRUCTION");
         return null;
     }
 
     @Override
+    // FREQUENCY: VERY COMMON
     // STATUS: TRANSLATED
     // CONFIDENCE: HIGH
     protected CAstNode visitIntegerLiteral(CAstNode N, SILInstructionContext C) {
@@ -1089,6 +1118,7 @@ public class RawAstTranslator extends SILInstructionVisitor<CAstNode, SILInstruc
     }
 
     @Override
+    // FREQUENCY: COMMON
     // STATUS: TRANSLATED
     // CONFIDENCE: HIGH
     protected CAstNode visitFloatLiteral(CAstNode N, SILInstructionContext C) {
@@ -1101,6 +1131,7 @@ public class RawAstTranslator extends SILInstructionVisitor<CAstNode, SILInstruc
     }
 
     @Override
+    // FREQUENCY: VERY COMMON
     // STATUS: TRANSLATED
     // CONFIDENCE: HIGH
     protected CAstNode visitStringLiteral(CAstNode N, SILInstructionContext C) {
@@ -1113,6 +1144,7 @@ public class RawAstTranslator extends SILInstructionVisitor<CAstNode, SILInstruc
     }
 
     @Override
+    // FREQUENCY: VERY COMMOND
     // STATUS: TRANSLATED
     // CONFIDENCE: HIGH
     protected CAstNode visitClassMethod(CAstNode N, SILInstructionContext C) {
@@ -1124,6 +1156,7 @@ public class RawAstTranslator extends SILInstructionVisitor<CAstNode, SILInstruc
     }
 
     @Override
+    // FREQUENCY: COMMON
     // STATUS: UNHANDLED
     // CONFIDENCE:
     protected CAstNode visitObjCMethod(CAstNode N, SILInstructionContext C) {
@@ -1133,15 +1166,16 @@ public class RawAstTranslator extends SILInstructionVisitor<CAstNode, SILInstruc
     }
 
     @Override
+    // FREQUENCY: UNSEEN
     // STATUS: UNHANDLED
     // CONFIDENCE:
     protected CAstNode visitSuperMethod(CAstNode N, SILInstructionContext C) {
-        // TODO: Ignoring dynamic dispatch for now.
         Assertions.UNREACHABLE("UNHANDLED INSTRUCTION");
         return null;
     }
 
     @Override
+    // FREQUENCY: COMMON
     // STATUS: UNHANDLED
     // CONFIDENCE:
     protected CAstNode visitObjCSuperMethod(CAstNode N, SILInstructionContext C) {
@@ -1151,6 +1185,7 @@ public class RawAstTranslator extends SILInstructionVisitor<CAstNode, SILInstruc
     }
 
     @Override
+    // FREQUENCY: VERY COMMON
     // STATUS: UNHANDLED
     // CONFIDENCE:
     protected CAstNode visitWitnessMethod(CAstNode N, SILInstructionContext C) {
@@ -1160,6 +1195,7 @@ public class RawAstTranslator extends SILInstructionVisitor<CAstNode, SILInstruc
     }
 
     @Override
+    // FREQUENCY: VERY COMMON
     // STATUS: TRANSLATED
     // CONFIDENCE: HIGH
     protected CAstNode visitApply(CAstNode N, SILInstructionContext C) {
@@ -1233,6 +1269,7 @@ public class RawAstTranslator extends SILInstructionVisitor<CAstNode, SILInstruc
     }
 
     @Override
+    // FREQUENCY: COMMON
     // STATUS: UNHANDLED
     // CONFIDENCE:
     protected CAstNode visitBeginApply(CAstNode N, SILInstructionContext C) {
@@ -1242,6 +1279,7 @@ public class RawAstTranslator extends SILInstructionVisitor<CAstNode, SILInstruc
     }
 
     @Override
+    // FREQUENCY: COMMON
     // STATUS: UNHANDLED
     // CONFIDENCE:
     protected CAstNode visitAbortApply(CAstNode N, SILInstructionContext C) {
@@ -1251,6 +1289,7 @@ public class RawAstTranslator extends SILInstructionVisitor<CAstNode, SILInstruc
     }
 
     @Override
+    // FREQUENCY: COMMON
     // STATUS: UNHANDLED
     // CONFIDENCE:
     protected CAstNode visitEndApply(CAstNode N, SILInstructionContext C) {
@@ -1260,6 +1299,7 @@ public class RawAstTranslator extends SILInstructionVisitor<CAstNode, SILInstruc
     }
 
     @Override
+    // FREQUENCY: VERY COMMON
     // STATUS: UNHANDLED
     // CONFIDENCE:
     protected CAstNode visitPartialApply(CAstNode N, SILInstructionContext C) {
@@ -1269,6 +1309,7 @@ public class RawAstTranslator extends SILInstructionVisitor<CAstNode, SILInstruc
     }
 
     @Override
+    // FREQUENCY: COMMON
     // STATUS: UNHANDLED
     // CONFIDENCE:
     protected CAstNode visitBuiltin(CAstNode N, SILInstructionContext C) {
@@ -1278,6 +1319,7 @@ public class RawAstTranslator extends SILInstructionVisitor<CAstNode, SILInstruc
     }
 
     @Override
+    // FREQUENCY: VERY COMMON
     // STATUS: TRANSLATED
     // CONFIDENCE: HIGH
     protected CAstNode visitMetatype(CAstNode N, SILInstructionContext C) {
@@ -1289,6 +1331,7 @@ public class RawAstTranslator extends SILInstructionVisitor<CAstNode, SILInstruc
     }
 
     @Override
+    // FREQUENCY: RARE
     // STATUS: TRANSLATED
     // CONFIDENCE: HIGH
     protected CAstNode visitValueMetatype(CAstNode N, SILInstructionContext C) {
@@ -1298,6 +1341,7 @@ public class RawAstTranslator extends SILInstructionVisitor<CAstNode, SILInstruc
     }
 
     @Override
+    // FREQUENCY: RARE
     // STATUS: TRANSLATED
     // CONFIDENCE: HIGH
     protected CAstNode visitExistentialMetatype(CAstNode N, SILInstructionContext C) {
@@ -1306,6 +1350,7 @@ public class RawAstTranslator extends SILInstructionVisitor<CAstNode, SILInstruc
     }
 
     @Override
+    // FREQUENCY: RARE
     // STATUS: UNHANDLED
     // CONFIDENCE:
     protected CAstNode visitObjCProtocol(CAstNode N, SILInstructionContext C) {
@@ -1315,30 +1360,34 @@ public class RawAstTranslator extends SILInstructionVisitor<CAstNode, SILInstruc
     }
 
     @Override
-    // STATUS: TRANSLATED
-    // CONFIDENCE: HIGH
+    // FREQUENCY: UNSEEN
+    // STATUS: UNHANDLED
+    // CONFIDENCE:
     protected CAstNode visitRetainValue(CAstNode N, SILInstructionContext C) {
-        // NOP
+        Assertions.UNREACHABLE("UNHANDLED INSTRUCTION");
         return null;
     }
 
     @Override
-    // STATUS: TRANSLATED
-    // CONFIDENCE: HIGH
+    // FREQUENCY: UNSEEN
+    // STATUS: UNHANDLED
+    // CONFIDENCE:
     protected CAstNode visitRetainValueAddr(CAstNode N, SILInstructionContext C) {
-        // NOP
+        Assertions.UNREACHABLE("UNHANDLED INSTRUCTION");
         return null;
     }
 
     @Override
-    // STATUS: TRANSLATED
-    // CONFIDENCE: HIGH
+    // FREQUENCY: UNSEEN
+    // STATUS: UNHANDLED
+    // CONFIDENCE:
     protected CAstNode visitUnmanagedRetainValue(CAstNode N, SILInstructionContext C) {
-        // NOP
+        Assertions.UNREACHABLE("UNHANDLED INSTRUCTION");
         return null;
     }
 
     @Override
+    // FREQUENCY: VERY COMMON
     // STATUS: TRANSLATED
     // CONFIDENCE: HIGH
     protected CAstNode visitCopyValue(CAstNode N, SILInstructionContext C) {
@@ -1350,30 +1399,34 @@ public class RawAstTranslator extends SILInstructionVisitor<CAstNode, SILInstruc
     }
 
     @Override
+    // FREQUENCY: UNSEEN
     // STATUS: UNHANDLED
     // CONFIDENCE:
     protected CAstNode visitReleaseValue(CAstNode N, SILInstructionContext C) {
-        // TODO: NOP for now since unclear if we should remove from value table.
+        Assertions.UNREACHABLE("UNHANDLED INSTRUCTION");
         return null;
     }
 
     @Override
+    // FREQUENCY: UNSEEN
     // STATUS: UNHANDLED
     // CONFIDENCE:
     protected CAstNode visitReleaseValueAddr(CAstNode N, SILInstructionContext C) {
-        // TODO: NOP for now since unclear if we should remove from value table.
+        Assertions.UNREACHABLE("UNHANDLED INSTRUCTION");
         return null;
-    }
+}
 
     @Override
+    // FREQUENCY: UNSEEN
     // STATUS: UNHANDLED
     // CONFIDENCE:
     protected CAstNode visitUnmanagedReleaseValue(CAstNode N, SILInstructionContext C) {
-        // TODO: NOP for now since unclear if we should remove from value table.
+        Assertions.UNREACHABLE("UNHANDLED INSTRUCTION");
         return null;
     }
 
     @Override
+    // FREQUENCY: VERY COMMON
     // STATUS: UNHANDLED
     // CONFIDENCE:
     protected CAstNode visitDestroyValue(CAstNode N, SILInstructionContext C) {
@@ -1382,6 +1435,7 @@ public class RawAstTranslator extends SILInstructionVisitor<CAstNode, SILInstruc
     }
 
     @Override
+    // FREQUENCY: RARE
     // STATUS: UNHANDLED
     // CONFIDENCE:
     protected CAstNode visitAutoreleaseValue(CAstNode N, SILInstructionContext C) {
@@ -1390,6 +1444,7 @@ public class RawAstTranslator extends SILInstructionVisitor<CAstNode, SILInstruc
     }
 
     @Override
+    // FREQUENCY: VERY COMMON
     // STATUS: TRANSLATED
     // CONFIDENCE: HIGH
     protected CAstNode visitTuple(CAstNode N, SILInstructionContext C) {
@@ -1415,6 +1470,7 @@ public class RawAstTranslator extends SILInstructionVisitor<CAstNode, SILInstruc
     }
 
     @Override
+    // FREQUENCY: RARE
     // STATUS: TRANSLATED
     // CONFIDENCE: HIGH
     protected CAstNode visitTupleExtract(CAstNode N, SILInstructionContext C) {
@@ -1424,7 +1480,7 @@ public class RawAstTranslator extends SILInstructionVisitor<CAstNode, SILInstruc
         RawValue operand = getSingleOperand(N);
         int Index = Integer.parseInt(getStringValue(N, 2));
         SILValue TupleValue = C.valueTable.getValue(operand.Name);
-        // TODO: Does this ever get called on a SILUnitArrayTuple?
+        // TODO: Does this ever get called on a SILUnitArrayTuple? Unlikely.
         Assertions.productionAssertion(TupleValue instanceof SILTuple);
         SILValue ResultValue = ((SILTuple)TupleValue).createField(result.Name, Index);
         C.valueTable.addValue(ResultValue);
@@ -1432,6 +1488,7 @@ public class RawAstTranslator extends SILInstructionVisitor<CAstNode, SILInstruc
     }
 
     @Override
+    // FREQUENCY: VERY COMMON
     // STATUS: TRANSLATED
     // CONFIDENCE: HIGH
     protected CAstNode visitTupleElementAddr(CAstNode N, SILInstructionContext C) {
@@ -1450,6 +1507,7 @@ public class RawAstTranslator extends SILInstructionVisitor<CAstNode, SILInstruc
     }
 
     @Override
+    // FREQUENCY: VERY COMMON
     // STATUS: TRANSLATED
     // CONFIDENCE: HIGH
     protected CAstNode visitDestructureTuple(CAstNode N, SILInstructionContext C) {
@@ -1475,6 +1533,7 @@ public class RawAstTranslator extends SILInstructionVisitor<CAstNode, SILInstruc
     }
 
     @Override
+    // FREQUENCY: VERY COMMON
     // STATUS: TRANSLATED
     // CONFIDENCE: HIGH
     protected CAstNode visitStruct(CAstNode N, SILInstructionContext C) {
@@ -1499,6 +1558,7 @@ public class RawAstTranslator extends SILInstructionVisitor<CAstNode, SILInstruc
     }
 
     @Override
+    // FREQUENCY: VERY COMMON
     // STATUS: TRANSLATED
     // CONFIDENCE: HIGH
     protected CAstNode visitStructExtract(CAstNode N, SILInstructionContext C) {
@@ -1521,6 +1581,7 @@ public class RawAstTranslator extends SILInstructionVisitor<CAstNode, SILInstruc
     }
 
     @Override
+    // FREQUENCY: VERY COMMON
     // STATUS: TRANSLATED
     // CONFIDENCE: HIGH
     protected CAstNode visitStructElementAddr(CAstNode N, SILInstructionContext C) {
@@ -1539,22 +1600,16 @@ public class RawAstTranslator extends SILInstructionVisitor<CAstNode, SILInstruc
     }
 
     @Override
-    // STATUS: TRANSLATED
-    // CONFIDENCE: HIGH
+    // FREQUENCY: UNSEEN
+    // STATUS: UNHANDLED
+    // CONFIDENCE:
     protected CAstNode visitDestructureStruct(CAstNode N, SILInstructionContext C) {
-        // Split the given struct value into its constituents.
-        RawValue operand = getSingleOperand(N);
-        SILValue OperandValue = C.valueTable.getValue(operand.Name);
-        Assertions.productionAssertion(OperandValue instanceof SILStruct);
-        for (int i = 0; i < ((SILStruct)OperandValue).getNumFields(); ++i) {
-            RawValue result = getResult(N, i);
-            SILField field = ((SILStruct) OperandValue).createField(result.Name, result.Type, i);
-            C.valueTable.addValue(field);
-        }
+        Assertions.UNREACHABLE("UNHANDLED INSTRUCTION");
         return null;
     }
 
     @Override
+    // FREQUENCY: RARE
     // STATUS: UNHANDLED
     // CONFIDENCE:
     protected CAstNode visitObject(CAstNode N, SILInstructionContext C) {
@@ -1564,6 +1619,7 @@ public class RawAstTranslator extends SILInstructionVisitor<CAstNode, SILInstruc
     }
 
     @Override
+    // FREQUENCY: VERY COMMON
     // STATUS: TRANSLATED
     // CONFIDENCE: HIGH
     protected CAstNode visitRefElementAddr(CAstNode N, SILInstructionContext C) {
@@ -1579,15 +1635,16 @@ public class RawAstTranslator extends SILInstructionVisitor<CAstNode, SILInstruc
     }
 
     @Override
+    // FREQUENCY: UNSEEN
     // STATUS: UNHANDLED
     // CONFIDENCE:
     protected CAstNode visitRefTailAddr(CAstNode N, SILInstructionContext C) {
-        // TODO:
         Assertions.UNREACHABLE("UNHANDLED INSTRUCTION");
         return null;
     }
 
     @Override
+    // FREQUENCY: VERY COMMON
     // STATUS: TRANSLATED
     // CONFIDENCE: HIGH
     protected CAstNode visitEnum(CAstNode N, SILInstructionContext C) {
@@ -1610,6 +1667,7 @@ public class RawAstTranslator extends SILInstructionVisitor<CAstNode, SILInstruc
     }
 
     @Override
+    // FREQUENCY: RARE
     // STATUS: TRANSLATED
     // CONFIDENCE: HIGH
     protected CAstNode visitUncheckedEnumData(CAstNode N, SILInstructionContext C) {
@@ -1625,6 +1683,7 @@ public class RawAstTranslator extends SILInstructionVisitor<CAstNode, SILInstruc
     }
 
     @Override
+    // FREQUENCY: COMMON
     // STATUS: TRANSLATED
     // CONFIDENCE: HIGH
     protected CAstNode visitInitEnumDataAddr(CAstNode N, SILInstructionContext C) {
@@ -1640,6 +1699,7 @@ public class RawAstTranslator extends SILInstructionVisitor<CAstNode, SILInstruc
     }
 
     @Override
+    // FREQUENCY: COMMON
     // STATUS: TRANSLATED
     // CONFIDENCE: HIGH
     protected CAstNode visitInjectEnumAddr(CAstNode N, SILInstructionContext C) {
@@ -1649,6 +1709,7 @@ public class RawAstTranslator extends SILInstructionVisitor<CAstNode, SILInstruc
     }
 
     @Override
+    // FREQUENCY: COMMON
     // STATUS: TRANSLATED
     // CONFIDENCE: HIGH
     protected CAstNode visitUncheckedTakeEnumDataAddr(CAstNode N, SILInstructionContext C) {
@@ -1668,6 +1729,7 @@ public class RawAstTranslator extends SILInstructionVisitor<CAstNode, SILInstruc
     }
 
     @Override
+    // FREQUENCY: COMMON
     // STATUS: UNHANDLED
     // CONFIDENCE:
     protected CAstNode visitSelectEnum(CAstNode N, SILInstructionContext C) {
@@ -1677,6 +1739,7 @@ public class RawAstTranslator extends SILInstructionVisitor<CAstNode, SILInstruc
     }
 
     @Override
+    // FREQUENCY: RARE
     // STATUS: UNHANDLED
     // CONFIDENCE:
     protected CAstNode visitSelectEnumAddr(CAstNode N, SILInstructionContext C) {
@@ -1686,6 +1749,7 @@ public class RawAstTranslator extends SILInstructionVisitor<CAstNode, SILInstruc
     }
 
     @Override
+    // FREQUENCY: VERY COMMON
     // STATUS: TRANSLATED
     // CONFIDENCE: HIGH
     protected CAstNode visitInitExistentialAddr(CAstNode N, SILInstructionContext C) {
@@ -1702,6 +1766,7 @@ public class RawAstTranslator extends SILInstructionVisitor<CAstNode, SILInstruc
     }
 
     @Override
+    // FREQUENCY: UNSEEN
     // STATUS: UNHANDLED
     // CONFIDENCE:
     protected CAstNode visitInitExistentialValue(CAstNode N, SILInstructionContext C) {
@@ -1710,6 +1775,7 @@ public class RawAstTranslator extends SILInstructionVisitor<CAstNode, SILInstruc
     }
 
     @Override
+    // FREQUENCY: RARE
     // STATUS: UNHANDLED
     // CONFIDENCE:
     protected CAstNode visitDeinitExistentialAddr(CAstNode N, SILInstructionContext C) {
@@ -1718,6 +1784,7 @@ public class RawAstTranslator extends SILInstructionVisitor<CAstNode, SILInstruc
     }
 
     @Override
+    // FREQUENCY: UNSEEN
     // STATUS: UNHANDLED
     // CONFIDENCE:
     protected CAstNode visitDeinitExistentialValue(CAstNode N, SILInstructionContext C) {
@@ -1726,6 +1793,7 @@ public class RawAstTranslator extends SILInstructionVisitor<CAstNode, SILInstruc
     }
 
     @Override
+    // FREQUENCY: COMMON
     // STATUS: UNHANDLED
     // CONFIDENCE:
     protected CAstNode visitOpenExistentialAddr(CAstNode N, SILInstructionContext C) {
@@ -1734,6 +1802,7 @@ public class RawAstTranslator extends SILInstructionVisitor<CAstNode, SILInstruc
     }
 
     @Override
+    // FREQUENCY: UNSEEN
     // STATUS: UNHANDLED
     // CONFIDENCE:
     protected CAstNode visitOpenExistentialValue(CAstNode N, SILInstructionContext C) {
@@ -1742,6 +1811,7 @@ public class RawAstTranslator extends SILInstructionVisitor<CAstNode, SILInstruc
     }
 
     @Override
+    // FREQUENCY: COMMON
     // STATUS: UNHANDLED
     // CONFIDENCE:
     protected CAstNode visitInitExistentialRef(CAstNode N, SILInstructionContext C) {
@@ -1750,6 +1820,7 @@ public class RawAstTranslator extends SILInstructionVisitor<CAstNode, SILInstruc
     }
 
     @Override
+    // FREQUENCY: COMMON
     // STATUS: UNHANDLED
     // CONFIDENCE:
     protected CAstNode visitOpenExistentialRef(CAstNode N, SILInstructionContext C) {
@@ -1758,6 +1829,7 @@ public class RawAstTranslator extends SILInstructionVisitor<CAstNode, SILInstruc
     }
 
     @Override
+    // FREQUENCY: COMMON
     // STATUS: UNHANDLED
     // CONFIDENCE:
     protected CAstNode visitInitExistentialMetatype(CAstNode N, SILInstructionContext C) {
@@ -1766,6 +1838,7 @@ public class RawAstTranslator extends SILInstructionVisitor<CAstNode, SILInstruc
     }
 
     @Override
+    // FREQUENCY: RARE
     // STATUS: UNHANDLED
     // CONFIDENCE:
     protected CAstNode visitOpenExistentialMetatype(CAstNode N, SILInstructionContext C) {
@@ -1774,6 +1847,7 @@ public class RawAstTranslator extends SILInstructionVisitor<CAstNode, SILInstruc
     }
 
     @Override
+    // FREQUENCY: RARE
     // STATUS: UNHANDLED
     // CONFIDENCE:
     protected CAstNode visitAllocExistentialBox(CAstNode N, SILInstructionContext C) {
@@ -1782,6 +1856,7 @@ public class RawAstTranslator extends SILInstructionVisitor<CAstNode, SILInstruc
     }
 
     @Override
+    // FREQUENCY: RARE
     // STATUS: UNHANDLED
     // CONFIDENCE:
     protected CAstNode visitProjectExistentialBox(CAstNode N, SILInstructionContext C) {
@@ -1790,6 +1865,7 @@ public class RawAstTranslator extends SILInstructionVisitor<CAstNode, SILInstruc
     }
 
     @Override
+    // FREQUENCY: RARE
     // STATUS: UNHANDLED
     // CONFIDENCE:
     protected CAstNode visitOpenExistentialBox(CAstNode N, SILInstructionContext C) {
@@ -1798,6 +1874,7 @@ public class RawAstTranslator extends SILInstructionVisitor<CAstNode, SILInstruc
     }
 
     @Override
+    // FREQUENCY: UNSEEN
     // STATUS: UNHANDLED
     // CONFIDENCE:
     protected CAstNode visitOpenExistentialBoxValue(CAstNode N, SILInstructionContext C) {
@@ -1806,6 +1883,7 @@ public class RawAstTranslator extends SILInstructionVisitor<CAstNode, SILInstruc
     }
 
     @Override
+    // FREQUENCY: RARE
     // STATUS: UNHANDLED
     // CONFIDENCE:
     protected CAstNode visitDeallocExistentialBox(CAstNode N, SILInstructionContext C) {
@@ -1814,6 +1892,7 @@ public class RawAstTranslator extends SILInstructionVisitor<CAstNode, SILInstruc
     }
 
     @Override
+    // FREQUENCY: RARE
     // STATUS: UNHANDLED
     // CONFIDENCE:
     protected CAstNode visitProjectBlockStorage(CAstNode N, SILInstructionContext C) {
@@ -1822,6 +1901,7 @@ public class RawAstTranslator extends SILInstructionVisitor<CAstNode, SILInstruc
     }
 
     @Override
+    // FREQUENCY: RARE
     // STATUS: UNHANDLED
     // CONFIDENCE:
     protected CAstNode visitInitBlockStorageHeader(CAstNode N, SILInstructionContext C) {
@@ -1830,6 +1910,7 @@ public class RawAstTranslator extends SILInstructionVisitor<CAstNode, SILInstruc
     }
 
     @Override
+    // FREQUENCY: VERY COMMON
     // STATUS: UNHANDLED
     // CONFIDENCE:
     protected CAstNode visitUpcast(CAstNode N, SILInstructionContext C) {
@@ -1838,6 +1919,7 @@ public class RawAstTranslator extends SILInstructionVisitor<CAstNode, SILInstruc
     }
 
     @Override
+    // FREQUENCY: COMMON
     // STATUS: UNHANDLED
     // CONFIDENCE:
     protected CAstNode visitAddressToPointer(CAstNode N, SILInstructionContext C) {
@@ -1846,6 +1928,7 @@ public class RawAstTranslator extends SILInstructionVisitor<CAstNode, SILInstruc
     }
 
     @Override
+    // FREQUENCY: VERY COMMON
     // STATUS: TRANSLATED
     // CONFIDENCE: LOW
     protected CAstNode visitPointerToAddress(CAstNode N, SILInstructionContext C) {
@@ -1860,6 +1943,7 @@ public class RawAstTranslator extends SILInstructionVisitor<CAstNode, SILInstruc
     }
 
     @Override
+    // FREQUENCY: VERY COMMON
     // STATUS: TRANSLATED
     // CONFIDENCE: LOW
     protected CAstNode visitUncheckedRefCast(CAstNode N, SILInstructionContext C) {
@@ -1873,15 +1957,16 @@ public class RawAstTranslator extends SILInstructionVisitor<CAstNode, SILInstruc
     }
 
     @Override
+    // FREQUENCY: UNSEEN
     // STATUS: UNHANDLED
     // CONFIDENCE:
     protected CAstNode visitUncheckedRefCastAddr(CAstNode N, SILInstructionContext C) {
-        // Cast problem
         Assertions.UNREACHABLE("UNHANDLED INSTRUCTION");
         return null;
     }
 
     @Override
+    // FREQUENCY: RARE
     // STATUS: UNHANDLED
     // CONFIDENCE:
     protected CAstNode visitUncheckedAddrCast(CAstNode N, SILInstructionContext C) {
@@ -1891,6 +1976,7 @@ public class RawAstTranslator extends SILInstructionVisitor<CAstNode, SILInstruc
     }
 
     @Override
+    // FREQUENCY: RARE
     // STATUS: UNHANDLED
     // CONFIDENCE:
     protected CAstNode visitUncheckedTrivialBitCast(CAstNode N, SILInstructionContext C) {
@@ -1900,15 +1986,16 @@ public class RawAstTranslator extends SILInstructionVisitor<CAstNode, SILInstruc
     }
 
     @Override
+    // FREQUENCY: UNSEEN
     // STATUS: UNHANDLED
     // CONFIDENCE:
     protected CAstNode visitUncheckedBitwiseCast(CAstNode N, SILInstructionContext C) {
-        // Cast problem
         Assertions.UNREACHABLE("UNHANDLED INSTRUCTION");
         return null;
     }
 
     @Override
+    // FREQUENCY: VERY COMMON
     // STATUS: TRANSLATED
     // CONFIDENCE: LOW
     protected CAstNode visitUncheckedOwnershipConversion(CAstNode N, SILInstructionContext C) {
@@ -1923,24 +2010,25 @@ public class RawAstTranslator extends SILInstructionVisitor<CAstNode, SILInstruc
     }
 
     @Override
+    // FREQUENCY: UNSEEN
     // STATUS: UNHANDLED
     // CONFIDENCE:
     protected CAstNode visitRefToRawPointer(CAstNode N, SILInstructionContext C) {
-        // Cast problem
         Assertions.UNREACHABLE("UNHANDLED INSTRUCTION");
         return null;
     }
 
     @Override
+    // FREQUENCY: UNSEEN
     // STATUS: UNHANDLED
     // CONFIDENCE:
     protected CAstNode visitRawPointerToRef(CAstNode N, SILInstructionContext C) {
-        // Cast problem
         Assertions.UNREACHABLE("UNHANDLED INSTRUCTION");
         return null;
     }
 
     @Override
+    // FREQUENCY: RARE
     // STATUS: UNHANDLED
     // CONFIDENCE:
     protected CAstNode visitRefToUnowned(CAstNode N, SILInstructionContext C) {
@@ -1950,15 +2038,16 @@ public class RawAstTranslator extends SILInstructionVisitor<CAstNode, SILInstruc
     }
 
     @Override
+    // FREQUENCY: UNSEEN
     // STATUS: UNHANDLED
     // CONFIDENCE:
     protected CAstNode visitUnownedToRef(CAstNode N, SILInstructionContext C) {
-        // Cast problem
         Assertions.UNREACHABLE("UNHANDLED INSTRUCTION");
         return null;
     }
 
     @Override
+    // FREQUENCY: RARE
     // STATUS: UNHANDLED
     // CONFIDENCE:
     protected CAstNode visitRefToUnmanaged(CAstNode N, SILInstructionContext C) {
@@ -1968,6 +2057,7 @@ public class RawAstTranslator extends SILInstructionVisitor<CAstNode, SILInstruc
     }
 
     @Override
+    // FREQUENCY: RARE
     // STATUS: UNHANDLED
     // CONFIDENCE:
     protected CAstNode visitUnmanagedToRef(CAstNode N, SILInstructionContext C) {
@@ -1977,6 +2067,7 @@ public class RawAstTranslator extends SILInstructionVisitor<CAstNode, SILInstruc
     }
 
     @Override
+    // FREQUENCY: COMMON
     // STATUS: UNHANDLED
     // CONFIDENCE:
     protected CAstNode visitConvertFunction(CAstNode N, SILInstructionContext C) {
@@ -1986,6 +2077,7 @@ public class RawAstTranslator extends SILInstructionVisitor<CAstNode, SILInstruc
     }
 
     @Override
+    // FREQUENCY: COMMON
     // STATUS: UNHANDLED
     // CONFIDENCE:
     protected CAstNode visitConvertEscapeToNoEscape(CAstNode N, SILInstructionContext C) {
@@ -1995,15 +2087,16 @@ public class RawAstTranslator extends SILInstructionVisitor<CAstNode, SILInstruc
     }
 
     @Override
+    // FREQUENCY: UNSEEN
     // STATUS: UNHANDLED
     // CONFIDENCE:
     protected CAstNode visitThinFunctionToPointer(CAstNode N, SILInstructionContext C) {
-        // Cast problem
         Assertions.UNREACHABLE("UNHANDLED INSTRUCTION");
         return null;
     }
 
     @Override
+    // FREQUENCY: UNSEEN
     // STATUS: UNHANDLED
     // CONFIDENCE:
     protected CAstNode visitPointerToThinFunction(CAstNode N, SILInstructionContext C) {
@@ -2013,51 +2106,52 @@ public class RawAstTranslator extends SILInstructionVisitor<CAstNode, SILInstruc
     }
 
     @Override
+    // FREQUENCY: UNSEEN
     // STATUS: UNHANDLED
     // CONFIDENCE:
     protected CAstNode visitClassifyBridgeObject(CAstNode N, SILInstructionContext C) {
-        // Cast problem 
         Assertions.UNREACHABLE("UNHANDLED INSTRUCTION");
         return null;
     }
 
     @Override
+    // FREQUENCY: UNSEEN
     // STATUS: UNHANDLED
     // CONFIDENCE:
     protected CAstNode visitValueToBridgeObject(CAstNode N, SILInstructionContext C) {
-        // Cast problem
         Assertions.UNREACHABLE("UNHANDLED INSTRUCTION");
         return null;
     }
 
     @Override
+    // FREQUENCY: UNSEEN
     // STATUS: UNHANDLED
     // CONFIDENCE:
     protected CAstNode visitRefToBridgeObject(CAstNode N, SILInstructionContext C) {
-        // Cast problem
         Assertions.UNREACHABLE("UNHANDLED INSTRUCTION");
         return null;
     }
 
     @Override
+    // FREQUENCY: UNSEEN
     // STATUS: UNHANDLED
     // CONFIDENCE:
     protected CAstNode visitBridgeObjectToRef(CAstNode N, SILInstructionContext C) {
-        // Cast problem
         Assertions.UNREACHABLE("UNHANDLED INSTRUCTION");
         return null;
     }
 
     @Override
+    // FREQUENCY: UNSEEN
     // STATUS: UNHANDLED
     // CONFIDENCE:
     protected CAstNode visitBridgeObjectToWord(CAstNode N, SILInstructionContext C) {
-        // Cast problem
         Assertions.UNREACHABLE("UNHANDLED INSTRUCTION");
         return null;
     }
 
     @Override
+    // FREQUENCY: VERY COMMON
     // STATUS: TRANSLATED
     // CONFIDENCE: LOW
     protected CAstNode visitThinToThickFunction(CAstNode N, SILInstructionContext C) {
@@ -2071,6 +2165,7 @@ public class RawAstTranslator extends SILInstructionVisitor<CAstNode, SILInstruc
     }
 
     @Override
+    // FREQUENCY: COMMON
     // STATUS: UNHANDLED
     // CONFIDENCE:
     protected CAstNode visitThickToObjCMetatype(CAstNode N, SILInstructionContext C) {
@@ -2080,6 +2175,7 @@ public class RawAstTranslator extends SILInstructionVisitor<CAstNode, SILInstruc
     }
 
     @Override
+    // FREQUENCY: RARE
     // STATUS: UNHANDLED
     // CONFIDENCE:
     protected CAstNode visitObjCToThickMetatype(CAstNode N, SILInstructionContext C) {
@@ -2089,6 +2185,7 @@ public class RawAstTranslator extends SILInstructionVisitor<CAstNode, SILInstruc
     }
 
     @Override
+    // FREQUENCY: RARE
     // STATUS: UNHANDLED
     // CONFIDENCE:
     protected CAstNode visitObjCMetatypeToObject(CAstNode N, SILInstructionContext C) {
@@ -2098,6 +2195,7 @@ public class RawAstTranslator extends SILInstructionVisitor<CAstNode, SILInstruc
     }
 
     @Override
+    // FREQUENCY: RARE
     // STATUS: UNHANDLED
     // CONFIDENCE:
     protected CAstNode visitObjCExistentialMetatypeToObject(CAstNode N, SILInstructionContext C) {
@@ -2107,6 +2205,7 @@ public class RawAstTranslator extends SILInstructionVisitor<CAstNode, SILInstruc
     }
 
     @Override
+    // FREQUENCY: RARE
     // STATUS: UNHANDLED
     // CONFIDENCE:
     protected CAstNode visitUnconditionalCheckedCast(CAstNode N, SILInstructionContext C) {
@@ -2116,6 +2215,7 @@ public class RawAstTranslator extends SILInstructionVisitor<CAstNode, SILInstruc
     }
 
     @Override
+    // FREQUENCY: COMMON
     // STATUS: UNHANDLED
     // CONFIDENCE:
     protected CAstNode visitUnconditionalCheckedCastAddr(CAstNode N, SILInstructionContext C) {
@@ -2125,15 +2225,16 @@ public class RawAstTranslator extends SILInstructionVisitor<CAstNode, SILInstruc
     }
 
     @Override
+    // FREQUENCY: UNSEEN
     // STATUS: UNHANDLED
     // CONFIDENCE:
     protected CAstNode visitUnconditionalCheckedCastValue(CAstNode N, SILInstructionContext C) {
-        // Cast problem
         Assertions.UNREACHABLE("UNHANDLED INSTRUCTION");
         return null;
     }
 
     @Override
+    // FREQUENCY: RARE
     // STATUS: UNHANDLED
     // CONFIDENCE:
     protected CAstNode visitCondFail(CAstNode N, SILInstructionContext C) {
@@ -2142,6 +2243,7 @@ public class RawAstTranslator extends SILInstructionVisitor<CAstNode, SILInstruc
     }
 
     @Override
+    // FREQUENCY: COMMON
     // STATUS: UNHANDLED
     // CONFIDENCE:
     protected CAstNode visitUnreachable(CAstNode N, SILInstructionContext C) {
@@ -2150,6 +2252,7 @@ public class RawAstTranslator extends SILInstructionVisitor<CAstNode, SILInstruc
     }
 
     @Override
+    // FREQUENCY: VERY COMMON
     // STATUS: TRANSLATED
     // CONFIDENCE: HIGH
     protected CAstNode visitReturn(CAstNode N, SILInstructionContext C) {
@@ -2165,6 +2268,7 @@ public class RawAstTranslator extends SILInstructionVisitor<CAstNode, SILInstruc
     }
 
     @Override
+    // FREQUENCY: COMMON
     // STATUS: UNHANDLED
     // CONFIDENCE:
     protected CAstNode visitThrow(CAstNode N, SILInstructionContext C) {
@@ -2177,6 +2281,7 @@ public class RawAstTranslator extends SILInstructionVisitor<CAstNode, SILInstruc
     }
 
     @Override
+    // FREQUENCY: VERY COMMON
     // STATUS: TRANSLATED
     // CONFIDENCE: MED
     protected CAstNode visitYield(CAstNode N, SILInstructionContext C) {
@@ -2194,6 +2299,7 @@ public class RawAstTranslator extends SILInstructionVisitor<CAstNode, SILInstruc
     }
 
     @Override
+    // FREQUENCY: VERY COMMON
     // STATUS: UNHANDLED
     // CONFIDENCE:
     protected CAstNode visitUnwind(CAstNode N, SILInstructionContext C) {
@@ -2202,6 +2308,7 @@ public class RawAstTranslator extends SILInstructionVisitor<CAstNode, SILInstruc
     }
 
     @Override
+    // FREQUENCY: VERY COMMON
     // STATUS: TRANSLATED
     // CONFIDENCE: HIGH
     protected CAstNode visitBr(CAstNode N, SILInstructionContext C) {
@@ -2236,6 +2343,7 @@ public class RawAstTranslator extends SILInstructionVisitor<CAstNode, SILInstruc
     }
 
     @Override
+    // FREQUENCY: VERY COMMON
     // STATUS: TRANSLATED
     // CONFIDENCE: HIGH
     protected CAstNode visitCondBr(CAstNode N, SILInstructionContext C) {
@@ -2275,6 +2383,7 @@ public class RawAstTranslator extends SILInstructionVisitor<CAstNode, SILInstruc
     }
 
     @Override
+    // FREQUENCY: RARE
     // STATUS: UNHANDLED
     // CONFIDENCE:
     protected CAstNode visitSwitchValue(CAstNode N, SILInstructionContext C) {
@@ -2284,15 +2393,16 @@ public class RawAstTranslator extends SILInstructionVisitor<CAstNode, SILInstruc
     }
 
     @Override
+    // FREQUENCY: UNSEEN
     // STATUS: UNHANDLED
     // CONFIDENCE:
     protected CAstNode visitSelectValue(CAstNode N, SILInstructionContext C) {
-        // Switch problem
         Assertions.UNREACHABLE("UNHANDLED INSTRUCTION");
         return null;
     }
 
     @Override
+    // FREQUENCY: VERY COMMON
     // STATUS: UNHANDLED
     // CONFIDENCE:
     protected CAstNode visitSwitchEnum(CAstNode N, SILInstructionContext C) {
@@ -2360,6 +2470,7 @@ public class RawAstTranslator extends SILInstructionVisitor<CAstNode, SILInstruc
     }
 
     @Override
+    // FREQUENCY: COMMON
     protected CAstNode visitSwitchEnumAddr(CAstNode N, SILInstructionContext C) {
         // Switch problem
         Assertions.UNREACHABLE("UNHANDLED INSTRUCTION");
@@ -2367,6 +2478,7 @@ public class RawAstTranslator extends SILInstructionVisitor<CAstNode, SILInstruc
     }
 
     @Override
+    // FREQUENCY: RARE
     // STATUS: UNHANDLED
     // CONFIDENCE:
     protected CAstNode visitDynamicMethodBr(CAstNode N, SILInstructionContext C) {
@@ -2375,6 +2487,7 @@ public class RawAstTranslator extends SILInstructionVisitor<CAstNode, SILInstruc
     }
 
     @Override
+    // FREQUENCY: COMMON
     // STATUS: UNHANDLED
     // CONFIDENCE:
     protected CAstNode visitCheckedCastBr(CAstNode N, SILInstructionContext C) {
@@ -2383,6 +2496,7 @@ public class RawAstTranslator extends SILInstructionVisitor<CAstNode, SILInstruc
     }
 
     @Override
+    // FREQUENCY: UNSEEN
     // STATUS: UNHANDLED
     // CONFIDENCE:
     protected CAstNode visitCheckedCastValueBr(CAstNode N, SILInstructionContext C) {
@@ -2391,6 +2505,7 @@ public class RawAstTranslator extends SILInstructionVisitor<CAstNode, SILInstruc
     }
 
     @Override
+    // FREQUENCY: COMMON
     // STATUS: UNHANDLED
     // CONFIDENCE:
     protected CAstNode visitCheckedCastAddrBr(CAstNode N, SILInstructionContext C) {
@@ -2399,6 +2514,7 @@ public class RawAstTranslator extends SILInstructionVisitor<CAstNode, SILInstruc
     }
 
     @Override
+    // FREQUENCY: COMMON
     // STATUS: INCOMPLETE
     // CONFIDENCE: LOW
     protected CAstNode visitTryApply(CAstNode N, SILInstructionContext C) {
