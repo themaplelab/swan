@@ -1779,6 +1779,7 @@ public class RawAstTranslator extends SILInstructionVisitor<CAstNode, SILInstruc
     // STATUS: UNHANDLED
     // CONFIDENCE:
     protected CAstNode visitDeinitExistentialAddr(CAstNode N, SILInstructionContext C) {
+        // TODO:
         Assertions.UNREACHABLE("UNHANDLED INSTRUCTION");
         return null;
     }
@@ -1797,6 +1798,7 @@ public class RawAstTranslator extends SILInstructionVisitor<CAstNode, SILInstruc
     // STATUS: UNHANDLED
     // CONFIDENCE:
     protected CAstNode visitOpenExistentialAddr(CAstNode N, SILInstructionContext C) {
+        // TODO:
         Assertions.UNREACHABLE("UNHANDLED INSTRUCTION");
         return null;
     }
@@ -1815,6 +1817,7 @@ public class RawAstTranslator extends SILInstructionVisitor<CAstNode, SILInstruc
     // STATUS: UNHANDLED
     // CONFIDENCE:
     protected CAstNode visitInitExistentialRef(CAstNode N, SILInstructionContext C) {
+        // TODO:
         Assertions.UNREACHABLE("UNHANDLED INSTRUCTION");
         return null;
     }
@@ -1824,6 +1827,7 @@ public class RawAstTranslator extends SILInstructionVisitor<CAstNode, SILInstruc
     // STATUS: UNHANDLED
     // CONFIDENCE:
     protected CAstNode visitOpenExistentialRef(CAstNode N, SILInstructionContext C) {
+        // TODO:
         Assertions.UNREACHABLE("UNHANDLED INSTRUCTION");
         return null;
     }
@@ -1833,6 +1837,7 @@ public class RawAstTranslator extends SILInstructionVisitor<CAstNode, SILInstruc
     // STATUS: UNHANDLED
     // CONFIDENCE:
     protected CAstNode visitInitExistentialMetatype(CAstNode N, SILInstructionContext C) {
+        // TODO:
         Assertions.UNREACHABLE("UNHANDLED INSTRUCTION");
         return null;
     }
@@ -1842,6 +1847,7 @@ public class RawAstTranslator extends SILInstructionVisitor<CAstNode, SILInstruc
     // STATUS: UNHANDLED
     // CONFIDENCE:
     protected CAstNode visitOpenExistentialMetatype(CAstNode N, SILInstructionContext C) {
+        // TODO:
         Assertions.UNREACHABLE("UNHANDLED INSTRUCTION");
         return null;
     }
@@ -1851,6 +1857,7 @@ public class RawAstTranslator extends SILInstructionVisitor<CAstNode, SILInstruc
     // STATUS: UNHANDLED
     // CONFIDENCE:
     protected CAstNode visitAllocExistentialBox(CAstNode N, SILInstructionContext C) {
+        // TODO:
         Assertions.UNREACHABLE("UNHANDLED INSTRUCTION");
         return null;
     }
@@ -1860,6 +1867,7 @@ public class RawAstTranslator extends SILInstructionVisitor<CAstNode, SILInstruc
     // STATUS: UNHANDLED
     // CONFIDENCE:
     protected CAstNode visitProjectExistentialBox(CAstNode N, SILInstructionContext C) {
+        // TODO:
         Assertions.UNREACHABLE("UNHANDLED INSTRUCTION");
         return null;
     }
@@ -1869,6 +1877,7 @@ public class RawAstTranslator extends SILInstructionVisitor<CAstNode, SILInstruc
     // STATUS: UNHANDLED
     // CONFIDENCE:
     protected CAstNode visitOpenExistentialBox(CAstNode N, SILInstructionContext C) {
+        // TODO:
         Assertions.UNREACHABLE("UNHANDLED INSTRUCTION");
         return null;
     }
@@ -1887,6 +1896,7 @@ public class RawAstTranslator extends SILInstructionVisitor<CAstNode, SILInstruc
     // STATUS: UNHANDLED
     // CONFIDENCE:
     protected CAstNode visitDeallocExistentialBox(CAstNode N, SILInstructionContext C) {
+        // TODO:
         Assertions.UNREACHABLE("UNHANDLED INSTRUCTION");
         return null;
     }
@@ -1896,6 +1906,7 @@ public class RawAstTranslator extends SILInstructionVisitor<CAstNode, SILInstruc
     // STATUS: UNHANDLED
     // CONFIDENCE:
     protected CAstNode visitProjectBlockStorage(CAstNode N, SILInstructionContext C) {
+        // TODO:
         Assertions.UNREACHABLE("UNHANDLED INSTRUCTION");
         return null;
     }
@@ -1905,6 +1916,7 @@ public class RawAstTranslator extends SILInstructionVisitor<CAstNode, SILInstruc
     // STATUS: UNHANDLED
     // CONFIDENCE:
     protected CAstNode visitInitBlockStorageHeader(CAstNode N, SILInstructionContext C) {
+        // TODO:
         Assertions.UNREACHABLE("UNHANDLED INSTRUCTION");
         return null;
     }
@@ -1914,6 +1926,7 @@ public class RawAstTranslator extends SILInstructionVisitor<CAstNode, SILInstruc
     // STATUS: UNHANDLED
     // CONFIDENCE:
     protected CAstNode visitUpcast(CAstNode N, SILInstructionContext C) {
+        // TODO:
         Assertions.UNREACHABLE("UNHANDLED INSTRUCTION");
         return null;
     }
@@ -1923,6 +1936,7 @@ public class RawAstTranslator extends SILInstructionVisitor<CAstNode, SILInstruc
     // STATUS: UNHANDLED
     // CONFIDENCE:
     protected CAstNode visitAddressToPointer(CAstNode N, SILInstructionContext C) {
+        // TODO:
         Assertions.UNREACHABLE("UNHANDLED INSTRUCTION");
         return null;
     }
@@ -1970,7 +1984,7 @@ public class RawAstTranslator extends SILInstructionVisitor<CAstNode, SILInstruc
     // STATUS: UNHANDLED
     // CONFIDENCE:
     protected CAstNode visitUncheckedAddrCast(CAstNode N, SILInstructionContext C) {
-        // Cast problem
+        // TODO: Cast problem
         Assertions.UNREACHABLE("UNHANDLED INSTRUCTION");
         return null;
     }
@@ -1980,7 +1994,7 @@ public class RawAstTranslator extends SILInstructionVisitor<CAstNode, SILInstruc
     // STATUS: UNHANDLED
     // CONFIDENCE:
     protected CAstNode visitUncheckedTrivialBitCast(CAstNode N, SILInstructionContext C) {
-        // Cast problem
+        // TODO: Cast problem
         Assertions.UNREACHABLE("UNHANDLED INSTRUCTION");
         return null;
     }
@@ -2032,7 +2046,7 @@ public class RawAstTranslator extends SILInstructionVisitor<CAstNode, SILInstruc
     // STATUS: UNHANDLED
     // CONFIDENCE:
     protected CAstNode visitRefToUnowned(CAstNode N, SILInstructionContext C) {
-        // Cast problem
+        // TODO: cast problem
         Assertions.UNREACHABLE("UNHANDLED INSTRUCTION");
         return null;
     }
@@ -2051,7 +2065,7 @@ public class RawAstTranslator extends SILInstructionVisitor<CAstNode, SILInstruc
     // STATUS: UNHANDLED
     // CONFIDENCE:
     protected CAstNode visitRefToUnmanaged(CAstNode N, SILInstructionContext C) {
-        // Cast problem
+        // TODO: Cast problem
         Assertions.UNREACHABLE("UNHANDLED INSTRUCTION");
         return null;
     }
@@ -2061,7 +2075,7 @@ public class RawAstTranslator extends SILInstructionVisitor<CAstNode, SILInstruc
     // STATUS: UNHANDLED
     // CONFIDENCE:
     protected CAstNode visitUnmanagedToRef(CAstNode N, SILInstructionContext C) {
-        // Cast problem
+        // TODO: Cast problem
         Assertions.UNREACHABLE("UNHANDLED INSTRUCTION");
         return null;
     }
@@ -2071,7 +2085,7 @@ public class RawAstTranslator extends SILInstructionVisitor<CAstNode, SILInstruc
     // STATUS: UNHANDLED
     // CONFIDENCE:
     protected CAstNode visitConvertFunction(CAstNode N, SILInstructionContext C) {
-        // Cast problem
+        // TODO: Cast problem
         Assertions.UNREACHABLE("UNHANDLED INSTRUCTION");
         return null;
     }
@@ -2081,7 +2095,7 @@ public class RawAstTranslator extends SILInstructionVisitor<CAstNode, SILInstruc
     // STATUS: UNHANDLED
     // CONFIDENCE:
     protected CAstNode visitConvertEscapeToNoEscape(CAstNode N, SILInstructionContext C) {
-        // Cast problem
+        // TODO: Cast problem
         Assertions.UNREACHABLE("UNHANDLED INSTRUCTION");
         return null;
     }
@@ -2169,7 +2183,7 @@ public class RawAstTranslator extends SILInstructionVisitor<CAstNode, SILInstruc
     // STATUS: UNHANDLED
     // CONFIDENCE:
     protected CAstNode visitThickToObjCMetatype(CAstNode N, SILInstructionContext C) {
-        // Cast problem
+        // TODO: Cast problem
         Assertions.UNREACHABLE("UNHANDLED INSTRUCTION");
         return null;
     }
@@ -2179,7 +2193,7 @@ public class RawAstTranslator extends SILInstructionVisitor<CAstNode, SILInstruc
     // STATUS: UNHANDLED
     // CONFIDENCE:
     protected CAstNode visitObjCToThickMetatype(CAstNode N, SILInstructionContext C) {
-        // Cast problem
+        // TODO: Cast problem
         Assertions.UNREACHABLE("UNHANDLED INSTRUCTION");
         return null;
     }
@@ -2189,7 +2203,7 @@ public class RawAstTranslator extends SILInstructionVisitor<CAstNode, SILInstruc
     // STATUS: UNHANDLED
     // CONFIDENCE:
     protected CAstNode visitObjCMetatypeToObject(CAstNode N, SILInstructionContext C) {
-        // Cast problem
+        // TODO: Cast problem
         Assertions.UNREACHABLE("UNHANDLED INSTRUCTION");
         return null;
     }
@@ -2199,7 +2213,7 @@ public class RawAstTranslator extends SILInstructionVisitor<CAstNode, SILInstruc
     // STATUS: UNHANDLED
     // CONFIDENCE:
     protected CAstNode visitObjCExistentialMetatypeToObject(CAstNode N, SILInstructionContext C) {
-        // Cast problem
+        // TODO: Cast problem
         Assertions.UNREACHABLE("UNHANDLED INSTRUCTION");
         return null;
     }
@@ -2209,7 +2223,7 @@ public class RawAstTranslator extends SILInstructionVisitor<CAstNode, SILInstruc
     // STATUS: UNHANDLED
     // CONFIDENCE:
     protected CAstNode visitUnconditionalCheckedCast(CAstNode N, SILInstructionContext C) {
-        // Cast problem
+        // TODO: Cast problem
         Assertions.UNREACHABLE("UNHANDLED INSTRUCTION");
         return null;
     }
@@ -2219,7 +2233,7 @@ public class RawAstTranslator extends SILInstructionVisitor<CAstNode, SILInstruc
     // STATUS: UNHANDLED
     // CONFIDENCE:
     protected CAstNode visitUnconditionalCheckedCastAddr(CAstNode N, SILInstructionContext C) {
-        // Cast problem
+        // TODO: Cast problem
         Assertions.UNREACHABLE("UNHANDLED INSTRUCTION");
         return null;
     }
@@ -2238,6 +2252,7 @@ public class RawAstTranslator extends SILInstructionVisitor<CAstNode, SILInstruc
     // STATUS: UNHANDLED
     // CONFIDENCE:
     protected CAstNode visitCondFail(CAstNode N, SILInstructionContext C) {
+        // TODO:
         Assertions.UNREACHABLE("UNHANDLED INSTRUCTION");
         return null;
     }
@@ -2247,6 +2262,7 @@ public class RawAstTranslator extends SILInstructionVisitor<CAstNode, SILInstruc
     // STATUS: UNHANDLED
     // CONFIDENCE:
     protected CAstNode visitUnreachable(CAstNode N, SILInstructionContext C) {
+        // TODO:
         Assertions.UNREACHABLE("UNHANDLED INSTRUCTION");
         return null;
     }
@@ -2275,7 +2291,7 @@ public class RawAstTranslator extends SILInstructionVisitor<CAstNode, SILInstruc
         // Need to figure out how exception handling will work in general.
         // We can use JS exception to exit, but that won't be precise because
         // throwing control flow is usually handled by the caller explicitly.
-        // e.g. try_apply
+        // e.g. try_apply TODO
         Assertions.UNREACHABLE("UNHANDLED INSTRUCTION");
         return null;
     }
@@ -2303,6 +2319,7 @@ public class RawAstTranslator extends SILInstructionVisitor<CAstNode, SILInstruc
     // STATUS: UNHANDLED
     // CONFIDENCE:
     protected CAstNode visitUnwind(CAstNode N, SILInstructionContext C) {
+        // TODO
         Assertions.UNREACHABLE("UNHANDLED INSTRUCTION");
         return Ast.makeNode(CAstNode.UNWIND);
     }
@@ -2387,7 +2404,7 @@ public class RawAstTranslator extends SILInstructionVisitor<CAstNode, SILInstruc
     // STATUS: UNHANDLED
     // CONFIDENCE:
     protected CAstNode visitSwitchValue(CAstNode N, SILInstructionContext C) {
-        // Switch problem
+        // TODO: Switch problem
         Assertions.UNREACHABLE("UNHANDLED INSTRUCTION");
         return null;
     }
@@ -2406,7 +2423,7 @@ public class RawAstTranslator extends SILInstructionVisitor<CAstNode, SILInstruc
     // STATUS: UNHANDLED
     // CONFIDENCE:
     protected CAstNode visitSwitchEnum(CAstNode N, SILInstructionContext C) {
-        // Switch problem
+        // Switch problem TODO
         Assertions.UNREACHABLE("UNHANDLED INSTRUCTION");
         /*
         String EnumName = (String)N.getChild(0).getValue();
@@ -2482,6 +2499,7 @@ public class RawAstTranslator extends SILInstructionVisitor<CAstNode, SILInstruc
     // STATUS: UNHANDLED
     // CONFIDENCE:
     protected CAstNode visitDynamicMethodBr(CAstNode N, SILInstructionContext C) {
+        // TODO
         Assertions.UNREACHABLE("UNHANDLED INSTRUCTION");
         return null;
     }
@@ -2491,6 +2509,7 @@ public class RawAstTranslator extends SILInstructionVisitor<CAstNode, SILInstruc
     // STATUS: UNHANDLED
     // CONFIDENCE:
     protected CAstNode visitCheckedCastBr(CAstNode N, SILInstructionContext C) {
+        // TODO
         Assertions.UNREACHABLE("UNHANDLED INSTRUCTION");
         return null;
     }
@@ -2509,6 +2528,7 @@ public class RawAstTranslator extends SILInstructionVisitor<CAstNode, SILInstruc
     // STATUS: UNHANDLED
     // CONFIDENCE:
     protected CAstNode visitCheckedCastAddrBr(CAstNode N, SILInstructionContext C) {
+        // TODO
         Assertions.UNREACHABLE("UNHANDLED INSTRUCTION");
         return null;
     }
@@ -2522,7 +2542,7 @@ public class RawAstTranslator extends SILInstructionVisitor<CAstNode, SILInstruc
         // 1. Return a value that is then checked in a conditional branch.
         // 2. Use whatever JS has for throw semantics. This might require passing the
         //    throw destination to the call site.
-
+        // TODO
         String FuncRefName = (String)N.getChild(0).getValue();
         CAstNode Source;
         CAstNode FuncNode = N.getChild(1);
