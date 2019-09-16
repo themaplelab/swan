@@ -135,6 +135,7 @@ unmanaged_to_ref: 53
 convert_function: 524
 convert_escape_to_noescape: 760
 thin_function_to_pointer: 0
+pointer_to_thin_function: 0
 classify_bridge_object: 0
 value_to_bridge_object: 0
 ref_to_bridge_object: 0
@@ -142,6 +143,7 @@ bridge_object_to_ref: 0
 bridge_object_to_word: 0
 thin_to_thick_function: 1041
 thick_to_objc_metatype: 274
+objc_to_thick_metatype: 30
 objc_metatype_to_object: 8
 objc_existential_metatype_to_object: 11
 unconditional_checked_cast: 54
@@ -164,4 +166,4 @@ checked_cast_br: 116
 checked_cast_value_br: 0
 checked_cast_addr_br: 262
 try_apply: 744
-coverage: 120/166 or 72%
+coverage: 121/168 or 72%
