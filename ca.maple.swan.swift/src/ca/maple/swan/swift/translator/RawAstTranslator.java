@@ -307,6 +307,9 @@ public class RawAstTranslator extends SILInstructionVisitor<CAstNode, SILInstruc
             argumentTypes.add(argType);
             argumentPositions.add((CAstSourcePositionMap.Position)arg.getChild(2).getValue());
         }
+        argumentNames.add(0, "self");
+        argumentTypes.add(0, "self");
+        argumentPositions.add(0, null);
         return new FunctionEntity(name, returnType, argumentTypes, argumentNames, functionPosition, argumentPositions, n);
     }
 
@@ -430,7 +433,7 @@ public class RawAstTranslator extends SILInstructionVisitor<CAstNode, SILInstruc
         // We are allocating a reference to an object, so no pointer here.
         // We ignore the operand which specifies irrelevant memory information.
         RawValue result = getSingleResult(N);
-        SILValue ResultValue = new SILValue(result.Name, result.Type, C);
+        SILValue ResultValue = new SILPointer(result.Name, result.Type, C);
         C.valueTable.addValue(ResultValue);
         return Ast.makeNode(CAstNode.ASSIGN,
                 ResultValue.getVarNode(),
@@ -1231,6 +1234,7 @@ public class RawAstTranslator extends SILInstructionVisitor<CAstNode, SILInstruc
                     ArrayList<SILValue> ParamVals = new ArrayList<>();
                     Params.add(((SILFunctionRef) FuncRef).getFunctionRef());
                     Params.add(Ast.makeConstant("do"));
+                    Params.add(Ast.makeConstant("self"));
                     for (CAstNode RawParam : FuncNode.getChildren().subList(1, FuncNode.getChildren().size())) {
                         String ParamName = (String)RawParam.getValue();
                         Params.add(C.valueTable.getValue(ParamName).getVarNode());
