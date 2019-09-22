@@ -20,6 +20,7 @@
 #define SWAN_STRUCTURES_HPP
 
 #include "CAstWrapper.h"
+
 #include "swift/SIL/ApplySite.h"
 #include "swift/SIL/SILVisitor.h"
 #include <jni.h>
@@ -192,9 +193,10 @@ struct RootFunctionInfo {
 
 /// Contains all raw function information.
 struct RootModuleInfo {
-  RootModuleInfo(CAstWrapper *wrapper) : wrapper(wrapper) {}
+  RootModuleInfo(CAstWrapper *wrapper, std::string filename) : wrapper(wrapper), filename(filename) {}
   CAstWrapper *wrapper;
   std::list<jobject> functions;
+  std::string filename;
 
   void addFunction(RootFunctionInfo *function) {
     functions.push_back(function->make());
@@ -207,10 +209,11 @@ struct RootModuleInfo {
   jobject make() {
     /*
      *  PRIMITIVE
+     *    MODULE_FILENAME
      *    PRIMTIVE <-- FUNCTION
      *    ...
      */
-    return wrapper->makeNode(CAstWrapper::PRIMITIVE, wrapper->makeArray(&functions));
+    return wrapper->makeNode(CAstWrapper::PRIMITIVE, wrapper->makeConstant(filename.c_str()), wrapper->makeArray(&functions));
   }
 };
 

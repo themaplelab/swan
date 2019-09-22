@@ -41,31 +41,19 @@ void WALAInstance::printNode(jobject Node) {
 }
 
 void WALAInstance::analyzeSILModule(SILModule &SM) {
-  InstructionVisitor Visitor(this); // Bool is for enabling translator printing (for debug).
+  InstructionVisitor Visitor(this);
   Visitor.visitSILModule(&SM);
 }
 
-void WALAInstance::analyze() {
-  // This -emit-sil option is critical as it specifies the action for the frontend,
-  // otherwise the compiler will not do anything and complain no action was given.
-  // Also, the callbacks required for the translation (hook) will not be triggered
-  // without this option.
-
-  // Note that "-o<name>.sil" option will prefix all function names with "<name>.". If you omit this option, it will
-  // prefix the function names with the .swift filename. This _shouldn't_ be problematic, but could be in the future
-  // especially with multi-file analysis.
-  auto Argv = {"", "-emit-silgen", "-oout.sil", "-Onone", File.c_str()};
-  swan::Observer observer(this); // create the hook
-  SmallVector<const char *, 256> argv(Argv.begin(), Argv.end());
-
-  // Change current working path to allow for relative pathed input files.
-  // Regular working dir is swan/ca.maple.swan.analysis, we change it to just swan/.
-  char temp[1024];
-  std::string currentWorkingPath = getcwd(temp, sizeof(temp)) ? std::string( temp ) : std::string("");
-  size_t lastSlashIndex = currentWorkingPath.find_last_of("/"); // TODO: Make this less hardcoded.
-  std::string newCurrentWorkingPath = currentWorkingPath.substr(0, lastSlashIndex);
-  chdir(newCurrentWorkingPath.c_str());
-
+void WALAInstance::analyze(const std::list<string> args) {
+  // Create the hook.
+  swan::Observer observer(this);
+  // Set up the arguments.
+  std::vector<const char *> vec(args.size());
+  for (auto it = args.begin(); it != args.end(); ++it) {
+    vec.push_back((*it).c_str());
+  }
+  SmallVector<const char *, 256> argv(vec.begin(), vec.end());
   // Call Swift compiler frontend.
   performFrontend(llvm::makeArrayRef(argv.data()+1,
                                      argv.data()+argv.size()),
@@ -76,22 +64,7 @@ void WALAInstance::analyze() {
 WALAInstance::WALAInstance(JNIEnv *Env, jobject Obj) : JavaEnv(Env), Translator(Obj) {
   TRY(Exception, JavaEnv)
       CAst = new CAstWrapper(JavaEnv, Exception, Translator); // Used for JNI calls.
-      // Find the bridge class.
-      auto TranslatorClass = JavaEnv->FindClass("ca/maple/swan/swift/translator/SwiftToCAstTranslator");
-      THROW_ANY_EXCEPTION(Exception);
-
-      // Get the file to analyze.
-      auto GetLocalFile = JavaEnv->GetMethodID(TranslatorClass, "getLocalFile", "()Ljava/lang/String;");
-      THROW_ANY_EXCEPTION(Exception);
-      auto LocalFile = static_cast<jstring>(JavaEnv->CallObjectMethod(Translator, GetLocalFile, 0));
-      THROW_ANY_EXCEPTION(Exception);
-      auto LocalFileStr = JavaEnv->GetStringUTFChars(LocalFile, nullptr);
-      THROW_ANY_EXCEPTION(Exception);
-      File = std::string(LocalFileStr);
-      JavaEnv->ReleaseStringUTFChars(LocalFile, LocalFileStr);
-      THROW_ANY_EXCEPTION(Exception);
   CATCH()
-      // TODO: Report exceptions to user.
 }
 
 jobject WALAInstance::makeBigDecimal(const char *strData, int strLen) {
@@ -106,6 +79,16 @@ jobject WALAInstance::makeBigDecimal(const char *strData, int strLen) {
   return bigDecimal;
 }
 
-jobject WALAInstance::getRoot() {
-  return Root;
+jobject WALAInstance::getRoots() {
+  jclass java_util_ArrayList = JavaEnv->FindClass("java/util/ArrayList");
+  jmethodID java_util_ArrayList_ = JavaEnv->GetMethodID(java_util_ArrayList, "<init>", "(I)V");
+  jmethodID java_util_ArrayList_add = JavaEnv->GetMethodID(java_util_ArrayList, "add", "(Ljava/lang/Object;)Z");
+
+  auto result = JavaEnv->NewObject(java_util_ArrayList, java_util_ArrayList_, Roots.size());
+
+  for (jobject node: Roots) {
+    JavaEnv->CallBooleanMethod(result, java_util_ArrayList_add, node);
+  }
+
+  return result;
 }

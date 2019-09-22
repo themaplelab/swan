@@ -27,8 +27,10 @@ import com.ibm.wala.ssa.SSAInstruction;
 import com.ibm.wala.types.MethodReference;
 import com.ibm.wala.util.collections.HashSetFactory;
 import com.ibm.wala.util.graph.traverse.BFSPathFinder;
+import com.ibm.wala.util.graph.traverse.DFS;
 
 import java.io.IOException;
+import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 
@@ -134,6 +136,8 @@ public class TaintAnalysis {
                         List<Statement> path = paths.find();
                         if (path != null) {
                             result.add(path);
+                        } else {
+                            System.out.println(DFS.getReachableNodes(G, Collections.singleton(src)));
                         }
                     }
                 }

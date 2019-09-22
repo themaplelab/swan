@@ -39,11 +39,10 @@ class WALAInstance {
 private:
   JNIEnv *JavaEnv; // JVM.
   jobject Translator; // Java translator object.
-  std::string File; // Swift file to analyze.
 
 public:
   CAstWrapper *CAst; // For handling JNI calls (WALA).
-  jobject Root;
+  std::list<jobject> Roots;
 
   explicit WALAInstance(JNIEnv* Env, jobject Obj);
 
@@ -55,10 +54,10 @@ public:
   void printNode(jobject Node);
 
   /// Starts the analysis, and hooks into the Swift compiler frontend.
-  void analyze();
+  void analyze(const std::list<string> args);
 
-  /// Returns the root node containing all information of the file.
-  jobject getRoot();
+  /// Returns the root nodes containing the information for each file.
+  jobject getRoots();
 
   /// Callback method from the Observer hook. It visits the given SIL module
   /// and will put the result back into the instance.
