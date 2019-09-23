@@ -63,7 +63,10 @@ void WALAInstance::analyze(const std::list<string> args) {
 
 WALAInstance::WALAInstance(JNIEnv *Env, jobject Obj) : JavaEnv(Env), Translator(Obj) {
   TRY(Exception, JavaEnv)
-      CAst = new CAstWrapper(JavaEnv, Exception, Translator); // Used for JNI calls.
+      this->CAst = new CAstWrapper(JavaEnv, Exception, Translator);
+
+      jobject test0 = CAst->makeConstant("test0");
+      printNode(test0);
   CATCH()
 }
 
