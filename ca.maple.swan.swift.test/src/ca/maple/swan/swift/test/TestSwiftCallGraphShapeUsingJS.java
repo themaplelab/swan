@@ -141,7 +141,7 @@ public class TestSwiftCallGraphShapeUsingJS extends TestCallGraphShape {
 
         try {
 
-            String[] modules = SwiftToCAstTranslator.doTranslation(args);
+            String[] modules = new SwiftToCAstTranslator().doTranslation(args);
 
             if (modules.length == 0) {
                 System.err.println("Error: could not create modules");

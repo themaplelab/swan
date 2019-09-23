@@ -46,6 +46,10 @@ public class SwiftToCAstTranslator extends NativeTranslatorToCAst {
         SwiftTranslatorPathLoader.load();
     }
 
+    public SwiftToCAstTranslator() {
+    	this(new CAstImpl(), null, null);
+	}
+
     public SwiftToCAstTranslator(ModuleEntry m) throws MalformedURLException {
         this(new CAstImpl(), new File(m.getName()).toURI().toURL(), m.getName());
     }
@@ -60,19 +64,19 @@ public class SwiftToCAstTranslator extends NativeTranslatorToCAst {
 		assert false;
 	}
 
-	public static native ArrayList<CAstNode> translateToCAstNodes(ArrayList<String> args);
+	public native ArrayList<CAstNode> translateToCAstNodes(ArrayList<String> args);
 
 	@Override
 	public CAstEntity translateToCAst() {
 		assert(!translatedModules.isEmpty());
-		return new RawAstTranslator().translate(new File(getFile()), translatedModules.get(this.sourceFileName).getChild(1));
+		return new RawAstTranslator().translate(new File((String)translatedModules.get(this.sourceFileName).getChild(0).getValue()), translatedModules.get(this.sourceFileName).getChild(1));
 	}
 
-	public static String[] doTranslation(String[] rawArgs) {
+	public String[] doTranslation(String[] rawArgs) {
 		return doTranslation(new ArrayList<>(Arrays.asList(rawArgs)));
 	}
 
-	public static String[] doTranslation(ArrayList<String> rawArgs) {
+	public String[] doTranslation(ArrayList<String> rawArgs) {
 
 		ArrayList<String> args = new ArrayList<>();
 
@@ -101,6 +105,7 @@ public class SwiftToCAstTranslator extends NativeTranslatorToCAst {
 		}
 
 		ArrayList<CAstNode> roots = translateToCAstNodes(args);
+
 		ArrayList<String> moduleNames = new ArrayList<>();
 		for (CAstNode root : roots) {
 			String filename = (String)root.getChild(0).getValue();
