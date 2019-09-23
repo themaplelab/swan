@@ -15,6 +15,7 @@ package ca.maple.swan.swift.test;
 
 import ca.maple.swan.swift.client.SwiftAnalysisEngine;
 import ca.maple.swan.swift.taint.TaintAnalysis;
+import ca.maple.swan.swift.translator.SwiftToCAstTranslator;
 import ca.maple.swan.swift.translator.SwiftToCAstTranslatorFactory;
 import com.ibm.wala.cast.ir.ssa.AstIRFactory;
 import com.ibm.wala.cast.js.client.JavaScriptAnalysisEngine;
@@ -79,7 +80,7 @@ public class TestSwiftCallGraphShapeUsingJS extends TestCallGraphShape {
             } else if (new File((name.substring(name.indexOf("/")+1).trim())).exists()) {
                 return new SourceURLModule((new File((name.substring(name.indexOf("/")+1).trim())).toURI().toURL()));
             } else {
-                throw new IOException("Script name is not a valid file!");
+                throw new IOException(String.format("Script name (%s) is not a valid file!", name));
             }
         } catch (MalformedURLException e) {
             return new SourceURLModule(getClass().getClassLoader().getResource(name));
@@ -137,13 +138,21 @@ public class TestSwiftCallGraphShapeUsingJS extends TestCallGraphShape {
         TestSwiftCallGraphShapeUsingJS driver = new TestSwiftCallGraphShapeUsingJS();
 
         JavaScriptAnalysisEngine Engine;
+
         try {
-            Engine = driver.makeEngine(args);
+
+            String[] modules = new SwiftToCAstTranslator().doTranslation(args);
+
+            if (modules.length == 0) {
+                System.err.println("Error: could not create modules");
+                System.exit(1);
+            }
+
+            Engine = driver.makeEngine(modules);
             CallGraphBuilder builder = Engine.defaultCallGraphBuilder();
             CallGraph CG = builder.makeCallGraph(Engine.getOptions(), new NullProgressMonitor());
 
             dumpCHA(CG.getClassHierarchy());
-            // dumpCG(CG);
 
             @SuppressWarnings("unchecked") SDG<InstanceKey> sdg = new SDG<InstanceKey>(CG, builder.getPointerAnalysis(), new JavaScriptModRef<>(), Slicer.DataDependenceOptions.NO_BASE_NO_HEAP_NO_EXCEPTIONS, Slicer.ControlDependenceOptions.NONE);
             Set<List<Statement>> paths = TaintAnalysis.getPaths(sdg, TaintAnalysis.swiftSources, TaintAnalysis.swiftSinks);

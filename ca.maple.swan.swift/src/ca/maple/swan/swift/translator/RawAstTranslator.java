@@ -22,7 +22,6 @@ import ca.maple.swan.swift.tree.SwiftFunctionType;
 import ca.maple.swan.swift.visualization.ASTtoDot;
 import com.ibm.wala.cast.ir.translator.AbstractCodeEntity;
 import com.ibm.wala.cast.tree.*;
-import com.ibm.wala.cast.tree.impl.CAstControlFlowRecorder;
 import com.ibm.wala.cast.tree.impl.CAstImpl;
 import com.ibm.wala.cast.tree.impl.CAstOperator;
 import com.ibm.wala.util.collections.Pair;

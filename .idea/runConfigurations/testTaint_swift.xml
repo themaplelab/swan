@@ -11,7 +11,8 @@
       <option name="taskNames">
         <list>
           <option value="run" />
-          <option value="--args=&quot;testFiles/taint/testTaint.swift&quot;" />
+          <option value="--args=&quot;SINGLE" />
+          <option value="testFiles/taint/testTaint.swift&quot;" />
         </list>
       </option>
       <option name="vmOptions" value="" />

@@ -25,9 +25,8 @@
 using namespace swan;
 
 JNIEXPORT jobject JNICALL
-Java_ca_maple_swan_swift_translator_SwiftToCAstTranslator_translateToCAstNodes(JNIEnv *env, jobject obj)
+Java_ca_maple_swan_swift_translator_SwiftToCAstTranslator_translateToCAstNodes(JNIEnv *env, jobject obj, jobject args)
 {
-    WALAInstance Instance(env, obj);
-    Instance.analyze();
-    return Instance.getRoot();
+    WALAInstance Instance(env, obj, args);
+    return Instance.getRoots();
 }
