@@ -13,23 +13,25 @@
 
 package ca.maple.swan.swift.translator;
 
-import java.io.File;
+import java.io.*;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.Map;
 
 import com.ibm.wala.cast.ir.translator.NativeTranslatorToCAst;
 import com.ibm.wala.cast.tree.CAst;
 import com.ibm.wala.cast.tree.CAstEntity;
 import com.ibm.wala.cast.tree.CAstNode;
+import com.ibm.wala.cast.tree.CAstSourcePositionMap;
+import com.ibm.wala.cast.tree.impl.AbstractSourcePosition;
 import com.ibm.wala.cast.tree.impl.CAstImpl;
 import com.ibm.wala.cast.tree.rewrite.CAstRewriter.CopyKey;
 import com.ibm.wala.cast.tree.rewrite.CAstRewriter.RewriteContext;
 import com.ibm.wala.cast.tree.rewrite.CAstRewriterFactory;
 import com.ibm.wala.classLoader.ModuleEntry;
-import com.ibm.wala.util.debug.Assertions;
 import org.apache.commons.io.FilenameUtils;
 
 /*
@@ -40,7 +42,10 @@ import org.apache.commons.io.FilenameUtils;
 
 public class SwiftToCAstTranslator extends NativeTranslatorToCAst {
 
-	private static Map<String, CAstNode> translatedModules;
+	private URL dynamicSourceURL;
+	private String dynamicSourceFileName;
+
+	private static Map<String, CAstNode> translatedModules = new HashMap<>();
 
     static {
         SwiftTranslatorPathLoader.load();
@@ -113,5 +118,82 @@ public class SwiftToCAstTranslator extends NativeTranslatorToCAst {
 			moduleNames.add(filename);
 		}
 		return moduleNames.toArray(new String[0]);
+	}
+
+	public void setSource(String url) {
+		try {
+			File newFile = new File(url);
+			this.dynamicSourceURL = newFile.toURI().toURL();
+			this.dynamicSourceFileName = newFile.getName();
+		} catch (Exception e) {
+			System.err.println("Error: Invalid url given");
+			e.printStackTrace();
+		}
+	}
+
+	protected CAstSourcePositionMap.Position makeLocation(final int fl, final int fc, final int ll, final int lc) {
+		return new AbstractSourcePosition() {
+			@Override
+			public int getFirstLine() {
+				return fl;
+			}
+
+			@Override
+			public int getLastLine() {
+				return ll;
+			}
+
+			@Override
+			public int getFirstCol() {
+				return fc;
+			}
+
+			@Override
+			public int getLastCol() {
+				return lc;
+			}
+
+			@Override
+			public int getFirstOffset() {
+				return -1;
+			}
+
+			@Override
+			public int getLastOffset() {
+				return -1;
+			}
+
+			@Override
+			public URL getURL() {
+				return dynamicSourceURL;
+			}
+
+			public InputStream getInputStream() throws IOException {
+				return new FileInputStream(dynamicSourceFileName);
+			}
+
+			@Override
+			public String toString() {
+				String urlString = dynamicSourceURL.toString();
+				if (urlString.lastIndexOf(File.separator) == -1)
+					return "[" + fl + ':' + fc + "]->[" + ll + ':' + lc + ']';
+				else
+					return urlString.substring(urlString.lastIndexOf(File.separator) + 1)
+							+ "@["
+							+ fl
+							+ ':'
+							+ fc
+							+ "]->["
+							+ ll
+							+ ':'
+							+ lc
+							+ ']';
+			}
+
+			@Override
+			public Reader getReader() throws IOException {
+				return new InputStreamReader(getInputStream());
+			}
+		};
 	}
 }

@@ -44,6 +44,7 @@ using namespace swan;
 
 void InstructionVisitor::visitSILModule(SILModule *M) {
   moduleInfo = std::make_unique<SILModuleInfo>(M->getSwiftModule()->getModuleFilename());
+  Instance->setSource(moduleInfo->sourcefile);
   currentModule = std::make_unique<RootModuleInfo>(Instance->CAst, moduleInfo->sourcefile);
 
   for (SILFunction &F: *M) {

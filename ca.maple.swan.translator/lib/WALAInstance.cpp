@@ -61,12 +61,25 @@ void WALAInstance::analyze(const std::list<string> args) {
                   &observer);
 }
 
-WALAInstance::WALAInstance(JNIEnv *Env, jobject Obj) : JavaEnv(Env), Translator(Obj) {
+WALAInstance::WALAInstance(JNIEnv *Env, jobject Obj, jobject args) : JavaEnv(Env), Translator(Obj) {
   TRY(Exception, JavaEnv)
       this->CAst = new CAstWrapper(JavaEnv, Exception, Translator);
 
-      jobject test0 = CAst->makeConstant("test0");
-      printNode(test0);
+      // Convert given ArrayList<String> to std::list<string>.
+      // Credit: https://gist.github.com/qiao-tw/6e43fb2311ee3c31752e11a4415deeb1
+      auto java_util_ArrayList      = JavaEnv->FindClass("java/util/ArrayList");
+      auto java_util_ArrayList_size = JavaEnv->GetMethodID (java_util_ArrayList, "size", "()I");
+      auto java_util_ArrayList_get  = JavaEnv->GetMethodID(java_util_ArrayList, "get", "(I)Ljava/lang/Object;");
+      jint len = JavaEnv->CallIntMethod(args, java_util_ArrayList_size);
+      std::list<std::string> argsList;
+      for (jint i=0; i<len; i++) {
+        jstring element = static_cast<jstring>(JavaEnv->CallObjectMethod(args, java_util_ArrayList_get, i));
+        const char* pchars = JavaEnv->GetStringUTFChars(element, nullptr);
+        argsList.push_back(pchars);
+        JavaEnv->ReleaseStringUTFChars(element, pchars);
+        JavaEnv->DeleteLocalRef(element);
+      }
+      analyze(argsList);
   CATCH()
 }
 
@@ -94,4 +107,15 @@ jobject WALAInstance::getRoots() {
   }
 
   return result;
+}
+
+void WALAInstance::setSource(std::string url) {
+  TRY(Exception, JavaEnv)
+      auto TranslatorClass = JavaEnv->FindClass("ca/maple/swan/swift/translator/SwiftToCAstTranslator");
+      THROW_ANY_EXCEPTION(Exception);
+      auto SetSource = JavaEnv->GetMethodID(TranslatorClass, "setSource", "(Ljava/lang/String;)V");
+      THROW_ANY_EXCEPTION(Exception);
+      JavaEnv->CallVoidMethod(Translator, SetSource, JavaEnv->NewStringUTF(url.c_str()));
+      THROW_ANY_EXCEPTION(Exception);
+  CATCH()
 }

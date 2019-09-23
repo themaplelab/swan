@@ -213,7 +213,10 @@ struct RootModuleInfo {
      *    PRIMTIVE <-- FUNCTION
      *    ...
      */
-    return wrapper->makeNode(CAstWrapper::PRIMITIVE, wrapper->makeConstant(filename.c_str()), wrapper->makeArray(&functions));
+    return wrapper->makeNode(CAstWrapper::PRIMITIVE,
+      wrapper->makeConstant(filename.c_str()),
+      wrapper->makeNode(CAstWrapper::PRIMITIVE,
+        wrapper->makeArray(&functions)));
   }
 };
 

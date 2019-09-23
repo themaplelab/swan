@@ -44,7 +44,7 @@ public:
   CAstWrapper *CAst; // For handling JNI calls (WALA).
   std::list<jobject> Roots;
 
-  explicit WALAInstance(JNIEnv* Env, jobject Obj);
+  explicit WALAInstance(JNIEnv* Env, jobject Obj, jobject args);
 
   /// Converts C++ string to Java BigDecimal, and is used by the
   /// SILWalaInstructionVisitor.
@@ -62,6 +62,9 @@ public:
   /// Callback method from the Observer hook. It visits the given SIL module
   /// and will put the result back into the instance.
   void analyzeSILModule(swift::SILModule &SM);
+
+  /// Sets the source URL/filename on the Java side so that locations are valid.
+  void setSource(std::string url);
 };
 
 } // end swan namespace
