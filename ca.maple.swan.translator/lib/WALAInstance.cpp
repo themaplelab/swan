@@ -96,17 +96,27 @@ jobject WALAInstance::makeBigDecimal(const char *strData, int strLen) {
 }
 
 jobject WALAInstance::getRoots() {
-  jclass java_util_ArrayList = JavaEnv->FindClass("java/util/ArrayList");
-  jmethodID java_util_ArrayList_ = JavaEnv->GetMethodID(java_util_ArrayList, "<init>", "(I)V");
-  jmethodID java_util_ArrayList_add = JavaEnv->GetMethodID(java_util_ArrayList, "add", "(Ljava/lang/Object;)Z");
+  TRY(Exception, JavaEnv)
+    jclass java_util_ArrayList = JavaEnv->FindClass("java/util/ArrayList");
+    jmethodID java_util_ArrayList_ = JavaEnv->GetMethodID(java_util_ArrayList, "<init>", "(I)V");
+    jmethodID java_util_ArrayList_add = JavaEnv->GetMethodID(java_util_ArrayList, "add", "(Ljava/lang/Object;)Z");
 
-  auto result = JavaEnv->NewObject(java_util_ArrayList, java_util_ArrayList_, Roots.size());
+    auto result = JavaEnv->NewObject(java_util_ArrayList, java_util_ArrayList_, mappedRoots.size());
 
-  for (jobject node: Roots) {
-    JavaEnv->CallBooleanMethod(result, java_util_ArrayList_add, node);
-  }
+    delete CAst;
+    CAst = new CAstWrapper(JavaEnv, Exception, Translator);
+    for (auto pair: mappedRoots) {
+      jobject Node = CAst->makeNode(
+        CAstWrapper::PRIMITIVE,
+          CAst->makeConstant(pair.first.c_str()),
+          CAst->makeNode(
+            CAstWrapper::PRIMITIVE,
+              CAst->makeArray(&pair.second)));
+      JavaEnv->CallBooleanMethod(result, java_util_ArrayList_add, Node);
+    }
 
-  return result;
+    return result;
+  CATCH()
 }
 
 void WALAInstance::setSource(std::string url) {

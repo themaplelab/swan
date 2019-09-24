@@ -43,20 +43,16 @@ using namespace swan;
 //===------------------- MODULE/FUNCTION/BLOCK VISITORS ------------------===//
 
 void InstructionVisitor::visitSILModule(SILModule *M) {
-  moduleInfo = std::make_unique<SILModuleInfo>(M->getSwiftModule()->getModuleFilename());
-  Instance->setSource(moduleInfo->sourcefile);
-  currentModule = std::make_unique<RootModuleInfo>(Instance->CAst, moduleInfo->sourcefile);
-
   for (SILFunction &F: *M) {
     if (F.empty()) { // Most likely a builtin, so we ignore it.
       llvm::outs() << "Skipping " << Demangle::demangleSymbolAsString(F.getName()) << "\n";
       continue;
     }
-
+    std::string file = F.getModule().getSwiftModule()->getModuleFilename();
+    Instance->setSource(file);
     visitSILFunction(&F);
+    Instance->addSourceFunction(file, currentFunction.get()->make());
   }
-
-  Instance->Roots.push_back(currentModule->make());
 }
 
 void InstructionVisitor::visitSILFunction(SILFunction *F) {
@@ -119,8 +115,6 @@ void InstructionVisitor::visitSILFunction(SILFunction *F) {
   for (auto &BB: *F) {
     visitSILBasicBlock(&BB);
   }
-
-  currentModule->addFunction(currentFunction.get());
 }
 
 void InstructionVisitor::visitSILBasicBlock(SILBasicBlock *BB) {

@@ -191,35 +191,6 @@ struct RootFunctionInfo {
   }
 };
 
-/// Contains all raw function information.
-struct RootModuleInfo {
-  RootModuleInfo(CAstWrapper *wrapper, std::string filename) : wrapper(wrapper), filename(filename) {}
-  CAstWrapper *wrapper;
-  std::list<jobject> functions;
-  std::string filename;
-
-  void addFunction(RootFunctionInfo *function) {
-    functions.push_back(function->make());
-  }
-
-  void addFunction(jobject function) {
-    functions.push_back(function);
-  }
-
-  jobject make() {
-    /*
-     *  PRIMITIVE
-     *    MODULE_FILENAME
-     *    PRIMTIVE <-- FUNCTION
-     *    ...
-     */
-    return wrapper->makeNode(CAstWrapper::PRIMITIVE,
-      wrapper->makeConstant(filename.c_str()),
-      wrapper->makeNode(CAstWrapper::PRIMITIVE,
-        wrapper->makeArray(&functions)));
-  }
-};
-
 inline std::string addressToString(void* const a) {
   char buff[80];
   std::sprintf(buff, "%p", a);

@@ -37,12 +37,16 @@ namespace swan {
 /// (C++ side) data and call hub.
 class WALAInstance {
 private:
-  JNIEnv *JavaEnv; // JVM.
-  jobject Translator; // Java translator object.
+  /// JVM.
+  JNIEnv *JavaEnv;
+  /// Java translator object.
+  jobject Translator;
+  /// Since even with multi-file compilation we only have a single
+  /// SILModule, we have to group SILFunctions by their source file.
+  std::unordered_map<std::string, std::list<jobject>> mappedRoots;
 
 public:
   CAstWrapper *CAst; // For handling JNI calls (WALA).
-  std::list<jobject> Roots;
 
   explicit WALAInstance(JNIEnv* Env, jobject Obj, jobject args);
 
@@ -65,6 +69,10 @@ public:
 
   /// Sets the source URL/filename on the Java side so that locations are valid.
   void setSource(std::string url);
+
+  void addSourceFunction(std::string file, jobject function) {
+    mappedRoots[file].push_back(function);
+  }
 };
 
 } // end swan namespace

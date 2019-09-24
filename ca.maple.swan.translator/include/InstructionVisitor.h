@@ -81,9 +81,6 @@ namespace swan {
     /// Current 'Cast Entity' which contains info necessary to later create the CAstEntity for the current function.
     std::unique_ptr<RootFunctionInfo> currentFunction;
 
-     /// Contains all of the raw data of the module.
-    std::unique_ptr<RootModuleInfo> currentModule;
-
     /// Source information about the SILInstruction.
     std::unique_ptr<SILInstructionInfo> instrInfo;
     /// Source information about the SILFunction.
