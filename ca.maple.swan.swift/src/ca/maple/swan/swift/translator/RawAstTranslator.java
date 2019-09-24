@@ -278,8 +278,8 @@ public class RawAstTranslator extends SILInstructionVisitor<CAstNode, SILInstruc
             EntityPrinter.print(mappedEntities.get(function));
         }
 
-        // For debugging : generate dot output.
-        ASTtoDot.print(allEntities);
+        // For debugging : generate dot output. Should turn off for large code.
+        // ASTtoDot.print(allEntities);
 
         return scriptEntity;
     }

@@ -6,7 +6,7 @@ A static program analysis framework for analyzing Swift (incl. iOS/macOS) applic
 
 ## Introduction
 
-SWAN is being developed for detecting security vulnerabilities in Swift applications using taint analysis. A custom translator converts Swift Intermediate Language ([SIL](https://github.com/apple/swift/blob/master/docs/SIL.rst)) to WALA IR (called [CAst](http://wala.sourceforge.net/javadocs/trunk/com/ibm/wala/cast/tree/package-summary.html)). The SIL is retrieved by hooking into the Swift compiler and grabbing the SIL modules during compilation. Since many languages can be translated to similar looking CAst, we are able to use WALA's JavaScript translators and analysis (with some modifcations) on the resulting CAst.
+SWAN is being developed for detecting security vulnerabilities in Swift applications using taint analysis. A custom translator converts Swift Intermediate Language ([SIL](https://github.com/apple/swift/blob/master/docs/SIL.rst)) to WALA IR (called [CAst](http://wala.sourceforge.net/javadocs/trunk/com/ibm/wala/cast/tree/package-summary.html)). The SIL is retrieved by hooking into the Swift compiler and grabbing the SIL module during compilation. Since many languages can be translated to similar looking CAst, we are able to use WALA's JavaScript translators and analysis (with some modifcations) on the resulting CAst.
 
 The translator aims to support every SIL instruction seen in practice.
 
