@@ -187,7 +187,7 @@ instrs =   ["alloc_stack",
             "checked_cast_addr_br",
             "try_apply"]
 
-flagged_cases = 0
+flagged_counts = dict()
 
 instrCounts = {}
 
@@ -219,10 +219,14 @@ for directory in sys.argv[1:]:
                         for s in instrs:
                             if s in line:
                                 if s in flagged_instrs:
-                                    f = open(os.path.join(tempDir, str(flagged_cases) + "_flagged_" + s + ".txt"), "w")
+                                    if s in flagged_counts:
+                                        flagged_counts[s] += 1
+                                    else:
+                                        flagged_counts[s] = 1
+                                    f = open(os.path.join(tempDir, s + "_" + str(flagged_counts[s]) + ".txt"), "w")
+                                    f.write("FILE: " + file + "\n\n")
                                     f.write(lines)
                                     f.close()
-                                    flagged_cases += 1
                                 found = s
                                 break
                         if (found != False):
