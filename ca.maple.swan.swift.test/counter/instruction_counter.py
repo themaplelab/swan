@@ -1,4 +1,4 @@
-import os, glob, sys, subprocess
+import os, glob, sys, subprocess, shutil
 
 # This script compiles every .swift in the given directories and counts the 
 # number of SIL instructions in the SIL output.
@@ -6,6 +6,13 @@ import os, glob, sys, subprocess
 
 # Usage: instruction_counter.py dir1 dir2 ...
 # where dir1, dir2, etc. are directories to be analyzed
+
+# You can add a list of flagged instructions below. This will write all files
+# with that instruction to a temp directory from where the script was called.
+# This is to help find use cases of instructions. e.g. in the case where there
+# is little to no documentation on the instruction.
+
+flagged_instrs = ['''FLAGGED INSTRUCTIONS GO HERE''']
 
 if len(sys.argv[1:]) == 0:
     print("Usage: instruction_counter.py dir1 dir2 ... where dir1, dir2, etc. are directories to be analyzed")
@@ -180,7 +187,15 @@ instrs =   ["alloc_stack",
             "checked_cast_addr_br",
             "try_apply"]
 
+flagged_cases = 0
+
 instrCounts = {}
+
+tempDir = "flaggedTemp"
+
+if os.path.exists(tempDir):
+    shutil.rmtree(tempDir)
+os.makedirs(tempDir)
 
 for instr in instrs:
     instrCounts[instr] = 0
@@ -194,6 +209,7 @@ for directory in sys.argv[1:]:
                     swiftcCmd = "swiftc " + filePath + " -emit-silgen -Onone "
                     sil = subprocess.getstatusoutput(swiftcCmd)[1]
                     f = open(filePath, "r", errors="ignore")
+                    lines = sil
                     for line in sil.splitlines():
                         line = line.split(':', 1)[0]
                         line = line.split(" ")
@@ -202,6 +218,11 @@ for directory in sys.argv[1:]:
                         found = False
                         for s in instrs:
                             if s in line:
+                                if s in flagged_instrs:
+                                    f = open(os.path.join(tempDir, str(flagged_cases) + "_flagged_" + s + ".txt"), "w")
+                                    f.write(lines)
+                                    f.close()
+                                    flagged_cases += 1
                                 found = s
                                 break
                         if (found != False):
