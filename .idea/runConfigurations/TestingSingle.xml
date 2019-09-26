@@ -1,0 +1,10 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="TestingSingle" type="Application" factoryName="Application">
+    <option name="MAIN_CLASS_NAME" value="ca.maple.swan.swift.test.TestSwiftCallGraphShapeUsingJS" />
+    <module name="swan.ca.maple.swan.swift.test.main" />
+    <option name="PROGRAM_PARAMETERS" value="SINGLE $PROJECT_DIR$/ca.maple.swan.swift.test/testFiles/other/add1-test.swift" />
+    <method v="2">
+      <option name="Make" enabled="true" />
+    </method>
+  </configuration>
+</component>
