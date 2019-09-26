@@ -153,6 +153,8 @@ import java.util.HashMap;
     $*Builtin.UnsafeValueBuffer which are most likely introduced via built in
     functions.
 
+    $Builtin.RawPointer are regular pointers to us.
+
     Treating references like regular values may be an extremely naive and
     problematic approach. e.g. project_box might be inaccurate. Depends on
     how boxes are introduced, esp by built in functions.
@@ -162,14 +164,15 @@ import java.util.HashMap;
     Assignment folding is delicate as some instructions MUST be directly
     represented in the CAst, such as `store`. In general, we need to
     carefully consider what stays in the background, and what shows
-    in the CAst.
+    in the CAst. We may have to make some copies explicit assignments
+    later. However, things like casts should be okay to fold.
 
     We do support deallocation instructions for completeness, but this
     theoretically has no effect as SIL opaque values are unique.
 
     Type information may not be perfect due to careless assignment folding.
-    This just needs to be checked. Assignment folding should not be done
-    if the result type != operand type.
+    This is fine for now as long as allocation sites have the right type
+    which would translate to CAst NEW instruction.
 
     We do not keep track of fields concretely. This is difficult to do
     statically as naturally fields are used in a dynamic matter.
@@ -177,13 +180,17 @@ import java.util.HashMap;
     For now, any instruction that we have never seen before, we
     don't translate.
 
-    TODO:
+    Metatype/Existential stuff is mostly marked at MED confidence since
+    maybe we are naive to think we shouldn't care about that. For now
+    we just copy as much as possible.
 
-        - Need a way of casting. e.g. x <-- y where x.type != y.type
+    TODO:
 
         - Function refs to inlined functions that are never called
           are problematic because WALA will try to find a CAstEntity
           (call site) for that function expression.
+
+        SOLUTION: KEEP TRACK OF DANGLING FUNCTION_REFS.
 
         - Dynamic method dispatches to methods expecting a pointer as
           a param are not inlineable. The best we can do here is pass
@@ -785,12 +792,20 @@ public class RawAstTranslator extends SILInstructionVisitor<CAstNode, SILInstruc
 
     @Override
     // FREQUENCY: VERY COMMON
-    // STATUS: UNHANDLED
-    // CONFIDENCE:
+    // STATUS: TRANSLATED
+    // CONFIDENCE: HIGH
     protected CAstNode visitIndexAddr(CAstNode N, SILInstructionContext C) {
-        // TODO: Need to first see an example of the operand (i.e. how is this
-        //       array of values created - is in OBJECT_LITERAL?)
-        Assertions.UNREACHABLE("UNHANDLED INSTRUCTION");
+        // A common use case of this instruction is indexing a string (which is
+        // of course an array of chars in SIL) to get a character. Since we
+        // represent a string as a literal, we would have to be able to
+        // represent strings as an array in order to get a character with an
+        // index. A possible workaround is a custom translation for a specific
+        // AST structure we can generate for this case. e.g. OBJECT_REF on
+        // a CONSTANT. For now, we treat it as an assignment of the whole
+        // string to the result as this is generally sound for taint analysis.
+        RawValue operand = getSingleOperand(N);
+        RawValue result = getSingleResult(N);
+        C.valueTable.copyValue(result.Name, operand.Name);
         return null;
     }
 
@@ -943,9 +958,12 @@ public class RawAstTranslator extends SILInstructionVisitor<CAstNode, SILInstruc
     // STATUS: UNHANDLED
     // CONFIDENCE:
     protected CAstNode visitLoadUnowned(CAstNode N, SILInstructionContext C) {
-        // TODO: No SIL.rst documentation. How to handle?
-        Assertions.UNREACHABLE("UNHANDLED INSTRUCTION");
-        return null;
+        // This instruction has no SIL.rst documentation. We see in practice
+        // it takes a pointer as an operand, and assigns the underlying value
+        // to the result. The difference here between a regular load is that
+        // the result has a scope is most likely going to be destroyed with
+        // destroy_value.
+        return visitLoad(N, C);
     }
 
     @Override
@@ -953,9 +971,10 @@ public class RawAstTranslator extends SILInstructionVisitor<CAstNode, SILInstruc
     // STATUS: UNHANDLED
     // CONFIDENCE: 
     protected CAstNode visitStoreUnowned(CAstNode N, SILInstructionContext C) {
-        // TODO: No SIL.rst documentation. How to handle?
-        Assertions.UNREACHABLE("UNHANDLED INSTRUCTION");
-        return null;
+        // This instruction has no SIL.rst documentation. We see in practice
+        // the instructions stores a value to a pointer, with no side-effects.
+        // This is a regular store as far as we know or care.
+        return visitStore(N, C);
     }
 
     @Override
@@ -1065,22 +1084,23 @@ public class RawAstTranslator extends SILInstructionVisitor<CAstNode, SILInstruc
 
     @Override
     // FREQUENCY: COMMON
-    // STATUS: UNHANDLED
-    // CONFIDENCE:
+    // STATUS: TRANSLATED
+    // CONFIDENCE: MED
     protected CAstNode visitDynamicFunctionRef(CAstNode N, SILInstructionContext C) {
-        // TODO: Ignoring dynamic dispatch for now.
-        Assertions.UNREACHABLE("UNHANDLED INSTRUCTION");
-        return null;
+        // Treat like regular function ref since we can still get the function name.
+        // TODO: INVESTIGATE: This function can apparently by replaced at runtime,
+        //  but it is unclear if this is problematic.
+        return visitFunctionRef(N, C);
     }
 
     @Override
     // FREQUENCY: RARE
-    // STATUS: UNHANDLED
-    // CONFIDENCE:
+    // STATUS: TRANSLATED
+    // CONFIDENCE: MED
     protected CAstNode visitPrevDynamicFunctionRef(CAstNode N, SILInstructionContext C) {
-        // TODO: Ignoring dynamic dispatch for now.
-        Assertions.UNREACHABLE("UNHANDLED INSTRUCTION");
-        return null;
+        // Treat like regular function ref since we can still get the function name.
+        // See visitDynamicFunctionRef about possible problems.
+        return visitFunctionRef(N, C);
     }
 
     @Override
@@ -1146,7 +1166,7 @@ public class RawAstTranslator extends SILInstructionVisitor<CAstNode, SILInstruc
     }
 
     @Override
-    // FREQUENCY: VERY COMMOND
+    // FREQUENCY: VERY COMMON
     // STATUS: TRANSLATED
     // CONFIDENCE: HIGH
     protected CAstNode visitClassMethod(CAstNode N, SILInstructionContext C) {
@@ -1162,7 +1182,8 @@ public class RawAstTranslator extends SILInstructionVisitor<CAstNode, SILInstruc
     // STATUS: UNHANDLED
     // CONFIDENCE:
     protected CAstNode visitObjCMethod(CAstNode N, SILInstructionContext C) {
-        // TODO: Ignoring dynamic dispatch for now.
+        // TODO: Need to figure out how these work and if they are effectively
+        //  black box calls.
         Assertions.UNREACHABLE("UNHANDLED INSTRUCTION");
         return null;
     }
@@ -1181,19 +1202,19 @@ public class RawAstTranslator extends SILInstructionVisitor<CAstNode, SILInstruc
     // STATUS: UNHANDLED
     // CONFIDENCE:
     protected CAstNode visitObjCSuperMethod(CAstNode N, SILInstructionContext C) {
-        // TODO: Ignoring dynamic dispatch for now.
+        // TODO: Need to figure out how these work and if they are effectively
+        //  black box calls.
         Assertions.UNREACHABLE("UNHANDLED INSTRUCTION");
         return null;
     }
 
     @Override
     // FREQUENCY: VERY COMMON
-    // STATUS: UNHANDLED
-    // CONFIDENCE:
+    // STATUS: TRANSLATED
+    // CONFIDENCE: HIGH
     protected CAstNode visitWitnessMethod(CAstNode N, SILInstructionContext C) {
-        // TODO: Ignoring dynamic dispatch for now.
-        Assertions.UNREACHABLE("UNHANDLED INSTRUCTION");
-        return null;
+        // Treat like regular function ref since we can still get the function name.
+        return visitFunctionRef(N, C);
     }
 
     @Override
@@ -1430,10 +1451,10 @@ public class RawAstTranslator extends SILInstructionVisitor<CAstNode, SILInstruc
 
     @Override
     // FREQUENCY: VERY COMMON
-    // STATUS: UNHANDLED
+    // STATUS: TRANSLATED
     // CONFIDENCE:
     protected CAstNode visitDestroyValue(CAstNode N, SILInstructionContext C) {
-        // TODO: NOP for now since unclear if we should remove from value table.
+        C.valueTable.removeValue(getSingleOperand(N).Name);
         return null;
     }
 
@@ -1442,7 +1463,9 @@ public class RawAstTranslator extends SILInstructionVisitor<CAstNode, SILInstruc
     // STATUS: UNHANDLED
     // CONFIDENCE:
     protected CAstNode visitAutoreleaseValue(CAstNode N, SILInstructionContext C) {
-        // TODO: No SIL.rst documentation.
+        // No SIL.rst documentation, but it seems it just releases (deletes) the
+        // value so we remove it from the table.
+        C.valueTable.removeValue(getSingleOperand(N).Name);
         return null;
     }
 
@@ -1483,7 +1506,7 @@ public class RawAstTranslator extends SILInstructionVisitor<CAstNode, SILInstruc
         RawValue operand = getSingleOperand(N);
         int Index = Integer.parseInt(getStringValue(N, 2));
         SILValue TupleValue = C.valueTable.getValue(operand.Name);
-        // TODO: Does this ever get called on a SILUnitArrayTuple? Unlikely.
+        // NOTE: Does this ever get called on a SILUnitArrayTuple? Unlikely.
         Assertions.productionAssertion(TupleValue instanceof SILTuple);
         SILValue ResultValue = ((SILTuple)TupleValue).createField(result.Name, Index);
         C.valueTable.addValue(ResultValue);
@@ -1500,7 +1523,7 @@ public class RawAstTranslator extends SILInstructionVisitor<CAstNode, SILInstruc
         RawValue operand = getSingleOperand(N);
         int Index = Integer.parseInt(getStringValue(N, 2));
         SILValue TuplePointer = C.valueTable.getValue(operand.Name);
-        // TODO: Does this ever get called on a SILUnitArrayTuple?
+        // NOTE: Does this ever get called on a SILUnitArrayTuple?
         Assertions.productionAssertion(TuplePointer instanceof SILPointer);
         SILValue TupleValue = ((SILPointer)TuplePointer).dereference();
         Assertions.productionAssertion(TupleValue instanceof SILTuple);
@@ -1612,11 +1635,10 @@ public class RawAstTranslator extends SILInstructionVisitor<CAstNode, SILInstruc
     }
 
     @Override
-    // FREQUENCY: RARE
+    // FREQUENCY: UNSEEN
     // STATUS: UNHANDLED
     // CONFIDENCE:
     protected CAstNode visitObject(CAstNode N, SILInstructionContext C) {
-        // TODO: Where is this object stored to?
         Assertions.UNREACHABLE("UNHANDLED INSTRUCTION");
         return null;
     }
@@ -1779,11 +1801,15 @@ public class RawAstTranslator extends SILInstructionVisitor<CAstNode, SILInstruc
 
     @Override
     // FREQUENCY: RARE
-    // STATUS: UNHANDLED
-    // CONFIDENCE:
+    // STATUS: TRANSLATED
+    // CONFIDENCE: HIGH
     protected CAstNode visitDeinitExistentialAddr(CAstNode N, SILInstructionContext C) {
-        // TODO:
-        Assertions.UNREACHABLE("UNHANDLED INSTRUCTION");
+        // De-inits the underlying value of the pointer operand. We can just remove
+        // the underlying value from the table.
+        RawValue operand = getSingleOperand(N);
+        Assertions.productionAssertion(C.valueTable.getValue(operand.Name) instanceof SILPointer);
+        SILPointer OperandPointer = (SILPointer)C.valueTable.getValue(operand.Name);
+        C.valueTable.removeValue(OperandPointer.dereference().getName());
         return null;
     }
 
@@ -1798,11 +1824,20 @@ public class RawAstTranslator extends SILInstructionVisitor<CAstNode, SILInstruc
 
     @Override
     // FREQUENCY: COMMON
-    // STATUS: UNHANDLED
-    // CONFIDENCE:
+    // STATUS: TRANSLATED
+    // CONFIDENCE: MED
     protected CAstNode visitOpenExistentialAddr(CAstNode N, SILInstructionContext C) {
-        // TODO:
-        Assertions.UNREACHABLE("UNHANDLED INSTRUCTION");
+        // Basically creates a new pointer to the same concrete value inside of the
+        // pointer operand. This is just a point copy, but the result has a different
+        // type.
+        RawValue result = getSingleResult(N);
+        RawValue operand = getSingleOperand(N);
+        // NOTE: This assertion may be wrong since its possible the operand is of
+        // "protocol composition type P". For now we will leave it.
+        Assertions.productionAssertion(C.valueTable.getValue(operand.Name) instanceof SILPointer);
+        SILPointer OperandPointer = (SILPointer)C.valueTable.getValue(operand.Name);
+        SILPointer NewPointer = new SILPointer(result.Name, result.Type, C, OperandPointer.dereference());
+        C.valueTable.addValue(NewPointer);
         return null;
     }
 
@@ -1817,71 +1852,81 @@ public class RawAstTranslator extends SILInstructionVisitor<CAstNode, SILInstruc
 
     @Override
     // FREQUENCY: COMMON
-    // STATUS: UNHANDLED
-    // CONFIDENCE:
+    // STATUS: TRANSLATED
+    // CONFIDENCE: MED
     protected CAstNode visitInitExistentialRef(CAstNode N, SILInstructionContext C) {
-        // TODO:
-        Assertions.UNREACHABLE("UNHANDLED INSTRUCTION");
+        // Creates a class reference to the class instance operand.
+        RawValue result = getSingleResult(N);
+        RawValue operand = getSingleOperand(N);
+        C.valueTable.copyValue(result.Name, operand.Name);
         return null;
     }
 
     @Override
     // FREQUENCY: COMMON
-    // STATUS: UNHANDLED
-    // CONFIDENCE:
+    // STATUS: TRANSLATED
+    // CONFIDENCE: MED
     protected CAstNode visitOpenExistentialRef(CAstNode N, SILInstructionContext C) {
-        // TODO:
-        Assertions.UNREACHABLE("UNHANDLED INSTRUCTION");
+        // Creates a reference to the operand ($P to $@opened P). The SIL.rst
+        // refers to the result as a "pointer", but we will ignore that for now.
+        RawValue result = getSingleResult(N);
+        RawValue operand = getSingleOperand(N);
+        C.valueTable.copyValue(result.Name, operand.Name);
         return null;
     }
 
     @Override
     // FREQUENCY: COMMON
-    // STATUS: UNHANDLED
-    // CONFIDENCE:
+    // STATUS: TRANSLATED
+    // CONFIDENCE: MED
     protected CAstNode visitInitExistentialMetatype(CAstNode N, SILInstructionContext C) {
-        // TODO:
-        Assertions.UNREACHABLE("UNHANDLED INSTRUCTION");
+        // Creates metatype existential container of a type based on the operand
+        // which originates from a metatype. For now, we just do a copy.
+        RawValue result = getSingleResult(N);
+        RawValue operand = getSingleOperand(N);
+        C.valueTable.copyValue(result.Name, operand.Name);
         return null;
     }
 
     @Override
     // FREQUENCY: RARE
-    // STATUS: UNHANDLED
-    // CONFIDENCE:
+    // STATUS: TRANSLATED
+    // CONFIDENCE: MED
     protected CAstNode visitOpenExistentialMetatype(CAstNode N, SILInstructionContext C) {
-        // TODO:
-        Assertions.UNREACHABLE("UNHANDLED INSTRUCTION");
+        // More metatype stuff we don't care about.
+        RawValue result = getSingleResult(N);
+        RawValue operand = getSingleOperand(N);
+        C.valueTable.copyValue(result.Name, operand.Name);
         return null;
     }
 
     @Override
     // FREQUENCY: RARE
-    // STATUS: UNHANDLED
-    // CONFIDENCE:
+    // STATUS: TRANSLATED
+    // CONFIDENCE: HIGH
     protected CAstNode visitAllocExistentialBox(CAstNode N, SILInstructionContext C) {
-        // TODO:
-        Assertions.UNREACHABLE("UNHANDLED INSTRUCTION");
-        return null;
+        // Allocated a boxed existential container. We treat boxes as pointers.
+       return visitAllocBox(N, C);
     }
 
     @Override
     // FREQUENCY: RARE
-    // STATUS: UNHANDLED
-    // CONFIDENCE:
+    // STATUS: TRANSLATED
+    // CONFIDENCE: HIGH
     protected CAstNode visitProjectExistentialBox(CAstNode N, SILInstructionContext C) {
-        // TODO:
-        Assertions.UNREACHABLE("UNHANDLED INSTRUCTION");
-        return null;
+        // Returns a pointer to the value inside the boxed container.
+        return visitProjectBox(N, C);
     }
 
     @Override
     // FREQUENCY: RARE
-    // STATUS: UNHANDLED
-    // CONFIDENCE:
+    // STATUS: TRANSLATED
+    // CONFIDENCE: MED
     protected CAstNode visitOpenExistentialBox(CAstNode N, SILInstructionContext C) {
-        // TODO:
-        Assertions.UNREACHABLE("UNHANDLED INSTRUCTION");
+        // Projects the value inside the box. Assume we can just copy the pointer.
+        RawValue result = getSingleResult(N);
+        RawValue operand = getSingleOperand(N);
+        C.valueTable.copyValue(result.Name, operand.Name);
         return null;
     }
 
@@ -1896,80 +1941,99 @@ public class RawAstTranslator extends SILInstructionVisitor<CAstNode, SILInstruc
 
     @Override
     // FREQUENCY: RARE
-    // STATUS: UNHANDLED
-    // CONFIDENCE:
+    // STATUS: TRANSLATED
+    // CONFIDENCE: HIGH
     protected CAstNode visitDeallocExistentialBox(CAstNode N, SILInstructionContext C) {
-        // TODO:
-        Assertions.UNREACHABLE("UNHANDLED INSTRUCTION");
+        // Destroys a boxed existential container. This means we can just remove it
+        // from the table.
+        RawValue operand = getSingleOperand(N);
+        C.valueTable.removeValue(operand.Name);
         return null;
     }
 
     @Override
     // FREQUENCY: RARE
-    // STATUS: UNHANDLED
-    // CONFIDENCE:
+    // STATUS: TRANSLATED
+    // CONFIDENCE: HIGH
     protected CAstNode visitProjectBlockStorage(CAstNode N, SILInstructionContext C) {
-        // TODO:
-        Assertions.UNREACHABLE("UNHANDLED INSTRUCTION");
+        // No SIL.rst documentation. Appears that the result is a pointer to the
+        // operand.
+        RawValue operand = getSingleOperand(N);
+        RawValue result = getSingleResult(N);
+        SILValue OperandValue = C.valueTable.getValue(operand.Name);
+        SILPointer NewPointer = new SILPointer(result.Name, result.Type, C, OperandValue);
+        C.valueTable.addValue(NewPointer);
         return null;
     }
 
     @Override
     // FREQUENCY: RARE
-    // STATUS: UNHANDLED
-    // CONFIDENCE:
+    // STATUS: TRANSLATED
+    // CONFIDENCE: LOW
     protected CAstNode visitInitBlockStorageHeader(CAstNode N, SILInstructionContext C) {
-        // TODO:
-        Assertions.UNREACHABLE("UNHANDLED INSTRUCTION");
+        // Appears to initialize a memory location (first operand).
+        // From the swift code the second operand is the "invoke function to form the
+        // block around." For now we ignore the invoke function operand because we
+        // are unsure if it is actually called. The return value is a (non-pointer)
+        // block type, so perhaps just the underlying value of the operand?
+        RawValue operand = getSingleOperand(N);
+        RawValue result = getSingleResult(N);
+        String functionValueName = getStringValue(N, 2);
+        Assertions.productionAssertion(C.valueTable.getValue(operand.Name) instanceof SILPointer);
+        SILPointer OperandPointer = (SILPointer)C.valueTable.getValue(operand.Name);
+        Assertions.productionAssertion(C.valueTable.getValue(functionValueName) instanceof SILFunctionRef);
+        SILFunctionRef InvokeFunction = (SILFunctionRef)C.valueTable.getValue(functionValueName);
+        C.valueTable.copyValue(result.Name, OperandPointer.dereference().getName());
         return null;
     }
 
     @Override
     // FREQUENCY: VERY COMMON
-    // STATUS: UNHANDLED
-    // CONFIDENCE:
+    // STATUS: TRANSLATED
+    // CONFIDENCE: HIGH
     protected CAstNode visitUpcast(CAstNode N, SILInstructionContext C) {
-        // TODO:
-        Assertions.UNREACHABLE("UNHANDLED INSTRUCTION");
+        // Regular class upcast. We just do a copy.
+        RawValue operand = getSingleOperand(N);
+        RawValue result = getSingleResult(N);
+        C.valueTable.copyValue(result.Name, operand.Name);
         return null;
     }
 
     @Override
     // FREQUENCY: COMMON
-    // STATUS: UNHANDLED
-    // CONFIDENCE:
+    // STATUS: TRANSLATED
+    // CONFIDENCE: HIGH
     protected CAstNode visitAddressToPointer(CAstNode N, SILInstructionContext C) {
-        // TODO:
-        Assertions.UNREACHABLE("UNHANDLED INSTRUCTION");
+        // We treat $Builtin.RawPointer and regular pointers as the same, so this
+        // is just a copy.
+        RawValue operand = getSingleOperand(N);
+        RawValue result = getSingleResult(N);
+        C.valueTable.copyValue(result.Name, operand.Name);
         return null;
     }
 
     @Override
     // FREQUENCY: VERY COMMON
     // STATUS: TRANSLATED
-    // CONFIDENCE: LOW
+    // CONFIDENCE: HIGH
     protected CAstNode visitPointerToAddress(CAstNode N, SILInstructionContext C) {
-        // TODO: Is it sufficient to make the result point to the operand?
-        //       Unclear what operand will be like in practice
-        // Result type != operand type, so not sufficient to just copy.
+        // We treat $Builtin.RawPointer and regular pointers as the same, so this
+        // is just a copy.
         RawValue operand = getSingleOperand(N);
         RawValue result = getSingleResult(N);
-        SILPointer ResultPointer = new SILPointer(result.Name, result.Type, C, C.valueTable.getValue(operand.Name));
-        C.valueTable.addValue(ResultPointer);
+        C.valueTable.copyValue(result.Name, operand.Name);
         return null;
     }
 
     @Override
     // FREQUENCY: VERY COMMON
     // STATUS: TRANSLATED
-    // CONFIDENCE: LOW
+    // CONFIDENCE: HIGH
     protected CAstNode visitUncheckedRefCast(CAstNode N, SILInstructionContext C) {
-        // Cast problem
+        // A regular cast just for heap object reference types.
         RawValue operand = getSingleOperand(N);
         RawValue result = getSingleResult(N);
-        SILValue ToCastValue = C.valueTable.getValue(operand.Name);
-        SILPointer ResultValue = ToCastValue.makePointer(result.Name, result.Type);
-        C.valueTable.addValue(ResultValue);
+        C.valueTable.copyValue(result.Name, operand.Name);
         return null;
     }
 
@@ -1984,21 +2048,25 @@ public class RawAstTranslator extends SILInstructionVisitor<CAstNode, SILInstruc
 
     @Override
     // FREQUENCY: RARE
-    // STATUS: UNHANDLED
-    // CONFIDENCE:
+    // STATUS: TRANSLATED
+    // CONFIDENCE: HIGH
     protected CAstNode visitUncheckedAddrCast(CAstNode N, SILInstructionContext C) {
-        // TODO: Cast problem
-        Assertions.UNREACHABLE("UNHANDLED INSTRUCTION");
+        // A regular cast just for addresses.
+        RawValue operand = getSingleOperand(N);
+        RawValue result = getSingleResult(N);
+        C.valueTable.copyValue(result.Name, operand.Name);
         return null;
     }
 
     @Override
     // FREQUENCY: RARE
-    // STATUS: UNHANDLED
-    // CONFIDENCE:
+    // STATUS: TRANSLATED
+    // CONFIDENCE: HIGH
     protected CAstNode visitUncheckedTrivialBitCast(CAstNode N, SILInstructionContext C) {
-        // TODO: Cast problem
-        Assertions.UNREACHABLE("UNHANDLED INSTRUCTION");
+        // Bitcast of an object to different type (ignore the specifics).
+        RawValue operand = getSingleOperand(N);
+        RawValue result = getSingleResult(N);
+        C.valueTable.copyValue(result.Name, operand.Name);
         return null;
     }
 
@@ -2014,15 +2082,13 @@ public class RawAstTranslator extends SILInstructionVisitor<CAstNode, SILInstruc
     @Override
     // FREQUENCY: VERY COMMON
     // STATUS: TRANSLATED
-    // CONFIDENCE: LOW
+    // CONFIDENCE: HIGH
     protected CAstNode visitUncheckedOwnershipConversion(CAstNode N, SILInstructionContext C) {
-        // No SIL.rst documentation. Assume regular cast.
-        // Cast problem
+        // No SIL.rst documentation. In practice, looks like some low level
+        // operation but the result and operand have the same type.
         RawValue operand = getSingleOperand(N);
         RawValue result = getSingleResult(N);
-        SILValue ToCastValue = C.valueTable.getValue(operand.Name);
-        SILPointer ResultValue = ToCastValue.makePointer(result.Name, result.Type);
-        C.valueTable.addValue(ResultValue);
+        C.valueTable.copyValue(result.Name, operand.Name);
         return null;
     }
 
@@ -2046,11 +2112,13 @@ public class RawAstTranslator extends SILInstructionVisitor<CAstNode, SILInstruc
 
     @Override
     // FREQUENCY: RARE
-    // STATUS: UNHANDLED
-    // CONFIDENCE:
+    // STATUS: TRANSLATED
+    // CONFIDENCE: HIGH
     protected CAstNode visitRefToUnowned(CAstNode N, SILInstructionContext C) {
-        // TODO: cast problem
-        Assertions.UNREACHABLE("UNHANDLED INSTRUCTION");
+        // Treat as regular cast.
+        RawValue operand = getSingleOperand(N);
+        RawValue result = getSingleResult(N);
+        C.valueTable.copyValue(result.Name, operand.Name);
         return null;
     }
 
@@ -2065,41 +2133,49 @@ public class RawAstTranslator extends SILInstructionVisitor<CAstNode, SILInstruc
 
     @Override
     // FREQUENCY: RARE
-    // STATUS: UNHANDLED
-    // CONFIDENCE:
+    // STATUS: TRANSLATED
+    // CONFIDENCE: HIGH
     protected CAstNode visitRefToUnmanaged(CAstNode N, SILInstructionContext C) {
-        // TODO: Cast problem
-        Assertions.UNREACHABLE("UNHANDLED INSTRUCTION");
+        // No SIL.rst documentation. Treat as regular cast.
+        RawValue operand = getSingleOperand(N);
+        RawValue result = getSingleResult(N);
+        C.valueTable.copyValue(result.Name, operand.Name);
         return null;
     }
 
     @Override
     // FREQUENCY: RARE
-    // STATUS: UNHANDLED
-    // CONFIDENCE:
+    // STATUS: TRANSLATED
+    // CONFIDENCE: HIGH
     protected CAstNode visitUnmanagedToRef(CAstNode N, SILInstructionContext C) {
-        // TODO: Cast problem
-        Assertions.UNREACHABLE("UNHANDLED INSTRUCTION");
+        // No SIL.rst documentation. Treat as regular cast.
+        RawValue operand = getSingleOperand(N);
+        RawValue result = getSingleResult(N);
+        C.valueTable.copyValue(result.Name, operand.Name);
         return null;
     }
 
     @Override
     // FREQUENCY: COMMON
-    // STATUS: UNHANDLED
-    // CONFIDENCE:
+    // STATUS: TRANSLATED
+    // CONFIDENCE: HIGH
     protected CAstNode visitConvertFunction(CAstNode N, SILInstructionContext C) {
-        // TODO: Cast problem
-        Assertions.UNREACHABLE("UNHANDLED INSTRUCTION");
+        // Changes function type (but not name). Treat as regular cast.
+        RawValue operand = getSingleOperand(N);
+        RawValue result = getSingleResult(N);
+        C.valueTable.copyValue(result.Name, operand.Name);
         return null;
     }
 
     @Override
     // FREQUENCY: COMMON
-    // STATUS: UNHANDLED
-    // CONFIDENCE:
+    // STATUS: TRANSLATED
+    // CONFIDENCE: HIGH
     protected CAstNode visitConvertEscapeToNoEscape(CAstNode N, SILInstructionContext C) {
-        // TODO: Cast problem
-        Assertions.UNREACHABLE("UNHANDLED INSTRUCTION");
+        // Changes function escape property. Treat as regular cast.
+        RawValue operand = getSingleOperand(N);
+        RawValue result = getSingleResult(N);
+        C.valueTable.copyValue(result.Name, operand.Name);
         return null;
     }
 

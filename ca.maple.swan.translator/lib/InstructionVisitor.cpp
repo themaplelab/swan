@@ -1413,6 +1413,20 @@ void InstructionVisitor::visitDeallocExistentialBoxInst(DeallocExistentialBoxIns
   handleSimpleInstr(DEBI);
 }
 
+void InstructionVisitor::visitProjectBlockStorageInst(ProjectBlockStorageInst *PBSI) {
+  handleSimpleInstr(PBSI);
+}
+
+void InstructionVisitor::visitInitBlockStorageHeaderInst(InitBlockStorageHeaderInst *IBSHI) {
+  handleSimpleInstr(IBSHI);
+  SILValue referencedFunction = IBSHI->getInvokeFunction();
+  std::string FuncName = addressToString(referencedFunction.getOpaqueValue());
+  if (SWAN_PRINT) {
+    llvm::outs() << "\t [INVOKE FUNC]:" << FuncName << "\n";
+  }
+  ADD_PROP(MAKE_CONST(FuncName.c_str()));
+}
+
 /*******************************************************************************/
 /*                          Blocks                                             */
 /*******************************************************************************/

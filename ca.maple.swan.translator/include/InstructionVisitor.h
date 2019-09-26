@@ -278,6 +278,9 @@ namespace swan {
     /*                          Blocks                                             */
     /*******************************************************************************/
 
+    void visitProjectBlockStorageInst(ProjectBlockStorageInst *PBSI);
+    void visitInitBlockStorageHeaderInst(InitBlockStorageHeaderInst *IBSHI);
+
     /*******************************************************************************/
     /*                          Unchecked Conversions                              */
     /*******************************************************************************/
