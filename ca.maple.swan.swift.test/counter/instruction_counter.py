@@ -14,6 +14,12 @@ import os, glob, sys, subprocess, shutil
 
 flagged_instrs = ['''FLAGGED INSTRUCTIONS GO HERE''']
 
+# Maximum number of cases to save of each flagged instruction.
+max_files_per_inst = 10
+
+# Output directory of flagged cases.
+tempDir = "flaggedTemp"
+
 if len(sys.argv[1:]) == 0:
     print("Usage: instruction_counter.py dir1 dir2 ... where dir1, dir2, etc. are directories to be analyzed")
     exit(1)
@@ -110,7 +116,7 @@ instrs =   ["alloc_stack",
             "struct_extract",
             "struct_element_addr",
             "destructure_struct",
-            "object",
+            "object", # prone to false positives for obvious reasons
             "ref_element_addr",
             "ret_tail_addr",
             "enum",
@@ -191,7 +197,7 @@ flagged_counts = dict()
 
 instrCounts = {}
 
-tempDir = "flaggedTemp"
+writtenFiles = []
 
 if os.path.exists(tempDir):
     shutil.rmtree(tempDir)
@@ -207,26 +213,31 @@ for directory in sys.argv[1:]:
                 if file.endswith(".swift"):
                     filePath = os.path.join(root, file)
                     swiftcCmd = "swiftc " + filePath + " -emit-silgen -Onone "
-                    sil = subprocess.getstatusoutput(swiftcCmd)[1]
+                    err, sil = subprocess.getstatusoutput(swiftcCmd)
+                    if (err != 0): continue
                     f = open(filePath, "r", errors="ignore")
                     lines = sil
                     for line in sil.splitlines():
-                        line = line.split(':', 1)[0]
+                        line = line.split(" : ", 1)[0]
                         line = line.split(" ")
                         if line[0] == "//":
                             continue
                         found = False
                         for s in instrs:
                             if s in line:
-                                if s in flagged_instrs:
+                                if s in flagged_instrs and file not in writtenFiles:
                                     if s in flagged_counts:
-                                        flagged_counts[s] += 1
+                                        if flagged_counts[s] >= max_files_per_inst:
+                                            continue
+                                        else:
+                                            flagged_counts[s] += 1
                                     else:
                                         flagged_counts[s] = 1
                                     f = open(os.path.join(tempDir, s + "_" + str(flagged_counts[s]) + ".txt"), "w")
-                                    f.write("FILE: " + file + "\n\n")
+                                    f.write("FILE: " + filePath + "\n\n")
                                     f.write(lines)
                                     f.close()
+                                    writtenFiles.append(file)
                                 found = s
                                 break
                         if (found != False):

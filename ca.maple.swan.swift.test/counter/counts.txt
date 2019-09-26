@@ -1,3 +1,6 @@
+From swan/ca.maple.swan.swift.test/testFiles and swift/test/
+object has been removed as it was a false positive
+
 alloc_stack: 11922
 alloc_ref: 1982
 alloc_ref_dynamic: 229
@@ -11,15 +14,15 @@ dealloc_ref: 1739
 dealloc_partial_ref: 0
 dealloc_value_buffer: 0
 project_value_buffer: 0
-debug_value: 22219
+debug_value: 22218
 debug_value_addr: 6237
-load: 12920
-store: 19839
+load: 12918
+store: 19838
 store_borrow: 586
 load_borrow: 1241
 begin_borrow: 6206
 end_borrow: 7870
-assign: 5988
+assign: 5805
 assign_by_wrapper: 32
 mark_uninitialized: 4624
 mark_function_escape: 384
@@ -64,13 +67,13 @@ objc_method: 462
 super_method: 0
 objc_super_method: 284
 witness_method: 988
-apply: 64001
+apply: 63996
 begin_apply: 394
 abort_apply: 90
 end_apply: 398
 partial_apply: 1777
 builtin: 417
-metatype: 33049
+metatype: 33034
 value_metatype: 77
 existential_metatype: 18
 objc_protocol: 7
@@ -83,17 +86,17 @@ release_value_addr: 0
 unmanaged_release_value: 0
 destroy_value: 22482
 autorelease_value: 3
-tuple: 15132
+tuple: 15123
 tuple_extract: 18
 destructure_tuple: 3409
-struct: 5485
+struct: 4430
 struct_extract: 2821
 struct_element_addr: 3926
 destructure_struct: 0
-object: 33
+object: 0
 ref_element_addr: 3423
 ret_tail_addr: 0
-enum: 3928
+enum: 3648
 unchecked_enum_data: 42
 init_enum_data_addr: 362
 inject_enum_addr: 702
@@ -150,10 +153,10 @@ unconditional_checked_cast: 54
 unconditional_checked_cast_addr: 113
 unconditional_checked_cast_value: 0
 cond_fail: 17
-unreachable: 986
-return: 35655
-throw: 693
-yield: 2045
+unreachable: 981
+return: 35015
+throw: 402
+yield: 2035
 unwind: 2011
 br: 9037
 cond_br: 1520
@@ -166,4 +169,4 @@ checked_cast_br: 116
 checked_cast_value_br: 0
 checked_cast_addr_br: 262
 try_apply: 744
-coverage: 121/168 or 72%
+coverage: 120/168 or 72%
