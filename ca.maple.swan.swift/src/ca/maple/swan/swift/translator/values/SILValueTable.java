@@ -87,7 +87,9 @@ public class SILValueTable {
     public ArrayList<CAstNode> getDecls() {
         ArrayList<CAstNode> decls = new ArrayList<>();
         for (SILValue v : undeclaredValues) {
-            decls.add(v.getDecl());
+            if (v.gotVarNode()) {
+                decls.add(v.getDecl());
+            }
         }
         undeclaredValues.clear();
         return decls;

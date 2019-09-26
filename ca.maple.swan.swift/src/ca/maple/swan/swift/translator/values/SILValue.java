@@ -27,6 +27,7 @@ import com.ibm.wala.cast.tree.impl.CAstSymbolImpl;
 
 public class SILValue {
 
+    protected boolean gotVarNode = false;
     protected final String name;
     protected SILType type;
     protected final CAstNode varNode;
@@ -69,7 +70,12 @@ public class SILValue {
     }
 
     public CAstNode getVarNode() {
+        gotVarNode = true;
         return varNode;
+    }
+
+    public boolean gotVarNode() {
+        return gotVarNode;
     }
 
     public SILPointer makePointer(String name, String type) {
