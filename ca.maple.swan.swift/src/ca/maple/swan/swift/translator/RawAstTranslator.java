@@ -2246,74 +2246,84 @@ public class RawAstTranslator extends SILInstructionVisitor<CAstNode, SILInstruc
     @Override
     // FREQUENCY: VERY COMMON
     // STATUS: TRANSLATED
-    // CONFIDENCE: LOW
+    // CONFIDENCE: HIGH
     protected CAstNode visitThinToThickFunction(CAstNode N, SILInstructionContext C) {
+        // Treat as regular cast.
         RawValue operand = getSingleOperand(N);
         RawValue result = getSingleResult(N);
-        SILValue OperandValue = C.valueTable.getValue(operand.Name);
-        Assertions.productionAssertion(OperandValue instanceof SILFunctionRef);
-        SILValue ResultValue = ((SILFunctionRef)OperandValue).copyFuncRef(result.Name, result.Type);
-        C.valueTable.addValue(ResultValue);
+        C.valueTable.copyValue(result.Name, operand.Name);
         return null;
     }
 
     @Override
     // FREQUENCY: COMMON
-    // STATUS: UNHANDLED
-    // CONFIDENCE:
+    // STATUS: TRANSLATED
+    // CONFIDENCE: HIGH
     protected CAstNode visitThickToObjCMetatype(CAstNode N, SILInstructionContext C) {
-        // TODO: Cast problem
-        Assertions.UNREACHABLE("UNHANDLED INSTRUCTION");
+        // Treat as regular cast.
+        RawValue operand = getSingleOperand(N);
+        RawValue result = getSingleResult(N);
+        C.valueTable.copyValue(result.Name, operand.Name);
         return null;
     }
 
     @Override
     // FREQUENCY: RARE
-    // STATUS: UNHANDLED
-    // CONFIDENCE:
+    // STATUS: TRANSLATED
+    // CONFIDENCE: HIGH
     protected CAstNode visitObjCToThickMetatype(CAstNode N, SILInstructionContext C) {
-        // TODO: Cast problem
-        Assertions.UNREACHABLE("UNHANDLED INSTRUCTION");
+        // Treat as regular cast.
+        RawValue operand = getSingleOperand(N);
+        RawValue result = getSingleResult(N);
+        C.valueTable.copyValue(result.Name, operand.Name);
         return null;
     }
 
     @Override
     // FREQUENCY: RARE
-    // STATUS: UNHANDLED
-    // CONFIDENCE:
+    // STATUS: TRANSLATED
+    // CONFIDENCE: HIGH
     protected CAstNode visitObjCMetatypeToObject(CAstNode N, SILInstructionContext C) {
-        // TODO: Cast problem
-        Assertions.UNREACHABLE("UNHANDLED INSTRUCTION");
+        // No SIL.rst documentation. Treat as regular cast.
+        RawValue operand = getSingleOperand(N);
+        RawValue result = getSingleResult(N);
+        C.valueTable.copyValue(result.Name, operand.Name);
         return null;
     }
 
     @Override
     // FREQUENCY: RARE
-    // STATUS: UNHANDLED
-    // CONFIDENCE:
+    // STATUS: TRANSLATED
+    // CONFIDENCE: HIGH
     protected CAstNode visitObjCExistentialMetatypeToObject(CAstNode N, SILInstructionContext C) {
-        // TODO: Cast problem
-        Assertions.UNREACHABLE("UNHANDLED INSTRUCTION");
+        // No SIL.rst documentation. Treat as regular cast.
+        RawValue operand = getSingleOperand(N);
+        RawValue result = getSingleResult(N);
+        C.valueTable.copyValue(result.Name, operand.Name);
         return null;
     }
 
     @Override
     // FREQUENCY: RARE
-    // STATUS: UNHANDLED
-    // CONFIDENCE:
+    // STATUS: TRANSLATED
+    // CONFIDENCE: HIGH
     protected CAstNode visitUnconditionalCheckedCast(CAstNode N, SILInstructionContext C) {
-        // TODO: Cast problem
-        Assertions.UNREACHABLE("UNHANDLED INSTRUCTION");
+        // Treat as regular cast.
+        RawValue operand = getSingleOperand(N);
+        RawValue result = getSingleResult(N);
+        C.valueTable.copyValue(result.Name, operand.Name);
         return null;
     }
 
     @Override
     // FREQUENCY: COMMON
-    // STATUS: UNHANDLED
-    // CONFIDENCE:
+    // STATUS: TRANSLATED
+    // CONFIDENCE: HIGH
     protected CAstNode visitUnconditionalCheckedCastAddr(CAstNode N, SILInstructionContext C) {
-        // TODO: Cast problem
-        Assertions.UNREACHABLE("UNHANDLED INSTRUCTION");
+        // Treat as regular cast.
+        RawValue operand = getSingleOperand(N);
+        RawValue result = getSingleResult(N);
+        C.valueTable.copyValue(result.Name, operand.Name);
         return null;
     }
 
@@ -2331,7 +2341,8 @@ public class RawAstTranslator extends SILInstructionVisitor<CAstNode, SILInstruc
     // STATUS: UNHANDLED
     // CONFIDENCE:
     protected CAstNode visitCondFail(CAstNode N, SILInstructionContext C) {
-        // TODO:
+        // TODO: Causes runtime failure with operand (int) as exit code,
+        //  so exception to exit?
         Assertions.UNREACHABLE("UNHANDLED INSTRUCTION");
         return null;
     }
