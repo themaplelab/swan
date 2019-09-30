@@ -44,11 +44,14 @@ using namespace swan;
 
 void InstructionVisitor::visitSILModule(SILModule *M) {
   for (SILFunction &F: *M) {
-    if (F.empty()) { // Most likely a builtin, so we ignore it.
+    if (F.empty()) { // Most likely a builtin or library (external) function, so we ignore it.
+      // Can't get information like arguments from functions without a body :(
       llvm::outs() << "Skipping " << Demangle::demangleSymbolAsString(F.getName()) << "\n";
       continue;
     }
-    std::string file = F.getModule().getSwiftModule()->getModuleFilename();
+    swift::DeclContext* declContext = F.getDeclContext();
+    swift::SourceFile* sourceFile = (declContext != nullptr) ? declContext->getParentSourceFile() : nullptr;
+    std::string file = (sourceFile != nullptr) ? sourceFile->getFilename() : "NO SOURCE";
     Instance->setSource(file);
     visitSILFunction(&F);
     Instance->addSourceFunction(file, currentFunction.get()->make());
