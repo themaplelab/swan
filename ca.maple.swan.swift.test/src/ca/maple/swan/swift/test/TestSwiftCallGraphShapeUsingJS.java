@@ -97,7 +97,6 @@ public class TestSwiftCallGraphShapeUsingJS extends TestCallGraphShape {
     protected JavaScriptAnalysisEngine makeEngine(JavaScriptAnalysisEngine engine, String... name) throws IllegalArgumentException, IOException {
         Set<Module> modules = HashSetFactory.make();
         for(String n : name) {
-            if (n.equals("")) { continue; } // TODO: Why do we have empty named modules?
             modules.add(getScript(n));
         }
 

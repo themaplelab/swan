@@ -19,7 +19,6 @@ import ca.maple.swan.swift.tree.EntityPrinter;
 import ca.maple.swan.swift.tree.FunctionEntity;
 import ca.maple.swan.swift.tree.ScriptEntity;
 import ca.maple.swan.swift.tree.SwiftFunctionType;
-import ca.maple.swan.swift.visualization.ASTtoDot;
 import com.ibm.wala.cast.ir.translator.AbstractCodeEntity;
 import com.ibm.wala.cast.tree.*;
 import com.ibm.wala.cast.tree.impl.CAstImpl;
@@ -210,14 +209,8 @@ public class RawAstTranslator extends SILInstructionVisitor<CAstNode, SILInstruc
 
     public CAstEntity translate(File file, CAstNode n) {
 
-        /*
-        System.out.println("\n\n<<<<<< DEBUG >>>>>\n");
-        System.out.println(n);
-        System.out.println("<<<<<< DEBUG >>>>>\n\n");
-        */
-
         // 1. Create CAstEntity for each function.
-        ArrayList<AbstractCodeEntity> allEntities = new ArrayList<>();
+        HashMap<String, AbstractCodeEntity> allEntities = new HashMap<>();
         HashMap<CAstNode, AbstractCodeEntity>  mappedEntities = new HashMap<>();
 
         AbstractCodeEntity scriptEntity = null;
@@ -230,7 +223,7 @@ public class RawAstTranslator extends SILInstructionVisitor<CAstNode, SILInstruc
             } else {
                 newEntity = makeFunctionEntity(function);
             }
-            allEntities.add(newEntity);
+            allEntities.put(newEntity.getName(), newEntity);
             mappedEntities.put(function, newEntity);
         }
 
@@ -238,7 +231,7 @@ public class RawAstTranslator extends SILInstructionVisitor<CAstNode, SILInstruc
         for (CAstNode function: mappedEntities.keySet()) {
             SILInstructionContext C = new SILInstructionContext(mappedEntities.get(function), allEntities, function);
             if (Inliner.shouldInlineFunction(C.parent.getName(), C)) { continue; }
-            // TODO: Script entity also has params.
+            // TODO: Script entity also has params, but are they ever used?
             if (C.parent instanceof FunctionEntity) {
                 int i = 0;
                 for (String argName : C.parent.getArgumentNames()) {
@@ -313,21 +306,20 @@ public class RawAstTranslator extends SILInstructionVisitor<CAstNode, SILInstruc
             argumentTypes.add(argType);
             argumentPositions.add((CAstSourcePositionMap.Position)arg.getChild(2).getValue());
         }
-        argumentNames.add(0, "self");
+        argumentNames.add(0, "self"); // TEMPORARY
         argumentTypes.add(0, "self");
         argumentPositions.add(0, null);
         return new FunctionEntity(name, returnType, argumentTypes, argumentNames, functionPosition, argumentPositions, n);
     }
 
-    public static AbstractCodeEntity findEntity(String name, ArrayList<AbstractCodeEntity> entities) {
-        for (AbstractCodeEntity e : entities) {
-            if (e.getName().equals(name)) {
-                return e;
-            }
+    public static AbstractCodeEntity findEntity(String name, HashMap<String, AbstractCodeEntity> entities) {
+        if (entities.containsKey(name)) {
+            return entities.get(name);
+        } else {
+            System.err.println("ERROR: Entity with name " + name + " not found");
+            new Exception().printStackTrace();
+            return null;
         }
-        System.err.println("ERROR: Entity with name " + name + " not found");
-        new Exception().printStackTrace();
-        return null;
     }
 
     private static void tryGOTO(CAstNode n, String label, SILInstructionContext C) {
@@ -701,10 +693,7 @@ public class RawAstTranslator extends SILInstructionVisitor<CAstNode, SILInstruc
         // are given and called based on if the value needs to be initialized or
         // re-assigned. This is just an if-else call. The condition here could be
         // done by a custom operation, but for now an arbitrary condition is set.
-        // TODO: Maybe summarized function/builtin stuff should be handled here?
-        // TODO: A CAst side translation is probably not enough, the value table
-        //       needs to be handled as well for the result assignment. This will
-        //       mean  inlining.
+        // TODO: Do regular apply handling here (checks/inlining/etc).
         RawValue source = getOperand(N, 0);
         RawValue dest = getOperand(N, 1);
         RawValue initFunc = getOperand(N, 2);
@@ -1059,17 +1048,14 @@ public class RawAstTranslator extends SILInstructionVisitor<CAstNode, SILInstruc
         // 1. Not built or summarized (regular function) - has representing entity
         // 2. Summarized (replaced when used in an apply) - representing entity
         // 3. Builtin function - replace with a constant value (this should be
-        //    temporary until a summary is created for it)
-        // TODO: If a summarized function is never actually called, the FUNC_EXPR
-        //       might end up in the CAst and since there is no representing entity,
-        //       there will be an error.
+        //    temporary until a summary is created for it) - TEMPORARY
         RawValue result = getSingleResult(N);
         String FuncName = getStringValue(N, 2);
         if (!BuiltInFunctionSummaries.isBuiltIn(FuncName) && !BuiltInFunctionSummaries.isSummarized(FuncName)) {
             SILFunctionRef FuncRef = new SILFunctionRef(result.Name, result.Type, C, FuncName);
             C.valueTable.addValue(FuncRef);
             if (!Inliner.shouldInlineFunction(FuncName, C)) {
-                C.parent.addScopedEntity(null, findEntity(FuncName, C.allEntities));
+               C.parent.addScopedEntity(null, findEntity(FuncName, C.allEntities));
             }
         } else if (BuiltInFunctionSummaries.isSummarized(FuncName)) {
             SILFunctionRef.SILSummarizedFunctionRef FuncRef =
@@ -1738,7 +1724,7 @@ public class RawAstTranslator extends SILInstructionVisitor<CAstNode, SILInstruc
     // STATUS: TRANSLATED
     // CONFIDENCE: HIGH
     protected CAstNode visitUncheckedTakeEnumDataAddr(CAstNode N, SILInstructionContext C) {
-        // Given a pointer to an enum, invalidate the enum value and take the address
+        // Given a pointer to an enum, take the address
         // of the payload for the given enum case.
         RawValue operand = getSingleOperand(N);
         RawValue result = getSingleResult(N);
@@ -1749,7 +1735,6 @@ public class RawAstTranslator extends SILInstructionVisitor<CAstNode, SILInstruc
         SILField FieldValue = ((SILEnum)EnumValue).createField(null, null);
         SILPointer ResultPointer = new SILPointer(result.Name, result.Type, C, FieldValue);
         C.valueTable.addValue(ResultPointer);
-        ((SILEnum)EnumValue).invalidateValue();
         return null;
     }
 

@@ -108,9 +108,9 @@ It is recommended you use the full path of files as our pathing code is fairly v
 ```
 ./gradlew run --args='<MODE> <ARGS>'
 ```
-`MODE`: `SINGLE` or `iOS`
+`MODE`: `SINGLE` or `MULTI`
 
-`ARGS`: file for `SINGLE` mode, or arguments to `performFrontend()` for `iOS` mode. These should come from the shim script.
+`ARGS`: file for `SINGLE` mode, or arguments to `performFrontend()` for `MULTI` mode. These should come from the shim script.
 
 Single quotes are important here.
 

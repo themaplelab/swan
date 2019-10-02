@@ -14,14 +14,11 @@ import static com.ibm.wala.cast.tree.CAstNode.OBJECT_LITERAL;
 
 public class SILEnum extends SILValue {
 
-    // TODO: Blow away "field" since it isn't used nor needed?
-    private SILValue field;
     private final CAstNode LiteralNode;
     private final String fieldName = "value";
 
     public SILEnum(String name, String type, SILInstructionContext C, SILValue field) {
         super(name, type, C);
-        this.field = field;
         ArrayList<CAstNode> LiteralFields = new ArrayList<>();
         LiteralFields.add(Ast.makeNode(CAstNode.NEW, Ast.makeConstant(type)));
         LiteralFields.add(Ast.makeConstant(fieldName));
@@ -41,10 +38,6 @@ public class SILEnum extends SILValue {
 
     public SILField createField(String name, String type) {
         return new SILField(name, type, C, this, fieldName);
-    }
-
-    public void invalidateValue() {
-        this.field = null;
     }
 
 }

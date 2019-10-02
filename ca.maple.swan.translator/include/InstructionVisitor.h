@@ -35,9 +35,9 @@ namespace swan {
   class WALAInstance;
 
   /// Decides whether to print the translation debug info to terminal at runtime.
-  static bool SWAN_PRINT = true;
+  static bool SWAN_PRINT = false;
   /// Source information can be annoying/unnecessary for debugging, so there is an option to disable it.
-  static bool SWAN_PRINT_SOURCE = true;
+  static bool SWAN_PRINT_SOURCE = false;
   /// Disable printing memory and file information.
   static bool SWAN_PRINT_FILE_AND_MEMORY = false;
 

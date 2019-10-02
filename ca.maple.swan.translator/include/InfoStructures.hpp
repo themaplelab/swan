@@ -146,6 +146,12 @@ struct RootFunctionInfo {
   jobject functionSourceInfo;
   std::list<jobject> arguments;
   std::list<jobject> blocks;
+  std::list<jobject> calledFunctions;
+
+  void addCalledFunction(std::string f) {
+    llvm::outs() << "called function: " << f << "\n";
+    calledFunctions.push_back(wrapper->makeConstant(f.c_str()));
+  }
 
   void setFunctionSourceInfo(unsigned int fl, unsigned int fc, unsigned int ll, unsigned int lc) {
     functionSourceInfo = wrapper->makeLocation(static_cast<int>(fl), static_cast<int>(fc),
@@ -181,13 +187,18 @@ struct RootFunctionInfo {
      *    PRIMITIVE
      *      PRIMITIVE <-- BLOCK
      *      ...
+     *    PRIMITIVE
+     *      CONSTANT <-- CALLED FUNCTION
+     *      ...
      */
     return wrapper->makeNode(CAstWrapper::PRIMITIVE,
       wrapper->makeConstant(functionName.c_str()),
       wrapper->makeConstant(returnType.c_str()),
       wrapper->makeConstant(functionSourceInfo),
       wrapper->makeNode(CAstWrapper::PRIMITIVE, wrapper->makeArray(&arguments)),
-      wrapper->makeNode(CAstWrapper::PRIMITIVE, wrapper->makeArray(&blocks)));
+      wrapper->makeNode(CAstWrapper::PRIMITIVE, wrapper->makeArray(&blocks)),
+      wrapper->makeNode(CAstWrapper::PRIMITIVE, wrapper->makeArray(&calledFunctions))
+      );
   }
 };
 

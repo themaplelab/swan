@@ -29,7 +29,6 @@
 #include <fstream>
 #include <memory>
 
-// TODO: Figure out how to use variadic macros instead.
 #define MAKE_NODE(x) Instance->CAst->makeNode(x)
 #define MAKE_NODE2(x, y) Instance->CAst->makeNode(x, y)
 #define MAKE_NODE3(x, y, z) Instance->CAst->makeNode(x, y, z)
@@ -46,7 +45,9 @@ void InstructionVisitor::visitSILModule(SILModule *M) {
   for (SILFunction &F: *M) {
     if (F.empty()) { // Most likely a builtin or library (external) function, so we ignore it.
       // Can't get information like arguments from functions without a body :(
-      llvm::outs() << "Skipping " << Demangle::demangleSymbolAsString(F.getName()) << "\n";
+      if (SWAN_PRINT) {
+          llvm::outs() << "Skipping " << Demangle::demangleSymbolAsString(F.getName()) << "\n";
+      }
       continue;
     }
     swift::DeclContext* declContext = F.getDeclContext();
@@ -73,7 +74,9 @@ void InstructionVisitor::visitSILFunction(SILFunction *F) {
     SourceLoc const &srcStart = srcRange.Start;
     SourceLoc const &srcEnd = srcRange.End;
     if (srcStart.isInvalid() || srcEnd.isInvalid()) {
-      llvm::outs() << "WARNING: Source information is invalid for function: " << demangledFunctionName;
+      if (SWAN_PRINT) {
+        llvm::outs() << "WARNING: Source information is invalid for function: " << demangledFunctionName;
+      }
     } else {
       auto startLineCol = srcMgr.getLineAndColumn(srcStart);
       fl = startLineCol.first;
@@ -84,7 +87,9 @@ void InstructionVisitor::visitSILFunction(SILFunction *F) {
     }
   } else {
     // "main" does not have source information for obvious reasons.
-    llvm::outs() << "WARNING: Source information is null for function: " << demangledFunctionName << "\n";
+    if (SWAN_PRINT) {
+      llvm::outs() << "WARNING: Source information is null for function: " << demangledFunctionName << "\n";
+    }
   }
   currentFunction->setFunctionSourceInfo(fl, fc, ll, lc);
 
@@ -158,6 +163,9 @@ void InstructionVisitor::beforeVisit(SILInstruction *I) {
   SILLocation::DebugLoc const &debugInfo = debugLoc.decodeDebugLoc(srcMgr);
   // Set filename.
   instrInfo->Filename = debugInfo.Filename;
+  if (debugInfo.Filename != "") {
+    Instance->setSource(debugInfo.Filename);
+  }
   // Set position.
   if (!I->getLoc().isNull()) {
     SourceRange const &srcRange = I->getLoc().getSourceRange();
@@ -265,6 +273,7 @@ void InstructionVisitor::printSILInstructionInfo() {
 //===------------------------- UTLITY FUNCTIONS ----------------------------===//
 
 jobject InstructionVisitor::getOperatorCAstType(const Identifier &Name) {
+  // TODO: Not all operators are handled!
   if (Name.is("==")) {
     return CAstWrapper::OP_EQ;
   } else if (Name.is("!=")) {
@@ -296,13 +305,11 @@ jobject InstructionVisitor::getOperatorCAstType(const Identifier &Name) {
   } else if (Name.is("&")) {
     return CAstWrapper::OP_BIT_AND;
   } else if (Name.is("&&")) {
-    // TODO: Why is this not handled?
     // OLD: return CAstWrapper::OP_REL_AND;
     return nullptr; // OLD: && and || are handled separately because they involve short circuits
   } else if (Name.is("|")) {
     return CAstWrapper::OP_BIT_OR;
   } else if (Name.is("||")) {
-    // TODO: Why is this not handled?
     // OLD: return CAstWrapper::OP_REL_OR;
     return nullptr; // OLD: && and || are handled separatedly because they involve short circuits
   } else if (Name.is("^")) {
@@ -310,7 +317,9 @@ jobject InstructionVisitor::getOperatorCAstType(const Identifier &Name) {
   } else if (Name.is("~=")) { // Pattern matching operator.
     return CAstWrapper::OP_EQ;
   } else {
-    llvm::outs() << "WARNING: Unhandled operator: " << Name << " detected! \n";
+    if (SWAN_PRINT) {
+      llvm::outs() << "WARNING: Unhandled operator: " << Name << " detected! \n";
+    }
     return nullptr;
   }
 }
@@ -321,8 +330,10 @@ void InstructionVisitor::handleSimpleInstr(SILInstruction *UIB) {
   for (auto InstOperand : UIB->getOperandValues()) {
       std::string OperandName = addressToString(InstOperand.getOpaqueValue());
       std::string OperandType = InstOperand->getType().getAsString();
-      llvm::outs() << "\t [OPER" << i << " NAME]: " << OperandName << "\n";
-      llvm::outs() << "\t [OPER" << i << " TYPE]: " << OperandType << "\n";
+      if (SWAN_PRINT) {
+        llvm::outs() << "\t [OPER" << i << " NAME]: " << OperandName << "\n";
+        llvm::outs() << "\t [OPER" << i << " TYPE]: " << OperandType << "\n";
+      }
       operands.push_back(MAKE_NODE3(
         CAstWrapper::PRIMITIVE,
         MAKE_CONST(OperandName.c_str()),
@@ -874,7 +885,9 @@ void InstructionVisitor::visitApplyInst(ApplyInst *AI) {
     llvm::outs() << "\t [FUNC REF ADDR]: " << AI->getOperand(0).getOpaqueValue() << "\n";
   }
   if (!Callee) {
-    llvm::outs() << "\t WARNING: Apply site's Callee is empty!\n";
+    if (SWAN_PRINT) {
+      llvm::outs() << "\t WARNING: Apply site's Callee is empty!\n";
+    }
     arguments.push_front(MAKE_CONST("N/A"));
     ADD_PROP(Instance->CAst->makeNode(CAstWrapper::PRIMITIVE, MAKE_ARRAY(&arguments)));
     return;
@@ -905,6 +918,7 @@ void InstructionVisitor::visitApplyInst(ApplyInst *AI) {
     if (SWAN_PRINT) {
       llvm::outs() << "\t [CALLEE NAME]:" << CalleeName << "\n";
     }
+    currentFunction->addCalledFunction(CalleeName);
     arguments.push_front(MAKE_CONST(CalleeName.c_str()));
     ADD_PROP(Instance->CAst->makeNode(CAstWrapper::PRIMITIVE, MAKE_ARRAY(&arguments)));
   }
@@ -941,7 +955,9 @@ void InstructionVisitor::visitBeginApplyInst(BeginApplyInst *BAI) {
     llvm::outs() << "\t [FUNC REF ADDR]: " << BAI->getOperand(0).getOpaqueValue() << "\n";
   }
   if (!Callee) {
-    llvm::outs() << "\t WARNING: Apply site's Callee is empty!\n";
+    if (SWAN_PRINT) {
+      llvm::outs() << "\t WARNING: Apply site's Callee is empty!\n";
+    }
     arguments.push_front(MAKE_CONST("N/A"));
     ADD_PROP(Instance->CAst->makeNode(CAstWrapper::PRIMITIVE, MAKE_ARRAY(&arguments)));
     return;
@@ -972,6 +988,7 @@ void InstructionVisitor::visitBeginApplyInst(BeginApplyInst *BAI) {
     if (SWAN_PRINT) {
       llvm::outs() << "\t [CALLEE NAME]:" << CalleeName << "\n";
     }
+    currentFunction->addCalledFunction(CalleeName);
     arguments.push_front(MAKE_CONST(CalleeName.c_str()));
     ADD_PROP(Instance->CAst->makeNode(CAstWrapper::PRIMITIVE, MAKE_ARRAY(&arguments)));
   }
@@ -997,7 +1014,9 @@ void InstructionVisitor::visitPartialApplyInst(PartialApplyInst *PAI) {
     llvm::outs() << "\t [FUNC REF ADDR]: " << PAI->getOperand(0).getOpaqueValue() << "\n";
   }
   if (!Callee) {
-    llvm::outs() << "\t WARNING: Apply site's Callee is empty!\n";
+    if (SWAN_PRINT) {
+      llvm::outs() << "\t WARNING: Apply site's Callee is empty!\n";
+    }
     arguments.push_front(MAKE_CONST("N/A"));
     ADD_PROP(Instance->CAst->makeNode(CAstWrapper::PRIMITIVE, MAKE_ARRAY(&arguments)));
     return;
@@ -1028,6 +1047,7 @@ void InstructionVisitor::visitPartialApplyInst(PartialApplyInst *PAI) {
     if (SWAN_PRINT) {
       llvm::outs() << "\t [CALLEE NAME]:" << CalleeName << "\n";
     }
+    currentFunction->addCalledFunction(CalleeName);
     arguments.push_front(MAKE_CONST(CalleeName.c_str()));
     ADD_PROP(Instance->CAst->makeNode(CAstWrapper::PRIMITIVE, MAKE_ARRAY(&arguments)));
   }
@@ -1037,11 +1057,12 @@ void InstructionVisitor::visitBuiltinInst(BuiltinInst *BI) {
   handleSimpleInstr(BI);
   std::list<jobject> arguments;
   std::string CalleeName = BI->getName().str();
+  currentFunction->addCalledFunction(CalleeName);
   if (SWAN_PRINT) {
     llvm::outs() << "\t [CALLEE NAME]:" << CalleeName << "\n";
   }
-    for (auto arg : BI->getArguments()) {
-   llvm::outs() << "\t\t [ARG]: " << arg.getOpaqueValue() << "\n";
+  for (auto arg : BI->getArguments()) {
+    llvm::outs() << "\t\t [ARG]: " << arg.getOpaqueValue() << "\n";
     arguments.push_back(MAKE_CONST(addressToString(arg.getOpaqueValue()).c_str()));
   }
   ADD_PROP(MAKE_CONST(CalleeName.c_str()));
@@ -1764,7 +1785,9 @@ void InstructionVisitor::visitTryApplyInst(TryApplyInst *TAI) {
     llvm::outs() << "\t [FUNC REF ADDR]: " << TAI->getOperand(0).getOpaqueValue() << "\n";
   }
   if (!Callee) {
-    llvm::outs() << "\t WARNING: Apply site's Callee is empty!\n";
+    if (SWAN_PRINT) {
+      llvm::outs() << "\t WARNING: Apply site's Callee is empty!\n";
+    }
     arguments.push_front(MAKE_CONST("N/A"));
     ADD_PROP(Instance->CAst->makeNode(CAstWrapper::PRIMITIVE, MAKE_ARRAY(&arguments)));
     return;
@@ -1795,6 +1818,7 @@ void InstructionVisitor::visitTryApplyInst(TryApplyInst *TAI) {
     if (SWAN_PRINT) {
       llvm::outs() << "\t [CALLEE NAME]:" << CalleeName << "\n";
     }
+    currentFunction->addCalledFunction(CalleeName);
     arguments.push_front(MAKE_CONST(CalleeName.c_str()));
     ADD_PROP(Instance->CAst->makeNode(CAstWrapper::PRIMITIVE, MAKE_ARRAY(&arguments)));
   }
