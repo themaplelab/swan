@@ -13,11 +13,11 @@ The translator aims to support every SIL instruction seen in practice.
 ## Current work
 - Finishing the new translator.
 - Taint Analysis.
-- Multi-file support for iOS and macOS apps.
+- Multi-file support including iOS and macOS apps.
 
 ## Future plans
 - Lifecycle awareness for iOS and macOS applications (custom call graph building)
-- Sources, cleaners, and sinks identified for iOS and macOS libraries
+- Sources, sinks, and sanitizers identified for iOS and macOS libraries
 
 ## Getting Started
 
@@ -114,7 +114,7 @@ It is recommended you use the full path of files as our pathing code is fairly v
 
 Single quotes are important here.
 
-**Compiling iOS/macOS apps**
+**Compiling Xcode projects (incl. iOS/macOS apps)**
 
 Obviously, this is only for those running macOS.
 
