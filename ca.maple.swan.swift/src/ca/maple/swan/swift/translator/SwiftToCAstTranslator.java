@@ -16,10 +16,9 @@ package ca.maple.swan.swift.translator;
 import java.io.*;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.Map;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.*;
 
 import com.ibm.wala.cast.ir.translator.NativeTranslatorToCAst;
 import com.ibm.wala.cast.tree.CAst;
@@ -111,105 +110,67 @@ public class SwiftToCAstTranslator extends NativeTranslatorToCAst {
 			}
 		}
 
+		// MAIN TRANSLATION CALL
 		ArrayList<CAstNode> roots = translateToCAstNodes(args);
 
-		// TODO: The whole no source handling thing is super janky and gross.
-		//		Needs a more clean solution.
-
-		// Get functions with no source.
-
-		// FuncName -> (RawAst, NestedCalls)
-		Map<String, Pair<CAstNode, ArrayList<String>>> noSourceFunctions = new HashMap<>();
-
-		for (CAstNode root : roots) {
-			String file = (String)root.getChild(0).getValue();
-			// Note: "NO SOURCE" is coupled with C++ code.
-			if (file.equals("NO SOURCE")) {
-				for (CAstNode func : root.getChild(1).getChildren()) {
-					ArrayList<String> calledFunctions = new ArrayList<>();
-					for (CAstNode calledFunc : func.getChild(5).getChildren()) {
-						calledFunctions.add((String)calledFunc.getValue());
-					}
-					noSourceFunctions.put((String)func.getChild(0).getValue(), Pair.make(func, calledFunctions));
-				}
-			}
-		}
-
+		// Module names - in reality, this will have a size of 1 since we are throwing
+		// everything into one module with the name being the common path of all files.
 		ArrayList<String> moduleNames = new ArrayList<>();
 
-		CAstNode main = null;
+		// Where all of the functions from every source file go, since we are using
+		// a single module.
+		ArrayList<CAstNode> newFunctions = new ArrayList<>();
 
-		// Find "main" to arbitrarily add to any file (doesn't matter which one).
-		for (CAstNode root : roots) {
-			if (root.getChild(0).getValue().equals("NO SOURCE")) {
-				for (CAstNode f : root.getChild(1).getChildren()) {
-					if (f.getChild(0).getValue().equals("main")) {
-						main = f;
-					}
-				}
-			}
-		}
-
-		Assertions.productionAssertion(main	!= null);
+		// All paths so we can later find the common one.
+		ArrayList<String> paths = new ArrayList<>();
 
 		for (CAstNode root : roots) {
-
-			// Note: "NO SOURCE" is coupled with C++ code.
-			if (root.getChild(0).getValue().equals("NO SOURCE")) {
-				continue;
+			if (!root.getChild(0).getValue().equals("NO SOURCE")) {
+				paths.add((String)root.getChild(0).getValue());
 			}
 
-			// Get all called functions of the current file.
-			ArrayList<String> calledFunctions = new ArrayList<>();
-			for (CAstNode func : root.getChild(1).getChildren()) {
-				for (CAstNode calledFunc : func.getChild(5).getChildren()) {
-					calledFunctions.add((String)calledFunc.getValue());
-				}
-			}
-
-			// We can't mutate the ast so we create a new one.
-
-			// First, we add all the current functions belonging to the file.
-			ArrayList<CAstNode> newFunctions = new ArrayList<>();
 			for (CAstNode func : root.getChild(1).getChildren()) {
 				newFunctions.add(func);
 			}
+		}
 
-			// Add main if it hasn't already been added.
-			if (main != null) {
-				newFunctions.add(main);
-				main = null;
-			}
+		String commonPath = longestCommonPath(paths);
 
-			// Then, we look at all calledFunctions, and analyze their calls
-			// incl. nested calls to see if they have no source. Pull in those
-			// with no source.
-			for (String s : calledFunctions) {
-				ArrayList<String> workList = new ArrayList<>();
-				workList.add(s);
-				while (!workList.isEmpty()) {
-					String currentFunc = workList.get(0);
-					workList.remove(0);
-					if (!noSourceFunctions.containsKey(currentFunc)) { continue; }
-					Pair<CAstNode, ArrayList<String>> currentPair = noSourceFunctions.get(currentFunc);
-					// Inefficient O(n) call.
-					if (!newFunctions.contains(currentPair.fst)){
-						newFunctions.add(currentPair.fst);
-						noSourceFunctions.remove(currentFunc);
-					}
-					for (String nestedCall : currentPair.snd) {
-						workList.add(nestedCall);
-					}
+		// We generally don't want to have a specific file as the module name.
+		// E.g. In the case that there is another file with just the main function.
+		File tempFile = new File(commonPath);
+		if (FilenameUtils.getExtension(tempFile.getName()).equals("swift")) {
+			commonPath = FilenameUtils.getPath(tempFile.getPath());
+		}
+
+		commonPath = "/" + commonPath;
+
+		CAstNode newRoot = Ast.makeNode(CAstNode.PRIMITIVE,
+				Ast.makeConstant(commonPath),
+				Ast.makeNode(CAstNode.PRIMITIVE, newFunctions));
+
+		translatedModules.put(commonPath, newRoot);
+		moduleNames.add(commonPath);
+
+		return moduleNames.toArray(new String[0]);
+	}
+
+	private static String longestCommonPath(ArrayList<String> paths) {
+		if (paths.size() == 0) {
+			return null;
+		} else if (paths.size() == 1) {
+			return paths.get(0);
+		}
+		String initialPath = paths.get(0);
+		for (String path : paths.subList(1, paths.size())) {
+			for (int i = 0; i < path.length() && i < initialPath.length(); ++i) {
+				if (initialPath.charAt(i) != path.charAt(i)) {
+					initialPath = initialPath.substring(0, i);
+					continue;
 				}
 			}
-
-			CAstNode newRoot = Ast.makeNode(CAstNode.PRIMITIVE, root.getChild(0), Ast.makeNode(CAstNode.PRIMITIVE, newFunctions));
-
-			String filename = (String)newRoot.getChild(0).getValue();
-			translatedModules.put(filename, newRoot);
-			moduleNames.add(filename);
 		}
-		return moduleNames.toArray(new String[0]);
+		return initialPath;
 	}
 
 	public void setSource(String url) {
