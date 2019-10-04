@@ -1240,7 +1240,6 @@ public class RawAstTranslator extends SILInstructionVisitor<CAstNode, SILInstruc
                     ArrayList<SILValue> ParamVals = new ArrayList<>();
                     Params.add(((SILFunctionRef) FuncRef).getFunctionRef());
                     Params.add(Ast.makeConstant("do"));
-                    Params.add(Ast.makeConstant("self"));
                     for (CAstNode RawParam : FuncNode.getChildren().subList(1, FuncNode.getChildren().size())) {
                         String ParamName = (String)RawParam.getValue();
                         Params.add(C.valueTable.getValue(ParamName).getVarNode());

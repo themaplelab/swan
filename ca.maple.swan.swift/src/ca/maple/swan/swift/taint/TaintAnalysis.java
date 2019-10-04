@@ -154,16 +154,20 @@ public class TaintAnalysis {
                 case NORMAL: {
                     if (ast) {
                         CAstSourcePositionMap.Position p = ((AstMethod)m).getSourcePosition(((NormalStatement)s).getInstructionIndex());
-                        SourceBuffer buf = new SourceBuffer(p);
-                        System.out.println(buf + " (" + p + ")");
+                        if (p != null) {
+                            SourceBuffer buf = new SourceBuffer(p);
+                            System.out.println(buf + " (" + p + ")");
+                        }
                     }
                     break;
                 }
                 case PARAM_CALLER: {
                     if (ast) {
                         CAstSourcePositionMap.Position p = ((AstMethod)m).getSourcePosition(((ParamCaller)s).getInstructionIndex());
-                        SourceBuffer buf = new SourceBuffer(p);
-                        System.out.println(buf + " (" + p + ")");
+                        if (p != null) {
+                            SourceBuffer buf = new SourceBuffer(p);
+                            System.out.println(buf + " (" + p + ")");
+                        }
                     }
                     break;
                 }
