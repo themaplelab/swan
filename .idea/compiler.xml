@@ -2,8 +2,13 @@
 <project version="4">
   <component name="CompilerConfiguration">
     <bytecodeTargetLevel>
+      <module name="ca.maple.swan.swan.ca.maple.swan.swift.test" target="1.8" />
+      <module name="swan.ca.maple.swan.swift.server.src.main" target="1.8" />
+      <module name="swan.ca.maple.swan.swift.server.src.test" target="1.8" />
       <module name="swan.com.ibm.wala.cast.js.main" target="1.8" />
       <module name="swan.com.ibm.wala.cast.js.test" target="1.8" />
+      <module name="swan.src.main" target="1.8" />
+      <module name="swan.src.test" target="1.8" />
     </bytecodeTargetLevel>
   </component>
 </project>
