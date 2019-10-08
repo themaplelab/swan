@@ -14,6 +14,7 @@
 package ca.maple.swan.swift.taint;
 
 import com.ibm.wala.cast.loader.AstMethod;
+import com.ibm.wala.cast.loader.CAstAbstractModuleLoader;
 import com.ibm.wala.cast.tree.CAstSourcePositionMap;
 import com.ibm.wala.cast.util.SourceBuffer;
 import com.ibm.wala.classLoader.CallSiteReference;
@@ -100,9 +101,10 @@ public class TaintAnalysis {
             CallSiteReference cs = ((NormalReturnCaller)s).getInstruction().getCallSite();
             CGNode node = s.getNode();
             Set<CGNode> it = CG.getPossibleTargets(node, cs);
-            String testSource = "function Lmain/out.source() -> Swift.String";
+            String testSource = "testTaint.source() -> Swift.String";
             for (CGNode target: it) {
-                if (target.getMethod().getDeclaringClass().toString().equals(testSource)) {
+                CAstAbstractModuleLoader.DynamicMethodObject m = (CAstAbstractModuleLoader.DynamicMethodObject) target.getMethod();
+                if (m.getEntity().getName().equals(testSource)) {
                     System.out.println("FOUND SOURCE:" + testSource);
                     return true;
                 }
@@ -113,8 +115,9 @@ public class TaintAnalysis {
 
     public static final EndpointFinder swiftSinks = s -> {
         if (s.getKind()== Statement.Kind.PARAM_CALLEE) {
-            String ref = s.getNode().getMethod().toString();
-            String testSink = "<Code body of function Lmain/out.sink(sunk: Swift.String) -> ()>";
+            CAstAbstractModuleLoader.DynamicMethodObject m = (CAstAbstractModuleLoader.DynamicMethodObject) s.getNode().getMethod();
+            String ref = m.getEntity().getName();
+            String testSink = "testTaint.sink(sunk: Swift.String) -> ()";
             if (ref.equals(testSink)) {
                 System.out.println("FOUND SINK:" + testSink);
                 return true;
@@ -161,9 +164,31 @@ public class TaintAnalysis {
                     }
                     break;
                 }
+                case PARAM_CALLEE: {
+                    if (ast) {
+                        try {
+                            CAstSourcePositionMap.Position p = ((AstMethod)m).getSourcePosition();
+                            if (p != null) {
+                                SourceBuffer buf = new SourceBuffer(p);
+                                System.out.println(buf + " (" + p + ")");
+                            }
+                        } catch (Exception e) {}
+                    }
+                    break;
+                }
                 case PARAM_CALLER: {
                     if (ast) {
                         CAstSourcePositionMap.Position p = ((AstMethod)m).getSourcePosition(((ParamCaller)s).getInstructionIndex());
+                        if (p != null) {
+                            SourceBuffer buf = new SourceBuffer(p);
+                            System.out.println(buf + " (" + p + ")");
+                        }
+                    }
+                    break;
+                }
+                case NORMAL_RET_CALLER: {
+                    if (ast) {
+                        CAstSourcePositionMap.Position p = ((AstMethod)m).getSourcePosition(((NormalReturnCaller)s).getInstructionIndex());
                         if (p != null) {
                             SourceBuffer buf = new SourceBuffer(p);
                             System.out.println(buf + " (" + p + ")");

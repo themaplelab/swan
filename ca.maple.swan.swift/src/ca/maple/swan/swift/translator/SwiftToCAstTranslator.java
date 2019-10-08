@@ -102,7 +102,7 @@ public class SwiftToCAstTranslator extends NativeTranslatorToCAst {
 					System.exit(1);
 				} else {
 					String[] singleArgs = new String[]
-							{"", "-emit-silgen", "-oout.sil", "-Onone", file.getAbsolutePath()};
+							{"", "-emit-silgen", "-Onone", file.getAbsolutePath()};
 					args.addAll(Arrays.asList(singleArgs));
 				}
 			} else { // multi mode.

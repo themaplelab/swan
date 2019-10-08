@@ -28,5 +28,5 @@ dependencies {
 
 run {
     enableAssertions = true
-    standardInput = System.in;
+    standardInput = System.in
 }

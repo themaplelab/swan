@@ -9,11 +9,7 @@ import static java.lang.System.exit;
 
 public class Server {
 
-
     public static void main(String[] args) throws IllegalArgumentException {
-
-
-        System.out.println("Hello World!");
 
         try {
             Socket socket = IO.socket("http://localhost:4040");
@@ -21,12 +17,14 @@ public class Server {
 
                 @Override
                 public void call(Object... args) {
+                    System.out.println("Connected");
                 }
 
             }).on("runTaintAnalysis", new Emitter.Listener() {
 
                 @Override
                 public void call(Object... args) {
+                    System.out.println("Running taint analysis...");
                     try {
                         JSONObject obj = new JSONObject("{\n" +
                                 "\"paths\": \n" +
@@ -51,6 +49,7 @@ public class Server {
                                 "\t\t}\n" +
                                 "\t]\n" +
                                 "}");
+                        System.out.println("Returning taint analysis results...");
                         socket.emit("taintAnalysisResults", obj);
                     } catch (Exception e) {}
                 }
@@ -60,7 +59,7 @@ public class Server {
                 @Override
                 public void call(Object... args) {
                     socket.disconnect();
-                    System.err.println("test");
+                    System.out.println("Disconnected. Exiting...");
                     exit(0);
                 }
 
