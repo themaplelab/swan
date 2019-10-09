@@ -78,6 +78,7 @@ public class Server {
                         JSONArray sinks = (JSONArray)sss.get("Sinks");
                         JSONArray sanitizers = (JSONArray)sss.get("Sanitizers");
                         ArrayList<ArrayList<CAstSourcePositionMap.Position>> paths = TaintAnalysis.doTaintAnalysis(
+                                sdg,
                                 JSONArrayToJavaStringArray(sources),
                                 JSONArrayToJavaStringArray(sinks),
                                 JSONArrayToJavaStringArray(sanitizers)
