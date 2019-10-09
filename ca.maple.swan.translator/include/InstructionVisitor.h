@@ -46,16 +46,7 @@ namespace swan {
   /// ones for every type of SILInstruction. This makes translating simple.
   class InstructionVisitor : public SILInstructionVisitor<InstructionVisitor, void> {
   public:
-    InstructionVisitor(WALAInstance *Instance, std::vector<const char *> args) : Instance(Instance) {
-      for (auto it = args.begin(); it != args.end(); ++it) {
-        string path = *it;
-        std::ifstream isPath(path);
-        if (isPath)
-        {
-          paths.insert({path.substr(path.find_last_of("/\\") + 1), path});
-        }
-      }
-    }
+    InstructionVisitor(WALAInstance *Instance) : Instance(Instance) { }
 
     /// Visit the SILModule of the swift file that holds the SILFunctions.
     void visitSILModule(SILModule *M);
@@ -81,9 +72,6 @@ namespace swan {
 
     /// Current instruction number.
     unsigned InstructionCounter = 0;
-
-    /// For looking up whole path of a given filename.
-    std::unordered_map<string, string> paths;
 
     /// Raw data of current instruction begin translated.
     std::unique_ptr<RootInstructionInfo> currentInstruction;

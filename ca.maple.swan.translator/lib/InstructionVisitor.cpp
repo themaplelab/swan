@@ -52,7 +52,7 @@ void InstructionVisitor::visitSILModule(SILModule *M) {
     }
     swift::DeclContext* declContext = F.getDeclContext();
     swift::SourceFile* sourceFile = (declContext != nullptr) ? declContext->getParentSourceFile() : nullptr;
-    std::string file = (sourceFile != nullptr) ? sourceFile->getFilename() : "NO SOURCE";
+    std::string file = (sourceFile != nullptr) ? sourceFile->getFilename() : "NO_SOURCE";
     Instance->setSource(file);
     visitSILFunction(&F);
     Instance->addSourceFunction(file, currentFunction.get()->make());
@@ -164,8 +164,7 @@ void InstructionVisitor::beforeVisit(SILInstruction *I) {
   // Set filename.
   instrInfo->Filename = debugInfo.Filename;
   if (debugInfo.Filename != "") {
-    std::string fullPath = paths.at(debugInfo.Filename);
-    Instance->setSource(fullPath);
+    Instance->setSource(debugInfo.Filename);
   }
   // Set position.
   if (!I->getLoc().isNull()) {

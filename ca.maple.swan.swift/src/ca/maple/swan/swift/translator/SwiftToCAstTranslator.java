@@ -16,8 +16,6 @@ package ca.maple.swan.swift.translator;
 import java.io.*;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.*;
 
 import com.ibm.wala.cast.ir.translator.NativeTranslatorToCAst;
@@ -31,8 +29,6 @@ import com.ibm.wala.cast.tree.rewrite.CAstRewriter.CopyKey;
 import com.ibm.wala.cast.tree.rewrite.CAstRewriter.RewriteContext;
 import com.ibm.wala.cast.tree.rewrite.CAstRewriterFactory;
 import com.ibm.wala.classLoader.ModuleEntry;
-import com.ibm.wala.util.collections.Pair;
-import com.ibm.wala.util.debug.Assertions;
 import org.apache.commons.io.FilenameUtils;
 
 /*
@@ -47,6 +43,8 @@ public class SwiftToCAstTranslator extends NativeTranslatorToCAst {
 	private String dynamicSourceFileName;
 
 	private static Map<String, CAstNode> translatedModules = new HashMap<>();
+
+	private static Map<String, String> paths = new HashMap<>();
 
 	static {
 		SwiftTranslatorPathLoader.load();
@@ -84,6 +82,15 @@ public class SwiftToCAstTranslator extends NativeTranslatorToCAst {
 
 	public String[] doTranslation(ArrayList<String> args) {
 
+		// Find all files being analyzed so when setSource() is called later,
+		// we can set the full path for the file.
+		for (String s : args) {
+			File f = new File(s);
+			if (f.exists()) {
+				paths.put(f.getName(), f.getAbsolutePath());
+			}
+		}
+
 		// MAIN TRANSLATION CALL.
 		// Arguments will be directly fed to performFrontend() call.
 		ArrayList<CAstNode> roots = translateToCAstNodes(args);
@@ -100,7 +107,7 @@ public class SwiftToCAstTranslator extends NativeTranslatorToCAst {
 		ArrayList<String> paths = new ArrayList<>();
 
 		for (CAstNode root : roots) {
-			if (!root.getChild(0).getValue().equals("NO SOURCE")) {
+			if (!root.getChild(0).getValue().equals("NO_SOURCE")) {
 				paths.add((String)root.getChild(0).getValue());
 			}
 
@@ -148,14 +155,21 @@ public class SwiftToCAstTranslator extends NativeTranslatorToCAst {
 		return initialPath;
 	}
 
-	public void setSource(String url) {
+	// Specifically meant to be used by the C++ translator.
+	public void setSource(String filename) {
 		try {
-			File newFile = new File(url);
+			File newFile =
+					new File(filename).exists() ?
+					new File(filename) :
+							(paths.containsKey(filename)) ?
+									new File(paths.get(filename)) :
+									new File(filename);
+
 			this.dynamicSourceURL = newFile.toURI().toURL();
 			this.dynamicSourceFileName = newFile.getName();
 		} catch (Exception e) {
-			System.err.println("Error: Invalid url given");
-			e.printStackTrace();
+			this.dynamicSourceFileName = filename;
+			this.dynamicSourceURL = null;
 		}
 	}
 

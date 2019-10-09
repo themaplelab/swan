@@ -41,7 +41,7 @@ void WALAInstance::printNode(jobject Node) {
 }
 
 void WALAInstance::analyzeSILModule(SILModule &SM) {
-  InstructionVisitor Visitor(this, currentArgs);
+  InstructionVisitor Visitor(this);
   Visitor.visitSILModule(&SM);
 }
 
@@ -53,7 +53,7 @@ void WALAInstance::analyze(const std::list<string> args) {
   for (auto it = args.begin(); it != args.end(); ++it) {
     vec.push_back((*it).c_str());
   }
-  currentArgs = vec;
+
   SmallVector<const char *, 256> argv(vec.begin(), vec.end());
   // Call Swift compiler frontend.
   performFrontend(llvm::makeArrayRef(argv.data()+1,
