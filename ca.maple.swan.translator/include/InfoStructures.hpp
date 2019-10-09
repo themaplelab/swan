@@ -149,7 +149,6 @@ struct RootFunctionInfo {
   std::list<jobject> calledFunctions;
 
   void addCalledFunction(std::string f) {
-    llvm::outs() << "called function: " << f << "\n";
     calledFunctions.push_back(wrapper->makeConstant(f.c_str()));
   }
 

@@ -114,9 +114,6 @@ void InstructionVisitor::visitSILFunction(SILFunction *F) {
     for (auto arg : F->getArguments()) {
       llvm::outs() << "[ARG]: " << addressToString(static_cast<ValueBase*>(arg)) << "\n";
     }
-
-  }
-  if (demangledFunctionName == "main") {
     llvm::outs() << "<RAW SIL BEGIN> \n\n";
     F->print(llvm::outs(), true);
     llvm::outs() << "\n</RAW SIL END> \n\n";

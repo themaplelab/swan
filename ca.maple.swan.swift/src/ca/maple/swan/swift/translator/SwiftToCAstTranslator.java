@@ -48,9 +48,9 @@ public class SwiftToCAstTranslator extends NativeTranslatorToCAst {
 
 	private static Map<String, CAstNode> translatedModules = new HashMap<>();
 
-    static {
-        SwiftTranslatorPathLoader.load();
-    }
+	static {
+		SwiftTranslatorPathLoader.load();
+	}
 
     public SwiftToCAstTranslator() {
     	this(new CAstImpl(), null, null);
@@ -82,35 +82,10 @@ public class SwiftToCAstTranslator extends NativeTranslatorToCAst {
 		return doTranslation(new ArrayList<>(Arrays.asList(rawArgs)));
 	}
 
-	public String[] doTranslation(ArrayList<String> rawArgs) {
+	public String[] doTranslation(ArrayList<String> args) {
 
-		ArrayList<String> args = new ArrayList<>();
-
-		String singleMode = "SINGLE";
-		String multiMode = "MULTI";
-		String usageString = String.format("Usage: <MODE> <args>\n\tMODE:\t\t%s or %s\n\targs:\t\tfile for %s mode, or arguments to performFrontend() for %s mode.\n\t\t\t\t\tThese should come from the shim script.", singleMode, multiMode, singleMode, multiMode);
-		if (rawArgs.isEmpty() || rawArgs.size() == 1 || !(rawArgs.get(0).equals(singleMode) || rawArgs.get(0).equals(multiMode))) {
-			System.err.println(usageString);
-			System.exit(1);
-		} else {
-			String mode = rawArgs.get(0);
-			if (mode.equals(singleMode)) {
-				String filePath = rawArgs.get(1);
-				File file = new File(FilenameUtils.getFullPath(filePath) + FilenameUtils.getName(filePath));
-				if (!file.exists()) {
-					System.err.println(String.format("Error: File %s does not exist", filePath));
-					System.exit(1);
-				} else {
-					String[] singleArgs = new String[]
-							{"", "-emit-silgen", "-Onone", file.getAbsolutePath()};
-					args.addAll(Arrays.asList(singleArgs));
-				}
-			} else { // multi mode.
-				args.addAll(rawArgs.subList(1,rawArgs.size()));
-			}
-		}
-
-		// MAIN TRANSLATION CALL
+		// MAIN TRANSLATION CALL.
+		// Arguments will be directly fed to performFrontend() call.
 		ArrayList<CAstNode> roots = translateToCAstNodes(args);
 
 		// Module names - in reality, this will have a size of 1 since we are throwing

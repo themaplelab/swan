@@ -275,7 +275,7 @@ public class RawAstTranslator extends SILInstructionVisitor<CAstNode, SILInstruc
                 ++i;
             }
             mappedEntities.get(function).setAst(Ast.makeNode(CAstNode.BLOCK_STMT, C.blocks.get(0)));
-            EntityPrinter.print(mappedEntities.get(function));
+            // EntityPrinter.print(mappedEntities.get(function));
         }
 
         // For debugging : generate dot output. Should turn off for large code.

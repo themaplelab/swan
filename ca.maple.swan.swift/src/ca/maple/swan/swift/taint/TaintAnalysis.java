@@ -13,6 +13,7 @@
 
 package ca.maple.swan.swift.taint;
 
+import ca.maple.swan.swift.sdg.SDGUtil;
 import com.ibm.wala.cast.loader.AstMethod;
 import com.ibm.wala.cast.loader.CAstAbstractModuleLoader;
 import com.ibm.wala.cast.tree.CAstSourcePositionMap;
@@ -31,9 +32,7 @@ import com.ibm.wala.util.graph.traverse.BFSPathFinder;
 import com.ibm.wala.util.graph.traverse.DFS;
 
 import java.io.IOException;
-import java.util.Collections;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 import static com.ibm.wala.ipa.slicer.Statement.Kind.NORMAL_RET_CALLER;
 
@@ -41,8 +40,8 @@ import static com.ibm.wala.ipa.slicer.Statement.Kind.NORMAL_RET_CALLER;
  * This code is mostly borrowed from https://github.com/wala/Examples.
  * Currently, it can find the sources and sinks, but not a path in between. (TODO)
  *
- * TODO: Find a way to identify functions more generically (i.e. without the
- *       filename, output filename, etc).
+ * TODO: Move whatever is for path finding needed to SDGUtil.java.
+ *   Only have whatever is needed for setting up calls to SDGUtil here.
  */
 
 public class TaintAnalysis {
@@ -204,5 +203,21 @@ public class TaintAnalysis {
         for(List<Statement> path : paths) {
             printPath(path);
         }
+    }
+
+    // *********** NEW TAINT ANALYSIS CODE FOR SDGUTIL ******* //
+
+    public static ArrayList<ArrayList<CAstSourcePositionMap.Position>> doTaintAnalysis(
+            String[] sources,
+            String[] sinks,
+            String[] sanitizers) {
+
+        // TODO: Combine with known SSS here.
+
+        return SDGUtil.findSSSPaths(
+                new ArrayList<String>(Arrays.asList(sources)),
+                new ArrayList<String>(Arrays.asList(sinks)),
+                new ArrayList<String>(Arrays.asList(sanitizers))
+        );
     }
 }
