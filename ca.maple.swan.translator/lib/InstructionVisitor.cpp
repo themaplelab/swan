@@ -164,7 +164,8 @@ void InstructionVisitor::beforeVisit(SILInstruction *I) {
   // Set filename.
   instrInfo->Filename = debugInfo.Filename;
   if (debugInfo.Filename != "") {
-    Instance->setSource(debugInfo.Filename);
+    std::string fullPath = paths.at(debugInfo.Filename);
+    Instance->setSource(fullPath);
   }
   // Set position.
   if (!I->getLoc().isNull()) {

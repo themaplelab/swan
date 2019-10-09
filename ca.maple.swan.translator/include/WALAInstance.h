@@ -44,6 +44,8 @@ private:
   /// Since even with multi-file compilation we only have a single
   /// SILModule, we have to group SILFunctions by their source file.
   std::unordered_map<std::string, std::list<jobject>> mappedRoots;
+  /// Arguments to be given to the InstructionVisitor.
+  std::vector<const char *> currentArgs;
 
 public:
   CAstWrapper *CAst; // For handling JNI calls (WALA).
