@@ -20,21 +20,32 @@ import com.ibm.wala.cast.tree.CAstSourcePositionMap;
 import com.ibm.wala.cast.util.SourceBuffer;
 import com.ibm.wala.classLoader.CallSiteReference;
 import com.ibm.wala.classLoader.IMethod;
+import com.ibm.wala.dataflow.graph.*;
+import com.ibm.wala.fixpoint.*;
 import com.ibm.wala.ipa.callgraph.CGNode;
 import com.ibm.wala.ipa.callgraph.CallGraph;
 import com.ibm.wala.ipa.callgraph.propagation.InstanceKey;
 import com.ibm.wala.ipa.slicer.*;
+import com.ibm.wala.properties.WalaProperties;
+import com.ibm.wala.util.CancelException;
+import com.ibm.wala.util.WalaException;
 import com.ibm.wala.util.collections.HashSetFactory;
+import com.ibm.wala.util.graph.Graph;
+import com.ibm.wala.util.graph.GraphSlicer;
 import com.ibm.wala.util.graph.traverse.BFSPathFinder;
 import com.ibm.wala.util.graph.traverse.DFS;
+import com.ibm.wala.util.intset.MutableMapping;
+import com.ibm.wala.util.intset.MutableSharedBitVectorIntSet;
+import com.ibm.wala.util.intset.OrdinalSetMapping;
+import com.ibm.wala.viz.DotUtil;
+import com.ibm.wala.viz.NodeDecorator;
 
+import javax.swing.plaf.nimbus.State;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
+import java.util.function.Predicate;
 
-import static com.ibm.wala.ipa.slicer.Statement.Kind.NORMAL_RET_CALLER;
+import static com.ibm.wala.ipa.slicer.Statement.Kind.*;
 
 public class SDGUtil {
 
@@ -153,17 +164,180 @@ public class SDGUtil {
         }
     }
 
+    public static class BooleanFramework<T> extends BasicFramework<T, BooleanVariable> {
+
+        public BooleanFramework(
+                Graph<T> flowGraph, ITransferFunctionProvider<T, BooleanVariable> transferFunctionProvider) {
+           super(flowGraph, transferFunctionProvider);
+        }
+    }
+
+    /** OUT = b */
+    public static class BooleanTransferFunction extends UnaryOperator<BooleanVariable> {
+
+        private final boolean b;
+
+        public BooleanTransferFunction(boolean b) {
+            this.b = b;
+        }
+
+        @Override
+        public byte evaluate(BooleanVariable lhs, BooleanVariable rhs) throws IllegalArgumentException {
+            if (lhs == null) {
+                throw new IllegalArgumentException("lhs == null");
+            }
+            boolean val = b;
+            BooleanVariable booleanVariable = new BooleanVariable(val);
+            if (lhs.sameValue(booleanVariable)) {
+                return NOT_CHANGED;
+            } else {
+                lhs.copyState(booleanVariable);
+                return CHANGED;
+            }
+        }
+
+        @Override
+        public int hashCode() {
+            return 9802;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            return (o instanceof BooleanIdentity);
+        }
+
+        @Override
+        public String toString() {
+            return "" + b;
+        }
+    }
+
+    public static boolean checkSource(HashSet<String> sources, Statement s) {
+        if (s.getKind() == NORMAL_RET_CALLER) {
+            CallSiteReference cs = ((NormalReturnCaller)s).getInstruction().getCallSite();
+            CGNode node = s.getNode();
+            Set<CGNode> it = CG.getPossibleTargets(node, cs);
+            for (CGNode target: it) {
+                CAstAbstractModuleLoader.DynamicMethodObject m = (CAstAbstractModuleLoader.DynamicMethodObject) target.getMethod();
+                if (sources.contains(m.getEntity().getName())) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    public static boolean checkSanitizer(HashSet<String> sanitizers, Statement s) {
+        return false;
+    }
+
+    public static BooleanSolver solveSDG(SDG<InstanceKey> sdg, HashSet<String> Sources, HashSet<String> Sanitizers) throws CancelException {
+        ITransferFunctionProvider<Statement, BooleanVariable> functions =
+                new ITransferFunctionProvider<Statement, BooleanVariable>() {
+                    @Override
+                    public UnaryOperator<BooleanVariable> getNodeTransferFunction(Statement Statement) {
+                        if (checkSource(Sources, Statement)) {
+                            return new BooleanTransferFunction(true);
+                        } else if (checkSanitizer(Sanitizers, Statement)) {
+                            return new BooleanTransferFunction(false);
+                        } else {
+                            return BooleanIdentity.instance();
+                        }
+                    }
+
+                    @Override
+                    public boolean hasNodeTransferFunctions() {
+                        return true;
+                    }
+
+                    @Override
+                    public UnaryOperator<BooleanVariable> getEdgeTransferFunction(Statement from, Statement to) {
+                        return BooleanIdentity.instance();
+                    }
+
+                    @Override
+                    public boolean hasEdgeTransferFunctions() {
+                        return true;
+                    }
+
+                    @Override
+                    public AbstractMeetOperator<BooleanVariable> getMeetOperator() {
+                        return BooleanUnion.instance();
+                    }
+                };
+
+        BooleanFramework<Statement> F = new BooleanFramework<>(sdg, functions);
+        BooleanSolver s = new BooleanSolver(F);
+        s.solve(null);
+
+        try {
+            Graph<Statement> g = pruneSDG(sdg);
+            DotUtil.writeDotFile(g, makeNodeDecorator(s), "sdg.dot ", "/Users/tiganov/Desktop/sdg.dot");
+        } catch (Exception e) {
+            System.err.println("Could not make pdf");
+            e.printStackTrace();
+        }
+
+        return s;
+    }
+
+    private static Graph<Statement> pruneSDG(final SDG<?> sdg) {
+        Predicate<Statement> f =
+                s -> {
+                    if (s.getNode().equals(sdg.getCallGraph().getFakeRootNode())) {
+                        return false;
+                    } else if (s instanceof MethodExitStatement || s instanceof MethodEntryStatement) {
+                        return false;
+                    } else {
+                        return true;
+                    }
+                };
+        return GraphSlicer.prune(sdg, f);
+    }
+
+    private static NodeDecorator<Statement> makeNodeDecorator(BooleanSolver solver) {
+        return s -> {
+            switch (s.getKind()) {
+                case HEAP_PARAM_CALLEE:
+                case HEAP_PARAM_CALLER:
+                case HEAP_RET_CALLEE:
+                case HEAP_RET_CALLER:
+                    HeapStatement h = (HeapStatement) s;
+                    return s.getKind() + "\\n" + h.getNode() + "\\n" + h.getLocation();
+                case EXC_RET_CALLEE:
+                case EXC_RET_CALLER:
+                case NORMAL:
+                case NORMAL_RET_CALLEE:
+                case NORMAL_RET_CALLER:
+                case PARAM_CALLEE:
+                case PARAM_CALLER:
+                case PHI:
+                default:
+                    return s.toString() + " | " + solver.getOut(s);
+            }
+        };
+    }
+
 
     public static ArrayList<ArrayList<CAstSourcePositionMap.Position>> findSSSPaths(
             SDG<InstanceKey> sdg,
-            ArrayList<String> sources,
-            ArrayList<String> sinks,
-            ArrayList<String> sanitizers) {
+            HashSet<String> sources,
+            HashSet<String> sinks,
+            HashSet<String> sanitizers) {
 
-        System.out.println("SDGUtil.findSSSPaths running with\n" +
-                "Sources: " + sources + "\n" +
-                "Sinks: " + sinks + "\n" +
-                "Sanitizers: " + sanitizers);
+        System.out.println("SDGUtil.findSSSPaths running with\n");
+
+        System.out.println("Sources: ");
+        sources.forEach(s -> System.out.print(s));
+        System.out.println("\n");
+
+        System.out.println("Sinks: ");
+        sinks.forEach(s -> System.out.print(s));
+        System.out.println("\n");
+
+        System.out.println("Sanitizers: ");
+        sanitizers.forEach(s -> System.out.print(s));
+        System.out.println("\n");
 
         Set<List<Statement>> paths = getPaths(sdg, sourceEndpoints, sinkEndpoints);
         try {
@@ -175,7 +349,11 @@ public class SDGUtil {
             } else {
                 System.out.println("*** NO TAINT ANALYSIS PATHS ***");
             }
-        } catch (IOException e) {}
+
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
 
         return new ArrayList<>(new ArrayList<>());
     }
