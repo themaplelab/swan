@@ -13,14 +13,13 @@
 
 package ca.maple.swan.swift.server;
 
-import ca.maple.swan.swift.taint.TaintAnalysis;
+import ca.maple.swan.swift.taint.TaintAnalysisDriver;
 import com.ibm.wala.cast.tree.CAstSourcePositionMap;
 import com.ibm.wala.ipa.callgraph.propagation.InstanceKey;
 import com.ibm.wala.ipa.slicer.SDG;
 import io.socket.client.IO;
 import io.socket.client.Socket;
 import io.socket.emitter.Emitter;
-import jdk.nashorn.internal.parser.JSONParser;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -77,7 +76,7 @@ public class Server {
                         JSONArray sources = (JSONArray)sss.get("Sources");
                         JSONArray sinks = (JSONArray)sss.get("Sinks");
                         JSONArray sanitizers = (JSONArray)sss.get("Sanitizers");
-                        ArrayList<ArrayList<CAstSourcePositionMap.Position>> paths = TaintAnalysis.doTaintAnalysis(
+                        ArrayList<ArrayList<CAstSourcePositionMap.Position>> paths = TaintAnalysisDriver.doTaintAnalysis(
                                 sdg,
                                 JSONArrayToJavaStringArray(sources),
                                 JSONArrayToJavaStringArray(sinks),
