@@ -25,6 +25,7 @@ import com.ibm.wala.viz.NodeDecorator;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
+import java.util.List;
 import java.util.function.Predicate;
 
 /*
@@ -35,14 +36,15 @@ public class TaintAnalysisDriver {
 
     public static TaintSolver solveSDG(SDG<InstanceKey> sdg, HashSet<String> Sources, HashSet<String> Sanitizers, HashSet<String> Sinks) throws CancelException {
 
+        Graph<Statement> graph = pruneSDG(sdg);
+
         TaintTransferFunctionProvider functions = new TaintTransferFunctionProvider(sdg.getCallGraph(), Sources, Sanitizers, Sinks);
-        TaintFramework<Statement> f = new TaintFramework<>(pruneSDG(sdg), functions);
-        TaintSolver<Statement> s = new TaintSolver<>(f);
+        TaintFramework f = new TaintFramework(graph, functions);
+        TaintSolver s = new TaintSolver(f);
         s.solve(null);
 
         try {
-            Graph<Statement> g = pruneSDG(sdg);
-            DotUtil.writeDotFile(g, makeNodeDecorator(s), "sdg.dot ", "/Users/tiganov/Desktop/sdg.dot");
+            DotUtil.writeDotFile(graph, makeNodeDecorator(s), "sdg.dot ", "/Users/tiganov/Desktop/sdg.dot");
             // Use `dot -Tsvg sdg.dot -o sdg.svg` to convert to svg.
         } catch (Exception e) {
             System.err.println("Could not make sdg");
@@ -67,6 +69,7 @@ public class TaintAnalysisDriver {
     }
 
     private static NodeDecorator<Statement> makeNodeDecorator(TaintSolver solver) {
+        // TODO: Add red color to nodes that are tainted. May require extending DotUtil.java.
         return s -> {
             switch (s.getKind()) {
                 case HEAP_PARAM_CALLEE:
@@ -90,7 +93,7 @@ public class TaintAnalysisDriver {
     }
 
 
-    private static ArrayList<ArrayList<CAstSourcePositionMap.Position>> findSSSPaths(
+    private static List<List<CAstSourcePositionMap.Position>> findSSSPaths(
             SDG<InstanceKey> sdg,
             HashSet<String> sources,
             HashSet<String> sinks,
@@ -111,15 +114,22 @@ public class TaintAnalysisDriver {
         System.out.println("\n");
 
         try {
+            TaintPathRecorder.clear();
             TaintSolver s = solveSDG(sdg, sources, sanitizers, sinks);
         } catch (CancelException e) {
             e.printStackTrace();
         }
 
-        return new ArrayList<>(new ArrayList<>());
+        try {
+            // TODO: Prune called again here, should be cached.
+            return TaintPathRecorder.getPaths(pruneSDG(sdg));
+        } catch (Exception e) {
+            e.printStackTrace();
+            return new ArrayList<>(new ArrayList<>());
+        }
     }
 
-    public static ArrayList<ArrayList<CAstSourcePositionMap.Position>> doTaintAnalysis(
+    public static List<List<CAstSourcePositionMap.Position>> doTaintAnalysis(
             SDG<InstanceKey> sdg,
             String[] sources,
             String[] sinks,

@@ -47,14 +47,13 @@ public class TaintUnion extends AbstractMeetOperator<TaintVariable> {
             throw new IllegalArgumentException("null rhs");
         }
         TaintVariable U = new TaintVariable();
-        U.copyState(lhs);
         for (TaintVariable R : rhs) {
             if (R != null) {
                 U.or(R);
             }
         }
         if (!lhs.sameValue(U)) {
-            lhs.transferState(U);
+            lhs.or(U);
             return CHANGED;
         } else {
             return NOT_CHANGED;

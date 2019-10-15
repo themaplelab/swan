@@ -15,20 +15,21 @@ package ca.maple.swan.swift.taint;
 
 import com.ibm.wala.dataflow.graph.DataflowSolver;
 import com.ibm.wala.dataflow.graph.IKilldallFramework;
+import com.ibm.wala.ipa.slicer.Statement;
 
-public class TaintSolver<T> extends DataflowSolver<T, TaintVariable> {
+public class TaintSolver extends DataflowSolver<Statement, TaintVariable> {
 
-    public TaintSolver(IKilldallFramework<T, TaintVariable> problem) {
+    public TaintSolver(IKilldallFramework<com.ibm.wala.ipa.slicer.Statement, TaintVariable> problem) {
         super(problem);
     }
 
     @Override
-    protected TaintVariable makeNodeVariable(T n, boolean IN) {
+    protected TaintVariable makeNodeVariable(com.ibm.wala.ipa.slicer.Statement statement, boolean b) {
         return new TaintVariable();
     }
 
     @Override
-    protected TaintVariable makeEdgeVariable(T src, T dst) {
+    protected TaintVariable makeEdgeVariable(com.ibm.wala.ipa.slicer.Statement statement, com.ibm.wala.ipa.slicer.Statement t1) {
         return new TaintVariable();
     }
 

@@ -15,12 +15,13 @@ package ca.maple.swan.swift.taint;
 
 import com.ibm.wala.dataflow.graph.BasicFramework;
 import com.ibm.wala.dataflow.graph.ITransferFunctionProvider;
+import com.ibm.wala.ipa.slicer.Statement;
 import com.ibm.wala.util.graph.Graph;
 
-public class TaintFramework<T> extends BasicFramework<T, TaintVariable> {
+public class TaintFramework extends BasicFramework<Statement, TaintVariable> {
 
     public TaintFramework(
-            Graph<T> flowGraph, ITransferFunctionProvider<T, TaintVariable> transferFunctionProvider) {
+            Graph<Statement> flowGraph, ITransferFunctionProvider<Statement, TaintVariable> transferFunctionProvider) {
         super(flowGraph, transferFunctionProvider);
     }
 }

@@ -14,31 +14,18 @@
 package ca.maple.swan.swift.taint;
 
 import com.ibm.wala.fixpoint.AbstractVariable;
+import com.ibm.wala.ipa.slicer.Statement;
 
-public class TaintVariable  extends AbstractVariable<TaintVariable> {
+import java.util.ArrayList;
 
-    public enum KIND {
-        UNTAINTED,
-        SOURCE,
-        TAINTED,
-        SANITIZER,
-        SINK
-    }
+public class TaintVariable extends AbstractVariable<TaintVariable> {
 
-    private boolean B = false;
-
-    private KIND K = KIND.UNTAINTED;
-
+    private ArrayList<Statement> sources = new ArrayList<>();
 
     public TaintVariable() {}
 
-    public TaintVariable(boolean b) {
-        this.B = b;
-    }
-
-    public TaintVariable(boolean b, KIND k) {
-        this.B = b;
-        this.K = k;
+    public TaintVariable(ArrayList<Statement> sources) {
+        this.sources = new ArrayList<>(sources);
     }
 
     @Override
@@ -46,47 +33,27 @@ public class TaintVariable  extends AbstractVariable<TaintVariable> {
         if (other == null) {
             throw new IllegalArgumentException("other null");
         }
-        B = other.B;
-        K = other.K;
-    }
-
-    public void transferState(TaintVariable other) {
-        if (other == null) {
-            throw new IllegalArgumentException("other null");
-        }
-        B = other.B;
-        switch (other.K) {
-            case SANITIZER:
-            case UNTAINTED:
-                K = KIND.UNTAINTED;
-                break;
-            case TAINTED:
-            case SINK:
-            case SOURCE:
-                K = KIND.TAINTED;
-                break;
-        }
+        this.sources = new ArrayList<>(other.sources);
     }
 
     public boolean sameValue(TaintVariable other) {
         if (other == null) {
             throw new IllegalArgumentException("other is null");
         }
-        return (B == other.B) && (K == other.K);
+        return sources.equals(other.sources);
     }
 
     public void or(TaintVariable other) {
         if (other == null) {
             throw new IllegalArgumentException("other is null");
         }
-        B = B || other.B;
-        K = B ? KIND.TAINTED : KIND.UNTAINTED;
+        this.sources.addAll(other.sources);
     }
 
 
     @Override
     public String toString() {
-        return (B ? "[TRUE]" : "[FALSE]") + " : [" + K + "]";
+        return (isTainted() ? "[TRUE]" : "[FALSE]") + ", |S| -> " + sources.size();
     }
 
     @Override
@@ -94,11 +61,12 @@ public class TaintVariable  extends AbstractVariable<TaintVariable> {
         return this == obj;
     }
 
-    public KIND getKind() {
-        return this.K;
+    public ArrayList<Statement> getSources() {
+        return this.sources;
     }
 
-    public boolean getTaintedness() {
-        return this.B;
+    public boolean isTainted() {
+        return !sources.isEmpty();
     }
+
 }

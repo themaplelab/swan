@@ -14,14 +14,25 @@
 package ca.maple.swan.swift.taint;
 
 import com.ibm.wala.fixpoint.UnaryOperator;
+import com.ibm.wala.ipa.slicer.Statement;
+
+import java.util.ArrayList;
 
 public class TaintTransferFunction extends UnaryOperator<TaintVariable> {
 
-    // Force the kind onto the TaintVariable.
-    private final TaintVariable.KIND k;
+    public enum FUNCTION_KIND {
+        SOURCE,
+        SINK,
+        SANITIZER
+    }
 
-    public TaintTransferFunction(boolean b, TaintVariable.KIND k) {
+    private final Statement statement;
+
+    private final FUNCTION_KIND k;
+
+    public TaintTransferFunction(FUNCTION_KIND k, Statement t) {
         this.k = k;
+        this.statement = t;
     }
 
     @Override
@@ -29,28 +40,23 @@ public class TaintTransferFunction extends UnaryOperator<TaintVariable> {
         if (lhs == null) {
             throw new IllegalArgumentException("lhs == null");
         }
-        boolean b;
+        ArrayList<Statement> sources = new ArrayList<>(rhs.getSources());
         switch (k) {
             case SOURCE:
-                b = true;
+                sources.add(statement);
                 break;
             case SINK:
-                if (rhs.getTaintedness()) {
-                    b = true;
-                    break;
-                }
-            case SANITIZER:
-                b = false;
+                TaintPathRecorder.recordPath(rhs.getSources(), statement);
                 break;
-            default:
-                b = false;
+            case SANITIZER:
+                sources.clear();
                 break;
         }
-        TaintVariable TaintVariable = new TaintVariable(b, k);
-        if (lhs.sameValue(TaintVariable)) {
+        TaintVariable taintVariable = new TaintVariable(sources);
+        if (lhs.sameValue(taintVariable)) {
             return NOT_CHANGED;
         } else {
-            lhs.copyState(TaintVariable);
+            lhs.copyState(taintVariable);
             return CHANGED;
         }
     }

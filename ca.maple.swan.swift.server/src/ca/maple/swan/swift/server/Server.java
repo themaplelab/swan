@@ -25,6 +25,7 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.util.ArrayList;
+import java.util.List;
 
 import static java.lang.System.exit;
 
@@ -76,7 +77,7 @@ public class Server {
                         JSONArray sources = (JSONArray)sss.get("Sources");
                         JSONArray sinks = (JSONArray)sss.get("Sinks");
                         JSONArray sanitizers = (JSONArray)sss.get("Sanitizers");
-                        ArrayList<ArrayList<CAstSourcePositionMap.Position>> paths = TaintAnalysisDriver.doTaintAnalysis(
+                        List<List<CAstSourcePositionMap.Position>> paths = TaintAnalysisDriver.doTaintAnalysis(
                                 sdg,
                                 JSONArrayToJavaStringArray(sources),
                                 JSONArrayToJavaStringArray(sinks),
@@ -115,7 +116,7 @@ public class Server {
         return javaArray;
     }
 
-    private static JSONObject pathsToJSON(ArrayList<ArrayList<CAstSourcePositionMap.Position>> paths) throws JSONException {
+    private static JSONObject pathsToJSON(List<List<CAstSourcePositionMap.Position>> paths) throws JSONException {
         // TEMPORARY DUMMY RESULT
         return new JSONObject("{\n" +
                 "\"paths\": \n" +

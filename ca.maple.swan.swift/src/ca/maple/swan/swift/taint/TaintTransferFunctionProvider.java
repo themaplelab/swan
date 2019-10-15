@@ -37,14 +37,13 @@ public class TaintTransferFunctionProvider implements ITransferFunctionProvider<
 
 
     @Override
-    public UnaryOperator<TaintVariable> getNodeTransferFunction(Statement Statement) {
-        // TODO: No need to check for source if rhs is tainted. But need to have the solver to check.
-        if (SSSDeterminer.checkSource(sources, Statement, cg)) {
-            return new TaintTransferFunction(true, TaintVariable.KIND.SOURCE);
-        } else if (SSSDeterminer.checkSink(sinks, Statement, cg)) {
-            return new TaintTransferFunction(true, TaintVariable.KIND.SINK);
-        } else if (SSSDeterminer.checkSanitizer(sanitizers, Statement, cg)) {
-            return new TaintTransferFunction(false, TaintVariable.KIND.SANITIZER);
+    public UnaryOperator<TaintVariable> getNodeTransferFunction(Statement t) {
+        if (SSSDeterminer.checkSource(sources, t, cg)) {
+            return new TaintTransferFunction(TaintTransferFunction.FUNCTION_KIND.SOURCE, t);
+        } else if (SSSDeterminer.checkSink(sinks, t, cg)) {
+            return new TaintTransferFunction(TaintTransferFunction.FUNCTION_KIND.SINK, t);
+        } else if (SSSDeterminer.checkSanitizer(sanitizers, t, cg)) {
+            return new TaintTransferFunction(TaintTransferFunction.FUNCTION_KIND.SANITIZER, t);
         } else {
             return TaintIdentity.instance();
         }

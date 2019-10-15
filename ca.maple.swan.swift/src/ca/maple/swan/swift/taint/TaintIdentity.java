@@ -34,7 +34,7 @@ public class TaintIdentity extends UnaryOperator<TaintVariable> {
         if (lhs.sameValue(rhs)) {
             return NOT_CHANGED;
         } else {
-            lhs.transferState(rhs);
+            lhs.copyState(rhs);
             return CHANGED;
         }
     }
