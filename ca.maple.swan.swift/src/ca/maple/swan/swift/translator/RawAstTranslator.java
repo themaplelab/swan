@@ -247,6 +247,7 @@ public class RawAstTranslator extends SILInstructionVisitor<CAstNode, SILInstruc
                 for (CAstNode instruction: block.getChildren().subList(1, block.getChildren().size())) {
                     try {
                         CAstNode Node = this.visit(instruction, C);
+                        C.parent.getSourceMap().setPosition(Node, getInstructionPosition(instruction));
                         if ((Node != null) && (Node.getKind() != CAstNode.EMPTY)) {
                             C.instructions.add(Node);
                         }
@@ -306,7 +307,7 @@ public class RawAstTranslator extends SILInstructionVisitor<CAstNode, SILInstruc
             argumentTypes.add(argType);
             argumentPositions.add((CAstSourcePositionMap.Position)arg.getChild(2).getValue());
         }
-        argumentNames.add(0, "self"); // TEMPORARY
+        argumentNames.add(0, "self");
         argumentTypes.add(0, "self");
         argumentPositions.add(0, null);
         return new FunctionEntity(name, returnType, argumentTypes, argumentNames, functionPosition, argumentPositions, n);

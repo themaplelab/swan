@@ -24,7 +24,7 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import java.util.ArrayList;
+import java.net.URISyntaxException;
 import java.util.List;
 
 import static java.lang.System.exit;
@@ -118,29 +118,32 @@ public class Server {
 
     private static JSONObject pathsToJSON(List<List<CAstSourcePositionMap.Position>> paths) throws JSONException {
         // TEMPORARY DUMMY RESULT
-        return new JSONObject("{\n" +
-                "\"paths\": \n" +
-                "\t[\n" +
-                "\t\t{ \n" +
-                "\t\t\"pathName\": \"path1\",\n" +
-                "\t\t\"elements\": \n" +
-                "\t\t\t[\n" +
-                "\t\t\t\t{\n" +
-                "\t\t\t\t\t\"file\" : \"/Users/tiganov/Documents/CS/proj/TestMultiFile/TestMultiFile/main.swift\",\n" +
-                "\t\t\t\t\t\"position\" : \"testPosition\"\n" +
-                "\t\t\t\t},\n" +
-                "\t\t\t\t{\n" +
-                "\t\t\t\t\t\"file\" : \"/Users/tiganov/Documents/CS/proj/TestMultiFile/TestMultiFile/main.swift\",\n" +
-                "\t\t\t\t\t\"position\" : \"testPosition\"\n" +
-                "\t\t\t\t},\n" +
-                "\t\t\t\t{\n" +
-                "\t\t\t\t\t\"file\" : \"/Users/tiganov/Documents/CS/proj/TestMultiFile/TestMultiFile/secondFile.swift\",\n" +
-                "\t\t\t\t\t\"position\" : \"testPosition\"\n" +
-                "\t\t\t\t}\n" +
-                "\t\t\t]\n" +
-                "\t\t}\n" +
-                "\t]\n" +
-                "}");
+        JSONObject returnObject = new JSONObject();
+        JSONArray jsonPaths = new JSONArray();
+        int counter = 0;
+        for (List<CAstSourcePositionMap.Position> path : paths) {
+            JSONObject jsonPath = new JSONObject();
+            jsonPath.put("pathName", "path " + counter);
+            JSONArray positions = new JSONArray();
+            for (CAstSourcePositionMap.Position pos : path) {
+                try {
+                    JSONObject element = new JSONObject();
+                    element.put("file", pos.getURL().toURI().getRawPath());
+                    element.put("fl", pos.getFirstLine());
+                    element.put("fc", pos.getFirstCol());
+                    element.put("ll", pos.getLastLine());
+                    element.put("lc", pos.getLastCol());
+                    positions.put(element);
+                } catch (URISyntaxException e) {
+                    e.printStackTrace();
+                }
+            }
+            jsonPath.put("elements", positions);
+            jsonPaths.put(jsonPath);
+            ++counter;
+        }
+        returnObject.put("paths", jsonPaths);
+        return returnObject;
     }
 
 }

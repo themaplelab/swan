@@ -83,6 +83,7 @@ public class Inliner {
             for (CAstNode instruction: block.getChildren().subList(1, block.getChildren().size())) {
                 try {
                     CAstNode Node = translator.visit(instruction, C2);
+                    C2.parent.getSourceMap().setPosition(Node, translator.getInstructionPosition(instruction));
                     if ((Node != null) && (Node.getKind() != CAstNode.EMPTY)) {
                         C2.instructions.add(Node);
                     }
