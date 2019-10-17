@@ -14,7 +14,6 @@
 package ca.maple.swan.swift.test;
 
 import ca.maple.swan.swift.client.SwiftAnalysisEngine;
-import ca.maple.swan.swift.taint.TaintAnalysis;
 import ca.maple.swan.swift.translator.SwiftToCAstTranslator;
 import ca.maple.swan.swift.translator.SwiftToCAstTranslatorFactory;
 import com.ibm.wala.cast.ir.ssa.AstIRFactory;
@@ -155,16 +154,7 @@ public class TestSwiftCallGraphShapeUsingJS extends TestCallGraphShape {
             dumpCHA(CG.getClassHierarchy());
 
             @SuppressWarnings("unchecked") SDG<InstanceKey> sdg = new SDG<InstanceKey>(CG, builder.getPointerAnalysis(), new JavaScriptModRef<>(), Slicer.DataDependenceOptions.NO_BASE_NO_HEAP_NO_EXCEPTIONS, Slicer.ControlDependenceOptions.NONE);
-            Set<List<Statement>> paths = TaintAnalysis.getPaths(sdg, TaintAnalysis.swiftSources, TaintAnalysis.swiftSinks);
 
-            if (paths.size() > 0) {
-                System.out.println("*** DUMPING TAINT ANALYSIS PATHS... ***");
-                System.out.println(paths);
-                TaintAnalysis.printPaths(paths);
-                System.out.println("*** ...FINSIHED DUMPING TAINT ANALYSIS PATHS ***");
-            } else {
-                System.out.println("*** NO TAINT ANALYSIS PATHS ***");
-            }
         } catch (Exception e) {
             e.printStackTrace();
             System.exit(1);
