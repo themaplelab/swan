@@ -884,44 +884,32 @@ void InstructionVisitor::visitApplyInst(ApplyInst *AI) {
   if (SWAN_PRINT) {
     llvm::outs() << "\t [FUNC REF ADDR]: " << AI->getOperand(0).getOpaqueValue() << "\n";
   }
-  if (!Callee) {
-    if (SWAN_PRINT) {
-      llvm::outs() << "\t WARNING: Apply site's Callee is empty!\n";
-    }
-    arguments.push_front(MAKE_CONST("N/A"));
-    ADD_PROP(Instance->CAst->makeNode(CAstWrapper::PRIMITIVE, MAKE_ARRAY(&arguments)));
-    return;
-  }
-  auto *FD = Callee->getLocation().getAsASTNode<FuncDecl>();
-  if (FD && (FD->isUnaryOperator() || FD->isBinaryOperator())) {
-    jobject OperatorNode = getOperatorCAstType(FD->getName());
-    arguments.push_front(OperatorNode);
-    if (OperatorNode) {
-      if (SWAN_PRINT) {
-        llvm::outs() << "\t [OPERATOR NAME]:" << Instance->CAst->getConstantValue(OperatorNode) << "\n";
-      }
-      if (FD->isUnaryOperator()) {
-        ADD_PROP(Instance->CAst->makeNode(CAstWrapper::UNARY_EXPR, MAKE_ARRAY(&arguments)));
-      } else if (FD->isBinaryOperator()) {
-        ADD_PROP(Instance->CAst->makeNode(CAstWrapper::BINARY_EXPR, MAKE_ARRAY(&arguments)));
-      }
-      if (SWAN_PRINT) {
-        for (auto arg : arguments) {
-          llvm::outs() << "\t\t [ARG]: " << Instance->CAst->getConstantValue(arg) << "\n";
+  if (Callee) {
+    auto *FD = Callee->getLocation().getAsASTNode<FuncDecl>();
+    if (FD && (FD->isUnaryOperator() || FD->isBinaryOperator())) {
+      jobject OperatorNode = getOperatorCAstType(FD->getName());
+      arguments.push_front(OperatorNode);
+      if (OperatorNode) {
+        if (SWAN_PRINT) {
+          llvm::outs() << "\t [OPERATOR NAME]:" << Instance->CAst->getConstantValue(OperatorNode) << "\n";
         }
+        if (FD->isUnaryOperator()) {
+          ADD_PROP(Instance->CAst->makeNode(CAstWrapper::UNARY_EXPR, MAKE_ARRAY(&arguments)));
+        } else if (FD->isBinaryOperator()) {
+          ADD_PROP(Instance->CAst->makeNode(CAstWrapper::BINARY_EXPR, MAKE_ARRAY(&arguments)));
+        }
+        if (SWAN_PRINT) {
+          for (auto arg : arguments) {
+            llvm::outs() << "\t\t [ARG]: " << Instance->CAst->getConstantValue(arg) << "\n";
+          }
+        }
+      } else {
+        llvm::outs() << "ERROR: Could not make operator \n";
       }
-    } else {
-      llvm::outs() << "ERROR: Could not make operator \n";
+      return;
     }
-  } else {
-    std::string CalleeName = Demangle::demangleSymbolAsString(Callee->getName());
-    if (SWAN_PRINT) {
-      llvm::outs() << "\t [CALLEE NAME]:" << CalleeName << "\n";
-    }
-    currentFunction->addCalledFunction(CalleeName);
-    arguments.push_front(MAKE_CONST(CalleeName.c_str()));
-    ADD_PROP(Instance->CAst->makeNode(CAstWrapper::PRIMITIVE, MAKE_ARRAY(&arguments)));
   }
+  ADD_PROP(Instance->CAst->makeNode(CAstWrapper::PRIMITIVE, MAKE_ARRAY(&arguments)));
 }
 
 void InstructionVisitor::visitBeginApplyInst(BeginApplyInst *BAI) {
@@ -954,44 +942,32 @@ void InstructionVisitor::visitBeginApplyInst(BeginApplyInst *BAI) {
   if (SWAN_PRINT) {
     llvm::outs() << "\t [FUNC REF ADDR]: " << BAI->getOperand(0).getOpaqueValue() << "\n";
   }
-  if (!Callee) {
-    if (SWAN_PRINT) {
-      llvm::outs() << "\t WARNING: Apply site's Callee is empty!\n";
-    }
-    arguments.push_front(MAKE_CONST("N/A"));
-    ADD_PROP(Instance->CAst->makeNode(CAstWrapper::PRIMITIVE, MAKE_ARRAY(&arguments)));
-    return;
-  }
-  auto *FD = Callee->getLocation().getAsASTNode<FuncDecl>();
-  if (FD && (FD->isUnaryOperator() || FD->isBinaryOperator())) {
-    jobject OperatorNode = getOperatorCAstType(FD->getName());
-    arguments.push_front(OperatorNode);
-    if (OperatorNode) {
-      if (SWAN_PRINT) {
-        llvm::outs() << "\t [OPERATOR NAME]:" << Instance->CAst->getConstantValue(OperatorNode) << "\n";
-      }
-      if (FD->isUnaryOperator()) {
-        ADD_PROP(Instance->CAst->makeNode(CAstWrapper::UNARY_EXPR, MAKE_ARRAY(&arguments)));
-      } else if (FD->isBinaryOperator()) {
-        ADD_PROP(Instance->CAst->makeNode(CAstWrapper::BINARY_EXPR, MAKE_ARRAY(&arguments)));
-      }
-      if (SWAN_PRINT) {
-        for (auto arg : arguments) {
-          llvm::outs() << "\t\t [ARG]: " << Instance->CAst->getConstantValue(arg) << "\n";
+  if (Callee) {
+    auto *FD = Callee->getLocation().getAsASTNode<FuncDecl>();
+    if (FD && (FD->isUnaryOperator() || FD->isBinaryOperator())) {
+      jobject OperatorNode = getOperatorCAstType(FD->getName());
+      arguments.push_front(OperatorNode);
+      if (OperatorNode) {
+        if (SWAN_PRINT) {
+          llvm::outs() << "\t [OPERATOR NAME]:" << Instance->CAst->getConstantValue(OperatorNode) << "\n";
         }
+        if (FD->isUnaryOperator()) {
+          ADD_PROP(Instance->CAst->makeNode(CAstWrapper::UNARY_EXPR, MAKE_ARRAY(&arguments)));
+        } else if (FD->isBinaryOperator()) {
+          ADD_PROP(Instance->CAst->makeNode(CAstWrapper::BINARY_EXPR, MAKE_ARRAY(&arguments)));
+        }
+        if (SWAN_PRINT) {
+          for (auto arg : arguments) {
+            llvm::outs() << "\t\t [ARG]: " << Instance->CAst->getConstantValue(arg) << "\n";
+          }
+        }
+      } else {
+        llvm::outs() << "ERROR: Could not make operator \n";
       }
-    } else {
-      llvm::outs() << "ERROR: Could not make operator \n";
+      return;
     }
-  } else {
-    std::string CalleeName = Demangle::demangleSymbolAsString(Callee->getName());
-    if (SWAN_PRINT) {
-      llvm::outs() << "\t [CALLEE NAME]:" << CalleeName << "\n";
-    }
-    currentFunction->addCalledFunction(CalleeName);
-    arguments.push_front(MAKE_CONST(CalleeName.c_str()));
-    ADD_PROP(Instance->CAst->makeNode(CAstWrapper::PRIMITIVE, MAKE_ARRAY(&arguments)));
   }
+  ADD_PROP(Instance->CAst->makeNode(CAstWrapper::PRIMITIVE, MAKE_ARRAY(&arguments)));
 }
 
 void InstructionVisitor::visitAbortApplyInst(AbortApplyInst *AAI) {
@@ -1003,6 +979,7 @@ void InstructionVisitor::visitEndApplyInst(EndApplyInst *EAI) {
 }
 
 void InstructionVisitor::visitPartialApplyInst(PartialApplyInst *PAI) {
+  // TODO:
   handleSimpleInstr(PAI);
   auto *Callee = PAI->getReferencedFunctionOrNull();
   std::list<jobject> arguments;
@@ -1784,42 +1761,30 @@ void InstructionVisitor::visitTryApplyInst(TryApplyInst *TAI) {
   if (SWAN_PRINT) {
     llvm::outs() << "\t [FUNC REF ADDR]: " << TAI->getOperand(0).getOpaqueValue() << "\n";
   }
-  if (!Callee) {
-    if (SWAN_PRINT) {
-      llvm::outs() << "\t WARNING: Apply site's Callee is empty!\n";
-    }
-    arguments.push_front(MAKE_CONST("N/A"));
-    ADD_PROP(Instance->CAst->makeNode(CAstWrapper::PRIMITIVE, MAKE_ARRAY(&arguments)));
-    return;
-  }
-  auto *FD = Callee->getLocation().getAsASTNode<FuncDecl>();
-  if (FD && (FD->isUnaryOperator() || FD->isBinaryOperator())) {
-    jobject OperatorNode = getOperatorCAstType(FD->getName());
-    arguments.push_front(OperatorNode);
-    if (OperatorNode) {
-      if (SWAN_PRINT) {
-        llvm::outs() << "\t [OPERATOR NAME]:" << Instance->CAst->getConstantValue(OperatorNode) << "\n";
-      }
-      if (FD->isUnaryOperator()) {
-        ADD_PROP(Instance->CAst->makeNode(CAstWrapper::UNARY_EXPR, MAKE_ARRAY(&arguments)));
-      } else if (FD->isBinaryOperator()) {
-        ADD_PROP(Instance->CAst->makeNode(CAstWrapper::BINARY_EXPR, MAKE_ARRAY(&arguments)));
-      }
-      if (SWAN_PRINT) {
-        for (auto arg : arguments) {
-          llvm::outs() << "\t\t [ARG]: " << Instance->CAst->getConstantValue(arg) << "\n";
+  if (Callee) {
+    auto *FD = Callee->getLocation().getAsASTNode<FuncDecl>();
+    if (FD && (FD->isUnaryOperator() || FD->isBinaryOperator())) {
+      jobject OperatorNode = getOperatorCAstType(FD->getName());
+      arguments.push_front(OperatorNode);
+      if (OperatorNode) {
+        if (SWAN_PRINT) {
+          llvm::outs() << "\t [OPERATOR NAME]:" << Instance->CAst->getConstantValue(OperatorNode) << "\n";
         }
+        if (FD->isUnaryOperator()) {
+          ADD_PROP(Instance->CAst->makeNode(CAstWrapper::UNARY_EXPR, MAKE_ARRAY(&arguments)));
+        } else if (FD->isBinaryOperator()) {
+          ADD_PROP(Instance->CAst->makeNode(CAstWrapper::BINARY_EXPR, MAKE_ARRAY(&arguments)));
+        }
+        if (SWAN_PRINT) {
+          for (auto arg : arguments) {
+            llvm::outs() << "\t\t [ARG]: " << Instance->CAst->getConstantValue(arg) << "\n";
+          }
+        }
+      } else {
+        llvm::outs() << "ERROR: Could not make operator \n";
       }
-    } else {
-      llvm::outs() << "ERROR: Could not make operator \n";
+      return;
     }
-  } else {
-    std::string CalleeName = Demangle::demangleSymbolAsString(Callee->getName());
-    if (SWAN_PRINT) {
-      llvm::outs() << "\t [CALLEE NAME]:" << CalleeName << "\n";
-    }
-    currentFunction->addCalledFunction(CalleeName);
-    arguments.push_front(MAKE_CONST(CalleeName.c_str()));
-    ADD_PROP(Instance->CAst->makeNode(CAstWrapper::PRIMITIVE, MAKE_ARRAY(&arguments)));
   }
+  ADD_PROP(Instance->CAst->makeNode(CAstWrapper::PRIMITIVE, MAKE_ARRAY(&arguments)));
 }

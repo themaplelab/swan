@@ -276,7 +276,7 @@ public class RawAstTranslator extends SILInstructionVisitor<CAstNode, SILInstruc
                 ++i;
             }
             mappedEntities.get(function).setAst(Ast.makeNode(CAstNode.BLOCK_STMT, C.blocks.get(0)));
-            // EntityPrinter.print(mappedEntities.get(function));
+            EntityPrinter.print(mappedEntities.get(function));
         }
 
         // For debugging : generate dot output. Should turn off for large code.
@@ -650,8 +650,11 @@ public class RawAstTranslator extends SILInstructionVisitor<CAstNode, SILInstruc
     // STATUS: TRANSLATED
     // CONFIDENCE: MED
     protected CAstNode visitBeginBorrow(CAstNode N, SILInstructionContext C) {
-        // No SIL.rst documentation. For now, just treat it the same as load.
-        return visitLoad(N, C);
+        // No SIL.rst documentation. Operand appears to be non-pointer.
+        RawValue operand = getSingleOperand(N);
+        RawValue result = getSingleResult(N);
+        C.valueTable.copyValue(result.Name, operand.Name);
+        return null;
     }
 
     @Override
@@ -1157,11 +1160,7 @@ public class RawAstTranslator extends SILInstructionVisitor<CAstNode, SILInstruc
     // STATUS: TRANSLATED
     // CONFIDENCE: HIGH
     protected CAstNode visitClassMethod(CAstNode N, SILInstructionContext C) {
-        RawValue result = getSingleResult(N);
-        String FuncName = getStringValue(N, 2);
-        SILConstant Constant = new SILConstant(result.Name, result.Type, C, FuncName);
-        C.valueTable.addValue(Constant);
-        return null;
+        return visitFunctionRef(N, C);
     }
 
     @Override
@@ -1231,7 +1230,6 @@ public class RawAstTranslator extends SILInstructionVisitor<CAstNode, SILInstruc
                 break;
             }
             default: {
-                String CalleeName = (String) FuncNode.getChild(0).getValue();
                 SILValue FuncRef = C.valueTable.getValue(FuncRefName);
                 if (FuncRef instanceof SILConstant) {
                     Source = ((SILConstant) FuncRef).getCAst();
@@ -1241,7 +1239,7 @@ public class RawAstTranslator extends SILInstructionVisitor<CAstNode, SILInstruc
                     ArrayList<SILValue> ParamVals = new ArrayList<>();
                     Params.add(((SILFunctionRef) FuncRef).getFunctionRef());
                     Params.add(Ast.makeConstant("do"));
-                    for (CAstNode RawParam : FuncNode.getChildren().subList(1, FuncNode.getChildren().size())) {
+                    for (CAstNode RawParam : FuncNode.getChildren()) {
                         String ParamName = (String)RawParam.getValue();
                         Params.add(C.valueTable.getValue(ParamName).getVarNode());
                         ParamVals.add(C.valueTable.getValue(ParamName));
@@ -1256,8 +1254,7 @@ public class RawAstTranslator extends SILInstructionVisitor<CAstNode, SILInstruc
                     C.parent.setGotoTarget(Source, Source);
                     C.valueTable.addValue(new SILValue(result.Name, result.Type, C));
                 } else if (FuncRef instanceof SILFunctionRef.SILSummarizedFunctionRef) {
-                    ArrayList<CAstNode> Params = new ArrayList<>(FuncNode.getChildren()
-                            .subList(1, FuncNode.getChildren().size()));
+                    ArrayList<CAstNode> Params = new ArrayList<>(FuncNode.getChildren());
                     C.valueTable.addValue(new SILValue(result.Name, result.Type, C));
                     Source = BuiltInFunctionSummaries.findSummary(
                             ((SILFunctionRef.SILSummarizedFunctionRef)FuncRef).getFunctionName(),
@@ -2634,7 +2631,6 @@ public class RawAstTranslator extends SILInstructionVisitor<CAstNode, SILInstruc
                 break;
             }
             default: {
-                String CalleeName = (String) FuncNode.getChild(0).getValue();
                 SILValue FuncRef = C.valueTable.getValue(FuncRefName);
                 if (FuncRef instanceof SILConstant) {
                     Source = ((SILConstant) FuncRef).getCAst();
@@ -2642,13 +2638,13 @@ public class RawAstTranslator extends SILInstructionVisitor<CAstNode, SILInstruc
                     ArrayList<CAstNode> Params = new ArrayList<>();
                     Params.add(((SILFunctionRef) FuncRef).getFunctionRef());
                     Params.add(Ast.makeConstant("do"));
-                    for (CAstNode RawParam : FuncNode.getChildren().subList(1, FuncNode.getChildren().size())) {
+                    for (CAstNode RawParam : FuncNode.getChildren()) {
                         Params.add(C.valueTable.getValue((String)RawParam.getValue()).getVarNode());
                     }
                     Source = Ast.makeNode(CAstNode.CALL, Params);
                     C.parent.setGotoTarget(Source, Source);
                 } else if (FuncRef instanceof SILFunctionRef.SILSummarizedFunctionRef) {
-                    ArrayList<CAstNode> Params = new ArrayList<>(FuncNode.getChildren().subList(1, FuncNode.getChildren().size()));
+                    ArrayList<CAstNode> Params = new ArrayList<>(FuncNode.getChildren());
                     Source = BuiltInFunctionSummaries.findSummary(
                             ((SILFunctionRef.SILSummarizedFunctionRef)FuncRef).getFunctionName(),
                             null, null, C, Params);
