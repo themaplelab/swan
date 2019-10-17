@@ -21,8 +21,10 @@ public class SILEnum extends SILValue {
         super(name, type, C);
         ArrayList<CAstNode> LiteralFields = new ArrayList<>();
         LiteralFields.add(Ast.makeNode(CAstNode.NEW, Ast.makeConstant(type)));
-        LiteralFields.add(Ast.makeConstant(fieldName));
-        LiteralFields.add(field.getVarNode());
+        if (field != null) {
+            LiteralFields.add(Ast.makeConstant(fieldName));
+            LiteralFields.add(field.getVarNode());
+        }
         LiteralNode = Ast.makeNode(OBJECT_LITERAL, LiteralFields);
         C.parent.setGotoTarget(LiteralNode, LiteralNode);
     }

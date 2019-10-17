@@ -116,16 +116,41 @@ public class SwiftToCAstTranslator extends NativeTranslatorToCAst {
 			}
 		}
 
+		// In the case that the only function is "main", which has no source information, find the first instruction
+		// with a source filename and use that one for the function.
+		if (paths.isEmpty() && !roots.isEmpty()) {
+			CAstNode root = roots.get(0);
+			boolean cont = false;
+			if (root.getChild(0).getValue().equals("NO_SOURCE")) {
+				for (CAstNode block : root.getChild(1).getChild(0).getChild(4).getChildren()) {
+					if (cont) { break; }
+					for (CAstNode instruction: block.getChildren().subList(1, block.getChildren().size())) {
+						if (!((CAstSourcePositionMap.Position)instruction.getChild(1).getValue()).getURL().toString().equals("NO_SOURCE")) {
+							try {
+								paths.add(((CAstSourcePositionMap.Position)instruction.getChild(1).getValue()).getURL().toURI().getRawPath());
+							} catch (Exception e) {
+								e.printStackTrace();
+							}
+							cont = true;
+							break;
+						}
+					}
+				}
+			}
+		}
+
+		if (paths.isEmpty()) {
+			return new String[0];
+		}
+
 		String commonPath = longestCommonPath(paths);
 
 		// We generally don't want to have a specific file as the module name.
 		// E.g. In the case that there is another file with just the main function.
 		File tempFile = new File(commonPath);
-		if (FilenameUtils.getExtension(tempFile.getName()).equals("swift")) {
+		if (FilenameUtils.getExtension(tempFile.getName()).equals("swift") && paths.size() > 1) {
 			commonPath = FilenameUtils.getPath(tempFile.getPath());
 		}
-
-		commonPath = "/" + commonPath;
 
 		CAstNode newRoot = Ast.makeNode(CAstNode.PRIMITIVE,
 				Ast.makeConstant(commonPath),

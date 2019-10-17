@@ -242,7 +242,7 @@ public class RawAstTranslator extends SILInstructionVisitor<CAstNode, SILInstruc
             }
             int blockNo =  0;
             for (CAstNode block: function.getChild(4).getChildren()) {
-                if (Inliner.shouldInlineBlock(blockNo, C)) { continue; }
+                if (Inliner.shouldInlineBlock(blockNo, C) && blockNo > 0) { continue; }
                 C.clearInstructions();
                 for (CAstNode instruction: block.getChildren().subList(1, block.getChildren().size())) {
                     try {
