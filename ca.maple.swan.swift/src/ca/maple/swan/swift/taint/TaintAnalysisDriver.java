@@ -43,14 +43,6 @@ public class TaintAnalysisDriver {
         TaintSolver s = new TaintSolver(f);
         s.solve(null);
 
-        try {
-            DotUtil.writeDotFile(graph, makeNodeDecorator(s), "sdg.dot ", "/Users/tiganov/Desktop/sdg.dot");
-            // Use `dot -Tsvg sdg.dot -o sdg.svg` to convert to svg.
-        } catch (Exception e) {
-            System.err.println("Could not make sdg");
-            e.printStackTrace();
-        }
-
         return s;
     }
 
