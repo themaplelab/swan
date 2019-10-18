@@ -780,13 +780,13 @@ void InstructionVisitor::visitFloatLiteralInst(FloatLiteralInst *FLI) {
   APFloat Value = FLI->getValue();
   jobject Node = nullptr;
   if (&Value.getSemantics() == &APFloat::IEEEsingle()) {
-    Node = Instance->CAst->makeConstant(Value.convertToFloat());
+    Node = MAKE_CONST(Value.convertToFloat());
     if (SWAN_PRINT) {
       llvm::outs() << "\t [VALUE]:" << static_cast<double>(Value.convertToFloat()) << "\n";
     }
   }
   else if (&Value.getSemantics() == &APFloat::IEEEdouble()) {
-    Node = Instance->CAst->makeConstant(Value.convertToDouble());
+    Node = MAKE_CONST(Value.convertToDouble());
     if (SWAN_PRINT) {
       llvm::outs() << "\t [VALUE]:" << Value.convertToDouble() << "\n";
     }
@@ -795,7 +795,7 @@ void InstructionVisitor::visitFloatLiteralInst(FloatLiteralInst *FLI) {
     SmallVector<char, 128> buf;
     Value.toString(buf);
     jobject BigDecimal = Instance->makeBigDecimal(buf.data(), static_cast<int>(buf.size()));
-    Node = Instance->CAst->makeConstant(BigDecimal);
+    Node = MAKE_CONST(BigDecimal);
     if (SWAN_PRINT) {
       llvm::outs() << "\t [VALUE]:" << buf << "\n";
     }
@@ -803,7 +803,7 @@ void InstructionVisitor::visitFloatLiteralInst(FloatLiteralInst *FLI) {
   else {
     bool APFLosesInfo;
     Value.convert(APFloat::IEEEdouble(), APFloat::rmNearestTiesToEven, &APFLosesInfo);
-    Node = Instance->CAst->makeConstant(Value.convertToDouble());
+    Node = MAKE_CONST(Value.convertToDouble());
     if (SWAN_PRINT) {
       llvm::outs() << "\t [VALUE]:" << Value.convertToDouble() << "\n";
     }
@@ -894,9 +894,9 @@ void InstructionVisitor::visitApplyInst(ApplyInst *AI) {
           llvm::outs() << "\t [OPERATOR NAME]:" << Instance->CAst->getConstantValue(OperatorNode) << "\n";
         }
         if (FD->isUnaryOperator()) {
-          ADD_PROP(Instance->CAst->makeNode(CAstWrapper::UNARY_EXPR, MAKE_ARRAY(&arguments)));
+          ADD_PROP(MAKE_NODE2(CAstWrapper::UNARY_EXPR, MAKE_ARRAY(&arguments)));
         } else if (FD->isBinaryOperator()) {
-          ADD_PROP(Instance->CAst->makeNode(CAstWrapper::BINARY_EXPR, MAKE_ARRAY(&arguments)));
+          ADD_PROP(MAKE_NODE2(CAstWrapper::BINARY_EXPR, MAKE_ARRAY(&arguments)));
         }
         if (SWAN_PRINT) {
           for (auto arg : arguments) {
@@ -909,7 +909,7 @@ void InstructionVisitor::visitApplyInst(ApplyInst *AI) {
       return;
     }
   }
-  ADD_PROP(Instance->CAst->makeNode(CAstWrapper::PRIMITIVE, MAKE_ARRAY(&arguments)));
+  ADD_PROP(MAKE_NODE2(CAstWrapper::PRIMITIVE, MAKE_ARRAY(&arguments)));
 }
 
 void InstructionVisitor::visitBeginApplyInst(BeginApplyInst *BAI) {
@@ -952,9 +952,9 @@ void InstructionVisitor::visitBeginApplyInst(BeginApplyInst *BAI) {
           llvm::outs() << "\t [OPERATOR NAME]:" << Instance->CAst->getConstantValue(OperatorNode) << "\n";
         }
         if (FD->isUnaryOperator()) {
-          ADD_PROP(Instance->CAst->makeNode(CAstWrapper::UNARY_EXPR, MAKE_ARRAY(&arguments)));
+          ADD_PROP(MAKE_NODE2(CAstWrapper::UNARY_EXPR, MAKE_ARRAY(&arguments)));
         } else if (FD->isBinaryOperator()) {
-          ADD_PROP(Instance->CAst->makeNode(CAstWrapper::BINARY_EXPR, MAKE_ARRAY(&arguments)));
+          ADD_PROP(MAKE_NODE2(CAstWrapper::BINARY_EXPR, MAKE_ARRAY(&arguments)));
         }
         if (SWAN_PRINT) {
           for (auto arg : arguments) {
@@ -967,7 +967,7 @@ void InstructionVisitor::visitBeginApplyInst(BeginApplyInst *BAI) {
       return;
     }
   }
-  ADD_PROP(Instance->CAst->makeNode(CAstWrapper::PRIMITIVE, MAKE_ARRAY(&arguments)));
+  ADD_PROP(MAKE_NODE2(CAstWrapper::PRIMITIVE, MAKE_ARRAY(&arguments)));
 }
 
 void InstructionVisitor::visitAbortApplyInst(AbortApplyInst *AAI) {
@@ -995,7 +995,7 @@ void InstructionVisitor::visitPartialApplyInst(PartialApplyInst *PAI) {
       llvm::outs() << "\t WARNING: Apply site's Callee is empty!\n";
     }
     arguments.push_front(MAKE_CONST("N/A"));
-    ADD_PROP(Instance->CAst->makeNode(CAstWrapper::PRIMITIVE, MAKE_ARRAY(&arguments)));
+    ADD_PROP(MAKE_NODE2(CAstWrapper::PRIMITIVE, MAKE_ARRAY(&arguments)));
     return;
   }
   auto *FD = Callee->getLocation().getAsASTNode<FuncDecl>();
@@ -1007,9 +1007,9 @@ void InstructionVisitor::visitPartialApplyInst(PartialApplyInst *PAI) {
         llvm::outs() << "\t [OPERATOR NAME]:" << Instance->CAst->getConstantValue(OperatorNode) << "\n";
       }
       if (FD->isUnaryOperator()) {
-        ADD_PROP(Instance->CAst->makeNode(CAstWrapper::UNARY_EXPR, MAKE_ARRAY(&arguments)));
+        ADD_PROP(MAKE_NODE2(CAstWrapper::UNARY_EXPR, MAKE_ARRAY(&arguments)));
       } else if (FD->isBinaryOperator()) {
-        ADD_PROP(Instance->CAst->makeNode(CAstWrapper::BINARY_EXPR, MAKE_ARRAY(&arguments)));
+        ADD_PROP(MAKE_NODE2(CAstWrapper::BINARY_EXPR, MAKE_ARRAY(&arguments)));
       }
       if (SWAN_PRINT) {
         for (auto arg : arguments) {
@@ -1026,7 +1026,7 @@ void InstructionVisitor::visitPartialApplyInst(PartialApplyInst *PAI) {
     }
     currentFunction->addCalledFunction(CalleeName);
     arguments.push_front(MAKE_CONST(CalleeName.c_str()));
-    ADD_PROP(Instance->CAst->makeNode(CAstWrapper::PRIMITIVE, MAKE_ARRAY(&arguments)));
+    ADD_PROP(MAKE_NODE2(CAstWrapper::PRIMITIVE, MAKE_ARRAY(&arguments)));
   }
 }
 
@@ -1771,9 +1771,9 @@ void InstructionVisitor::visitTryApplyInst(TryApplyInst *TAI) {
           llvm::outs() << "\t [OPERATOR NAME]:" << Instance->CAst->getConstantValue(OperatorNode) << "\n";
         }
         if (FD->isUnaryOperator()) {
-          ADD_PROP(Instance->CAst->makeNode(CAstWrapper::UNARY_EXPR, MAKE_ARRAY(&arguments)));
+          ADD_PROP(MAKE_NODE2(CAstWrapper::UNARY_EXPR, MAKE_ARRAY(&arguments)));
         } else if (FD->isBinaryOperator()) {
-          ADD_PROP(Instance->CAst->makeNode(CAstWrapper::BINARY_EXPR, MAKE_ARRAY(&arguments)));
+          ADD_PROP(MAKE_NODE2(CAstWrapper::BINARY_EXPR, MAKE_ARRAY(&arguments)));
         }
         if (SWAN_PRINT) {
           for (auto arg : arguments) {
@@ -1786,5 +1786,8 @@ void InstructionVisitor::visitTryApplyInst(TryApplyInst *TAI) {
       return;
     }
   }
-  ADD_PROP(Instance->CAst->makeNode(CAstWrapper::PRIMITIVE, MAKE_ARRAY(&arguments)));
+  ADD_PROP(MAKE_NODE2(CAstWrapper::PRIMITIVE, MAKE_ARRAY(&arguments)));
+  ADD_PROP(MAKE_CONST(label(TAI->getNormalBB()).c_str()));
+  ADD_PROP(MAKE_CONST(label(TAI->getErrorBB()).c_str()));
+  // TODO: Add BB args.
 }
