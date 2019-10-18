@@ -10,6 +10,8 @@ SWAN is being developed for detecting security vulnerabilities in Swift applicat
 
 The translator aims to support every SIL instruction seen in practice.
 
+![](https://github.com/themaplelab/swan/blob/master/docs/readmeContent/exampleUse.gif)
+
 ## Current work
 - Finishing translation
 - Extending taint analysis capabilities
