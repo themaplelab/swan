@@ -39,6 +39,8 @@ public class BuiltInFunctionSummaries {
 
     public static CAstNode findSummary(String funcName, String resultName, String resultType, SILInstructionContext C, ArrayList<CAstNode> params) {
 
+        // TODO: String interpolation support.
+
         switch(funcName) {
 
             /*************** LITERALS ****************/

@@ -27,7 +27,7 @@ import java.util.HashMap;
 
 public class SILInstructionContext {
     public final AbstractCodeEntity parent;
-    public final ArrayList<AbstractCodeEntity> allEntities;
+    public final HashMap<String, AbstractCodeEntity> allEntities;
     public SILValueTable valueTable;
     public ArrayList<CAstNode> instructions;
     // danglingGOTOs are GOTO nodes that need to be linked to their destination
@@ -39,7 +39,7 @@ public class SILInstructionContext {
     public SILValue returnValue = null;
     public boolean inliningParent = false;
 
-    public SILInstructionContext(AbstractCodeEntity parent, ArrayList<AbstractCodeEntity> allEntities, CAstNode currentFunction) {
+    public SILInstructionContext(AbstractCodeEntity parent, HashMap<String, AbstractCodeEntity> allEntities, CAstNode currentFunction) {
         this.parent = parent;
         this.allEntities = allEntities;
         valueTable =  new SILValueTable();

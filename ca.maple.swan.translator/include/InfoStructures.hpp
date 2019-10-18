@@ -20,6 +20,7 @@
 #define SWAN_STRUCTURES_HPP
 
 #include "CAstWrapper.h"
+
 #include "swift/SIL/ApplySite.h"
 #include "swift/SIL/SILVisitor.h"
 #include <jni.h>
@@ -145,6 +146,11 @@ struct RootFunctionInfo {
   jobject functionSourceInfo;
   std::list<jobject> arguments;
   std::list<jobject> blocks;
+  std::list<jobject> calledFunctions;
+
+  void addCalledFunction(std::string f) {
+    calledFunctions.push_back(wrapper->makeConstant(f.c_str()));
+  }
 
   void setFunctionSourceInfo(unsigned int fl, unsigned int fc, unsigned int ll, unsigned int lc) {
     functionSourceInfo = wrapper->makeLocation(static_cast<int>(fl), static_cast<int>(fc),
@@ -180,37 +186,18 @@ struct RootFunctionInfo {
      *    PRIMITIVE
      *      PRIMITIVE <-- BLOCK
      *      ...
+     *    PRIMITIVE
+     *      CONSTANT <-- CALLED FUNCTION
+     *      ...
      */
     return wrapper->makeNode(CAstWrapper::PRIMITIVE,
       wrapper->makeConstant(functionName.c_str()),
       wrapper->makeConstant(returnType.c_str()),
       wrapper->makeConstant(functionSourceInfo),
       wrapper->makeNode(CAstWrapper::PRIMITIVE, wrapper->makeArray(&arguments)),
-      wrapper->makeNode(CAstWrapper::PRIMITIVE, wrapper->makeArray(&blocks)));
-  }
-};
-
-/// Contains all raw function information.
-struct RootModuleInfo {
-  RootModuleInfo(CAstWrapper *wrapper) : wrapper(wrapper) {}
-  CAstWrapper *wrapper;
-  std::list<jobject> functions;
-
-  void addFunction(RootFunctionInfo *function) {
-    functions.push_back(function->make());
-  }
-
-  void addFunction(jobject function) {
-    functions.push_back(function);
-  }
-
-  jobject make() {
-    /*
-     *  PRIMITIVE
-     *    PRIMTIVE <-- FUNCTION
-     *    ...
-     */
-    return wrapper->makeNode(CAstWrapper::PRIMITIVE, wrapper->makeArray(&functions));
+      wrapper->makeNode(CAstWrapper::PRIMITIVE, wrapper->makeArray(&blocks)),
+      wrapper->makeNode(CAstWrapper::PRIMITIVE, wrapper->makeArray(&calledFunctions))
+      );
   }
 };
 

@@ -93,9 +93,6 @@ public class EntityPrinter {
 
             CAstControlFlowRecorder map = entity.getControlFlow();
             for (CAstNode source : map.getMappedNodes()) {
-                /* TODO:  Control flow mapping is incomplete as edges that go from CALL nodes to BASIC_BLOCK nodes are
-                 *        not printed because they exist on the map.table.
-                 */
                 if (map.isMapped(source) && !(map.getTargetLabels(source).isEmpty()) && map.getTargetLabels(source).size() > 1) {
                     System.out.println("\t\t<CONTROL_FLOW>");
                     System.out.println("\t\t\t<FROM>" + source.toString().replace("\n", " | ") + "</FROM>");

@@ -37,15 +37,18 @@ namespace swan {
 /// (C++ side) data and call hub.
 class WALAInstance {
 private:
-  JNIEnv *JavaEnv; // JVM.
-  jobject Translator; // Java translator object.
-  std::string File; // Swift file to analyze.
+  /// JVM.
+  JNIEnv *JavaEnv;
+  /// Java translator object.
+  jobject Translator;
+  /// Since even with multi-file compilation we only have a single
+  /// SILModule, we have to group SILFunctions by their source file.
+  std::unordered_map<std::string, std::list<jobject>> mappedRoots;
 
 public:
   CAstWrapper *CAst; // For handling JNI calls (WALA).
-  jobject Root;
 
-  explicit WALAInstance(JNIEnv* Env, jobject Obj);
+  explicit WALAInstance(JNIEnv* Env, jobject Obj, jobject args);
 
   /// Converts C++ string to Java BigDecimal, and is used by the
   /// SILWalaInstructionVisitor.
@@ -55,14 +58,21 @@ public:
   void printNode(jobject Node);
 
   /// Starts the analysis, and hooks into the Swift compiler frontend.
-  void analyze();
+  void analyze(const std::list<string> args);
 
-  /// Returns the root node containing all information of the file.
-  jobject getRoot();
+  /// Returns the root nodes containing the information for each file.
+  jobject getRoots();
 
   /// Callback method from the Observer hook. It visits the given SIL module
   /// and will put the result back into the instance.
   void analyzeSILModule(swift::SILModule &SM);
+
+  /// Sets the source URL/filename on the Java side so that locations are valid.
+  void setSource(std::string url);
+
+  void addSourceFunction(std::string file, jobject function) {
+    mappedRoots[file].push_back(function);
+  }
 };
 
 } // end swan namespace

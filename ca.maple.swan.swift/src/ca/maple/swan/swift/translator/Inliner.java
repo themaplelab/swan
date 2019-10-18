@@ -17,10 +17,12 @@ import ca.maple.swan.swift.translator.values.SILValue;
 import ca.maple.swan.swift.tree.FunctionEntity;
 import ca.maple.swan.swift.tree.SwiftFunctionType;
 import com.ibm.wala.cast.ir.translator.AbstractCodeEntity;
+import com.ibm.wala.cast.tree.CAstEntity;
 import com.ibm.wala.cast.tree.CAstNode;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 
 import static ca.maple.swan.swift.translator.RawAstTranslator.Ast;
 import static ca.maple.swan.swift.translator.RawAstTranslator.getStringValue;
@@ -69,7 +71,7 @@ public class Inliner {
         SILInstructionContext C2 = new SILInstructionContext(function, C.allEntities, function.rawInfo);
         C2.inliningParent = true;
         C2.valueTable = C.valueTable;
-        int argIndex = 0;
+        int argIndex = 1;
         for (SILValue arg : args) {
             C.valueTable.copyValue(function.getArgumentNames()[argIndex], arg.getName());
             ++argIndex;
@@ -81,6 +83,7 @@ public class Inliner {
             for (CAstNode instruction: block.getChildren().subList(1, block.getChildren().size())) {
                 try {
                     CAstNode Node = translator.visit(instruction, C2);
+                    C2.parent.getSourceMap().setPosition(Node, translator.getInstructionPosition(instruction));
                     if ((Node != null) && (Node.getKind() != CAstNode.EMPTY)) {
                         C2.instructions.add(Node);
                     }
@@ -113,6 +116,11 @@ public class Inliner {
             flatBlocks.add(BlockStmt);
         }
         C.instructions.addAll(flatBlocks);
+        for (Collection<CAstEntity> e : C2.parent.getAllScopedEntities().values()) {
+            for (CAstEntity entity : e) {
+                C.parent.addScopedEntity(null, entity);
+            }
+        }
         C.parent.getControlFlow().addAll(C2.parent.getControlFlow());
         return C2.returnValue;
     }
@@ -154,6 +162,7 @@ public class Inliner {
             "$Bool", // This can exist as an OBJECT_LITERAL, but that's perfectly okay.
             "$Builtin.Word",
             "$Builtin.Int1",
-            "$String"
+            "$String",
+            "self"
     };
 }

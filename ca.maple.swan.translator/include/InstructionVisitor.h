@@ -27,6 +27,7 @@
 #include "swift/SIL/SILVisitor.h"
 #include <jni.h>
 #include <list>
+#include <fstream>
 
 using namespace swift;
 
@@ -37,7 +38,7 @@ namespace swan {
   /// Decides whether to print the translation debug info to terminal at runtime.
   static bool SWAN_PRINT = true;
   /// Source information can be annoying/unnecessary for debugging, so there is an option to disable it.
-  static bool SWAN_PRINT_SOURCE = true;
+  static bool SWAN_PRINT_SOURCE = false;
   /// Disable printing memory and file information.
   static bool SWAN_PRINT_FILE_AND_MEMORY = false;
 
@@ -45,7 +46,7 @@ namespace swan {
   /// ones for every type of SILInstruction. This makes translating simple.
   class InstructionVisitor : public SILInstructionVisitor<InstructionVisitor, void> {
   public:
-    InstructionVisitor(WALAInstance *Instance) : Instance(Instance) {}
+    InstructionVisitor(WALAInstance *Instance) : Instance(Instance) { }
 
     /// Visit the SILModule of the swift file that holds the SILFunctions.
     void visitSILModule(SILModule *M);
@@ -80,9 +81,6 @@ namespace swan {
 
     /// Current 'Cast Entity' which contains info necessary to later create the CAstEntity for the current function.
     std::unique_ptr<RootFunctionInfo> currentFunction;
-
-     /// Contains all of the raw data of the module.
-    std::unique_ptr<RootModuleInfo> currentModule;
 
     /// Source information about the SILInstruction.
     std::unique_ptr<SILInstructionInfo> instrInfo;
@@ -280,6 +278,9 @@ namespace swan {
     /*******************************************************************************/
     /*                          Blocks                                             */
     /*******************************************************************************/
+
+    void visitProjectBlockStorageInst(ProjectBlockStorageInst *PBSI);
+    void visitInitBlockStorageHeaderInst(InitBlockStorageHeaderInst *IBSHI);
 
     /*******************************************************************************/
     /*                          Unchecked Conversions                              */
