@@ -30,6 +30,8 @@ import com.ibm.wala.types.TypeReference;
  * we don't use the "construct" instruction the JSAstTranslator uses.
  * Instead we use the "new" instruction.
  *
+ * We also make sure our types are preserved.
+ *
  * Most likely this class will be extended as problematic limitations or
  * implications of the JS translator for Swift translation are discovered.
  */

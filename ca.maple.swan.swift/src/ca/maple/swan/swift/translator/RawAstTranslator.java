@@ -26,6 +26,7 @@ import com.ibm.wala.cast.tree.impl.CAstOperator;
 import com.ibm.wala.util.collections.Pair;
 import com.ibm.wala.util.debug.Assertions;
 
+import javax.jws.soap.SOAPBinding;
 import java.io.File;
 import java.math.BigDecimal;
 import java.util.ArrayList;
@@ -2615,46 +2616,63 @@ public class RawAstTranslator extends SILInstructionVisitor<CAstNode, SILInstruc
         // 2. Use whatever JS has for throw semantics. This might require passing the
         //    throw destination to the call site.
         // TODO
-        String FuncRefName = (String)N.getChild(0).getValue();
+        RawValue result = getSingleResult(N);
+        String FuncRefName = getStringValue(N, 2);
         CAstNode Source;
-        CAstNode FuncNode = N.getChild(1);
+        CAstNode FuncNode = N.getChild(3);
         switch (FuncNode.getKind()) {
             case CAstNode.UNARY_EXPR: {
-                CAstNode Oper = C.valueTable.getValue((String)FuncNode.getChild(1).getValue()).getVarNode();
+                CAstNode Oper = C.valueTable.getValue(getStringValue(FuncNode, 1)).getVarNode();
                 Source = Ast.makeNode(CAstNode.UNARY_EXPR, FuncNode.getChild(0), Oper);
+                C.valueTable.addValue(new SILValue(result.Name, result.Type, C));
                 break;
             }
             case CAstNode.BINARY_EXPR: {
-                CAstNode Oper1 = C.valueTable.getValue((String)FuncNode.getChild(1).getValue()).getVarNode();
-                CAstNode Oper2 = C.valueTable.getValue((String)FuncNode.getChild(2).getValue()).getVarNode();
+                CAstNode Oper1 = C.valueTable.getValue(getStringValue(FuncNode, 1)).getVarNode();
+                CAstNode Oper2 = C.valueTable.getValue(getStringValue(FuncNode, 2)).getVarNode();
                 Source = Ast.makeNode(CAstNode.BINARY_EXPR, FuncNode.getChild(0), Oper1, Oper2);
+                C.valueTable.addValue(new SILValue(result.Name, result.Type, C));
                 break;
             }
             default: {
                 SILValue FuncRef = C.valueTable.getValue(FuncRefName);
                 if (FuncRef instanceof SILConstant) {
                     Source = ((SILConstant) FuncRef).getCAst();
+                    C.valueTable.addValue(new SILValue(result.Name, result.Type, C));
                 } else if (FuncRef instanceof SILFunctionRef) {
                     ArrayList<CAstNode> Params = new ArrayList<>();
+                    ArrayList<SILValue> ParamVals = new ArrayList<>();
                     Params.add(((SILFunctionRef) FuncRef).getFunctionRef());
                     Params.add(Ast.makeConstant("do"));
                     for (CAstNode RawParam : FuncNode.getChildren()) {
-                        Params.add(C.valueTable.getValue((String)RawParam.getValue()).getVarNode());
+                        String ParamName = (String)RawParam.getValue();
+                        Params.add(C.valueTable.getValue(ParamName).getVarNode());
+                        ParamVals.add(C.valueTable.getValue(ParamName));
+                    }
+                    if (Inliner.shouldInlineFunction(((SILFunctionRef) FuncRef).getFunctionName(), C)) {
+                        SILValue ReturnValue = Inliner.doFunctionInline(((SILFunctionRef) FuncRef)
+                                .getFunctionName(), C, ParamVals, this);
+                        C.valueTable.copyValue(result.Name, ReturnValue.getName());
+                        return Ast.makeNode(CAstNode.EMPTY);
                     }
                     Source = Ast.makeNode(CAstNode.CALL, Params);
                     C.parent.setGotoTarget(Source, Source);
+                    C.valueTable.addValue(new SILValue(result.Name, result.Type, C));
                 } else if (FuncRef instanceof SILFunctionRef.SILSummarizedFunctionRef) {
                     ArrayList<CAstNode> Params = new ArrayList<>(FuncNode.getChildren());
+                    C.valueTable.addValue(new SILValue(result.Name, result.Type, C));
                     Source = BuiltInFunctionSummaries.findSummary(
                             ((SILFunctionRef.SILSummarizedFunctionRef)FuncRef).getFunctionName(),
-                            null, null, C, Params);
+                            result.Name, result.Type, C, Params);
                     if (Source == null || Source.getKind() == CAstNode.EMPTY) {
                         return Ast.makeNode(CAstNode.EMPTY);
                     } else if (Source.getKind() == CAstNode.VAR) {
+                        C.valueTable.addValue(new SILValue(result.Name, result.Type, C));
                         return Ast.makeNode(CAstNode.EMPTY);
                     }
                 } else {
                     Source = Ast.makeConstant("UNKNOWN");
+                    C.valueTable.addValue(new SILValue(result.Name, result.Type, C));
                 }
                 break;
             }

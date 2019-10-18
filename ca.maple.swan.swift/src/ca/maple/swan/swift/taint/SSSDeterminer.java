@@ -31,6 +31,8 @@ import static com.ibm.wala.ipa.slicer.Statement.Kind.NORMAL_RET_CALLER;
 
 public class SSSDeterminer {
 
+    // TODO: Add way of comparing argument position and configuration (e.g. JSON format that Phasar uses).
+
     public static boolean checkSource(HashSet<String> sources, Statement s, CallGraph CG) {
         if (s.getKind() == NORMAL_RET_CALLER) {
             CallSiteReference cs = ((NormalReturnCaller) s).getInstruction().getCallSite();

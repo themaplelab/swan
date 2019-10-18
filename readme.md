@@ -6,14 +6,13 @@ A static program analysis framework for analyzing Swift (incl. iOS/macOS) applic
 
 ## Introduction
 
-SWAN is being developed for detecting security vulnerabilities in Swift applications using taint analysis. A custom translator converts Swift Intermediate Language ([SIL](https://github.com/apple/swift/blob/master/docs/SIL.rst)) to WALA IR (called [CAst](http://wala.sourceforge.net/javadocs/trunk/com/ibm/wala/cast/tree/package-summary.html)). The SIL is retrieved by hooking into the Swift compiler and grabbing the SIL module during compilation. Since many languages can be translated to similar looking CAst, we are able to use WALA's JavaScript translators and analysis (with some modifcations) on the resulting CAst.
+SWAN is being developed for detecting security vulnerabilities in Swift applications using taint analysis. A custom translator converts Swift Intermediate Language ([SIL](https://github.com/apple/swift/blob/master/docs/SIL.rst)) to WALA AST ([CAst](http://wala.sourceforge.net/javadocs/trunk/com/ibm/wala/cast/tree/package-summary.html)). The SIL is retrieved by hooking into the Swift compiler and grabbing the SIL module during compilation. Since many languages can be translated to similar looking CAst, we are able to use WALA's JavaScript translators and analysis (with some modifcations) on the resulting CAst.
 
 The translator aims to support every SIL instruction seen in practice.
 
 ## Current work
-- Finishing the new translator.
-- Taint Analysis.
-- Multi-file support including iOS and macOS apps.
+- Finishing translation
+- Extending taint analysis capabilities
 
 ## Future plans
 - Lifecycle awareness for iOS and macOS applications (custom call graph building)
@@ -87,49 +86,19 @@ cd ./swan
 
 ### Running SWAN
 
-First you need to set some environment variables. You can also add the following to your `~/.bashrc` or `~/.bash_profile`, but make sure to `source` after. **Restart IDEA if you have it open.** The first variable is the same as in `gradle.properties`. The second variable is just the path to the directory containing this cloned repository.
+First you need to set some environment variables. You should add the following to your `~/.bashrc` or `~/.bash_profile`, but make sure to `source` after. The first variable is the same as in `gradle.properties`. The second variable is just the path to the directory containing this cloned repository.
 
 ```
 export WALA_PATH_TO_SWIFT_BUILD={path/to/your/swift/build/dir}
 export PATH_TO_SWAN={path/to/swan/dir}
 ```
 
-The current analysis driver generates WALA IR, creates a call graph, and runs a taint analysis. Sources and sinks are hardcoded only for `testTaint.swift` currently.
+SWAN uses its own [VSCode extension](https://github.com/themaplelab/swan-vscode) as the main driver. The extension has not been published yet, so you will need to run it yourself. See the [README](https://github.com/themaplelab/swan-vscode/blob/master/README.md) of the `swan-vscode` repo for instructions.
 
-**IDEA**
+The extension can launch the JVM itself. Alternatively, you can first start the JVM via the Intellij run configuration called _Server_ before using the extension. This is useful for debugging.
 
-There are some run configs ready to use for single Swift test files.
- 
-**From the terminal**
 
-You must run the analysis by running the following in the **root** directory. There are some test files in `ca.maple.swan.swift.test/testFiles`.
-
-It is recommended you use the full path of files as our pathing code is fairly volatile.
-```
-./gradlew run --args='<MODE> <ARGS>'
-```
-`MODE`: `SINGLE` or `MULTI`
-
-`ARGS`: file for `SINGLE` mode, or arguments to `performFrontend()` for `MULTI` mode. These should come from the shim script.
-
-Single quotes are important here.
-
-**Compiling Xcode projects (incl. iOS/macOS apps)**
-
-Obviously, this is only for those running macOS.
-
-SWAN intercepts arguments going to `swiftc` by using the `SWIFT_EXEC` argument to `xcodebuild`. Therefore, your application must be compiled using `xcodebuild`. The shim script that needs to be given to `SWIFT_EXEC` is in `$PATH_TO_SWAN/ca.maple.swan.translator/shim.py`. 
-
-An example call to `xcodebuild` might look like this.
-```
-xcodebuild clean build -project swift-2048.xcodeproj -scheme swift-2048 CODE_SIGN_IDENTITY="" CODE_SIGNING_REQUIRED=NO CODE_SIGNING_ALLOWED="NO" SWIFT_COMPILATION_MODE=wholemodule SWIFT_OPTIMIZATION_LEVEL=-Onone SWIFT_EXEC=$PATH_TO_SWAN/ca.maple.swan.translator/shim.py
-```
-Note that you might need to set `shim.py` to be executable as it runs like a regular bash script. The three necessary arguments for SWAN from the above example are..
-1. `SWIFT_COMPILATION_MODE=wholemodule`
-2. `SWIFT_OPTIMIZATION_LEVEL=-Onone`
-3. `SWIFT_EXEC=$PATH_TO_SWAN/ca.maple.swan.translator/shim.py`
-                                        
-The rest are regular arguments or arguments needed to compile without code signing.
+We hope to switch over to LSP in the future if the protocol is further developed.
 
 ## Contributing
 Please see the [page](https://github.com/themaplelab/swan/wiki/Contributing) on contributing.
