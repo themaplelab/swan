@@ -113,17 +113,14 @@ public class TaintAnalysisDriver {
         sanitizers.forEach(s -> System.out.print(s));
         System.out.println("\n");
 
+
+
         try {
             TaintPathRecorder.clear();
             TaintSolver s = solveSDG(sdg, sources, sanitizers, sinks);
-        } catch (CancelException e) {
-            e.printStackTrace();
-        }
-
-        try {
             // TODO: Prune called again here, should be cached.
-            return TaintPathRecorder.getPaths(pruneSDG(sdg));
-        } catch (Exception e) {
+            return TaintPathRecorder.getPaths(pruneSDG(sdg), s);
+        } catch (CancelException e) {
             e.printStackTrace();
             return new ArrayList<>(new ArrayList<>());
         }

@@ -21,7 +21,6 @@ import com.ibm.wala.ipa.slicer.NormalStatement;
 import com.ibm.wala.ipa.slicer.ParamCaller;
 import com.ibm.wala.ipa.slicer.Statement;
 import com.ibm.wala.util.graph.Graph;
-import com.ibm.wala.util.graph.traverse.BFSPathFinder;
 
 import java.util.*;
 
@@ -51,6 +50,7 @@ public class TaintPathRecorder {
     }
 
     public static List<CAstSourcePositionMap.Position> getPositionsFromStatements(List<Statement> statements) {
+        // TODO: Add source function itself to the beginning of the path.
         List<CAstSourcePositionMap.Position> path = new ArrayList<>();
         for (Statement s : statements) {
             CAstSourcePositionMap.Position p = null;
@@ -103,13 +103,13 @@ public class TaintPathRecorder {
         return path;
     }
 
-    public static List<List<CAstSourcePositionMap.Position>> getPaths(Graph<Statement> g) {
+    public static List<List<CAstSourcePositionMap.Position>> getPaths(Graph<Statement> g, TaintSolver s) {
         ArrayList<List<CAstSourcePositionMap.Position>> paths = new ArrayList<>();
         for (Statement src : getSources()) {
             for (Statement target : getTargets(src)) {
                 // TODO: Override connected nodes of bfs pathfinder to only traverse those
                 //   whose |sources| > 0.
-                BFSPathFinder<Statement> finder = new BFSPathFinder<>(g, src, target);
+                TaintBFSPathFinder finder = new TaintBFSPathFinder(g, src, target, s);
                 List<CAstSourcePositionMap.Position> path = getPositionsFromStatements(finder.find());
                 if (!path.isEmpty()) {
                     paths.add(path);
