@@ -32,7 +32,7 @@ public class TaintBFSPathFinder extends com.ibm.wala.util.graph.traverse.BFSPath
 
     @Override
     protected Iterator<? extends Statement> getConnected(Statement n) {
-        return new FilterIterator<>(G.getSuccNodes(n), (Statement s) -> S.getOut(n).isTainted());
+        return new FilterIterator<>(G.getSuccNodes(n), (Statement s) -> S.getOut(s).isTainted());
     }
 
 }
