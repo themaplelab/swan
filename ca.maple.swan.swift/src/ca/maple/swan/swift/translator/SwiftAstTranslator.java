@@ -13,63 +13,129 @@
 
 package ca.maple.swan.swift.translator;
 
+import ca.maple.swan.swift.loader.SwiftLoader;
 import com.ibm.wala.cast.ir.ssa.CAstBinaryOp;
 import com.ibm.wala.cast.ir.translator.AstTranslator;
-import com.ibm.wala.cast.js.loader.JavaScriptLoader;
 import com.ibm.wala.cast.js.ssa.JSInstructionFactory;
-import com.ibm.wala.cast.js.translator.JSAstTranslator;
-import com.ibm.wala.cast.js.types.JavaScriptMethods;
 import com.ibm.wala.cast.js.types.JavaScriptTypes;
+import com.ibm.wala.cast.loader.AstMethod;
 import com.ibm.wala.cast.loader.DynamicCallSiteReference;
-import com.ibm.wala.cast.tree.CAstEntity;
-import com.ibm.wala.cast.tree.CAstNode;
-import com.ibm.wala.cast.tree.CAstSourcePositionMap;
-import com.ibm.wala.cast.tree.CAstType;
+import com.ibm.wala.cast.tree.*;
 import com.ibm.wala.cast.tree.impl.CAstOperator;
 import com.ibm.wala.cast.tree.visit.CAstVisitor;
 import com.ibm.wala.cast.types.AstMethodReference;
 import com.ibm.wala.cast.util.CAstPrinter;
+import com.ibm.wala.cfg.AbstractCFG;
+import com.ibm.wala.cfg.IBasicBlock;
 import com.ibm.wala.classLoader.IClass;
 import com.ibm.wala.classLoader.NewSiteReference;
+import com.ibm.wala.ssa.SSAInstruction;
+import com.ibm.wala.ssa.SymbolTable;
 import com.ibm.wala.types.MethodReference;
 import com.ibm.wala.types.TypeName;
 import com.ibm.wala.types.TypeReference;
 import com.ibm.wala.util.debug.Assertions;
 
-import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Map;
+
+import static ca.maple.swan.swift.translator.SwiftCAstNode.GLOBAL_DECL_STMT;
 
 /*
- * We use this class to override functionality of the JSAstTranslator.
- *
- * Most likely this class will be further extended as problematic limitations or
- * implications of the JS translator for Swift translation are discovered.
+ * This class is borrows lots from the JSAstTranslator. Translates SIL specific CAst to WALA IR.
  */
 
-public class SwiftAstTranslator extends JSAstTranslator {
-    public SwiftAstTranslator(JavaScriptLoader loader) {
+public class SwiftAstTranslator extends AstTranslator {
+
+    // TODO: Replace with Swift types.
+
+    public SwiftAstTranslator(SwiftLoader loader) {
         super(loader);
     }
 
-    @Override
-    protected void doMaterializeFunction(
-            CAstNode n, WalkContext context, int result, int exception, CAstEntity fn) {
-        String fnName = composeEntityName(context, fn);
-        IClass cls = loader.lookupClass(TypeName.findOrCreate("L" + fnName));
-        TypeReference type = cls.getReference();
+    private static final boolean DEBUG = false;
 
-        context
-                .cfg()
-                .addInstruction(
-                        insts.NewInstruction(
-                                context.cfg().getCurrentInstruction(),
-                                result,
-                                new NewSiteReference(
-                                        context.cfg().getCurrentInstruction(), type)));
+    @Override
+    protected boolean useDefaultInitValues() {
+        return false;
+    }
+
+    @Override
+    protected boolean hasImplicitGlobals() {
+        return false;
+    }
+
+    @Override
+    protected boolean treatGlobalsAsLexicallyScoped() {
+        return false;
+    }
+
+    @Override
+    protected TypeReference defaultCatchType() {
+        return JavaScriptTypes.Root;
     }
 
     @Override
     protected TypeReference makeType(CAstType type) {
         return TypeReference.findOrCreate(JavaScriptTypes.jsLoader, type.getName());
+    }
+
+    @Override
+    protected boolean defineType(CAstEntity type, WalkContext wc) {
+        Assertions.UNREACHABLE();
+        return false;
+    }
+
+    @Override
+    protected void defineField(CAstEntity topEntity, WalkContext wc, CAstEntity n) {
+        Assertions.UNREACHABLE();
+    }
+
+    @Override
+    protected String composeEntityName(WalkContext parent, CAstEntity f) {
+        if (f.getKind() == CAstEntity.SCRIPT_ENTITY) return f.getName();
+        else return parent.getName() + '/' + f.getName();
+    }
+
+    @Override
+    protected void declareFunction(CAstEntity N, WalkContext context) {
+        String fnName = composeEntityName(context, N);
+        if (N.getKind() == CAstEntity.SCRIPT_ENTITY) {
+            ((SwiftLoader) loader).defineScriptType('L' + fnName, N.getPosition(), N, context);
+        } else if (N.getKind() == CAstEntity.FUNCTION_ENTITY) {
+            ((SwiftLoader) loader).defineFunctionType('L' + fnName, N.getPosition(), N, context);
+        } else {
+            Assertions.UNREACHABLE();
+        }
+    }
+
+    @Override
+    protected void defineFunction(
+            CAstEntity N,
+            WalkContext definingContext,
+            AbstractCFG<SSAInstruction, ? extends IBasicBlock<SSAInstruction>> cfg,
+            SymbolTable symtab,
+            boolean hasCatchBlock,
+            Map<IBasicBlock<SSAInstruction>, TypeReference[]> caughtTypes,
+            boolean hasMonitorOp,
+            AstLexicalInformation LI,
+            AstMethod.DebuggingInformation debugInfo) {
+        if (DEBUG) System.err.println(("\n\nAdding code for " + N));
+        String fnName = composeEntityName(definingContext, N);
+
+        if (DEBUG) System.err.println(cfg);
+
+        ((SwiftLoader) loader)
+                .defineCodeBodyCode(
+                        'L' + fnName, cfg, symtab, hasCatchBlock, caughtTypes, hasMonitorOp, LI, debugInfo);
+    }
+
+    @Override
+    protected void doThrow(WalkContext context, int exception) {
+        context
+                .cfg()
+                .addInstruction(insts.ThrowInstruction(context.cfg().getCurrentInstruction(), exception));
     }
 
     @Override
@@ -81,12 +147,7 @@ public class SwiftAstTranslator extends JSAstTranslator {
             CAstNode name,
             int receiver,
             int[] arguments) {
-        MethodReference ref =
-                name.getValue().equals("ctor")
-                        ? JavaScriptMethods.ctorReference
-                        : name.getValue().equals("dispatch")
-                        ? JavaScriptMethods.dispatchReference
-                        : AstMethodReference.fnReference(JavaScriptTypes.CodeBody);
+        MethodReference ref = AstMethodReference.fnReference(JavaScriptTypes.CodeBody);
 
         context
                 .cfg()
@@ -115,16 +176,48 @@ public class SwiftAstTranslator extends JSAstTranslator {
     }
 
     @Override
-    protected void doFieldWrite(
-            WalkContext context, int receiver, CAstNode elt, CAstNode parent, int rval) {
-        this.visit(elt, context, this);
+    protected void doNewObject(
+            WalkContext context, CAstNode newNode, int result, Object type, int[] arguments) {
+        assert arguments == null;
+        TypeReference typeRef =
+                TypeReference.findOrCreate(JavaScriptTypes.jsLoader, TypeName.string2TypeName("L" + type));
 
         context
                 .cfg()
                 .addInstruction(
-                        ((JSInstructionFactory) insts)
-                                .PropertyWrite(
-                                        context.cfg().getCurrentInstruction(), receiver, context.getValue(elt), rval));
+                        insts.NewInstruction(
+                                context.cfg().getCurrentInstruction(),
+                                result,
+                                NewSiteReference.make(context.cfg().getCurrentInstruction(), typeRef)));
+    }
+
+    @Override
+    protected void doMaterializeFunction(
+            CAstNode n, WalkContext context, int result, int exception, CAstEntity fn) {
+        String fnName = composeEntityName(context, fn);
+        IClass cls = loader.lookupClass(TypeName.findOrCreate("L" + fnName));
+        TypeReference type = cls.getReference();
+
+        context
+                .cfg()
+                .addInstruction(
+                        insts.NewInstruction(
+                                context.cfg().getCurrentInstruction(),
+                                result,
+                                new NewSiteReference(
+                                        context.cfg().getCurrentInstruction(), type)));
+    }
+
+    @Override
+    public void doArrayRead(
+            WalkContext context, int result, int arrayValue, CAstNode arrayRef, int[] dimValues) {
+        Assertions.UNREACHABLE("doArrayRead() called!");
+    }
+
+    @Override
+    public void doArrayWrite(
+            WalkContext context, int arrayValue, CAstNode arrayRef, int[] dimValues, int rval) {
+        Assertions.UNREACHABLE("doArrayWrite() called!");
     }
 
     @Override
@@ -158,6 +251,78 @@ public class SwiftAstTranslator extends JSAstTranslator {
                                             context.cfg().getCurrentInstruction(), result, x, context.getValue(elt)));
         }
 
+    }
+
+    @Override
+    protected void doFieldWrite(
+            WalkContext context, int receiver, CAstNode elt, CAstNode parent, int rval) {
+        this.visit(elt, context, this);
+
+        context
+                .cfg()
+                .addInstruction(
+                        ((JSInstructionFactory) insts)
+                                .PropertyWrite(
+                                        context.cfg().getCurrentInstruction(), receiver, context.getValue(elt), rval));
+    }
+
+    @Override
+    protected void doPrimitive(int resultVal, WalkContext context, CAstNode primitiveCall) {
+        Assertions.UNREACHABLE("Primitives are not supported");
+        // Perhaps in the future we can move built in operations here to make the CAst frontend less messy.
+    }
+
+    @Override
+    protected boolean doVisit(CAstNode n, WalkContext context, CAstVisitor<WalkContext> visitor) {
+        switch (n.getKind()) {
+            case GLOBAL_DECL_STMT:
+                CAstSymbol s = (CAstSymbol) n.getChild(0).getValue();
+                context.getGlobalScope().declare(s);
+                return true;
+            default:
+            {
+                return false;
+            }
+        }
+    }
+
+    // For now, we will keep this "Any" type from JS.
+
+    public static final CAstType Any =
+            new CAstType() {
+
+                @Override
+                public String getName() {
+                    return "Any";
+                }
+
+                @Override
+                public Collection<CAstType> getSupertypes() {
+                    return Collections.emptySet();
+                }
+            };
+
+    @Override
+    protected CAstType topType() {
+        return Any;
+    }
+
+    @Override
+    protected CAstType exceptionType() {
+        return Any;
+    }
+
+    @Override
+    protected CAstSourcePositionMap.Position[] getParameterPositions(CAstEntity e) {
+        if (e.getKind() == CAstEntity.SCRIPT_ENTITY) {
+            return new CAstSourcePositionMap.Position[0];
+        } else {
+            CAstSourcePositionMap.Position[] ps = new CAstSourcePositionMap.Position[e.getArgumentCount()];
+            for (int i = 2; i < e.getArgumentCount(); i++) {
+                ps[i] = e.getPosition(i - 2);
+            }
+            return ps;
+        }
     }
 
     @Override
@@ -212,6 +377,17 @@ public class SwiftAstTranslator extends JSAstTranslator {
         }
     }
 
+    @Override
+    protected void doPrologue(WalkContext context) {
+        // No prologue needed in Swift.
+    }
 
+    @Override
+    protected void leaveDeclStmt(CAstNode n, WalkContext c, CAstVisitor<WalkContext> visitor) {
+        CAstSymbol s = (CAstSymbol) n.getChild(0).getValue();
+        if (!c.currentScope().contains(s.name())) {
+            c.currentScope().declare(s);
+        }
+    }
 
 }

@@ -21,7 +21,7 @@ import com.ibm.wala.cast.tree.rewrite.CAstRewriterFactory;
 import com.ibm.wala.ipa.cha.IClassHierarchy;
 
 /*
- * For now, we use a custom loader to use our own AstTranslator in the JS code.
+ * For now, we basically use the JavaScriptLoader, but this will most likely not be the case in the future.
  */
 
 public class SwiftLoader extends JavaScriptLoader {

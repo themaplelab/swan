@@ -15,6 +15,7 @@ package ca.maple.swan.swift.translator.values;
 
 import ca.maple.swan.swift.translator.RawAstTranslator;
 import ca.maple.swan.swift.translator.SILInstructionContext;
+import ca.maple.swan.swift.translator.SwiftCAstNode;
 import ca.maple.swan.swift.translator.types.SILType;
 import ca.maple.swan.swift.translator.types.SILTypes;
 import com.ibm.wala.cast.tree.CAstNode;
@@ -59,7 +60,7 @@ public class SILValue {
     }
 
     public CAstNode getGlobalDecl() {
-        return Ast.makeNode(CAstNode.GLOBAL_DECL, Ast.makeConstant(new CAstSymbolImpl(this.name, this.type)));
+        return Ast.makeNode(SwiftCAstNode.GLOBAL_DECL_STMT, Ast.makeConstant(new CAstSymbolImpl(this.name, this.type)));
     }
 
     public CAstNode copy(String ResultName, String ResultType) {

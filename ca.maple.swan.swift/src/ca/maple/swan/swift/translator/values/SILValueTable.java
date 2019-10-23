@@ -34,9 +34,12 @@ public class SILValueTable {
     // For keeping track of which values need a DECL_STMT generated.
     private final ArrayList<SILValue> undeclaredValues;
 
+    private final ArrayList<SILValue> globals;
+
     public SILValueTable() {
         values = new HashMap<>();
         undeclaredValues = new ArrayList<>();
+        globals = new ArrayList<>();
     }
 
     public SILValue getValue(String valueName) {
@@ -46,8 +49,10 @@ public class SILValueTable {
 
     public SILValue getGlobalValue(String valueName, SILInstructionContext C) {
         if (!values.containsKey(valueName)) {
-            // TODO: Add actual type here somehow.
-            this.addValue(new SILValue(valueName, "global", C));
+            // Dummy type, doesn't matter anyways.
+            SILValue val = new SILValue(valueName, "global", C);
+            this.addGlobalValue(val);
+            C.parent.setGotoTarget(val.getVarNode(), val.getVarNode());
         }
         return values.get(valueName);
     }
@@ -84,9 +89,13 @@ public class SILValueTable {
         undeclaredValues.add(v);
     }
 
+    public void addGlobalValue(SILValue v) {
+        values.put(v.name, v);
+        globals.add(v);
+    }
+
     public void addArg(SILValue v) {
         values.put(v.name, v);
-        // We don't want to redeclare an argument.
     }
 
     public void clearValues() {
@@ -98,7 +107,11 @@ public class SILValueTable {
         for (SILValue v : undeclaredValues) {
             decls.add(v.getDecl());
         }
+        for (SILValue v : globals) {
+            decls.add(v.getGlobalDecl());
+        }
         undeclaredValues.clear();
+        globals.clear();
         return decls;
     }
 

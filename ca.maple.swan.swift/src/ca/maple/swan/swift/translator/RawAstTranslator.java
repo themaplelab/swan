@@ -494,7 +494,7 @@ public class RawAstTranslator extends SILInstructionVisitor<CAstNode, SILInstruc
         String GlobalName = getStringValue(N, 0);
         String GlobalType = getStringValue(N, 1);
         SILValue ResultValue = new SILValue(GlobalName, GlobalType, C);
-        C.valueTable.addValue(ResultValue);
+        C.valueTable.addGlobalValue(ResultValue);
         return Ast.makeNode(CAstNode.ASSIGN,
                 ResultValue.getVarNode(),
                 Ast.makeNode(CAstNode.NEW, Ast.makeConstant(GlobalType)));
@@ -1109,7 +1109,7 @@ public class RawAstTranslator extends SILInstructionVisitor<CAstNode, SILInstruc
         RawValue result = getSingleResult(N);
         String GlobalName = getStringValue(N, 2);
         SILValue GlobalValue = C.valueTable.getGlobalValue(GlobalName, C);
-        C.valueTable.addValue(GlobalValue.makePointer(result.Name, result.Type));
+        C.valueTable.addGlobalValue(GlobalValue.makePointer(result.Name, result.Type));
         return null;
     }
 
@@ -1224,6 +1224,13 @@ public class RawAstTranslator extends SILInstructionVisitor<CAstNode, SILInstruc
         switch (FuncNode.getKind()) {
             case CAstNode.UNARY_EXPR: {
                 CAstNode Oper = C.valueTable.getValue(getStringValue(FuncNode, 1)).getVarNode();
+                if (Oper.getKind() == CAstNode.FUNCTION_EXPR) {
+                    ArrayList<CAstNode> Params = new ArrayList<>();
+                    Params.add(Oper);
+                    Params.add(Ast.makeConstant("do"));
+                    Oper = Ast.makeNode(CAstNode.CALL, Params);
+                    C.parent.setGotoTarget(Oper, Oper);
+                }
                 Source = Ast.makeNode(CAstNode.UNARY_EXPR, FuncNode.getChild(0), Oper);
                 C.valueTable.addValue(new SILValue(result.Name, result.Type, C));
                 break;
@@ -1231,6 +1238,20 @@ public class RawAstTranslator extends SILInstructionVisitor<CAstNode, SILInstruc
             case CAstNode.BINARY_EXPR: {
                 CAstNode Oper1 = C.valueTable.getValue(getStringValue(FuncNode, 1)).getVarNode();
                 CAstNode Oper2 = C.valueTable.getValue(getStringValue(FuncNode, 2)).getVarNode();
+                if (Oper1.getKind() == CAstNode.FUNCTION_EXPR) {
+                    ArrayList<CAstNode> Params = new ArrayList<>();
+                    Params.add(Oper1);
+                    Params.add(Ast.makeConstant("do"));
+                    Oper1 = Ast.makeNode(CAstNode.CALL, Params);
+                    C.parent.setGotoTarget(Oper1, Oper1);
+                }
+                if (Oper2.getKind() == CAstNode.FUNCTION_EXPR) {
+                    ArrayList<CAstNode> Params = new ArrayList<>();
+                    Params.add(Oper2);
+                    Params.add(Ast.makeConstant("do"));
+                    Oper2 = Ast.makeNode(CAstNode.CALL, Params);
+                    C.parent.setGotoTarget(Oper2, Oper2);
+                }
                 Source = Ast.makeNode(CAstNode.BINARY_EXPR, FuncNode.getChild(0), Oper1, Oper2);
                 C.valueTable.addValue(new SILValue(result.Name, result.Type, C));
                 break;
@@ -2622,6 +2643,16 @@ public class RawAstTranslator extends SILInstructionVisitor<CAstNode, SILInstruc
         switch (FuncNode.getKind()) {
             case CAstNode.UNARY_EXPR: {
                 CAstNode Oper = C.valueTable.getValue(getStringValue(FuncNode, 1)).getVarNode();
+                if (Oper.getKind() == CAstNode.FUNCTION_EXPR) {
+                    // Odd case where the builtin operator actual applies the function expression which does not
+                    // take any arguments, so we can just call it and use the result. No inline checking needed since
+                    // no arguments.
+                    ArrayList<CAstNode> Params = new ArrayList<>();
+                    Params.add(Oper);
+                    Params.add(Ast.makeConstant("do"));
+                    Oper = Ast.makeNode(CAstNode.CALL, Params);
+                    C.parent.setGotoTarget(Oper, Oper);
+                }
                 Source = Ast.makeNode(CAstNode.UNARY_EXPR, FuncNode.getChild(0), Oper);
                 C.valueTable.addValue(new SILValue(result.Name, result.Type, C));
                 break;
@@ -2629,6 +2660,20 @@ public class RawAstTranslator extends SILInstructionVisitor<CAstNode, SILInstruc
             case CAstNode.BINARY_EXPR: {
                 CAstNode Oper1 = C.valueTable.getValue(getStringValue(FuncNode, 1)).getVarNode();
                 CAstNode Oper2 = C.valueTable.getValue(getStringValue(FuncNode, 2)).getVarNode();
+                if (Oper1.getKind() == CAstNode.FUNCTION_EXPR) {
+                    ArrayList<CAstNode> Params = new ArrayList<>();
+                    Params.add(Oper1);
+                    Params.add(Ast.makeConstant("do"));
+                    Oper1 = Ast.makeNode(CAstNode.CALL, Params);
+                    C.parent.setGotoTarget(Oper1, Oper1);
+                }
+                if (Oper2.getKind() == CAstNode.FUNCTION_EXPR) {
+                    ArrayList<CAstNode> Params = new ArrayList<>();
+                    Params.add(Oper2);
+                    Params.add(Ast.makeConstant("do"));
+                    Oper2 = Ast.makeNode(CAstNode.CALL, Params);
+                    C.parent.setGotoTarget(Oper2, Oper2);
+                }
                 Source = Ast.makeNode(CAstNode.BINARY_EXPR, FuncNode.getChild(0), Oper1, Oper2);
                 C.valueTable.addValue(new SILValue(result.Name, result.Type, C));
                 break;
@@ -2694,12 +2739,10 @@ public class RawAstTranslator extends SILInstructionVisitor<CAstNode, SILInstruc
         ArrayList<CAstNode> NormalBlock = new ArrayList<>();
         NormalBlock.add(AssignNode);
         NormalBlock.add(GotoNormal);
-        ArrayList<CAstNode> ErrorBlock = new ArrayList<>();
-        C.valueTable.copyValue(errorReceiver.Name, result.Name);
-        ErrorBlock.add(GotoError);
-
         return Ast.makeNode(CAstNode.TRY,
                 Ast.makeNode(CAstNode.BLOCK_STMT, NormalBlock),
-                Ast.makeNode(CAstNode.BLOCK_STMT, ErrorBlock));
+                Ast.makeNode(CAstNode.CATCH,
+                        Ast.makeNode(CAstNode.VAR, Ast.makeConstant(errorReceiver.Name)),
+                        GotoError));
     }
 }
