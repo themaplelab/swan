@@ -94,9 +94,7 @@ public class Inliner {
                     e.printStackTrace();
                 }
             }
-            // TODO: If a function is inlined more than once, there will be duplicate
-            //       declarations.
-            C.instructions.addAll(0, C2.valueTable.getDecls());
+            C.valueTable.addAll(C2.valueTable);
             C2.instructions.add(0, Ast.makeNode(CAstNode.LABEL_STMT,
                     Ast.makeConstant(blockNo)));
             C2.blocks.add(C2.instructions);
@@ -154,7 +152,6 @@ public class Inliner {
                 e.printStackTrace();
             }
         }
-        C.instructions.addAll(beginning, C.valueTable.getDecls());
         C.instructions.add(beginning, Ast.makeNode(CAstNode.LABEL_STMT,
                 Ast.makeConstant("inlined_" + destBlockNo)));
     }
@@ -169,7 +166,6 @@ public class Inliner {
             "$Builtin.Int1",
             "$String",
             "self",
-            "$Error",
             "$Error"
     };
 }

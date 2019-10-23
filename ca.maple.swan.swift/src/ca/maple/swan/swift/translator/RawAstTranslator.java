@@ -261,12 +261,12 @@ public class RawAstTranslator extends SILInstructionVisitor<CAstNode, SILInstruc
                         e.printStackTrace();
                     }
                 }
-                C.instructions.addAll(0, C.valueTable.getDecls());
                 C.instructions.add(0, Ast.makeNode(CAstNode.LABEL_STMT,
                         Ast.makeConstant(blockNo)));
                 C.blocks.add(C.instructions);
                 ++blockNo;
             }
+            C.blocks.get(0).addAll(0, C.valueTable.getDecls());
             int i = 1; // Assuming BB0 is never branched to.
             for (ArrayList<CAstNode> block : C.blocks.subList(1, C.blocks.size())) {
                 CAstNode BlockStmt = Ast.makeNode(CAstNode.BLOCK_STMT, block);

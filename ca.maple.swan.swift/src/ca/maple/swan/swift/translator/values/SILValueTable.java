@@ -19,6 +19,8 @@ import com.ibm.wala.util.debug.Assertions;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Set;
 
 /*
  * Table that holds the SIL value information. The idea here is that
@@ -34,11 +36,14 @@ public class SILValueTable {
     // For keeping track of which values need a DECL_STMT generated.
     private final ArrayList<SILValue> undeclaredValues;
 
+    private final Set<String> declared;
+
     private final ArrayList<SILValue> globals;
 
     public SILValueTable() {
         values = new HashMap<>();
         undeclaredValues = new ArrayList<>();
+        declared = new HashSet<>();
         globals = new ArrayList<>();
     }
 
@@ -94,6 +99,10 @@ public class SILValueTable {
         globals.add(v);
     }
 
+    public void addAll(SILValueTable t) {
+        this.values.putAll(t.values);
+    }
+
     public void addArg(SILValue v) {
         values.put(v.name, v);
     }
@@ -103,12 +112,20 @@ public class SILValueTable {
     }
 
     public ArrayList<CAstNode> getDecls() {
+        // TODO: Only generate decls for those variables that actually appear.
         ArrayList<CAstNode> decls = new ArrayList<>();
         for (SILValue v : undeclaredValues) {
-            decls.add(v.getDecl());
+            if (!declared.contains(v)) {
+                decls.add(v.getDecl());
+                declared.add(v.getName());
+            }
+
         }
         for (SILValue v : globals) {
-            decls.add(v.getGlobalDecl());
+            if (!declared.contains(v)) {
+                decls.add(v.getGlobalDecl());
+                declared.add(v.getName());
+            }
         }
         undeclaredValues.clear();
         globals.clear();
