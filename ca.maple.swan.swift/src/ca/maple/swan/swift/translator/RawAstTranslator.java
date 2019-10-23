@@ -32,6 +32,8 @@ import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.HashMap;
 
+import static com.ibm.wala.cast.tree.CAstControlFlowMap.EXCEPTION_TO_EXIT;
+
 /*****************************  AST FORMAT ************************************
 
     This is the main translator for SIL to WALA CAst. It expects a particular
@@ -736,10 +738,13 @@ public class RawAstTranslator extends SILInstructionVisitor<CAstNode, SILInstruc
     // STATUS: TRANSLATED
     // CONFIDENCE: HIGH
     protected CAstNode visitMarkFunctionEscape(CAstNode N, SILInstructionContext C) {
-        // This instruction annotates memory, so we can just copy the value.
+        // This instruction annotates memory, so we can just copy the value if there is a result.
+        // TODO: Why does the SIL.rst show a result, is it optional? Investigate.
         RawValue operand = getSingleOperand(N);
-        RawValue result = getSingleResult(N);
-        C.valueTable.copyValue(result.Name, operand.Name);
+        try {
+            RawValue result = getSingleResult(N);
+            C.valueTable.copyValue(result.Name, operand.Name);
+        } catch (Exception e) {}
         return null;
     }
 
@@ -1103,7 +1108,7 @@ public class RawAstTranslator extends SILInstructionVisitor<CAstNode, SILInstruc
         // is a pointer to the global var.
         RawValue result = getSingleResult(N);
         String GlobalName = getStringValue(N, 2);
-        SILValue GlobalValue = C.valueTable.getValue(GlobalName);
+        SILValue GlobalValue = C.valueTable.getGlobalValue(GlobalName, C);
         C.valueTable.addValue(GlobalValue.makePointer(result.Name, result.Type));
         return null;
     }
@@ -1247,7 +1252,7 @@ public class RawAstTranslator extends SILInstructionVisitor<CAstNode, SILInstruc
                     }
                     if (Inliner.shouldInlineFunction(((SILFunctionRef) FuncRef).getFunctionName(), C)) {
                         SILValue ReturnValue = Inliner.doFunctionInline(((SILFunctionRef) FuncRef)
-                                .getFunctionName(), C, ParamVals, this);
+                                .getFunctionName(), C, ParamVals, this, null);
                         C.valueTable.copyValue(result.Name, ReturnValue.getName());
                         return Ast.makeNode(CAstNode.EMPTY);
                     }
@@ -1321,7 +1326,8 @@ public class RawAstTranslator extends SILInstructionVisitor<CAstNode, SILInstruc
     // STATUS: UNHANDLED
     // CONFIDENCE:
     protected CAstNode visitBuiltin(CAstNode N, SILInstructionContext C) {
-        // TODO:
+        // TODO: Generate CAstEntity for this call. Can look up this name
+        //  to summarize later.
         Assertions.UNREACHABLE("UNHANDLED INSTRUCTION");
         return null;
     }
@@ -2321,23 +2327,18 @@ public class RawAstTranslator extends SILInstructionVisitor<CAstNode, SILInstruc
 
     @Override
     // FREQUENCY: RARE
-    // STATUS: UNHANDLED
-    // CONFIDENCE:
+    // STATUS: TRANSLATED
+    // CONFIDENCE: MED
     protected CAstNode visitCondFail(CAstNode N, SILInstructionContext C) {
-        // TODO: Causes runtime failure with operand (int) as exit code,
-        //  so exception to exit?
-        Assertions.UNREACHABLE("UNHANDLED INSTRUCTION");
-        return null;
+        return Ast.makeNode(CAstNode.THROW, EXCEPTION_TO_EXIT);
     }
 
     @Override
     // FREQUENCY: COMMON
-    // STATUS: UNHANDLED
-    // CONFIDENCE:
+    // STATUS: TRANSLATED
+    // CONFIDENCE: MED
     protected CAstNode visitUnreachable(CAstNode N, SILInstructionContext C) {
-        // TODO:
-        Assertions.UNREACHABLE("UNHANDLED INSTRUCTION");
-        return null;
+        return Ast.makeNode(CAstNode.THROW, EXCEPTION_TO_EXIT);
     }
 
     @Override
@@ -2358,15 +2359,12 @@ public class RawAstTranslator extends SILInstructionVisitor<CAstNode, SILInstruc
 
     @Override
     // FREQUENCY: COMMON
-    // STATUS: UNHANDLED
-    // CONFIDENCE:
+    // STATUS: TRANSLATED
+    // CONFIDENCE: HIGH
     protected CAstNode visitThrow(CAstNode N, SILInstructionContext C) {
-        // Need to figure out how exception handling will work in general.
-        // We can use JS exception to exit, but that won't be precise because
-        // throwing control flow is usually handled by the caller explicitly.
-        // e.g. try_apply TODO
-        Assertions.UNREACHABLE("UNHANDLED INSTRUCTION");
-        return null;
+        RawValue Error = getSingleOperand(N);
+        SILValue Value = C.valueTable.getValue(Error.Name);
+        return Ast.makeNode(CAstNode.THROW, Value.getVarNode());
     }
 
     @Override
@@ -2389,12 +2387,11 @@ public class RawAstTranslator extends SILInstructionVisitor<CAstNode, SILInstruc
 
     @Override
     // FREQUENCY: VERY COMMON
-    // STATUS: UNHANDLED
-    // CONFIDENCE:
+    // STATUS: TRANSLATED
+    // CONFIDENCE: HIGH
     protected CAstNode visitUnwind(CAstNode N, SILInstructionContext C) {
-        // TODO
-        Assertions.UNREACHABLE("UNHANDLED INSTRUCTION");
-        return Ast.makeNode(CAstNode.UNWIND);
+        // Exits the current (coroutine) function, completing an unwind from a yield.
+        return Ast.makeNode(CAstNode.RETURN);
     }
 
     @Override
@@ -2616,10 +2613,12 @@ public class RawAstTranslator extends SILInstructionVisitor<CAstNode, SILInstruc
         // 2. Use whatever JS has for throw semantics. This might require passing the
         //    throw destination to the call site.
         // TODO
-        RawValue result = getSingleResult(N);
-        String FuncRefName = getStringValue(N, 2);
+        RawValue result = new RawValue(getStringValue(N, 4), getStringValue(N, 5));
+        RawValue errorReceiver = new RawValue(getStringValue(N, 6), getStringValue(N, 7));
+        String FuncRefName = getStringValue(N, 0);
         CAstNode Source;
-        CAstNode FuncNode = N.getChild(3);
+        CAstNode FuncNode = N.getChild(1);
+        boolean inlined = false;
         switch (FuncNode.getKind()) {
             case CAstNode.UNARY_EXPR: {
                 CAstNode Oper = C.valueTable.getValue(getStringValue(FuncNode, 1)).getVarNode();
@@ -2650,14 +2649,17 @@ public class RawAstTranslator extends SILInstructionVisitor<CAstNode, SILInstruc
                         ParamVals.add(C.valueTable.getValue(ParamName));
                     }
                     if (Inliner.shouldInlineFunction(((SILFunctionRef) FuncRef).getFunctionName(), C)) {
+                        ArrayList<CAstNode> blocks = new ArrayList<>();
                         SILValue ReturnValue = Inliner.doFunctionInline(((SILFunctionRef) FuncRef)
-                                .getFunctionName(), C, ParamVals, this);
+                                .getFunctionName(), C, ParamVals, this, blocks);
+                        Source = Ast.makeNode(CAstNode.BLOCK_STMT, blocks);
                         C.valueTable.copyValue(result.Name, ReturnValue.getName());
-                        return Ast.makeNode(CAstNode.EMPTY);
+                        inlined = true;
+                    } else {
+                        Source = Ast.makeNode(CAstNode.CALL, Params);
+                        C.valueTable.addValue(new SILValue(result.Name, result.Type, C));
                     }
-                    Source = Ast.makeNode(CAstNode.CALL, Params);
                     C.parent.setGotoTarget(Source, Source);
-                    C.valueTable.addValue(new SILValue(result.Name, result.Type, C));
                 } else if (FuncRef instanceof SILFunctionRef.SILSummarizedFunctionRef) {
                     ArrayList<CAstNode> Params = new ArrayList<>(FuncNode.getChildren());
                     C.valueTable.addValue(new SILValue(result.Name, result.Type, C));
@@ -2677,6 +2679,27 @@ public class RawAstTranslator extends SILInstructionVisitor<CAstNode, SILInstruc
                 break;
             }
         }
-        return Source;
+        String NormalDestName = getStringValue(N, 2);
+        String ErrorDestName = getStringValue(N, 3);
+        CAstNode AssignNode;
+        if (!inlined) {
+            AssignNode = Ast.makeNode(CAstNode.ASSIGN, C.valueTable.getValue(result.Name).getVarNode(), Source);
+        } else {
+            AssignNode = Source;
+        }
+        CAstNode GotoNormal = Ast.makeNode(CAstNode.GOTO, Ast.makeConstant(NormalDestName));
+        tryGOTO(GotoNormal, NormalDestName, C);
+        CAstNode GotoError = Ast.makeNode(CAstNode.GOTO, Ast.makeConstant(ErrorDestName));
+        tryGOTO(GotoError, ErrorDestName, C);
+        ArrayList<CAstNode> NormalBlock = new ArrayList<>();
+        NormalBlock.add(AssignNode);
+        NormalBlock.add(GotoNormal);
+        ArrayList<CAstNode> ErrorBlock = new ArrayList<>();
+        C.valueTable.copyValue(errorReceiver.Name, result.Name);
+        ErrorBlock.add(GotoError);
+
+        return Ast.makeNode(CAstNode.TRY,
+                Ast.makeNode(CAstNode.BLOCK_STMT, NormalBlock),
+                Ast.makeNode(CAstNode.BLOCK_STMT, ErrorBlock));
     }
 }

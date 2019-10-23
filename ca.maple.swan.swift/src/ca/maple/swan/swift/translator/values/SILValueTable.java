@@ -13,6 +13,7 @@
 
 package ca.maple.swan.swift.translator.values;
 
+import ca.maple.swan.swift.translator.SILInstructionContext;
 import com.ibm.wala.cast.tree.CAstNode;
 import com.ibm.wala.util.debug.Assertions;
 
@@ -40,6 +41,14 @@ public class SILValueTable {
 
     public SILValue getValue(String valueName) {
         Assertions.productionAssertion(values.containsKey(valueName));
+        return values.get(valueName);
+    }
+
+    public SILValue getGlobalValue(String valueName, SILInstructionContext C) {
+        if (!values.containsKey(valueName)) {
+            // TODO: Add actual type here somehow.
+            this.addValue(new SILValue(valueName, "global", C));
+        }
         return values.get(valueName);
     }
 

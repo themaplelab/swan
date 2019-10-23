@@ -131,6 +131,8 @@ public class BuiltInFunctionSummaries {
             "static Swift.Double.* infix(Swift.Double, Swift.Double) -> Swift.Double",
             "static Swift.Int./ infix(Swift.Int, Swift.Int) -> Swift.Int",
             "static Swift.Double./ infix(Swift.Double, Swift.Double) -> Swift.Double",
+            "static Swift.Bool.&& infix(Swift.Bool, @autoclosure () throws -> Swift.Bool) throws -> Swift.Bool",
+            "static Swift.Bool.|| infix(Swift.Bool, @autoclosure () throws -> Swift.Bool) throws -> Swift.Bool",
             "(extension in Swift):Swift.BinaryInteger.description.getter : Swift.String",
             "Swift.?? infix<A>(Swift.Optional<A>, @autoclosure () throws -> A) throws -> A",
             "Swift.~= infix<A where A: Swift.Equatable>(A, A) -> Swift.Bool",

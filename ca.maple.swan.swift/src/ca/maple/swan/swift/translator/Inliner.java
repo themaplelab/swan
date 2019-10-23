@@ -65,7 +65,7 @@ public class Inliner {
         return !Arrays.stream(blackListInlineTypes).anyMatch(type::equals);
     }
 
-    public static SILValue doFunctionInline(String functionName, SILInstructionContext C, ArrayList<SILValue> args, RawAstTranslator translator) {
+    public static SILValue doFunctionInline(String functionName, SILInstructionContext C, ArrayList<SILValue> args, RawAstTranslator translator, ArrayList<CAstNode> blocks) {
         FunctionEntity function = (FunctionEntity)RawAstTranslator.findEntity(functionName, C.allEntities);
         assert function != null;
         SILInstructionContext C2 = new SILInstructionContext(function, C.allEntities, function.rawInfo);
@@ -115,7 +115,12 @@ public class Inliner {
             }
             flatBlocks.add(BlockStmt);
         }
-        C.instructions.addAll(flatBlocks);
+        // For handling the case of try_apply inlining which needs to add the instructions itself inside the normal block.
+        if (blocks != null) {
+            blocks.addAll(flatBlocks);
+        } else {
+            C.instructions.addAll(flatBlocks);
+        }
         for (Collection<CAstEntity> e : C2.parent.getAllScopedEntities().values()) {
             for (CAstEntity entity : e) {
                 C.parent.addScopedEntity(null, entity);
@@ -163,6 +168,8 @@ public class Inliner {
             "$Builtin.Word",
             "$Builtin.Int1",
             "$String",
-            "self"
+            "self",
+            "$Error",
+            "$Error"
     };
 }

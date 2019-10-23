@@ -21,6 +21,8 @@
 ///
 //===---------------------------------------------------------------------===//
 
+// TODO: PRINT INFORMATION NEEDS TO BE COMPLETED. i.e. "[ ... ]"
+
 #include "InstructionVisitor.h"
 #include "swift/AST/Module.h"
 #include "swift/AST/Types.h"
@@ -305,13 +307,11 @@ jobject InstructionVisitor::getOperatorCAstType(const Identifier &Name) {
   } else if (Name.is("&")) {
     return CAstWrapper::OP_BIT_AND;
   } else if (Name.is("&&")) {
-    // OLD: return CAstWrapper::OP_REL_AND;
-    return nullptr; // OLD: && and || are handled separately because they involve short circuits
+    return CAstWrapper::OP_REL_AND;
   } else if (Name.is("|")) {
     return CAstWrapper::OP_BIT_OR;
   } else if (Name.is("||")) {
-    // OLD: return CAstWrapper::OP_REL_OR;
-    return nullptr; // OLD: && and || are handled separatedly because they involve short circuits
+    return CAstWrapper::OP_REL_OR;
   } else if (Name.is("^")) {
     return CAstWrapper::OP_BIT_XOR;
   } else if (Name.is("~=")) { // Pattern matching operator.
@@ -1783,11 +1783,14 @@ void InstructionVisitor::visitTryApplyInst(TryApplyInst *TAI) {
       } else {
         llvm::outs() << "ERROR: Could not make operator \n";
       }
-      return;
     }
+  } else {
+    ADD_PROP(MAKE_NODE2(CAstWrapper::PRIMITIVE, MAKE_ARRAY(&arguments)));
   }
-  ADD_PROP(MAKE_NODE2(CAstWrapper::PRIMITIVE, MAKE_ARRAY(&arguments)));
   ADD_PROP(MAKE_CONST(label(TAI->getNormalBB()).c_str()));
   ADD_PROP(MAKE_CONST(label(TAI->getErrorBB()).c_str()));
-  // TODO: Add BB args.
+  ADD_PROP(MAKE_CONST(addressToString(TAI->getNormalBB()->getArgument(0)).c_str()));
+  ADD_PROP(MAKE_CONST(TAI->getNormalBB()->getArgument(0)->getType().getAsString().c_str()));
+  ADD_PROP(MAKE_CONST(addressToString(TAI->getErrorBB()->getArgument(0)).c_str()));
+  ADD_PROP(MAKE_CONST(TAI->getErrorBB()->getArgument(0)->getType().getAsString().c_str()));
 }

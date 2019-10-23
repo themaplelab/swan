@@ -58,6 +58,10 @@ public class SILValue {
         return Ast.makeNode(CAstNode.DECL_STMT, Ast.makeConstant(new CAstSymbolImpl(this.name, this.type)));
     }
 
+    public CAstNode getGlobalDecl() {
+        return Ast.makeNode(CAstNode.GLOBAL_DECL, Ast.makeConstant(new CAstSymbolImpl(this.name, this.type)));
+    }
+
     public CAstNode copy(String ResultName, String ResultType) {
         SILValue newValue = new SILValue(ResultName, ResultType, C);
         C.valueTable.addValue(newValue);

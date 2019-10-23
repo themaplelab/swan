@@ -107,8 +107,6 @@ public class TaintPathRecorder {
         ArrayList<List<CAstSourcePositionMap.Position>> paths = new ArrayList<>();
         for (Statement src : getSources()) {
             for (Statement target : getTargets(src)) {
-                // TODO: Override connected nodes of bfs pathfinder to only traverse those
-                //   whose |sources| > 0.
                 TaintBFSPathFinder finder = new TaintBFSPathFinder(g, src, target, s);
                 List<CAstSourcePositionMap.Position> path = getPositionsFromStatements(finder.find());
                 if (!path.isEmpty()) {
