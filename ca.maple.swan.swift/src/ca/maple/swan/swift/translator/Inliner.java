@@ -38,6 +38,9 @@ public class Inliner {
     public static boolean shouldInlineFunction(String functionName, SILInstructionContext C) {
         AbstractCodeEntity function = RawAstTranslator.findEntity(functionName, C.allEntities);
         if (function instanceof FunctionEntity) {
+            if (((FunctionEntity) function).artificial) {
+                return false;
+            }
             // Temporary using realTypes until JS "Any" type problem is resolved.
             for (String argType : ((SwiftFunctionType)function.getType()).realTypes) {
                 if (shouldInlineType(argType)) {
@@ -62,7 +65,7 @@ public class Inliner {
     }
 
     private static boolean shouldInlineType(String type) {
-        return !Arrays.stream(blackListInlineTypes).anyMatch(type::equals);
+        return !Arrays.stream(whiteListInlineTypes).anyMatch(type::equals);
     }
 
     public static SILValue doFunctionInline(String functionName, SILInstructionContext C, ArrayList<SILValue> args, RawAstTranslator translator, ArrayList<CAstNode> blocks) {
@@ -78,7 +81,9 @@ public class Inliner {
         }
         int blockNo =  0;
         for (CAstNode block: function.rawInfo.getChild(4).getChildren()) {
-            if (Inliner.shouldInlineBlock(blockNo, C2)) { continue; }
+            if (Inliner.shouldInlineBlock(blockNo, C2)) {
+                continue;
+            }
             C2.clearInstructions();
             for (CAstNode instruction: block.getChildren().subList(1, block.getChildren().size())) {
                 try {
@@ -128,7 +133,7 @@ public class Inliner {
         return C2.returnValue;
     }
 
-    public static void doBlockInline(CAstNode N, int destBlockNo, SILInstructionContext C, ArrayList<SILValue> args, RawAstTranslator translator) {
+    public static CAstNode doBlockInline(CAstNode N, int destBlockNo, SILInstructionContext C, ArrayList<SILValue> args, RawAstTranslator translator) {
         CAstNode block = C.currentFunction.getChild(4).getChild(destBlockNo);
         int argIndex = 0;
         for (CAstNode arg : block.getChild(0).getChildren()) {
@@ -152,12 +157,12 @@ public class Inliner {
                 e.printStackTrace();
             }
         }
-        C.instructions.add(beginning, Ast.makeNode(CAstNode.LABEL_STMT,
-                Ast.makeConstant("inlined_" + destBlockNo)));
+        return Ast.makeNode(CAstNode.LABEL_STMT,
+                Ast.makeConstant("inlined_" + destBlockNo));
     }
 
-    // Better safe than sorry, so we blacklist instead of whitelist.
-    private static final String[] blackListInlineTypes = new String[] {
+    // Better safe than sorry, so we whitelist instead of blacklist.
+    private static final String[] whiteListInlineTypes = new String[] {
             "$Int",
             "$Int32",
             "$UInt",

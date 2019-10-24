@@ -111,6 +111,7 @@ public class BuiltInFunctionSummaries {
             "Swift.Double.init(Swift.Int) -> Swift.Double",
             "Swift.Bool.init(_builtinBooleanLiteral: Builtin.Int1) -> Swift.Bool",
             "static Swift.String.+ infix(Swift.String, Swift.String) -> Swift.String",
+            "Swift.String.isEmpty.getter : Swift.Bool",
             "Swift.DefaultStringInterpolation.init(literalCapacity: Swift.Int, interpolationCount: Swift.Int) -> Swift.DefaultStringInterpolation",
             "Swift.String.init(stringInterpolation: Swift.DefaultStringInterpolation) -> Swift.String",
             "Swift.DefaultStringInterpolation.appendLiteral(Swift.String) -> ()",

@@ -116,6 +116,8 @@ void InstructionVisitor::visitSILFunction(SILFunction *F) {
     for (auto arg : F->getArguments()) {
       llvm::outs() << "[ARG]: " << addressToString(static_cast<ValueBase*>(arg)) << "\n";
     }
+  }
+  if (PRINT_SIL) {
     llvm::outs() << "<RAW SIL BEGIN> \n\n";
     F->print(llvm::outs(), true);
     llvm::outs() << "\n</RAW SIL END> \n\n";
@@ -521,20 +523,7 @@ void InstructionVisitor::visitDestroyAddrInst(DestroyAddrInst *DAI) {
 }
 
 void InstructionVisitor::visitIndexAddrInst(IndexAddrInst *IAI) {
-  std::string BaseName = addressToString(IAI->getBase().getOpaqueValue());
-  std::string IndexName = addressToString(IAI->getIndex().getOpaqueValue());
-  std::string ResultName = addressToString(static_cast<ValueBase*>(IAI));
-  std::string ResultType = IAI->getType().getAsString();
-  if (SWAN_PRINT) {
-    llvm::outs() << "\t [BASE NAME: " << BaseName << "\n";
-    llvm::outs() << "\t [DEST ADDR]: " << IndexName << "\n";
-    llvm::outs() << "\t [RESULT NAME]: " << ResultName << "\n";
-    llvm::outs() << "\t [RESULT TYPE]: " << ResultType << "\n";
-  }
-  ADD_PROP(MAKE_CONST(BaseName.c_str()));
-  ADD_PROP(MAKE_CONST(IndexName.c_str()));
-  ADD_PROP(MAKE_CONST(ResultName.c_str()));
-  ADD_PROP(MAKE_CONST(ResultType.c_str()));
+  handleSimpleInstr(IAI);
 }
 
 void InstructionVisitor::visitTailAddrInst(TailAddrInst *TAI) {
@@ -884,6 +873,7 @@ void InstructionVisitor::visitApplyInst(ApplyInst *AI) {
   if (SWAN_PRINT) {
     llvm::outs() << "\t [FUNC REF ADDR]: " << AI->getOperand(0).getOpaqueValue() << "\n";
   }
+  ADD_PROP(MAKE_NODE2(CAstWrapper::PRIMITIVE, MAKE_ARRAY(&arguments)));
   if (Callee) {
     auto *FD = Callee->getLocation().getAsASTNode<FuncDecl>();
     if (FD && (FD->isUnaryOperator() || FD->isBinaryOperator())) {
@@ -906,10 +896,8 @@ void InstructionVisitor::visitApplyInst(ApplyInst *AI) {
       } else {
         llvm::outs() << "ERROR: Could not make operator \n";
       }
-      return;
     }
   }
-  ADD_PROP(MAKE_NODE2(CAstWrapper::PRIMITIVE, MAKE_ARRAY(&arguments)));
 }
 
 void InstructionVisitor::visitBeginApplyInst(BeginApplyInst *BAI) {

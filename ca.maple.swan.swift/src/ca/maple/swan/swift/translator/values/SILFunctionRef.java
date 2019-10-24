@@ -79,4 +79,29 @@ public class SILFunctionRef extends SILValue {
             return node;
         }
     }
+
+    public static class ArtificialFunctionRef extends SILValue {
+        private final String functionName;
+        private final CAstNode node;
+
+        public ArtificialFunctionRef(String name, String type,  SILInstructionContext C, String functionName) {
+            super(name, type, C);
+            this.functionName = functionName;
+            node = Ast.makeNode(CAstNode.FUNCTION_EXPR,
+                    Ast.makeConstant(functionName));
+        }
+
+        public String getFunctionName() {
+            return functionName;
+        }
+
+        public CAstNode getFunctionRef() {
+            return node;
+        }
+
+        @Override
+        public CAstNode getVarNode() {
+            return node;
+        }
+    }
 }

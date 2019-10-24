@@ -275,6 +275,22 @@ public class SwiftAstTranslator extends AstTranslator {
     @Override
     protected boolean doVisit(CAstNode n, WalkContext context, CAstVisitor<WalkContext> visitor) {
         switch (n.getKind()) {
+            case CAstNode.TYPE_OF:
+            {
+                int result = context.currentScope().allocateTempValue();
+
+                this.visit(n.getChild(0), context, this);
+                int ref = context.getValue(n.getChild(0));
+
+                context
+                        .cfg()
+                        .addInstruction(
+                                ((JSInstructionFactory) insts)
+                                        .TypeOfInstruction(context.cfg().getCurrentInstruction(), result, ref));
+
+                context.setValue(n, result);
+                return true;
+            }
             case GLOBAL_DECL_STMT:
                 CAstSymbol s = (CAstSymbol) n.getChild(0).getValue();
                 context.getGlobalScope().declare(s);
