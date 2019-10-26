@@ -14,8 +14,9 @@
 package ca.maple.swan.swift.translator;
 
 import ca.maple.swan.swift.translator.raw.*;
-import ca.maple.swan.swift.translator.raw.RawUtil.RawValue;
-import ca.maple.swan.swift.translator.silir.*;
+import ca.maple.swan.swift.translator.raw.RawUtil.*;
+import ca.maple.swan.swift.translator.silir.BasicBlock;
+import ca.maple.swan.swift.translator.silir.Function;
 import ca.maple.swan.swift.translator.silir.context.BlockContext;
 import ca.maple.swan.swift.translator.silir.context.FunctionContext;
 import ca.maple.swan.swift.translator.silir.context.InstructionContext;
@@ -28,6 +29,7 @@ import com.ibm.wala.cast.tree.CAstSourcePositionMap;
 import com.ibm.wala.cast.tree.CAstSourcePositionMap.Position;
 import com.ibm.wala.util.debug.Assertions;
 
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.UUID;
@@ -37,6 +39,13 @@ import static ca.maple.swan.swift.translator.raw.RawUtil.*;
 /*
  * Translates the raw representation given from the C++ SIL translator to SILIR.
  * The raw representation used CAst purely for convenience.
+ *
+ * The big point about this translator is that it removes pointers by using field references.
+ * e.g. dereferencing a pointer (say p) would look like "p.value".
+ *      writing to a pointer:       p.value = x
+ *      reading from a pointer:     x = p.value
+ *
+ * Therefore, the translator needs to be careful to handle instructions that involve pointers.
  */
 
 @SuppressWarnings("unused")
@@ -113,14 +122,6 @@ public class RawToSILIRTranslator extends SILInstructionVisitor<SILIRInstruction
         }
     }
 
-    // --------------------------------------
-    // BLOW THIS AWAY SOMETIME --------------
-
-
-    // BLOW THIS AWAY SOMETIME --------------
-    // --------------------------------------
-
-
     @Override
     protected CAstSourcePositionMap.Position getInstructionPosition(CAstNode N) {
         return (CAstSourcePositionMap.Position) N.getChild(1).getValue();
@@ -140,8 +141,8 @@ public class RawToSILIRTranslator extends SILInstructionVisitor<SILIRInstruction
 
     @Override
     protected SILIRInstruction visitAllocRefDynamic(CAstNode N, InstructionContext C) {
-        System.err.println("ERROR: Unhandled instruction: " + new Exception().getStackTrace()[0].getMethodName());
-        return null;
+        RawValue result = getSingleResult(N);
+        return new NewInstruction(result.Name, result.Type, C);
     }
 
     @Override
@@ -171,7 +172,7 @@ public class RawToSILIRTranslator extends SILInstructionVisitor<SILIRInstruction
 
     @Override
     protected SILIRInstruction visitDeallocBox(CAstNode N, InstructionContext C) {
-        System.err.println("ERROR: Unhandled instruction: " + new Exception().getStackTrace()[0].getMethodName());
+        // NOP
         return null;
     }
 
@@ -214,7 +215,7 @@ public class RawToSILIRTranslator extends SILInstructionVisitor<SILIRInstruction
 
     @Override
     protected SILIRInstruction visitDebugValueAddr(CAstNode N, InstructionContext C) {
-        System.err.println("ERROR: Unhandled instruction: " + new Exception().getStackTrace()[0].getMethodName());
+        // NOP
         return null;
     }
 
@@ -234,14 +235,12 @@ public class RawToSILIRTranslator extends SILInstructionVisitor<SILIRInstruction
 
     @Override
     protected SILIRInstruction visitStoreBorrow(CAstNode N, InstructionContext C) {
-        System.err.println("ERROR: Unhandled instruction: " + new Exception().getStackTrace()[0].getMethodName());
-        return null;
+        return visitStore(N, C);
     }
 
     @Override
     protected SILIRInstruction visitLoadBorrow(CAstNode N, InstructionContext C) {
-        System.err.println("ERROR: Unhandled instruction: " + new Exception().getStackTrace()[0].getMethodName());
-        return null;
+        return visitLoad(N, C);
     }
 
     @Override
@@ -266,6 +265,7 @@ public class RawToSILIRTranslator extends SILInstructionVisitor<SILIRInstruction
 
     @Override
     protected SILIRInstruction visitAssignByWrapper(CAstNode N, InstructionContext C) {
+        // TODO
         System.err.println("ERROR: Unhandled instruction: " + new Exception().getStackTrace()[0].getMethodName());
         return null;
     }
@@ -279,8 +279,14 @@ public class RawToSILIRTranslator extends SILInstructionVisitor<SILIRInstruction
 
     @Override
     protected SILIRInstruction visitMarkFunctionEscape(CAstNode N, InstructionContext C) {
-        System.err.println("ERROR: Unhandled instruction: " + new Exception().getStackTrace()[0].getMethodName());
-        return null;
+        RawValue operand = getSingleOperand(N);
+        // Why does the SIL.rst show a result, but sometimes there isn't one. Is it optional?
+        try {
+            RawValue result = getSingleResult(N); // May be no result and cause an exception.
+            return new ImplicitCopyInstruction(result.Name, operand.Name, C);
+        } catch (Exception e) {
+            return null;
+        }
     }
 
     @Override
@@ -307,8 +313,9 @@ public class RawToSILIRTranslator extends SILInstructionVisitor<SILIRInstruction
 
     @Override
     protected SILIRInstruction visitIndexAddr(CAstNode N, InstructionContext C) {
-        System.err.println("ERROR: Unhandled instruction: " + new Exception().getStackTrace()[0].getMethodName());
-        return null;
+        RawValue operand = getSingleOperand(N);
+        RawValue result = getSingleResult(N);
+        return new ImplicitCopyInstruction(result.Name, operand.Name, C);
     }
 
     @Override
@@ -392,26 +399,23 @@ public class RawToSILIRTranslator extends SILInstructionVisitor<SILIRInstruction
 
     @Override
     protected SILIRInstruction visitLoadWeak(CAstNode N, InstructionContext C) {
-        System.err.println("ERROR: Unhandled instruction: " + new Exception().getStackTrace()[0].getMethodName());
+        // NOP
         return null;
     }
 
     @Override
     protected SILIRInstruction visitStoreWeak(CAstNode N, InstructionContext C) {
-        System.err.println("ERROR: Unhandled instruction: " + new Exception().getStackTrace()[0].getMethodName());
-        return null;
+        return visitStore(N, C);
     }
 
     @Override
     protected SILIRInstruction visitLoadUnowned(CAstNode N, InstructionContext C) {
-        System.err.println("ERROR: Unhandled instruction: " + new Exception().getStackTrace()[0].getMethodName());
-        return null;
+        return visitLoad(N, C);
     }
 
     @Override
     protected SILIRInstruction visitStoreUnowned(CAstNode N, InstructionContext C) {
-        System.err.println("ERROR: Unhandled instruction: " + new Exception().getStackTrace()[0].getMethodName());
-        return null;
+        return visitStore(N, C);
     }
 
     @Override
@@ -428,8 +432,9 @@ public class RawToSILIRTranslator extends SILInstructionVisitor<SILIRInstruction
 
     @Override
     protected SILIRInstruction visitMarkDependence(CAstNode N, InstructionContext C) {
-        System.err.println("ERROR: Unhandled instruction: " + new Exception().getStackTrace()[0].getMethodName());
-        return null;
+        RawValue operand = getSingleOperand(N);
+        RawValue result = getSingleResult(N);
+        return new ImplicitCopyInstruction(result.Name, operand.Name, C);
     }
 
     @Override
@@ -440,20 +445,21 @@ public class RawToSILIRTranslator extends SILInstructionVisitor<SILIRInstruction
 
     @Override
     protected SILIRInstruction visitIsEscapingClosure(CAstNode N, InstructionContext C) {
+        // TODO: Maybe create a custom or dummy operator here for a unary instruction?
         System.err.println("ERROR: Unhandled instruction: " + new Exception().getStackTrace()[0].getMethodName());
         return null;
     }
 
     @Override
     protected SILIRInstruction visitCopyBlock(CAstNode N, InstructionContext C) {
-        System.err.println("ERROR: Unhandled instruction: " + new Exception().getStackTrace()[0].getMethodName());
-        return null;
+        RawValue operand = getSingleOperand(N);
+        RawValue result = getSingleResult(N);
+        return new AssignInstruction(result.Name, operand.Name, C);
     }
 
     @Override
     protected SILIRInstruction visitCopyBlockWithoutEscaping(CAstNode N, InstructionContext C) {
-        System.err.println("ERROR: Unhandled instruction: " + new Exception().getStackTrace()[0].getMethodName());
-        return null;
+        return visitCopyBlock(N, C);
     }
 
     @Override
@@ -468,14 +474,12 @@ public class RawToSILIRTranslator extends SILInstructionVisitor<SILIRInstruction
 
     @Override
     protected SILIRInstruction visitDynamicFunctionRef(CAstNode N, InstructionContext C) {
-        System.err.println("ERROR: Unhandled instruction: " + new Exception().getStackTrace()[0].getMethodName());
-        return null;
+        return visitFunctionRef(N, C);
     }
 
     @Override
     protected SILIRInstruction visitPrevDynamicFunctionRef(CAstNode N, InstructionContext C) {
-        System.err.println("ERROR: Unhandled instruction: " + new Exception().getStackTrace()[0].getMethodName());
-        return null;
+        return visitFunctionRef(N, C);
     }
 
     @Override
@@ -500,8 +504,9 @@ public class RawToSILIRTranslator extends SILInstructionVisitor<SILIRInstruction
 
     @Override
     protected SILIRInstruction visitFloatLiteral(CAstNode N, InstructionContext C) {
-        System.err.println("ERROR: Unhandled instruction: " + new Exception().getStackTrace()[0].getMethodName());
-        return null;
+        RawValue result = getSingleResult(N);
+        float Float = ((BigDecimal) N.getChild(2).getValue()).floatValue();
+        return new LiteralInstruction(Float, result.Name, result.Type, C);
     }
 
     @Override
@@ -518,8 +523,9 @@ public class RawToSILIRTranslator extends SILInstructionVisitor<SILIRInstruction
 
     @Override
     protected SILIRInstruction visitObjCMethod(CAstNode N, InstructionContext C) {
-        System.err.println("ERROR: Unhandled instruction: " + new Exception().getStackTrace()[0].getMethodName());
-        return null;
+        RawValue result = getSingleResult(N);
+        String FuncName = RawUtil.getStringValue(N, 2);
+        return new BuiltinInstruction(FuncName, result.Name, result.Type, C);
     }
 
     @Override
@@ -530,14 +536,12 @@ public class RawToSILIRTranslator extends SILInstructionVisitor<SILIRInstruction
 
     @Override
     protected SILIRInstruction visitObjCSuperMethod(CAstNode N, InstructionContext C) {
-        System.err.println("ERROR: Unhandled instruction: " + new Exception().getStackTrace()[0].getMethodName());
-        return null;
+        return visitObjCMethod(N, C);
     }
 
     @Override
     protected SILIRInstruction visitWitnessMethod(CAstNode N, InstructionContext C) {
-        System.err.println("ERROR: Unhandled instruction: " + new Exception().getStackTrace()[0].getMethodName());
-        return null;
+        return visitFunctionRef(N, C);
     }
 
     @Override
@@ -562,7 +566,7 @@ public class RawToSILIRTranslator extends SILInstructionVisitor<SILIRInstruction
                         return new LiteralInstruction("unsummarized builtin", result.Name, result.Type, C);
                     }
                 } else {
-                    // TODO: Make new function here.
+                    // TODO: Make new function here. What to then do with builtin ref?
                     return null;
                 }
             } else if (refValue instanceof FunctionRefValue) {
@@ -591,30 +595,35 @@ public class RawToSILIRTranslator extends SILInstructionVisitor<SILIRInstruction
 
     @Override
     protected SILIRInstruction visitBeginApply(CAstNode N, InstructionContext C) {
+        // TODO
         System.err.println("ERROR: Unhandled instruction: " + new Exception().getStackTrace()[0].getMethodName());
         return null;
     }
 
     @Override
     protected SILIRInstruction visitAbortApply(CAstNode N, InstructionContext C) {
+        // TODO
         System.err.println("ERROR: Unhandled instruction: " + new Exception().getStackTrace()[0].getMethodName());
         return null;
     }
 
     @Override
     protected SILIRInstruction visitEndApply(CAstNode N, InstructionContext C) {
+        // TODO
         System.err.println("ERROR: Unhandled instruction: " + new Exception().getStackTrace()[0].getMethodName());
         return null;
     }
 
     @Override
     protected SILIRInstruction visitPartialApply(CAstNode N, InstructionContext C) {
+        // TODO
         System.err.println("ERROR: Unhandled instruction: " + new Exception().getStackTrace()[0].getMethodName());
         return null;
     }
 
     @Override
     protected SILIRInstruction visitBuiltin(CAstNode N, InstructionContext C) {
+        // TODO: Create new function here too
         System.err.println("ERROR: Unhandled instruction: " + new Exception().getStackTrace()[0].getMethodName());
         return null;
     }
@@ -627,18 +636,17 @@ public class RawToSILIRTranslator extends SILInstructionVisitor<SILIRInstruction
 
     @Override
     protected SILIRInstruction visitValueMetatype(CAstNode N, InstructionContext C) {
-        System.err.println("ERROR: Unhandled instruction: " + new Exception().getStackTrace()[0].getMethodName());
-        return null;
+        return visitMetatype(N, C);
     }
 
     @Override
     protected SILIRInstruction visitExistentialMetatype(CAstNode N, InstructionContext C) {
-        System.err.println("ERROR: Unhandled instruction: " + new Exception().getStackTrace()[0].getMethodName());
-        return null;
+        return visitMetatype(N, C);
     }
 
     @Override
     protected SILIRInstruction visitObjCProtocol(CAstNode N, InstructionContext C) {
+        // TODO
         System.err.println("ERROR: Unhandled instruction: " + new Exception().getStackTrace()[0].getMethodName());
         return null;
     }
@@ -694,7 +702,7 @@ public class RawToSILIRTranslator extends SILInstructionVisitor<SILIRInstruction
 
     @Override
     protected SILIRInstruction visitAutoreleaseValue(CAstNode N, InstructionContext C) {
-        System.err.println("ERROR: Unhandled instruction: " + new Exception().getStackTrace()[0].getMethodName());
+        // NOP
         return null;
     }
 
@@ -715,14 +723,20 @@ public class RawToSILIRTranslator extends SILInstructionVisitor<SILIRInstruction
 
     @Override
     protected SILIRInstruction visitTupleExtract(CAstNode N, InstructionContext C) {
-        System.err.println("ERROR: Unhandled instruction: " + new Exception().getStackTrace()[0].getMethodName());
-        return null;
+        RawValue result = getSingleResult(N);
+        RawValue operand = getSingleOperand(N);
+        String field = getStringValue(N, 2);
+        return new FieldReadInstruction(result.Name, result.Type, operand.Name, field, C);
     }
 
     @Override
     protected SILIRInstruction visitTupleElementAddr(CAstNode N, InstructionContext C) {
-        System.err.println("ERROR: Unhandled instruction: " + new Exception().getStackTrace()[0].getMethodName());
-        return null;
+        String tempName = UUID.randomUUID().toString();
+        RawValue operand = getSingleOperand(N);
+        C.bc.block.addInstruction(new FieldReadInstruction(tempName, "temp", operand.Name, "value", C));
+        RawValue result = getSingleResult(N);
+        String field = getStringValue(N, 2);
+        return new FieldReadInstruction(result.Name, result.Type, tempName, field, C);
     }
 
     @Override
@@ -755,14 +769,20 @@ public class RawToSILIRTranslator extends SILInstructionVisitor<SILIRInstruction
 
     @Override
     protected SILIRInstruction visitStructExtract(CAstNode N, InstructionContext C) {
-        System.err.println("ERROR: Unhandled instruction: " + new Exception().getStackTrace()[0].getMethodName());
-        return null;
+        RawValue result = getSingleResult(N);
+        String StructName = getStringValue(N, 2);
+        String FieldName = getStringValue(N, 3);
+        return new FieldReadInstruction(result.Name, result.Type, StructName, FieldName, C);
     }
 
     @Override
     protected SILIRInstruction visitStructElementAddr(CAstNode N, InstructionContext C) {
-        System.err.println("ERROR: Unhandled instruction: " + new Exception().getStackTrace()[0].getMethodName());
-        return null;
+        String tempName = UUID.randomUUID().toString();
+        String StructName = getStringValue(N, 2);
+        String FieldName = getStringValue(N, 3);
+        C.bc.block.addInstruction(new FieldReadInstruction(tempName, "temp", StructName, "value", C));
+        RawValue result = getSingleResult(N);
+        return new FieldReadInstruction(result.Name, result.Type, tempName, FieldName, C);
     }
 
     @Override
@@ -793,42 +813,48 @@ public class RawToSILIRTranslator extends SILInstructionVisitor<SILIRInstruction
 
     @Override
     protected SILIRInstruction visitEnum(CAstNode N, InstructionContext C) {
+        // TODO
         System.err.println("ERROR: Unhandled instruction: " + new Exception().getStackTrace()[0].getMethodName());
         return null;
     }
 
     @Override
     protected SILIRInstruction visitUncheckedEnumData(CAstNode N, InstructionContext C) {
+        // TODO
         System.err.println("ERROR: Unhandled instruction: " + new Exception().getStackTrace()[0].getMethodName());
         return null;
     }
 
     @Override
     protected SILIRInstruction visitInitEnumDataAddr(CAstNode N, InstructionContext C) {
+        // TODO
         System.err.println("ERROR: Unhandled instruction: " + new Exception().getStackTrace()[0].getMethodName());
         return null;
     }
 
     @Override
     protected SILIRInstruction visitInjectEnumAddr(CAstNode N, InstructionContext C) {
-        System.err.println("ERROR: Unhandled instruction: " + new Exception().getStackTrace()[0].getMethodName());
+        // NOP
         return null;
     }
 
     @Override
     protected SILIRInstruction visitUncheckedTakeEnumDataAddr(CAstNode N, InstructionContext C) {
+        // TODO
         System.err.println("ERROR: Unhandled instruction: " + new Exception().getStackTrace()[0].getMethodName());
         return null;
     }
 
     @Override
     protected SILIRInstruction visitSelectEnum(CAstNode N, InstructionContext C) {
+        // TODO
         System.err.println("ERROR: Unhandled instruction: " + new Exception().getStackTrace()[0].getMethodName());
         return null;
     }
 
     @Override
     protected SILIRInstruction visitSelectEnumAddr(CAstNode N, InstructionContext C) {
+        // TODO
         System.err.println("ERROR: Unhandled instruction: " + new Exception().getStackTrace()[0].getMethodName());
         return null;
     }
@@ -848,7 +874,7 @@ public class RawToSILIRTranslator extends SILInstructionVisitor<SILIRInstruction
 
     @Override
     protected SILIRInstruction visitDeinitExistentialAddr(CAstNode N, InstructionContext C) {
-        System.err.println("ERROR: Unhandled instruction: " + new Exception().getStackTrace()[0].getMethodName());
+        // NOP
         return null;
     }
 
@@ -860,8 +886,9 @@ public class RawToSILIRTranslator extends SILInstructionVisitor<SILIRInstruction
 
     @Override
     protected SILIRInstruction visitOpenExistentialAddr(CAstNode N, InstructionContext C) {
-        System.err.println("ERROR: Unhandled instruction: " + new Exception().getStackTrace()[0].getMethodName());
-        return null;
+        RawValue operand = getSingleOperand(N);
+        RawValue result = getSingleResult(N);
+        return new ImplicitCopyInstruction(result.Name, operand.Name, C);
     }
 
     @Override
@@ -872,44 +899,47 @@ public class RawToSILIRTranslator extends SILInstructionVisitor<SILIRInstruction
 
     @Override
     protected SILIRInstruction visitInitExistentialRef(CAstNode N, InstructionContext C) {
-        System.err.println("ERROR: Unhandled instruction: " + new Exception().getStackTrace()[0].getMethodName());
-        return null;
+        RawValue operand = getSingleOperand(N);
+        RawValue result = getSingleResult(N);
+        return new ImplicitCopyInstruction(result.Name, operand.Name, C);
     }
 
     @Override
     protected SILIRInstruction visitOpenExistentialRef(CAstNode N, InstructionContext C) {
-        System.err.println("ERROR: Unhandled instruction: " + new Exception().getStackTrace()[0].getMethodName());
-        return null;
+        RawValue operand = getSingleOperand(N);
+        RawValue result = getSingleResult(N);
+        return new ImplicitCopyInstruction(result.Name, operand.Name, C);
     }
 
     @Override
     protected SILIRInstruction visitInitExistentialMetatype(CAstNode N, InstructionContext C) {
-        System.err.println("ERROR: Unhandled instruction: " + new Exception().getStackTrace()[0].getMethodName());
-        return null;
+        RawValue operand = getSingleOperand(N);
+        RawValue result = getSingleResult(N);
+        return new ImplicitCopyInstruction(result.Name, operand.Name, C);
     }
 
     @Override
     protected SILIRInstruction visitOpenExistentialMetatype(CAstNode N, InstructionContext C) {
-        System.err.println("ERROR: Unhandled instruction: " + new Exception().getStackTrace()[0].getMethodName());
-        return null;
+        RawValue operand = getSingleOperand(N);
+        RawValue result = getSingleResult(N);
+        return new ImplicitCopyInstruction(result.Name, operand.Name, C);
     }
 
     @Override
     protected SILIRInstruction visitAllocExistentialBox(CAstNode N, InstructionContext C) {
-        System.err.println("ERROR: Unhandled instruction: " + new Exception().getStackTrace()[0].getMethodName());
-        return null;
+        return visitAllocBox(N, C);
     }
 
     @Override
     protected SILIRInstruction visitProjectExistentialBox(CAstNode N, InstructionContext C) {
-        System.err.println("ERROR: Unhandled instruction: " + new Exception().getStackTrace()[0].getMethodName());
-        return null;
+        return visitProjectBox(N, C);
     }
 
     @Override
     protected SILIRInstruction visitOpenExistentialBox(CAstNode N, InstructionContext C) {
-        System.err.println("ERROR: Unhandled instruction: " + new Exception().getStackTrace()[0].getMethodName());
-        return null;
+        RawValue operand = getSingleOperand(N);
+        RawValue result = getSingleResult(N);
+        return new ImplicitCopyInstruction(result.Name, operand.Name, C);
     }
 
     @Override
@@ -920,32 +950,36 @@ public class RawToSILIRTranslator extends SILInstructionVisitor<SILIRInstruction
 
     @Override
     protected SILIRInstruction visitDeallocExistentialBox(CAstNode N, InstructionContext C) {
-        System.err.println("ERROR: Unhandled instruction: " + new Exception().getStackTrace()[0].getMethodName());
+        // NOP
         return null;
     }
 
     @Override
     protected SILIRInstruction visitProjectBlockStorage(CAstNode N, InstructionContext C) {
+        // TODO
         System.err.println("ERROR: Unhandled instruction: " + new Exception().getStackTrace()[0].getMethodName());
         return null;
     }
 
     @Override
     protected SILIRInstruction visitInitBlockStorageHeader(CAstNode N, InstructionContext C) {
+        // TODO
         System.err.println("ERROR: Unhandled instruction: " + new Exception().getStackTrace()[0].getMethodName());
         return null;
     }
 
     @Override
     protected SILIRInstruction visitUpcast(CAstNode N, InstructionContext C) {
-        System.err.println("ERROR: Unhandled instruction: " + new Exception().getStackTrace()[0].getMethodName());
-        return null;
+        RawValue operand = getSingleOperand(N);
+        RawValue result = getSingleResult(N);
+        return new ImplicitCopyInstruction(result.Name, operand.Name, C);
     }
 
     @Override
     protected SILIRInstruction visitAddressToPointer(CAstNode N, InstructionContext C) {
-        System.err.println("ERROR: Unhandled instruction: " + new Exception().getStackTrace()[0].getMethodName());
-        return null;
+        RawValue operand = getSingleOperand(N);
+        RawValue result = getSingleResult(N);
+        return new ImplicitCopyInstruction(result.Name, operand.Name, C);
     }
 
     @Override
@@ -970,14 +1004,16 @@ public class RawToSILIRTranslator extends SILInstructionVisitor<SILIRInstruction
 
     @Override
     protected SILIRInstruction visitUncheckedAddrCast(CAstNode N, InstructionContext C) {
-        System.err.println("ERROR: Unhandled instruction: " + new Exception().getStackTrace()[0].getMethodName());
-        return null;
+        RawValue operand = getSingleOperand(N);
+        RawValue result = getSingleResult(N);
+        return new ImplicitCopyInstruction(result.Name, operand.Name, C);
     }
 
     @Override
     protected SILIRInstruction visitUncheckedTrivialBitCast(CAstNode N, InstructionContext C) {
-        System.err.println("ERROR: Unhandled instruction: " + new Exception().getStackTrace()[0].getMethodName());
-        return null;
+        RawValue operand = getSingleOperand(N);
+        RawValue result = getSingleResult(N);
+        return new ImplicitCopyInstruction(result.Name, operand.Name, C);
     }
 
     @Override
@@ -1007,8 +1043,9 @@ public class RawToSILIRTranslator extends SILInstructionVisitor<SILIRInstruction
 
     @Override
     protected SILIRInstruction visitRefToUnowned(CAstNode N, InstructionContext C) {
-        System.err.println("ERROR: Unhandled instruction: " + new Exception().getStackTrace()[0].getMethodName());
-        return null;
+        RawValue operand = getSingleOperand(N);
+        RawValue result = getSingleResult(N);
+        return new ImplicitCopyInstruction(result.Name, operand.Name, C);
     }
 
     @Override
@@ -1019,26 +1056,30 @@ public class RawToSILIRTranslator extends SILInstructionVisitor<SILIRInstruction
 
     @Override
     protected SILIRInstruction visitRefToUnmanaged(CAstNode N, InstructionContext C) {
-        System.err.println("ERROR: Unhandled instruction: " + new Exception().getStackTrace()[0].getMethodName());
-        return null;
+        RawValue operand = getSingleOperand(N);
+        RawValue result = getSingleResult(N);
+        return new ImplicitCopyInstruction(result.Name, operand.Name, C);
     }
 
     @Override
     protected SILIRInstruction visitUnmanagedToRef(CAstNode N, InstructionContext C) {
-        System.err.println("ERROR: Unhandled instruction: " + new Exception().getStackTrace()[0].getMethodName());
-        return null;
+        RawValue operand = getSingleOperand(N);
+        RawValue result = getSingleResult(N);
+        return new ImplicitCopyInstruction(result.Name, operand.Name, C);
     }
 
     @Override
     protected SILIRInstruction visitConvertFunction(CAstNode N, InstructionContext C) {
-        System.err.println("ERROR: Unhandled instruction: " + new Exception().getStackTrace()[0].getMethodName());
-        return null;
+        RawValue operand = getSingleOperand(N);
+        RawValue result = getSingleResult(N);
+        return new ImplicitCopyInstruction(result.Name, operand.Name, C);
     }
 
     @Override
     protected SILIRInstruction visitConvertEscapeToNoEscape(CAstNode N, InstructionContext C) {
-        System.err.println("ERROR: Unhandled instruction: " + new Exception().getStackTrace()[0].getMethodName());
-        return null;
+        RawValue operand = getSingleOperand(N);
+        RawValue result = getSingleResult(N);
+        return new ImplicitCopyInstruction(result.Name, operand.Name, C);
     }
 
     @Override
@@ -1085,44 +1126,51 @@ public class RawToSILIRTranslator extends SILInstructionVisitor<SILIRInstruction
 
     @Override
     protected SILIRInstruction visitThinToThickFunction(CAstNode N, InstructionContext C) {
-        System.err.println("ERROR: Unhandled instruction: " + new Exception().getStackTrace()[0].getMethodName());
-        return null;
+        RawValue operand = getSingleOperand(N);
+        RawValue result = getSingleResult(N);
+        return new ImplicitCopyInstruction(result.Name, operand.Name, C);
     }
 
     @Override
     protected SILIRInstruction visitThickToObjCMetatype(CAstNode N, InstructionContext C) {
-        System.err.println("ERROR: Unhandled instruction: " + new Exception().getStackTrace()[0].getMethodName());
-        return null;
+        RawValue operand = getSingleOperand(N);
+        RawValue result = getSingleResult(N);
+        return new ImplicitCopyInstruction(result.Name, operand.Name, C);
     }
 
     @Override
     protected SILIRInstruction visitObjCToThickMetatype(CAstNode N, InstructionContext C) {
-        System.err.println("ERROR: Unhandled instruction: " + new Exception().getStackTrace()[0].getMethodName());
-        return null;
+        RawValue operand = getSingleOperand(N);
+        RawValue result = getSingleResult(N);
+        return new ImplicitCopyInstruction(result.Name, operand.Name, C);
     }
 
     @Override
     protected SILIRInstruction visitObjCMetatypeToObject(CAstNode N, InstructionContext C) {
-        System.err.println("ERROR: Unhandled instruction: " + new Exception().getStackTrace()[0].getMethodName());
-        return null;
+        RawValue operand = getSingleOperand(N);
+        RawValue result = getSingleResult(N);
+        return new ImplicitCopyInstruction(result.Name, operand.Name, C);
     }
 
     @Override
     protected SILIRInstruction visitObjCExistentialMetatypeToObject(CAstNode N, InstructionContext C) {
-        System.err.println("ERROR: Unhandled instruction: " + new Exception().getStackTrace()[0].getMethodName());
-        return null;
+        RawValue operand = getSingleOperand(N);
+        RawValue result = getSingleResult(N);
+        return new ImplicitCopyInstruction(result.Name, operand.Name, C);
     }
 
     @Override
     protected SILIRInstruction visitUnconditionalCheckedCast(CAstNode N, InstructionContext C) {
-        System.err.println("ERROR: Unhandled instruction: " + new Exception().getStackTrace()[0].getMethodName());
-        return null;
+        RawValue operand = getSingleOperand(N);
+        RawValue result = getSingleResult(N);
+        return new ImplicitCopyInstruction(result.Name, operand.Name, C);
     }
 
     @Override
     protected SILIRInstruction visitUnconditionalCheckedCastAddr(CAstNode N, InstructionContext C) {
-        System.err.println("ERROR: Unhandled instruction: " + new Exception().getStackTrace()[0].getMethodName());
-        return null;
+        RawValue operand = getSingleOperand(N);
+        RawValue result = getSingleResult(N);
+        return new ImplicitCopyInstruction(result.Name, operand.Name, C);
     }
 
     @Override
@@ -1133,12 +1181,14 @@ public class RawToSILIRTranslator extends SILInstructionVisitor<SILIRInstruction
 
     @Override
     protected SILIRInstruction visitCondFail(CAstNode N, InstructionContext C) {
+        // TODO
         System.err.println("ERROR: Unhandled instruction: " + new Exception().getStackTrace()[0].getMethodName());
         return null;
     }
 
     @Override
     protected SILIRInstruction visitUnreachable(CAstNode N, InstructionContext C) {
+        // TODO
         System.err.println("ERROR: Unhandled instruction: " + new Exception().getStackTrace()[0].getMethodName());
         return null;
     }
@@ -1151,6 +1201,7 @@ public class RawToSILIRTranslator extends SILInstructionVisitor<SILIRInstruction
 
     @Override
     protected SILIRInstruction visitThrow(CAstNode N, InstructionContext C) {
+        // TODO
         System.err.println("ERROR: Unhandled instruction: " + new Exception().getStackTrace()[0].getMethodName());
         return null;
     }
@@ -1194,12 +1245,14 @@ public class RawToSILIRTranslator extends SILInstructionVisitor<SILIRInstruction
 
     @Override
     protected SILIRInstruction visitCondBr(CAstNode N, InstructionContext C) {
+        // TODO
         System.err.println("ERROR: Unhandled instruction: " + new Exception().getStackTrace()[0].getMethodName());
         return null;
     }
 
     @Override
     protected SILIRInstruction visitSwitchValue(CAstNode N, InstructionContext C) {
+        // TODO
         System.err.println("ERROR: Unhandled instruction: " + new Exception().getStackTrace()[0].getMethodName());
         return null;
     }
@@ -1212,24 +1265,28 @@ public class RawToSILIRTranslator extends SILInstructionVisitor<SILIRInstruction
 
     @Override
     protected SILIRInstruction visitSwitchEnum(CAstNode N, InstructionContext C) {
+        // TODO
         System.err.println("ERROR: Unhandled instruction: " + new Exception().getStackTrace()[0].getMethodName());
         return null;
     }
 
     @Override
     protected SILIRInstruction visitSwitchEnumAddr(CAstNode N, InstructionContext C) {
+        // TODO
         System.err.println("ERROR: Unhandled instruction: " + new Exception().getStackTrace()[0].getMethodName());
         return null;
     }
 
     @Override
     protected SILIRInstruction visitDynamicMethodBr(CAstNode N, InstructionContext C) {
+        // TODO
         System.err.println("ERROR: Unhandled instruction: " + new Exception().getStackTrace()[0].getMethodName());
         return null;
     }
 
     @Override
     protected SILIRInstruction visitCheckedCastBr(CAstNode N, InstructionContext C) {
+        // TODO
         System.err.println("ERROR: Unhandled instruction: " + new Exception().getStackTrace()[0].getMethodName());
         return null;
     }
@@ -1242,12 +1299,14 @@ public class RawToSILIRTranslator extends SILInstructionVisitor<SILIRInstruction
 
     @Override
     protected SILIRInstruction visitCheckedCastAddrBr(CAstNode N, InstructionContext C) {
+        // TODO
         System.err.println("ERROR: Unhandled instruction: " + new Exception().getStackTrace()[0].getMethodName());
         return null;
     }
 
     @Override
     protected SILIRInstruction visitTryApply(CAstNode N, InstructionContext C) {
+        // TODO
         System.err.println("ERROR: Unhandled instruction: " + new Exception().getStackTrace()[0].getMethodName());
         return null;
     }
