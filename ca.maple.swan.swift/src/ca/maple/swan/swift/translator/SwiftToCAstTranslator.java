@@ -18,6 +18,8 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.*;
 
+import ca.maple.swan.swift.translator.silir.context.ProgramContext;
+import ca.maple.swan.swift.tree.ScriptEntity;
 import com.ibm.wala.cast.ir.translator.NativeTranslatorToCAst;
 import com.ibm.wala.cast.tree.CAst;
 import com.ibm.wala.cast.tree.CAstEntity;
@@ -73,7 +75,9 @@ public class SwiftToCAstTranslator extends NativeTranslatorToCAst {
 	@Override
 	public CAstEntity translateToCAst() {
 		assert(!translatedModules.isEmpty());
-		return new RawAstTranslator().translate(new File((String)translatedModules.get(this.sourceFileName).getChild(0).getValue()), translatedModules.get(this.sourceFileName).getChild(1));
+		ProgramContext pc = new RawToSILIRTranslator().translate(translatedModules.get(this.sourceFileName).getChild(1));
+		pc.printFunctions();
+		return new SILIRToCAstTranslator().translate(new File((String)translatedModules.get(this.sourceFileName).getChild(0).getValue()), pc);
 	}
 
 	public String[] doTranslation(String[] rawArgs) {

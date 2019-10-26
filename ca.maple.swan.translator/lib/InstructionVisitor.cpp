@@ -1593,10 +1593,11 @@ void InstructionVisitor::visitYieldInst(YieldInst *YI) {
   ADD_PROP(MAKE_CONST(UnwindLabel.c_str()));
   list<jobject> yieldValues;
   for (const auto value : YI->getYieldedValues()) {
+    std::string valName = addressToString(value.getOpaqueValue());
     if (SWAN_PRINT) {
-      llvm::outs() << "\t [YIELD VALUE]: " << value << "\n";
-      yieldValues.push_back(MAKE_CONST(addressToString(value.getOpaqueValue()).c_str()));
+      llvm::outs() << "\t [YIELD VALUE]: " << valName << "\n";
     }
+    yieldValues.push_back(MAKE_CONST(valName.c_str()));
   }
   ADD_PROP(MAKE_NODE2(CAstWrapper::PRIMITIVE, MAKE_ARRAY(&yieldValues)));
 }
