@@ -28,7 +28,8 @@ public class YieldInstruction extends SILIRInstruction {
         super(ic);
         this.values = new ArrayList<>();
         for (String s : yieldValues) {
-            this.values.add(ic.valueTable().getValue(s));
+            // TODO: Yielded value(s) can be an alias, so handle this.
+            this.values.add(ic.valueTable().getPossibleAlias(s));
         }
     }
 

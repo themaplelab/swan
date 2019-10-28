@@ -24,7 +24,7 @@ public class ImplicitCopyInstruction extends SILIRInstruction {
 
     public ImplicitCopyInstruction(String to, String from, InstructionContext ic) {
         super(ic);
-        this.from = ic.valueTable().getValue(from);
+        this.from = ic.valueTable().getPossibleAlias(from);
         ic.valueTable().copy(to, from);
         this.to = to;
     }

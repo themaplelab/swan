@@ -225,7 +225,7 @@ public class RawToSILIRTranslator extends SILInstructionVisitor<SILIRInstruction
     }
 
     private SILIRInstruction tryAliasWrite(String SourceName, String DestName, InstructionContext C) {
-        Value v = C.valueTable().getValue(DestName);
+        Value v = C.valueTable().getPossibleAlias(DestName);
         if (v instanceof FieldAliasValue) {
             return new FieldWriteInstruction(((FieldAliasValue) v).value.name, ((FieldAliasValue) v).field, SourceName, C);
         } else {
@@ -234,7 +234,7 @@ public class RawToSILIRTranslator extends SILInstructionVisitor<SILIRInstruction
     }
 
     private SILIRInstruction tryAliasRead(RawValue result, String operand, String field, InstructionContext C) {
-        Value v = C.valueTable().getValue(operand);
+        Value v = C.valueTable().getPossibleAlias(operand);
         if (v instanceof FieldAliasValue) {
             return new FieldReadInstruction(result.Name, result.Type, ((FieldAliasValue) v).value.name, ((FieldAliasValue) v).field, C);
         } else {

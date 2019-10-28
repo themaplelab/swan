@@ -30,7 +30,7 @@ public class AssignInstruction extends SILIRInstruction {
 
     public AssignInstruction(String toName, String toType, String from, InstructionContext ic) {
         super(ic);
-        this.from = ic.valueTable().getValue(from);
+        this.from = ic.valueTable().getPossibleAlias(from);
         if (this.from instanceof FieldAliasValue) {
             System.err.println("Just checking if this ever occurs in practice");
             this.to = new FieldAliasValue(this.from.name, this.from.type,
