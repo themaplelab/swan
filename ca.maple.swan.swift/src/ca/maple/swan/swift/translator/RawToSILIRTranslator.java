@@ -14,7 +14,6 @@
 package ca.maple.swan.swift.translator;
 
 import ca.maple.swan.swift.translator.raw.*;
-import ca.maple.swan.swift.translator.raw.RawUtil.*;
 import ca.maple.swan.swift.translator.silir.BasicBlock;
 import ca.maple.swan.swift.translator.silir.Function;
 import ca.maple.swan.swift.translator.silir.context.BlockContext;
@@ -92,13 +91,13 @@ public class RawToSILIRTranslator extends SILInstructionVisitor<SILIRInstruction
 
     }
 
-    public void VisitProgram(ProgramContext pc) {
+    private void VisitProgram(ProgramContext pc) {
         for (Function f : pc.getFunctions()) {
             VisitFunction(f, pc);
         }
     }
 
-    public void VisitFunction(Function f, ProgramContext pc) {
+    private void VisitFunction(Function f, ProgramContext pc) {
         FunctionContext fc = new FunctionContext(f, pc);
         for (BasicBlock b : f.getBlocks()) {
             VisitBlock(b, fc);
@@ -106,7 +105,7 @@ public class RawToSILIRTranslator extends SILInstructionVisitor<SILIRInstruction
 
     }
 
-    public void VisitBlock(BasicBlock b, FunctionContext fc) {
+    private void VisitBlock(BasicBlock b, FunctionContext fc) {
         BlockContext bc = new BlockContext(b, fc);
         for (InstructionNode inst : fc.pc.toTranslate.get(b)) {
             try {

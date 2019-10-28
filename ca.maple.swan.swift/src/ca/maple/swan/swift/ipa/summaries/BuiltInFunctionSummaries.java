@@ -43,7 +43,6 @@ public class BuiltInFunctionSummaries {
 
         switch(funcName) {
 
-            /*************** LITERALS ****************/
             case "Swift._allocateUninitializedArray<A>(Builtin.Word) -> (Swift.Array<A>, Builtin.RawPointer)" : {
                 C.valueTable.addValue(new SILTuple.SILUnitArrayTuple(resultName, resultType, C));
                 return null;

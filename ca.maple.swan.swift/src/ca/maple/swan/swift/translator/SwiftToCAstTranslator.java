@@ -19,7 +19,6 @@ import java.net.URL;
 import java.util.*;
 
 import ca.maple.swan.swift.translator.silir.context.ProgramContext;
-import ca.maple.swan.swift.tree.ScriptEntity;
 import com.ibm.wala.cast.ir.translator.NativeTranslatorToCAst;
 import com.ibm.wala.cast.tree.CAst;
 import com.ibm.wala.cast.tree.CAstEntity;
@@ -40,6 +39,8 @@ import org.apache.commons.io.FilenameUtils;
  */
 
 public class SwiftToCAstTranslator extends NativeTranslatorToCAst {
+
+	private static final boolean DEBUG = true;
 
 	private URL dynamicSourceURL;
 	private String dynamicSourceFileName;
@@ -76,7 +77,9 @@ public class SwiftToCAstTranslator extends NativeTranslatorToCAst {
 	public CAstEntity translateToCAst() {
 		assert(!translatedModules.isEmpty());
 		ProgramContext pc = new RawToSILIRTranslator().translate(translatedModules.get(this.sourceFileName).getChild(1));
-		pc.printFunctions();
+		if (DEBUG) {
+			pc.printFunctions();
+		}
 		return new SILIRToCAstTranslator().translate(new File((String)translatedModules.get(this.sourceFileName).getChild(0).getValue()), pc);
 	}
 
@@ -115,9 +118,7 @@ public class SwiftToCAstTranslator extends NativeTranslatorToCAst {
 				paths.add((String)root.getChild(0).getValue());
 			}
 
-			for (CAstNode func : root.getChild(1).getChildren()) {
-				newFunctions.add(func);
-			}
+			newFunctions.addAll(root.getChild(1).getChildren());
 		}
 
 		// In the case that the only function is "main", which has no source information, find the first instruction
@@ -167,9 +168,7 @@ public class SwiftToCAstTranslator extends NativeTranslatorToCAst {
 	}
 
 	private static String longestCommonPath(ArrayList<String> paths) {
-		if (paths.size() == 0) {
-			return null;
-		} else if (paths.size() == 1) {
+		if (paths.size() == 1) {
 			return paths.get(0);
 		}
 		String initialPath = paths.get(0);
@@ -177,7 +176,6 @@ public class SwiftToCAstTranslator extends NativeTranslatorToCAst {
 			for (int i = 0; i < path.length() && i < initialPath.length(); ++i) {
 				if (initialPath.charAt(i) != path.charAt(i)) {
 					initialPath = initialPath.substring(0, i);
-					continue;
 				}
 			}
 		}

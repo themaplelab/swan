@@ -51,11 +51,7 @@ public class TaintAnalysisDriver {
                 s -> {
                     if (s.getNode().equals(sdg.getCallGraph().getFakeRootNode())) {
                         return false;
-                    } else if (s instanceof MethodExitStatement || s instanceof MethodEntryStatement) {
-                        return false;
-                    } else {
-                        return true;
-                    }
+                    } else return !(s instanceof MethodExitStatement) && !(s instanceof MethodEntryStatement);
                 };
         return GraphSlicer.prune(sdg, f);
     }
@@ -94,15 +90,15 @@ public class TaintAnalysisDriver {
         System.out.println("SDGUtil.findSSSPaths running with\n");
 
         System.out.println("Sources: ");
-        sources.forEach(s -> System.out.print(s));
+        sources.forEach(System.out::print);
         System.out.println("\n");
 
         System.out.println("Sinks: ");
-        sinks.forEach(s -> System.out.print(s));
+        sinks.forEach(System.out::print);
         System.out.println("\n");
 
         System.out.println("Sanitizers: ");
-        sanitizers.forEach(s -> System.out.print(s));
+        sanitizers.forEach(System.out::print);
         System.out.println("\n");
 
 
@@ -128,9 +124,9 @@ public class TaintAnalysisDriver {
 
         return findSSSPaths(
                 sdg,
-                new HashSet<String>(Arrays.asList(sources)),
-                new HashSet<String>(Arrays.asList(sinks)),
-                new HashSet<String>(Arrays.asList(sanitizers))
+                new HashSet<>(Arrays.asList(sources)),
+                new HashSet<>(Arrays.asList(sinks)),
+                new HashSet<>(Arrays.asList(sanitizers))
         );
     }
 

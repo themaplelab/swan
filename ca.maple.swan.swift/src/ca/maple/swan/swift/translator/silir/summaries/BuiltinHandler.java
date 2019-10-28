@@ -33,7 +33,6 @@ public class BuiltinHandler {
 
         switch(funcName) {
 
-            /*************** LITERALS ****************/
             case "Swift._allocateUninitializedArray<A>(Builtin.Word) -> (Swift.Array<A>, Builtin.RawPointer)" : {
                 return new NewArrayTupleInstruction(resultName, resultType, C);
             }

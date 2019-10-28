@@ -25,6 +25,7 @@ import java.util.Iterator;
 
 public class BasicBlock {
 
+    @SuppressWarnings("FieldCanBeLocal")
     private final boolean PRINT_IMPLICIT_INSTRUCTIONS = false;
 
     private final int number;
@@ -43,7 +44,7 @@ public class BasicBlock {
         if (arguments != null) {
             this.arguments = arguments;
         } else {
-            arguments = new ArrayList<>();
+            this.arguments = new ArrayList<>();
         }
     }
 
@@ -89,6 +90,7 @@ public class BasicBlock {
         for (SILIRInstruction instruction : instructions) {
             try {
                 if (instruction.isExplicit() || PRINT_IMPLICIT_INSTRUCTIONS) {
+                    //noinspection ResultOfMethodCallIgnored
                     instruction.toString(); // To trigger error
                     s.append("\t\t");
                     s.append(instruction.toString());
