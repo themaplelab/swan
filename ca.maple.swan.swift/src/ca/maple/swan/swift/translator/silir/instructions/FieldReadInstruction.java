@@ -27,9 +27,9 @@ public class FieldReadInstruction extends SILIRInstruction {
     public FieldReadInstruction(String resultName, String resultType, String operand, String field, InstructionContext ic) {
         super(ic);
         this.result = new Value(resultName, resultType);
-        ic.valueTable().add(result);
-        this.field = field;
+        ic.valueTable().add(this.result);
         this.operand = ic.valueTable().getValue(operand);
+        this.field = field;
     }
 
     @Override

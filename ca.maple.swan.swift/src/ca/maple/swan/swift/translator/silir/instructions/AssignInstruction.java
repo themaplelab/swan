@@ -14,6 +14,7 @@
 package ca.maple.swan.swift.translator.silir.instructions;
 
 import ca.maple.swan.swift.translator.silir.context.InstructionContext;
+import ca.maple.swan.swift.translator.silir.values.FieldAliasValue;
 import ca.maple.swan.swift.translator.silir.values.Value;
 
 public class AssignInstruction extends SILIRInstruction {
@@ -25,13 +26,18 @@ public class AssignInstruction extends SILIRInstruction {
         super(ic);
         this.from = ic.valueTable().getValue(from);
         this.to = ic.valueTable().getValue(toName);
-        ic.valueTable().add(this.to);
     }
 
     public AssignInstruction(String toName, String toType, String from, InstructionContext ic) {
         super(ic);
         this.from = ic.valueTable().getValue(from);
-        this.to = new Value(toName, toType);
+        if (this.from instanceof FieldAliasValue) {
+            System.err.println("Just checking if this ever occurs in practice");
+            this.to = new FieldAliasValue(this.from.name, this.from.type,
+                    ((FieldAliasValue) this.from).value, ((FieldAliasValue) this.from).field);
+        } else {
+            this.to = new Value(toName, toType);
+        }
         ic.valueTable().add(this.to);
     }
 

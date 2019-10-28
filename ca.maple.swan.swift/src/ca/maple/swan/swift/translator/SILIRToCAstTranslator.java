@@ -271,6 +271,11 @@ public class SILIRToCAstTranslator {
         }
 
         @Override
+        public void visitFieldAliasInstruction(FieldAliasInstruction instruction) {
+            // NOP
+        }
+
+        @Override
         public void visitFieldReadInstruction(FieldReadInstruction instruction) {
             CAstNode n =
                     Ast.makeNode(
@@ -280,6 +285,23 @@ public class SILIRToCAstTranslator {
                                     CAstNode.OBJECT_REF,
                                     makeVarNode(instruction.operand),
                                     Ast.makeConstant(instruction.field)));
+            setNodePosition(n, instruction);
+            addNode(n);
+        }
+
+        @Override
+        public void visitFieldReadWriteInstruction(FieldReadWriteInstruction instruction) {
+            CAstNode n =
+                    Ast.makeNode(
+                            CAstNode.ASSIGN,
+                            Ast.makeNode(
+                                    CAstNode.OBJECT_REF,
+                                    makeVarNode(instruction.resultValue),
+                                    Ast.makeConstant(instruction.resultField)),
+                            Ast.makeNode(
+                                    CAstNode.OBJECT_REF,
+                                    makeVarNode(instruction.operandValue),
+                                    Ast.makeConstant(instruction.operandField)));
             setNodePosition(n, instruction);
             addNode(n);
         }

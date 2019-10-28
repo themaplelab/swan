@@ -31,7 +31,6 @@ import com.ibm.wala.util.debug.Assertions;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.UUID;
 
 import static ca.maple.swan.swift.translator.raw.RawUtil.*;
 
@@ -222,14 +221,32 @@ public class RawToSILIRTranslator extends SILInstructionVisitor<SILIRInstruction
     protected SILIRInstruction visitLoad(CAstNode N, InstructionContext C) {
         RawValue operand = getSingleOperand(N);
         RawValue result = getSingleResult(N);
-        return new FieldReadInstruction(result.Name, result.Type, operand.Name, "value", C);
+        return tryAliasRead(result, operand.Name, "value", C);
+    }
+
+    private SILIRInstruction tryAliasWrite(String SourceName, String DestName, InstructionContext C) {
+        Value v = C.valueTable().getValue(DestName);
+        if (v instanceof FieldAliasValue) {
+            return new FieldWriteInstruction(((FieldAliasValue) v).value.name, ((FieldAliasValue) v).field, SourceName, C);
+        } else {
+            return new FieldWriteInstruction(DestName, "value", SourceName, C);
+        }
+    }
+
+    private SILIRInstruction tryAliasRead(RawValue result, String operand, String field, InstructionContext C) {
+        Value v = C.valueTable().getValue(operand);
+        if (v instanceof FieldAliasValue) {
+            return new FieldReadInstruction(result.Name, result.Type, ((FieldAliasValue) v).value.name, ((FieldAliasValue) v).field, C);
+        } else {
+            return new FieldReadInstruction(result.Name, result.Type, operand, field, C);
+        }
     }
 
     @Override
     protected SILIRInstruction visitStore(CAstNode N, InstructionContext C) {
         String SourceName = RawUtil.getStringValue(N, 0);
         String DestName = RawUtil.getStringValue(N, 1);
-        return new FieldWriteInstruction(DestName, "value", SourceName, C);
+        return tryAliasWrite(SourceName, DestName, C);
     }
 
     @Override
@@ -259,7 +276,7 @@ public class RawToSILIRTranslator extends SILInstructionVisitor<SILIRInstruction
     protected SILIRInstruction visitAssign(CAstNode N, InstructionContext C) {
         String SourceName = RawUtil.getStringValue(N, 0);
         String DestName = RawUtil.getStringValue(N, 1);
-        return new AssignInstruction(DestName, SourceName, C);
+        return tryAliasWrite(SourceName, DestName, C);
     }
 
     @Override
@@ -296,12 +313,10 @@ public class RawToSILIRTranslator extends SILInstructionVisitor<SILIRInstruction
 
     @Override
     protected SILIRInstruction visitCopyAddr(CAstNode N, InstructionContext C) {
-        String tempName = UUID.randomUUID().toString();
+        // This is an assign since we can't handle pointer value copies.
         String SourceName = RawUtil.getStringValue(N, 0);
         String DestName = RawUtil.getStringValue(N, 1);
-        C.bc.block.addInstruction(new FieldReadInstruction(tempName, "temp", SourceName, "value", C));
-        C.bc.block.addInstruction(new FieldWriteInstruction(DestName, "value", tempName, C));
-        return null;
+        return new AssignInstruction(DestName, SourceName, C);
     }
 
     @Override
@@ -725,17 +740,15 @@ public class RawToSILIRTranslator extends SILInstructionVisitor<SILIRInstruction
         RawValue result = getSingleResult(N);
         RawValue operand = getSingleOperand(N);
         String field = getStringValue(N, 2);
-        return new FieldReadInstruction(result.Name, result.Type, operand.Name, field, C);
+        return tryAliasRead(result, operand.Name, field, C);
     }
 
     @Override
     protected SILIRInstruction visitTupleElementAddr(CAstNode N, InstructionContext C) {
-        String tempName = UUID.randomUUID().toString();
         RawValue operand = getSingleOperand(N);
-        C.bc.block.addInstruction(new FieldReadInstruction(tempName, "temp", operand.Name, "value", C));
         RawValue result = getSingleResult(N);
-        String field = getStringValue(N, 2);
-        return new FieldReadInstruction(result.Name, result.Type, tempName, field, C);
+        String Index = getStringValue(N, 2);
+        return new FieldAliasInstruction(result.Name, result.Type, operand.Name, Index, C);
     }
 
     @Override
@@ -771,17 +784,15 @@ public class RawToSILIRTranslator extends SILInstructionVisitor<SILIRInstruction
         RawValue result = getSingleResult(N);
         String StructName = getStringValue(N, 2);
         String FieldName = getStringValue(N, 3);
-        return new FieldReadInstruction(result.Name, result.Type, StructName, FieldName, C);
+        return tryAliasRead(result, StructName, FieldName, C);
     }
 
     @Override
     protected SILIRInstruction visitStructElementAddr(CAstNode N, InstructionContext C) {
-        String tempName = UUID.randomUUID().toString();
         String StructName = getStringValue(N, 2);
         String FieldName = getStringValue(N, 3);
-        C.bc.block.addInstruction(new FieldReadInstruction(tempName, "temp", StructName, "value", C));
         RawValue result = getSingleResult(N);
-        return new FieldReadInstruction(result.Name, result.Type, tempName, FieldName, C);
+        return new FieldAliasInstruction(result.Name, result.Type, StructName, FieldName, C);
     }
 
     @Override
@@ -801,7 +812,7 @@ public class RawToSILIRTranslator extends SILInstructionVisitor<SILIRInstruction
         RawValue operand = getSingleOperand(N);
         RawValue result = getSingleResult(N);
         String FieldName = RawUtil.getStringValue(N, 2);
-        return new FieldReadInstruction(result.Name, result.Type, operand.Name, FieldName, C);
+        return new FieldAliasInstruction(result.Name, result.Type, operand.Name, FieldName, C);
     }
 
     @Override
@@ -812,23 +823,30 @@ public class RawToSILIRTranslator extends SILInstructionVisitor<SILIRInstruction
 
     @Override
     protected SILIRInstruction visitEnum(CAstNode N, InstructionContext C) {
-        // TODO
-        System.err.println("ERROR: Unhandled instruction: " + new Exception().getStackTrace()[0].getMethodName());
+        RawValue result = getSingleResult(N);
+        String EnumName = getStringValue(N, 2);
+        String CaseName = getStringValue(N, 3);
+        C.bc.block.addInstruction(new NewInstruction(result.Name, result.Type, C));
+        try {
+            RawValue operand = getSingleOperand(N); // Is optional, so can cause exception.
+            C.bc.block.addInstruction(new FieldWriteInstruction(result.Name, "data", operand.Name, C));
+        } catch (Exception ignored) {
+        }
         return null;
     }
 
     @Override
     protected SILIRInstruction visitUncheckedEnumData(CAstNode N, InstructionContext C) {
-        // TODO
-        System.err.println("ERROR: Unhandled instruction: " + new Exception().getStackTrace()[0].getMethodName());
-        return null;
+        RawValue operand = getSingleOperand(N);
+        RawValue result = getSingleResult(N);
+        return tryAliasRead(result, operand.Name, "data", C);
     }
 
     @Override
     protected SILIRInstruction visitInitEnumDataAddr(CAstNode N, InstructionContext C) {
-        // TODO
-        System.err.println("ERROR: Unhandled instruction: " + new Exception().getStackTrace()[0].getMethodName());
-        return null;
+        RawValue operand = getSingleOperand(N);
+        RawValue result = getSingleResult(N);
+        return new FieldAliasInstruction(result.Name, result.Type, operand.Name, "data", C);
     }
 
     @Override
@@ -839,9 +857,9 @@ public class RawToSILIRTranslator extends SILInstructionVisitor<SILIRInstruction
 
     @Override
     protected SILIRInstruction visitUncheckedTakeEnumDataAddr(CAstNode N, InstructionContext C) {
-        // TODO
-        System.err.println("ERROR: Unhandled instruction: " + new Exception().getStackTrace()[0].getMethodName());
-        return null;
+        RawValue operand = getSingleOperand(N);
+        RawValue result = getSingleResult(N);
+        return new FieldAliasInstruction(result.Name, result.Type, operand.Name, "data", C);
     }
 
     @Override
