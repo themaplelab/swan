@@ -18,13 +18,13 @@ import ca.maple.swan.swift.translator.silir.values.Value;
 
 public class BinaryOperatorInstruction extends SILIRInstruction {
 
-    private final Value resultValue;
+    public final Value resultValue;
 
-    private final String operator;
+    public final String operator;
 
-    private final Value operand1;
+    public final Value operand1;
 
-    private final Value operand2;
+    public final Value operand2;
 
     public BinaryOperatorInstruction(String resultName, String resultType,
                                      String operator, String operand1,

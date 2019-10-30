@@ -36,9 +36,9 @@ public class ValueTable {
     }
 
     public Value getValue(String s) {
+        Assertions.productionAssertion(has(s));
         // We need to know if aliases show up where they are not expected.
         Assertions.productionAssertion(!(values.get(s) instanceof FieldAliasValue));
-        Assertions.productionAssertion(has(s));
         return values.get(s);
     }
 

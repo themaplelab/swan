@@ -49,9 +49,13 @@ public class BuiltinHandler {
             case "Swift.Double.init(_builtinFloatLiteral: Builtin.FPIEEE80) -> Swift.Double":
             case "Swift.Double.init(_builtinIntegerLiteral: Builtin.IntLiteral) -> Swift.Double":
             case "Swift.UInt.init(_builtinIntegerLiteral: Builtin.IntLiteral) -> Swift.UInt":
-            case "Swift.Bool.init(_builtinBooleanLiteral: Builtin.Int1) -> Swift.Bool":
             case "Swift.Double.init(Swift.Int) -> Swift.Double": {
                 return new ImplicitCopyInstruction(resultName, params.get(0), C);
+            }
+            case "Swift.Bool.init(_builtinBooleanLiteral: Builtin.Int1) -> Swift.Bool": {
+                C.bc.block.addInstruction(new NewInstruction(resultName, resultType, C));
+                C.bc.block.addInstruction(new FieldWriteInstruction(resultName, "_value", params.get(0), C));
+                return null;
             }
             case "static Swift.String.+ infix(Swift.String, Swift.String) -> Swift.String": {
                 return null;

@@ -28,6 +28,7 @@ import com.ibm.wala.cast.tree.CAstEntity;
 import com.ibm.wala.cast.tree.CAstNode;
 import com.ibm.wala.cast.tree.CAstSourcePositionMap.Position;
 import com.ibm.wala.cast.tree.impl.CAstImpl;
+import com.ibm.wala.cast.tree.impl.CAstOperator;
 import com.ibm.wala.cast.tree.impl.CAstSymbolImpl;
 import com.ibm.wala.util.debug.Assertions;
 
@@ -181,7 +182,7 @@ public class SILIRToCAstTranslator {
                 if (bb.getNumber() == 0) {
                     topLevelBody.addAll(c.currentBody);
                 }
-                c.blocks.add(Ast.makeNode(CAstNode.BLOCK_STMT, c.currentBody));
+                c.blocks.add(Ast.makeNode(CAstNode.BLOCK_STMT, new ArrayList<>(c.currentBody)));
             }
             topLevelBody.addAll(c.blocks.subList(1, c.blocks.size()));
             c.currentEntity.setAst(Ast.makeNode(CAstNode.BLOCK_STMT, topLevelBody));
@@ -205,9 +206,9 @@ public class SILIRToCAstTranslator {
         }
 
 
-        private CAstNode makeGotoNode(GotoInstruction instruction) {
-            CAstNode n = Ast.makeNode(CAstNode.GOTO, Ast.makeConstant("bb" + instruction.bb.getNumber()));
-            c.currentEntity.setGotoTarget(n, c.bbLabels.get(instruction.bb.getNumber()));
+        private CAstNode makeGotoNode(BasicBlock bb) {
+            CAstNode n = Ast.makeNode(CAstNode.GOTO, Ast.makeConstant("bb" + bb.getNumber()));
+            c.currentEntity.setGotoTarget(n, c.bbLabels.get(bb.getNumber()));
             return n;
         }
 
@@ -261,8 +262,49 @@ public class SILIRToCAstTranslator {
         }
 
         @Override
+        public void visitConditionBranchInstruction(CondtionBranchInstruction instruction) {
+            CAstNode n =
+                    Ast.makeNode(
+                            CAstNode.IF_STMT,
+                            makeVarNode(instruction.conditionValue),
+                            makeGotoNode(instruction.trueBlock),
+                            makeGotoNode(instruction.falseBlock));
+            setNodePosition(n, instruction);
+            addNode(n);
+        }
+
+        @Override
         public void visitBinaryOperatorInstruction(BinaryOperatorInstruction instruction) {
-            // TODO
+            CAstOperator operator;
+            switch(instruction.operator) {
+                case "==":
+                    operator = CAstOperator.OP_EQ;
+                    break;
+                case "!=":
+                    operator = CAstOperator.OP_NE;
+                    break;
+                case "+":
+                    operator = CAstOperator.OP_ADD;
+                    break;
+                case "-":
+                    operator = CAstOperator.OP_SUB;
+                    break;
+                default:
+                    operator = CAstOperator.OP_EQ;
+                    System.err.println("Operator not handled: " + instruction.operator + ". Defaulting to ==");
+                    break;
+            }
+            CAstNode n =
+                    Ast.makeNode(
+                            CAstNode.ASSIGN,
+                            makeVarNode(instruction.resultValue),
+                            Ast.makeNode(
+                                CAstNode.BINARY_EXPR,
+                                operator,
+                                makeVarNode(instruction.operand1),
+                                makeVarNode(instruction.operand2)));
+            setNodePosition(n, instruction);
+            addNode(n);
         }
 
         @Override
@@ -338,7 +380,7 @@ public class SILIRToCAstTranslator {
 
         @Override
         public void visitGotoInstruction(GotoInstruction instruction) {
-            CAstNode n = makeGotoNode(instruction);
+            CAstNode n = makeGotoNode(instruction.bb);
             setNodePosition(n, instruction);
             addNode(n);
         }

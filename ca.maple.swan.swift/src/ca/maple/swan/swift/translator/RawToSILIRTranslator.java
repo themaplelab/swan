@@ -26,11 +26,13 @@ import ca.maple.swan.swift.translator.silir.values.*;
 import com.ibm.wala.cast.tree.CAstNode;
 import com.ibm.wala.cast.tree.CAstSourcePositionMap;
 import com.ibm.wala.cast.tree.CAstSourcePositionMap.Position;
+import com.ibm.wala.shrikeBT.ConditionalBranchInstruction;
 import com.ibm.wala.util.debug.Assertions;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.UUID;
 
 import static ca.maple.swan.swift.translator.raw.RawUtil.*;
 
@@ -1252,19 +1254,43 @@ public class RawToSILIRTranslator extends SILInstructionVisitor<SILIRInstruction
         return doBranch(DestBlockNo, args, C);
     }
 
-    private SILIRInstruction doBranch(int dest, ArrayList<String> args, InstructionContext C) {
+    private BasicBlock assignBlockArgs(int dest, ArrayList<String> args, InstructionContext C) {
         BasicBlock bb = C.bc.fc.function.getBlock(dest);
         for (int i = 0; i < args.size(); ++i) {
             C.bc.block.addInstruction(new AssignInstruction(bb.getArgument(i).name, bb.getArgument(i).type, args.get(i), C));
         }
+        return bb;
+    }
+
+    private SILIRInstruction doBranch(int dest, ArrayList<String> args, InstructionContext C) {
+        BasicBlock bb = assignBlockArgs(dest, args, C);
         return new GotoInstruction(bb, C);
     }
 
     @Override
     protected SILIRInstruction visitCondBr(CAstNode N, InstructionContext C) {
-        // TODO
-        System.err.println("ERROR: Unhandled instruction: " + new Exception().getStackTrace()[0].getMethodName());
-        return null;
+        String CondOperandName = getStringValue(N, 0);
+        String TrueDestName = getStringValue(N, 1);
+        String FalseDestName = getStringValue(N, 2);
+        // These types can be whatever, really.
+        String IntermediateLiteralName = UUID.randomUUID().toString();
+        C.bc.block.addInstruction(new LiteralInstruction(1, IntermediateLiteralName, "$Builtin.Int1", C));
+        String IntermediateConditionName = UUID.randomUUID().toString();
+        // Set arguments
+        ArrayList<String> trueArgs = new ArrayList<>();
+        for (CAstNode arg : N.getChild(1).getChildren()) {
+            String ArgName = RawUtil.getStringValue(arg, 0);
+            trueArgs.add(ArgName);
+        }
+        BasicBlock trueBB = assignBlockArgs(Integer.parseInt(TrueDestName), trueArgs, C);
+        ArrayList<String> falseArgs = new ArrayList<>();
+        for (CAstNode arg : N.getChild(2).getChildren()) {
+            String ArgName = RawUtil.getStringValue(arg, 0);
+            falseArgs.add(ArgName);
+        }
+        BasicBlock falseBB = assignBlockArgs(Integer.parseInt(FalseDestName), falseArgs, C);
+        C.bc.block.addInstruction(new BinaryOperatorInstruction(IntermediateConditionName, "$Bool", "==", IntermediateLiteralName, CondOperandName, C));
+        return new CondtionBranchInstruction(IntermediateConditionName, trueBB, falseBB, C);
     }
 
     @Override

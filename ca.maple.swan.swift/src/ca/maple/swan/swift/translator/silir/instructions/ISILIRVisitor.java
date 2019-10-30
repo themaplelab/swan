@@ -25,6 +25,8 @@ public abstract class ISILIRVisitor {
 
     public abstract void visitBuiltinInstruction(BuiltinInstruction instruction);
 
+    public abstract void visitConditionBranchInstruction(CondtionBranchInstruction instruction);
+
     public abstract void visitFieldAliasInstruction(FieldAliasInstruction instruction);
 
     public abstract void visitFieldReadInstruction(FieldReadInstruction instruction);
