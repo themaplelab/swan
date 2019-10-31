@@ -27,6 +27,7 @@ import com.ibm.wala.cast.tree.CAstNode;
 import com.ibm.wala.cast.tree.CAstSourcePositionMap;
 import com.ibm.wala.cast.tree.CAstSourcePositionMap.Position;
 import com.ibm.wala.shrikeBT.ConditionalBranchInstruction;
+import com.ibm.wala.util.collections.Pair;
 import com.ibm.wala.util.debug.Assertions;
 
 import java.math.BigDecimal;
@@ -565,33 +566,27 @@ public class RawToSILIRTranslator extends SILInstructionVisitor<SILIRInstruction
         RawValue result = getSingleResult(N);
         String FuncRefValue = RawUtil.getStringValue(N, 2);
         Value refValue = C.valueTable().getValue(FuncRefValue);
-        // If not operator, or operator overloaded.
-        if (N.getChildren().size() <= 4 || C.bc.fc.pc.getFunction(refValue.name) != null) {
-            CAstNode FuncNode = N.getChild(3);
-            ArrayList<String> args = new ArrayList<>();
-            for (CAstNode arg : FuncNode.getChildren()) {
-                args.add((String) arg.getValue());
-            }
-            if (refValue instanceof BuiltinFunctionRefValue) {
-                String name = ((BuiltinFunctionRefValue) refValue).getFunction();
-                if (BuiltinHandler.isBuiltIn(name) || BuiltinHandler.isSummarized(name)) {
-                    if (BuiltinHandler.isSummarized(name)) {
-                        return BuiltinHandler.findSummary(name, result.Name, result.Type, args, C);
-                    } else {
-                        // TEMPORARY SOLUTION
-                        return new LiteralInstruction("unsummarized builtin", result.Name, result.Type, C);
-                    }
+        CAstNode FuncNode = N.getChild(3);
+        ArrayList<String> args = new ArrayList<>();
+        for (CAstNode arg : FuncNode.getChildren()) {
+            args.add((String) arg.getValue());
+        }
+        if (refValue instanceof BuiltinFunctionRefValue) {
+            String name = ((BuiltinFunctionRefValue) refValue).getFunction();
+            if (BuiltinHandler.isBuiltIn(name) || BuiltinHandler.isSummarized(name)) {
+                if (BuiltinHandler.isSummarized(name)) {
+                    return BuiltinHandler.findSummary(name, result.Name, result.Type, args, C);
                 } else {
-                    // TODO: Make new function here. What to then do with builtin ref?
-                    return null;
+                    // TEMPORARY SOLUTION
+                    return new LiteralInstruction("unsummarized builtin", result.Name, result.Type, C);
                 }
-            } else if (refValue instanceof FunctionRefValue) {
-                return new ApplyInstruction(FuncRefValue, result.Name, result.Type, args, C);
             } else {
-                Assertions.UNREACHABLE("Unexpected value type");
+                // TODO: Make new function here. What to then do with builtin ref?
                 return null;
             }
-        } else { // Else an operator.
+        } else if (refValue instanceof FunctionRefValue) {
+            return new ApplyInstruction(FuncRefValue, result.Name, result.Type, args, C);
+        } else { // An operator.
             CAstNode OperatorNode = N.getChild(4);
             if (OperatorNode.getKind() == CAstNode.UNARY_EXPR) {
                 String operator = getStringValue(OperatorNode, 0);
@@ -829,6 +824,10 @@ public class RawToSILIRTranslator extends SILInstructionVisitor<SILIRInstruction
         String EnumName = getStringValue(N, 2);
         String CaseName = getStringValue(N, 3);
         C.bc.block.addInstruction(new NewInstruction(result.Name, result.Type, C));
+        // Add the case name so we can later compare it in instructions such as switch typeof.
+        String tempName = UUID.randomUUID().toString();
+        C.bc.block.addInstruction(new LiteralInstruction(CaseName, tempName, "$String", C));
+        C.bc.block.addInstruction(new FieldWriteInstruction(result.Name, "type", tempName, C));
         try {
             RawValue operand = getSingleOperand(N); // Is optional, so can cause exception.
             C.bc.block.addInstruction(new FieldWriteInstruction(result.Name, "data", operand.Name, C));
@@ -1232,7 +1231,7 @@ public class RawToSILIRTranslator extends SILInstructionVisitor<SILIRInstruction
         String UnwindLabel = RawUtil.getStringValue(N, 1);
         ArrayList<String> values = new ArrayList<>();
         for (CAstNode value : N.getChild(2).getChildren()) {
-            values.add((String)value.getValue());
+            values.add((String) value.getValue());
         }
         return new YieldInstruction(values, C);
     }
@@ -1308,9 +1307,37 @@ public class RawToSILIRTranslator extends SILInstructionVisitor<SILIRInstruction
 
     @Override
     protected SILIRInstruction visitSwitchEnum(CAstNode N, InstructionContext C) {
-        // TODO
-        System.err.println("ERROR: Unhandled instruction: " + new Exception().getStackTrace()[0].getMethodName());
-        return null;
+        String EnumName = (String) N.getChild(0).getValue();
+        ArrayList<Pair<String, BasicBlock>> cases = new ArrayList<Pair<String, BasicBlock>>();
+        // If the enum has data and at least one case expects an argument, we generate an
+        // instruction that puts the data in a temporary value to then copy to the block argument.
+        // We only want to create this instruction once so we keep track of a bool.
+        boolean createdGetInstruction = false;
+        String tempDataValueName = null;
+        for (CAstNode Case : N.getChild(1).getChildren()) {
+            String CaseName = getStringValue(Case, 0);
+            int DestBB = getIntValue(Case, 1);
+            BasicBlock destBlock = C.bc.fc.function.getBlock(DestBB);
+            cases.add(Pair.make(CaseName, destBlock));
+            // If the block takes an argument, do an implicit copy.
+            // A block has zero or exactly one argument.
+            if (destBlock.getArguments().size() > 0) {
+                if (!createdGetInstruction) {
+                    tempDataValueName = UUID.randomUUID().toString();
+                    C.bc.block.addInstruction(new FieldReadInstruction(tempDataValueName, "temp", CaseName, "data", C));
+                    createdGetInstruction = true;
+                }
+                C.bc.block.addInstruction(new ImplicitCopyInstruction(destBlock.getArgument(0).name, tempDataValueName, C));
+            }
+        }
+        BasicBlock defaultBlock = null;
+        // If has default.
+        if (N.getChildren().size() > 2) {
+            // Default block takes no block arguments.
+            int DestBB = getIntValue(N, 2);
+            defaultBlock = C.bc.fc.function.getBlock(DestBB);
+        }
+        return new SwitchTypeOfInstruction(EnumName, cases, defaultBlock, C);
     }
 
     @Override

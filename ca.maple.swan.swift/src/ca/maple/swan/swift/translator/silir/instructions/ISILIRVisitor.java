@@ -53,6 +53,8 @@ public abstract class ISILIRVisitor {
 
     public abstract void visitReturnInstruction(ReturnInstruction instruction);
 
+    public abstract void visitSwitchTypeOfInstruction(SwitchTypeOfInstruction instruction);
+
     public abstract void visitUnaryOperatorInstruction(UnaryOperatorInstruction instruction);
 
     public abstract void visitYieldInstruction(YieldInstruction instruction);

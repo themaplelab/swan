@@ -92,7 +92,7 @@ public class BasicBlock {
                 if (instruction.isExplicit() || PRINT_IMPLICIT_INSTRUCTIONS) {
                     //noinspection ResultOfMethodCallIgnored
                     instruction.toString(); // To trigger error
-                    s.append("\t\t");
+                    s.append("        ");
                     s.append(instruction.toString());
                 }
             } catch (Exception e ){

@@ -205,6 +205,10 @@ public class SILIRToCAstTranslator {
             return n;
         }
 
+        @Override
+        public void visitSwitchTypeOfInstruction(SwitchTypeOfInstruction instruction) {
+            // TODO
+        }
 
         private CAstNode makeGotoNode(BasicBlock bb) {
             CAstNode n = Ast.makeNode(CAstNode.GOTO, Ast.makeConstant("bb" + bb.getNumber()));

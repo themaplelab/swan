@@ -101,7 +101,7 @@ public class Function {
         s.append(") ");
         s.append("{\n");
         for (BasicBlock bb : this.blocks) {
-            s.append("\t");
+            s.append("    ");
             s.append(bb.toString());
         }
         s.append("}\n");

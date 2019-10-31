@@ -14,6 +14,7 @@
 package ca.maple.swan.swift.translator.types;
 
 import java.util.HashMap;
+import java.util.Set;
 
 /*
  * Used for dynamically creating and saving SIL types. Since there
@@ -29,6 +30,10 @@ public class SILTypes {
             types.put(name, new SILType(name));
         }
         return types.get(name);
+    }
+
+    public static Set<String> getTypeNames() {
+        return types.keySet();
     }
 
 }
