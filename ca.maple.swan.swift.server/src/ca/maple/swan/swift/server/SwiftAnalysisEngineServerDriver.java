@@ -110,7 +110,7 @@ public class SwiftAnalysisEngineServerDriver {
             dumpCHA(CG.getClassHierarchy());
         }
 
-        @SuppressWarnings("unchecked") SDG<InstanceKey> sdg = new SDG<InstanceKey>(CG, builder.getPointerAnalysis(), new JavaScriptModRef<>(), Slicer.DataDependenceOptions.NO_BASE_NO_HEAP_NO_EXCEPTIONS, Slicer.ControlDependenceOptions.NONE);
+        @SuppressWarnings("unchecked") SDG<InstanceKey> sdg = new SDG<InstanceKey>(CG, builder.getPointerAnalysis(), new JavaScriptModRef<>(), Slicer.DataDependenceOptions.NO_EXCEPTIONS, Slicer.ControlDependenceOptions.NONE);
 
         return sdg;
 
