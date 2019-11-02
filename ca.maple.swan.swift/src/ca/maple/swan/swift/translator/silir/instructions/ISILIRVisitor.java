@@ -25,7 +25,9 @@ public abstract class ISILIRVisitor {
 
     public abstract void visitBuiltinInstruction(BuiltinInstruction instruction);
 
-    public abstract void visitConditionBranchInstruction(CondtionBranchInstruction instruction);
+    public abstract void visitConditionalBranchInstruction(ConditionalBranchInstruction instruction);
+
+    public abstract void visitConditionalThrowInstruction(ConditionalThrowInstruction instruction);
 
     public abstract void visitFieldAliasInstruction(FieldAliasInstruction instruction);
 
@@ -53,7 +55,11 @@ public abstract class ISILIRVisitor {
 
     public abstract void visitReturnInstruction(ReturnInstruction instruction);
 
-    public abstract void visitSwitchTypeOfInstruction(SwitchTypeOfInstruction instruction);
+    public abstract void visitSwitchAssignValueInstruction(SwitchAssignValueInstruction instruction);
+
+    public abstract void visitSwitchValueInstruction(SwitchValueInstruction instruction);
+
+    public abstract void visitThrowInstruction(ThrowInstruction instruction);
 
     public abstract void visitUnaryOperatorInstruction(UnaryOperatorInstruction instruction);
 

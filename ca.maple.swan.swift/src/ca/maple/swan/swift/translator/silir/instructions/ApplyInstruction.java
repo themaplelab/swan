@@ -22,7 +22,7 @@ import java.util.Iterator;
 
 public class ApplyInstruction extends SILIRInstruction {
 
-    public final FunctionRefValue functionRefValue;
+    public final Value functionRefValue;
 
     public final Value result;
 
@@ -30,10 +30,9 @@ public class ApplyInstruction extends SILIRInstruction {
 
     public ApplyInstruction(String funcRef, String resultName, String resultType, ArrayList<String> args, InstructionContext ic) {
         super(ic);
-        FunctionRefValue functionRefValue = (FunctionRefValue)ic.valueTable().getValue(funcRef);
         Value result = new Value(resultName, resultType);
         ic.valueTable().add(result);
-        this.functionRefValue = functionRefValue;
+        this.functionRefValue = ic.valueTable().getValue(funcRef);
         this.result = result;
         this.args = new ArrayList<>();
         for (String arg : args) {

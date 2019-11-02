@@ -18,13 +18,13 @@ import ca.maple.swan.swift.translator.silir.values.BuiltinFunctionRefValue;
 
 public class BuiltinInstruction extends SILIRInstruction {
 
-    private final String name;
+    public final String functionName;
 
-    private final BuiltinFunctionRefValue value;
+    public final BuiltinFunctionRefValue value;
 
     public BuiltinInstruction(String name, String resultName, String resultType, InstructionContext ic) {
         super(ic);
-        this.name = name;
+        this.functionName = name;
         this.value = new BuiltinFunctionRefValue(resultName, resultType, name);
         ic.valueTable().add(this.value);
     }
@@ -36,6 +36,6 @@ public class BuiltinInstruction extends SILIRInstruction {
 
     @Override
     public String toString() {
-        return value.simpleName() + " := builtin " + name + "\n";
+        return value.simpleName() + " := " + (value.summaryCreated ? "func_ref " :  "builtin ") + functionName + "\n";
     }
 }

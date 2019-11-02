@@ -1286,56 +1286,46 @@ void InstructionVisitor::visitUncheckedTakeEnumDataAddrInst(UncheckedTakeEnumDat
 
 void InstructionVisitor::visitSelectEnumInst(SelectEnumInst *SEI) {
   handleSimpleInstr(SEI);
-  std::list<jobject> cases;
-  for (unsigned int caseNo = 0; caseNo < SEI->getNumCases(); ++caseNo) {
-    auto Case = SEI->getCase(caseNo);
-    std::string CaseName = Case.first->getNameStr();
-    std::string DestValue = addressToString(Case.second.getOpaqueValue());
-    if (SWAN_PRINT) {
-      llvm::outs() << "\t\t [CASE NAME]: " << CaseName << "\n";
-      llvm::outs() << "\t\t [DEST VALUE]: " << DestValue << "\n";
-    }
-    cases.push_back(MAKE_NODE3(CAstWrapper::PRIMITIVE,
-      MAKE_CONST(CaseName.c_str()), MAKE_CONST(DestValue.c_str())));
+  std::string EnumName = addressToString(SEI->getOperand().getOpaqueValue());
+  ADD_PROP(MAKE_CONST(EnumName.c_str()));
+  std::list<jobject> Cases;
+  for (unsigned int i = 0; i < SEI->getNumCases(); ++i) {
+    auto Case = SEI->getCase(i);
+    EnumElementDecl *CaseDecl = Case.first;
+    std::string CaseName = CaseDecl->getNameStr().str();
+    std::string CaseValue = addressToString(Case.second);
+    std::list<jobject> Fields;
+    Fields.push_back(MAKE_CONST(CaseName.c_str()));
+    Fields.push_back(MAKE_CONST(CaseValue.c_str()));
+    Cases.push_back(MAKE_NODE2(CAstWrapper::PRIMITIVE, MAKE_ARRAY(&Fields)));
   }
+  ADD_PROP(MAKE_NODE2(CAstWrapper::PRIMITIVE, MAKE_ARRAY(&Cases)));
   if (SEI->hasDefault()) {
-    std::string DefaultName = "DEFAULT";
     std::string DefaultValue = addressToString(SEI->getDefaultResult().getOpaqueValue());
-    if (SWAN_PRINT) {
-      llvm::outs() << "\t\t [DEFAULT CASE NAME]: " << DefaultName << "\n";
-      llvm::outs() << "\t\t [DEFAULT VALUE]: " << DefaultValue << "\n";
-    }
-    cases.push_back(MAKE_NODE3(CAstWrapper::PRIMITIVE,
-      MAKE_CONST(DefaultName.c_str()), MAKE_CONST(DefaultValue.c_str())));
+    ADD_PROP(MAKE_CONST(DefaultValue.c_str()));
   }
-  ADD_PROP(MAKE_NODE2(CAstWrapper::PRIMITIVE, MAKE_ARRAY(&cases)));
 }
 
 void InstructionVisitor::visitSelectEnumAddrInst(SelectEnumAddrInst *SEAI) {
   handleSimpleInstr(SEAI);
-  std::list<jobject> cases;
-  for (unsigned int caseNo = 0; caseNo < SEAI->getNumCases(); ++caseNo) {
-    auto Case = SEAI->getCase(caseNo);
-    std::string CaseName = Case.first->getNameStr();
-    std::string DestValue = addressToString(Case.second.getOpaqueValue());
-    if (SWAN_PRINT) {
-      llvm::outs() << "\t\t [CASE NAME]: " << CaseName << "\n";
-      llvm::outs() << "\t\t [DEST VALUE]: " << DestValue << "\n";
-    }
-    cases.push_back(MAKE_NODE3(CAstWrapper::PRIMITIVE,
-      MAKE_CONST(CaseName.c_str()), MAKE_CONST(DestValue.c_str())));
+  std::string EnumName = addressToString(SEAI->getOperand().getOpaqueValue());
+  ADD_PROP(MAKE_CONST(EnumName.c_str()));
+  std::list<jobject> Cases;
+  for (unsigned int i = 0; i < SEAI->getNumCases(); ++i) {
+    auto Case = SEAI->getCase(i);
+    EnumElementDecl *CaseDecl = Case.first;
+    std::string CaseName = CaseDecl->getNameStr().str();
+    std::string CaseValue = addressToString(Case.second);
+    std::list<jobject> Fields;
+    Fields.push_back(MAKE_CONST(CaseName.c_str()));
+    Fields.push_back(MAKE_CONST(CaseValue.c_str()));
+    Cases.push_back(MAKE_NODE2(CAstWrapper::PRIMITIVE, MAKE_ARRAY(&Fields)));
   }
+  ADD_PROP(MAKE_NODE2(CAstWrapper::PRIMITIVE, MAKE_ARRAY(&Cases)));
   if (SEAI->hasDefault()) {
-    std::string DefaultName = "DEFAULT";
     std::string DefaultValue = addressToString(SEAI->getDefaultResult().getOpaqueValue());
-    if (SWAN_PRINT) {
-      llvm::outs() << "\t\t [DEFAULT CASE NAME]: " << DefaultName << "\n";
-      llvm::outs() << "\t\t [DEFAULT VALUE]: " << DefaultValue << "\n";
-    }
-    cases.push_back(MAKE_NODE3(CAstWrapper::PRIMITIVE,
-      MAKE_CONST(DefaultName.c_str()), MAKE_CONST(DefaultValue.c_str())));
+    ADD_PROP(MAKE_CONST(DefaultValue.c_str()));
   }
-  ADD_PROP(MAKE_NODE2(CAstWrapper::PRIMITIVE, MAKE_ARRAY(&cases)));
 }
 
 /*******************************************************************************/
@@ -1680,7 +1670,26 @@ void InstructionVisitor::visitCondBranchInst(CondBranchInst *CBI) {
 }
 
 void InstructionVisitor::visitSwitchValueInst(SwitchValueInst *SVI) {
-  // TODO: UNIMPLEMENTED
+  std::string EnumName = addressToString(SVI->getOperand().getOpaqueValue());
+  ADD_PROP(MAKE_CONST(EnumName.c_str()));
+  std::list<jobject> Cases;
+  for (unsigned int i = 0; i < SVI->getNumCases(); ++i) {
+    auto Case = SVI->getCase(i);
+    SILValue CaseValue = Case.first;
+    SILBasicBlock *CaseBasicBlock = Case.second;
+    std::string CaseValueName = addressToString(CaseValue.getOpaqueValue());
+    int DestBlock = CaseBasicBlock->getDebugID();
+    std::list<jobject> Fields;
+    Fields.push_back(MAKE_CONST(CaseValueName.c_str()));
+    Fields.push_back(MAKE_CONST(DestBlock));
+    Cases.push_back(MAKE_NODE2(CAstWrapper::PRIMITIVE, MAKE_ARRAY(&Fields)));
+  }
+  ADD_PROP(MAKE_NODE2(CAstWrapper::PRIMITIVE, MAKE_ARRAY(&Cases)));
+  if (SVI->hasDefault()) {
+    SILBasicBlock *DefaultBasicBlock = SVI->getDefaultBB();
+    int DestBlock = DefaultBasicBlock->getDebugID();
+    ADD_PROP(MAKE_CONST(DestBlock));
+  }
   
 }
 
@@ -1713,18 +1722,47 @@ void InstructionVisitor::visitSwitchEnumInst(SwitchEnumInst *SWI) {
 }
 
 void InstructionVisitor::visitSwitchEnumAddrInst(SwitchEnumAddrInst *SEAI) {
-  // TODO: UNIMPLEMENTED
-  
+  std::string EnumName = addressToString(SEAI->getOperand().getOpaqueValue());
+  ADD_PROP(MAKE_CONST(EnumName.c_str()));
+  std::list<jobject> Cases;
+  for (unsigned int i = 0; i < SEAI->getNumCases(); ++i) {
+    auto Case = SEAI->getCase(i);
+    EnumElementDecl *CaseDecl = Case.first;
+    SILBasicBlock *CaseBasicBlock = Case.second;
+    std::string CaseName = CaseDecl->getNameStr().str();
+    int DestBlock = CaseBasicBlock->getDebugID();
+    std::list<jobject> Fields;
+    Fields.push_back(MAKE_CONST(CaseName.c_str()));
+    Fields.push_back(MAKE_CONST(DestBlock));
+    Cases.push_back(MAKE_NODE2(CAstWrapper::PRIMITIVE, MAKE_ARRAY(&Fields)));
+  }
+  ADD_PROP(MAKE_NODE2(CAstWrapper::PRIMITIVE, MAKE_ARRAY(&Cases)));
+  if (SEAI->hasDefault()) {
+    SILBasicBlock *DefaultBasicBlock = SEAI->getDefaultBB();
+    int DestBlock = DefaultBasicBlock->getDebugID();
+    ADD_PROP(MAKE_CONST(DestBlock));
+  }
 }
 
 void InstructionVisitor::visitCheckedCastBranchInst(CheckedCastBranchInst *CI) {
+  handleSimpleInstr(CI);
+  SILBasicBlock *successBlock = CI->getSuccessBB();
+  ADD_PROP(MAKE_CONST(successBlock->getDebugID()));
+  SILBasicBlock *failureBlock = CI->getFailureBB();
+  ADD_PROP(MAKE_CONST(failureBlock->getDebugID()));
+}
+
+void InstructionVisitor::visitCheckedCastBranchValueInst(CheckedCastValueBranchInst CI)
+{
   // TODO: UNIMPLEMENTED
-  
 }
 
 void InstructionVisitor::visitCheckedCastAddrBranchInst(CheckedCastAddrBranchInst *CI) {
-  // TODO: UNIMPLEMENTED
-  
+  handleSimpleInstr(CI);
+  SILBasicBlock *successBlock = CI->getSuccessBB();
+  ADD_PROP(MAKE_CONST(successBlock->getDebugID()));
+  SILBasicBlock *failureBlock = CI->getFailureBB();
+  ADD_PROP(MAKE_CONST(failureBlock->getDebugID()));
 }
 
 void InstructionVisitor::visitTryApplyInst(TryApplyInst *TAI) {

@@ -13,6 +13,8 @@
 
 package ca.maple.swan.swift.translator;
 
+import ca.maple.swan.swift.translator.cast.SwiftCAstNode;
+import ca.maple.swan.swift.translator.operators.SILIRCAstOperator;
 import ca.maple.swan.swift.translator.silir.BasicBlock;
 import ca.maple.swan.swift.translator.silir.Function;
 import ca.maple.swan.swift.translator.silir.context.ProgramContext;
@@ -25,17 +27,20 @@ import ca.maple.swan.swift.tree.FunctionEntity;
 import ca.maple.swan.swift.tree.ScriptEntity;
 import com.ibm.wala.cast.ir.translator.AbstractCodeEntity;
 import com.ibm.wala.cast.tree.CAstEntity;
+import com.ibm.wala.cast.tree.CAstLeafNode;
 import com.ibm.wala.cast.tree.CAstNode;
 import com.ibm.wala.cast.tree.CAstSourcePositionMap.Position;
 import com.ibm.wala.cast.tree.impl.CAstImpl;
 import com.ibm.wala.cast.tree.impl.CAstOperator;
 import com.ibm.wala.cast.tree.impl.CAstSymbolImpl;
+import com.ibm.wala.util.collections.Pair;
 import com.ibm.wala.util.debug.Assertions;
 
 import java.io.File;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Stack;
 
 /*
  * Translates SILIR to CAst. Nothing particularly interesting happens here since all of the
@@ -44,9 +49,8 @@ import java.util.HashSet;
 
 public class SILIRToCAstTranslator {
 
-    private static final boolean DEBUG = true;
-
     public static final CAstImpl Ast = new CAstImpl();
+    private static final boolean DEBUG = true;
 
     public CAstEntity translate(File file, ProgramContext pc) {
 
@@ -165,9 +169,9 @@ public class SILIRToCAstTranslator {
                 for (Value v : c.decls) {
                     declStmts.add(
                             Ast.makeNode(
-                            CAstNode.DECL_STMT,
-                            Ast.makeConstant(
-                                    new CAstSymbolImpl(v.name, SILTypes.getType(v.type)))));
+                                    CAstNode.DECL_STMT,
+                                    Ast.makeConstant(
+                                            new CAstSymbolImpl(v.name, SILTypes.getType(v.type)))));
                 }
                 c.currentBody.addAll(1, declStmts);
                 ArrayList<CAstNode> globalDeclStmts = new ArrayList<>();
@@ -205,11 +209,6 @@ public class SILIRToCAstTranslator {
             return n;
         }
 
-        @Override
-        public void visitSwitchTypeOfInstruction(SwitchTypeOfInstruction instruction) {
-            // TODO
-        }
-
         private CAstNode makeGotoNode(BasicBlock bb) {
             CAstNode n = Ast.makeNode(CAstNode.GOTO, Ast.makeConstant("bb" + bb.getNumber()));
             c.currentEntity.setGotoTarget(n, c.bbLabels.get(bb.getNumber()));
@@ -222,6 +221,37 @@ public class SILIRToCAstTranslator {
 
         private void setNodePosition(CAstNode n, SILIRInstruction instruction) {
             c.currentEntity.setNodePosition(n, instruction.ic.position);
+        }
+
+        public CAstNode ifStmtSwitch(Stack<Pair<Value, BasicBlock>> cases, Value toCompare, BasicBlock defaultBlock) {
+            if (!cases.empty()) {
+                Pair<Value, BasicBlock> Case = cases.pop();
+                return Ast.makeNode(
+                        CAstNode.IF_STMT,
+                        Ast.makeNode(
+                                CAstNode.BINARY_EXPR,
+                                CAstOperator.OP_EQ,
+                                makeVarNode(toCompare),
+                                makeVarNode(Case.fst)),
+                        makeGotoNode(Case.snd),
+                        ifStmtSwitch(cases, toCompare, defaultBlock));
+            } else {
+                if (defaultBlock != null) {
+                    return makeGotoNode(defaultBlock);
+                }
+                return Ast.makeNode(CAstNode.EMPTY);
+            }
+        }
+
+        @Override
+        public void visitSwitchValueInstruction(SwitchValueInstruction instruction) {
+            Stack<Pair<Value, BasicBlock>> cases = new Stack<>();
+            for (Pair<Value, BasicBlock> c : instruction.cases) {
+                cases.push(c);
+            }
+            CAstNode n = ifStmtSwitch(cases, instruction.switchValue, instruction.defaultBlock);
+            setNodePosition(n, instruction);
+            addNode(n);
         }
 
         @Override
@@ -247,9 +277,9 @@ public class SILIRToCAstTranslator {
         public void visitAssignGlobalInstruction(AssignGlobalInstruction instruction) {
             CAstNode n =
                     Ast.makeNode(
-                        CAstNode.ASSIGN,
-                        makeVarNode(instruction.to),
-                        makeVarNode(instruction.from));
+                            CAstNode.ASSIGN,
+                            makeVarNode(instruction.to),
+                            makeVarNode(instruction.from));
             setNodePosition(n, instruction);
             addNode(n);
         }
@@ -266,7 +296,7 @@ public class SILIRToCAstTranslator {
         }
 
         @Override
-        public void visitConditionBranchInstruction(CondtionBranchInstruction instruction) {
+        public void visitConditionalBranchInstruction(ConditionalBranchInstruction instruction) {
             CAstNode n =
                     Ast.makeNode(
                             CAstNode.IF_STMT,
@@ -277,10 +307,9 @@ public class SILIRToCAstTranslator {
             addNode(n);
         }
 
-        @Override
-        public void visitBinaryOperatorInstruction(BinaryOperatorInstruction instruction) {
-            CAstOperator operator;
-            switch(instruction.operator) {
+        private CAstLeafNode getOperator(String s) {
+            CAstLeafNode operator;
+            switch (s) {
                 case "==":
                     operator = CAstOperator.OP_EQ;
                     break;
@@ -293,27 +322,53 @@ public class SILIRToCAstTranslator {
                 case "-":
                     operator = CAstOperator.OP_SUB;
                     break;
+                case "binary_arb":
+                    operator = SILIRCAstOperator.OP_BINARY_ARBITRARY;
+                    break;
+                case "unary_arb":
+                    operator = SILIRCAstOperator.OP_UNARY_ARBITRARY;
+                    break;
                 default:
                     operator = CAstOperator.OP_EQ;
-                    System.err.println("Operator not handled: " + instruction.operator + ". Defaulting to ==");
+                    System.err.println("Operator not handled: " + s + ". Defaulting to ==");
                     break;
             }
+            return  operator;
+        }
+
+        @Override
+        public void visitBinaryOperatorInstruction(BinaryOperatorInstruction instruction) {
+            CAstLeafNode operator;
+
             CAstNode n =
                     Ast.makeNode(
                             CAstNode.ASSIGN,
                             makeVarNode(instruction.resultValue),
                             Ast.makeNode(
-                                CAstNode.BINARY_EXPR,
-                                operator,
-                                makeVarNode(instruction.operand1),
-                                makeVarNode(instruction.operand2)));
+                                    CAstNode.BINARY_EXPR,
+                                    getOperator(instruction.operator),
+                                    makeVarNode(instruction.operand1),
+                                    makeVarNode(instruction.operand2)));
             setNodePosition(n, instruction);
             addNode(n);
         }
 
         @Override
         public void visitBuiltinInstruction(BuiltinInstruction instruction) {
-            // NOP (for now)
+            if (instruction.value.summaryCreated) {
+                CAstEntity entity = (c.allEntities.get(instruction.functionName));
+                Assertions.productionAssertion(entity != null);
+                CAstNode n =
+                        Ast.makeNode(
+                                CAstNode.ASSIGN,
+                                makeVarNode(instruction.value),
+                                Ast.makeNode(
+                                        CAstNode.FUNCTION_EXPR,
+                                        Ast.makeConstant(entity)));
+                c.currentEntity.addScopedEntity(null, entity);
+                setNodePosition(n, instruction);
+                addNode(n);
+            }
         }
 
         @Override
@@ -366,6 +421,44 @@ public class SILIRToCAstTranslator {
             addNode(n);
         }
 
+        public CAstNode ifStmtAssignSwitch(Value result, Stack<Pair<Value, Value>> cases, Value toCompare, Value defaultValue) {
+            if (!cases.empty()) {
+                Pair<Value, Value> Case = cases.pop();
+                return Ast.makeNode(
+                        CAstNode.IF_STMT,
+                        Ast.makeNode(
+                                CAstNode.BINARY_EXPR,
+                                CAstOperator.OP_EQ,
+                                makeVarNode(toCompare),
+                                makeVarNode(Case.fst)),
+                        Ast.makeNode(
+                                CAstNode.ASSIGN,
+                                makeVarNode(result),
+                                makeVarNode(Case.snd)
+                        ),
+                        ifStmtAssignSwitch(result, cases, toCompare, defaultValue));
+            } else {
+                if (defaultValue != null) {
+                    return Ast.makeNode(
+                            CAstNode.ASSIGN,
+                            makeVarNode(result),
+                            makeVarNode(defaultValue));
+                }
+                return Ast.makeNode(CAstNode.EMPTY);
+            }
+        }
+
+        @Override
+        public void visitSwitchAssignValueInstruction(SwitchAssignValueInstruction instruction) {
+            Stack<Pair<Value, Value>> cases = new Stack<>();
+            for (Pair<Value, Value> c : instruction.cases) {
+                cases.push(c);
+            }
+            CAstNode n = ifStmtAssignSwitch(instruction.result, cases, instruction.switchValue, instruction.defaultValue);
+            setNodePosition(n, instruction);
+            addNode(n);
+        }
+
         @Override
         public void visitFunctionRefInstruction(FunctionRefInstruction instruction) {
             CAstEntity entity = (c.allEntities.get(instruction.value.getFunction().getName()));
@@ -375,8 +468,8 @@ public class SILIRToCAstTranslator {
                             CAstNode.ASSIGN,
                             makeVarNode(instruction.value),
                             Ast.makeNode(
-                                CAstNode.FUNCTION_EXPR,
-                                Ast.makeConstant(entity)));
+                                    CAstNode.FUNCTION_EXPR,
+                                    Ast.makeConstant(entity)));
             c.currentEntity.addScopedEntity(null, entity);
             setNodePosition(n, instruction);
             addNode(n);
@@ -455,23 +548,58 @@ public class SILIRToCAstTranslator {
         }
 
         @Override
+        public void visitConditionalThrowInstruction(ConditionalThrowInstruction instruction) {
+            CAstNode n =
+                    Ast.makeNode(
+                            CAstNode.IF_STMT,
+                            makeVarNode(instruction.conditionValue),
+                            Ast.makeNode(CAstNode.THROW)
+                    );
+            setNodePosition(n, instruction);
+            addNode(n);
+        }
+
+        @Override
+        public void visitThrowInstruction(ThrowInstruction instruction) {
+            CAstNode n =
+                    Ast.makeNode(
+                            CAstNode.THROW
+                    );
+            setNodePosition(n, instruction);
+            addNode(n);
+        }
+
+        @Override
         public void visitReturnInstruction(ReturnInstruction instruction) {
             CAstNode n =
                     (instruction.hasReturnVal()
-                    ? Ast.makeNode(CAstNode.RETURN, makeVarNode(instruction.getReturnVal()))
-                    : Ast.makeNode(CAstNode.RETURN));
+                            ? Ast.makeNode(CAstNode.RETURN, makeVarNode(instruction.getReturnVal()))
+                            : Ast.makeNode(CAstNode.RETURN));
             setNodePosition(n, instruction);
             addNode(n);
         }
 
         @Override
         public void visitUnaryOperatorInstruction(UnaryOperatorInstruction instruction) {
-            // TODO
+            CAstNode n =
+                    Ast.makeNode(
+                            CAstNode.ASSIGN,
+                            Ast.makeNode(
+                                    CAstNode.UNARY_EXPR,
+                                    getOperator(instruction.operator),
+                                    makeVarNode(instruction.operand)
+
+                            ),
+                            makeVarNode(instruction.resultValue)
+                    );
+            setNodePosition(n, instruction);
+            addNode(n);
         }
 
         @Override
         public void visitYieldInstruction(YieldInstruction instruction) {
             // TODO
+            System.err.println("ERROR: Unhandled instruction: " + new Exception().getStackTrace()[0].getMethodName());
         }
     }
 

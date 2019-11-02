@@ -350,6 +350,7 @@ namespace swan {
     void visitSwitchEnumInst(SwitchEnumInst *SWI);
     void visitSwitchEnumAddrInst(SwitchEnumAddrInst *SEAI);
     void visitCheckedCastBranchInst(CheckedCastBranchInst *CI);
+    void visitCheckedCastBranchValueInst(CheckedCastValueBranchInst CI);
     void visitCheckedCastAddrBranchInst(CheckedCastAddrBranchInst *CI);
     void visitTryApplyInst(TryApplyInst *TAI);
 

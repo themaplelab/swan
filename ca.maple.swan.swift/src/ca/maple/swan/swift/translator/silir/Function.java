@@ -84,6 +84,8 @@ public class Function {
     public String toString() {
         ValueNameSimplifier.clear();
         StringBuilder s = new StringBuilder("func ");
+        s.append(this.returnType);
+        s.append(" ");
         s.append("`");
         s.append(this.name);
         s.append("`");

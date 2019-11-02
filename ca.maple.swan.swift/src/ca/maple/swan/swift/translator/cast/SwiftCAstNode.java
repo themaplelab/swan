@@ -1,4 +1,4 @@
-package ca.maple.swan.swift.translator;
+package ca.maple.swan.swift.translator.cast;
 
 import com.ibm.wala.cast.tree.CAstNode;
 

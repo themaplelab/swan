@@ -26,7 +26,6 @@ import ca.maple.swan.swift.translator.silir.values.*;
 import com.ibm.wala.cast.tree.CAstNode;
 import com.ibm.wala.cast.tree.CAstSourcePositionMap;
 import com.ibm.wala.cast.tree.CAstSourcePositionMap.Position;
-import com.ibm.wala.shrikeBT.ConditionalBranchInstruction;
 import com.ibm.wala.util.collections.Pair;
 import com.ibm.wala.util.debug.Assertions;
 
@@ -462,9 +461,9 @@ public class RawToSILIRTranslator extends SILInstructionVisitor<SILIRInstruction
 
     @Override
     protected SILIRInstruction visitIsEscapingClosure(CAstNode N, InstructionContext C) {
-        // TODO: Maybe create a custom or dummy operator here for a unary instruction?
-        System.err.println("ERROR: Unhandled instruction: " + new Exception().getStackTrace()[0].getMethodName());
-        return null;
+        RawValue operand = getSingleOperand(N);
+        RawValue result = getSingleResult(N);
+        return new UnaryOperatorInstruction(result.Name, result.Type, "binary_arb", operand.Name, C);
     }
 
     @Override
@@ -561,6 +560,16 @@ public class RawToSILIRTranslator extends SILInstructionVisitor<SILIRInstruction
         return visitFunctionRef(N, C);
     }
 
+    private Function createFakeFunction(String name, String returnType, ArrayList<Argument> args, InstructionContext C) {
+        Function f = new Function(name, returnType, null, args);
+        BasicBlock bb = new BasicBlock(0);
+        String randomName = UUID.randomUUID().toString();
+        bb.addInstruction(new NewInstruction(randomName, returnType, C));
+        bb.addInstruction(new ReturnInstruction(randomName, C));
+        f.addBlock(bb);
+        return f;
+    }
+
     @Override
     protected SILIRInstruction visitApply(CAstNode N, InstructionContext C) {
         RawValue result = getSingleResult(N);
@@ -573,16 +582,19 @@ public class RawToSILIRTranslator extends SILInstructionVisitor<SILIRInstruction
         }
         if (refValue instanceof BuiltinFunctionRefValue) {
             String name = ((BuiltinFunctionRefValue) refValue).getFunction();
-            if (BuiltinHandler.isBuiltIn(name) || BuiltinHandler.isSummarized(name)) {
-                if (BuiltinHandler.isSummarized(name)) {
-                    return BuiltinHandler.findSummary(name, result.Name, result.Type, args, C);
-                } else {
-                    // TEMPORARY SOLUTION
-                    return new LiteralInstruction("unsummarized builtin", result.Name, result.Type, C);
-                }
+            if (BuiltinHandler.isSummarized(name)) {
+                return BuiltinHandler.findSummary(name, result.Name, result.Type, args, C);
             } else {
-                // TODO: Make new function here. What to then do with builtin ref?
-                return null;
+                // Make a function for builtins we don't have summaries for.
+                ArrayList<Argument> funcArgs = new ArrayList<>();
+                for (String arg : args) {
+                    Argument a = new Argument(arg, C.valueTable().getValue(arg).type);
+                    funcArgs.add(a);
+                }
+                Function f = createFakeFunction(((BuiltinFunctionRefValue) refValue).getFunction(), result.Type, funcArgs, C);
+                C.bc.fc.pc.addFunction(f.getName(), f);
+                ((BuiltinFunctionRefValue) refValue).summaryCreated = true;
+                return new ApplyInstruction(refValue.name, result.Name, result.Type, args, C);
             }
         } else if (refValue instanceof FunctionRefValue) {
             return new ApplyInstruction(FuncRefValue, result.Name, result.Type, args, C);
@@ -634,9 +646,22 @@ public class RawToSILIRTranslator extends SILInstructionVisitor<SILIRInstruction
 
     @Override
     protected SILIRInstruction visitBuiltin(CAstNode N, InstructionContext C) {
-        // TODO: Create new function here too
-        System.err.println("ERROR: Unhandled instruction: " + new Exception().getStackTrace()[0].getMethodName());
-        return null;
+        RawValue result = getSingleResult(N);
+        String functionName = getStringValue(N, 2);
+        String builtinIntermediate = UUID.randomUUID().toString();
+        C.bc.block.addInstruction(new BuiltinInstruction(functionName, builtinIntermediate, "temp", C));
+        ArrayList<Argument> funcArgs = new ArrayList<>();
+        ArrayList<String> args = new ArrayList<>();
+        for (CAstNode argNode : N.getChild(3).getChildren()) {
+            String arg = (String)argNode.getValue();
+            Argument a = new Argument(arg, C.valueTable().getValue(arg).type);
+            funcArgs.add(a);
+            args.add(arg);
+        }
+        Function f = createFakeFunction(functionName, result.Type, funcArgs, C);
+        C.bc.fc.pc.addFunction(f.getName(), f);
+        ((BuiltinFunctionRefValue) C.valueTable().getValue(builtinIntermediate)).summaryCreated = true;
+        return new ApplyInstruction(builtinIntermediate, result.Name, result.Type, args, C);
     }
 
     @Override
@@ -865,16 +890,42 @@ public class RawToSILIRTranslator extends SILInstructionVisitor<SILIRInstruction
 
     @Override
     protected SILIRInstruction visitSelectEnum(CAstNode N, InstructionContext C) {
-        // TODO
-        System.err.println("ERROR: Unhandled instruction: " + new Exception().getStackTrace()[0].getMethodName());
-        return null;
+        RawValue result = getSingleResult(N);
+        String EnumName = getStringValue(N, 2);
+        ArrayList<Pair<String, String>> cases = new ArrayList<>();
+        for (CAstNode CaseNode : N.getChild(3).getChildren()) {
+            String CaseName = getStringValue(CaseNode, 0);
+            String CaseValue = getStringValue(CaseNode, 1);
+            cases.add(Pair.make(CaseName, CaseValue));
+        }
+        String defaultName = null;
+        if (N.getChildren().size() > 4) {
+            defaultName = getStringValue(N, 4);
+        }
+        String enumTypeValue = UUID.randomUUID().toString();
+        C.bc.block.addInstruction(new FieldReadInstruction(enumTypeValue, "$String", EnumName, "type", C));
+        return new SwitchAssignValueInstruction(result.Name, result.Type, enumTypeValue, cases, defaultName, C);
     }
 
     @Override
     protected SILIRInstruction visitSelectEnumAddr(CAstNode N, InstructionContext C) {
-        // TODO
-        System.err.println("ERROR: Unhandled instruction: " + new Exception().getStackTrace()[0].getMethodName());
-        return null;
+        RawValue result = getSingleResult(N);
+        String EnumName = getStringValue(N, 2);
+        ArrayList<Pair<String, String>> cases = new ArrayList<>();
+        for (CAstNode CaseNode : N.getChild(3).getChildren()) {
+            String CaseName = getStringValue(CaseNode, 0);
+            String CaseValue = getStringValue(CaseNode, 1);
+            cases.add(Pair.make(CaseName, CaseValue));
+        }
+        String defaultName = null;
+        if (N.getChildren().size() > 4) {
+            defaultName = getStringValue(N, 4);
+        }
+        String actualEnumValue = UUID.randomUUID().toString();
+        C.bc.block.addInstruction(new FieldReadInstruction(EnumName, "temp", EnumName, "value", C));
+        String enumTypeValue = UUID.randomUUID().toString();
+        C.bc.block.addInstruction(new FieldReadInstruction(enumTypeValue, "$String", actualEnumValue, "type", C));
+        return new SwitchAssignValueInstruction(result.Name, result.Type, enumTypeValue, cases, defaultName, C);
     }
 
     @Override
@@ -974,8 +1025,10 @@ public class RawToSILIRTranslator extends SILInstructionVisitor<SILIRInstruction
 
     @Override
     protected SILIRInstruction visitProjectBlockStorage(CAstNode N, InstructionContext C) {
-        // TODO
-        System.err.println("ERROR: Unhandled instruction: " + new Exception().getStackTrace()[0].getMethodName());
+        RawValue operand = getSingleOperand(N);
+        RawValue result = getSingleResult(N);
+        C.bc.block.addInstruction(new NewInstruction(result.Name, result.Type, C));
+        C.bc.block.addInstruction(new FieldWriteInstruction(result.Name, "value", operand.Name, C));
         return null;
     }
 
@@ -1199,16 +1252,18 @@ public class RawToSILIRTranslator extends SILInstructionVisitor<SILIRInstruction
 
     @Override
     protected SILIRInstruction visitCondFail(CAstNode N, InstructionContext C) {
-        // TODO
-        System.err.println("ERROR: Unhandled instruction: " + new Exception().getStackTrace()[0].getMethodName());
+        RawValue operand = getSingleOperand(N);
+        String Literal1 = UUID.randomUUID().toString();
+        C.bc.block.addInstruction(new LiteralInstruction(1, Literal1, "$Builtin.Int1", C));
+        String ConditionIntermediate = UUID.randomUUID().toString();
+        C.bc.block.addInstruction(new BinaryOperatorInstruction(ConditionIntermediate, "$Bool", "==", operand.Name, Literal1, C));
+        C.bc.block.addInstruction(new ConditionalThrowInstruction(ConditionIntermediate, C));
         return null;
     }
 
     @Override
     protected SILIRInstruction visitUnreachable(CAstNode N, InstructionContext C) {
-        // TODO
-        System.err.println("ERROR: Unhandled instruction: " + new Exception().getStackTrace()[0].getMethodName());
-        return null;
+        return new ThrowInstruction(C);
     }
 
     @Override
@@ -1219,9 +1274,8 @@ public class RawToSILIRTranslator extends SILInstructionVisitor<SILIRInstruction
 
     @Override
     protected SILIRInstruction visitThrow(CAstNode N, InstructionContext C) {
-        // TODO
-        System.err.println("ERROR: Unhandled instruction: " + new Exception().getStackTrace()[0].getMethodName());
-        return null;
+        RawValue Error = getSingleOperand(N);
+        return new ThrowInstruction(Error.Name, C);
     }
 
     @Override
@@ -1289,14 +1343,35 @@ public class RawToSILIRTranslator extends SILInstructionVisitor<SILIRInstruction
         }
         BasicBlock falseBB = assignBlockArgs(Integer.parseInt(FalseDestName), falseArgs, C);
         C.bc.block.addInstruction(new BinaryOperatorInstruction(IntermediateConditionName, "$Bool", "==", IntermediateLiteralName, CondOperandName, C));
-        return new CondtionBranchInstruction(IntermediateConditionName, trueBB, falseBB, C);
+        return new ConditionalBranchInstruction(IntermediateConditionName, trueBB, falseBB, C);
     }
 
     @Override
     protected SILIRInstruction visitSwitchValue(CAstNode N, InstructionContext C) {
-        // TODO
-        System.err.println("ERROR: Unhandled instruction: " + new Exception().getStackTrace()[0].getMethodName());
-        return null;
+        String ConditionName = (String) N.getChild(0).getValue();
+        ArrayList<Pair<String, BasicBlock>> cases = new ArrayList<>();
+        boolean createdGetInstruction = false;
+        String tempDataValueName = null;
+        for (CAstNode Case : N.getChild(1).getChildren()) {
+            String CaseName = getStringValue(Case, 0);
+            int DestBB = getIntValue(Case, 1);
+            BasicBlock destBlock = C.bc.fc.function.getBlock(DestBB);
+            cases.add(Pair.make(CaseName, destBlock));
+            if (destBlock.getArguments().size() > 0) {
+                if (!createdGetInstruction) {
+                    tempDataValueName = UUID.randomUUID().toString();
+                    C.bc.block.addInstruction(new FieldReadInstruction(tempDataValueName, destBlock.getArgument(0).type, CaseName, "data", C));
+                    createdGetInstruction = true;
+                }
+                C.bc.block.addInstruction(new ImplicitCopyInstruction(destBlock.getArgument(0).name, tempDataValueName, C));
+            }
+        }
+        BasicBlock defaultBlock = null;
+        if (N.getChildren().size() > 2) {
+            int DestBB = getIntValue(N, 2);
+            defaultBlock = C.bc.fc.function.getBlock(DestBB);
+        }
+        return new SwitchValueInstruction(ConditionName, cases, defaultBlock, C);
     }
 
     @Override
@@ -1308,7 +1383,7 @@ public class RawToSILIRTranslator extends SILInstructionVisitor<SILIRInstruction
     @Override
     protected SILIRInstruction visitSwitchEnum(CAstNode N, InstructionContext C) {
         String EnumName = (String) N.getChild(0).getValue();
-        ArrayList<Pair<String, BasicBlock>> cases = new ArrayList<Pair<String, BasicBlock>>();
+        ArrayList<Pair<String, BasicBlock>> cases = new ArrayList<>();
         // If the enum has data and at least one case expects an argument, we generate an
         // instruction that puts the data in a temporary value to then copy to the block argument.
         // We only want to create this instruction once so we keep track of a bool.
@@ -1316,15 +1391,17 @@ public class RawToSILIRTranslator extends SILInstructionVisitor<SILIRInstruction
         String tempDataValueName = null;
         for (CAstNode Case : N.getChild(1).getChildren()) {
             String CaseName = getStringValue(Case, 0);
+            String tempCaseValue = UUID.randomUUID().toString();
+            C.bc.block.addInstruction(new LiteralInstruction(CaseName, tempCaseValue, "$String", C));
             int DestBB = getIntValue(Case, 1);
             BasicBlock destBlock = C.bc.fc.function.getBlock(DestBB);
-            cases.add(Pair.make(CaseName, destBlock));
+            cases.add(Pair.make(tempCaseValue, destBlock));
             // If the block takes an argument, do an implicit copy.
             // A block has zero or exactly one argument.
             if (destBlock.getArguments().size() > 0) {
                 if (!createdGetInstruction) {
                     tempDataValueName = UUID.randomUUID().toString();
-                    C.bc.block.addInstruction(new FieldReadInstruction(tempDataValueName, "temp", CaseName, "data", C));
+                    C.bc.block.addInstruction(new FieldReadInstruction(tempDataValueName, destBlock.getArgument(0).type, CaseName, "data", C));
                     createdGetInstruction = true;
                 }
                 C.bc.block.addInstruction(new ImplicitCopyInstruction(destBlock.getArgument(0).name, tempDataValueName, C));
@@ -1337,14 +1414,43 @@ public class RawToSILIRTranslator extends SILInstructionVisitor<SILIRInstruction
             int DestBB = getIntValue(N, 2);
             defaultBlock = C.bc.fc.function.getBlock(DestBB);
         }
-        return new SwitchTypeOfInstruction(EnumName, cases, defaultBlock, C);
+        String tempName = UUID.randomUUID().toString();
+        C.bc.block.addInstruction(new FieldReadInstruction(tempName, "$String", EnumName, "type", C));
+        return new SwitchValueInstruction(tempName, cases, defaultBlock, C);
     }
 
     @Override
     protected SILIRInstruction visitSwitchEnumAddr(CAstNode N, InstructionContext C) {
-        // TODO
-        System.err.println("ERROR: Unhandled instruction: " + new Exception().getStackTrace()[0].getMethodName());
-        return null;
+        String EnumName = (String) N.getChild(0).getValue();
+        ArrayList<Pair<String, BasicBlock>> cases = new ArrayList<>();
+        boolean createdGetInstruction = false;
+        String tempDataValueName = null;
+        for (CAstNode Case : N.getChild(1).getChildren()) {
+            String CaseName = getStringValue(Case, 0);
+            String tempCaseValue = UUID.randomUUID().toString();
+            C.bc.block.addInstruction(new LiteralInstruction(CaseName, tempCaseValue, "$String", C));
+            int DestBB = getIntValue(Case, 1);
+            BasicBlock destBlock = C.bc.fc.function.getBlock(DestBB);
+            cases.add(Pair.make(tempCaseValue, destBlock));
+            if (destBlock.getArguments().size() > 0) {
+                if (!createdGetInstruction) {
+                    tempDataValueName = UUID.randomUUID().toString();
+                    C.bc.block.addInstruction(new FieldReadInstruction(tempDataValueName, destBlock.getArgument(0).type, CaseName, "data", C));
+                    createdGetInstruction = true;
+                }
+                C.bc.block.addInstruction(new ImplicitCopyInstruction(destBlock.getArgument(0).name, tempDataValueName, C));
+            }
+        }
+        BasicBlock defaultBlock = null;
+        if (N.getChildren().size() > 2) {
+            int DestBB = getIntValue(N, 2);
+            defaultBlock = C.bc.fc.function.getBlock(DestBB);
+        }
+        String actualEnumValue = UUID.randomUUID().toString();
+        C.bc.block.addInstruction(new FieldReadInstruction(actualEnumValue, "temp", EnumName, "value", C));
+        String tempName = UUID.randomUUID().toString();
+        C.bc.block.addInstruction(new FieldReadInstruction(tempName, "$String", actualEnumValue, "type", C));
+        return new SwitchValueInstruction(tempName, cases, defaultBlock, C);
     }
 
     @Override
@@ -1356,8 +1462,12 @@ public class RawToSILIRTranslator extends SILInstructionVisitor<SILIRInstruction
 
     @Override
     protected SILIRInstruction visitCheckedCastBr(CAstNode N, InstructionContext C) {
-        // TODO
-        System.err.println("ERROR: Unhandled instruction: " + new Exception().getStackTrace()[0].getMethodName());
+        RawValue operand = getSingleOperand(N);
+        String condition = UUID.randomUUID().toString();
+        C.bc.block.addInstruction(new UnaryOperatorInstruction(condition, "$Bool", "unary_arb", operand.Name, C));
+        BasicBlock successBB = C.bc.fc.function.getBlock(getIntValue(N, 2));
+        BasicBlock failureBB = C.bc.fc.function.getBlock(getIntValue(N, 2));
+        C.bc.block.addInstruction(new ConditionalBranchInstruction(condition, successBB, failureBB, C));
         return null;
     }
 
@@ -1369,8 +1479,13 @@ public class RawToSILIRTranslator extends SILInstructionVisitor<SILIRInstruction
 
     @Override
     protected SILIRInstruction visitCheckedCastAddrBr(CAstNode N, InstructionContext C) {
-        // TODO
-        System.err.println("ERROR: Unhandled instruction: " + new Exception().getStackTrace()[0].getMethodName());
+        RawValue operand1 = getOperand(N, 0);
+        RawValue operand2 = getOperand(N, 1);
+        String condition = UUID.randomUUID().toString();
+        C.bc.block.addInstruction(new BinaryOperatorInstruction(condition, "$Bool", "binary_arb", operand1.Name, operand2.Name, C));
+        BasicBlock successBB = C.bc.fc.function.getBlock(getIntValue(N, 2));
+        BasicBlock failureBB = C.bc.fc.function.getBlock(getIntValue(N, 2));
+        C.bc.block.addInstruction(new ConditionalBranchInstruction(condition, successBB, failureBB, C));
         return null;
     }
 

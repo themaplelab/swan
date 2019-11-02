@@ -18,19 +18,19 @@ import ca.maple.swan.swift.translator.silir.values.Value;
 
 public class UnaryOperatorInstruction extends SILIRInstruction {
 
-    private final Value resultValue;
+    public final Value resultValue;
 
-    private final String operator;
+    public final String operator;
 
-    private final Value operand;
+    public final Value operand;
 
     public UnaryOperatorInstruction(String resultName, String resultType,
-                                     String operator, String operand1, InstructionContext ic) {
+                                     String operator, String operand, InstructionContext ic) {
         super(ic);
         this.resultValue = new Value(resultName, resultType);
         ic.valueTable().add(this.resultValue);
         this.operator = operator;
-        this.operand = ic.valueTable().getValue(operand1);
+        this.operand = ic.valueTable().getValue(operand);
     }
 
     @Override
