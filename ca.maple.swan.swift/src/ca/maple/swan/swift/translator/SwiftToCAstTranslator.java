@@ -47,6 +47,8 @@ public class SwiftToCAstTranslator extends NativeTranslatorToCAst {
 
 	private static Map<String, CAstNode> translatedModules = new HashMap<>();
 
+	public static Set<String> functionNames = null;
+
 	private static Map<String, String> paths = new HashMap<>();
 
 	static {
@@ -77,6 +79,7 @@ public class SwiftToCAstTranslator extends NativeTranslatorToCAst {
 	public CAstEntity translateToCAst() {
 		assert(!translatedModules.isEmpty());
 		ProgramContext pc = new RawToSILIRTranslator().translate(translatedModules.get(this.sourceFileName).getChild(1));
+		functionNames = pc.getFunctionNames();
 		if (DEBUG) {
 			pc.printFunctions();
 		}

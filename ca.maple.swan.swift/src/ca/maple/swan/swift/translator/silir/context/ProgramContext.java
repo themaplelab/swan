@@ -20,6 +20,7 @@ import ca.maple.swan.swift.translator.silir.values.ValueTable;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Set;
 
 /*
  * Holds anything a program would need for translation.
@@ -46,6 +47,10 @@ public class ProgramContext {
             return allFunctions.get(s);
         }
         return null;
+    }
+
+    public Set<String> getFunctionNames() {
+        return allFunctions.keySet();
     }
 
     public ArrayList<Function> getFunctions() {
