@@ -127,37 +127,70 @@ public class RawToSILIRTranslator extends SILInstructionVisitor<SILIRInstruction
         return (CAstSourcePositionMap.Position) N.getChild(1).getValue();
     }
 
+    /********************** INSTRUCTION TRANSLATION **********************
+     * Every instruction has some extra information commented before it.
+     *
+     * FREQUENCY: How often this instruction occurs in test cases. This is
+     *            just set relative to the frequency of other instructions.
+     *            VERY COMMON > COMMON > UNCOMMON > RARE > UNSEEN
+     * STATUS: Whether this instruction is translated.
+     * CONFIDENCE: Confidence level of translation. e.g. LOW would probably
+     *             mean its an initial translation based off SIL.rst but
+     *             could be wrong in practice.
+     *
+     * Please see https://github.com/apple/swift/blob/master/docs/SIL.rst
+     * for more information about what each instruction does.
+     */
+
     @Override
+    // FREQUENCY: VERY COMMON
+    // STATUS: TRANSLATED
+    // CONFIDENCE: HIGH
     protected SILIRInstruction visitAllocStack(CAstNode N, InstructionContext C) {
         RawValue result = getSingleResult(N);
         return new NewInstruction(result.Name, result.Type, C);
     }
 
     @Override
+    // FREQUENCY: COMMON
+    // STATUS: TRANSLATED
+    // CONFIDENCE: HIGH
     protected SILIRInstruction visitAllocRef(CAstNode N, InstructionContext C) {
         RawValue result = getSingleResult(N);
         return new NewInstruction(result.Name, result.Type, C);
     }
 
     @Override
+    // FREQUENCY: UNCOMMON
+    // STATUS: TRANSLATED
+    // CONFIDENCE: HIGH
     protected SILIRInstruction visitAllocRefDynamic(CAstNode N, InstructionContext C) {
         RawValue result = getSingleResult(N);
         return new NewInstruction(result.Name, result.Type, C);
     }
 
     @Override
+    // FREQUENCY: VERY COMMON
+    // STATUS: TRANSLATED
+    // CONFIDENCE: HIGH
     protected SILIRInstruction visitAllocBox(CAstNode N, InstructionContext C) {
         RawValue result = getSingleResult(N);
         return new NewInstruction(result.Name, result.Type, C);
     }
 
     @Override
+    // FREQUENCY: UNSEEN
+    // STATUS: UNHANDLED
+    // CONFIDENCE:
     protected SILIRInstruction visitAllocValueBuffer(CAstNode N, InstructionContext C) {
         System.err.println("ERROR: Unhandled instruction: " + new Exception().getStackTrace()[0].getMethodName());
         return null;
     }
 
     @Override
+    // FREQUENCY: COMMON
+    // STATUS: TRANSLATED
+    // CONFIDENCE: HIGH
     protected SILIRInstruction visitAllocGlobal(CAstNode N, InstructionContext C) {
         String GlobalName = RawUtil.getStringValue(N, 0);
         String GlobalType = RawUtil.getStringValue(N, 1);
@@ -165,18 +198,27 @@ public class RawToSILIRTranslator extends SILInstructionVisitor<SILIRInstruction
     }
 
     @Override
+    // FREQUENCY: VERY COMMON
+    // STATUS: TRANSLATED
+    // CONFIDENCE: HIGH
     protected SILIRInstruction visitDeallocStack(CAstNode N, InstructionContext C) {
         // NOP
         return null;
     }
 
     @Override
+    // FREQUENCY: RARE
+    // STATUS: TRANSLATED
+    // CONFIDENCE: HIGH
     protected SILIRInstruction visitDeallocBox(CAstNode N, InstructionContext C) {
         // NOP
         return null;
     }
 
     @Override
+    // FREQUENCY: VERY COMMON
+    // STATUS: TRANSLATED
+    // CONFIDENCE: HIGH
     protected SILIRInstruction visitProjectBox(CAstNode N, InstructionContext C) {
         RawValue operand = getSingleOperand(N);
         RawValue result = getSingleResult(N);
@@ -184,42 +226,63 @@ public class RawToSILIRTranslator extends SILInstructionVisitor<SILIRInstruction
     }
 
     @Override
+    // FREQUENCY: VERY COMMON
+    // STATUS: TRANSLATED
+    // CONFIDENCE: HIGH
     protected SILIRInstruction visitDeallocRef(CAstNode N, InstructionContext C) {
         // NOP
         return null;
     }
 
     @Override
+    // FREQUENCY: UNSEEN
+    // STATUS: UNHANDLED
+    // CONFIDENCE:
     protected SILIRInstruction visitDeallocPartialRef(CAstNode N, InstructionContext C) {
         System.err.println("ERROR: Unhandled instruction: " + new Exception().getStackTrace()[0].getMethodName());
         return null;
     }
 
     @Override
+    // FREQUENCY: UNSEEN
+    // STATUS: UNHANDLED
+    // CONFIDENCE:
     protected SILIRInstruction visitDeallocValueBuffer(CAstNode N, InstructionContext C) {
         System.err.println("ERROR: Unhandled instruction: " + new Exception().getStackTrace()[0].getMethodName());
         return null;
     }
 
     @Override
+    // FREQUENCY: UNSEEN
+    // STATUS: UNHANDLED
+    // CONFIDENCE:
     protected SILIRInstruction visitProjectValueBuffer(CAstNode N, InstructionContext C) {
         System.err.println("ERROR: Unhandled instruction: " + new Exception().getStackTrace()[0].getMethodName());
         return null;
     }
 
     @Override
+    // FREQUENCY: VERY COMMON
+    // STATUS: TRANSLATED
+    // CONFIDENCE: HIGH
     protected SILIRInstruction visitDebugValue(CAstNode N, InstructionContext C) {
         // NOP
         return null;
     }
 
     @Override
+    // FREQUENCY: VERY COMMON
+    // STATUS: TRANSLATED
+    // CONFIDENCE: HIGH
     protected SILIRInstruction visitDebugValueAddr(CAstNode N, InstructionContext C) {
         // NOP
         return null;
     }
 
     @Override
+    // FREQUENCY: VERY COMMON
+    // STATUS: TRANSLATED
+    // CONFIDENCE: HIGH
     protected SILIRInstruction visitLoad(CAstNode N, InstructionContext C) {
         RawValue operand = getSingleOperand(N);
         RawValue result = getSingleResult(N);
@@ -245,6 +308,9 @@ public class RawToSILIRTranslator extends SILInstructionVisitor<SILIRInstruction
     }
 
     @Override
+    // FREQUENCY: VERY COMMON
+    // STATUS: TRANSLATED
+    // CONFIDENCE: HIGH
     protected SILIRInstruction visitStore(CAstNode N, InstructionContext C) {
         String SourceName = RawUtil.getStringValue(N, 0);
         String DestName = RawUtil.getStringValue(N, 1);
@@ -252,16 +318,25 @@ public class RawToSILIRTranslator extends SILInstructionVisitor<SILIRInstruction
     }
 
     @Override
+    // FREQUENCY: COMMON
+    // STATUS: TRANSLATED
+    // CONFIDENCE: HIGH
     protected SILIRInstruction visitStoreBorrow(CAstNode N, InstructionContext C) {
         return visitStore(N, C);
     }
 
     @Override
+    // FREQUENCY: COMMON
+    // STATUS: TRANSLATED
+    // CONFIDENCE: HIGH
     protected SILIRInstruction visitLoadBorrow(CAstNode N, InstructionContext C) {
         return visitLoad(N, C);
     }
 
     @Override
+    // FREQUENCY: VERY COMMON
+    // STATUS: TRANSLATED
+    // CONFIDENCE: HIGH
     protected SILIRInstruction visitBeginBorrow(CAstNode N, InstructionContext C) {
         RawValue operand = getSingleOperand(N);
         RawValue result = getSingleResult(N);
@@ -269,12 +344,18 @@ public class RawToSILIRTranslator extends SILInstructionVisitor<SILIRInstruction
     }
 
     @Override
+    // FREQUENCY: VERY COMMON
+    // STATUS: TRANSLATED
+    // CONFIDENCE: HIGH
     protected SILIRInstruction visitEndBorrow(CAstNode N, InstructionContext C) {
         // NOP
         return null;
     }
 
     @Override
+    // FREQUENCY: VERY COMMON
+    // STATUS: TRANSLATED
+    // CONFIDENCE: HIGH
     protected SILIRInstruction visitAssign(CAstNode N, InstructionContext C) {
         String SourceName = RawUtil.getStringValue(N, 0);
         String DestName = RawUtil.getStringValue(N, 1);
@@ -282,6 +363,9 @@ public class RawToSILIRTranslator extends SILInstructionVisitor<SILIRInstruction
     }
 
     @Override
+    // FREQUENCY: RARE
+    // STATUS: UNHANDLED
+    // CONFIDENCE:
     protected SILIRInstruction visitAssignByWrapper(CAstNode N, InstructionContext C) {
         // TODO
         System.err.println("ERROR: Unhandled instruction: " + new Exception().getStackTrace()[0].getMethodName());
@@ -289,6 +373,9 @@ public class RawToSILIRTranslator extends SILInstructionVisitor<SILIRInstruction
     }
 
     @Override
+    // FREQUENCY: VERY COMMON
+    // STATUS: TRANSLATED
+    // CONFIDENCE: HIGH
     protected SILIRInstruction visitMarkUninitialized(CAstNode N, InstructionContext C) {
         RawValue operand = getSingleOperand(N);
         RawValue result = getSingleResult(N);
@@ -296,6 +383,9 @@ public class RawToSILIRTranslator extends SILInstructionVisitor<SILIRInstruction
     }
 
     @Override
+    // FREQUENCY: COMMON
+    // STATUS: TRANSLATED
+    // CONFIDENCE: HIGH
     protected SILIRInstruction visitMarkFunctionEscape(CAstNode N, InstructionContext C) {
         RawValue operand = getSingleOperand(N);
         // Why does the SIL.rst show a result, but sometimes there isn't one. Is it optional?
@@ -308,12 +398,18 @@ public class RawToSILIRTranslator extends SILInstructionVisitor<SILIRInstruction
     }
 
     @Override
+    // FREQUENCY: UNSEEN
+    // STATUS: UNHANDLED
+    // CONFIDENCE:
     protected SILIRInstruction visitMarkUninitializedBehavior(CAstNode N, InstructionContext C) {
         System.err.println("ERROR: Unhandled instruction: " + new Exception().getStackTrace()[0].getMethodName());
         return null;
     }
 
     @Override
+    // FREQUENCY: VERY COMMON
+    // STATUS: TRANSLATED
+    // CONFIDENCE: HIGH
     protected SILIRInstruction visitCopyAddr(CAstNode N, InstructionContext C) {
         // This is an assign since we can't handle pointer value copies.
         String SourceName = RawUtil.getStringValue(N, 0);
@@ -322,12 +418,18 @@ public class RawToSILIRTranslator extends SILInstructionVisitor<SILIRInstruction
     }
 
     @Override
+    // FREQUENCY: VERY COMMON
+    // STATUS: TRANSLATED
+    // CONFIDENCE: HIGH
     protected SILIRInstruction visitDestroyAddr(CAstNode N, InstructionContext C) {
         // NOP
         return null;
     }
 
     @Override
+    // FREQUENCY: VERY COMMON
+    // STATUS: TRANSLATED
+    // CONFIDENCE: HIGH
     protected SILIRInstruction visitIndexAddr(CAstNode N, InstructionContext C) {
         RawValue operand = getSingleOperand(N);
         RawValue result = getSingleResult(N);
@@ -335,24 +437,36 @@ public class RawToSILIRTranslator extends SILInstructionVisitor<SILIRInstruction
     }
 
     @Override
+    // FREQUENCY: UNSEEN
+    // STATUS: UNHANDLED
+    // CONFIDENCE:
     protected SILIRInstruction visitTailAddr(CAstNode N, InstructionContext C) {
         System.err.println("ERROR: Unhandled instruction: " + new Exception().getStackTrace()[0].getMethodName());
         return null;
     }
 
     @Override
+    // FREQUENCY: UNSEEN
+    // STATUS: UNHANDLED
+    // CONFIDENCE:
     protected SILIRInstruction visitIndexRawPointer(CAstNode N, InstructionContext C) {
         System.err.println("ERROR: Unhandled instruction: " + new Exception().getStackTrace()[0].getMethodName());
         return null;
     }
 
     @Override
+    // FREQUENCY: UNSEEN
+    // STATUS: UNHANDLED
+    // CONFIDENCE:
     protected SILIRInstruction visitBindMemory(CAstNode N, InstructionContext C) {
         System.err.println("ERROR: Unhandled instruction: " + new Exception().getStackTrace()[0].getMethodName());
         return null;
     }
 
     @Override
+    // FREQUENCY: VERY COMMON
+    // STATUS: TRANSLATED
+    // CONFIDENCE: HIGH
     protected SILIRInstruction visitBeginAccess(CAstNode N, InstructionContext C) {
         RawValue operand = getSingleOperand(N);
         RawValue result = getSingleResult(N);
@@ -360,93 +474,141 @@ public class RawToSILIRTranslator extends SILInstructionVisitor<SILIRInstruction
     }
 
     @Override
+    // FREQUENCY: VERY COMMON
+    // STATUS: TRANSLATED
+    // CONFIDENCE: HIGH
     protected SILIRInstruction visitEndAccess(CAstNode N, InstructionContext C) {
         // NOP
         return null;
     }
 
     @Override
+    // FREQUENCY: UNSEEN
+    // STATUS: UNHANDLED
+    // CONFIDENCE:
     protected SILIRInstruction visitBeginUnpairedAccess(CAstNode N, InstructionContext C) {
         System.err.println("ERROR: Unhandled instruction: " + new Exception().getStackTrace()[0].getMethodName());
         return null;
     }
 
     @Override
+    // FREQUENCY: UNSEEN
+    // STATUS: UNHANDLED
+    // CONFIDENCE:
     protected SILIRInstruction visitEndUnpairedAccess(CAstNode N, InstructionContext C) {
         System.err.println("ERROR: Unhandled instruction: " + new Exception().getStackTrace()[0].getMethodName());
         return null;
     }
 
     @Override
+    // FREQUENCY: UNSEEN
+    // STATUS: UNHANDLED
+    // CONFIDENCE:
     protected SILIRInstruction visitStrongRetain(CAstNode N, InstructionContext C) {
         System.err.println("ERROR: Unhandled instruction: " + new Exception().getStackTrace()[0].getMethodName());
         return null;
     }
 
     @Override
+    // FREQUENCY: UNSEEN
+    // STATUS: UNHANDLED
+    // CONFIDENCE:
     protected SILIRInstruction visitStrongRelease(CAstNode N, InstructionContext C) {
         System.err.println("ERROR: Unhandled instruction: " + new Exception().getStackTrace()[0].getMethodName());
         return null;
     }
 
     @Override
+    // FREQUENCY: UNSEEN
+    // STATUS: UNHANDLED
+    // CONFIDENCE:
     protected SILIRInstruction visitSetDeallocating(CAstNode N, InstructionContext C) {
         System.err.println("ERROR: Unhandled instruction: " + new Exception().getStackTrace()[0].getMethodName());
         return null;
     }
 
     @Override
+    // FREQUENCY: UNSEEN
+    // STATUS: UNHANDLED
+    // CONFIDENCE:
     protected SILIRInstruction visitStrongRetainUnowned(CAstNode N, InstructionContext C) {
         System.err.println("ERROR: Unhandled instruction: " + new Exception().getStackTrace()[0].getMethodName());
         return null;
     }
 
     @Override
+    // FREQUENCY: UNSEEN
+    // STATUS: UNHANDLED
+    // CONFIDENCE:
     protected SILIRInstruction visitUnownedRetain(CAstNode N, InstructionContext C) {
         System.err.println("ERROR: Unhandled instruction: " + new Exception().getStackTrace()[0].getMethodName());
         return null;
     }
 
     @Override
+    // FREQUENCY: UNSEEN
+    // STATUS: UNHANDLED
+    // CONFIDENCE:
     protected SILIRInstruction visitUnownedRelease(CAstNode N, InstructionContext C) {
         System.err.println("ERROR: Unhandled instruction: " + new Exception().getStackTrace()[0].getMethodName());
         return null;
     }
 
     @Override
+    // FREQUENCY: COMMON
+    // STATUS: TRANSLATED
+    // CONFIDENCE: HIGH
     protected SILIRInstruction visitLoadWeak(CAstNode N, InstructionContext C) {
         // NOP
         return null;
     }
 
     @Override
+    // FREQUENCY: COMMON
+    // STATUS: TRANSLATED
+    // CONFIDENCE: HIGH
     protected SILIRInstruction visitStoreWeak(CAstNode N, InstructionContext C) {
         return visitStore(N, C);
     }
 
     @Override
+    // FREQUENCY: RARE
+    // STATUS: TRANSLATED
+    // CONFIDENCE: HIGH
     protected SILIRInstruction visitLoadUnowned(CAstNode N, InstructionContext C) {
         return visitLoad(N, C);
     }
 
     @Override
+    // FREQUENCY: RARE
+    // STATUS: TRANSLATED
+    // CONFIDENCE: HIGH
     protected SILIRInstruction visitStoreUnowned(CAstNode N, InstructionContext C) {
         return visitStore(N, C);
     }
 
     @Override
+    // FREQUENCY: UNSEEN
+    // STATUS: UNHANDLED
+    // CONFIDENCE:
     protected SILIRInstruction visitFixLifetime(CAstNode N, InstructionContext C) {
         System.err.println("ERROR: Unhandled instruction: " + new Exception().getStackTrace()[0].getMethodName());
         return null;
     }
 
     @Override
+    // FREQUENCY: VERY COMMON
+    // STATUS: TRANSLATED
+    // CONFIDENCE: HIGH
     protected SILIRInstruction visitEndLifetime(CAstNode N, InstructionContext C) {
         // NOP
         return null;
     }
 
     @Override
+    // FREQUENCY: COMMON
+    // STATUS: TRANSLATED
+    // CONFIDENCE: HIGH
     protected SILIRInstruction visitMarkDependence(CAstNode N, InstructionContext C) {
         RawValue operand = getSingleOperand(N);
         RawValue result = getSingleResult(N);
@@ -454,12 +616,18 @@ public class RawToSILIRTranslator extends SILInstructionVisitor<SILIRInstruction
     }
 
     @Override
+    // FREQUENCY: UNSEEN
+    // STATUS: UNHANDLED
+    // CONFIDENCE:
     protected SILIRInstruction visitIsUnique(CAstNode N, InstructionContext C) {
         System.err.println("ERROR: Unhandled instruction: " + new Exception().getStackTrace()[0].getMethodName());
         return null;
     }
 
     @Override
+    // FREQUENCY: RARE
+    // STATUS: TRANSLATED
+    // CONFIDENCE: HIGH
     protected SILIRInstruction visitIsEscapingClosure(CAstNode N, InstructionContext C) {
         RawValue operand = getSingleOperand(N);
         RawValue result = getSingleResult(N);
@@ -467,6 +635,9 @@ public class RawToSILIRTranslator extends SILInstructionVisitor<SILIRInstruction
     }
 
     @Override
+    // FREQUENCY: RARE
+    // STATUS: TRANSLATED
+    // CONFIDENCE: HIGH
     protected SILIRInstruction visitCopyBlock(CAstNode N, InstructionContext C) {
         RawValue operand = getSingleOperand(N);
         RawValue result = getSingleResult(N);
@@ -474,11 +645,17 @@ public class RawToSILIRTranslator extends SILInstructionVisitor<SILIRInstruction
     }
 
     @Override
+    // FREQUENCY: RARE
+    // STATUS: TRANSLATED
+    // CONFIDENCE: HIGH
     protected SILIRInstruction visitCopyBlockWithoutEscaping(CAstNode N, InstructionContext C) {
         return visitCopyBlock(N, C);
     }
 
     @Override
+    // FREQUENCY: VERY COMMON
+    // STATUS: TRANSLATED
+    // CONFIDENCE: HIGH
     protected SILIRInstruction visitFunctionRef(CAstNode N, InstructionContext C) {
         RawValue result = getSingleResult(N);
         String FuncName = RawUtil.getStringValue(N, 2);
@@ -489,16 +666,25 @@ public class RawToSILIRTranslator extends SILInstructionVisitor<SILIRInstruction
     }
 
     @Override
+    // FREQUENCY: COMMON
+    // STATUS: TRANSLATED
+    // CONFIDENCE: HIGH
     protected SILIRInstruction visitDynamicFunctionRef(CAstNode N, InstructionContext C) {
         return visitFunctionRef(N, C);
     }
 
     @Override
+    // FREQUENCY: RARE
+    // STATUS: TRANSLATED
+    // CONFIDENCE: HIGH
     protected SILIRInstruction visitPrevDynamicFunctionRef(CAstNode N, InstructionContext C) {
         return visitFunctionRef(N, C);
     }
 
     @Override
+    // FREQUENCY: VERY COMMON
+    // STATUS: TRANSLATED
+    // CONFIDENCE: HIGH
     protected SILIRInstruction visitGlobalAddr(CAstNode N, InstructionContext C) {
         RawValue result = getSingleResult(N);
         String GlobalName = RawUtil.getStringValue(N, 2);
@@ -506,12 +692,18 @@ public class RawToSILIRTranslator extends SILInstructionVisitor<SILIRInstruction
     }
 
     @Override
+    // FREQUENCY: UNSEEN
+    // STATUS: UNHANDLED
+    // CONFIDENCE:
     protected SILIRInstruction visitGlobalValue(CAstNode N, InstructionContext C) {
         System.err.println("ERROR: Unhandled instruction: " + new Exception().getStackTrace()[0].getMethodName());
         return null;
     }
 
     @Override
+    // FREQUENCY: VERY COMMON
+    // STATUS: TRANSLATED
+    // CONFIDENCE: HIGH
     protected SILIRInstruction visitIntegerLiteral(CAstNode N, InstructionContext C) {
         RawValue result = getSingleResult(N);
         int Integer = RawUtil.getIntValue(N, 2);
@@ -519,6 +711,9 @@ public class RawToSILIRTranslator extends SILInstructionVisitor<SILIRInstruction
     }
 
     @Override
+    // FREQUENCY: COMMON
+    // STATUS: TRANSLATED
+    // CONFIDENCE: HIGH
     protected SILIRInstruction visitFloatLiteral(CAstNode N, InstructionContext C) {
         RawValue result = getSingleResult(N);
         float Float = ((BigDecimal) N.getChild(2).getValue()).floatValue();
@@ -526,6 +721,9 @@ public class RawToSILIRTranslator extends SILInstructionVisitor<SILIRInstruction
     }
 
     @Override
+    // FREQUENCY: VERY COMMON
+    // STATUS: TRANSLATED
+    // CONFIDENCE: HIGH
     protected SILIRInstruction visitStringLiteral(CAstNode N, InstructionContext C) {
         RawValue result = getSingleResult(N);
         String StringValue = RawUtil.getStringValue(N, 2);
@@ -533,11 +731,17 @@ public class RawToSILIRTranslator extends SILInstructionVisitor<SILIRInstruction
     }
 
     @Override
+    // FREQUENCY: VERY COMMON
+    // STATUS: TRANSLATED
+    // CONFIDENCE: HIGH
     protected SILIRInstruction visitClassMethod(CAstNode N, InstructionContext C) {
         return visitFunctionRef(N, C);
     }
 
     @Override
+    // FREQUENCY: COMMON
+    // STATUS: TRANSLATED
+    // CONFIDENCE: HIGH
     protected SILIRInstruction visitObjCMethod(CAstNode N, InstructionContext C) {
         RawValue result = getSingleResult(N);
         String FuncName = RawUtil.getStringValue(N, 2);
@@ -545,17 +749,26 @@ public class RawToSILIRTranslator extends SILInstructionVisitor<SILIRInstruction
     }
 
     @Override
+    // FREQUENCY: UNSEEN
+    // STATUS: UNHANDLED
+    // CONFIDENCE:
     protected SILIRInstruction visitSuperMethod(CAstNode N, InstructionContext C) {
         System.err.println("ERROR: Unhandled instruction: " + new Exception().getStackTrace()[0].getMethodName());
         return null;
     }
 
     @Override
+    // FREQUENCY: COMMON
+    // STATUS: TRANSLATED
+    // CONFIDENCE: HIGH
     protected SILIRInstruction visitObjCSuperMethod(CAstNode N, InstructionContext C) {
         return visitObjCMethod(N, C);
     }
 
     @Override
+    // FREQUENCY: VERY COMMON
+    // STATUS: TRANSLATED
+    // CONFIDENCE: HIGH
     protected SILIRInstruction visitWitnessMethod(CAstNode N, InstructionContext C) {
         return visitFunctionRef(N, C);
     }
@@ -571,6 +784,9 @@ public class RawToSILIRTranslator extends SILInstructionVisitor<SILIRInstruction
     }
 
     @Override
+    // FREQUENCY: VERY COMMON
+    // STATUS: TRANSLATED
+    // CONFIDENCE: HIGH
     protected SILIRInstruction visitApply(CAstNode N, InstructionContext C) {
         RawValue result = getSingleResult(N);
         String FuncRefValue = RawUtil.getStringValue(N, 2);
@@ -617,6 +833,9 @@ public class RawToSILIRTranslator extends SILInstructionVisitor<SILIRInstruction
     }
 
     @Override
+    // FREQUENCY: COMMON
+    // STATUS: UNHANDLED
+    // CONFIDENCE:
     protected SILIRInstruction visitBeginApply(CAstNode N, InstructionContext C) {
         // TODO
         System.err.println("ERROR: Unhandled instruction: " + new Exception().getStackTrace()[0].getMethodName());
@@ -624,6 +843,9 @@ public class RawToSILIRTranslator extends SILInstructionVisitor<SILIRInstruction
     }
 
     @Override
+    // FREQUENCY: COMMON
+    // STATUS: UNHANDLED
+    // CONFIDENCE:
     protected SILIRInstruction visitAbortApply(CAstNode N, InstructionContext C) {
         // TODO
         System.err.println("ERROR: Unhandled instruction: " + new Exception().getStackTrace()[0].getMethodName());
@@ -631,6 +853,9 @@ public class RawToSILIRTranslator extends SILInstructionVisitor<SILIRInstruction
     }
 
     @Override
+    // FREQUENCY: COMMON
+    // STATUS: UNHANDLED
+    // CONFIDENCE:
     protected SILIRInstruction visitEndApply(CAstNode N, InstructionContext C) {
         // TODO
         System.err.println("ERROR: Unhandled instruction: " + new Exception().getStackTrace()[0].getMethodName());
@@ -638,6 +863,9 @@ public class RawToSILIRTranslator extends SILInstructionVisitor<SILIRInstruction
     }
 
     @Override
+    // FREQUENCY: VERY COMMON
+    // STATUS: UNHANDLED
+    // CONFIDENCE:
     protected SILIRInstruction visitPartialApply(CAstNode N, InstructionContext C) {
         // TODO
         System.err.println("ERROR: Unhandled instruction: " + new Exception().getStackTrace()[0].getMethodName());
@@ -645,6 +873,9 @@ public class RawToSILIRTranslator extends SILInstructionVisitor<SILIRInstruction
     }
 
     @Override
+    // FREQUENCY: COMMON
+    // STATUS: TRANSLATED
+    // CONFIDENCE: HIGH
     protected SILIRInstruction visitBuiltin(CAstNode N, InstructionContext C) {
         RawValue result = getSingleResult(N);
         String functionName = getStringValue(N, 2);
@@ -665,47 +896,72 @@ public class RawToSILIRTranslator extends SILInstructionVisitor<SILIRInstruction
     }
 
     @Override
+    // FREQUENCY: VERY COMMON
+    // STATUS: TRANSLATED
+    // CONFIDENCE: HIGH
     protected SILIRInstruction visitMetatype(CAstNode N, InstructionContext C) {
         RawValue result = getSingleResult(N);
         return new LiteralInstruction(result.Type, result.Name, result.Type, C);
     }
 
     @Override
+    // FREQUENCY: RARE
+    // STATUS: TRANSLATED
+    // CONFIDENCE: HIGH
     protected SILIRInstruction visitValueMetatype(CAstNode N, InstructionContext C) {
         return visitMetatype(N, C);
     }
 
     @Override
+    // FREQUENCY: RARE
+    // STATUS: TRANSLATED
+    // CONFIDENCE: HIGH
     protected SILIRInstruction visitExistentialMetatype(CAstNode N, InstructionContext C) {
         return visitMetatype(N, C);
     }
 
     @Override
+    // FREQUENCY: RARE
+    // STATUS: TRANSLATED
+    // CONFIDENCE: HIGH
     protected SILIRInstruction visitObjCProtocol(CAstNode N, InstructionContext C) {
-        // TODO
-        System.err.println("ERROR: Unhandled instruction: " + new Exception().getStackTrace()[0].getMethodName());
-        return null;
+        // Creates a $Protocol value, which is then used in calls to builtin functions.
+        // Could also make it a LiteralInstruction - doesn't really matter.
+        RawValue result = getSingleResult(N);
+        return new NewInstruction(result.Name, result.Type, C);
     }
 
     @Override
+    // FREQUENCY: UNSEEN
+    // STATUS: UNHANDLED
+    // CONFIDENCE:
     protected SILIRInstruction visitRetainValue(CAstNode N, InstructionContext C) {
         System.err.println("ERROR: Unhandled instruction: " + new Exception().getStackTrace()[0].getMethodName());
         return null;
     }
 
     @Override
+    // FREQUENCY: UNSEEN
+    // STATUS: UNHANDLED
+    // CONFIDENCE:
     protected SILIRInstruction visitRetainValueAddr(CAstNode N, InstructionContext C) {
         System.err.println("ERROR: Unhandled instruction: " + new Exception().getStackTrace()[0].getMethodName());
         return null;
     }
 
     @Override
+    // FREQUENCY: UNSEEN
+    // STATUS: UNHANDLED
+    // CONFIDENCE:
     protected SILIRInstruction visitUnmanagedRetainValue(CAstNode N, InstructionContext C) {
         System.err.println("ERROR: Unhandled instruction: " + new Exception().getStackTrace()[0].getMethodName());
         return null;
     }
 
     @Override
+    // FREQUENCY: VERY COMMON
+    // STATUS: TRANSLATED
+    // CONFIDENCE: HIGH
     protected SILIRInstruction visitCopyValue(CAstNode N, InstructionContext C) {
         RawValue operand = getSingleOperand(N);
         RawValue result = getSingleResult(N);
@@ -713,36 +969,54 @@ public class RawToSILIRTranslator extends SILInstructionVisitor<SILIRInstruction
     }
 
     @Override
+    // FREQUENCY: UNSEEN
+    // STATUS: UNHANDLED
+    // CONFIDENCE:
     protected SILIRInstruction visitReleaseValue(CAstNode N, InstructionContext C) {
         System.err.println("ERROR: Unhandled instruction: " + new Exception().getStackTrace()[0].getMethodName());
         return null;
     }
 
     @Override
+    // FREQUENCY: UNSEEN
+    // STATUS: UNHANDLED
+    // CONFIDENCE:
     protected SILIRInstruction visitReleaseValueAddr(CAstNode N, InstructionContext C) {
         System.err.println("ERROR: Unhandled instruction: " + new Exception().getStackTrace()[0].getMethodName());
         return null;
     }
 
     @Override
+    // FREQUENCY: UNSEEN
+    // STATUS: UNHANDLED
+    // CONFIDENCE:
     protected SILIRInstruction visitUnmanagedReleaseValue(CAstNode N, InstructionContext C) {
         System.err.println("ERROR: Unhandled instruction: " + new Exception().getStackTrace()[0].getMethodName());
         return null;
     }
 
     @Override
+    // FREQUENCY: VERY COMMON
+    // STATUS: TRANSLATED
+    // CONFIDENCE: HIGH
     protected SILIRInstruction visitDestroyValue(CAstNode N, InstructionContext C) {
         // NOP
         return null;
     }
 
     @Override
+    // FREQUENCY: RARE
+    // STATUS: TRANSLATED
+    // CONFIDENCE: HIGH
     protected SILIRInstruction visitAutoreleaseValue(CAstNode N, InstructionContext C) {
         // NOP
         return null;
     }
 
     @Override
+    // FREQUENCY: VERY COMMON
+    // STATUS: TRANSLATED
+    // CONFIDENCE: HIGH
     protected SILIRInstruction visitTuple(CAstNode N, InstructionContext C) {
         RawValue result = getSingleResult(N);
         Value TupleValue = new Value(result.Name, result.Type);
@@ -758,6 +1032,9 @@ public class RawToSILIRTranslator extends SILInstructionVisitor<SILIRInstruction
     }
 
     @Override
+    // FREQUENCY: RARE
+    // STATUS: TRANSLATED
+    // CONFIDENCE: HIGH
     protected SILIRInstruction visitTupleExtract(CAstNode N, InstructionContext C) {
         RawValue result = getSingleResult(N);
         RawValue operand = getSingleOperand(N);
@@ -766,6 +1043,9 @@ public class RawToSILIRTranslator extends SILInstructionVisitor<SILIRInstruction
     }
 
     @Override
+    // FREQUENCY: VERY COMMON
+    // STATUS: TRANSLATED
+    // CONFIDENCE: HIGH
     protected SILIRInstruction visitTupleElementAddr(CAstNode N, InstructionContext C) {
         RawValue operand = getSingleOperand(N);
         RawValue result = getSingleResult(N);
@@ -774,6 +1054,9 @@ public class RawToSILIRTranslator extends SILInstructionVisitor<SILIRInstruction
     }
 
     @Override
+    // FREQUENCY: VERY COMMON
+    // STATUS: TRANSLATED
+    // CONFIDENCE: HIGH
     protected SILIRInstruction visitDestructureTuple(CAstNode N, InstructionContext C) {
         RawValue result1 = getResult(N, 0);
         RawValue result2 = getResult(N, 1);
@@ -788,6 +1071,9 @@ public class RawToSILIRTranslator extends SILInstructionVisitor<SILIRInstruction
     }
 
     @Override
+    // FREQUENCY: VERY COMMON
+    // STATUS: TRANSLATED
+    // CONFIDENCE: HIGH
     protected SILIRInstruction visitStruct(CAstNode N, InstructionContext C) {
         RawValue result = getSingleResult(N);
         Value StructValue = new Value(result.Name, result.Type);
@@ -802,6 +1088,9 @@ public class RawToSILIRTranslator extends SILInstructionVisitor<SILIRInstruction
     }
 
     @Override
+    // FREQUENCY: VERY COMMON
+    // STATUS: TRANSLATED
+    // CONFIDENCE: HIGH
     protected SILIRInstruction visitStructExtract(CAstNode N, InstructionContext C) {
         RawValue result = getSingleResult(N);
         String StructName = getStringValue(N, 2);
@@ -810,6 +1099,9 @@ public class RawToSILIRTranslator extends SILInstructionVisitor<SILIRInstruction
     }
 
     @Override
+    // FREQUENCY: VERY COMMON
+    // STATUS: TRANSLATED
+    // CONFIDENCE: HIGH
     protected SILIRInstruction visitStructElementAddr(CAstNode N, InstructionContext C) {
         String StructName = getStringValue(N, 2);
         String FieldName = getStringValue(N, 3);
@@ -818,18 +1110,27 @@ public class RawToSILIRTranslator extends SILInstructionVisitor<SILIRInstruction
     }
 
     @Override
+    // FREQUENCY: UNSEEN
+    // STATUS: UNHANDLED
+    // CONFIDENCE:
     protected SILIRInstruction visitDestructureStruct(CAstNode N, InstructionContext C) {
         System.err.println("ERROR: Unhandled instruction: " + new Exception().getStackTrace()[0].getMethodName());
         return null;
     }
 
     @Override
+    // FREQUENCY: UNSEEN
+    // STATUS: UNHANDLED
+    // CONFIDENCE:
     protected SILIRInstruction visitObject(CAstNode N, InstructionContext C) {
         System.err.println("ERROR: Unhandled instruction: " + new Exception().getStackTrace()[0].getMethodName());
         return null;
     }
 
     @Override
+    // FREQUENCY: VERY COMMON
+    // STATUS: TRANSLATED
+    // CONFIDENCE: HIGH
     protected SILIRInstruction visitRefElementAddr(CAstNode N, InstructionContext C) {
         RawValue operand = getSingleOperand(N);
         RawValue result = getSingleResult(N);
@@ -838,12 +1139,18 @@ public class RawToSILIRTranslator extends SILInstructionVisitor<SILIRInstruction
     }
 
     @Override
+    // FREQUENCY: UNSEEN
+    // STATUS: UNHANDLED
+    // CONFIDENCE:
     protected SILIRInstruction visitRefTailAddr(CAstNode N, InstructionContext C) {
         System.err.println("ERROR: Unhandled instruction: " + new Exception().getStackTrace()[0].getMethodName());
         return null;
     }
 
     @Override
+    // FREQUENCY: VERY COMMON
+    // STATUS: TRANSLATED
+    // CONFIDENCE: HIGH
     protected SILIRInstruction visitEnum(CAstNode N, InstructionContext C) {
         RawValue result = getSingleResult(N);
         String EnumName = getStringValue(N, 2);
@@ -862,6 +1169,9 @@ public class RawToSILIRTranslator extends SILInstructionVisitor<SILIRInstruction
     }
 
     @Override
+    // FREQUENCY: RARE
+    // STATUS: TRANSLATED
+    // CONFIDENCE: HIGH
     protected SILIRInstruction visitUncheckedEnumData(CAstNode N, InstructionContext C) {
         RawValue operand = getSingleOperand(N);
         RawValue result = getSingleResult(N);
@@ -869,6 +1179,9 @@ public class RawToSILIRTranslator extends SILInstructionVisitor<SILIRInstruction
     }
 
     @Override
+    // FREQUENCY: COMMON
+    // STATUS: TRANSLATED
+    // CONFIDENCE: HIGH
     protected SILIRInstruction visitInitEnumDataAddr(CAstNode N, InstructionContext C) {
         RawValue operand = getSingleOperand(N);
         RawValue result = getSingleResult(N);
@@ -876,12 +1189,18 @@ public class RawToSILIRTranslator extends SILInstructionVisitor<SILIRInstruction
     }
 
     @Override
+    // FREQUENCY: COMMON
+    // STATUS: TRANSLATED
+    // CONFIDENCE: HIGH
     protected SILIRInstruction visitInjectEnumAddr(CAstNode N, InstructionContext C) {
         // NOP
         return null;
     }
 
     @Override
+    // FREQUENCY: COMMON
+    // STATUS: TRANSLATED
+    // CONFIDENCE: HIGH
     protected SILIRInstruction visitUncheckedTakeEnumDataAddr(CAstNode N, InstructionContext C) {
         RawValue operand = getSingleOperand(N);
         RawValue result = getSingleResult(N);
@@ -889,6 +1208,9 @@ public class RawToSILIRTranslator extends SILInstructionVisitor<SILIRInstruction
     }
 
     @Override
+    // FREQUENCY: COMMON
+    // STATUS: TRANSLATED
+    // CONFIDENCE: HIGH
     protected SILIRInstruction visitSelectEnum(CAstNode N, InstructionContext C) {
         RawValue result = getSingleResult(N);
         String EnumName = getStringValue(N, 2);
@@ -908,6 +1230,9 @@ public class RawToSILIRTranslator extends SILInstructionVisitor<SILIRInstruction
     }
 
     @Override
+    // FREQUENCY: RARE
+    // STATUS: TRANSLATED
+    // CONFIDENCE: HIGH
     protected SILIRInstruction visitSelectEnumAddr(CAstNode N, InstructionContext C) {
         RawValue result = getSingleResult(N);
         String EnumName = getStringValue(N, 2);
@@ -929,6 +1254,9 @@ public class RawToSILIRTranslator extends SILInstructionVisitor<SILIRInstruction
     }
 
     @Override
+    // FREQUENCY: VERY COMMON
+    // STATUS: TRANSLATED
+    // CONFIDENCE: HIGH
     protected SILIRInstruction visitInitExistentialAddr(CAstNode N, InstructionContext C) {
         RawValue operand = getSingleOperand(N);
         RawValue result = getSingleResult(N);
@@ -936,24 +1264,36 @@ public class RawToSILIRTranslator extends SILInstructionVisitor<SILIRInstruction
     }
 
     @Override
+    // FREQUENCY: UNSEEN
+    // STATUS: UNHANDLED
+    // CONFIDENCE:
     protected SILIRInstruction visitInitExistentialValue(CAstNode N, InstructionContext C) {
         System.err.println("ERROR: Unhandled instruction: " + new Exception().getStackTrace()[0].getMethodName());
         return null;
     }
 
     @Override
+    // FREQUENCY: RARE
+    // STATUS: TRANSLATED
+    // CONFIDENCE: HIGH
     protected SILIRInstruction visitDeinitExistentialAddr(CAstNode N, InstructionContext C) {
         // NOP
         return null;
     }
 
     @Override
+    // FREQUENCY: UNSEEN
+    // STATUS: UNHANDLED
+    // CONFIDENCE:
     protected SILIRInstruction visitDeinitExistentialValue(CAstNode N, InstructionContext C) {
         System.err.println("ERROR: Unhandled instruction: " + new Exception().getStackTrace()[0].getMethodName());
         return null;
     }
 
     @Override
+    // FREQUENCY: COMMON
+    // STATUS: TRANSLATED
+    // CONFIDENCE: HIGH
     protected SILIRInstruction visitOpenExistentialAddr(CAstNode N, InstructionContext C) {
         RawValue operand = getSingleOperand(N);
         RawValue result = getSingleResult(N);
@@ -961,12 +1301,18 @@ public class RawToSILIRTranslator extends SILInstructionVisitor<SILIRInstruction
     }
 
     @Override
+    // FREQUENCY: UNSEEN
+    // STATUS: UNHANDLED
+    // CONFIDENCE:
     protected SILIRInstruction visitOpenExistentialValue(CAstNode N, InstructionContext C) {
         System.err.println("ERROR: Unhandled instruction: " + new Exception().getStackTrace()[0].getMethodName());
         return null;
     }
 
     @Override
+    // FREQUENCY: COMMON
+    // STATUS: TRANSLATED
+    // CONFIDENCE: HIGH
     protected SILIRInstruction visitInitExistentialRef(CAstNode N, InstructionContext C) {
         RawValue operand = getSingleOperand(N);
         RawValue result = getSingleResult(N);
@@ -974,6 +1320,9 @@ public class RawToSILIRTranslator extends SILInstructionVisitor<SILIRInstruction
     }
 
     @Override
+    // FREQUENCY: COMMON
+    // STATUS: TRANSLATED
+    // CONFIDENCE: HIGH
     protected SILIRInstruction visitOpenExistentialRef(CAstNode N, InstructionContext C) {
         RawValue operand = getSingleOperand(N);
         RawValue result = getSingleResult(N);
@@ -981,6 +1330,9 @@ public class RawToSILIRTranslator extends SILInstructionVisitor<SILIRInstruction
     }
 
     @Override
+    // FREQUENCY: COMMON
+    // STATUS: TRANSLATED
+    // CONFIDENCE: HIGH
     protected SILIRInstruction visitInitExistentialMetatype(CAstNode N, InstructionContext C) {
         RawValue operand = getSingleOperand(N);
         RawValue result = getSingleResult(N);
@@ -988,6 +1340,9 @@ public class RawToSILIRTranslator extends SILInstructionVisitor<SILIRInstruction
     }
 
     @Override
+    // FREQUENCY: RARE
+    // STATUS: TRANSLATED
+    // CONFIDENCE: HIGH
     protected SILIRInstruction visitOpenExistentialMetatype(CAstNode N, InstructionContext C) {
         RawValue operand = getSingleOperand(N);
         RawValue result = getSingleResult(N);
@@ -995,16 +1350,25 @@ public class RawToSILIRTranslator extends SILInstructionVisitor<SILIRInstruction
     }
 
     @Override
+    // FREQUENCY: RARE
+    // STATUS: TRANSLATED
+    // CONFIDENCE: HIGH
     protected SILIRInstruction visitAllocExistentialBox(CAstNode N, InstructionContext C) {
         return visitAllocBox(N, C);
     }
 
     @Override
+    // FREQUENCY: RARE
+    // STATUS: TRANSLATED
+    // CONFIDENCE: HIGH
     protected SILIRInstruction visitProjectExistentialBox(CAstNode N, InstructionContext C) {
         return visitProjectBox(N, C);
     }
 
     @Override
+    // FREQUENCY: RARE
+    // STATUS: TRANSLATED
+    // CONFIDENCE: HIGH
     protected SILIRInstruction visitOpenExistentialBox(CAstNode N, InstructionContext C) {
         RawValue operand = getSingleOperand(N);
         RawValue result = getSingleResult(N);
@@ -1012,18 +1376,27 @@ public class RawToSILIRTranslator extends SILInstructionVisitor<SILIRInstruction
     }
 
     @Override
+    // FREQUENCY: UNSEEN
+    // STATUS: UNHANDLED
+    // CONFIDENCE:
     protected SILIRInstruction visitOpenExistentialBoxValue(CAstNode N, InstructionContext C) {
         System.err.println("ERROR: Unhandled instruction: " + new Exception().getStackTrace()[0].getMethodName());
         return null;
     }
 
     @Override
+    // FREQUENCY: RARE
+    // STATUS: TRANSLATED
+    // CONFIDENCE: HIGH
     protected SILIRInstruction visitDeallocExistentialBox(CAstNode N, InstructionContext C) {
         // NOP
         return null;
     }
 
     @Override
+    // FREQUENCY: RARE
+    // STATUS: TRANSLATED
+    // CONFIDENCE: HIGH
     protected SILIRInstruction visitProjectBlockStorage(CAstNode N, InstructionContext C) {
         RawValue operand = getSingleOperand(N);
         RawValue result = getSingleResult(N);
@@ -1033,6 +1406,9 @@ public class RawToSILIRTranslator extends SILInstructionVisitor<SILIRInstruction
     }
 
     @Override
+    // FREQUENCY: RARE
+    // STATUS: UNHANDLED
+    // CONFIDENCE:
     protected SILIRInstruction visitInitBlockStorageHeader(CAstNode N, InstructionContext C) {
         // TODO
         System.err.println("ERROR: Unhandled instruction: " + new Exception().getStackTrace()[0].getMethodName());
@@ -1040,6 +1416,9 @@ public class RawToSILIRTranslator extends SILInstructionVisitor<SILIRInstruction
     }
 
     @Override
+    // FREQUENCY: VERY COMMON
+    // STATUS: TRANSLATED
+    // CONFIDENCE: HIGH
     protected SILIRInstruction visitUpcast(CAstNode N, InstructionContext C) {
         RawValue operand = getSingleOperand(N);
         RawValue result = getSingleResult(N);
@@ -1047,6 +1426,9 @@ public class RawToSILIRTranslator extends SILInstructionVisitor<SILIRInstruction
     }
 
     @Override
+    // FREQUENCY: COMMON
+    // STATUS: TRANSLATED
+    // CONFIDENCE: HIGH
     protected SILIRInstruction visitAddressToPointer(CAstNode N, InstructionContext C) {
         RawValue operand = getSingleOperand(N);
         RawValue result = getSingleResult(N);
@@ -1054,6 +1436,9 @@ public class RawToSILIRTranslator extends SILInstructionVisitor<SILIRInstruction
     }
 
     @Override
+    // FREQUENCY: VERY COMMON
+    // STATUS: TRANSLATED
+    // CONFIDENCE: HIGH
     protected SILIRInstruction visitPointerToAddress(CAstNode N, InstructionContext C) {
         RawValue operand = getSingleOperand(N);
         RawValue result = getSingleResult(N);
@@ -1061,6 +1446,9 @@ public class RawToSILIRTranslator extends SILInstructionVisitor<SILIRInstruction
     }
 
     @Override
+    // FREQUENCY: VERY COMMON
+    // STATUS: TRANSLATED
+    // CONFIDENCE: HIGH
     protected SILIRInstruction visitUncheckedRefCast(CAstNode N, InstructionContext C) {
         RawValue operand = getSingleOperand(N);
         RawValue result = getSingleResult(N);
@@ -1068,12 +1456,18 @@ public class RawToSILIRTranslator extends SILInstructionVisitor<SILIRInstruction
     }
 
     @Override
+    // FREQUENCY: UNSEEN
+    // STATUS: UNHANDLED
+    // CONFIDENCE:
     protected SILIRInstruction visitUncheckedRefCastAddr(CAstNode N, InstructionContext C) {
         System.err.println("ERROR: Unhandled instruction: " + new Exception().getStackTrace()[0].getMethodName());
         return null;
     }
 
     @Override
+    // FREQUENCY: RARE
+    // STATUS: TRANSLATED
+    // CONFIDENCE: HIGH
     protected SILIRInstruction visitUncheckedAddrCast(CAstNode N, InstructionContext C) {
         RawValue operand = getSingleOperand(N);
         RawValue result = getSingleResult(N);
@@ -1081,6 +1475,9 @@ public class RawToSILIRTranslator extends SILInstructionVisitor<SILIRInstruction
     }
 
     @Override
+    // FREQUENCY: RARE
+    // STATUS: TRANSLATED
+    // CONFIDENCE: HIGH
     protected SILIRInstruction visitUncheckedTrivialBitCast(CAstNode N, InstructionContext C) {
         RawValue operand = getSingleOperand(N);
         RawValue result = getSingleResult(N);
@@ -1088,12 +1485,18 @@ public class RawToSILIRTranslator extends SILInstructionVisitor<SILIRInstruction
     }
 
     @Override
+    // FREQUENCY: UNSEEN
+    // STATUS: UNHANDLED
+    // CONFIDENCE:
     protected SILIRInstruction visitUncheckedBitwiseCast(CAstNode N, InstructionContext C) {
         System.err.println("ERROR: Unhandled instruction: " + new Exception().getStackTrace()[0].getMethodName());
         return null;
     }
 
     @Override
+    // FREQUENCY: VERY COMMON
+    // STATUS: TRANSLATED
+    // CONFIDENCE: HIGH
     protected SILIRInstruction visitUncheckedOwnershipConversion(CAstNode N, InstructionContext C) {
         RawValue operand = getSingleOperand(N);
         RawValue result = getSingleResult(N);
@@ -1101,18 +1504,27 @@ public class RawToSILIRTranslator extends SILInstructionVisitor<SILIRInstruction
     }
 
     @Override
+    // FREQUENCY: UNSEEN
+    // STATUS: UNHANDLED
+    // CONFIDENCE:
     protected SILIRInstruction visitRefToRawPointer(CAstNode N, InstructionContext C) {
         System.err.println("ERROR: Unhandled instruction: " + new Exception().getStackTrace()[0].getMethodName());
         return null;
     }
 
     @Override
+    // FREQUENCY: UNSEEN
+    // STATUS: UNHANDLED
+    // CONFIDENCE:
     protected SILIRInstruction visitRawPointerToRef(CAstNode N, InstructionContext C) {
         System.err.println("ERROR: Unhandled instruction: " + new Exception().getStackTrace()[0].getMethodName());
         return null;
     }
 
     @Override
+    // FREQUENCY: RARE
+    // STATUS: TRANSLATED
+    // CONFIDENCE: HIGH
     protected SILIRInstruction visitRefToUnowned(CAstNode N, InstructionContext C) {
         RawValue operand = getSingleOperand(N);
         RawValue result = getSingleResult(N);
@@ -1120,12 +1532,18 @@ public class RawToSILIRTranslator extends SILInstructionVisitor<SILIRInstruction
     }
 
     @Override
+    // FREQUENCY: UNSEEN
+    // STATUS: UNHANDLED
+    // CONFIDENCE:
     protected SILIRInstruction visitUnownedToRef(CAstNode N, InstructionContext C) {
         System.err.println("ERROR: Unhandled instruction: " + new Exception().getStackTrace()[0].getMethodName());
         return null;
     }
 
     @Override
+    // FREQUENCY: RARE
+    // STATUS: TRANSLATED
+    // CONFIDENCE: HIGH
     protected SILIRInstruction visitRefToUnmanaged(CAstNode N, InstructionContext C) {
         RawValue operand = getSingleOperand(N);
         RawValue result = getSingleResult(N);
@@ -1133,6 +1551,9 @@ public class RawToSILIRTranslator extends SILInstructionVisitor<SILIRInstruction
     }
 
     @Override
+    // FREQUENCY: RARE
+    // STATUS: TRANSLATED
+    // CONFIDENCE: HIGH
     protected SILIRInstruction visitUnmanagedToRef(CAstNode N, InstructionContext C) {
         RawValue operand = getSingleOperand(N);
         RawValue result = getSingleResult(N);
@@ -1140,6 +1561,9 @@ public class RawToSILIRTranslator extends SILInstructionVisitor<SILIRInstruction
     }
 
     @Override
+    // FREQUENCY: COMMON
+    // STATUS: TRANSLATED
+    // CONFIDENCE: HIGH
     protected SILIRInstruction visitConvertFunction(CAstNode N, InstructionContext C) {
         RawValue operand = getSingleOperand(N);
         RawValue result = getSingleResult(N);
@@ -1147,6 +1571,9 @@ public class RawToSILIRTranslator extends SILInstructionVisitor<SILIRInstruction
     }
 
     @Override
+    // FREQUENCY: COMMON
+    // STATUS: TRANSLATED
+    // CONFIDENCE: HIGH
     protected SILIRInstruction visitConvertEscapeToNoEscape(CAstNode N, InstructionContext C) {
         RawValue operand = getSingleOperand(N);
         RawValue result = getSingleResult(N);
@@ -1154,48 +1581,72 @@ public class RawToSILIRTranslator extends SILInstructionVisitor<SILIRInstruction
     }
 
     @Override
+    // FREQUENCY: UNSEEN
+    // STATUS: UNHANDLED
+    // CONFIDENCE:
     protected SILIRInstruction visitThinFunctionToPointer(CAstNode N, InstructionContext C) {
         System.err.println("ERROR: Unhandled instruction: " + new Exception().getStackTrace()[0].getMethodName());
         return null;
     }
 
     @Override
+    // FREQUENCY: UNSEEN
+    // STATUS: UNHANDLED
+    // CONFIDENCE:
     protected SILIRInstruction visitPointerToThinFunction(CAstNode N, InstructionContext C) {
         System.err.println("ERROR: Unhandled instruction: " + new Exception().getStackTrace()[0].getMethodName());
         return null;
     }
 
     @Override
+    // FREQUENCY: UNSEEN
+    // STATUS: UNHANDLED
+    // CONFIDENCE:
     protected SILIRInstruction visitClassifyBridgeObject(CAstNode N, InstructionContext C) {
         System.err.println("ERROR: Unhandled instruction: " + new Exception().getStackTrace()[0].getMethodName());
         return null;
     }
 
     @Override
+    // FREQUENCY: UNSEEN
+    // STATUS: UNHANDLED
+    // CONFIDENCE:
     protected SILIRInstruction visitValueToBridgeObject(CAstNode N, InstructionContext C) {
         System.err.println("ERROR: Unhandled instruction: " + new Exception().getStackTrace()[0].getMethodName());
         return null;
     }
 
     @Override
+    // FREQUENCY: UNSEEN
+    // STATUS: UNHANDLED
+    // CONFIDENCE:
     protected SILIRInstruction visitRefToBridgeObject(CAstNode N, InstructionContext C) {
         System.err.println("ERROR: Unhandled instruction: " + new Exception().getStackTrace()[0].getMethodName());
         return null;
     }
 
     @Override
+    // FREQUENCY: UNSEEN
+    // STATUS: UNHANDLED
+    // CONFIDENCE:
     protected SILIRInstruction visitBridgeObjectToRef(CAstNode N, InstructionContext C) {
         System.err.println("ERROR: Unhandled instruction: " + new Exception().getStackTrace()[0].getMethodName());
         return null;
     }
 
     @Override
+    // FREQUENCY: UNSEEN
+    // STATUS: UNHANDLED
+    // CONFIDENCE:
     protected SILIRInstruction visitBridgeObjectToWord(CAstNode N, InstructionContext C) {
         System.err.println("ERROR: Unhandled instruction: " + new Exception().getStackTrace()[0].getMethodName());
         return null;
     }
 
     @Override
+    // FREQUENCY: VERY COMMON
+    // STATUS: TRANSLATED
+    // CONFIDENCE: HIGH
     protected SILIRInstruction visitThinToThickFunction(CAstNode N, InstructionContext C) {
         RawValue operand = getSingleOperand(N);
         RawValue result = getSingleResult(N);
@@ -1203,6 +1654,9 @@ public class RawToSILIRTranslator extends SILInstructionVisitor<SILIRInstruction
     }
 
     @Override
+    // FREQUENCY: COMMON
+    // STATUS: TRANSLATED
+    // CONFIDENCE: HIGH
     protected SILIRInstruction visitThickToObjCMetatype(CAstNode N, InstructionContext C) {
         RawValue operand = getSingleOperand(N);
         RawValue result = getSingleResult(N);
@@ -1210,6 +1664,9 @@ public class RawToSILIRTranslator extends SILInstructionVisitor<SILIRInstruction
     }
 
     @Override
+    // FREQUENCY: RARE
+    // STATUS: TRANSLATED
+    // CONFIDENCE: HIGH
     protected SILIRInstruction visitObjCToThickMetatype(CAstNode N, InstructionContext C) {
         RawValue operand = getSingleOperand(N);
         RawValue result = getSingleResult(N);
@@ -1217,6 +1674,9 @@ public class RawToSILIRTranslator extends SILInstructionVisitor<SILIRInstruction
     }
 
     @Override
+    // FREQUENCY: RARE
+    // STATUS: TRANSLATED
+    // CONFIDENCE: HIGH
     protected SILIRInstruction visitObjCMetatypeToObject(CAstNode N, InstructionContext C) {
         RawValue operand = getSingleOperand(N);
         RawValue result = getSingleResult(N);
@@ -1224,6 +1684,9 @@ public class RawToSILIRTranslator extends SILInstructionVisitor<SILIRInstruction
     }
 
     @Override
+    // FREQUENCY: RARE
+    // STATUS: TRANSLATED
+    // CONFIDENCE: HIGH
     protected SILIRInstruction visitObjCExistentialMetatypeToObject(CAstNode N, InstructionContext C) {
         RawValue operand = getSingleOperand(N);
         RawValue result = getSingleResult(N);
@@ -1231,6 +1694,9 @@ public class RawToSILIRTranslator extends SILInstructionVisitor<SILIRInstruction
     }
 
     @Override
+    // FREQUENCY: RARE
+    // STATUS: TRANSLATED
+    // CONFIDENCE: HIGH
     protected SILIRInstruction visitUnconditionalCheckedCast(CAstNode N, InstructionContext C) {
         RawValue operand = getSingleOperand(N);
         RawValue result = getSingleResult(N);
@@ -1238,6 +1704,9 @@ public class RawToSILIRTranslator extends SILInstructionVisitor<SILIRInstruction
     }
 
     @Override
+    // FREQUENCY: COMMON
+    // STATUS: TRANSLATED
+    // CONFIDENCE: HIGH
     protected SILIRInstruction visitUnconditionalCheckedCastAddr(CAstNode N, InstructionContext C) {
         RawValue operand = getSingleOperand(N);
         RawValue result = getSingleResult(N);
@@ -1245,12 +1714,18 @@ public class RawToSILIRTranslator extends SILInstructionVisitor<SILIRInstruction
     }
 
     @Override
+    // FREQUENCY: UNSEEN
+    // STATUS: UNHANDLED
+    // CONFIDENCE:
     protected SILIRInstruction visitUnconditionalCheckedCastValue(CAstNode N, InstructionContext C) {
         System.err.println("ERROR: Unhandled instruction: " + new Exception().getStackTrace()[0].getMethodName());
         return null;
     }
 
     @Override
+    // FREQUENCY: RARE
+    // STATUS: TRANSLATED
+    // CONFIDENCE: HIGH
     protected SILIRInstruction visitCondFail(CAstNode N, InstructionContext C) {
         RawValue operand = getSingleOperand(N);
         String Literal1 = UUID.randomUUID().toString();
@@ -1262,25 +1737,37 @@ public class RawToSILIRTranslator extends SILInstructionVisitor<SILIRInstruction
     }
 
     @Override
+    // FREQUENCY: COMMON
+    // STATUS: TRANSLATED
+    // CONFIDENCE: HIGH
     protected SILIRInstruction visitUnreachable(CAstNode N, InstructionContext C) {
         return new ThrowInstruction(C);
     }
 
     @Override
+    // FREQUENCY: VERY COMMON
+    // STATUS: TRANSLATED
+    // CONFIDENCE: HIGH
     protected SILIRInstruction visitReturn(CAstNode N, InstructionContext C) {
         RawValue operand = getSingleOperand(N);
         return new ReturnInstruction(operand.Name, C);
     }
 
     @Override
+    // FREQUENCY: COMMON
+    // STATUS: TRANSLATED
+    // CONFIDENCE: HIGH
     protected SILIRInstruction visitThrow(CAstNode N, InstructionContext C) {
         RawValue Error = getSingleOperand(N);
         return new ThrowInstruction(Error.Name, C);
     }
 
     @Override
+    // FREQUENCY: VERY COMMON
+    // STATUS: TRANSLATED
+    // CONFIDENCE: LOW
     protected SILIRInstruction visitYield(CAstNode N, InstructionContext C) {
-        // TODO: TEMPORARY, NEED TO HANDLE BRANCHING TO RESUME/UNWIND
+        // TODO: Coroutine problem.
         String ResumeLabel = RawUtil.getStringValue(N, 0);
         String UnwindLabel = RawUtil.getStringValue(N, 1);
         ArrayList<String> values = new ArrayList<>();
@@ -1291,11 +1778,18 @@ public class RawToSILIRTranslator extends SILInstructionVisitor<SILIRInstruction
     }
 
     @Override
+    // FREQUENCY: VERY COMMON
+    // STATUS: TRANSLATED
+    // CONFIDENCE: LOW
     protected SILIRInstruction visitUnwind(CAstNode N, InstructionContext C) {
+        // TODO: Coroutine problem.
         return new ReturnInstruction(C);
     }
 
     @Override
+    // FREQUENCY: VERY COMMON
+    // STATUS: TRANSLATED
+    // CONFIDENCE: HIGH
     protected SILIRInstruction visitBr(CAstNode N, InstructionContext C) {
         String DestBranch = RawUtil.getStringValue(N, 0);
         int DestBlockNo = Integer.parseInt(DestBranch);
@@ -1321,6 +1815,9 @@ public class RawToSILIRTranslator extends SILInstructionVisitor<SILIRInstruction
     }
 
     @Override
+    // FREQUENCY: VERY COMMON
+    // STATUS: TRANSLATED
+    // CONFIDENCE: HIGH
     protected SILIRInstruction visitCondBr(CAstNode N, InstructionContext C) {
         String CondOperandName = getStringValue(N, 0);
         String TrueDestName = getStringValue(N, 1);
@@ -1347,6 +1844,9 @@ public class RawToSILIRTranslator extends SILInstructionVisitor<SILIRInstruction
     }
 
     @Override
+    // FREQUENCY: VERY RARE
+    // STATUS: TRANSLATED
+    // CONFIDENCE: HIGH
     protected SILIRInstruction visitSwitchValue(CAstNode N, InstructionContext C) {
         String ConditionName = (String) N.getChild(0).getValue();
         ArrayList<Pair<String, BasicBlock>> cases = new ArrayList<>();
@@ -1375,12 +1875,18 @@ public class RawToSILIRTranslator extends SILInstructionVisitor<SILIRInstruction
     }
 
     @Override
+    // FREQUENCY: UNSEEN
+    // STATUS: UNHANDLED
+    // CONFIDENCE:
     protected SILIRInstruction visitSelectValue(CAstNode N, InstructionContext C) {
         System.err.println("ERROR: Unhandled instruction: " + new Exception().getStackTrace()[0].getMethodName());
         return null;
     }
 
     @Override
+    // FREQUENCY: VERY COMMON
+    // STATUS: TRANSLATED
+    // CONFIDENCE: HIGH
     protected SILIRInstruction visitSwitchEnum(CAstNode N, InstructionContext C) {
         String EnumName = (String) N.getChild(0).getValue();
         ArrayList<Pair<String, BasicBlock>> cases = new ArrayList<>();
@@ -1420,6 +1926,9 @@ public class RawToSILIRTranslator extends SILInstructionVisitor<SILIRInstruction
     }
 
     @Override
+    // FREQUENCY: COMMON
+    // STATUS: TRANSLATED
+    // CONFIDENCE: HIGH
     protected SILIRInstruction visitSwitchEnumAddr(CAstNode N, InstructionContext C) {
         String EnumName = (String) N.getChild(0).getValue();
         ArrayList<Pair<String, BasicBlock>> cases = new ArrayList<>();
@@ -1454,6 +1963,9 @@ public class RawToSILIRTranslator extends SILInstructionVisitor<SILIRInstruction
     }
 
     @Override
+    // FREQUENCY: RARE
+    // STATUS: UNHANDLED
+    // CONFIDENCE:
     protected SILIRInstruction visitDynamicMethodBr(CAstNode N, InstructionContext C) {
         // TODO
         System.err.println("ERROR: Unhandled instruction: " + new Exception().getStackTrace()[0].getMethodName());
@@ -1461,6 +1973,9 @@ public class RawToSILIRTranslator extends SILInstructionVisitor<SILIRInstruction
     }
 
     @Override
+    // FREQUENCY: COMMON
+    // STATUS: TRANSLATED
+    // CONFIDENCE: HIGH
     protected SILIRInstruction visitCheckedCastBr(CAstNode N, InstructionContext C) {
         RawValue operand = getSingleOperand(N);
         String condition = UUID.randomUUID().toString();
@@ -1472,12 +1987,18 @@ public class RawToSILIRTranslator extends SILInstructionVisitor<SILIRInstruction
     }
 
     @Override
+    // FREQUENCY: UNSEEN
+    // STATUS: UNHANDLED
+    // CONFIDENCE:
     protected SILIRInstruction visitCheckedCastValueBr(CAstNode N, InstructionContext C) {
         System.err.println("ERROR: Unhandled instruction: " + new Exception().getStackTrace()[0].getMethodName());
         return null;
     }
 
     @Override
+    // FREQUENCY: COMMON
+    // STATUS: TRANSLATED
+    // CONFIDENCE: HIGH
     protected SILIRInstruction visitCheckedCastAddrBr(CAstNode N, InstructionContext C) {
         RawValue operand1 = getOperand(N, 0);
         RawValue operand2 = getOperand(N, 1);
@@ -1490,6 +2011,9 @@ public class RawToSILIRTranslator extends SILInstructionVisitor<SILIRInstruction
     }
 
     @Override
+    // FREQUENCY: COMMON
+    // STATUS: UNHANDLED
+    // CONFIDENCE:
     protected SILIRInstruction visitTryApply(CAstNode N, InstructionContext C) {
         // TODO
         System.err.println("ERROR: Unhandled instruction: " + new Exception().getStackTrace()[0].getMethodName());

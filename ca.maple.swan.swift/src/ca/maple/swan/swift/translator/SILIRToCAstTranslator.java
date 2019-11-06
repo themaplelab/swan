@@ -319,8 +319,56 @@ public class SILIRToCAstTranslator {
                 case "+":
                     operator = CAstOperator.OP_ADD;
                     break;
+                case "/":
+                    operator = CAstOperator.OP_DIV;
+                    break;
+                case "<<":
+                    operator = CAstOperator.OP_LSH;
+                    break;
+                case "*":
+                    operator = CAstOperator.OP_MUL;
+                    break;
+                case ">>":
+                    operator = CAstOperator.OP_RSH;
+                    break;
                 case "-":
                     operator = CAstOperator.OP_SUB;
+                    break;
+                case ">=":
+                    operator = CAstOperator.OP_GE;
+                    break;
+                case ">":
+                    operator = CAstOperator.OP_GT;
+                    break;
+                case "<=":
+                    operator = CAstOperator.OP_LE;
+                    break;
+                case "<":
+                    operator = CAstOperator.OP_LT;
+                    break;
+                case "!":
+                    operator = CAstOperator.OP_NOT;
+                    break;
+                case "~":
+                    operator = CAstOperator.OP_BITNOT;
+                    break;
+                case "&":
+                    operator = CAstOperator.OP_BIT_AND;
+                    break;
+                case "&&":
+                    operator = CAstOperator.OP_REL_AND;
+                    break;
+                case "|":
+                    operator = CAstOperator.OP_BIT_OR;
+                    break;
+                case "||":
+                    operator = CAstOperator.OP_REL_OR;
+                    break;
+                case "^":
+                    operator = CAstOperator.OP_BIT_XOR;
+                    break;
+                case "~=": // Pattern matching operator.
+                    operator = CAstOperator.OP_EQ;
                     break;
                 case "binary_arb":
                     operator = SILIRCAstOperator.OP_BINARY_ARBITRARY;

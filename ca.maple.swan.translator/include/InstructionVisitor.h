@@ -41,7 +41,7 @@ namespace swan {
   static bool SWAN_PRINT_SOURCE = false;
   /// Disable printing memory and file information.
   static bool SWAN_PRINT_FILE_AND_MEMORY = false;
-
+  /// Toggles printing the SIL for each function.
   static bool PRINT_SIL = true;
 
   /// This class translates SIL to CAst by using Swift's SILInstructionVisitor which has callbacks, including
@@ -65,9 +65,6 @@ namespace swan {
     void visitSILBasicBlock(SILBasicBlock *BB);
     /// Prints the SILInstructionInfo
     void printSILInstructionInfo();
-
-    /// Returns CAstNode with appropriate operator kind.
-    jobject getOperatorCAstType(const Identifier &Name);
 
     /// The WALAInstance that holds the resultant CAst.
     WALAInstance *Instance;
