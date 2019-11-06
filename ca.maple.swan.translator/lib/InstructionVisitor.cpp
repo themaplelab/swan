@@ -1597,10 +1597,7 @@ void InstructionVisitor::visitSwitchValueInst(SwitchValueInst *SVI) {
   
 }
 
-void InstructionVisitor::visitSelectValueInst(SelectValueInst *SVI) {
-  // TODO: UNIMPLEMENTED
-  
-}
+void InstructionVisitor::visitSelectValueInst(__attribute__((unused)) SelectValueInst *SVI) { }
 
 void InstructionVisitor::visitSwitchEnumInst(SwitchEnumInst *SWI) {
   std::string EnumName = addressToString(SWI->getOperand().getOpaqueValue());
@@ -1648,6 +1645,22 @@ void InstructionVisitor::visitSwitchEnumAddrInst(SwitchEnumAddrInst *SEAI) {
   }
 }
 
+void InstructionVisitor::visitDynamicMethodBranchInst(DynamicMethodBranchInst *DMBI)
+{
+  handleSimpleInstr(DMBI);
+  std::string method = DMBI->getMember().getDecl()->getFullName().getBaseIdentifier().str();
+  int hasMethodBB = DMBI->getHasMethodBB()->getDebugID();
+  int noMethodBB = DMBI->getNoMethodBB()->getDebugID();
+  ADD_PROP(MAKE_CONST(method.c_str()));
+  ADD_PROP(MAKE_CONST(hasMethodBB));
+  ADD_PROP(MAKE_CONST(noMethodBB));
+  if (SWAN_PRINT) {
+    llvm::outs() << "\t [METHOD]: " << method << "\n";
+    llvm::outs() << "\t [HAS METHOD BB: " << hasMethodBB << "\n";
+    llvm::outs() << "\t [NO METHOD BB]: " << noMethodBB << "\n";
+  }
+}
+
 void InstructionVisitor::visitCheckedCastBranchInst(CheckedCastBranchInst *CI) {
   handleSimpleInstr(CI);
   SILBasicBlock *successBlock = CI->getSuccessBB();
@@ -1656,10 +1669,7 @@ void InstructionVisitor::visitCheckedCastBranchInst(CheckedCastBranchInst *CI) {
   ADD_PROP(MAKE_CONST(failureBlock->getDebugID()));
 }
 
-void InstructionVisitor::visitCheckedCastBranchValueInst(CheckedCastValueBranchInst CI)
-{
-  // TODO: UNIMPLEMENTED
-}
+void InstructionVisitor::visitCheckedCastBranchValueInst(__attribute__((unused)) CheckedCastValueBranchInst CI) { }
 
 void InstructionVisitor::visitCheckedCastAddrBranchInst(CheckedCastAddrBranchInst *CI) {
   handleSimpleInstr(CI);

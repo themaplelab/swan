@@ -346,6 +346,7 @@ namespace swan {
     void visitSelectValueInst(SelectValueInst *SVI);
     void visitSwitchEnumInst(SwitchEnumInst *SWI);
     void visitSwitchEnumAddrInst(SwitchEnumAddrInst *SEAI);
+    void visitDynamicMethodBranchInst(DynamicMethodBranchInst *DMBI);
     void visitCheckedCastBranchInst(CheckedCastBranchInst *CI);
     void visitCheckedCastBranchValueInst(CheckedCastValueBranchInst CI);
     void visitCheckedCastAddrBranchInst(CheckedCastAddrBranchInst *CI);

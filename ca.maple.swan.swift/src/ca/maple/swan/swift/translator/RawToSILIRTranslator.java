@@ -1407,11 +1407,19 @@ public class RawToSILIRTranslator extends SILInstructionVisitor<SILIRInstruction
 
     @Override
     // FREQUENCY: RARE
-    // STATUS: UNHANDLED
-    // CONFIDENCE:
+    // STATUS: TRANSLATED
+    // CONFIDENCE: MED
     protected SILIRInstruction visitInitBlockStorageHeader(CAstNode N, InstructionContext C) {
-        // TODO
-        System.err.println("ERROR: Unhandled instruction: " + new Exception().getStackTrace()[0].getMethodName());
+        // Objc instruction, the result of which is a block. The result is used in calls
+        // to objc builtins, so we can just set the result to the operand.
+        RawValue operand = getSingleOperand(N);
+        RawValue result = getSingleResult(N);
+        String funcRef = getStringValue(N, 2);
+        String unusedReturnValue = UUID.randomUUID().toString();
+        ArrayList<String> args = new ArrayList<>();
+        args.add(operand.Name);
+        C.bc.block.addInstruction(new ApplyInstruction(funcRef, unusedReturnValue, "temp", args, C));
+        C.bc.block.addInstruction(new AssignInstruction(result.Name, operand.Name, C));
         return null;
     }
 
@@ -1964,11 +1972,21 @@ public class RawToSILIRTranslator extends SILInstructionVisitor<SILIRInstruction
 
     @Override
     // FREQUENCY: RARE
-    // STATUS: UNHANDLED
-    // CONFIDENCE:
+    // STATUS: TRANSLATED
+    // CONFIDENCE: LOW - because the C++ way of getting the method is not verified.
     protected SILIRInstruction visitDynamicMethodBr(CAstNode N, InstructionContext C) {
-        // TODO
-        System.err.println("ERROR: Unhandled instruction: " + new Exception().getStackTrace()[0].getMethodName());
+        // ObjC method implementation lookup, just treat as arb conditional branch.
+        RawValue operand = getSingleOperand(N);
+        String methodName = getStringValue(N, 2);
+        BasicBlock hasMethodBB = C.bc.fc.function.getBlock(getIntValue(N, 3));
+        BasicBlock noMethodBB = C.bc.fc.function.getBlock(getIntValue(N, 4));
+        // Create a new function ref for this method and use it as the argument to hasMethodBB.
+        String functionRef = UUID.randomUUID().toString();
+        C.bc.block.addInstruction(new BuiltinInstruction(methodName, functionRef, "temp", C));
+        C.bc.block.addInstruction(new ImplicitCopyInstruction(hasMethodBB.getArgument(0).name, hasMethodBB.getArgument(0).type, C));
+        String condition = UUID.randomUUID().toString();
+        C.bc.block.addInstruction(new UnaryOperatorInstruction(condition, "$Bool", "unary_arb", operand.Name, C));
+        C.bc.block.addInstruction(new ConditionalBranchInstruction(condition, hasMethodBB, noMethodBB, C));
         return null;
     }
 
@@ -1981,7 +1999,7 @@ public class RawToSILIRTranslator extends SILInstructionVisitor<SILIRInstruction
         String condition = UUID.randomUUID().toString();
         C.bc.block.addInstruction(new UnaryOperatorInstruction(condition, "$Bool", "unary_arb", operand.Name, C));
         BasicBlock successBB = C.bc.fc.function.getBlock(getIntValue(N, 2));
-        BasicBlock failureBB = C.bc.fc.function.getBlock(getIntValue(N, 2));
+        BasicBlock failureBB = C.bc.fc.function.getBlock(getIntValue(N, 3));
         C.bc.block.addInstruction(new ConditionalBranchInstruction(condition, successBB, failureBB, C));
         return null;
     }
@@ -2005,7 +2023,7 @@ public class RawToSILIRTranslator extends SILInstructionVisitor<SILIRInstruction
         String condition = UUID.randomUUID().toString();
         C.bc.block.addInstruction(new BinaryOperatorInstruction(condition, "$Bool", "binary_arb", operand1.Name, operand2.Name, C));
         BasicBlock successBB = C.bc.fc.function.getBlock(getIntValue(N, 2));
-        BasicBlock failureBB = C.bc.fc.function.getBlock(getIntValue(N, 2));
+        BasicBlock failureBB = C.bc.fc.function.getBlock(getIntValue(N, 3));
         C.bc.block.addInstruction(new ConditionalBranchInstruction(condition, successBB, failureBB, C));
         return null;
     }
