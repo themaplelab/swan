@@ -97,7 +97,13 @@ public class TaintPathRecorder {
                 }
             }
             if (p != null) {
-                path.add(0, p);
+                if (p.getFirstCol() != p.getLastCol() || p.getFirstLine() != p.getLastLine()) {
+                    if (!path.isEmpty() && !(path.get(0).equals(p))) {
+                        path.add(0, p);
+                    } else if (path.isEmpty()) {
+                        path.add(0, p);
+                    }
+                }
             }
         }
         return path;

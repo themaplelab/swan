@@ -46,7 +46,7 @@ public class SwiftLoader extends JavaScriptLoader {
     @Override
     protected TranslatorToIR initTranslator() {
         for (String typeName : SILTypes.getTypeNames()) {
-            cha.addClass(new CoreClass(TypeName.findOrCreate(typeName), JavaScriptTypes.Root.getName(), this, null));
+            cha.addClass(new CoreClass(TypeName.findOrCreate("L" + typeName), JavaScriptTypes.Root.getName(), this, null));
         }
         return new SwiftAstTranslator(this);
     }

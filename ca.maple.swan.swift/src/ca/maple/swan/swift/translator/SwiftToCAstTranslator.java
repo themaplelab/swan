@@ -245,6 +245,17 @@ public class SwiftToCAstTranslator extends NativeTranslatorToCAst {
 				return url;
 			}
 
+			@Override
+			public boolean equals(Object p) {
+				if (p instanceof CAstSourcePositionMap.Position) {
+					return (this.getFirstLine() == ((CAstSourcePositionMap.Position) p).getFirstLine() &&
+							this.getFirstCol() == ((CAstSourcePositionMap.Position) p).getFirstCol() &&
+							this.getLastLine() == ((CAstSourcePositionMap.Position) p).getLastLine() &&
+							this.getLastCol() == ((CAstSourcePositionMap.Position) p).getLastCol());
+				}
+				return false;
+			}
+
 			public InputStream getInputStream() throws IOException {
 				return new FileInputStream(filename);
 			}

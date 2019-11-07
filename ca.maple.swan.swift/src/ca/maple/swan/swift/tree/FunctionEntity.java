@@ -29,7 +29,6 @@ public class FunctionEntity extends AbstractCodeEntity {
 
     private String functionName;
     private final String[] arguments;
-    private CAstSourcePositionRecorder sourcePositionRecorder;
     private CAstSourcePositionMap.Position namePosition;
     private ArrayList<CAstSourcePositionMap.Position> argumentPositions;
     // rawInfo holds the raw AST node representing the function
@@ -57,7 +56,6 @@ public class FunctionEntity extends AbstractCodeEntity {
                 : "Function: " + name + " :argument information is not parallel";
         this.functionName = name;
         this.arguments = argumentNames.toArray(new String[0]);
-        this.sourcePositionRecorder = new CAstSourcePositionRecorder();
         this.argumentPositions = argumentPositions;
         this.setPosition(functionPosition);
         // SILLocation/SILFunction doesn't have a way of getting the columns of the function name (AFAIK), so we just
@@ -109,11 +107,6 @@ public class FunctionEntity extends AbstractCodeEntity {
     @Override
     public String toString() {
         return getName();
-    }
-
-    @Override
-    public CAstSourcePositionRecorder getSourceMap() {
-        return this.sourcePositionRecorder;
     }
 
 }

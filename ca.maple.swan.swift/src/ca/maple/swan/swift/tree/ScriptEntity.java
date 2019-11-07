@@ -27,12 +27,10 @@ import java.io.File;
 
 public class ScriptEntity extends AbstractScriptEntity {
 
-    private final CAstSourcePositionRecorder sourcePositionRecorder;
     private final String scriptName;
 
     public ScriptEntity(String scriptName, File file) {
         super(file, new SwiftScriptType());
-        this.sourcePositionRecorder = new CAstSourcePositionRecorder();
         this.scriptName = scriptName;
     }
 
@@ -54,11 +52,6 @@ public class ScriptEntity extends AbstractScriptEntity {
     @Override
     public String getName() {
         return scriptName;
-    }
-
-    @Override
-    public CAstSourcePositionRecorder getSourceMap() {
-        return this.sourcePositionRecorder;
     }
 
     @Override
