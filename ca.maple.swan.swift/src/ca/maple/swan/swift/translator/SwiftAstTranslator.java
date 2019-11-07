@@ -14,6 +14,9 @@
 package ca.maple.swan.swift.translator;
 
 import ca.maple.swan.swift.loader.SwiftLoader;
+import ca.maple.swan.swift.translator.operators.SILIRBinaryOp;
+import ca.maple.swan.swift.translator.operators.SILIRCAstOperator;
+import ca.maple.swan.swift.translator.operators.SILIRUnaryOp;
 import com.ibm.wala.cast.ir.ssa.CAstBinaryOp;
 import com.ibm.wala.cast.ir.translator.AstTranslator;
 import com.ibm.wala.cast.js.ssa.JSInstructionFactory;
@@ -40,7 +43,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Map;
 
-import static ca.maple.swan.swift.translator.SwiftCAstNode.GLOBAL_DECL_STMT;
+import static ca.maple.swan.swift.translator.cast.SwiftCAstNode.GLOBAL_DECL_STMT;
 
 /*
  * This class is borrows lots from the JSAstTranslator. Translates SIL specific CAst to WALA IR.
@@ -275,6 +278,22 @@ public class SwiftAstTranslator extends AstTranslator {
     @Override
     protected boolean doVisit(CAstNode n, WalkContext context, CAstVisitor<WalkContext> visitor) {
         switch (n.getKind()) {
+            case CAstNode.TYPE_OF:
+            {
+                int result = context.currentScope().allocateTempValue();
+
+                this.visit(n.getChild(0), context, this);
+                int ref = context.getValue(n.getChild(0));
+
+                context
+                        .cfg()
+                        .addInstruction(
+                                ((JSInstructionFactory) insts)
+                                        .TypeOfInstruction(context.cfg().getCurrentInstruction(), result, ref));
+
+                context.setValue(n, result);
+                return true;
+            }
             case GLOBAL_DECL_STMT:
                 CAstSymbol s = (CAstSymbol) n.getChild(0).getValue();
                 context.getGlobalScope().declare(s);
@@ -371,6 +390,10 @@ public class SwiftAstTranslator extends AstTranslator {
             return com.ibm.wala.shrikeBT.IBinaryOpInstruction.Operator.AND;
         } else if (op == CAstOperator.OP_REL_OR) {
             return com.ibm.wala.shrikeBT.IBinaryOpInstruction.Operator.OR;
+        } else if (op == SILIRCAstOperator.OP_UNARY_ARBITRARY) {
+            return SILIRUnaryOp.ARB;
+        } else if (op == SILIRCAstOperator.OP_BINARY_ARBITRARY) {
+            return SILIRBinaryOp.ARB;
         } else {
             Assertions.UNREACHABLE("cannot translate " + CAstPrinter.print(op));
             return null;

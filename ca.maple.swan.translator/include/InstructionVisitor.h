@@ -36,11 +36,13 @@ namespace swan {
   class WALAInstance;
 
   /// Decides whether to print the translation debug info to terminal at runtime.
-  static bool SWAN_PRINT = true;
+  static bool SWAN_PRINT = false;
   /// Source information can be annoying/unnecessary for debugging, so there is an option to disable it.
   static bool SWAN_PRINT_SOURCE = false;
   /// Disable printing memory and file information.
   static bool SWAN_PRINT_FILE_AND_MEMORY = false;
+  /// Toggles printing the SIL for each function.
+  static bool PRINT_SIL = true;
 
   /// This class translates SIL to CAst by using Swift's SILInstructionVisitor which has callbacks, including
   /// ones for every type of SILInstruction. This makes translating simple.
@@ -63,9 +65,6 @@ namespace swan {
     void visitSILBasicBlock(SILBasicBlock *BB);
     /// Prints the SILInstructionInfo
     void printSILInstructionInfo();
-
-    /// Returns CAstNode with appropriate operator kind.
-    jobject getOperatorCAstType(const Identifier &Name);
 
     /// The WALAInstance that holds the resultant CAst.
     WALAInstance *Instance;
@@ -347,7 +346,9 @@ namespace swan {
     void visitSelectValueInst(SelectValueInst *SVI);
     void visitSwitchEnumInst(SwitchEnumInst *SWI);
     void visitSwitchEnumAddrInst(SwitchEnumAddrInst *SEAI);
+    void visitDynamicMethodBranchInst(DynamicMethodBranchInst *DMBI);
     void visitCheckedCastBranchInst(CheckedCastBranchInst *CI);
+    void visitCheckedCastBranchValueInst(CheckedCastValueBranchInst CI);
     void visitCheckedCastAddrBranchInst(CheckedCastAddrBranchInst *CI);
     void visitTryApplyInst(TryApplyInst *TAI);
 
