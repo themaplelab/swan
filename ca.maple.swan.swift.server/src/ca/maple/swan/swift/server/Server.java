@@ -14,6 +14,7 @@
 package ca.maple.swan.swift.server;
 
 import ca.maple.swan.swift.taint.TaintAnalysisDriver;
+import ca.maple.swan.swift.translator.SwiftToCAstTranslator;
 import com.ibm.wala.cast.tree.CAstSourcePositionMap;
 import com.ibm.wala.ipa.callgraph.propagation.InstanceKey;
 import com.ibm.wala.ipa.slicer.SDG;
@@ -25,6 +26,7 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.net.URISyntaxException;
+import java.util.Arrays;
 import java.util.List;
 
 import static java.lang.System.exit;
@@ -84,6 +86,8 @@ public class Server {
                                 JSONArrayToJavaStringArray(sanitizers)
                         );
                         JSONObject result = pathsToJSON(paths);
+                        JSONArray functions = new JSONArray(SwiftToCAstTranslator.functionNames);
+                        result.put("functions", functions);
                         System.out.println("Returning taint analysis results...");
                         socket.emit("taintAnalysisResults", result);
                     } catch (Exception e) {

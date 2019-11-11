@@ -52,6 +52,7 @@ public class TaintPathRecorder {
     public static List<CAstSourcePositionMap.Position> getPositionsFromStatements(List<Statement> statements) {
         // TODO: Add source function itself to the beginning of the path.
         List<CAstSourcePositionMap.Position> path = new ArrayList<>();
+        Set<Integer> seenLines = new HashSet<>();
         for (Statement s : statements) {
             CAstSourcePositionMap.Position p = null;
             IMethod m = s.getNode().getMethod();
@@ -97,7 +98,17 @@ public class TaintPathRecorder {
                 }
             }
             if (p != null) {
-                path.add(0, p);
+                if (p.getFirstCol() != p.getLastCol() || p.getFirstLine() != p.getLastLine()) {
+                    if (!path.isEmpty() && !(path.get(0).equals(p))) {
+                        if (!(p.getFirstLine() == p.getLastLine() && seenLines.contains(p.getFirstLine()))) {
+                            path.add(0, p);
+                        }
+                        seenLines.add(p.getFirstLine());
+                    } else if (path.isEmpty()) {
+                        path.add(0, p);
+                        seenLines.add(p.getFirstLine());
+                    }
+                }
             }
         }
         return path;
@@ -107,8 +118,6 @@ public class TaintPathRecorder {
         ArrayList<List<CAstSourcePositionMap.Position>> paths = new ArrayList<>();
         for (Statement src : getSources()) {
             for (Statement target : getTargets(src)) {
-                // TODO: Override connected nodes of bfs pathfinder to only traverse those
-                //   whose |sources| > 0.
                 TaintBFSPathFinder finder = new TaintBFSPathFinder(g, src, target, s);
                 List<CAstSourcePositionMap.Position> path = getPositionsFromStatements(finder.find());
                 if (!path.isEmpty()) {

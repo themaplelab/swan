@@ -112,6 +112,7 @@ public class EntityPrinter {
 
         if (entity.getAST() != null) {
             System.out.println("\t<AST>");
+            // TODO: Edit to print custom CAst correctly.
             System.out.println(entity.getAST());
             System.out.println("\t</AST>");
         }

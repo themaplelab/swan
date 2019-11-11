@@ -29,9 +29,7 @@ import com.ibm.wala.ipa.cha.IClassHierarchy;
 import java.util.Collections;
 
 /*
- * This class extends the JavaScriptAnalysisEngine because we need to
- * be able to set a custom loader factory in order to be able to use
- * our own extended AstTranslator.
+ * This class extends the JavaScriptAnalysisEngine. In the future we will most likely make our own engine entirely.
  */
 
 public abstract class SwiftAnalysisEngine<I extends InstanceKey>

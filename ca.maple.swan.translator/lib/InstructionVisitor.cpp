@@ -21,6 +21,8 @@
 ///
 //===---------------------------------------------------------------------===//
 
+// TODO: PRINT INFORMATION NEEDS TO BE COMPLETED. i.e. "[ ... ]"
+
 #include "InstructionVisitor.h"
 #include "swift/AST/Module.h"
 #include "swift/AST/Types.h"
@@ -106,7 +108,7 @@ void InstructionVisitor::visitSILFunction(SILFunction *F) {
   } else if (F->getLoweredFunctionType()->getNumResults() == 0) {
     currentFunction->returnType = "void";
   } else {
-    currentFunction->returnType = "MultiResultType"; // TODO: Replace with array of types or something?
+    currentFunction->returnType = "MultiResultType"; // SHOULD NOT HAPPEN IN CURRENT SWIFT VERSION!
   }
 
   if (SWAN_PRINT) {
@@ -114,6 +116,8 @@ void InstructionVisitor::visitSILFunction(SILFunction *F) {
     for (auto arg : F->getArguments()) {
       llvm::outs() << "[ARG]: " << addressToString(static_cast<ValueBase*>(arg)) << "\n";
     }
+  }
+  if (PRINT_SIL) {
     llvm::outs() << "<RAW SIL BEGIN> \n\n";
     F->print(llvm::outs(), true);
     llvm::outs() << "\n</RAW SIL END> \n\n";
@@ -271,58 +275,6 @@ void InstructionVisitor::printSILInstructionInfo() {
 }
 
 //===------------------------- UTLITY FUNCTIONS ----------------------------===//
-
-jobject InstructionVisitor::getOperatorCAstType(const Identifier &Name) {
-  // TODO: Not all operators are handled!
-  if (Name.is("==")) {
-    return CAstWrapper::OP_EQ;
-  } else if (Name.is("!=")) {
-    return CAstWrapper::OP_NE;
-  } else if (Name.is("+")) {
-    return CAstWrapper::OP_ADD;
-  } else if (Name.is("/")) {
-    return CAstWrapper::OP_DIV;
-  } else if (Name.is("<<")) {
-    return CAstWrapper::OP_LSH;
-  } else if (Name.is("*")) {
-    return CAstWrapper::OP_MUL;
-  } else if (Name.is(">>")) {
-    return CAstWrapper::OP_RSH;
-  } else if (Name.is("-")) {
-    return CAstWrapper::OP_SUB;
-  } else if (Name.is(">=")) {
-    return CAstWrapper::OP_GE;
-  } else if (Name.is(">")) {
-    return CAstWrapper::OP_GT;
-  } else if (Name.is("<=")) {
-    return CAstWrapper::OP_LE;
-  } else if (Name.is("<")) {
-    return CAstWrapper::OP_LT;
-  } else if (Name.is("!")) {
-    return CAstWrapper::OP_NOT;
-  } else if (Name.is("~")) {
-    return CAstWrapper::OP_BITNOT;
-  } else if (Name.is("&")) {
-    return CAstWrapper::OP_BIT_AND;
-  } else if (Name.is("&&")) {
-    // OLD: return CAstWrapper::OP_REL_AND;
-    return nullptr; // OLD: && and || are handled separately because they involve short circuits
-  } else if (Name.is("|")) {
-    return CAstWrapper::OP_BIT_OR;
-  } else if (Name.is("||")) {
-    // OLD: return CAstWrapper::OP_REL_OR;
-    return nullptr; // OLD: && and || are handled separatedly because they involve short circuits
-  } else if (Name.is("^")) {
-    return CAstWrapper::OP_BIT_XOR;
-  } else if (Name.is("~=")) { // Pattern matching operator.
-    return CAstWrapper::OP_EQ;
-  } else {
-    if (SWAN_PRINT) {
-      llvm::outs() << "WARNING: Unhandled operator: " << Name << " detected! \n";
-    }
-    return nullptr;
-  }
-}
 
 void InstructionVisitor::handleSimpleInstr(SILInstruction *UIB) {
   std::list<jobject> operands;
@@ -521,20 +473,7 @@ void InstructionVisitor::visitDestroyAddrInst(DestroyAddrInst *DAI) {
 }
 
 void InstructionVisitor::visitIndexAddrInst(IndexAddrInst *IAI) {
-  std::string BaseName = addressToString(IAI->getBase().getOpaqueValue());
-  std::string IndexName = addressToString(IAI->getIndex().getOpaqueValue());
-  std::string ResultName = addressToString(static_cast<ValueBase*>(IAI));
-  std::string ResultType = IAI->getType().getAsString();
-  if (SWAN_PRINT) {
-    llvm::outs() << "\t [BASE NAME: " << BaseName << "\n";
-    llvm::outs() << "\t [DEST ADDR]: " << IndexName << "\n";
-    llvm::outs() << "\t [RESULT NAME]: " << ResultName << "\n";
-    llvm::outs() << "\t [RESULT TYPE]: " << ResultType << "\n";
-  }
-  ADD_PROP(MAKE_CONST(BaseName.c_str()));
-  ADD_PROP(MAKE_CONST(IndexName.c_str()));
-  ADD_PROP(MAKE_CONST(ResultName.c_str()));
-  ADD_PROP(MAKE_CONST(ResultType.c_str()));
+  handleSimpleInstr(IAI);
 }
 
 void InstructionVisitor::visitTailAddrInst(TailAddrInst *TAI) {
@@ -884,55 +823,31 @@ void InstructionVisitor::visitApplyInst(ApplyInst *AI) {
   if (SWAN_PRINT) {
     llvm::outs() << "\t [FUNC REF ADDR]: " << AI->getOperand(0).getOpaqueValue() << "\n";
   }
-  if (Callee) {
-    auto *FD = Callee->getLocation().getAsASTNode<FuncDecl>();
-    if (FD && (FD->isUnaryOperator() || FD->isBinaryOperator())) {
-      jobject OperatorNode = getOperatorCAstType(FD->getName());
-      arguments.push_front(OperatorNode);
-      if (OperatorNode) {
-        if (SWAN_PRINT) {
-          llvm::outs() << "\t [OPERATOR NAME]:" << Instance->CAst->getConstantValue(OperatorNode) << "\n";
-        }
-        if (FD->isUnaryOperator()) {
-          ADD_PROP(MAKE_NODE2(CAstWrapper::UNARY_EXPR, MAKE_ARRAY(&arguments)));
-        } else if (FD->isBinaryOperator()) {
-          ADD_PROP(MAKE_NODE2(CAstWrapper::BINARY_EXPR, MAKE_ARRAY(&arguments)));
-        }
-        if (SWAN_PRINT) {
-          for (auto arg : arguments) {
-            llvm::outs() << "\t\t [ARG]: " << Instance->CAst->getConstantValue(arg) << "\n";
-          }
-        }
-      } else {
-        llvm::outs() << "ERROR: Could not make operator \n";
-      }
-      return;
+  if (SWAN_PRINT) {
+    for (auto arg : arguments) {
+      llvm::outs() << "\t\t [ARG]: " << Instance->CAst->getConstantValue(arg) << "\n";
     }
   }
   ADD_PROP(MAKE_NODE2(CAstWrapper::PRIMITIVE, MAKE_ARRAY(&arguments)));
+  if (Callee) {
+    auto *FD = Callee->getLocation().getAsASTNode<FuncDecl>();
+    if (FD && (FD->isUnaryOperator() || FD->isBinaryOperator())) {
+      jobject OperatorNode = MAKE_CONST(FD->getName().str().str().c_str());
+      arguments.push_front(OperatorNode);
+      if (SWAN_PRINT) {
+        llvm::outs() << "\t [OPERATOR NAME]:" << Instance->CAst->getConstantValue(OperatorNode) << "\n";
+      }
+      if (FD->isUnaryOperator()) {
+        ADD_PROP(MAKE_NODE2(CAstWrapper::UNARY_EXPR, MAKE_ARRAY(&arguments)));
+      } else if (FD->isBinaryOperator()) {
+        ADD_PROP(MAKE_NODE2(CAstWrapper::BINARY_EXPR, MAKE_ARRAY(&arguments)));
+      }
+    }
+  }
 }
 
 void InstructionVisitor::visitBeginApplyInst(BeginApplyInst *BAI) {
-  std::string AnyName = addressToString(BAI->getResult(0).getOpaqueValue());
-  std::string AnyType = BAI->getResult(0)->getType().getAsString();
-  std::string FloatName = addressToString(BAI->getResult(1).getOpaqueValue());
-  std::string FloatType = BAI->getResult(1)->getType().getAsString();
-  std::string TokenName = addressToString(BAI->getTokenResult().getOpaqueValue());
-  std::string TokenType = BAI->getTokenResult()->getType().getAsString();
-  if (SWAN_PRINT) {
-    llvm::outs() << "\t [ANY NAME]:" << AnyName << "\n";
-    llvm::outs() << "\t [ANY TYPE]:" << AnyType << "\n";
-    llvm::outs() << "\t [FLOAT NAME]:" << FloatName << "\n";
-    llvm::outs() << "\t [FLOAT TYPE]:" << FloatType << "\n";
-    llvm::outs() << "\t [TOKEN NAME]:" << TokenName << "\n";
-    llvm::outs() << "\t [TOKEN TYPE]:" << TokenType << "\n";
-  }
-  ADD_PROP(MAKE_CONST(AnyName.c_str()));
-  ADD_PROP(MAKE_CONST(AnyType.c_str()));
-  ADD_PROP(MAKE_CONST(FloatName.c_str()));
-  ADD_PROP(MAKE_CONST(FloatType.c_str()));
-  ADD_PROP(MAKE_CONST(TokenName.c_str()));
-  ADD_PROP(MAKE_CONST(TokenType.c_str()));
+  handleSimpleInstr(BAI);
   auto *Callee = BAI->getReferencedFunctionOrNull();
   std::list<jobject> arguments;
   for (auto arg : BAI->getArguments()) {
@@ -942,32 +857,27 @@ void InstructionVisitor::visitBeginApplyInst(BeginApplyInst *BAI) {
   if (SWAN_PRINT) {
     llvm::outs() << "\t [FUNC REF ADDR]: " << BAI->getOperand(0).getOpaqueValue() << "\n";
   }
-  if (Callee) {
-    auto *FD = Callee->getLocation().getAsASTNode<FuncDecl>();
-    if (FD && (FD->isUnaryOperator() || FD->isBinaryOperator())) {
-      jobject OperatorNode = getOperatorCAstType(FD->getName());
-      arguments.push_front(OperatorNode);
-      if (OperatorNode) {
-        if (SWAN_PRINT) {
-          llvm::outs() << "\t [OPERATOR NAME]:" << Instance->CAst->getConstantValue(OperatorNode) << "\n";
-        }
-        if (FD->isUnaryOperator()) {
-          ADD_PROP(MAKE_NODE2(CAstWrapper::UNARY_EXPR, MAKE_ARRAY(&arguments)));
-        } else if (FD->isBinaryOperator()) {
-          ADD_PROP(MAKE_NODE2(CAstWrapper::BINARY_EXPR, MAKE_ARRAY(&arguments)));
-        }
-        if (SWAN_PRINT) {
-          for (auto arg : arguments) {
-            llvm::outs() << "\t\t [ARG]: " << Instance->CAst->getConstantValue(arg) << "\n";
-          }
-        }
-      } else {
-        llvm::outs() << "ERROR: Could not make operator \n";
-      }
-      return;
+  if (SWAN_PRINT) {
+    for (auto arg : arguments) {
+      llvm::outs() << "\t\t [ARG]: " << Instance->CAst->getConstantValue(arg) << "\n";
     }
   }
   ADD_PROP(MAKE_NODE2(CAstWrapper::PRIMITIVE, MAKE_ARRAY(&arguments)));
+  if (Callee) {
+    auto *FD = Callee->getLocation().getAsASTNode<FuncDecl>();
+    if (FD && (FD->isUnaryOperator() || FD->isBinaryOperator())) {
+      jobject OperatorNode = MAKE_CONST(FD->getName().str().str().c_str());
+      arguments.push_front(OperatorNode);
+      if (SWAN_PRINT) {
+        llvm::outs() << "\t [OPERATOR NAME]:" << Instance->CAst->getConstantValue(OperatorNode) << "\n";
+      }
+      if (FD->isUnaryOperator()) {
+        ADD_PROP(MAKE_NODE2(CAstWrapper::UNARY_EXPR, MAKE_ARRAY(&arguments)));
+      } else if (FD->isBinaryOperator()) {
+        ADD_PROP(MAKE_NODE2(CAstWrapper::BINARY_EXPR, MAKE_ARRAY(&arguments)));
+      }
+    }
+  }
 }
 
 void InstructionVisitor::visitAbortApplyInst(AbortApplyInst *AAI) {
@@ -979,7 +889,6 @@ void InstructionVisitor::visitEndApplyInst(EndApplyInst *EAI) {
 }
 
 void InstructionVisitor::visitPartialApplyInst(PartialApplyInst *PAI) {
-  // TODO:
   handleSimpleInstr(PAI);
   auto *Callee = PAI->getReferencedFunctionOrNull();
   std::list<jobject> arguments;
@@ -990,19 +899,17 @@ void InstructionVisitor::visitPartialApplyInst(PartialApplyInst *PAI) {
   if (SWAN_PRINT) {
     llvm::outs() << "\t [FUNC REF ADDR]: " << PAI->getOperand(0).getOpaqueValue() << "\n";
   }
-  if (!Callee) {
-    if (SWAN_PRINT) {
-      llvm::outs() << "\t WARNING: Apply site's Callee is empty!\n";
+  if (SWAN_PRINT) {
+    for (auto arg : arguments) {
+      llvm::outs() << "\t\t [ARG]: " << Instance->CAst->getConstantValue(arg) << "\n";
     }
-    arguments.push_front(MAKE_CONST("N/A"));
-    ADD_PROP(MAKE_NODE2(CAstWrapper::PRIMITIVE, MAKE_ARRAY(&arguments)));
-    return;
   }
-  auto *FD = Callee->getLocation().getAsASTNode<FuncDecl>();
-  if (FD && (FD->isUnaryOperator() || FD->isBinaryOperator())) {
-    jobject OperatorNode = getOperatorCAstType(FD->getName());
-    arguments.push_front(OperatorNode);
-    if (OperatorNode) {
+  ADD_PROP(MAKE_NODE2(CAstWrapper::PRIMITIVE, MAKE_ARRAY(&arguments)));
+  if (Callee) {
+    auto *FD = Callee->getLocation().getAsASTNode<FuncDecl>();
+    if (FD && (FD->isUnaryOperator() || FD->isBinaryOperator())) {
+      jobject OperatorNode = MAKE_CONST(FD->getName().str().str().c_str());
+      arguments.push_front(OperatorNode);
       if (SWAN_PRINT) {
         llvm::outs() << "\t [OPERATOR NAME]:" << Instance->CAst->getConstantValue(OperatorNode) << "\n";
       }
@@ -1011,22 +918,7 @@ void InstructionVisitor::visitPartialApplyInst(PartialApplyInst *PAI) {
       } else if (FD->isBinaryOperator()) {
         ADD_PROP(MAKE_NODE2(CAstWrapper::BINARY_EXPR, MAKE_ARRAY(&arguments)));
       }
-      if (SWAN_PRINT) {
-        for (auto arg : arguments) {
-          llvm::outs() << "\t\t [ARG]: " << Instance->CAst->getConstantValue(arg) << "\n";
-        }
-      }
-    } else {
-      llvm::outs() << "ERROR: Could not make operator \n";
     }
-  } else {
-    std::string CalleeName = Demangle::demangleSymbolAsString(Callee->getName());
-    if (SWAN_PRINT) {
-      llvm::outs() << "\t [CALLEE NAME]:" << CalleeName << "\n";
-    }
-    currentFunction->addCalledFunction(CalleeName);
-    arguments.push_front(MAKE_CONST(CalleeName.c_str()));
-    ADD_PROP(MAKE_NODE2(CAstWrapper::PRIMITIVE, MAKE_ARRAY(&arguments)));
   }
 }
 
@@ -1298,56 +1190,46 @@ void InstructionVisitor::visitUncheckedTakeEnumDataAddrInst(UncheckedTakeEnumDat
 
 void InstructionVisitor::visitSelectEnumInst(SelectEnumInst *SEI) {
   handleSimpleInstr(SEI);
-  std::list<jobject> cases;
-  for (unsigned int caseNo = 0; caseNo < SEI->getNumCases(); ++caseNo) {
-    auto Case = SEI->getCase(caseNo);
-    std::string CaseName = Case.first->getNameStr();
-    std::string DestValue = addressToString(Case.second.getOpaqueValue());
-    if (SWAN_PRINT) {
-      llvm::outs() << "\t\t [CASE NAME]: " << CaseName << "\n";
-      llvm::outs() << "\t\t [DEST VALUE]: " << DestValue << "\n";
-    }
-    cases.push_back(MAKE_NODE3(CAstWrapper::PRIMITIVE,
-      MAKE_CONST(CaseName.c_str()), MAKE_CONST(DestValue.c_str())));
+  std::string EnumName = addressToString(SEI->getOperand().getOpaqueValue());
+  ADD_PROP(MAKE_CONST(EnumName.c_str()));
+  std::list<jobject> Cases;
+  for (unsigned int i = 0; i < SEI->getNumCases(); ++i) {
+    auto Case = SEI->getCase(i);
+    EnumElementDecl *CaseDecl = Case.first;
+    std::string CaseName = CaseDecl->getNameStr().str();
+    std::string CaseValue = addressToString(Case.second);
+    std::list<jobject> Fields;
+    Fields.push_back(MAKE_CONST(CaseName.c_str()));
+    Fields.push_back(MAKE_CONST(CaseValue.c_str()));
+    Cases.push_back(MAKE_NODE2(CAstWrapper::PRIMITIVE, MAKE_ARRAY(&Fields)));
   }
+  ADD_PROP(MAKE_NODE2(CAstWrapper::PRIMITIVE, MAKE_ARRAY(&Cases)));
   if (SEI->hasDefault()) {
-    std::string DefaultName = "DEFAULT";
     std::string DefaultValue = addressToString(SEI->getDefaultResult().getOpaqueValue());
-    if (SWAN_PRINT) {
-      llvm::outs() << "\t\t [DEFAULT CASE NAME]: " << DefaultName << "\n";
-      llvm::outs() << "\t\t [DEFAULT VALUE]: " << DefaultValue << "\n";
-    }
-    cases.push_back(MAKE_NODE3(CAstWrapper::PRIMITIVE,
-      MAKE_CONST(DefaultName.c_str()), MAKE_CONST(DefaultValue.c_str())));
+    ADD_PROP(MAKE_CONST(DefaultValue.c_str()));
   }
-  ADD_PROP(MAKE_NODE2(CAstWrapper::PRIMITIVE, MAKE_ARRAY(&cases)));
 }
 
 void InstructionVisitor::visitSelectEnumAddrInst(SelectEnumAddrInst *SEAI) {
   handleSimpleInstr(SEAI);
-  std::list<jobject> cases;
-  for (unsigned int caseNo = 0; caseNo < SEAI->getNumCases(); ++caseNo) {
-    auto Case = SEAI->getCase(caseNo);
-    std::string CaseName = Case.first->getNameStr();
-    std::string DestValue = addressToString(Case.second.getOpaqueValue());
-    if (SWAN_PRINT) {
-      llvm::outs() << "\t\t [CASE NAME]: " << CaseName << "\n";
-      llvm::outs() << "\t\t [DEST VALUE]: " << DestValue << "\n";
-    }
-    cases.push_back(MAKE_NODE3(CAstWrapper::PRIMITIVE,
-      MAKE_CONST(CaseName.c_str()), MAKE_CONST(DestValue.c_str())));
+  std::string EnumName = addressToString(SEAI->getOperand().getOpaqueValue());
+  ADD_PROP(MAKE_CONST(EnumName.c_str()));
+  std::list<jobject> Cases;
+  for (unsigned int i = 0; i < SEAI->getNumCases(); ++i) {
+    auto Case = SEAI->getCase(i);
+    EnumElementDecl *CaseDecl = Case.first;
+    std::string CaseName = CaseDecl->getNameStr().str();
+    std::string CaseValue = addressToString(Case.second);
+    std::list<jobject> Fields;
+    Fields.push_back(MAKE_CONST(CaseName.c_str()));
+    Fields.push_back(MAKE_CONST(CaseValue.c_str()));
+    Cases.push_back(MAKE_NODE2(CAstWrapper::PRIMITIVE, MAKE_ARRAY(&Fields)));
   }
+  ADD_PROP(MAKE_NODE2(CAstWrapper::PRIMITIVE, MAKE_ARRAY(&Cases)));
   if (SEAI->hasDefault()) {
-    std::string DefaultName = "DEFAULT";
     std::string DefaultValue = addressToString(SEAI->getDefaultResult().getOpaqueValue());
-    if (SWAN_PRINT) {
-      llvm::outs() << "\t\t [DEFAULT CASE NAME]: " << DefaultName << "\n";
-      llvm::outs() << "\t\t [DEFAULT VALUE]: " << DefaultValue << "\n";
-    }
-    cases.push_back(MAKE_NODE3(CAstWrapper::PRIMITIVE,
-      MAKE_CONST(DefaultName.c_str()), MAKE_CONST(DefaultValue.c_str())));
+    ADD_PROP(MAKE_CONST(DefaultValue.c_str()));
   }
-  ADD_PROP(MAKE_NODE2(CAstWrapper::PRIMITIVE, MAKE_ARRAY(&cases)));
 }
 
 /*******************************************************************************/
@@ -1605,10 +1487,11 @@ void InstructionVisitor::visitYieldInst(YieldInst *YI) {
   ADD_PROP(MAKE_CONST(UnwindLabel.c_str()));
   list<jobject> yieldValues;
   for (const auto value : YI->getYieldedValues()) {
+    std::string valName = addressToString(value.getOpaqueValue());
     if (SWAN_PRINT) {
-      llvm::outs() << "\t [YIELD VALUE]: " << value << "\n";
-      yieldValues.push_back(MAKE_CONST(addressToString(value.getOpaqueValue()).c_str()));
+      llvm::outs() << "\t [YIELD VALUE]: " << valName << "\n";
     }
+    yieldValues.push_back(MAKE_CONST(valName.c_str()));
   }
   ADD_PROP(MAKE_NODE2(CAstWrapper::PRIMITIVE, MAKE_ARRAY(&yieldValues)));
 }
@@ -1691,14 +1574,30 @@ void InstructionVisitor::visitCondBranchInst(CondBranchInst *CBI) {
 }
 
 void InstructionVisitor::visitSwitchValueInst(SwitchValueInst *SVI) {
-  // TODO: UNIMPLEMENTED
+  std::string EnumName = addressToString(SVI->getOperand().getOpaqueValue());
+  ADD_PROP(MAKE_CONST(EnumName.c_str()));
+  std::list<jobject> Cases;
+  for (unsigned int i = 0; i < SVI->getNumCases(); ++i) {
+    auto Case = SVI->getCase(i);
+    SILValue CaseValue = Case.first;
+    SILBasicBlock *CaseBasicBlock = Case.second;
+    std::string CaseValueName = addressToString(CaseValue.getOpaqueValue());
+    int DestBlock = CaseBasicBlock->getDebugID();
+    std::list<jobject> Fields;
+    Fields.push_back(MAKE_CONST(CaseValueName.c_str()));
+    Fields.push_back(MAKE_CONST(DestBlock));
+    Cases.push_back(MAKE_NODE2(CAstWrapper::PRIMITIVE, MAKE_ARRAY(&Fields)));
+  }
+  ADD_PROP(MAKE_NODE2(CAstWrapper::PRIMITIVE, MAKE_ARRAY(&Cases)));
+  if (SVI->hasDefault()) {
+    SILBasicBlock *DefaultBasicBlock = SVI->getDefaultBB();
+    int DestBlock = DefaultBasicBlock->getDebugID();
+    ADD_PROP(MAKE_CONST(DestBlock));
+  }
   
 }
 
-void InstructionVisitor::visitSelectValueInst(SelectValueInst *SVI) {
-  // TODO: UNIMPLEMENTED
-  
-}
+void InstructionVisitor::visitSelectValueInst(__attribute__((unused)) SelectValueInst *SVI) { }
 
 void InstructionVisitor::visitSwitchEnumInst(SwitchEnumInst *SWI) {
   std::string EnumName = addressToString(SWI->getOperand().getOpaqueValue());
@@ -1709,46 +1608,75 @@ void InstructionVisitor::visitSwitchEnumInst(SwitchEnumInst *SWI) {
     EnumElementDecl *CaseDecl = Case.first;
     SILBasicBlock *CaseBasicBlock = Case.second;
     std::string CaseName = CaseDecl->getNameStr().str();
-    std::string DestBlock = label(CaseBasicBlock);
+    int DestBlock = CaseBasicBlock->getDebugID();
     std::list<jobject> Fields;
     Fields.push_back(MAKE_CONST(CaseName.c_str()));
-    Fields.push_back(MAKE_CONST(DestBlock.c_str()));
-    if (CaseBasicBlock->getNumArguments() > 0) {
-      std::string ArgName = addressToString(CaseBasicBlock->getArgument(0));
-      std::string ArgType = CaseBasicBlock->getArgument(0)->getType().getAsString();
-      Fields.push_back(MAKE_CONST(ArgName.c_str()));
-      Fields.push_back(MAKE_CONST(ArgType.c_str()));
-    }
+    Fields.push_back(MAKE_CONST(DestBlock));
     Cases.push_back(MAKE_NODE2(CAstWrapper::PRIMITIVE, MAKE_ARRAY(&Fields)));
   }
   ADD_PROP(MAKE_NODE2(CAstWrapper::PRIMITIVE, MAKE_ARRAY(&Cases)));
   if (SWI->hasDefault()) {
     SILBasicBlock *DefaultBasicBlock = SWI->getDefaultBB();
-    std::list<jobject> Fields;
-    Fields.push_back(MAKE_CONST(label(DefaultBasicBlock).c_str()));
-    if (DefaultBasicBlock->getNumArguments() > 0) {
-      std::string ArgName = addressToString(DefaultBasicBlock->getArgument(0));
-      std::string ArgType = DefaultBasicBlock->getArgument(0)->getType().getAsString();
-      Fields.push_back(MAKE_CONST(ArgName.c_str()));
-      Fields.push_back(MAKE_CONST(ArgType.c_str()));
-    }
-    ADD_PROP(MAKE_NODE2(CAstWrapper::PRIMITIVE, MAKE_ARRAY(&Fields)));
+    int DestBlock = DefaultBasicBlock->getDebugID();
+    ADD_PROP(MAKE_CONST(DestBlock));
   }
 }
 
 void InstructionVisitor::visitSwitchEnumAddrInst(SwitchEnumAddrInst *SEAI) {
-  // TODO: UNIMPLEMENTED
-  
+  std::string EnumName = addressToString(SEAI->getOperand().getOpaqueValue());
+  ADD_PROP(MAKE_CONST(EnumName.c_str()));
+  std::list<jobject> Cases;
+  for (unsigned int i = 0; i < SEAI->getNumCases(); ++i) {
+    auto Case = SEAI->getCase(i);
+    EnumElementDecl *CaseDecl = Case.first;
+    SILBasicBlock *CaseBasicBlock = Case.second;
+    std::string CaseName = CaseDecl->getNameStr().str();
+    int DestBlock = CaseBasicBlock->getDebugID();
+    std::list<jobject> Fields;
+    Fields.push_back(MAKE_CONST(CaseName.c_str()));
+    Fields.push_back(MAKE_CONST(DestBlock));
+    Cases.push_back(MAKE_NODE2(CAstWrapper::PRIMITIVE, MAKE_ARRAY(&Fields)));
+  }
+  ADD_PROP(MAKE_NODE2(CAstWrapper::PRIMITIVE, MAKE_ARRAY(&Cases)));
+  if (SEAI->hasDefault()) {
+    SILBasicBlock *DefaultBasicBlock = SEAI->getDefaultBB();
+    int DestBlock = DefaultBasicBlock->getDebugID();
+    ADD_PROP(MAKE_CONST(DestBlock));
+  }
+}
+
+void InstructionVisitor::visitDynamicMethodBranchInst(DynamicMethodBranchInst *DMBI)
+{
+  handleSimpleInstr(DMBI);
+  std::string method = DMBI->getMember().getDecl()->getFullName().getBaseIdentifier().str();
+  int hasMethodBB = DMBI->getHasMethodBB()->getDebugID();
+  int noMethodBB = DMBI->getNoMethodBB()->getDebugID();
+  ADD_PROP(MAKE_CONST(method.c_str()));
+  ADD_PROP(MAKE_CONST(hasMethodBB));
+  ADD_PROP(MAKE_CONST(noMethodBB));
+  if (SWAN_PRINT) {
+    llvm::outs() << "\t [METHOD]: " << method << "\n";
+    llvm::outs() << "\t [HAS METHOD BB: " << hasMethodBB << "\n";
+    llvm::outs() << "\t [NO METHOD BB]: " << noMethodBB << "\n";
+  }
 }
 
 void InstructionVisitor::visitCheckedCastBranchInst(CheckedCastBranchInst *CI) {
-  // TODO: UNIMPLEMENTED
-  
+  handleSimpleInstr(CI);
+  SILBasicBlock *successBlock = CI->getSuccessBB();
+  ADD_PROP(MAKE_CONST(successBlock->getDebugID()));
+  SILBasicBlock *failureBlock = CI->getFailureBB();
+  ADD_PROP(MAKE_CONST(failureBlock->getDebugID()));
 }
 
+void InstructionVisitor::visitCheckedCastBranchValueInst(__attribute__((unused)) CheckedCastValueBranchInst CI) { }
+
 void InstructionVisitor::visitCheckedCastAddrBranchInst(CheckedCastAddrBranchInst *CI) {
-  // TODO: UNIMPLEMENTED
-  
+  handleSimpleInstr(CI);
+  SILBasicBlock *successBlock = CI->getSuccessBB();
+  ADD_PROP(MAKE_CONST(successBlock->getDebugID()));
+  SILBasicBlock *failureBlock = CI->getFailureBB();
+  ADD_PROP(MAKE_CONST(failureBlock->getDebugID()));
 }
 
 void InstructionVisitor::visitTryApplyInst(TryApplyInst *TAI) {
@@ -1761,33 +1689,32 @@ void InstructionVisitor::visitTryApplyInst(TryApplyInst *TAI) {
   if (SWAN_PRINT) {
     llvm::outs() << "\t [FUNC REF ADDR]: " << TAI->getOperand(0).getOpaqueValue() << "\n";
   }
+  if (SWAN_PRINT) {
+    for (auto arg : arguments) {
+      llvm::outs() << "\t\t [ARG]: " << Instance->CAst->getConstantValue(arg) << "\n";
+    }
+  }
   if (Callee) {
     auto *FD = Callee->getLocation().getAsASTNode<FuncDecl>();
     if (FD && (FD->isUnaryOperator() || FD->isBinaryOperator())) {
-      jobject OperatorNode = getOperatorCAstType(FD->getName());
+      jobject OperatorNode = MAKE_CONST(FD->getName().str().str().c_str());
       arguments.push_front(OperatorNode);
-      if (OperatorNode) {
-        if (SWAN_PRINT) {
-          llvm::outs() << "\t [OPERATOR NAME]:" << Instance->CAst->getConstantValue(OperatorNode) << "\n";
-        }
-        if (FD->isUnaryOperator()) {
-          ADD_PROP(MAKE_NODE2(CAstWrapper::UNARY_EXPR, MAKE_ARRAY(&arguments)));
-        } else if (FD->isBinaryOperator()) {
-          ADD_PROP(MAKE_NODE2(CAstWrapper::BINARY_EXPR, MAKE_ARRAY(&arguments)));
-        }
-        if (SWAN_PRINT) {
-          for (auto arg : arguments) {
-            llvm::outs() << "\t\t [ARG]: " << Instance->CAst->getConstantValue(arg) << "\n";
-          }
-        }
-      } else {
-        llvm::outs() << "ERROR: Could not make operator \n";
+      if (SWAN_PRINT) {
+        llvm::outs() << "\t [OPERATOR NAME]:" << Instance->CAst->getConstantValue(OperatorNode) << "\n";
       }
-      return;
+      if (FD->isUnaryOperator()) {
+        ADD_PROP(MAKE_NODE2(CAstWrapper::UNARY_EXPR, MAKE_ARRAY(&arguments)));
+      } else if (FD->isBinaryOperator()) {
+        ADD_PROP(MAKE_NODE2(CAstWrapper::BINARY_EXPR, MAKE_ARRAY(&arguments)));
+      }
     }
+  } else {
+    ADD_PROP(MAKE_NODE2(CAstWrapper::PRIMITIVE, MAKE_ARRAY(&arguments)));
   }
-  ADD_PROP(MAKE_NODE2(CAstWrapper::PRIMITIVE, MAKE_ARRAY(&arguments)));
   ADD_PROP(MAKE_CONST(label(TAI->getNormalBB()).c_str()));
   ADD_PROP(MAKE_CONST(label(TAI->getErrorBB()).c_str()));
-  // TODO: Add BB args.
+  ADD_PROP(MAKE_CONST(addressToString(TAI->getNormalBB()->getArgument(0)).c_str()));
+  ADD_PROP(MAKE_CONST(TAI->getNormalBB()->getArgument(0)->getType().getAsString().c_str()));
+  ADD_PROP(MAKE_CONST(addressToString(TAI->getErrorBB()->getArgument(0)).c_str()));
+  ADD_PROP(MAKE_CONST(TAI->getErrorBB()->getArgument(0)->getType().getAsString().c_str()));
 }
