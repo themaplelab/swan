@@ -796,6 +796,22 @@ public class RawToSILIRTranslator extends SILInstructionVisitor<SILIRInstruction
         for (CAstNode arg : FuncNode.getChildren()) {
             args.add((String) arg.getValue());
         }
+        if (N.getChildren().size() == 5) { // An operator.
+            CAstNode OperatorNode = N.getChild(4);
+            if (OperatorNode.getKind() == CAstNode.UNARY_EXPR) {
+                String operator = getStringValue(OperatorNode, 0);
+                String operand = getStringValue(OperatorNode, 1);
+                return new UnaryOperatorInstruction(result.Name, result.Type, operator, operand, C);
+            } else if (OperatorNode.getKind() == CAstNode.BINARY_EXPR) {
+                String operator = getStringValue(OperatorNode, 0);
+                String operand1 = getStringValue(OperatorNode, 1);
+                String operand2 = getStringValue(OperatorNode, 2);
+                return new BinaryOperatorInstruction(result.Name, result.Type, operator, operand1, operand2, C);
+            } else {
+                Assertions.UNREACHABLE("Unexpected kind");
+                return null;
+            }
+        }
         if (refValue instanceof BuiltinFunctionRefValue) {
             String name = ((BuiltinFunctionRefValue) refValue).getFunction();
             if (BuiltinHandler.isSummarized(name)) {
@@ -814,21 +830,9 @@ public class RawToSILIRTranslator extends SILInstructionVisitor<SILIRInstruction
             }
         } else if (refValue instanceof FunctionRefValue) {
             return new ApplyInstruction(FuncRefValue, result.Name, result.Type, args, C);
-        } else { // An operator.
-            CAstNode OperatorNode = N.getChild(4);
-            if (OperatorNode.getKind() == CAstNode.UNARY_EXPR) {
-                String operator = getStringValue(OperatorNode, 0);
-                String operand = getStringValue(OperatorNode, 1);
-                return new UnaryOperatorInstruction(result.Name, result.Type, operator, operand, C);
-            } else if (OperatorNode.getKind() == CAstNode.BINARY_EXPR) {
-                String operator = getStringValue(OperatorNode, 0);
-                String operand1 = getStringValue(OperatorNode, 1);
-                String operand2 = getStringValue(OperatorNode, 2);
-                return new BinaryOperatorInstruction(result.Name, result.Type, operator, operand1, operand2, C);
-            } else {
-                Assertions.UNREACHABLE("Unexpected kind");
-                return null;
-            }
+        } else {
+            Assertions.UNREACHABLE("Unexpected function ref value type");
+            return null;
         }
     }
 
