@@ -15,16 +15,23 @@ package ca.maple.swan.swift.client;
 
 import ca.maple.swan.swift.loader.SwiftLoaderFactory;
 import com.ibm.wala.cast.ipa.callgraph.CAstAnalysisScope;
+import com.ibm.wala.cast.ipa.callgraph.StandardFunctionTargetSelector;
 import com.ibm.wala.cast.js.client.JavaScriptAnalysisEngine;
-import com.ibm.wala.cast.js.client.impl.ZeroCFABuilderFactory;
 import com.ibm.wala.cast.js.ipa.callgraph.JSAnalysisOptions;
+import com.ibm.wala.cast.js.ipa.callgraph.JSZeroOrOneXCFABuilder;
 import com.ibm.wala.cast.js.loader.JavaScriptLoader;
+import com.ibm.wala.classLoader.CallSiteReference;
+import com.ibm.wala.classLoader.IMethod;
 import com.ibm.wala.classLoader.SourceModule;
-import com.ibm.wala.ipa.callgraph.AnalysisOptions;
-import com.ibm.wala.ipa.callgraph.CallGraphBuilder;
-import com.ibm.wala.ipa.callgraph.IAnalysisCacheView;
+import com.ibm.wala.ipa.callgraph.*;
+import com.ibm.wala.ipa.callgraph.impl.Util;
 import com.ibm.wala.ipa.callgraph.propagation.InstanceKey;
+import com.ibm.wala.ipa.callgraph.propagation.ReceiverInstanceContext;
+import com.ibm.wala.ipa.callgraph.propagation.SSAContextInterpreter;
+import com.ibm.wala.ipa.callgraph.propagation.cfa.ZeroXInstanceKeys;
 import com.ibm.wala.ipa.cha.IClassHierarchy;
+import com.ibm.wala.util.intset.IntSet;
+import com.ibm.wala.util.intset.IntSetUtil;
 
 import java.util.Collections;
 
@@ -50,7 +57,26 @@ public abstract class SwiftAnalysisEngine<I extends InstanceKey>
         @Override
         protected CallGraphBuilder<InstanceKey> getCallGraphBuilder(
                 IClassHierarchy cha, AnalysisOptions options, IAnalysisCacheView cache) {
-            return new ZeroCFABuilderFactory().make((JSAnalysisOptions) options, cache, cha);
+            Util.addDefaultSelectors(options, cha);
+            options.setSelector(new StandardFunctionTargetSelector(cha, options.getMethodTargetSelector()));
+            return new JSZeroOrOneXCFABuilder(cha, (JSAnalysisOptions)options, cache, new SwiftContextSelector(), (SSAContextInterpreter)null, ZeroXInstanceKeys.ALLOCATIONS, false);
+        }
+    }
+
+    private static class SwiftContextSelector implements ContextSelector {
+
+        @Override
+        public Context getCalleeTarget(CGNode cgNode, CallSiteReference callSiteReference, IMethod iMethod, InstanceKey[] instanceKeys) {
+            String signature =  iMethod.getReference().getSignature();
+            if (signature.contains("setter") || signature.contains("getter") || signature.contains("__allocating_init")) {
+                return new ReceiverInstanceContext(instanceKeys[0]);
+            }
+            return null;
+        }
+
+        @Override
+        public IntSet getRelevantParameters(CGNode cgNode, CallSiteReference callSiteReference) {
+            return IntSetUtil.make(new int[]{0});
         }
     }
 }
