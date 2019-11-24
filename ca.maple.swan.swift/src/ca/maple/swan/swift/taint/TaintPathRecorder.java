@@ -16,10 +16,7 @@ package ca.maple.swan.swift.taint;
 import com.ibm.wala.cast.loader.AstMethod;
 import com.ibm.wala.cast.tree.CAstSourcePositionMap;
 import com.ibm.wala.classLoader.IMethod;
-import com.ibm.wala.ipa.slicer.NormalReturnCaller;
-import com.ibm.wala.ipa.slicer.NormalStatement;
-import com.ibm.wala.ipa.slicer.ParamCaller;
-import com.ibm.wala.ipa.slicer.Statement;
+import com.ibm.wala.ipa.slicer.*;
 import com.ibm.wala.util.graph.Graph;
 
 import java.util.*;
@@ -49,53 +46,58 @@ public class TaintPathRecorder {
         sourcesAndTargets.clear();
     }
 
+    public static CAstSourcePositionMap.Position getPositionFromStatement(Statement s) {
+        IMethod m = s.getNode().getMethod();
+        switch (s.getKind()) {
+            case NORMAL:
+                return ((AstMethod) m).getSourcePosition(((NormalStatement) s).getInstructionIndex());
+            case PHI:
+                break;
+            case PI:
+                break;
+            case CATCH:
+                break;
+            case PARAM_CALLER:
+                return ((AstMethod) m).getSourcePosition(((ParamCaller) s).getInstructionIndex());
+            case PARAM_CALLEE:
+                return ((AstMethod) m).getSourcePosition();
+            case NORMAL_RET_CALLER:
+                return ((AstMethod) m).getSourcePosition(((NormalReturnCaller)s).getInstructionIndex());
+            case NORMAL_RET_CALLEE:
+                break;
+            case EXC_RET_CALLER:
+                break;
+            case EXC_RET_CALLEE:
+                break;
+            case HEAP_PARAM_CALLER:
+                break;
+            case HEAP_PARAM_CALLEE:
+                break;
+            case HEAP_RET_CALLER:
+                break;
+            case HEAP_RET_CALLEE:
+                break;
+            case METHOD_ENTRY:
+                break;
+            case METHOD_EXIT:
+                break;
+        }
+        return null;
+    }
+
     public static List<CAstSourcePositionMap.Position> getPositionsFromStatements(List<Statement> statements) {
         // TODO: Add source function itself to the beginning of the path.
         List<CAstSourcePositionMap.Position> path = new ArrayList<>();
+        if (statements == null) {
+            return path;
+        }
         Set<Integer> seenLines = new HashSet<>();
         for (Statement s : statements) {
             CAstSourcePositionMap.Position p = null;
             IMethod m = s.getNode().getMethod();
             boolean ast = m instanceof AstMethod;
             if (ast) {
-                switch (s.getKind()) {
-                    case NORMAL:
-                        p = ((AstMethod) m).getSourcePosition(((NormalStatement) s).getInstructionIndex());
-                        break;
-                    case PHI:
-                        break;
-                    case PI:
-                        break;
-                    case CATCH:
-                        break;
-                    case PARAM_CALLER:
-                        p = ((AstMethod) m).getSourcePosition(((ParamCaller) s).getInstructionIndex());
-                        break;
-                    case PARAM_CALLEE:
-                        p = ((AstMethod) m).getSourcePosition();
-                        break;
-                    case NORMAL_RET_CALLER:
-                        p = ((AstMethod) m).getSourcePosition(((NormalReturnCaller)s).getInstructionIndex());
-                        break;
-                    case NORMAL_RET_CALLEE:
-                        break;
-                    case EXC_RET_CALLER:
-                        break;
-                    case EXC_RET_CALLEE:
-                        break;
-                    case HEAP_PARAM_CALLER:
-                        break;
-                    case HEAP_PARAM_CALLEE:
-                        break;
-                    case HEAP_RET_CALLER:
-                        break;
-                    case HEAP_RET_CALLEE:
-                        break;
-                    case METHOD_ENTRY:
-                        break;
-                    case METHOD_EXIT:
-                        break;
-                }
+                p = getPositionFromStatement(s);
             }
             if (p != null) {
                 if (p.getFirstCol() != p.getLastCol() || p.getFirstLine() != p.getLastLine()) {
@@ -118,10 +120,15 @@ public class TaintPathRecorder {
         ArrayList<List<CAstSourcePositionMap.Position>> paths = new ArrayList<>();
         for (Statement src : getSources()) {
             for (Statement target : getTargets(src)) {
-                TaintBFSPathFinder finder = new TaintBFSPathFinder(g, src, target, s);
-                List<CAstSourcePositionMap.Position> path = getPositionsFromStatements(finder.find());
-                if (!path.isEmpty()) {
-                    paths.add(path);
+                Iterator<Statement> preds = g.getPredNodes(target);
+                while (preds.hasNext()) {
+                    Statement t = preds.next();
+                    TaintBFSPathFinder finder = new TaintBFSPathFinder(g, src, t, s);
+                    List<CAstSourcePositionMap.Position> path = getPositionsFromStatements(finder.find());
+                    if (!path.isEmpty()) {
+                        path.add(getPositionFromStatement(target));
+                        paths.add(path);
+                    }
                 }
             }
         }
