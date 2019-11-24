@@ -13,6 +13,7 @@
 
 package ca.maple.swan.swift.translator.silir;
 
+import ca.maple.swan.swift.translator.silir.context.ProgramContext;
 import ca.maple.swan.swift.translator.silir.printing.ValueNameSimplifier;
 import ca.maple.swan.swift.translator.silir.values.Argument;
 import com.ibm.wala.cast.tree.CAstSourcePositionMap.Position;
@@ -36,6 +37,8 @@ public class Function {
 
     private final Position position;
 
+    private boolean isCoroutine = false;
+
     public Function(String name, String returnType, Position position) {
         this(name, returnType, position, null);
     }
@@ -49,6 +52,19 @@ public class Function {
             this.arguments = arguments;
         } else {
             this.arguments = new ArrayList<>();
+        }
+    }
+
+    public Function(Function f, ProgramContext pc) {
+        this.name = f.getName();
+        this.returnType = f.getReturnType();
+        this.position = f.getPosition();
+        this.arguments = f.getArguments();
+        blocks = new ArrayList<>();
+        for (BasicBlock b : f.getBlocks()) {
+            BasicBlock copyBB = new BasicBlock(b);
+            pc.toTranslate.put(copyBB, pc.toTranslate.get(b));
+            blocks.add(copyBB);
         }
     }
 
@@ -80,6 +96,14 @@ public class Function {
         return this.position;
     }
 
+    public boolean isCoroutine() {
+        return isCoroutine;
+    }
+
+    public void setCoroutine() {
+        isCoroutine = true;
+    }
+
     @Override
     public String toString() {
         ValueNameSimplifier.clear();
@@ -102,6 +126,11 @@ public class Function {
         }
         s.append(") ");
         s.append("{\n");
+        int i = 0;
+        for (BasicBlock bb : this.blocks) {
+            bb.setNumber(i);
+            ++i;
+        }
         for (BasicBlock bb : this.blocks) {
             s.append("    ");
             s.append(bb.toString());

@@ -38,6 +38,6 @@ public class FieldWriteInstruction extends SILIRInstruction {
 
     @Override
     public String toString() {
-        return writeTo.simpleName() + "." + field + " := " + operand.simpleName() + "\n";
+        return writeTo.simpleName() + "." + field + " := " + operand.simpleName() + this.getComment();
     }
 }

@@ -847,12 +847,20 @@ void InstructionVisitor::visitApplyInst(ApplyInst *AI) {
 }
 
 void InstructionVisitor::visitBeginApplyInst(BeginApplyInst *BAI) {
-  handleSimpleInstr(BAI);
+  auto yieldedValues = BAI->getYieldedValues();
+  std::list<jobject> results;
+  for (auto result : yieldedValues) {
+    results.push_back(MAKE_NODE3(CAstWrapper::PRIMITIVE,
+      MAKE_CONST(addressToString(result.getOpaqueValue()).c_str()),
+      MAKE_CONST(result->getType().getAsString().c_str())));
+  }
+  ADD_PROP(MAKE_NODE2(CAstWrapper::PRIMITIVE, MAKE_ARRAY(&results)));
   auto *Callee = BAI->getReferencedFunctionOrNull();
   std::list<jobject> arguments;
   for (auto arg : BAI->getArguments()) {
     arguments.push_back(MAKE_CONST(addressToString(arg.getOpaqueValue()).c_str()));
   }
+  ADD_PROP(MAKE_CONST(addressToString(BAI->getTokenResult().getOpaqueValue()).c_str()));
   ADD_PROP(MAKE_CONST(addressToString(BAI->getOperand(0).getOpaqueValue()).c_str()));
   if (SWAN_PRINT) {
     llvm::outs() << "\t [FUNC REF ADDR]: " << BAI->getOperand(0).getOpaqueValue() << "\n";
@@ -1507,18 +1515,11 @@ void InstructionVisitor::visitBranchInst(BranchInst *BI) {
   std::list<jobject> Arguments;
   for (unsigned int opIndex = 0; opIndex < BI->getNumArgs(); ++opIndex) {
     std::string OperandName = addressToString(BI->getOperand(opIndex).getOpaqueValue());
-    std::string DestArgName = addressToString(BI->getDestBB()->getArgument(opIndex));
-    std::string DestArgType = BI->getDestBB()->getArgument(opIndex)->getType().getAsString();
     if (SWAN_PRINT) {
       llvm::outs() << "\t\t [OPER NAME]: " << OperandName << "\n";
-      llvm::outs() << "\t\t [DEST ARG NAME]: " << DestArgName << "\n";
-      llvm::outs() << "\t\t [DEST ARG TYPE]: " << DestArgType << "\n";
       llvm::outs() << "\t\t -------\n";
     }
-    Arguments.push_back(MAKE_NODE4(CAstWrapper::PRIMITIVE,
-      MAKE_CONST(OperandName.c_str()),
-      MAKE_CONST(DestArgName.c_str()),
-      MAKE_CONST(DestArgType.c_str())));
+    Arguments.push_back(MAKE_CONST(OperandName.c_str()));
   }
   ADD_PROP(MAKE_NODE2(CAstWrapper::PRIMITIVE, MAKE_ARRAY(&Arguments)));
 }
@@ -1536,39 +1537,29 @@ void InstructionVisitor::visitCondBranchInst(CondBranchInst *CBI) {
   ADD_PROP(MAKE_CONST(TrueDestName.c_str()));
   ADD_PROP(MAKE_CONST(FalseDestName.c_str()));
   std::list<jobject> TrueArguments;
-  llvm::outs() << "\t True Args \n";
+  if (SWAN_PRINT) {
+    llvm::outs() << "\t True Args \n";
+  }
   for (unsigned int opIndex = 0; opIndex < CBI->getTrueOperands().size(); ++opIndex) {
     std::string OperandName = addressToString(CBI->getTrueOperands()[opIndex].get().getOpaqueValue());
-    std::string DestArgName = addressToString(CBI->getTrueArgs()[opIndex]);
-    std::string DestArgType = CBI->getTrueArgs()[opIndex]->getType().getAsString();
     if (SWAN_PRINT) {
       llvm::outs() << "\t\t [OPER NAME]: " << OperandName << "\n";
-      llvm::outs() << "\t\t [DEST ARG NAME]: " << DestArgName << "\n";
-      llvm::outs() << "\t\t [DEST ARG TYPE]: " << DestArgType << "\n";
       llvm::outs() << "\t\t -------\n";
     }
-    TrueArguments.push_back(MAKE_NODE4(CAstWrapper::PRIMITIVE,
-      MAKE_CONST(OperandName.c_str()),
-      MAKE_CONST(DestArgName.c_str()),
-      MAKE_CONST(DestArgType.c_str())));
+    TrueArguments.push_back(MAKE_CONST(OperandName.c_str()));
   }
   ADD_PROP(MAKE_NODE2(CAstWrapper::PRIMITIVE, MAKE_ARRAY(&TrueArguments)));
   std::list<jobject> FalseArguments;
-  llvm::outs() << "\t False Args \n";
+  if (SWAN_PRINT) {
+    llvm::outs() << "\t False Args \n";
+  }
   for (unsigned int opIndex = 0; opIndex < CBI->getFalseOperands().size(); ++opIndex) {
     std::string OperandName = addressToString(CBI->getFalseOperands()[opIndex].get().getOpaqueValue());
-    std::string DestArgName = addressToString(CBI->getFalseArgs()[opIndex]);
-    std::string DestArgType = CBI->getFalseArgs()[opIndex]->getType().getAsString();
     if (SWAN_PRINT) {
       llvm::outs() << "\t\t [OPER NAME]: " << OperandName << "\n";
-      llvm::outs() << "\t\t [DEST ARG NAME]: " << DestArgName << "\n";
-      llvm::outs() << "\t\t [DEST ARG TYPE]: " << DestArgType << "\n";
       llvm::outs() << "\t\t -------\n";
     }
-    FalseArguments.push_back(MAKE_NODE4(CAstWrapper::PRIMITIVE,
-      MAKE_CONST(OperandName.c_str()),
-      MAKE_CONST(DestArgName.c_str()),
-      MAKE_CONST(DestArgType.c_str())));
+    FalseArguments.push_back(MAKE_CONST(OperandName.c_str()));
   }
   ADD_PROP(MAKE_NODE2(CAstWrapper::PRIMITIVE, MAKE_ARRAY(&FalseArguments)));
 }
@@ -1680,6 +1671,8 @@ void InstructionVisitor::visitCheckedCastAddrBranchInst(CheckedCastAddrBranchIns
 }
 
 void InstructionVisitor::visitTryApplyInst(TryApplyInst *TAI) {
+  ADD_PROP(MAKE_CONST(label(TAI->getNormalBB()).c_str()));
+  ADD_PROP(MAKE_CONST(label(TAI->getErrorBB()).c_str()));
   auto *Callee = TAI->getReferencedFunctionOrNull();
   std::list<jobject> arguments;
   for (auto arg : TAI->getArguments()) {
@@ -1694,6 +1687,7 @@ void InstructionVisitor::visitTryApplyInst(TryApplyInst *TAI) {
       llvm::outs() << "\t\t [ARG]: " << Instance->CAst->getConstantValue(arg) << "\n";
     }
   }
+  ADD_PROP(MAKE_NODE2(CAstWrapper::PRIMITIVE, MAKE_ARRAY(&arguments)));
   if (Callee) {
     auto *FD = Callee->getLocation().getAsASTNode<FuncDecl>();
     if (FD && (FD->isUnaryOperator() || FD->isBinaryOperator())) {
@@ -1708,13 +1702,5 @@ void InstructionVisitor::visitTryApplyInst(TryApplyInst *TAI) {
         ADD_PROP(MAKE_NODE2(CAstWrapper::BINARY_EXPR, MAKE_ARRAY(&arguments)));
       }
     }
-  } else {
-    ADD_PROP(MAKE_NODE2(CAstWrapper::PRIMITIVE, MAKE_ARRAY(&arguments)));
   }
-  ADD_PROP(MAKE_CONST(label(TAI->getNormalBB()).c_str()));
-  ADD_PROP(MAKE_CONST(label(TAI->getErrorBB()).c_str()));
-  ADD_PROP(MAKE_CONST(addressToString(TAI->getNormalBB()->getArgument(0)).c_str()));
-  ADD_PROP(MAKE_CONST(TAI->getNormalBB()->getArgument(0)->getType().getAsString().c_str()));
-  ADD_PROP(MAKE_CONST(addressToString(TAI->getErrorBB()->getArgument(0)).c_str()));
-  ADD_PROP(MAKE_CONST(TAI->getErrorBB()->getArgument(0)->getType().getAsString().c_str()));
 }

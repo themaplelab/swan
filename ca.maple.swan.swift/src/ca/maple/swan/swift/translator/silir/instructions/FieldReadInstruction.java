@@ -39,6 +39,6 @@ public class FieldReadInstruction extends SILIRInstruction {
 
     @Override
     public String toString() {
-        return result.simpleName() + " := " + operand.simpleName() + "." + field + "\n";
+        return result.simpleName() + " := " + operand.simpleName() + "." + field + this.getComment();
     }
 }

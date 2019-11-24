@@ -18,21 +18,17 @@ import ca.maple.swan.swift.translator.silir.values.Value;
 
 public class ThrowInstruction extends SILIRInstruction {
 
-    public final Value optionalOperand;
+    public final Value operand;
 
-    public ThrowInstruction(InstructionContext ic) {
-        super(ic);
-        this.optionalOperand = null;
-    }
 
     public ThrowInstruction(String operandName, InstructionContext ic) {
         super(ic);
-        this.optionalOperand = ic.valueTable().getValue(operandName);
+        this.operand = ic.valueTable().getValue(operandName);
     }
 
     @Override
     public String toString() {
-        return "throw" + ((optionalOperand != null) ? optionalOperand.simpleName() : "") + "\n";
+        return "throw " + operand.simpleName() + this.getComment();
     }
 
     @Override

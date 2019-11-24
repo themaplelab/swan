@@ -37,6 +37,6 @@ public class FunctionRefInstruction extends SILIRInstruction {
     public String toString() {
         return value.simpleName() + " := func_ref " +
                 ((value.getFunction() != null) ? value.getFunction().getName() : "?")
-                + "\n";
+                + this.getComment();
     }
 }

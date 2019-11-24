@@ -101,6 +101,8 @@ public class SwiftToCAstTranslator extends NativeTranslatorToCAst {
 			}
 		}
 
+		// TODO: Do away with grouping by file, since we need to preserve ordering for globals.
+
 		// MAIN TRANSLATION CALL.
 		// Arguments will be directly fed to performFrontend() call.
 		ArrayList<CAstNode> roots = translateToCAstNodes(args);
@@ -115,6 +117,8 @@ public class SwiftToCAstTranslator extends NativeTranslatorToCAst {
 
 		// All paths so we can later find the common one.
 		ArrayList<String> paths = new ArrayList<>();
+
+		Collections.reverse(roots); // TODO: Blow away, temporary, see above note about file grouping/globals.
 
 		for (CAstNode root : roots) {
 			if (!root.getChild(0).getValue().equals("NO_SOURCE")) {

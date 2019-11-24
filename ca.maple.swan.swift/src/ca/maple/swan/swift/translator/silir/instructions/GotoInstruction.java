@@ -18,7 +18,7 @@ import ca.maple.swan.swift.translator.silir.context.InstructionContext;
 
 public class GotoInstruction extends SILIRInstruction {
 
-    public final BasicBlock bb;
+    public BasicBlock bb;
 
     public GotoInstruction(BasicBlock bb, InstructionContext ic) {
         super(ic);
@@ -32,7 +32,10 @@ public class GotoInstruction extends SILIRInstruction {
 
     @Override
     public String toString() {
-        return "goto bb" + bb.getNumber() + "\n";
+        if (bb == null) {
+            return "goto bb UNKNOWN" + this.getComment();
+        }
+        return "goto bb" + bb.getNumber() + this.getComment();
     }
 
 }

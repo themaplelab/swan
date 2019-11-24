@@ -33,6 +33,6 @@ public class NewInstruction extends SILIRInstruction {
 
     @Override
     public String toString() {
-        return this.value.simpleName() + " := new " + this.value.type + "\n";
+        return this.value.simpleName() + " := new " + this.value.type + this.getComment();
     }
 }

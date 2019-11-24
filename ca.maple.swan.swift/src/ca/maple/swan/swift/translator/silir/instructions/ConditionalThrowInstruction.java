@@ -28,7 +28,7 @@ public class ConditionalThrowInstruction extends SILIRInstruction {
 
     @Override
     public String toString() {
-        return "throw if " + conditionValue.simpleName() + "\n";
+        return "throw if " + conditionValue.simpleName() + this.getComment();
     }
 
     @Override

@@ -41,6 +41,6 @@ public class UnaryOperatorInstruction extends SILIRInstruction {
     @Override
     public String toString() {
         return resultValue.simpleName()+ " := " + operator + " " +
-                operand.simpleName() + "\n";
+                operand.simpleName() + this.getComment();
     }
 }

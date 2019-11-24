@@ -13,14 +13,13 @@
 
 package ca.maple.swan.swift.translator.silir.context;
 
+import ca.maple.swan.swift.translator.RawToSILIRTranslator;
 import ca.maple.swan.swift.translator.raw.InstructionNode;
 import ca.maple.swan.swift.translator.silir.BasicBlock;
 import ca.maple.swan.swift.translator.silir.Function;
 import ca.maple.swan.swift.translator.silir.values.ValueTable;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Set;
+import java.util.*;
 
 /*
  * Holds anything a program would need for translation.
@@ -34,7 +33,7 @@ public class ProgramContext {
     public ValueTable globalValues = new ValueTable();
 
     public ProgramContext(HashMap<BasicBlock, ArrayList<InstructionNode>> toTranslate) {
-        this.allFunctions = new HashMap<>();
+        this.allFunctions = new LinkedHashMap<>(); // LinkedHashMap is important here! Ordering can affect global accessing.
         this.toTranslate = toTranslate;
     }
 
@@ -59,6 +58,16 @@ public class ProgramContext {
             functions.add(allFunctions.get(s));
         }
         return functions;
+    }
+
+    public void removeFunction(Function f) {
+        this.allFunctions.remove(f.getName());
+    }
+
+    public void markCoroutine(String functionName) {
+        if (allFunctions.containsKey(functionName)) {
+            allFunctions.remove(functionName);
+        }
     }
 
     public void printFunctions() {

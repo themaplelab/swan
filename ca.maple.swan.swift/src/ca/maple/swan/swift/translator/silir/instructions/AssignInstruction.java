@@ -48,6 +48,6 @@ public class AssignInstruction extends SILIRInstruction {
 
     @Override
     public String toString() {
-        return to.simpleName() + " := " + from.simpleName() + "\n";
+        return to.simpleName() + " := " + from.simpleName() + this.getComment();
     }
 }

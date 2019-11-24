@@ -13,6 +13,7 @@
 
 package ca.maple.swan.swift.translator.silir;
 
+import ca.maple.swan.swift.translator.silir.context.ProgramContext;
 import ca.maple.swan.swift.translator.silir.instructions.SILIRInstruction;
 import ca.maple.swan.swift.translator.silir.values.Argument;
 
@@ -28,7 +29,7 @@ public class BasicBlock {
     @SuppressWarnings("FieldCanBeLocal")
     private final boolean PRINT_IMPLICIT_INSTRUCTIONS = false;
 
-    private final int number;
+    private int number;
 
     private ArrayList<SILIRInstruction> instructions;
 
@@ -46,6 +47,16 @@ public class BasicBlock {
         } else {
             this.arguments = new ArrayList<>();
         }
+    }
+
+    public BasicBlock(BasicBlock b) {
+        this.number = b.getNumber();
+        this.arguments = b.getArguments();
+        this.instructions = new ArrayList<>();
+    }
+
+    public void setNumber(int n) {
+        this.number = n;
     }
 
     public int getNumber() {
@@ -70,7 +81,7 @@ public class BasicBlock {
 
     @Override
     public String toString() {
-        StringBuilder s = new StringBuilder("bb" + number);
+        StringBuilder s = new StringBuilder("bb" + getNumber());
         if (arguments.size() > 0) {
             s.append("(");
             Iterator<Argument> it = arguments.iterator();
@@ -96,7 +107,7 @@ public class BasicBlock {
                     s.append(instruction.toString());
                 }
             } catch (Exception e ){
-                System.err.println("(Block #" + this.number + ") Could not print instruction :" + instruction.getClass().getName());
+                System.err.println("(Block #" + getNumber() + ") Could not print instruction :" + instruction.getClass().getName());
             }
 
         }

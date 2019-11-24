@@ -36,6 +36,6 @@ public class BuiltinInstruction extends SILIRInstruction {
 
     @Override
     public String toString() {
-        return value.simpleName() + " := " + (value.summaryCreated ? "func_ref " :  "builtin ") + functionName + "\n";
+        return value.simpleName() + " := " + (value.summaryCreated ? "func_ref " :  "builtin ") + functionName + this.getComment();
     }
 }

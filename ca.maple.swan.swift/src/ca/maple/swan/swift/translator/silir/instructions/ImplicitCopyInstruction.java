@@ -36,7 +36,7 @@ public class ImplicitCopyInstruction extends SILIRInstruction {
 
     @Override
     public String toString() {
-        return ValueNameSimplifier.get(to) + " := " + from.simpleName() + "\n";
+        return ValueNameSimplifier.get(to) + " := " + from.simpleName() + this.getComment();
     }
 
     @Override

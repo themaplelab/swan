@@ -33,6 +33,6 @@ public class LiteralInstruction extends SILIRInstruction {
 
     @Override
     public String toString() {
-        return literal.simpleName() + " := #" + literal.getLiteral() + "\n";
+        return literal.simpleName() + " := #" + literal.getLiteral() + this.getComment();
     }
 }

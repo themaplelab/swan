@@ -35,6 +35,6 @@ public class AssignGlobalInstruction extends SILIRInstruction {
 
     @Override
     public String toString() {
-        return to.simpleName() + " := " + from.name + "\n";
+        return to.simpleName() + " := " + from.name + this.getComment();
     }
 }

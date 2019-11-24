@@ -13,27 +13,28 @@
 
 package ca.maple.swan.swift.translator.silir.instructions;
 
+import ca.maple.swan.swift.translator.silir.BasicBlock;
 import ca.maple.swan.swift.translator.silir.context.InstructionContext;
-import ca.maple.swan.swift.translator.silir.values.FunctionRefValue;
 import ca.maple.swan.swift.translator.silir.values.Value;
 
 import java.util.ArrayList;
 import java.util.Iterator;
 
-public class ApplyInstruction extends SILIRInstruction {
+public class TryApplyInstruction extends SILIRInstruction {
 
     public final Value functionRefValue;
 
-    public final Value result;
+    public final BasicBlock normalBB;
+
+    public final BasicBlock errorBB;
 
     public final ArrayList<Value> args;
 
-    public ApplyInstruction(String funcRef, String resultName, String resultType, ArrayList<String> args, InstructionContext ic) {
+    public TryApplyInstruction(String funcRef, BasicBlock normalBB, BasicBlock errorBB, ArrayList<String> args, InstructionContext ic) {
         super(ic);
-        Value result = new Value(resultName, resultType);
-        ic.valueTable().add(result);
+        this.normalBB = normalBB;
+        this.errorBB = errorBB;
         this.functionRefValue = ic.valueTable().getValue(funcRef);
-        this.result = result;
         this.args = new ArrayList<>();
         for (String arg : args) {
             this.args.add(ic.valueTable().getValue(arg));
@@ -42,14 +43,13 @@ public class ApplyInstruction extends SILIRInstruction {
 
     @Override
     public void visit(ISILIRVisitor v) {
-        v.visitApplyInstruction(this);
+        v.visitTryApplyInstruction(this);
     }
 
     @Override
     public String toString() {
         StringBuilder s = new StringBuilder();
-        s.append(result.simpleName());
-        s.append(" := ");
+        s.append("try ");
         s.append(functionRefValue.simpleName());
         s.append("(");
         Iterator<Value> it = args.iterator();
@@ -60,6 +60,10 @@ public class ApplyInstruction extends SILIRInstruction {
             }
         }
         s.append(")");
+        s.append(" normal: ");
+        s.append(normalBB.getNumber());
+        s.append(", error: ");
+        s.append(errorBB.getNumber());
         s.append(this.getComment());
         return s.toString();
     }

@@ -16,10 +16,7 @@ package ca.maple.swan.swift.translator;
 import ca.maple.swan.swift.translator.raw.*;
 import ca.maple.swan.swift.translator.silir.BasicBlock;
 import ca.maple.swan.swift.translator.silir.Function;
-import ca.maple.swan.swift.translator.silir.context.BlockContext;
-import ca.maple.swan.swift.translator.silir.context.FunctionContext;
-import ca.maple.swan.swift.translator.silir.context.InstructionContext;
-import ca.maple.swan.swift.translator.silir.context.ProgramContext;
+import ca.maple.swan.swift.translator.silir.context.*;
 import ca.maple.swan.swift.translator.silir.instructions.*;
 import ca.maple.swan.swift.translator.silir.summaries.BuiltinHandler;
 import ca.maple.swan.swift.translator.silir.values.*;
@@ -30,9 +27,7 @@ import com.ibm.wala.util.collections.Pair;
 import com.ibm.wala.util.debug.Assertions;
 
 import java.math.BigDecimal;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.UUID;
+import java.util.*;
 
 import static ca.maple.swan.swift.translator.raw.RawUtil.*;
 
@@ -46,6 +41,13 @@ import static ca.maple.swan.swift.translator.raw.RawUtil.*;
  *      reading from a pointer:     x = p.value
  *
  * Therefore, the translator needs to be careful to handle instructions that involve pointers.
+ *
+ * One of the most complicated parts of this translator is its handling of (asymmetric) coroutines. Effectively,
+ * coroutines are decomposed and inlined - but since one can not be translated without the other, they are not "linked"
+ * right away.
+ *
+ * Note: Some builtins (at least operators) take functions (closures) as parameters, and these are ignored when the
+ *       operator call is replaced with an operator instruction.
  */
 
 @SuppressWarnings("unused")
@@ -86,7 +88,11 @@ public class RawToSILIRTranslator extends SILInstructionVisitor<SILIRInstruction
             pc.addFunction(functionName, f);
         }
 
-        VisitProgram(pc);
+        try {
+            VisitProgram(pc);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
 
         return pc;
 
@@ -94,32 +100,86 @@ public class RawToSILIRTranslator extends SILInstructionVisitor<SILIRInstruction
 
     private void VisitProgram(ProgramContext pc) {
         for (Function f : pc.getFunctions()) {
-            VisitFunction(f, pc);
+            // Check if it is a coroutine.
+            // This is a bit inefficient. Ideally we could ask the Swift compiler if a function is a coroutine.
+            for (BasicBlock b : f.getBlocks()) {
+                for (InstructionNode inst : pc.toTranslate.get(b)) {
+                    if (inst.getName().equals("yield")) {
+                        f.setCoroutine();
+                    }
+                }
+            }
+            if (!f.isCoroutine()) {
+                VisitFunction(f, pc);
+            }
         }
+        for (Function f : pc.getFunctions()) {
+            if (f.isCoroutine()) {
+                pc.removeFunction(f);
+            }
+        }
+    }
+
+    private FunctionContext VisitCoroutine(Function f, ProgramContext pc, CoroutineContext cc, FunctionContext parentContext) {
+        Function copy = new Function(f, pc);
+        FunctionContext fc = new FunctionContext(copy, pc);
+        fc.vt = parentContext.vt;
+        fc.cc = cc;
+        int i = 0;
+        while (true) {
+            if (i == copy.getBlocks().size()) {
+                break;
+            }
+            BasicBlock b = copy.getBlock(i);
+            VisitBlock(b, fc);
+            ++i;
+        }
+        // Merge coroutine bodies.
+        for (String token : fc.coroutines.keySet()) {
+            FunctionContext curr = fc.coroutines.get(token);
+            for (BasicBlock bb : curr.function.getBlocks()) {
+                copy.addBlock(bb);
+            }
+        }
+        return fc;
     }
 
     private void VisitFunction(Function f, ProgramContext pc) {
         FunctionContext fc = new FunctionContext(f, pc);
-        for (BasicBlock b : f.getBlocks()) {
+        int i = 0;
+        while (true) {
+            if (i == f.getBlocks().size()) {
+                break;
+            }
+            BasicBlock b = f.getBlock(i);
             VisitBlock(b, fc);
+            ++i;
         }
-
+        // Merge coroutine bodies.
+        for (String token : fc.coroutines.keySet()) {
+            FunctionContext curr = fc.coroutines.get(token);
+            for (BasicBlock bb : curr.function.getBlocks()) {
+                f.addBlock(bb);
+            }
+        }
     }
 
     private void VisitBlock(BasicBlock b, FunctionContext fc) {
         BlockContext bc = new BlockContext(b, fc);
-        for (InstructionNode inst : fc.pc.toTranslate.get(b)) {
-            try {
-                InstructionContext ic = new InstructionContext(bc, getInstructionPosition(inst.getInstruction()));
-                SILIRInstruction result = this.visit(inst.getInstruction(), ic);
-                if (result != null) {
-                    bc.block.addInstruction(result);
+        if (fc.pc.toTranslate.containsKey(b)) {
+            for (InstructionNode inst : fc.pc.toTranslate.get(b)) {
+                try {
+                    InstructionContext ic = new InstructionContext(bc, getInstructionPosition(inst.getInstruction()));
+                    SILIRInstruction result = this.visit(inst.getInstruction(), ic);
+                    if (result != null) {
+                        bc.block.addInstruction(result);
+                    }
+                } catch (Exception e) {
+                    System.err.println("Could not translate " + inst.getName());
+                    e.printStackTrace();
                 }
-            } catch (Exception e) {
-                System.err.println("Could not translate " + inst.getName());
-                e.printStackTrace();
             }
-        }
+        } // else is a generated block (for coroutine handling)
     }
 
     @Override
@@ -806,7 +866,13 @@ public class RawToSILIRTranslator extends SILInstructionVisitor<SILIRInstruction
                 String operator = getStringValue(OperatorNode, 0);
                 String operand1 = getStringValue(OperatorNode, 1);
                 String operand2 = getStringValue(OperatorNode, 2);
-                return new BinaryOperatorInstruction(result.Name, result.Type, operator, operand1, operand2, C);
+                if (operator.equals("-=")) {
+                    return new BinaryOperatorInstruction(operand1, "-", operand1, operand2, C);
+                } else if (operator.equals("+=")) {
+                    return new BinaryOperatorInstruction(operand1, "+", operand1, operand2, C);
+                } else {
+                    return new BinaryOperatorInstruction(result.Name, result.Type, operator, operand1, operand2, C);
+                }
             } else {
                 Assertions.UNREACHABLE("Unexpected kind");
                 return null;
@@ -838,31 +904,93 @@ public class RawToSILIRTranslator extends SILInstructionVisitor<SILIRInstruction
 
     @Override
     // FREQUENCY: COMMON
-    // STATUS: UNHANDLED
-    // CONFIDENCE:
+    // STATUS: TRANSLATED
+    // CONFIDENCE: HIGH
     protected SILIRInstruction visitBeginApply(CAstNode N, InstructionContext C) {
-        // TODO
-        System.err.println("ERROR: Unhandled instruction: " + new Exception().getStackTrace()[0].getMethodName());
-        return null;
+        ArrayList<RawValue> yieldedValues = new ArrayList<>();
+        for (CAstNode n : N.getChild(0).getChildren()) {
+            yieldedValues.add(new RawValue((String)n.getChild(0).getValue(), (String)n.getChild(1).getValue()));
+        }
+        String FuncRefValue = RawUtil.getStringValue(N, 2);
+        String Token = RawUtil.getStringValue(N, 1);
+        Value refValue = C.valueTable().getValue(FuncRefValue);
+        CAstNode FuncNode = N.getChild(3);
+        ArrayList<String> args = new ArrayList<>();
+        for (CAstNode arg : FuncNode.getChildren()) {
+            args.add((String) arg.getValue());
+        }
+        if (N.getChildren().size() == 5) { // An operator.
+            Assertions.UNREACHABLE("This is weird that this occured");
+            return null;
+        }
+        if (refValue instanceof BuiltinFunctionRefValue) {
+            // TODO: Handle builtins that return multiple values
+            Assertions.UNREACHABLE("Not yet handled");
+            return null;
+        } else if (refValue instanceof FunctionRefValue) {
+            ((FunctionRefValue) refValue).ignore = true;
+            BasicBlock bb = new BasicBlock(C.bc.fc.function.getBlocks().size());
+            C.bc.fc.function.addBlock(bb);
+            ArrayList<Value> values = new ArrayList<>();
+            for (RawValue value : yieldedValues) {
+                values.add(new Value(value.Name, value.Type));
+            }
+            FunctionContext coroutine = this.VisitCoroutine(
+                    ((FunctionRefValue) refValue).getFunction(),
+                    C.bc.fc.pc,
+                    new CoroutineContext(values, bb),
+                    C.bc.fc);
+            C.bc.fc.coroutines.put(Token, coroutine);
+            GotoInstruction inst = new GotoInstruction(coroutine.function.getBlock(0), C);
+            inst.setComment("coroutine " + coroutine.function.getName());
+            C.bc.block.addInstruction(inst);
+            C.bc.block = bb;
+            return null;
+        } else {
+            Assertions.UNREACHABLE("Unexpected function ref value type");
+            return null;
+        }
     }
 
     @Override
     // FREQUENCY: COMMON
-    // STATUS: UNHANDLED
-    // CONFIDENCE:
+    // STATUS: TRANSLATED
+    // CONFIDENCE: HIGH
     protected SILIRInstruction visitAbortApply(CAstNode N, InstructionContext C) {
-        // TODO
-        System.err.println("ERROR: Unhandled instruction: " + new Exception().getStackTrace()[0].getMethodName());
+        RawValue operand = getSingleOperand(N);
+        FunctionContext fc = C.bc.fc.coroutines.get(operand.Name);
+        CoroutineContext cc = fc.cc;
+        Assertions.productionAssertion(cc.unwindBlock != null);
+        BasicBlock unwindBlock = cc.unwindBlock;
+        BasicBlock bb = new BasicBlock(C.bc.fc.function.getBlocks().size());
+        C.bc.fc.function.addBlock(bb);
+        cc.returnUnwindBlock = bb;
+        cc.linkUnwind();
+        GotoInstruction inst = new GotoInstruction(unwindBlock, C);
+        inst.setComment("unwind coroutine " + fc.getFunction().getName());
+        C.bc.block.addInstruction(inst);
+        C.bc.block = bb;
         return null;
     }
 
     @Override
     // FREQUENCY: COMMON
-    // STATUS: UNHANDLED
-    // CONFIDENCE:
+    // STATUS: TRANSLATED
+    // CONFIDENCE: HIGH
     protected SILIRInstruction visitEndApply(CAstNode N, InstructionContext C) {
-        // TODO
-        System.err.println("ERROR: Unhandled instruction: " + new Exception().getStackTrace()[0].getMethodName());
+        RawValue operand = getSingleOperand(N);
+        FunctionContext fc = C.bc.fc.coroutines.get(operand.Name);
+        CoroutineContext cc = fc.cc;
+        Assertions.productionAssertion(cc.resumeBlock != null);
+        BasicBlock resumeBlock = cc.resumeBlock;
+        BasicBlock bb = new BasicBlock(C.bc.fc.function.getBlocks().size());
+        C.bc.fc.function.addBlock(bb);
+        cc.returnResumeBlock = bb;
+        cc.linkResume();
+        GotoInstruction inst = new GotoInstruction(resumeBlock, C);
+        inst.setComment("resume coroutine " + fc.getFunction().getName());
+        C.bc.block.addInstruction(inst);
+        C.bc.block = bb;
         return null;
     }
 
@@ -1753,7 +1881,10 @@ public class RawToSILIRTranslator extends SILInstructionVisitor<SILIRInstruction
     // STATUS: TRANSLATED
     // CONFIDENCE: HIGH
     protected SILIRInstruction visitUnreachable(CAstNode N, InstructionContext C) {
-        return new ThrowInstruction(C);
+        String LiteralResult = UUID.randomUUID().toString();
+        LiteralInstruction inst = new LiteralInstruction("unreachable", LiteralResult, "$String", C);
+        C.bc.block.addInstruction(inst);
+        return new ThrowInstruction(LiteralResult, C);
     }
 
     @Override
@@ -1761,6 +1892,12 @@ public class RawToSILIRTranslator extends SILInstructionVisitor<SILIRInstruction
     // STATUS: TRANSLATED
     // CONFIDENCE: HIGH
     protected SILIRInstruction visitReturn(CAstNode N, InstructionContext C) {
+        if (C.bc.fc.cc != null) {
+            GotoInstruction gotoInstr = new GotoInstruction(null, C);
+            gotoInstr.setComment("return from coroutine");
+            C.bc.fc.cc.gotoReturnResume = gotoInstr;
+            return gotoInstr;
+        }
         RawValue operand = getSingleOperand(N);
         return new ReturnInstruction(operand.Name, C);
     }
@@ -1777,25 +1914,40 @@ public class RawToSILIRTranslator extends SILInstructionVisitor<SILIRInstruction
     @Override
     // FREQUENCY: VERY COMMON
     // STATUS: TRANSLATED
-    // CONFIDENCE: LOW
+    // CONFIDENCE: HIGH
     protected SILIRInstruction visitYield(CAstNode N, InstructionContext C) {
-        // TODO: Coroutine problem.
-        String ResumeLabel = RawUtil.getStringValue(N, 0);
-        String UnwindLabel = RawUtil.getStringValue(N, 1);
-        ArrayList<String> values = new ArrayList<>();
-        for (CAstNode value : N.getChild(2).getChildren()) {
-            values.add((String) value.getValue());
+        if (C.bc.fc.cc == null) {
+            Assertions.UNREACHABLE("Coroutine should have a coroutine context");
+            return null;
         }
-        return new YieldInstruction(values, C);
+        int ResumeLabel = Integer.parseInt(RawUtil.getStringValue(N, 0));
+        int UnwindLabel = Integer.parseInt(RawUtil.getStringValue(N, 1));
+        C.bc.fc.cc.resumeBlock = C.bc.fc.function.getBlock(ResumeLabel);
+        C.bc.fc.cc.unwindBlock = C.bc.fc.function.getBlock(UnwindLabel);
+        int i = 0;
+        for (CAstNode value : N.getChild(2).getChildren()) {
+            Value receiver = C.bc.fc.cc.yieldedValues.get(i);
+            C.bc.block.addInstruction(new AssignInstruction(receiver.name, receiver.type, (String)value.getValue(), C));
+            ++i;
+        }
+        GotoInstruction inst = new GotoInstruction(C.bc.fc.cc.returnBlock, C);
+        inst.setComment("yield");
+        return inst;
     }
 
     @Override
     // FREQUENCY: VERY COMMON
     // STATUS: TRANSLATED
-    // CONFIDENCE: LOW
+    // CONFIDENCE: HIGH
     protected SILIRInstruction visitUnwind(CAstNode N, InstructionContext C) {
-        // TODO: Coroutine problem.
-        return new ReturnInstruction(C);
+        if (C.bc.fc.cc == null) {
+            Assertions.UNREACHABLE("Coroutine should have a coroutine context");
+            return null;
+        }
+        GotoInstruction gotoInstr = new GotoInstruction(null, C);
+        gotoInstr.setComment("unwind");
+        C.bc.fc.cc.gotoReturnUnwind = gotoInstr;
+        return gotoInstr;
     }
 
     @Override
@@ -1807,7 +1959,7 @@ public class RawToSILIRTranslator extends SILInstructionVisitor<SILIRInstruction
         int DestBlockNo = Integer.parseInt(DestBranch);
         ArrayList<String> args = new ArrayList<>();
         for (CAstNode arg : N.getChild(1).getChildren()) {
-            String ArgName = RawUtil.getStringValue(arg, 0);
+            String ArgName = (String)arg.getValue();
             args.add(ArgName);
         }
         return doBranch(DestBlockNo, args, C);
@@ -1841,13 +1993,13 @@ public class RawToSILIRTranslator extends SILInstructionVisitor<SILIRInstruction
         // Set arguments
         ArrayList<String> trueArgs = new ArrayList<>();
         for (CAstNode arg : N.getChild(1).getChildren()) {
-            String ArgName = RawUtil.getStringValue(arg, 0);
+            String ArgName = (String)arg.getValue();
             trueArgs.add(ArgName);
         }
         BasicBlock trueBB = assignBlockArgs(Integer.parseInt(TrueDestName), trueArgs, C);
         ArrayList<String> falseArgs = new ArrayList<>();
         for (CAstNode arg : N.getChild(2).getChildren()) {
-            String ArgName = RawUtil.getStringValue(arg, 0);
+            String ArgName = (String)arg.getValue();
             falseArgs.add(ArgName);
         }
         BasicBlock falseBB = assignBlockArgs(Integer.parseInt(FalseDestName), falseArgs, C);
@@ -2034,11 +2186,75 @@ public class RawToSILIRTranslator extends SILInstructionVisitor<SILIRInstruction
 
     @Override
     // FREQUENCY: COMMON
-    // STATUS: UNHANDLED
-    // CONFIDENCE:
+    // STATUS: TRANSLATED
+    // CONFIDENCE: HIGH
     protected SILIRInstruction visitTryApply(CAstNode N, InstructionContext C) {
-        // TODO
-        System.err.println("ERROR: Unhandled instruction: " + new Exception().getStackTrace()[0].getMethodName());
-        return null;
+        int NormalBB = Integer.parseInt(getStringValue(N, 0));
+        int ErrorBB = Integer.parseInt(getStringValue(N, 1));
+        String FuncRefValue = RawUtil.getStringValue(N, 2);
+        Value refValue = C.valueTable().getValue(FuncRefValue);
+        CAstNode FuncNode = N.getChild(3);
+        ArrayList<String> args = new ArrayList<>();
+        for (CAstNode arg : FuncNode.getChildren()) {
+            args.add((String) arg.getValue());
+        }
+        if (N.getChildren().size() == 5) {
+            // An operator. No catching needed. This really shouldn't occur in SIL anyway.
+            RawValue result = new RawValue(
+                    C.bc.fc.function.getBlock(NormalBB).getArgument(0).name,
+                    C.bc.fc.function.getBlock(NormalBB).getArgument(0).getType());
+            CAstNode OperatorNode = N.getChild(4);
+            SILIRInstruction operatorInstruction;
+            if (OperatorNode.getKind() == CAstNode.UNARY_EXPR) {
+                String operator = getStringValue(OperatorNode, 0);
+                String operand = getStringValue(OperatorNode, 1);
+                operatorInstruction =  new UnaryOperatorInstruction(result.Name, result.Type, operator, operand, C);
+            } else if (OperatorNode.getKind() == CAstNode.BINARY_EXPR) {
+                String operator = getStringValue(OperatorNode, 0);
+                String operand1 = getStringValue(OperatorNode, 1);
+                String operand2 = getStringValue(OperatorNode, 2);
+                if (operator.equals("-=")) {
+                    operatorInstruction = new BinaryOperatorInstruction(operand1, "-", operand1, operand2, C);
+                } else if (operator.equals("+=")) {
+                    operatorInstruction = new BinaryOperatorInstruction(operand1, "+", operand1, operand2, C);
+                } else {
+                    operatorInstruction = new BinaryOperatorInstruction(result.Name, result.Type, operator, operand1, operand2, C);
+                }
+            } else {
+                Assertions.UNREACHABLE("Unexpected kind");
+                return null;
+            }
+            operatorInstruction.setComment("try_apply on an operator");
+            C.bc.block.addInstruction(operatorInstruction);
+            return new GotoInstruction(C.bc.fc.function.getBlock(NormalBB), C); // Go straight to normal block.
+        }
+        if (refValue instanceof BuiltinFunctionRefValue) { // No point of catching anything.
+            RawValue result = new RawValue(
+                    C.bc.fc.function.getBlock(NormalBB).getArgument(0).name,
+                    C.bc.fc.function.getBlock(NormalBB).getArgument(0).getType());
+            String name = ((BuiltinFunctionRefValue) refValue).getFunction();
+            if (BuiltinHandler.isSummarized(name)) {
+                return BuiltinHandler.findSummary(name, result.Name, result.Type, args, C);
+            } else {
+                // Make a function for builtins we don't have summaries for.
+                ArrayList<Argument> funcArgs = new ArrayList<>();
+                for (String arg : args) {
+                    Argument a = new Argument(arg, C.valueTable().getValue(arg).type);
+                    funcArgs.add(a);
+                }
+                Function f = createFakeFunction(((BuiltinFunctionRefValue) refValue).getFunction(), result.Type, funcArgs, C);
+                C.bc.fc.pc.addFunction(f.getName(), f);
+                ((BuiltinFunctionRefValue) refValue).summaryCreated = true;
+                ApplyInstruction inst = new ApplyInstruction(refValue.name, result.Name, result.Type, args, C);
+                inst.setComment("try_apply on builtin");
+                C.bc.block.addInstruction(inst);
+                return new GotoInstruction(C.bc.fc.function.getBlock(NormalBB), C); // Go straight to normal block.
+            }
+        } else if (refValue instanceof FunctionRefValue) {
+            return new TryApplyInstruction(FuncRefValue, C.bc.fc.function.getBlock(NormalBB), C.bc.fc.function.getBlock(ErrorBB), args, C);
+        } else {
+            Assertions.UNREACHABLE("Unexpected function ref value type");
+            return null;
+        }
     }
 }

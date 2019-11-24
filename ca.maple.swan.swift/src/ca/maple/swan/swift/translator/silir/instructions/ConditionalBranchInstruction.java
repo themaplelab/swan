@@ -34,7 +34,7 @@ public class ConditionalBranchInstruction extends SILIRInstruction {
 
     @Override
     public String toString() {
-        return "cond_br " + conditionValue.simpleName() + " true: bb" + trueBlock.getNumber() + ", false: bb" + falseBlock.getNumber() + "\n";
+        return "cond_br " + conditionValue.simpleName() + " true: bb" + trueBlock.getNumber() + ", false: bb" + falseBlock.getNumber() + this.getComment();
     }
 
     @Override

@@ -23,6 +23,8 @@ public class FunctionRefValue extends Value {
 
     private final Function function;
 
+    public boolean ignore = false;
+
     public FunctionRefValue(String name, String type, Function function) {
         super(name, type);
         this.function = function;

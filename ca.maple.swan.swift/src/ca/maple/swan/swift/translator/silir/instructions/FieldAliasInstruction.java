@@ -35,7 +35,7 @@ public class FieldAliasInstruction extends SILIRInstruction {
 
     @Override
     public String toString() {
-        return operandValue.simpleName() + "." + field + " alias-to " + resultValue.simpleName() + "\n";
+        return operandValue.simpleName() + "." + field + " alias-to " + resultValue.simpleName() + this.getComment();
     }
 
     @Override
