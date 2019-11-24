@@ -49,8 +49,11 @@ public class SSSDeterminer {
     }
 
     public static boolean checkSanitizer(HashSet<String> sanitizers, Statement s, CallGraph CG) {
-        // TODO:
-
+        if (s.getKind()== Statement.Kind.PARAM_CALLEE) {
+            CAstAbstractModuleLoader.DynamicMethodObject m = (CAstAbstractModuleLoader.DynamicMethodObject) s.getNode().getMethod();
+            String ref = m.getEntity().getName();
+            return sanitizers.contains(ref);
+        }
         return false;
     }
 
