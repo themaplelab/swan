@@ -464,13 +464,14 @@ public class SILIRToCAstTranslator {
 
         @Override
         public void visitFieldWriteInstruction(FieldWriteInstruction instruction) {
+            CAstNode field = (instruction.isDynamic) ? makeVarNode(instruction.dynamicField) : Ast.makeConstant(instruction.field);
             CAstNode n =
                     Ast.makeNode(
                             CAstNode.ASSIGN,
                             Ast.makeNode(
                                     CAstNode.OBJECT_REF,
                                     makeVarNode(instruction.writeTo),
-                                    Ast.makeConstant(instruction.field)),
+                                    field),
                             makeVarNode(instruction.operand));
             setNodePosition(n, instruction);
             addNode(n);

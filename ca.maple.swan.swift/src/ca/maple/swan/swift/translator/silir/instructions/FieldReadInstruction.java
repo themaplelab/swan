@@ -25,7 +25,7 @@ public class FieldReadInstruction extends SILIRInstruction {
 
     public final Value operand;
 
-    public final Value dynamicField; // For dynamic field.
+    public final Value dynamicField;
 
     public final boolean isDynamic;
 

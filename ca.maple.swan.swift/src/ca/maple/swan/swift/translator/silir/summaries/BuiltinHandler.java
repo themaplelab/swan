@@ -21,6 +21,7 @@ import com.ibm.wala.util.debug.Assertions;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.UUID;
 
 /*
  * Builtin handler for SILIR.
@@ -33,6 +34,42 @@ public class BuiltinHandler {
         // TODO: String interpolation support.
 
         switch(funcName) {
+
+            case "Swift.Dictionary.subscript.setter : (A) -> Swift.Optional<B>": {
+                // setter(v0, v1, v2)
+                // (v2.value).(v1.value) = v0.value.data
+                // These result types are not correct.
+                String temp1 = UUID.randomUUID().toString(); // v2.value
+                C.bc.block.addInstruction(new FieldReadInstruction(temp1, "$Swift.Dictionary<A, B>", params.get(2), "value", C));
+                String temp2 = UUID.randomUUID().toString(); // v0.value
+                C.bc.block.addInstruction(new FieldReadInstruction(temp2, "$*Optional<A>", params.get(0), "value", C));
+                String temp3 = UUID.randomUUID().toString(); // v0.value.data
+                C.bc.block.addInstruction(new FieldReadInstruction(temp3, "$Any", temp2, "data", C));
+                String temp4 = UUID.randomUUID().toString(); // v1.value
+                C.bc.block.addInstruction(new FieldReadInstruction(temp4, "$Any", params.get(1), "value", C));
+                // temp1.temp4 = temp3
+                C.bc.block.addInstruction(new FieldWriteInstruction(temp1, temp4, temp3, true, C));
+                return null;
+            }
+
+            case "Swift.Dictionary.subscript.getter : (A) -> Swift.Optional<B>": {
+                // getter(v0, v1, v2)
+                // v0.value.data = v2.(v1.value)
+                // v0.value.type = "some"/"none"
+                // These result types are not correct.
+                String temp1 = UUID.randomUUID().toString(); // (v1.value)
+                C.bc.block.addInstruction(new FieldReadInstruction(temp1, "$Any", params.get(1), "value", C));
+                String temp2 = UUID.randomUUID().toString(); // v2.(v1.value)
+                C.bc.block.addInstruction(new FieldReadInstruction(temp2, "$Any", params.get(2), temp1, true, C));
+                String temp3 = UUID.randomUUID().toString(); // v0.value
+                C.bc.block.addInstruction(new FieldReadInstruction(temp3, "$Any", params.get(0), "value", C));
+                C.bc.block.addInstruction(new FieldWriteInstruction(temp3, "data", temp2, C));
+                // Assume there is some.
+                String temp4 = UUID.randomUUID().toString(); // "some"
+                C.bc.block.addInstruction(new LiteralInstruction("some", temp4, "$String", C));
+                C.bc.block.addInstruction(new FieldWriteInstruction(temp3, "type", temp4,  C));
+                return null;
+            }
 
             case "Swift.Array.subscript.getter : (Swift.Int) -> A" : {
                 return new FieldReadWriteInstruction(params.get(0), "value", params.get(2), params.get(1), true, C);
@@ -84,6 +121,8 @@ public class BuiltinHandler {
     }
 
     private static final String[] summarizedBuiltins = new String[] {
+            "Swift.Dictionary.subscript.getter : (A) -> Swift.Optional<B>",
+            "Swift.Dictionary.subscript.setter : (A) -> Swift.Optional<B>",
             "Swift.Array.subscript.getter : (Swift.Int) -> A",
             "Swift._allocateUninitializedArray<A>(Builtin.Word) -> (Swift.Array<A>, Builtin.RawPointer)",
             "default argument 1 of Swift.print(_: Any..., separator: Swift.String, terminator: Swift.String) -> ()",
