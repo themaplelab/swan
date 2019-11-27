@@ -35,6 +35,20 @@ public class BuiltinHandler {
 
         switch(funcName) {
 
+            case "default argument 0 of (extension in Swift):Swift.BidirectionalCollection< where A.Element == Swift.String>.joined(separator: Swift.String) -> Swift.String": {
+                return new LiteralInstruction("", resultName, resultName, C);
+            }
+
+            case "(extension in Swift):Swift.BidirectionalCollection< where A.Element == Swift.String>.joined(separator: Swift.String) -> Swift.String": {
+                // TODO: here we need to add all elements of the array together and return it.
+                // This is temporary.
+                return new FieldReadInstruction(resultName, resultType, params.get(1), "value", C);
+            }
+
+            case "Swift.Dictionary.init() -> Swift.Dictionary<A, B>": {
+                return new NewInstruction(resultName, resultType, C);
+            }
+
             case "Swift.Dictionary.subscript.setter : (A) -> Swift.Optional<B>": {
                 // setter(v0, v1, v2)
                 // (v2.value).(v1.value) = v0.value.data
@@ -121,6 +135,9 @@ public class BuiltinHandler {
     }
 
     private static final String[] summarizedBuiltins = new String[] {
+            "(extension in Swift):Swift.BidirectionalCollection< where A.Element == Swift.String>.joined(separator: Swift.String) -> Swift.String",
+            "default argument 0 of (extension in Swift):Swift.BidirectionalCollection< where A.Element == Swift.String>.joined(separator: Swift.String) -> Swift.String",
+            "Swift.Dictionary.init() -> Swift.Dictionary<A, B>",
             "Swift.Dictionary.subscript.getter : (A) -> Swift.Optional<B>",
             "Swift.Dictionary.subscript.setter : (A) -> Swift.Optional<B>",
             "Swift.Array.subscript.getter : (Swift.Int) -> A",
@@ -148,29 +165,5 @@ public class BuiltinHandler {
     public static boolean isSummarized(String name) {
         //noinspection SimplifyStreamApiCallChains
         return Arrays.stream(summarizedBuiltins).anyMatch(name::equals);
-    }
-
-    private static final String[] builtins = new String[] {
-            "static Swift.Int.- infix(Swift.Int, Swift.Int) -> Swift.Int",
-            "static Swift.Int.+ infix(Swift.Int, Swift.Int) -> Swift.Int",
-            "static Swift.Int.* infix(Swift.Int, Swift.Int) -> Swift.Int",
-            "static Swift.Double.* infix(Swift.Double, Swift.Double) -> Swift.Double",
-            "static Swift.Int./ infix(Swift.Int, Swift.Int) -> Swift.Int",
-            "static Swift.Double./ infix(Swift.Double, Swift.Double) -> Swift.Double",
-            "static Swift.Bool.&& infix(Swift.Bool, @autoclosure () throws -> Swift.Bool) throws -> Swift.Bool",
-            "static Swift.Bool.|| infix(Swift.Bool, @autoclosure () throws -> Swift.Bool) throws -> Swift.Bool",
-            "(extension in Swift):Swift.BinaryInteger.description.getter : Swift.String",
-            "Swift.?? infix<A>(Swift.Optional<A>, @autoclosure () throws -> A) throws -> A",
-            "Swift.~= infix<A where A: Swift.Equatable>(A, A) -> Swift.Bool",
-            "Swift.== infix<A where A: Swift.RawRepresentable, A.RawValue: Swift.Equatable>(A, A) -> Swift.Bool",
-            "(extension in Swift):Swift.RawRepresentable< where A: Swift.Hashable, A.RawValue: Swift.Hashable>.hashValue.getter : Swift.Int",
-            "(extension in Swift):Swift.RawRepresentable< where A: Swift.Hashable, A.RawValue: Swift.Hashable>.hash(into: inout Swift.Hasher) -> ()",
-            "(extension in Swift):Swift.RawRepresentable< where A: Swift.Hashable, A.RawValue: Swift.Hashable>._rawHashValue(seed: Swift.Int) -> Swift.Int",
-            "Swift.?? infix<A>(Swift.Optional<A>, @autoclosure () throws -> A) throws -> A"
-    };
-
-    public static boolean isBuiltIn(String name) {
-        //noinspection SimplifyStreamApiCallChains
-        return Arrays.stream(builtins).anyMatch(name::equals);
     }
 }
