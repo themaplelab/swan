@@ -16,7 +16,6 @@ package ca.maple.swan.swift.translator.silir.instructions;
 import ca.maple.swan.swift.translator.silir.context.InstructionContext;
 import ca.maple.swan.swift.translator.silir.values.Value;
 
-// Might be blown away if not used.
 
 public class FieldReadWriteInstruction extends SILIRInstruction {
 
@@ -28,20 +27,37 @@ public class FieldReadWriteInstruction extends SILIRInstruction {
 
     public final String operandField;
 
-    public FieldReadWriteInstruction(String resultName, String resultType, String resultField,
-                                     String operandName, String operandField, InstructionContext ic) {
+    public final Value dynamicOperandField;
+
+    public final boolean operandIsDynamic;
+
+    public FieldReadWriteInstruction(String resultName, String resultField,
+                                     String operandName, String operandField,
+                                     boolean operandIsDynamic, InstructionContext ic) {
         super(ic);
-        Value result = new Value(resultName, resultType);
-        ic.valueTable().add(result);
-        this.resultValue = result;
+        this.resultValue = ic.valueTable().getValue(resultName);
         this.resultField = resultField;
         this.operandValue = ic.valueTable().getValue(operandName);
-        this.operandField = operandField;
+        this.operandIsDynamic = operandIsDynamic;
+        if (operandIsDynamic) {
+            this.operandField = "N/A";
+            this.dynamicOperandField = ic.valueTable().getValue(operandField);
+        } else {
+            this.operandField = operandField;
+            this.dynamicOperandField = null;
+        }
+    }
+
+    public FieldReadWriteInstruction(String resultName, String resultField,
+                                     String operandName, String operandField, InstructionContext ic) {
+        this (resultName, resultField, operandName, operandField, false, ic);
     }
 
     @Override
     public String toString() {
-        return this.resultValue.simpleName() + "." + resultField + " := " + operandValue.simpleName() + "." + operandField + this.getComment();
+        return this.resultValue.simpleName() + "." + resultField + " := " + operandValue.simpleName() + "." +
+                (operandIsDynamic ? this.dynamicOperandField.simpleName() : operandField) +
+                this.getComment();
     }
 
     @Override

@@ -20,7 +20,7 @@ package ca.maple.swan.swift.translator.silir.values;
 
 public class LiteralValue extends Value {
 
-    private final Object literal;
+    public final Object literal;
 
     public LiteralValue(String name, String type, Object literal) {
         super(name, type);

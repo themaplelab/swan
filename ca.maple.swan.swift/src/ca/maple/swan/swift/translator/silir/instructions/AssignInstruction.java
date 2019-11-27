@@ -24,7 +24,7 @@ public class AssignInstruction extends SILIRInstruction {
 
     public AssignInstruction(String toName, String from, InstructionContext ic) {
         super(ic);
-        this.from = ic.valueTable().getValue(from);
+        this.from = ic.valueTable().getPossibleAlias(from);
         this.to = ic.valueTable().getValue(toName);
     }
 

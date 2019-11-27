@@ -373,6 +373,9 @@ public class SILIRToCAstTranslator {
                 case "~=": // Pattern matching operator.
                     operator = CAstOperator.OP_EQ;
                     break;
+                case "%":
+                    operator = CAstOperator.OP_MOD;
+                    break;
                 case "binary_arb":
                     operator = SILIRCAstOperator.OP_BINARY_ARBITRARY;
                     break;
@@ -427,6 +430,7 @@ public class SILIRToCAstTranslator {
 
         @Override
         public void visitFieldReadInstruction(FieldReadInstruction instruction) {
+            CAstNode field = (instruction.isDynamic) ? makeVarNode(instruction.dynamicField) : Ast.makeConstant(instruction.field);
             CAstNode n =
                     Ast.makeNode(
                             CAstNode.ASSIGN,
@@ -434,13 +438,15 @@ public class SILIRToCAstTranslator {
                             Ast.makeNode(
                                     CAstNode.OBJECT_REF,
                                     makeVarNode(instruction.operand),
-                                    Ast.makeConstant(instruction.field)));
+                                    field));
             setNodePosition(n, instruction);
             addNode(n);
         }
 
         @Override
         public void visitFieldReadWriteInstruction(FieldReadWriteInstruction instruction) {
+            CAstNode operandField = (instruction.operandIsDynamic) ?
+                    makeVarNode(instruction.dynamicOperandField) : Ast.makeConstant(instruction.operandField);
             CAstNode n =
                     Ast.makeNode(
                             CAstNode.ASSIGN,
@@ -451,7 +457,7 @@ public class SILIRToCAstTranslator {
                             Ast.makeNode(
                                     CAstNode.OBJECT_REF,
                                     makeVarNode(instruction.operandValue),
-                                    Ast.makeConstant(instruction.operandField)));
+                                    operandField));
             setNodePosition(n, instruction);
             addNode(n);
         }

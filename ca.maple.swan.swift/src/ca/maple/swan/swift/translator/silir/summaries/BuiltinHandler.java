@@ -16,6 +16,7 @@ package ca.maple.swan.swift.translator.silir.summaries;
 import ca.maple.swan.swift.translator.silir.context.InstructionContext;
 import ca.maple.swan.swift.translator.silir.instructions.*;
 import ca.maple.swan.swift.translator.silir.values.LiteralValue;
+import ca.maple.swan.swift.translator.silir.values.Value;
 import com.ibm.wala.util.debug.Assertions;
 
 import java.util.ArrayList;
@@ -32,6 +33,10 @@ public class BuiltinHandler {
         // TODO: String interpolation support.
 
         switch(funcName) {
+
+            case "Swift.Array.subscript.getter : (Swift.Int) -> A" : {
+                return new FieldReadWriteInstruction(params.get(0), "value", params.get(2), params.get(1), true, C);
+            }
 
             case "Swift._allocateUninitializedArray<A>(Builtin.Word) -> (Swift.Array<A>, Builtin.RawPointer)" : {
                 return new NewArrayTupleInstruction(resultName, resultType, C);
@@ -79,6 +84,7 @@ public class BuiltinHandler {
     }
 
     private static final String[] summarizedBuiltins = new String[] {
+            "Swift.Array.subscript.getter : (Swift.Int) -> A",
             "Swift._allocateUninitializedArray<A>(Builtin.Word) -> (Swift.Array<A>, Builtin.RawPointer)",
             "default argument 1 of Swift.print(_: Any..., separator: Swift.String, terminator: Swift.String) -> ()",
             "default argument 2 of Swift.print(_: Any..., separator: Swift.String, terminator: Swift.String) -> ()",

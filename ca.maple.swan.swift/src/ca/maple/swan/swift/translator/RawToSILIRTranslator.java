@@ -282,6 +282,8 @@ public class RawToSILIRTranslator extends SILInstructionVisitor<SILIRInstruction
     protected SILIRInstruction visitProjectBox(CAstNode N, InstructionContext C) {
         RawValue operand = getSingleOperand(N);
         RawValue result = getSingleResult(N);
+        int Field = getIntValue(N, 2);
+        // TODO: Do something with this field?
         return new ImplicitCopyInstruction(result.Name, operand.Name, C);
     }
 
@@ -349,10 +351,13 @@ public class RawToSILIRTranslator extends SILInstructionVisitor<SILIRInstruction
         return tryAliasRead(result, operand.Name, "value", C);
     }
 
+
     private SILIRInstruction tryAliasWrite(String SourceName, String DestName, InstructionContext C) {
         Value v = C.valueTable().getPossibleAlias(DestName);
         if (v instanceof FieldAliasValue) {
             return new FieldWriteInstruction(((FieldAliasValue) v).value.name, ((FieldAliasValue) v).field, SourceName, C);
+        } else if (v instanceof ArrayValue) {
+            return new FieldWriteInstruction(DestName, "0", SourceName, C);
         } else {
             return new FieldWriteInstruction(DestName, "value", SourceName, C);
         }
@@ -492,8 +497,11 @@ public class RawToSILIRTranslator extends SILInstructionVisitor<SILIRInstruction
     // CONFIDENCE: HIGH
     protected SILIRInstruction visitIndexAddr(CAstNode N, InstructionContext C) {
         RawValue operand = getSingleOperand(N);
+        RawValue idx = getOperand(N, 1);
         RawValue result = getSingleResult(N);
-        return new ImplicitCopyInstruction(result.Name, operand.Name, C);
+        Value literal = C.valueTable().getValue(idx.Name);
+        Assertions.productionAssertion(literal instanceof LiteralValue);
+        return new FieldAliasInstruction(result.Name, result.Type, operand.Name, ((LiteralValue)literal).literal.toString(), C);
     }
 
     @Override
@@ -834,13 +842,43 @@ public class RawToSILIRTranslator extends SILInstructionVisitor<SILIRInstruction
     }
 
     private Function createFakeFunction(String name, String returnType, ArrayList<Argument> args, InstructionContext C) {
-        Function f = new Function(name, returnType, null, args);
+        Function f = new Function(name, returnType, null, args, true);
         BasicBlock bb = new BasicBlock(0);
         String randomName = UUID.randomUUID().toString();
         bb.addInstruction(new NewInstruction(randomName, returnType, C));
         bb.addInstruction(new ReturnInstruction(randomName, C));
         f.addBlock(bb);
         return f;
+    }
+
+    private boolean handleInfixOperators(String operator, String operand1, String operand2, InstructionContext C) {
+        String tempValue = UUID.randomUUID().toString();
+        String actualOperator = null;
+        switch (operator) {
+            case "-=":
+                actualOperator = "-";
+                break;
+            case "+=":
+                actualOperator = "+";
+                break;
+            case "*=":
+                actualOperator = "*";
+                break;
+            case "/=":
+                actualOperator = "/";
+                break;
+            case "%=":
+                actualOperator = "%";
+                break;
+            // TODO: Complete
+        }
+        if (actualOperator != null) {
+            FieldReadInstruction inst = new FieldReadInstruction(tempValue, C.valueTable().getValue(operand1).type, operand1, "value", C);
+            C.bc.block.addInstruction(inst);
+            C.bc.block.addInstruction(new BinaryOperatorInstruction(tempValue, actualOperator, tempValue, operand2, C));
+            C.bc.block.addInstruction(new FieldWriteInstruction(operand1, "value", tempValue, C));
+        }
+        return actualOperator != null;
     }
 
     @Override
@@ -866,12 +904,10 @@ public class RawToSILIRTranslator extends SILInstructionVisitor<SILIRInstruction
                 String operator = getStringValue(OperatorNode, 0);
                 String operand1 = getStringValue(OperatorNode, 1);
                 String operand2 = getStringValue(OperatorNode, 2);
-                if (operator.equals("-=")) {
-                    return new BinaryOperatorInstruction(operand1, "-", operand1, operand2, C);
-                } else if (operator.equals("+=")) {
-                    return new BinaryOperatorInstruction(operand1, "+", operand1, operand2, C);
-                } else {
+                if (!handleInfixOperators(operator, operand1, operand2, C)) {
                     return new BinaryOperatorInstruction(result.Name, result.Type, operator, operand1, operand2, C);
+                } else {
+                    return null;
                 }
             } else {
                 Assertions.UNREACHABLE("Unexpected kind");
@@ -1197,6 +1233,8 @@ public class RawToSILIRTranslator extends SILInstructionVisitor<SILIRInstruction
         C.bc.block.addInstruction(new FieldReadInstruction(result2.Name, result2.Type, operand.Name, "1", C));
         // Handle allocateunitarray builtin.
         if (C.valueTable().getValue(operand.Name) instanceof ArrayTupleValue) {
+            C.valueTable().replace(C.valueTable().getValue(result1.Name), new ArrayValue(result1.Name, result1.Type));
+            C.valueTable().replace(C.valueTable().getValue(result2.Name), new ArrayValue(result2.Name, result2.Type));
             C.bc.block.addInstruction(new AssignInstruction(result1.Name, result2.Name, C));
         }
         return null;
@@ -2071,10 +2109,10 @@ public class RawToSILIRTranslator extends SILInstructionVisitor<SILIRInstruction
             if (destBlock.getArguments().size() > 0) {
                 if (!createdGetInstruction) {
                     tempDataValueName = UUID.randomUUID().toString();
-                    C.bc.block.addInstruction(new FieldReadInstruction(tempDataValueName, destBlock.getArgument(0).type, CaseName, "data", C));
+                    C.bc.block.addInstruction(new FieldReadInstruction(tempDataValueName, destBlock.getArgument(0).type, EnumName, "data", C));
                     createdGetInstruction = true;
                 }
-                C.bc.block.addInstruction(new ImplicitCopyInstruction(destBlock.getArgument(0).name, tempDataValueName, C));
+                C.bc.block.addInstruction(new AssignInstruction(destBlock.getArgument(0).name, destBlock.getArgument(0).type, tempDataValueName, C));
             }
         }
         BasicBlock defaultBlock = null;
@@ -2108,10 +2146,10 @@ public class RawToSILIRTranslator extends SILInstructionVisitor<SILIRInstruction
             if (destBlock.getArguments().size() > 0) {
                 if (!createdGetInstruction) {
                     tempDataValueName = UUID.randomUUID().toString();
-                    C.bc.block.addInstruction(new FieldReadInstruction(tempDataValueName, destBlock.getArgument(0).type, CaseName, "data", C));
+                    C.bc.block.addInstruction(new FieldReadInstruction(tempDataValueName, destBlock.getArgument(0).type, EnumName, "data", C));
                     createdGetInstruction = true;
                 }
-                C.bc.block.addInstruction(new ImplicitCopyInstruction(destBlock.getArgument(0).name, tempDataValueName, C));
+                C.bc.block.addInstruction(new AssignInstruction(destBlock.getArgument(0).name, destBlock.getArgument(0).type, tempDataValueName, C));
             }
         }
         BasicBlock defaultBlock = null;
@@ -2204,28 +2242,21 @@ public class RawToSILIRTranslator extends SILInstructionVisitor<SILIRInstruction
                     C.bc.fc.function.getBlock(NormalBB).getArgument(0).name,
                     C.bc.fc.function.getBlock(NormalBB).getArgument(0).getType());
             CAstNode OperatorNode = N.getChild(4);
-            SILIRInstruction operatorInstruction;
             if (OperatorNode.getKind() == CAstNode.UNARY_EXPR) {
                 String operator = getStringValue(OperatorNode, 0);
                 String operand = getStringValue(OperatorNode, 1);
-                operatorInstruction =  new UnaryOperatorInstruction(result.Name, result.Type, operator, operand, C);
+                C.bc.block.addInstruction(new UnaryOperatorInstruction(result.Name, result.Type, operator, operand, C));
             } else if (OperatorNode.getKind() == CAstNode.BINARY_EXPR) {
                 String operator = getStringValue(OperatorNode, 0);
                 String operand1 = getStringValue(OperatorNode, 1);
                 String operand2 = getStringValue(OperatorNode, 2);
-                if (operator.equals("-=")) {
-                    operatorInstruction = new BinaryOperatorInstruction(operand1, "-", operand1, operand2, C);
-                } else if (operator.equals("+=")) {
-                    operatorInstruction = new BinaryOperatorInstruction(operand1, "+", operand1, operand2, C);
-                } else {
-                    operatorInstruction = new BinaryOperatorInstruction(result.Name, result.Type, operator, operand1, operand2, C);
+                if (!handleInfixOperators(operator, operand1, operand2, C)) {
+                    C.bc.block.addInstruction(new BinaryOperatorInstruction(result.Name, result.Type, operator, operand1, operand2, C));
                 }
             } else {
                 Assertions.UNREACHABLE("Unexpected kind");
                 return null;
             }
-            operatorInstruction.setComment("try_apply on an operator");
-            C.bc.block.addInstruction(operatorInstruction);
             return new GotoInstruction(C.bc.fc.function.getBlock(NormalBB), C); // Go straight to normal block.
         }
         if (refValue instanceof BuiltinFunctionRefValue) { // No point of catching anything.

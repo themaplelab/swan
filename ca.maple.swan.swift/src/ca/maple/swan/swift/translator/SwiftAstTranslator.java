@@ -272,7 +272,6 @@ public class SwiftAstTranslator extends AstTranslator {
     @Override
     protected void doPrimitive(int resultVal, WalkContext context, CAstNode primitiveCall) {
         Assertions.UNREACHABLE("Primitives are not supported");
-        // Perhaps in the future we can move built in operations here to make the CAst frontend less messy.
     }
 
     @Override

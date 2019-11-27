@@ -39,8 +39,15 @@ public class Function {
 
     private boolean isCoroutine = false;
 
+    private boolean isSILIRGenerated = false;
+
     public Function(String name, String returnType, Position position) {
         this(name, returnType, position, null);
+    }
+
+    public Function(String name, String returnType, Position position, ArrayList<Argument> arguments, boolean isSILIRGenerated) {
+        this(name, returnType, position, arguments);
+        this.isSILIRGenerated = isSILIRGenerated;
     }
 
     public Function(String name, String returnType, Position position, ArrayList<Argument> arguments) {
@@ -107,7 +114,11 @@ public class Function {
     @Override
     public String toString() {
         ValueNameSimplifier.clear();
-        StringBuilder s = new StringBuilder("func ");
+        StringBuilder s = new StringBuilder();
+        if (isSILIRGenerated) {
+            s.append("// Generated (fake)\n");
+        }
+        s.append("func ");
         s.append(this.returnType);
         s.append(" ");
         s.append("`");

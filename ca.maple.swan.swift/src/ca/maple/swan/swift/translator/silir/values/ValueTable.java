@@ -44,8 +44,12 @@ public class ValueTable {
 
     public Value getPossibleAlias(String s) {
         Assertions.productionAssertion(has(s));
-
         return values.get(s);
+    }
+
+    public void replace(Value v1, Value v2) {
+        this.values.remove(v1.name);
+        this.values.put(v2.name, v2);
     }
 
     public void add(Value v) {
