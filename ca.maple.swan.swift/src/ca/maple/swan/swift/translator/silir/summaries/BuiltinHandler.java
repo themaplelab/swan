@@ -31,7 +31,8 @@ public class BuiltinHandler {
 
     public static SILIRInstruction findSummary(String funcName, String resultName, String resultType, ArrayList<String> params, InstructionContext C) {
 
-        // TODO: String interpolation support.
+        // TODO: Proper string interpolation support.
+        // TODO: Handle all Array, Set, and Dictionary container type functions.
 
         switch(funcName) {
 
@@ -68,9 +69,13 @@ public class BuiltinHandler {
 
             case "Swift.Dictionary.subscript.getter : (A) -> Swift.Optional<B>": {
                 // getter(v0, v1, v2)
+                // v0.value = new $Swift.Optional<A>
                 // v0.value.data = v2.(v1.value)
                 // v0.value.type = "some"/"none"
                 // These result types are not correct.
+                String init = UUID.randomUUID().toString();
+                C.bc.block.addInstruction(new NewInstruction(init, "$Swift.Optional<A>", C));
+                C.bc.block.addInstruction(new FieldWriteInstruction(params.get(0), "value", init, C));
                 String temp1 = UUID.randomUUID().toString(); // (v1.value)
                 C.bc.block.addInstruction(new FieldReadInstruction(temp1, "$Any", params.get(1), "value", C));
                 String temp2 = UUID.randomUUID().toString(); // v2.(v1.value)
@@ -90,7 +95,14 @@ public class BuiltinHandler {
             }
 
             case "Swift._allocateUninitializedArray<A>(Builtin.Word) -> (Swift.Array<A>, Builtin.RawPointer)" : {
-                return new NewArrayTupleInstruction(resultName, resultType, C);
+                C.bc.block.addInstruction(new NewArrayTupleInstruction(resultName, resultType, C));
+                String temp1 = UUID.randomUUID().toString();
+                String temp2 = UUID.randomUUID().toString();
+                C.bc.block.addInstruction(new NewInstruction(temp1, "$Array<Any>", C));
+                C.bc.block.addInstruction(new NewInstruction(temp2, "$Builtin.RawPointer", C));
+                C.bc.block.addInstruction(new FieldWriteInstruction(resultName, "0", temp1, C));
+                C.bc.block.addInstruction(new FieldWriteInstruction(resultName, "1", temp2, C));
+                return null;
             }
             case "default argument 1 of Swift.print(_: Any..., separator: Swift.String, terminator: Swift.String) -> ()":
             case "default argument 2 of Swift.print(_: Any..., separator: Swift.String, terminator: Swift.String) -> ()": {
@@ -113,10 +125,7 @@ public class BuiltinHandler {
                 C.bc.block.addInstruction(new FieldWriteInstruction(resultName, "_value", params.get(0), C));
                 return null;
             }
-            case "static Swift.String.+ infix(Swift.String, Swift.String) -> Swift.String": {
-                return null;
-                // TODO: Is this not an operator?
-            }
+
             case "Swift.DefaultStringInterpolation.init(literalCapacity: Swift.Int, interpolationCount: Swift.Int) -> Swift.DefaultStringInterpolation":
             case "Swift.String.init(stringInterpolation: Swift.DefaultStringInterpolation) -> Swift.String": {
                 return new LiteralInstruction("", resultName, resultType, C);
@@ -152,7 +161,6 @@ public class BuiltinHandler {
             "Swift.Double.init(_builtinIntegerLiteral: Builtin.IntLiteral) -> Swift.Double",
             "Swift.Double.init(Swift.Int) -> Swift.Double",
             "Swift.Bool.init(_builtinBooleanLiteral: Builtin.Int1) -> Swift.Bool",
-            "static Swift.String.+ infix(Swift.String, Swift.String) -> Swift.String",
             "Swift.String.isEmpty.getter : Swift.Bool",
             "Swift.DefaultStringInterpolation.init(literalCapacity: Swift.Int, interpolationCount: Swift.Int) -> Swift.DefaultStringInterpolation",
             "Swift.String.init(stringInterpolation: Swift.DefaultStringInterpolation) -> Swift.String",

@@ -123,7 +123,6 @@ public class RawToSILIRTranslator extends SILInstructionVisitor<SILIRInstruction
     private FunctionContext VisitCoroutine(Function f, ProgramContext pc, CoroutineContext cc, FunctionContext parentContext) {
         Function copy = new Function(f, pc);
         FunctionContext fc = new FunctionContext(copy, pc);
-        fc.vt = parentContext.vt;
         fc.cc = cc;
         int i = 0;
         while (true) {
@@ -851,7 +850,20 @@ public class RawToSILIRTranslator extends SILInstructionVisitor<SILIRInstruction
         return f;
     }
 
-    private boolean handleInfixOperators(String operator, String operand1, String operand2, InstructionContext C) {
+    private boolean handleComparisonOperators(String resultName, String resultType, String operator, String operand1, String operand2, InstructionContext C) {
+        String tempValue = UUID.randomUUID().toString();
+        String[] comparisonOperators = {"==", "!=", "<=", ">="};
+        if (Arrays.asList(comparisonOperators).contains(operator)) {
+            String temp = UUID.randomUUID().toString();
+            C.bc.block.addInstruction(new BinaryOperatorInstruction(temp, "$Int", operator, operand1, operand2, C));
+            C.bc.block.addInstruction(new NewInstruction(resultName, resultType, C));
+            C.bc.block.addInstruction(new FieldWriteInstruction(resultName, "_value", temp, C));
+            return true;
+        }
+        return false;
+    }
+
+    private boolean handleInfixOperators(String resultName, String resultType, String operator, String operand1, String operand2, InstructionContext C) {
         String tempValue = UUID.randomUUID().toString();
         String actualOperator = null;
         switch (operator) {
@@ -871,14 +883,14 @@ public class RawToSILIRTranslator extends SILInstructionVisitor<SILIRInstruction
                 actualOperator = "%";
                 break;
             // TODO: Complete
+            default:
+                return handleComparisonOperators(resultName, resultType, operator, operand1, operand2, C);
         }
-        if (actualOperator != null) {
-            FieldReadInstruction inst = new FieldReadInstruction(tempValue, C.valueTable().getValue(operand1).type, operand1, "value", C);
-            C.bc.block.addInstruction(inst);
-            C.bc.block.addInstruction(new BinaryOperatorInstruction(tempValue, actualOperator, tempValue, operand2, C));
-            C.bc.block.addInstruction(new FieldWriteInstruction(operand1, "value", tempValue, C));
-        }
-        return actualOperator != null;
+        FieldReadInstruction inst = new FieldReadInstruction(tempValue, C.valueTable().getValue(operand1).type, operand1, "value", C);
+        C.bc.block.addInstruction(inst);
+        C.bc.block.addInstruction(new BinaryOperatorInstruction(tempValue, actualOperator, tempValue, operand2, C));
+        C.bc.block.addInstruction(new FieldWriteInstruction(operand1, "value", tempValue, C));
+        return true;
     }
 
     @Override
@@ -904,7 +916,7 @@ public class RawToSILIRTranslator extends SILInstructionVisitor<SILIRInstruction
                 String operator = getStringValue(OperatorNode, 0);
                 String operand1 = getStringValue(OperatorNode, 1);
                 String operand2 = getStringValue(OperatorNode, 2);
-                if (!handleInfixOperators(operator, operand1, operand2, C)) {
+                if (!handleInfixOperators(result.Name, result.Type, operator, operand1, operand2, C)) {
                     return new BinaryOperatorInstruction(result.Name, result.Type, operator, operand1, operand2, C);
                 } else {
                     return null;
@@ -2250,7 +2262,7 @@ public class RawToSILIRTranslator extends SILInstructionVisitor<SILIRInstruction
                 String operator = getStringValue(OperatorNode, 0);
                 String operand1 = getStringValue(OperatorNode, 1);
                 String operand2 = getStringValue(OperatorNode, 2);
-                if (!handleInfixOperators(operator, operand1, operand2, C)) {
+                if (!handleInfixOperators(result.Name, result.Type, operator, operand1, operand2, C)) {
                     C.bc.block.addInstruction(new BinaryOperatorInstruction(result.Name, result.Type, operator, operand1, operand2, C));
                 }
             } else {

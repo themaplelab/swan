@@ -31,6 +31,7 @@ public class FieldAliasInstruction extends SILIRInstruction {
         this.resultValue = new FieldAliasValue(resultName, resultType, this.operandValue, operandField);
         ic.valueTable().add(this.resultValue);
         this.field = operandField;
+        this.setImplicit();
     }
 
     @Override
@@ -43,8 +44,4 @@ public class FieldAliasInstruction extends SILIRInstruction {
         v.visitFieldAliasInstruction(this);
     }
 
-    @Override
-    public boolean isExplicit() {
-        return false;
-    }
 }

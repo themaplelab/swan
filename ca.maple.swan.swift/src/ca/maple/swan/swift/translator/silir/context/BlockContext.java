@@ -31,7 +31,7 @@ public class BlockContext {
         this.fc = fc;
         this.block = b;
         for (Argument a : b.getArguments()) {
-            this.fc.vt.add(a.name, new Value(a.name, a.type));
+            this.fc.pc.vt.add(a.name, new Value(a.name, a.type));
         }
     }
 }

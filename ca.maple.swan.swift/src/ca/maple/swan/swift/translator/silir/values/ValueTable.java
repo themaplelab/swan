@@ -16,6 +16,7 @@ package ca.maple.swan.swift.translator.silir.values;
 import com.ibm.wala.util.debug.Assertions;
 
 import java.util.HashMap;
+import java.util.HashSet;
 
 /*
  * Stores values during SIL -> SILIR translation.
@@ -25,31 +26,41 @@ public class ValueTable {
 
     private HashMap<String, Value> values;
 
+    private HashSet<String> usedValues;
+
     public ValueTable() {
         this.values = new HashMap<>();
+        this.usedValues = new HashSet<>();
     }
 
     // For implicit copies. Useful for reducing IR assignment statement bloat.
     public void copy(String to, String from) {
         Assertions.productionAssertion(has(from));
         values.put(to, values.get(from));
+        usedValues.add(from);
     }
 
     public Value getValue(String s) {
         Assertions.productionAssertion(has(s));
         // We need to know if aliases show up where they are not expected.
         Assertions.productionAssertion(!(values.get(s) instanceof FieldAliasValue));
+        usedValues.add(s);
         return values.get(s);
     }
 
     public Value getPossibleAlias(String s) {
         Assertions.productionAssertion(has(s));
+        usedValues.add(s);
         return values.get(s);
     }
 
     public void replace(Value v1, Value v2) {
         this.values.remove(v1.name);
         this.values.put(v2.name, v2);
+    }
+
+    public boolean isUsed(String s) {
+        return this.usedValues.contains(s);
     }
 
     public void add(Value v) {

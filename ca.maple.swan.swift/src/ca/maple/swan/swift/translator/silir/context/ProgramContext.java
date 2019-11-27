@@ -17,6 +17,7 @@ import ca.maple.swan.swift.translator.RawToSILIRTranslator;
 import ca.maple.swan.swift.translator.raw.InstructionNode;
 import ca.maple.swan.swift.translator.silir.BasicBlock;
 import ca.maple.swan.swift.translator.silir.Function;
+import ca.maple.swan.swift.translator.silir.printing.IRPruner;
 import ca.maple.swan.swift.translator.silir.values.ValueTable;
 
 import java.util.*;
@@ -29,12 +30,14 @@ public class ProgramContext {
 
     private HashMap<String, Function> allFunctions;
     public HashMap<BasicBlock, ArrayList<InstructionNode>> toTranslate;
+    public ValueTable vt;
 
     public ValueTable globalValues = new ValueTable();
 
     public ProgramContext(HashMap<BasicBlock, ArrayList<InstructionNode>> toTranslate) {
         this.allFunctions = new LinkedHashMap<>(); // LinkedHashMap is important here! Ordering can affect global accessing.
         this.toTranslate = toTranslate;
+        this.vt = new ValueTable();
     }
 
     public void addFunction(String s, Function f) {
@@ -67,6 +70,12 @@ public class ProgramContext {
     public void markCoroutine(String functionName) {
         if (allFunctions.containsKey(functionName)) {
             allFunctions.remove(functionName);
+        }
+    }
+
+    public void pruneIR() {
+        for (Function f : getFunctions()) {
+            new IRPruner(f, vt);
         }
     }
 

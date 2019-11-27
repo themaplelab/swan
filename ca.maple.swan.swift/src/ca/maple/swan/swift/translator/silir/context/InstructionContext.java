@@ -32,7 +32,7 @@ public class InstructionContext {
     }
 
     public ValueTable valueTable() {
-        return this.bc.fc.vt;
+        return this.bc.fc.pc.vt;
     }
 
     public ValueTable globalValueTable() {

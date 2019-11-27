@@ -68,7 +68,8 @@ public abstract class SwiftAnalysisEngine<I extends InstanceKey>
         @Override
         public Context getCalleeTarget(CGNode cgNode, CallSiteReference callSiteReference, IMethod iMethod, InstanceKey[] instanceKeys) {
             String signature =  iMethod.getReference().getSignature();
-            if (signature.contains("setter") || signature.contains("getter") || signature.contains("__allocating_init")) {
+            // For now, just always have context.
+            if (/*signature.contains("setter") || signature.contains("getter") || signature.contains("__allocating_init")*/ true) {
                 return new ReceiverInstanceContext(instanceKeys[0]);
             }
             return null;

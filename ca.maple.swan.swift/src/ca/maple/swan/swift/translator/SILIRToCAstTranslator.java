@@ -417,7 +417,9 @@ public class SILIRToCAstTranslator {
                                 Ast.makeNode(
                                         CAstNode.FUNCTION_EXPR,
                                         Ast.makeConstant(entity)));
-                c.currentEntity.addScopedEntity(null, entity);
+                if (!instruction.ic.bc.fc.function.getName().equals(instruction.value.getFunction())) {
+                    c.currentEntity.addScopedEntity(null, entity);
+                }
                 setNodePosition(n, instruction);
                 addNode(n);
             }
@@ -529,7 +531,9 @@ public class SILIRToCAstTranslator {
                             Ast.makeNode(
                                     CAstNode.FUNCTION_EXPR,
                                     Ast.makeConstant(entity)));
-            c.currentEntity.addScopedEntity(null, entity);
+            if (!instruction.ic.bc.fc.function.getName().equals(instruction.value.getFunction().getName())) {
+                c.currentEntity.addScopedEntity(null, entity);
+            }
             setNodePosition(n, instruction);
             addNode(n);
         }

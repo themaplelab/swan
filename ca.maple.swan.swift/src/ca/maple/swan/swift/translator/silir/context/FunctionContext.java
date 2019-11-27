@@ -30,8 +30,6 @@ public class FunctionContext {
 
     public ProgramContext pc;
 
-    public ValueTable vt;
-
     public HashMap<String, FunctionContext> coroutines;
 
     public CoroutineContext cc = null;
@@ -39,10 +37,9 @@ public class FunctionContext {
     public FunctionContext(Function f, ProgramContext pc) {
         this.function = f;
         this.pc  = pc;
-        this.vt = new ValueTable();
         this.coroutines = new HashMap<>();
         for (Argument a : f.getArguments()) {
-            this.vt.add(a.name, new Value(a.name, a.type));
+           pc.vt.add(a.name, new Value(a.name, a.type));
         }
     }
 

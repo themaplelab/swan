@@ -27,6 +27,7 @@ public class ImplicitCopyInstruction extends SILIRInstruction {
         this.from = ic.valueTable().getPossibleAlias(from);
         ic.valueTable().copy(to, from);
         this.to = to;
+        this.setImplicit();
     }
 
     @Override
@@ -39,8 +40,4 @@ public class ImplicitCopyInstruction extends SILIRInstruction {
         return ValueNameSimplifier.get(to) + " := " + from.simpleName() + this.getComment();
     }
 
-    @Override
-    public boolean isExplicit() {
-        return false;
-    }
 }
