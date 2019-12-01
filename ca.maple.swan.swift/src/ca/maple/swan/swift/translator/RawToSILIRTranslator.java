@@ -989,6 +989,12 @@ public class RawToSILIRTranslator extends SILInstructionVisitor<SILIRInstruction
                     new CoroutineContext(values, bb),
                     C.bc.fc);
             C.bc.fc.coroutines.put(Token, coroutine);
+            for (int i = 0; i < args.size(); ++i) {
+                C.bc.block.addInstruction(new AssignInstruction(
+                        coroutine.function.getArguments().get(i).name,
+                        coroutine.function.getArguments().get(i).type,
+                        args.get(i), C));
+            }
             GotoInstruction inst = new GotoInstruction(coroutine.function.getBlock(0), C);
             inst.setComment("coroutine " + coroutine.function.getName());
             C.bc.block.addInstruction(inst);

@@ -19,11 +19,11 @@ import ca.maple.swan.swift.translator.silir.values.Value;
 public class AssignGlobalInstruction extends SILIRInstruction {
 
     public final Value to;
-    public final Value from;
+    public Value from;
 
     public AssignGlobalInstruction(String toName, String toType, String from, InstructionContext ic) {
         super(ic);
-        this.from = ic.globalValueTable().getValue(from);
+        this.from = ic.globalValueTable().getGlobalValue(from, this);
         this.to = new Value(toName, toType);
         ic.valueTable().add(this.to);
     }

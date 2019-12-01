@@ -33,8 +33,15 @@ public class BuiltinHandler {
 
         // TODO: Proper string interpolation support.
         // TODO: Handle all Array, Set, and Dictionary container type functions.
+        // TODO: os_log needs to have all values of given array sunk.
 
         switch(funcName) {
+
+            case "Swift.Array.append(__owned A) -> ()": {
+                // append(v0, v1)
+                // v1.arr.append(v0.value)
+                // TODO
+            }
 
             case "default argument 0 of (extension in Swift):Swift.BidirectionalCollection< where A.Element == Swift.String>.joined(separator: Swift.String) -> Swift.String": {
                 return new LiteralInstruction("", resultName, resultName, C);
@@ -112,6 +119,7 @@ public class BuiltinHandler {
             case "Swift.print(_: Any..., separator: Swift.String, terminator: Swift.String) -> ()": {
                 return new PrintInstruction(params.get(0), C);
             }
+            case "Swift.StaticString.init(_builtinStringLiteral: Builtin.RawPointer, utf8CodeUnitCount: Builtin.Word, isASCII: Builtin.Int1) -> Swift.StaticString":
             case "Swift.String.init(_builtinStringLiteral: Builtin.RawPointer, utf8CodeUnitCount: Builtin.Word, isASCII: Builtin.Int1) -> Swift.String":
             case "Swift.Int.init(_builtinIntegerLiteral: Builtin.IntLiteral) -> Swift.Int":
             case "Swift.Double.init(_builtinFloatLiteral: Builtin.FPIEEE80) -> Swift.Double":
@@ -144,6 +152,8 @@ public class BuiltinHandler {
     }
 
     private static final String[] summarizedBuiltins = new String[] {
+            "Swift.StaticString.init(_builtinStringLiteral: Builtin.RawPointer, utf8CodeUnitCount: Builtin.Word, isASCII: Builtin.Int1) -> Swift.StaticString",
+            //"Swift.Array.append(__owned A) -> ()",
             "(extension in Swift):Swift.BidirectionalCollection< where A.Element == Swift.String>.joined(separator: Swift.String) -> Swift.String",
             "default argument 0 of (extension in Swift):Swift.BidirectionalCollection< where A.Element == Swift.String>.joined(separator: Swift.String) -> Swift.String",
             "Swift.Dictionary.init() -> Swift.Dictionary<A, B>",

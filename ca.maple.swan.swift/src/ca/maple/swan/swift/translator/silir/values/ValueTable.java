@@ -24,9 +24,9 @@ import java.util.HashSet;
 
 public class ValueTable {
 
-    private HashMap<String, Value> values;
+    protected HashMap<String, Value> values;
 
-    private HashSet<String> usedValues;
+    protected HashSet<String> usedValues;
 
     public ValueTable() {
         this.values = new HashMap<>();

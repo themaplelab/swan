@@ -21,7 +21,7 @@ import ca.maple.swan.swift.translator.silir.values.ValueTable;
 import java.util.ArrayList;
 
 /*
- * Prunes the IR from unused instruction results.
+ * Prunes the IR from unused instruction results. Mainly done for making debugging easier.
  */
 
 public class IRPruner extends ISILIRVisitor {
@@ -59,7 +59,9 @@ public class IRPruner extends ISILIRVisitor {
 
     @Override
     public void visitAssignInstruction(AssignInstruction instruction) {
-        
+        if (instruction.from == instruction.to) {
+            kill = true;
+        }
     }
 
     @Override

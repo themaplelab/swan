@@ -18,6 +18,7 @@ import ca.maple.swan.swift.translator.raw.InstructionNode;
 import ca.maple.swan.swift.translator.silir.BasicBlock;
 import ca.maple.swan.swift.translator.silir.Function;
 import ca.maple.swan.swift.translator.silir.printing.IRPruner;
+import ca.maple.swan.swift.translator.silir.values.GlobalValueTable;
 import ca.maple.swan.swift.translator.silir.values.ValueTable;
 
 import java.util.*;
@@ -32,7 +33,7 @@ public class ProgramContext {
     public HashMap<BasicBlock, ArrayList<InstructionNode>> toTranslate;
     public ValueTable vt;
 
-    public ValueTable globalValues = new ValueTable();
+    public GlobalValueTable globalValues = new GlobalValueTable();
 
     public ProgramContext(HashMap<BasicBlock, ArrayList<InstructionNode>> toTranslate) {
         this.allFunctions = new LinkedHashMap<>(); // LinkedHashMap is important here! Ordering can affect global accessing.
