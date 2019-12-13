@@ -23,7 +23,7 @@ public class LiteralInstruction extends SILIRInstruction {
     public LiteralInstruction(Object literal, String resultName, String resultType, InstructionContext ic) {
         super(ic);
         this.literal = new LiteralValue(resultName, resultType, literal);
-        ic.bc.fc.vt.add(this.literal);
+        ic.valueTable().add(this.literal);
     }
 
     @Override
@@ -33,6 +33,6 @@ public class LiteralInstruction extends SILIRInstruction {
 
     @Override
     public String toString() {
-        return literal.simpleName() + " := #" + literal.getLiteral() + "\n";
+        return literal.simpleName() + " := #" + literal.getLiteral() + this.getComment();
     }
 }

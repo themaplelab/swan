@@ -24,11 +24,26 @@ public class FieldWriteInstruction extends SILIRInstruction {
 
     public final Value operand;
 
+    public final Value dynamicField;
+
+    public final boolean isDynamic;
+
     public FieldWriteInstruction(String writeTo, String field, String operand, InstructionContext ic) {
+        this(writeTo, field, operand, false, ic);
+    }
+
+    public FieldWriteInstruction(String writeTo, String field, String operand, boolean isDynamic, InstructionContext ic) {
         super(ic);
         this.writeTo = ic.valueTable().getValue(writeTo);
-        this.field = field;
         this.operand = ic.valueTable().getValue(operand);
+        this.isDynamic = isDynamic;
+        if (this.isDynamic) {
+            this.field = "N/A";
+            this.dynamicField = ic.valueTable().getValue(field);
+        } else {
+            this.field = field;
+            this.dynamicField = null;
+        }
     }
 
     @Override
@@ -38,6 +53,8 @@ public class FieldWriteInstruction extends SILIRInstruction {
 
     @Override
     public String toString() {
-        return writeTo.simpleName() + "." + field + " := " + operand.simpleName() + "\n";
+        return writeTo.simpleName() + "." +
+                (isDynamic ? this.dynamicField.simpleName() : field) +
+                " := " + operand.simpleName() + this.getComment();
     }
 }

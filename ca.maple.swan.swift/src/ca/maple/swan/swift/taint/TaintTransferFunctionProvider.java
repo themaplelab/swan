@@ -35,7 +35,6 @@ public class TaintTransferFunctionProvider implements ITransferFunctionProvider<
         this.sinks = sinks;
     }
 
-
     @Override
     public UnaryOperator<TaintVariable> getNodeTransferFunction(Statement t) {
         if (SSSDeterminer.checkSource(sources, t, cg)) {

@@ -81,6 +81,7 @@ public class SwiftToCAstTranslator extends NativeTranslatorToCAst {
 		ProgramContext pc = new RawToSILIRTranslator().translate(translatedModules.get(this.sourceFileName).getChild(1));
 		functionNames = pc.getFunctionNames();
 		if (DEBUG) {
+			pc.pruneIR();
 			pc.printFunctions();
 		}
 		return new SILIRToCAstTranslator().translate(new File((String)translatedModules.get(this.sourceFileName).getChild(0).getValue()), pc);
@@ -101,6 +102,8 @@ public class SwiftToCAstTranslator extends NativeTranslatorToCAst {
 			}
 		}
 
+		// TODO: Do away with grouping by file, since we need to preserve ordering for globals.
+
 		// MAIN TRANSLATION CALL.
 		// Arguments will be directly fed to performFrontend() call.
 		ArrayList<CAstNode> roots = translateToCAstNodes(args);
@@ -115,6 +118,8 @@ public class SwiftToCAstTranslator extends NativeTranslatorToCAst {
 
 		// All paths so we can later find the common one.
 		ArrayList<String> paths = new ArrayList<>();
+
+		Collections.reverse(roots); // TODO: Blow away, temporary, see above note about file grouping/globals.
 
 		for (CAstNode root : roots) {
 			if (!root.getChild(0).getValue().equals("NO_SOURCE")) {

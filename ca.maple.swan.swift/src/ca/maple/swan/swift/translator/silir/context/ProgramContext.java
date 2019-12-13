@@ -13,14 +13,15 @@
 
 package ca.maple.swan.swift.translator.silir.context;
 
+import ca.maple.swan.swift.translator.RawToSILIRTranslator;
 import ca.maple.swan.swift.translator.raw.InstructionNode;
 import ca.maple.swan.swift.translator.silir.BasicBlock;
 import ca.maple.swan.swift.translator.silir.Function;
+import ca.maple.swan.swift.translator.silir.printing.IRPruner;
+import ca.maple.swan.swift.translator.silir.values.GlobalValueTable;
 import ca.maple.swan.swift.translator.silir.values.ValueTable;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Set;
+import java.util.*;
 
 /*
  * Holds anything a program would need for translation.
@@ -30,12 +31,14 @@ public class ProgramContext {
 
     private HashMap<String, Function> allFunctions;
     public HashMap<BasicBlock, ArrayList<InstructionNode>> toTranslate;
+    public ValueTable vt;
 
-    public ValueTable globalValues = new ValueTable();
+    public GlobalValueTable globalValues = new GlobalValueTable();
 
     public ProgramContext(HashMap<BasicBlock, ArrayList<InstructionNode>> toTranslate) {
-        this.allFunctions = new HashMap<>();
+        this.allFunctions = new LinkedHashMap<>(); // LinkedHashMap is important here! Ordering can affect global accessing.
         this.toTranslate = toTranslate;
+        this.vt = new ValueTable();
     }
 
     public void addFunction(String s, Function f) {
@@ -59,6 +62,22 @@ public class ProgramContext {
             functions.add(allFunctions.get(s));
         }
         return functions;
+    }
+
+    public void removeFunction(Function f) {
+        this.allFunctions.remove(f.getName());
+    }
+
+    public void markCoroutine(String functionName) {
+        if (allFunctions.containsKey(functionName)) {
+            allFunctions.remove(functionName);
+        }
+    }
+
+    public void pruneIR() {
+        for (Function f : getFunctions()) {
+            new IRPruner(f, vt);
+        }
     }
 
     public void printFunctions() {

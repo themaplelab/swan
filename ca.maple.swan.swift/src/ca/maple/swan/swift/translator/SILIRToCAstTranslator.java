@@ -50,7 +50,7 @@ import java.util.Stack;
 public class SILIRToCAstTranslator {
 
     public static final CAstImpl Ast = new CAstImpl();
-    private static final boolean DEBUG = true;
+    private static final boolean DEBUG = false;
 
     public CAstEntity translate(File file, ProgramContext pc) {
 
@@ -72,6 +72,9 @@ public class SILIRToCAstTranslator {
         for (AbstractCodeEntity entity : allEntities) {
             Function f = pc.getFunction(entity.getName());
             Assertions.productionAssertion(f != null);
+            if (f.isCoroutine()) {
+                continue;
+            }
             WalkContext c = new WalkContext(pc, f, entity, allEntities);
             Visitor v = new Visitor(c);
             v.visit();
@@ -370,6 +373,9 @@ public class SILIRToCAstTranslator {
                 case "~=": // Pattern matching operator.
                     operator = CAstOperator.OP_EQ;
                     break;
+                case "%":
+                    operator = CAstOperator.OP_MOD;
+                    break;
                 case "binary_arb":
                     operator = SILIRCAstOperator.OP_BINARY_ARBITRARY;
                     break;
@@ -386,8 +392,6 @@ public class SILIRToCAstTranslator {
 
         @Override
         public void visitBinaryOperatorInstruction(BinaryOperatorInstruction instruction) {
-            CAstLeafNode operator;
-
             CAstNode n =
                     Ast.makeNode(
                             CAstNode.ASSIGN,
@@ -413,7 +417,9 @@ public class SILIRToCAstTranslator {
                                 Ast.makeNode(
                                         CAstNode.FUNCTION_EXPR,
                                         Ast.makeConstant(entity)));
-                c.currentEntity.addScopedEntity(null, entity);
+                if (!instruction.ic.bc.fc.function.getName().equals(instruction.value.getFunction())) {
+                    c.currentEntity.addScopedEntity(null, entity);
+                }
                 setNodePosition(n, instruction);
                 addNode(n);
             }
@@ -426,6 +432,7 @@ public class SILIRToCAstTranslator {
 
         @Override
         public void visitFieldReadInstruction(FieldReadInstruction instruction) {
+            CAstNode field = (instruction.isDynamic) ? makeVarNode(instruction.dynamicField) : Ast.makeConstant(instruction.field);
             CAstNode n =
                     Ast.makeNode(
                             CAstNode.ASSIGN,
@@ -433,13 +440,15 @@ public class SILIRToCAstTranslator {
                             Ast.makeNode(
                                     CAstNode.OBJECT_REF,
                                     makeVarNode(instruction.operand),
-                                    Ast.makeConstant(instruction.field)));
+                                    field));
             setNodePosition(n, instruction);
             addNode(n);
         }
 
         @Override
         public void visitFieldReadWriteInstruction(FieldReadWriteInstruction instruction) {
+            CAstNode operandField = (instruction.operandIsDynamic) ?
+                    makeVarNode(instruction.dynamicOperandField) : Ast.makeConstant(instruction.operandField);
             CAstNode n =
                     Ast.makeNode(
                             CAstNode.ASSIGN,
@@ -450,20 +459,21 @@ public class SILIRToCAstTranslator {
                             Ast.makeNode(
                                     CAstNode.OBJECT_REF,
                                     makeVarNode(instruction.operandValue),
-                                    Ast.makeConstant(instruction.operandField)));
+                                    operandField));
             setNodePosition(n, instruction);
             addNode(n);
         }
 
         @Override
         public void visitFieldWriteInstruction(FieldWriteInstruction instruction) {
+            CAstNode field = (instruction.isDynamic) ? makeVarNode(instruction.dynamicField) : Ast.makeConstant(instruction.field);
             CAstNode n =
                     Ast.makeNode(
                             CAstNode.ASSIGN,
                             Ast.makeNode(
                                     CAstNode.OBJECT_REF,
                                     makeVarNode(instruction.writeTo),
-                                    Ast.makeConstant(instruction.field)),
+                                    field),
                             makeVarNode(instruction.operand));
             setNodePosition(n, instruction);
             addNode(n);
@@ -509,6 +519,9 @@ public class SILIRToCAstTranslator {
 
         @Override
         public void visitFunctionRefInstruction(FunctionRefInstruction instruction) {
+            if (instruction.value.ignore) {
+                return;
+            }
             CAstEntity entity = (c.allEntities.get(instruction.value.getFunction().getName()));
             Assertions.productionAssertion(entity != null);
             CAstNode n =
@@ -518,7 +531,9 @@ public class SILIRToCAstTranslator {
                             Ast.makeNode(
                                     CAstNode.FUNCTION_EXPR,
                                     Ast.makeConstant(entity)));
-            c.currentEntity.addScopedEntity(null, entity);
+            if (!instruction.ic.bc.fc.function.getName().equals(instruction.value.getFunction().getName())) {
+                c.currentEntity.addScopedEntity(null, entity);
+            }
             setNodePosition(n, instruction);
             addNode(n);
         }
@@ -611,10 +626,46 @@ public class SILIRToCAstTranslator {
         public void visitThrowInstruction(ThrowInstruction instruction) {
             CAstNode n =
                     Ast.makeNode(
-                            CAstNode.THROW
+                            CAstNode.THROW,
+                            makeVarNode(instruction.operand)
                     );
             setNodePosition(n, instruction);
             addNode(n);
+        }
+
+        @Override
+        public void visitTryApplyInstruction(TryApplyInstruction instruction) {
+            ArrayList<CAstNode> args = new ArrayList<>();
+            args.add(makeVarNode(instruction.functionRefValue));
+            args.add(Ast.makeConstant("do"));
+            for (Value v : instruction.args) {
+                args.add(makeVarNode(v));
+            }
+            CAstNode callNode = Ast.makeNode(CAstNode.CALL, args);
+            c.currentEntity.setGotoTarget(callNode, callNode);
+            CAstNode n =
+                    Ast.makeNode(
+                            CAstNode.ASSIGN,
+                            makeVarNode(instruction.normalBB.getArgument(0)),
+                            callNode);
+            ArrayList<CAstNode> tryBody = new ArrayList<>();
+            tryBody.add(n);
+            tryBody.add(makeGotoNode(instruction.normalBB));
+            CAstNode tryCatchNode =
+                    Ast.makeNode(
+                            CAstNode.TRY,
+                            Ast.makeNode(
+                                    CAstNode.BLOCK_STMT,
+                                    tryBody),
+                            Ast.makeNode(
+                                    CAstNode.CATCH,
+                                    Ast.makeNode(CAstNode.VAR, Ast.makeConstant(instruction.errorBB.getArgument(0).name)),
+                                    makeGotoNode(instruction.errorBB)
+
+                            )
+                    );
+            setNodePosition(tryCatchNode, instruction);
+            addNode(tryCatchNode);
         }
 
         @Override
@@ -642,12 +693,6 @@ public class SILIRToCAstTranslator {
                     );
             setNodePosition(n, instruction);
             addNode(n);
-        }
-
-        @Override
-        public void visitYieldInstruction(YieldInstruction instruction) {
-            // TODO
-            System.err.println("ERROR: Unhandled instruction: " + new Exception().getStackTrace()[0].getMethodName());
         }
     }
 

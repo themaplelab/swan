@@ -47,7 +47,11 @@ public class TaintVariable extends AbstractVariable<TaintVariable> {
         if (other == null) {
             throw new IllegalArgumentException("other is null");
         }
-        this.sources.addAll(other.sources);
+        for (Statement s : other.sources) {
+            if (!this.sources.contains(s)) {
+                this.sources.add(s);
+            }
+        }
     }
 
 

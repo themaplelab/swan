@@ -31,11 +31,12 @@ public class FieldAliasInstruction extends SILIRInstruction {
         this.resultValue = new FieldAliasValue(resultName, resultType, this.operandValue, operandField);
         ic.valueTable().add(this.resultValue);
         this.field = operandField;
+        this.setImplicit();
     }
 
     @Override
     public String toString() {
-        return operandValue.simpleName() + "." + field + " alias-to " + resultValue.simpleName() + "\n";
+        return operandValue.simpleName() + "." + field + " alias-to " + resultValue.simpleName() + this.getComment();
     }
 
     @Override
@@ -43,8 +44,4 @@ public class FieldAliasInstruction extends SILIRInstruction {
         v.visitFieldAliasInstruction(this);
     }
 
-    @Override
-    public boolean isExplicit() {
-        return false;
-    }
 }

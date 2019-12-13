@@ -1,4 +1,4 @@
-//===--- FunctionRefValue.java -------------------------------------------===//
+//===--- ArrayValue.java -------------------------------------------------===//
 //
 // This source file is part of the SWAN open source project
 //
@@ -13,24 +13,28 @@
 
 package ca.maple.swan.swift.translator.silir.values;
 
-import ca.maple.swan.swift.translator.silir.Function;
+import ca.maple.swan.swift.translator.silir.printing.ValueNameSimplifier;
 
 /*
- * A regular function reference to a function we have the source code for.
+ * Represents that the value is an array, and therefore the "value" field should not
+ * be used for instructions like 'store'.
  */
 
-public class FunctionRefValue extends Value {
+public class ArrayValue extends Value {
 
-    private final Function function;
-
-    public boolean ignore = false;
-
-    public FunctionRefValue(String name, String type, Function function) {
+    public ArrayValue(String name, String type) {
         super(name, type);
-        this.function = function;
     }
 
-    public Function getFunction() {
-        return this.function;
+    public String getName() {
+        return this.name;
+    }
+
+    public String getType() {
+        return this.type;
+    }
+
+    public String simpleName() {
+        return ValueNameSimplifier.get(this.name);
     }
 }

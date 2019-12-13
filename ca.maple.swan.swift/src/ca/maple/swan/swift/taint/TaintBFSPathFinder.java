@@ -21,6 +21,8 @@ import java.util.Iterator;
 
 public class TaintBFSPathFinder extends com.ibm.wala.util.graph.traverse.BFSPathFinder<Statement> {
 
+    // TODO: Fix ordering for paths (e.g. FieldSensitivity1 from SwiftBench).
+
     private final TaintSolver S;
     private final Graph<Statement> G;
 

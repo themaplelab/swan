@@ -48,6 +48,6 @@ public class ReturnInstruction extends SILIRInstruction {
                 ((returnVal != null)
                     ? returnVal.simpleName()
                     : "")
-                + "\n";
+                + this.getComment();
     }
 }

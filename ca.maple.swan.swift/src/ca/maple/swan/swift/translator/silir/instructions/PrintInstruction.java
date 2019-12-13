@@ -32,6 +32,6 @@ public class PrintInstruction extends SILIRInstruction {
 
     @Override
     public String toString() {
-        return "print " + value.simpleName() + "\n";
+        return "print " + value.simpleName() + this.getComment();
     }
 }

@@ -61,8 +61,8 @@ public abstract class ISILIRVisitor {
 
     public abstract void visitThrowInstruction(ThrowInstruction instruction);
 
-    public abstract void visitUnaryOperatorInstruction(UnaryOperatorInstruction instruction);
+    public abstract void visitTryApplyInstruction(TryApplyInstruction instruction);
 
-    public abstract void visitYieldInstruction(YieldInstruction instruction);
+    public abstract void visitUnaryOperatorInstruction(UnaryOperatorInstruction instruction);
 
 }

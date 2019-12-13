@@ -58,7 +58,7 @@ public class SwitchAssignValueInstruction extends SILIRInstruction {
             s.append("\n            default: ");
             s.append(defaultValue.simpleName());
         }
-        s.append("\n");
+        s.append(this.getComment());
         return s.toString();
     }
 

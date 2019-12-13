@@ -19,9 +19,13 @@ public abstract class SILIRInstruction {
 
     public final InstructionContext ic;
 
+    private String comment = "";
+
     protected SILIRInstruction(InstructionContext ic) {
         this.ic = ic;
     }
+
+    private boolean isExplicit = true;
 
     @Override
     public abstract String toString();
@@ -29,6 +33,18 @@ public abstract class SILIRInstruction {
     public abstract void visit(ISILIRVisitor v);
 
     public boolean isExplicit() {
-        return true;
+        return this.isExplicit;
+    }
+
+    public void setImplicit() {
+        this.isExplicit = false;
+    }
+
+    public void setComment(String s) {
+        this.comment = s;
+    }
+
+    public String getComment() {
+        return this.comment.equals("") ? "\n" : "    // " + this.comment + "\n";
     }
 }

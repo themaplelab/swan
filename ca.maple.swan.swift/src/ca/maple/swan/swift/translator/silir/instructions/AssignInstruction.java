@@ -24,21 +24,27 @@ public class AssignInstruction extends SILIRInstruction {
 
     public AssignInstruction(String toName, String from, InstructionContext ic) {
         super(ic);
-        this.from = ic.valueTable().getValue(from);
+        this.from = ic.valueTable().getPossibleAlias(from);
         this.to = ic.valueTable().getValue(toName);
     }
 
     public AssignInstruction(String toName, String toType, String from, InstructionContext ic) {
         super(ic);
-        this.from = ic.valueTable().getPossibleAlias(from);
-        if (this.from instanceof FieldAliasValue) {
-            System.err.println("Just checking if this ever occurs in practice");
-            this.to = new FieldAliasValue(this.from.name, this.from.type,
-                    ((FieldAliasValue) this.from).value, ((FieldAliasValue) this.from).field);
+        Value possibleFrom = ic.valueTable().getPossibleAlias(from);
+        if (possibleFrom instanceof FieldAliasValue) {
+            // This is a unique case where an assignment is attempted from a value which is an alias.
+            // We assume the client wants an explicit copy so the best we can do is a copy.
+            this.to = new Value(toName, toType);
+            ic.valueTable().add(this.to);
+            // Adding an instruction in the constructor of an instruction is not ideal.
+            ic.bc.block.addInstruction(new FieldReadInstruction(
+                    toName, toType, ((FieldAliasValue) possibleFrom).value.name, ((FieldAliasValue) possibleFrom).field, ic));
+            this.from = this.to; // To basically NOP the assign.
         } else {
             this.to = new Value(toName, toType);
+            this.from = possibleFrom;
+            ic.valueTable().add(this.to);
         }
-        ic.valueTable().add(this.to);
     }
 
     @Override
@@ -48,6 +54,6 @@ public class AssignInstruction extends SILIRInstruction {
 
     @Override
     public String toString() {
-        return to.simpleName() + " := " + from.simpleName() + "\n";
+        return to.simpleName() + " := " + from.simpleName() + this.getComment();
     }
 }

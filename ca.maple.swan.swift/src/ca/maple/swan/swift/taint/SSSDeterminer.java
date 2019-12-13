@@ -40,17 +40,18 @@ public class SSSDeterminer {
             Set<CGNode> it = CG.getPossibleTargets(node, cs);
             for (CGNode target : it) {
                 CAstAbstractModuleLoader.DynamicMethodObject m = (CAstAbstractModuleLoader.DynamicMethodObject) target.getMethod();
-                if (sources.contains(m.getEntity().getName())) {
-                    return true;
-                }
+                return (sources.contains(m.getEntity().getName()) || SSS.isSource(m.getEntity().getName()));
             }
         }
         return false;
     }
 
     public static boolean checkSanitizer(HashSet<String> sanitizers, Statement s, CallGraph CG) {
-        // TODO:
-
+        if (s.getKind()== Statement.Kind.PARAM_CALLEE) {
+            CAstAbstractModuleLoader.DynamicMethodObject m = (CAstAbstractModuleLoader.DynamicMethodObject) s.getNode().getMethod();
+            String ref = m.getEntity().getName();
+            return (sanitizers.contains(ref) || SSS.isSanitizer(ref));
+        }
         return false;
     }
 
@@ -58,7 +59,7 @@ public class SSSDeterminer {
         if (s.getKind()== Statement.Kind.PARAM_CALLEE) {
             CAstAbstractModuleLoader.DynamicMethodObject m = (CAstAbstractModuleLoader.DynamicMethodObject) s.getNode().getMethod();
             String ref = m.getEntity().getName();
-            return sinks.contains(ref);
+            return (sinks.contains(ref) || SSS.isSink(ref));
         }
         return false;
     }

@@ -14,6 +14,7 @@
 package ca.maple.swan.swift.translator.silir.instructions;
 
 import ca.maple.swan.swift.translator.silir.context.InstructionContext;
+import ca.maple.swan.swift.translator.silir.values.ArrayValue;
 import ca.maple.swan.swift.translator.silir.values.Value;
 
 public class FieldReadInstruction extends SILIRInstruction {
@@ -24,12 +25,27 @@ public class FieldReadInstruction extends SILIRInstruction {
 
     public final Value operand;
 
+    public final Value dynamicField;
+
+    public final boolean isDynamic;
+
     public FieldReadInstruction(String resultName, String resultType, String operand, String field, InstructionContext ic) {
+        this(resultName, resultType, operand, field, false, ic);
+    }
+
+    public FieldReadInstruction(String resultName, String resultType, String operand, String field, boolean isDynamic, InstructionContext ic) {
         super(ic);
         this.result = new Value(resultName, resultType);
         ic.valueTable().add(this.result);
         this.operand = ic.valueTable().getValue(operand);
-        this.field = field;
+        this.isDynamic = isDynamic;
+        if (isDynamic) {
+            this.field = "N/A";
+            this.dynamicField = ic.valueTable().getValue(field);
+        } else {
+            this.field = field;
+            this.dynamicField = null;
+        }
     }
 
     @Override
@@ -39,6 +55,8 @@ public class FieldReadInstruction extends SILIRInstruction {
 
     @Override
     public String toString() {
-        return result.simpleName() + " := " + operand.simpleName() + "." + field + "\n";
+        return result.simpleName() + " := " + operand.simpleName() + "." +
+                (isDynamic ? this.dynamicField.simpleName() : field) +
+                this.getComment();
     }
 }

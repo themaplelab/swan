@@ -54,7 +54,7 @@ public class SwitchValueInstruction extends SILIRInstruction {
             s.append("\n            default: bb");
             s.append(defaultBlock.getNumber());
         }
-        s.append("\n");
+        s.append(this.getComment());
         return s.toString();
     }
 
