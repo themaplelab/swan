@@ -29,12 +29,12 @@ Supported Swift (incl. dependencies) and WALA releases on SWAN's `master` branch
 
 | OS | Swift Release Tag | WALA Release Tag | 
 | -----------|:-------:|:-----:|
-| macOS Catalina | NOT SUPPORTED* | |
+| macOS Catalina | NOT SUPPORTED, but build available for download* | |
 | macOS Mojave | [swift-DEVELOPMENT-SNAPSHOT-2019-09-15-a](https://github.com/apple/swift/releases/tag/swift-DEVELOPMENT-SNAPSHOT-2019-09-15-a) | [master](https://github.com/wala/WALA/tree/master/) |
 | Linux (Ubuntu 18.04) | [swift-DEVELOPMENT-SNAPSHOT-2019-09-15-a](https://github.com/apple/swift/releases/tag/swift-DEVELOPMENT-SNAPSHOT-2019-09-15-a)** | [master](https://github.com/wala/WALA/tree/master/) |
 
 
-\*Has not worked for us. Error is produced when linking SWAN against the Swift compiler. We are currently running Catalina, but using a build that was built using Mojave. **This build will be soon available for download.**
+\*Has not worked for us. Error is produced when linking SWAN against the Swift compiler. We are currently running Catalina, but using a build that was built using Mojave. This build is available [here](https://drive.google.com/file/d/1kPPeFqMzR7T5b-GBw_EdnoTj_IOyE7Ij/view?usp=sharing) for download. Just extract it to `swift-source/` and set up everything else normally.
 
 \**Master does build on Linux, but we have not updated SWAN's C++ code to fit some new Swift compiler API changes.
 
