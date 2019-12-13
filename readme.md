@@ -29,8 +29,14 @@ Supported Swift (incl. dependencies) and WALA releases on SWAN's `master` branch
 
 | OS | Swift Release Tag | WALA Release Tag | 
 | -----------|:-------:|:-----:|
-| macOS Mojave | [master](https://github.com/apple/swift/tree/master) | [master](https://github.com/wala/WALA/tree/master/) |
-| Linux (Ubuntu 18.04) | [master](https://github.com/apple/swift/tree/master) | [master](https://github.com/wala/WALA/tree/master/) |
+| macOS Catalina | NOT SUPPORTED* | |
+| macOS Mojave | [swift-DEVELOPMENT-SNAPSHOT-2019-09-15-a](https://github.com/apple/swift/releases/tag/swift-DEVELOPMENT-SNAPSHOT-2019-09-15-a) | [master](https://github.com/wala/WALA/tree/master/) |
+| Linux (Ubuntu 18.04) | [swift-DEVELOPMENT-SNAPSHOT-2019-09-15-a](https://github.com/apple/swift/releases/tag/swift-DEVELOPMENT-SNAPSHOT-2019-09-15-a)** | [master](https://github.com/wala/WALA/tree/master/) |
+
+
+\*Has not worked for us. Error is produced when linking SWAN against the Swift compiler. We are currently running Catalina, but using a build that was built using Mojave. **This build will be soon available for download.**
+
+\**Master does build on Linux, but we have not updated SWAN's C++ code to fit some new Swift compiler API changes.
 
 ### Download Projects
 
@@ -53,6 +59,7 @@ See compatibility table above for supported release tags according to your OS. P
 
 ```
 cd ./swift
+git checkout SUPPORTED_TAG
 ./utils/update-checkout --clone --tag SUPPORTED_TAG
 ./utils/build-script 
 cd ..
