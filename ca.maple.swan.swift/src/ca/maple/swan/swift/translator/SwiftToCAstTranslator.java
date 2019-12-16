@@ -82,6 +82,7 @@ public class SwiftToCAstTranslator extends NativeTranslatorToCAst {
 		functionNames = pc.getFunctionNames();
 		if (DEBUG) {
 			pc.pruneIR();
+			pc.generateLineNumbers();
 			pc.printFunctions();
 		}
 		return new SILIRToCAstTranslator().translate(new File((String)translatedModules.get(this.sourceFileName).getChild(0).getValue()), pc);

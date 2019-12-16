@@ -13,11 +13,11 @@
 
 package ca.maple.swan.swift.translator.silir.context;
 
-import ca.maple.swan.swift.translator.RawToSILIRTranslator;
 import ca.maple.swan.swift.translator.raw.InstructionNode;
 import ca.maple.swan.swift.translator.silir.BasicBlock;
 import ca.maple.swan.swift.translator.silir.Function;
-import ca.maple.swan.swift.translator.silir.printing.IRPruner;
+import ca.maple.swan.swift.translator.silir.post.IRPruner;
+import ca.maple.swan.swift.translator.silir.post.LineNumberGenerator;
 import ca.maple.swan.swift.translator.silir.values.GlobalValueTable;
 import ca.maple.swan.swift.translator.silir.values.ValueTable;
 
@@ -78,6 +78,10 @@ public class ProgramContext {
         for (Function f : getFunctions()) {
             new IRPruner(f, vt);
         }
+    }
+
+    public void generateLineNumbers() {
+        LineNumberGenerator.generateLineNumbers(this);
     }
 
     public void printFunctions() {

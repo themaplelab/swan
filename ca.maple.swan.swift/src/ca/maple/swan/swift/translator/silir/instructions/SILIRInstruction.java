@@ -19,6 +19,8 @@ public abstract class SILIRInstruction {
 
     public final InstructionContext ic;
 
+    private int lineNumber = -1;
+
     private String comment = "";
 
     protected SILIRInstruction(InstructionContext ic) {
@@ -42,6 +44,14 @@ public abstract class SILIRInstruction {
 
     public void setComment(String s) {
         this.comment = s;
+    }
+
+    public void setLineNumber(int n) {
+        this.lineNumber = n;
+    }
+
+    public int getLineNumber() {
+        return this.lineNumber;
     }
 
     public String getComment() {

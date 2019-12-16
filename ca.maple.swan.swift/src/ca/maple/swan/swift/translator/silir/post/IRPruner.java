@@ -11,7 +11,7 @@
 //
 //===---------------------------------------------------------------------===//
 
-package ca.maple.swan.swift.translator.silir.printing;
+package ca.maple.swan.swift.translator.silir.post;
 
 import ca.maple.swan.swift.translator.silir.BasicBlock;
 import ca.maple.swan.swift.translator.silir.Function;

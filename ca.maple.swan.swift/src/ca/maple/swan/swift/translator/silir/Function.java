@@ -41,6 +41,8 @@ public class Function {
 
     private boolean isSILIRGenerated = false;
 
+    private int lineNumber = -1;
+
     public Function(String name, String returnType, Position position) {
         this(name, returnType, position, null);
     }
@@ -73,6 +75,14 @@ public class Function {
             pc.toTranslate.put(copyBB, pc.toTranslate.get(b));
             blocks.add(copyBB);
         }
+    }
+
+    public void setLineNumber(int n) {
+        this.lineNumber = n;
+    }
+
+    public int getLineNumber() {
+        return this.lineNumber;
     }
 
     public void addBlock(BasicBlock bb) {
