@@ -164,7 +164,8 @@ public class BuiltinHandler {
             case "Swift.Double.init(_builtinIntegerLiteral: Builtin.IntLiteral) -> Swift.Double":
             case "Swift.UInt.init(_builtinIntegerLiteral: Builtin.IntLiteral) -> Swift.UInt":
             case "Swift.Double.init(Swift.Int) -> Swift.Double": {
-                return new ImplicitCopyInstruction(resultName, params.get(0), C);
+                C.valueTable().copy(resultName, params.get(0));
+                return null;
             }
             case "Swift.Bool.init(_builtinBooleanLiteral: Builtin.Int1) -> Swift.Bool": {
                 C.bc.block.addInstruction(new NewInstruction(resultName, resultType, C));

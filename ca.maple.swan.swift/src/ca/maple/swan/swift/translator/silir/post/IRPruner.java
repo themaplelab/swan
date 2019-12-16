@@ -37,7 +37,7 @@ public class IRPruner extends ISILIRVisitor {
             for (SILIRInstruction instruction : b.getInstructions()) {
                 kill = false;
                 instruction.visit(this);
-                if (kill || !instruction.isExplicit()) {
+                if (kill) {
                     killList.add(instruction);
                 }
             }
@@ -50,11 +50,6 @@ public class IRPruner extends ISILIRVisitor {
     @Override
     public void visitApplyInstruction(ApplyInstruction instruction) {
         
-    }
-
-    @Override
-    public void visitArrayLengthInstruction(ArrayLengthInstruction instruction) {
-
     }
 
     @Override
@@ -102,11 +97,6 @@ public class IRPruner extends ISILIRVisitor {
     }
 
     @Override
-    public void visitFieldAliasInstruction(FieldAliasInstruction instruction) {
-        
-    }
-
-    @Override
     public void visitFieldReadInstruction(FieldReadInstruction instruction) {
         
     }
@@ -127,20 +117,10 @@ public class IRPruner extends ISILIRVisitor {
     }
 
     @Override
-    public void visitImplicitCopyInstruction(ImplicitCopyInstruction instruction) {
-
-    }
-
-    @Override
     public void visitLiteralInstruction(LiteralInstruction instruction) {
         if (!vt.isUsed(instruction.literal.name)) {
             kill = true;
         }
-    }
-
-    @Override
-    public void visitLoadArrayIndexInstruction(ArrayIndexAliasInstruction instruction) {
-
     }
 
     @Override

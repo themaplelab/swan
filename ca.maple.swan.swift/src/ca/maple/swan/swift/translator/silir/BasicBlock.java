@@ -26,9 +26,6 @@ import java.util.Iterator;
 
 public class BasicBlock {
 
-    @SuppressWarnings("FieldCanBeLocal")
-    private final boolean PRINT_IMPLICIT_INSTRUCTIONS = false;
-
     private int number;
 
     private ArrayList<SILIRInstruction> instructions;
@@ -110,17 +107,15 @@ public class BasicBlock {
 
         for (SILIRInstruction instruction : instructions) {
             try {
-                if (instruction.isExplicit() || PRINT_IMPLICIT_INSTRUCTIONS) {
-                    //noinspection ResultOfMethodCallIgnored
-                    instruction.toString(); // To trigger error
-                    s.append(instruction.getLineNumber());
-                    // Lazy column building
-                    int count = Integer.toString(instruction.getLineNumber()).length();
-                    for (int i = 0; i < 8 - count; ++i) {
-                        s.append(" ");
-                    }
-                    s.append(instruction.toString());
+                //noinspection ResultOfMethodCallIgnored
+                instruction.toString(); // To trigger error
+                s.append(instruction.getLineNumber());
+                // Lazy column building
+                int count = Integer.toString(instruction.getLineNumber()).length();
+                for (int i = 0; i < 8 - count; ++i) {
+                    s.append(" ");
                 }
+                s.append(instruction.toString());
             } catch (Exception e ){
                 System.err.println("(Block #" + getNumber() + ") Could not print instruction :" + instruction.getClass().getName());
             }

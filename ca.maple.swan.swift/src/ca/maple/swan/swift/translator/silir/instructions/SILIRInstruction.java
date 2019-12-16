@@ -27,20 +27,10 @@ public abstract class SILIRInstruction {
         this.ic = ic;
     }
 
-    private boolean isExplicit = true;
-
     @Override
     public abstract String toString();
 
     public abstract void visit(ISILIRVisitor v);
-
-    public boolean isExplicit() {
-        return this.isExplicit;
-    }
-
-    public void setImplicit() {
-        this.isExplicit = false;
-    }
 
     public void setComment(String s) {
         this.comment = s;

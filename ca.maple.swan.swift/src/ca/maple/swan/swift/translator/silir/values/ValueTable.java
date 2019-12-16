@@ -59,6 +59,19 @@ public class ValueTable {
         this.values.put(v2.name, v2);
     }
 
+    public void arrayAlias(String resultName, String resultType, String operandName, int index) {
+        Value operandValue = this.getValue(operandName);
+        Value resultValue = new ArrayIndexAliasValue(resultName, resultType, operandValue, index);
+        this.add(resultValue);
+    }
+
+    public void fieldAlias(String resultName, String resultType, String operandName, String operandField) {
+        Value operandValue = this.getValue(operandName);
+        Value resultValue = new FieldAliasValue(resultName, resultType, operandValue, operandField);
+        this.add(resultValue);
+
+    }
+
     public void setUnused(String s) {
         this.usedValues.remove(s);
     }

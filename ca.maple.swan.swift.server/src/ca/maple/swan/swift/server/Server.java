@@ -33,8 +33,7 @@ import static java.lang.System.exit;
 
 public class Server {
 
-    // TODO: Better exception handling across SWAN. Perhaps have some kind of
-    //  global optional exception listener.
+    // TODO: Better exception handling across SWAN to report back to the frontend (extension).
 
     static SDG<InstanceKey> sdg;
 
@@ -121,7 +120,6 @@ public class Server {
     }
 
     private static JSONObject pathsToJSON(List<List<CAstSourcePositionMap.Position>> paths) throws JSONException {
-        // TEMPORARY DUMMY RESULT
         JSONObject returnObject = new JSONObject();
         JSONArray jsonPaths = new JSONArray();
         int counter = 0;

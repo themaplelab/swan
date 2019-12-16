@@ -283,7 +283,8 @@ public class RawToSILIRTranslator extends SILInstructionVisitor<SILIRInstruction
         RawValue result = getSingleResult(N);
         int Field = getIntValue(N, 2);
         // TODO: Do something with this field?
-        return new ImplicitCopyInstruction(result.Name, operand.Name, C);
+        C.valueTable().copy(result.Name, operand.Name);
+        return null;
     }
 
     @Override
@@ -369,7 +370,7 @@ public class RawToSILIRTranslator extends SILInstructionVisitor<SILIRInstruction
         if (v instanceof FieldAliasValue) {
             return new FieldReadInstruction(result.Name, result.Type, ((FieldAliasValue) v).value.name, ((FieldAliasValue) v).field, C);
         } else if (v instanceof ArrayIndexAliasValue) {
-            return new ArrayReadInstruction(result.Name, result.Type, ((ArrayIndexAliasValue)v).value.name, ((ArrayIndexAliasValue)v).index, C);
+            return new ArrayReadInstruction(result.Name, result.Type, ((ArrayIndexAliasValue) v).value.name, ((ArrayIndexAliasValue) v).index, C);
         } else {
             return new FieldReadInstruction(result.Name, result.Type, operand, field, C);
         }
@@ -408,7 +409,8 @@ public class RawToSILIRTranslator extends SILInstructionVisitor<SILIRInstruction
     protected SILIRInstruction visitBeginBorrow(CAstNode N, InstructionContext C) {
         RawValue operand = getSingleOperand(N);
         RawValue result = getSingleResult(N);
-        return new ImplicitCopyInstruction(result.Name, operand.Name, C);
+        C.valueTable().copy(result.Name, operand.Name);
+        return null;
     }
 
     @Override
@@ -447,7 +449,8 @@ public class RawToSILIRTranslator extends SILInstructionVisitor<SILIRInstruction
     protected SILIRInstruction visitMarkUninitialized(CAstNode N, InstructionContext C) {
         RawValue operand = getSingleOperand(N);
         RawValue result = getSingleResult(N);
-        return new ImplicitCopyInstruction(result.Name, operand.Name, C);
+        C.valueTable().copy(result.Name, operand.Name);
+        return null;
     }
 
     @Override
@@ -459,7 +462,8 @@ public class RawToSILIRTranslator extends SILInstructionVisitor<SILIRInstruction
         // Why does the SIL.rst show a result, but sometimes there isn't one. Is it optional?
         try {
             RawValue result = getSingleResult(N); // May be no result and cause an exception.
-            return new ImplicitCopyInstruction(result.Name, operand.Name, C);
+            C.valueTable().copy(result.Name, operand.Name);
+            return null;
         } catch (Exception e) {
             return null;
         }
@@ -505,8 +509,9 @@ public class RawToSILIRTranslator extends SILInstructionVisitor<SILIRInstruction
         Value literal = C.valueTable().getValue(idx.Name);
         C.valueTable().setUnused(idx.Name);
         Assertions.productionAssertion(literal instanceof LiteralValue);
-        return new ArrayIndexAliasInstruction(result.Name, result.Type, operand.Name,
-                Integer.parseInt(((LiteralValue)literal).literal.toString()), C);
+        C.valueTable().arrayAlias(result.Name, result.Type, operand.Name,
+                Integer.parseInt(((LiteralValue) literal).literal.toString()));
+        return null;
     }
 
     @Override
@@ -543,7 +548,8 @@ public class RawToSILIRTranslator extends SILInstructionVisitor<SILIRInstruction
     protected SILIRInstruction visitBeginAccess(CAstNode N, InstructionContext C) {
         RawValue operand = getSingleOperand(N);
         RawValue result = getSingleResult(N);
-        return new ImplicitCopyInstruction(result.Name, operand.Name, C);
+        C.valueTable().copy(result.Name, operand.Name);
+        return null;
     }
 
     @Override
@@ -685,7 +691,8 @@ public class RawToSILIRTranslator extends SILInstructionVisitor<SILIRInstruction
     protected SILIRInstruction visitMarkDependence(CAstNode N, InstructionContext C) {
         RawValue operand = getSingleOperand(N);
         RawValue result = getSingleResult(N);
-        return new ImplicitCopyInstruction(result.Name, operand.Name, C);
+        C.valueTable().copy(result.Name, operand.Name);
+        return null;
     }
 
     @Override
@@ -963,7 +970,7 @@ public class RawToSILIRTranslator extends SILInstructionVisitor<SILIRInstruction
     protected SILIRInstruction visitBeginApply(CAstNode N, InstructionContext C) {
         ArrayList<RawValue> yieldedValues = new ArrayList<>();
         for (CAstNode n : N.getChild(0).getChildren()) {
-            yieldedValues.add(new RawValue((String)n.getChild(0).getValue(), (String)n.getChild(1).getValue()));
+            yieldedValues.add(new RawValue((String) n.getChild(0).getValue(), (String) n.getChild(1).getValue()));
         }
         String FuncRefValue = RawUtil.getStringValue(N, 2);
         String Token = RawUtil.getStringValue(N, 1);
@@ -1076,7 +1083,7 @@ public class RawToSILIRTranslator extends SILInstructionVisitor<SILIRInstruction
         ArrayList<Argument> funcArgs = new ArrayList<>();
         ArrayList<String> args = new ArrayList<>();
         for (CAstNode argNode : N.getChild(3).getChildren()) {
-            String arg = (String)argNode.getValue();
+            String arg = (String) argNode.getValue();
             Argument a = new Argument(arg, C.valueTable().getValue(arg).type);
             funcArgs.add(a);
             args.add(arg);
@@ -1157,7 +1164,8 @@ public class RawToSILIRTranslator extends SILInstructionVisitor<SILIRInstruction
     protected SILIRInstruction visitCopyValue(CAstNode N, InstructionContext C) {
         RawValue operand = getSingleOperand(N);
         RawValue result = getSingleResult(N);
-        return new ImplicitCopyInstruction(result.Name, operand.Name, C);
+        C.valueTable().copy(result.Name, operand.Name);
+        return null;
     }
 
     @Override
@@ -1242,7 +1250,8 @@ public class RawToSILIRTranslator extends SILInstructionVisitor<SILIRInstruction
         RawValue operand = getSingleOperand(N);
         RawValue result = getSingleResult(N);
         String Index = getStringValue(N, 2);
-        return new FieldAliasInstruction(result.Name, result.Type, operand.Name, Index, C);
+        C.valueTable().fieldAlias(result.Name, result.Type, operand.Name, Index);
+        return null;
     }
 
     @Override
@@ -1259,7 +1268,7 @@ public class RawToSILIRTranslator extends SILInstructionVisitor<SILIRInstruction
         if (C.valueTable().getValue(operand.Name) instanceof ArrayTupleValue) {
             C.valueTable().replace(C.valueTable().getValue(result1.Name), new ArrayValue(result1.Name, result1.Type));
             C.valueTable().replace(C.valueTable().getValue(result2.Name), new ArrayValue(result2.Name, result2.Type));
-            C.bc.block.addInstruction(new ImplicitCopyInstruction(result1.Name, result2.Name, C));
+            C.valueTable().copy(result1.Name, result2.Name);
         }
         return null;
     }
@@ -1300,7 +1309,8 @@ public class RawToSILIRTranslator extends SILInstructionVisitor<SILIRInstruction
         String StructName = getStringValue(N, 2);
         String FieldName = getStringValue(N, 3);
         RawValue result = getSingleResult(N);
-        return new FieldAliasInstruction(result.Name, result.Type, StructName, FieldName, C);
+        C.valueTable().fieldAlias(result.Name, result.Type, StructName, FieldName);
+        return null;
     }
 
     @Override
@@ -1329,7 +1339,8 @@ public class RawToSILIRTranslator extends SILInstructionVisitor<SILIRInstruction
         RawValue operand = getSingleOperand(N);
         RawValue result = getSingleResult(N);
         String FieldName = RawUtil.getStringValue(N, 2);
-        return new FieldAliasInstruction(result.Name, result.Type, operand.Name, FieldName, C);
+        C.valueTable().fieldAlias(result.Name, result.Type, operand.Name, FieldName);
+        return null;
     }
 
     @Override
@@ -1379,7 +1390,8 @@ public class RawToSILIRTranslator extends SILInstructionVisitor<SILIRInstruction
     protected SILIRInstruction visitInitEnumDataAddr(CAstNode N, InstructionContext C) {
         RawValue operand = getSingleOperand(N);
         RawValue result = getSingleResult(N);
-        return new FieldAliasInstruction(result.Name, result.Type, operand.Name, "data", C);
+        C.valueTable().fieldAlias(result.Name, result.Type, operand.Name, "data");
+        return null;
     }
 
     @Override
@@ -1398,7 +1410,8 @@ public class RawToSILIRTranslator extends SILInstructionVisitor<SILIRInstruction
     protected SILIRInstruction visitUncheckedTakeEnumDataAddr(CAstNode N, InstructionContext C) {
         RawValue operand = getSingleOperand(N);
         RawValue result = getSingleResult(N);
-        return new FieldAliasInstruction(result.Name, result.Type, operand.Name, "data", C);
+        C.valueTable().fieldAlias(result.Name, result.Type, operand.Name, "data");
+        return null;
     }
 
     @Override
@@ -1454,7 +1467,8 @@ public class RawToSILIRTranslator extends SILInstructionVisitor<SILIRInstruction
     protected SILIRInstruction visitInitExistentialAddr(CAstNode N, InstructionContext C) {
         RawValue operand = getSingleOperand(N);
         RawValue result = getSingleResult(N);
-        return new ImplicitCopyInstruction(result.Name, operand.Name, C);
+        C.valueTable().copy(result.Name, operand.Name);
+        return null;
     }
 
     @Override
@@ -1491,7 +1505,8 @@ public class RawToSILIRTranslator extends SILInstructionVisitor<SILIRInstruction
     protected SILIRInstruction visitOpenExistentialAddr(CAstNode N, InstructionContext C) {
         RawValue operand = getSingleOperand(N);
         RawValue result = getSingleResult(N);
-        return new ImplicitCopyInstruction(result.Name, operand.Name, C);
+        C.valueTable().copy(result.Name, operand.Name);
+        return null;
     }
 
     @Override
@@ -1510,7 +1525,8 @@ public class RawToSILIRTranslator extends SILInstructionVisitor<SILIRInstruction
     protected SILIRInstruction visitInitExistentialRef(CAstNode N, InstructionContext C) {
         RawValue operand = getSingleOperand(N);
         RawValue result = getSingleResult(N);
-        return new ImplicitCopyInstruction(result.Name, operand.Name, C);
+        C.valueTable().copy(result.Name, operand.Name);
+        return null;
     }
 
     @Override
@@ -1520,7 +1536,8 @@ public class RawToSILIRTranslator extends SILInstructionVisitor<SILIRInstruction
     protected SILIRInstruction visitOpenExistentialRef(CAstNode N, InstructionContext C) {
         RawValue operand = getSingleOperand(N);
         RawValue result = getSingleResult(N);
-        return new ImplicitCopyInstruction(result.Name, operand.Name, C);
+        C.valueTable().copy(result.Name, operand.Name);
+        return null;
     }
 
     @Override
@@ -1530,7 +1547,8 @@ public class RawToSILIRTranslator extends SILInstructionVisitor<SILIRInstruction
     protected SILIRInstruction visitInitExistentialMetatype(CAstNode N, InstructionContext C) {
         RawValue operand = getSingleOperand(N);
         RawValue result = getSingleResult(N);
-        return new ImplicitCopyInstruction(result.Name, operand.Name, C);
+        C.valueTable().copy(result.Name, operand.Name);
+        return null;
     }
 
     @Override
@@ -1540,7 +1558,8 @@ public class RawToSILIRTranslator extends SILInstructionVisitor<SILIRInstruction
     protected SILIRInstruction visitOpenExistentialMetatype(CAstNode N, InstructionContext C) {
         RawValue operand = getSingleOperand(N);
         RawValue result = getSingleResult(N);
-        return new ImplicitCopyInstruction(result.Name, operand.Name, C);
+        C.valueTable().copy(result.Name, operand.Name);
+        return null;
     }
 
     @Override
@@ -1566,7 +1585,8 @@ public class RawToSILIRTranslator extends SILInstructionVisitor<SILIRInstruction
     protected SILIRInstruction visitOpenExistentialBox(CAstNode N, InstructionContext C) {
         RawValue operand = getSingleOperand(N);
         RawValue result = getSingleResult(N);
-        return new ImplicitCopyInstruction(result.Name, operand.Name, C);
+        C.valueTable().copy(result.Name, operand.Name);
+        return null;
     }
 
     @Override
@@ -1624,7 +1644,8 @@ public class RawToSILIRTranslator extends SILInstructionVisitor<SILIRInstruction
     protected SILIRInstruction visitUpcast(CAstNode N, InstructionContext C) {
         RawValue operand = getSingleOperand(N);
         RawValue result = getSingleResult(N);
-        return new ImplicitCopyInstruction(result.Name, operand.Name, C);
+        C.valueTable().copy(result.Name, operand.Name);
+        return null;
     }
 
     @Override
@@ -1634,7 +1655,8 @@ public class RawToSILIRTranslator extends SILInstructionVisitor<SILIRInstruction
     protected SILIRInstruction visitAddressToPointer(CAstNode N, InstructionContext C) {
         RawValue operand = getSingleOperand(N);
         RawValue result = getSingleResult(N);
-        return new ImplicitCopyInstruction(result.Name, operand.Name, C);
+        C.valueTable().copy(result.Name, operand.Name);
+        return null;
     }
 
     @Override
@@ -1644,7 +1666,8 @@ public class RawToSILIRTranslator extends SILInstructionVisitor<SILIRInstruction
     protected SILIRInstruction visitPointerToAddress(CAstNode N, InstructionContext C) {
         RawValue operand = getSingleOperand(N);
         RawValue result = getSingleResult(N);
-        return new ImplicitCopyInstruction(result.Name, operand.Name, C);
+        C.valueTable().copy(result.Name, operand.Name);
+        return null;
     }
 
     @Override
@@ -1654,7 +1677,8 @@ public class RawToSILIRTranslator extends SILInstructionVisitor<SILIRInstruction
     protected SILIRInstruction visitUncheckedRefCast(CAstNode N, InstructionContext C) {
         RawValue operand = getSingleOperand(N);
         RawValue result = getSingleResult(N);
-        return new ImplicitCopyInstruction(result.Name, operand.Name, C);
+        C.valueTable().copy(result.Name, operand.Name);
+        return null;
     }
 
     @Override
@@ -1673,7 +1697,8 @@ public class RawToSILIRTranslator extends SILInstructionVisitor<SILIRInstruction
     protected SILIRInstruction visitUncheckedAddrCast(CAstNode N, InstructionContext C) {
         RawValue operand = getSingleOperand(N);
         RawValue result = getSingleResult(N);
-        return new ImplicitCopyInstruction(result.Name, operand.Name, C);
+        C.valueTable().copy(result.Name, operand.Name);
+        return null;
     }
 
     @Override
@@ -1683,7 +1708,8 @@ public class RawToSILIRTranslator extends SILInstructionVisitor<SILIRInstruction
     protected SILIRInstruction visitUncheckedTrivialBitCast(CAstNode N, InstructionContext C) {
         RawValue operand = getSingleOperand(N);
         RawValue result = getSingleResult(N);
-        return new ImplicitCopyInstruction(result.Name, operand.Name, C);
+        C.valueTable().copy(result.Name, operand.Name);
+        return null;
     }
 
     @Override
@@ -1702,7 +1728,8 @@ public class RawToSILIRTranslator extends SILInstructionVisitor<SILIRInstruction
     protected SILIRInstruction visitUncheckedOwnershipConversion(CAstNode N, InstructionContext C) {
         RawValue operand = getSingleOperand(N);
         RawValue result = getSingleResult(N);
-        return new ImplicitCopyInstruction(result.Name, operand.Name, C);
+        C.valueTable().copy(result.Name, operand.Name);
+        return null;
     }
 
     @Override
@@ -1730,7 +1757,8 @@ public class RawToSILIRTranslator extends SILInstructionVisitor<SILIRInstruction
     protected SILIRInstruction visitRefToUnowned(CAstNode N, InstructionContext C) {
         RawValue operand = getSingleOperand(N);
         RawValue result = getSingleResult(N);
-        return new ImplicitCopyInstruction(result.Name, operand.Name, C);
+        C.valueTable().copy(result.Name, operand.Name);
+        return null;
     }
 
     @Override
@@ -1749,7 +1777,8 @@ public class RawToSILIRTranslator extends SILInstructionVisitor<SILIRInstruction
     protected SILIRInstruction visitRefToUnmanaged(CAstNode N, InstructionContext C) {
         RawValue operand = getSingleOperand(N);
         RawValue result = getSingleResult(N);
-        return new ImplicitCopyInstruction(result.Name, operand.Name, C);
+        C.valueTable().copy(result.Name, operand.Name);
+        return null;
     }
 
     @Override
@@ -1759,7 +1788,8 @@ public class RawToSILIRTranslator extends SILInstructionVisitor<SILIRInstruction
     protected SILIRInstruction visitUnmanagedToRef(CAstNode N, InstructionContext C) {
         RawValue operand = getSingleOperand(N);
         RawValue result = getSingleResult(N);
-        return new ImplicitCopyInstruction(result.Name, operand.Name, C);
+        C.valueTable().copy(result.Name, operand.Name);
+        return null;
     }
 
     @Override
@@ -1769,7 +1799,8 @@ public class RawToSILIRTranslator extends SILInstructionVisitor<SILIRInstruction
     protected SILIRInstruction visitConvertFunction(CAstNode N, InstructionContext C) {
         RawValue operand = getSingleOperand(N);
         RawValue result = getSingleResult(N);
-        return new ImplicitCopyInstruction(result.Name, operand.Name, C);
+        C.valueTable().copy(result.Name, operand.Name);
+        return null;
     }
 
     @Override
@@ -1779,7 +1810,8 @@ public class RawToSILIRTranslator extends SILInstructionVisitor<SILIRInstruction
     protected SILIRInstruction visitConvertEscapeToNoEscape(CAstNode N, InstructionContext C) {
         RawValue operand = getSingleOperand(N);
         RawValue result = getSingleResult(N);
-        return new ImplicitCopyInstruction(result.Name, operand.Name, C);
+        C.valueTable().copy(result.Name, operand.Name);
+        return null;
     }
 
     @Override
@@ -1852,7 +1884,8 @@ public class RawToSILIRTranslator extends SILInstructionVisitor<SILIRInstruction
     protected SILIRInstruction visitThinToThickFunction(CAstNode N, InstructionContext C) {
         RawValue operand = getSingleOperand(N);
         RawValue result = getSingleResult(N);
-        return new ImplicitCopyInstruction(result.Name, operand.Name, C);
+        C.valueTable().copy(result.Name, operand.Name);
+        return null;
     }
 
     @Override
@@ -1862,7 +1895,8 @@ public class RawToSILIRTranslator extends SILInstructionVisitor<SILIRInstruction
     protected SILIRInstruction visitThickToObjCMetatype(CAstNode N, InstructionContext C) {
         RawValue operand = getSingleOperand(N);
         RawValue result = getSingleResult(N);
-        return new ImplicitCopyInstruction(result.Name, operand.Name, C);
+        C.valueTable().copy(result.Name, operand.Name);
+        return null;
     }
 
     @Override
@@ -1872,7 +1906,8 @@ public class RawToSILIRTranslator extends SILInstructionVisitor<SILIRInstruction
     protected SILIRInstruction visitObjCToThickMetatype(CAstNode N, InstructionContext C) {
         RawValue operand = getSingleOperand(N);
         RawValue result = getSingleResult(N);
-        return new ImplicitCopyInstruction(result.Name, operand.Name, C);
+        C.valueTable().copy(result.Name, operand.Name);
+        return null;
     }
 
     @Override
@@ -1882,7 +1917,8 @@ public class RawToSILIRTranslator extends SILInstructionVisitor<SILIRInstruction
     protected SILIRInstruction visitObjCMetatypeToObject(CAstNode N, InstructionContext C) {
         RawValue operand = getSingleOperand(N);
         RawValue result = getSingleResult(N);
-        return new ImplicitCopyInstruction(result.Name, operand.Name, C);
+        C.valueTable().copy(result.Name, operand.Name);
+        return null;
     }
 
     @Override
@@ -1892,7 +1928,8 @@ public class RawToSILIRTranslator extends SILInstructionVisitor<SILIRInstruction
     protected SILIRInstruction visitObjCExistentialMetatypeToObject(CAstNode N, InstructionContext C) {
         RawValue operand = getSingleOperand(N);
         RawValue result = getSingleResult(N);
-        return new ImplicitCopyInstruction(result.Name, operand.Name, C);
+        C.valueTable().copy(result.Name, operand.Name);
+        return null;
     }
 
     @Override
@@ -1902,7 +1939,8 @@ public class RawToSILIRTranslator extends SILInstructionVisitor<SILIRInstruction
     protected SILIRInstruction visitUnconditionalCheckedCast(CAstNode N, InstructionContext C) {
         RawValue operand = getSingleOperand(N);
         RawValue result = getSingleResult(N);
-        return new ImplicitCopyInstruction(result.Name, operand.Name, C);
+        C.valueTable().copy(result.Name, operand.Name);
+        return null;
     }
 
     @Override
@@ -1912,7 +1950,8 @@ public class RawToSILIRTranslator extends SILInstructionVisitor<SILIRInstruction
     protected SILIRInstruction visitUnconditionalCheckedCastAddr(CAstNode N, InstructionContext C) {
         RawValue operand = getSingleOperand(N);
         RawValue result = getSingleResult(N);
-        return new ImplicitCopyInstruction(result.Name, operand.Name, C);
+        C.valueTable().copy(result.Name, operand.Name);
+        return null;
     }
 
     @Override
@@ -1989,7 +2028,7 @@ public class RawToSILIRTranslator extends SILInstructionVisitor<SILIRInstruction
         int i = 0;
         for (CAstNode value : N.getChild(2).getChildren()) {
             Value receiver = C.bc.fc.cc.yieldedValues.get(i);
-            C.bc.block.addInstruction(new AssignInstruction(receiver.name, receiver.type, (String)value.getValue(), C));
+            C.bc.block.addInstruction(new AssignInstruction(receiver.name, receiver.type, (String) value.getValue(), C));
             ++i;
         }
         GotoInstruction inst = new GotoInstruction(C.bc.fc.cc.returnBlock, C);
@@ -2021,7 +2060,7 @@ public class RawToSILIRTranslator extends SILInstructionVisitor<SILIRInstruction
         int DestBlockNo = Integer.parseInt(DestBranch);
         ArrayList<String> args = new ArrayList<>();
         for (CAstNode arg : N.getChild(1).getChildren()) {
-            String ArgName = (String)arg.getValue();
+            String ArgName = (String) arg.getValue();
             args.add(ArgName);
         }
         return doBranch(DestBlockNo, args, C);
@@ -2055,13 +2094,13 @@ public class RawToSILIRTranslator extends SILInstructionVisitor<SILIRInstruction
         // Set arguments
         ArrayList<String> trueArgs = new ArrayList<>();
         for (CAstNode arg : N.getChild(1).getChildren()) {
-            String ArgName = (String)arg.getValue();
+            String ArgName = (String) arg.getValue();
             trueArgs.add(ArgName);
         }
         BasicBlock trueBB = assignBlockArgs(Integer.parseInt(TrueDestName), trueArgs, C);
         ArrayList<String> falseArgs = new ArrayList<>();
         for (CAstNode arg : N.getChild(2).getChildren()) {
-            String ArgName = (String)arg.getValue();
+            String ArgName = (String) arg.getValue();
             falseArgs.add(ArgName);
         }
         BasicBlock falseBB = assignBlockArgs(Integer.parseInt(FalseDestName), falseArgs, C);
@@ -2089,7 +2128,7 @@ public class RawToSILIRTranslator extends SILInstructionVisitor<SILIRInstruction
                     C.bc.block.addInstruction(new FieldReadInstruction(tempDataValueName, destBlock.getArgument(0).type, CaseName, "data", C));
                     createdGetInstruction = true;
                 }
-                C.bc.block.addInstruction(new ImplicitCopyInstruction(destBlock.getArgument(0).name, tempDataValueName, C));
+                C.valueTable().copy(destBlock.getArgument(0).name, tempDataValueName);
             }
         }
         BasicBlock defaultBlock = null;
@@ -2201,7 +2240,8 @@ public class RawToSILIRTranslator extends SILInstructionVisitor<SILIRInstruction
         // Create a new function ref for this method and use it as the argument to hasMethodBB.
         String functionRef = UUID.randomUUID().toString();
         C.bc.block.addInstruction(new BuiltinInstruction(methodName, functionRef, "temp", C));
-        C.bc.block.addInstruction(new ImplicitCopyInstruction(hasMethodBB.getArgument(0).name, hasMethodBB.getArgument(0).type, C));
+        // Give the basic block the "uncurried function".
+        C.valueTable().copy(hasMethodBB.getArgument(0).name, functionRef);
         String condition = UUID.randomUUID().toString();
         C.bc.block.addInstruction(new UnaryOperatorInstruction(condition, "$Bool", "unary_arb", operand.Name, C));
         C.bc.block.addInstruction(new ConditionalBranchInstruction(condition, hasMethodBB, noMethodBB, C));

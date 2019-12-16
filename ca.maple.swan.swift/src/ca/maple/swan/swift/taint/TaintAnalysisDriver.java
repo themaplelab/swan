@@ -120,8 +120,6 @@ public class TaintAnalysisDriver {
             String[] sinks,
             String[] sanitizers) {
 
-        // TODO: Combine with known SSS here.
-
         return findSSSPaths(
                 sdg,
                 new HashSet<>(Arrays.asList(sources)),

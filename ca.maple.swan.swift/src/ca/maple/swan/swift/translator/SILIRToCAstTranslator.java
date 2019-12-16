@@ -146,7 +146,7 @@ public class SILIRToCAstTranslator {
 
     }
 
-    private static class Visitor extends IFinalSILIRVisitor {
+    private static class Visitor extends ISILIRVisitor {
 
         private WalkContext c;
 
@@ -274,11 +274,6 @@ public class SILIRToCAstTranslator {
                             callNode);
             setNodePosition(n, instruction);
             addNode(n);
-        }
-
-        @Override
-        public void visitArrayLengthInstruction(ArrayLengthInstruction instruction) {
-            // TODO
         }
 
         @Override
