@@ -355,8 +355,10 @@ public class RawToSILIRTranslator extends SILInstructionVisitor<SILIRInstruction
         Value v = C.valueTable().getPossibleAlias(DestName);
         if (v instanceof FieldAliasValue) {
             return new FieldWriteInstruction(((FieldAliasValue) v).value.name, ((FieldAliasValue) v).field, SourceName, C);
+        } else if (v instanceof ArrayIndexAliasValue) {
+            return new ArrayWriteInstruction(((ArrayIndexAliasValue) v).value.name, SourceName, ((ArrayIndexAliasValue) v).index, C);
         } else if (v instanceof ArrayValue) {
-            return new FieldWriteInstruction(DestName, "0", SourceName, C);
+            return new ArrayWriteInstruction(DestName, SourceName, 0, C);
         } else {
             return new FieldWriteInstruction(DestName, "value", SourceName, C);
         }
@@ -366,6 +368,8 @@ public class RawToSILIRTranslator extends SILInstructionVisitor<SILIRInstruction
         Value v = C.valueTable().getPossibleAlias(operand);
         if (v instanceof FieldAliasValue) {
             return new FieldReadInstruction(result.Name, result.Type, ((FieldAliasValue) v).value.name, ((FieldAliasValue) v).field, C);
+        } else if (v instanceof ArrayIndexAliasValue) {
+            return new ArrayReadInstruction(result.Name, result.Type, ((ArrayIndexAliasValue)v).value.name, ((ArrayIndexAliasValue)v).index, C);
         } else {
             return new FieldReadInstruction(result.Name, result.Type, operand, field, C);
         }
@@ -499,8 +503,10 @@ public class RawToSILIRTranslator extends SILInstructionVisitor<SILIRInstruction
         RawValue idx = getOperand(N, 1);
         RawValue result = getSingleResult(N);
         Value literal = C.valueTable().getValue(idx.Name);
+        C.valueTable().setUnused(idx.Name);
         Assertions.productionAssertion(literal instanceof LiteralValue);
-        return new FieldAliasInstruction(result.Name, result.Type, operand.Name, ((LiteralValue)literal).literal.toString(), C);
+        return new ArrayIndexAliasInstruction(result.Name, result.Type, operand.Name,
+                Integer.parseInt(((LiteralValue)literal).literal.toString()), C);
     }
 
     @Override
@@ -1253,7 +1259,7 @@ public class RawToSILIRTranslator extends SILInstructionVisitor<SILIRInstruction
         if (C.valueTable().getValue(operand.Name) instanceof ArrayTupleValue) {
             C.valueTable().replace(C.valueTable().getValue(result1.Name), new ArrayValue(result1.Name, result1.Type));
             C.valueTable().replace(C.valueTable().getValue(result2.Name), new ArrayValue(result2.Name, result2.Type));
-            C.bc.block.addInstruction(new AssignInstruction(result1.Name, result2.Name, C));
+            C.bc.block.addInstruction(new ImplicitCopyInstruction(result1.Name, result2.Name, C));
         }
         return null;
     }

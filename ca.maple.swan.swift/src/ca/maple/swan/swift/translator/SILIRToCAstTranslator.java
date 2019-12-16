@@ -146,7 +146,7 @@ public class SILIRToCAstTranslator {
 
     }
 
-    private static class Visitor extends ISILIRVisitor {
+    private static class Visitor extends IFinalSILIRVisitor {
 
         private WalkContext c;
 
@@ -274,6 +274,34 @@ public class SILIRToCAstTranslator {
                             callNode);
             setNodePosition(n, instruction);
             addNode(n);
+        }
+
+        @Override
+        public void visitArrayLengthInstruction(ArrayLengthInstruction instruction) {
+            // TODO
+        }
+
+        @Override
+        public void visitArrayReadInstruction(ArrayReadInstruction instruction) {
+            // TODO
+            /*
+            CAstNode index = Ast.makeConstant(instruction.index);
+            CAstNode n =
+                    Ast.makeNode(
+                            CAstNode.ASSIGN,
+                            makeVarNode(instruction.result),
+                            Ast.makeNode(
+                                    CAstNode.ARRAY_REF,
+                                    makeVarNode(instruction.operand),
+                                    index));
+            setNodePosition(n, instruction);
+            addNode(n);
+             */
+        }
+
+        @Override
+        public void visitArrayWriteInstruction(ArrayWriteInstruction instruction) {
+            // TODO
         }
 
         @Override
@@ -426,11 +454,6 @@ public class SILIRToCAstTranslator {
         }
 
         @Override
-        public void visitFieldAliasInstruction(FieldAliasInstruction instruction) {
-            // NOP
-        }
-
-        @Override
         public void visitFieldReadInstruction(FieldReadInstruction instruction) {
             CAstNode field = (instruction.isDynamic) ? makeVarNode(instruction.dynamicField) : Ast.makeConstant(instruction.field);
             CAstNode n =
@@ -441,25 +464,6 @@ public class SILIRToCAstTranslator {
                                     CAstNode.OBJECT_REF,
                                     makeVarNode(instruction.operand),
                                     field));
-            setNodePosition(n, instruction);
-            addNode(n);
-        }
-
-        @Override
-        public void visitFieldReadWriteInstruction(FieldReadWriteInstruction instruction) {
-            CAstNode operandField = (instruction.operandIsDynamic) ?
-                    makeVarNode(instruction.dynamicOperandField) : Ast.makeConstant(instruction.operandField);
-            CAstNode n =
-                    Ast.makeNode(
-                            CAstNode.ASSIGN,
-                            Ast.makeNode(
-                                    CAstNode.OBJECT_REF,
-                                    makeVarNode(instruction.resultValue),
-                                    Ast.makeConstant(instruction.resultField)),
-                            Ast.makeNode(
-                                    CAstNode.OBJECT_REF,
-                                    makeVarNode(instruction.operandValue),
-                                    operandField));
             setNodePosition(n, instruction);
             addNode(n);
         }
@@ -543,11 +547,6 @@ public class SILIRToCAstTranslator {
             CAstNode n = makeGotoNode(instruction.bb);
             setNodePosition(n, instruction);
             addNode(n);
-        }
-
-        @Override
-        public void visitImplicitCopyInstruction(ImplicitCopyInstruction instruction) {
-            // NOP
         }
 
         @Override

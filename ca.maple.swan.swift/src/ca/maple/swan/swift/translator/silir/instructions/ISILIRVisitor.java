@@ -17,6 +17,12 @@ public abstract class ISILIRVisitor {
 
     public abstract void visitApplyInstruction(ApplyInstruction instruction);
 
+    public abstract void visitArrayLengthInstruction(ArrayLengthInstruction instruction);
+
+    public abstract void visitArrayReadInstruction(ArrayReadInstruction instruction);
+
+    public abstract void visitArrayWriteInstruction(ArrayWriteInstruction instruction);
+
     public abstract void visitAssignGlobalInstruction(AssignGlobalInstruction instruction);
 
     public abstract void visitAssignInstruction(AssignInstruction instruction);
@@ -33,8 +39,6 @@ public abstract class ISILIRVisitor {
 
     public abstract void visitFieldReadInstruction(FieldReadInstruction instruction);
 
-    public abstract void visitFieldReadWriteInstruction(FieldReadWriteInstruction instruction);
-
     public abstract void visitFieldWriteInstruction(FieldWriteInstruction instruction);
 
     public abstract void visitFunctionRefInstruction(FunctionRefInstruction instruction);
@@ -44,6 +48,8 @@ public abstract class ISILIRVisitor {
     public abstract void visitImplicitCopyInstruction(ImplicitCopyInstruction instruction);
 
     public abstract void visitLiteralInstruction(LiteralInstruction instruction);
+
+    public abstract void visitLoadArrayIndexInstruction(ArrayIndexAliasInstruction instruction);
 
     public abstract void visitNewArrayTupleInst(NewArrayTupleInstruction instruction);
 

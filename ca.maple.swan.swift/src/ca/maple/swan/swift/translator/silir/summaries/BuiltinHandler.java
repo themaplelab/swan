@@ -132,7 +132,11 @@ public class BuiltinHandler {
             }
 
             case "Swift.Array.subscript.getter : (Swift.Int) -> A" : {
-                return new FieldReadWriteInstruction(params.get(0), "value", params.get(2), params.get(1), true, C);
+                String temp = UUID.randomUUID().toString();
+                Value index = C.valueTable().getValue(params.get(1));
+                Assertions.productionAssertion(index instanceof LiteralValue);
+                C.bc.block.addInstruction(new ArrayReadInstruction(temp, "$Any", params.get(2), Integer.parseInt(((LiteralValue)index).literal.toString()), C));
+                C.bc.block.addInstruction(new FieldWriteInstruction(params.get(0), "value", temp, C));
             }
 
             case "Swift._allocateUninitializedArray<A>(Builtin.Word) -> (Swift.Array<A>, Builtin.RawPointer)" : {

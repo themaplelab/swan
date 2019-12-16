@@ -1,4 +1,4 @@
-//===--- NewGlobalInstruction.java ---------------------------------------===//
+//===--- ArrayReadInstruction.java ---------------------------------------===//
 //
 // This source file is part of the SWAN open source project
 //
@@ -14,25 +14,33 @@
 package ca.maple.swan.swift.translator.silir.instructions;
 
 import ca.maple.swan.swift.translator.silir.context.InstructionContext;
+import ca.maple.swan.swift.translator.silir.values.ArrayValue;
 import ca.maple.swan.swift.translator.silir.values.Value;
 
-public class NewGlobalInstruction extends SILIRInstruction {
+public class ArrayReadInstruction extends SILIRInstruction {
 
-    public final Value value;
+    public final Value result;
 
-    public NewGlobalInstruction(String name, String type, InstructionContext ic) {
+    public final int index;
+
+    public final Value operand;
+
+    public ArrayReadInstruction(String resultName, String resultType, String operand, int index, InstructionContext ic) {
         super(ic);
-        this.value = new Value(name, type);
-        ic.globalValueTable().add(value);
+        this.result = new Value(resultName, resultType);
+        ic.valueTable().add(this.result);
+        this.operand = ic.valueTable().getValue(operand);
+        this.index = index;
     }
 
     @Override
     public void visit(ISILIRVisitor v) {
-        v.visitNewGlobalInstruction(this);
+        v.visitArrayReadInstruction(this);
     }
 
     @Override
     public String toString() {
-        return "new global " + value.name + this.getComment();
+        return result.simpleName() + " := " + operand.simpleName() + "[" +
+                this.index + "]" + this.getComment();
     }
 }
