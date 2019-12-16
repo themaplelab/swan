@@ -19,12 +19,9 @@ import com.ibm.wala.cast.ir.translator.TranslatorToIR;
 import com.ibm.wala.cast.js.loader.JavaScriptLoader;
 import com.ibm.wala.cast.js.translator.JavaScriptTranslatorFactory;
 import com.ibm.wala.cast.js.types.JavaScriptTypes;
-import com.ibm.wala.cast.tree.CAstType;
 import com.ibm.wala.cast.tree.rewrite.CAstRewriterFactory;
 import com.ibm.wala.ipa.cha.IClassHierarchy;
 import com.ibm.wala.types.TypeName;
-
-import java.util.ArrayList;
 
 /*
  * For now, we basically use the JavaScriptLoader, but this will most likely not be the case in the future.

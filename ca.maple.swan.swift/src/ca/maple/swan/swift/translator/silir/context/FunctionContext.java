@@ -16,7 +16,6 @@ package ca.maple.swan.swift.translator.silir.context;
 import ca.maple.swan.swift.translator.silir.Function;
 import ca.maple.swan.swift.translator.silir.values.Argument;
 import ca.maple.swan.swift.translator.silir.values.Value;
-import ca.maple.swan.swift.translator.silir.values.ValueTable;
 
 import java.util.HashMap;
 

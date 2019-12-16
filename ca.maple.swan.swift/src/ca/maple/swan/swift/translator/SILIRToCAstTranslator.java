@@ -37,10 +37,7 @@ import com.ibm.wala.util.collections.Pair;
 import com.ibm.wala.util.debug.Assertions;
 
 import java.io.File;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Stack;
+import java.util.*;
 
 /*
  * Translates SILIR to CAst. Nothing particularly interesting happens here since all of the
@@ -450,7 +447,7 @@ public class SILIRToCAstTranslator {
 
         @Override
         public void visitFieldReadInstruction(FieldReadInstruction instruction) {
-            CAstNode field = (instruction.isDynamic) ? makeVarNode(instruction.dynamicField) : Ast.makeConstant(instruction.field);
+            CAstNode field = (instruction.isDynamic) ? makeVarNode(Objects.requireNonNull(instruction.dynamicField)) : Ast.makeConstant(instruction.field);
             CAstNode n =
                     Ast.makeNode(
                             CAstNode.ASSIGN,
@@ -465,7 +462,7 @@ public class SILIRToCAstTranslator {
 
         @Override
         public void visitFieldWriteInstruction(FieldWriteInstruction instruction) {
-            CAstNode field = (instruction.isDynamic) ? makeVarNode(instruction.dynamicField) : Ast.makeConstant(instruction.field);
+            CAstNode field = (instruction.isDynamic) ? makeVarNode(Objects.requireNonNull(instruction.dynamicField)) : Ast.makeConstant(instruction.field);
             CAstNode n =
                     Ast.makeNode(
                             CAstNode.ASSIGN,

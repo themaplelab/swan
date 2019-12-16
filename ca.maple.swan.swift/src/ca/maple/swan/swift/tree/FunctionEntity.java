@@ -15,7 +15,6 @@ package ca.maple.swan.swift.tree;
 
 import com.ibm.wala.cast.ir.translator.AbstractCodeEntity;
 import com.ibm.wala.cast.tree.*;
-import com.ibm.wala.cast.tree.impl.CAstSourcePositionRecorder;
 import com.ibm.wala.cast.tree.impl.LineNumberPosition;
 
 import java.util.ArrayList;

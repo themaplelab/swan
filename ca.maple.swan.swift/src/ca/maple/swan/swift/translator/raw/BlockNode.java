@@ -22,7 +22,6 @@ import java.util.ArrayList;
  * Coupled with C++ translator raw output format.
  */
 
-@SuppressWarnings("FieldCanBeLocal")
 public class BlockNode {
 
     private final CAstNode block;

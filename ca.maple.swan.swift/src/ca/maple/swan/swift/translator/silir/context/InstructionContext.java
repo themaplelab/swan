@@ -13,12 +13,9 @@
 
 package ca.maple.swan.swift.translator.silir.context;
 
-import ca.maple.swan.swift.translator.silir.instructions.AssignGlobalInstruction;
 import ca.maple.swan.swift.translator.silir.values.GlobalValueTable;
 import ca.maple.swan.swift.translator.silir.values.ValueTable;
 import com.ibm.wala.cast.tree.CAstSourcePositionMap.Position;
-
-import java.util.HashMap;
 
 /*
  * Holds anything an instruction would need for translation.
@@ -30,12 +27,9 @@ public class InstructionContext {
 
     public final Position position;
 
-    private HashMap<String, AssignGlobalInstruction> delayedGlobalAccesses;
-
     public InstructionContext(BlockContext bc, Position position) {
         this.bc = bc;
         this.position = position;
-        this.delayedGlobalAccesses = new HashMap<>();
     }
 
     public ValueTable valueTable() {

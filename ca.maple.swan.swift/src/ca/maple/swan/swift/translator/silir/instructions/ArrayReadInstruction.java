@@ -14,7 +14,6 @@
 package ca.maple.swan.swift.translator.silir.instructions;
 
 import ca.maple.swan.swift.translator.silir.context.InstructionContext;
-import ca.maple.swan.swift.translator.silir.values.ArrayValue;
 import ca.maple.swan.swift.translator.silir.values.Value;
 
 public class ArrayReadInstruction extends SILIRInstruction {
@@ -23,13 +22,13 @@ public class ArrayReadInstruction extends SILIRInstruction {
 
     public final int index;
 
-    public final Value operand;
+    public final Value operandBase;
 
     public ArrayReadInstruction(String resultName, String resultType, String operand, int index, InstructionContext ic) {
         super(ic);
         this.result = new Value(resultName, resultType);
         ic.valueTable().add(this.result);
-        this.operand = ic.valueTable().getValue(operand);
+        this.operandBase = ic.valueTable().getValue(operand);
         this.index = index;
     }
 
@@ -40,7 +39,7 @@ public class ArrayReadInstruction extends SILIRInstruction {
 
     @Override
     public String toString() {
-        return result.simpleName() + " := " + operand.simpleName() + "[" +
+        return result.simpleName() + " := " + operandBase.simpleName() + "[" +
                 this.index + "]" + this.getComment();
     }
 }

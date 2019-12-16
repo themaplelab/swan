@@ -68,12 +68,6 @@ public class ProgramContext {
         this.allFunctions.remove(f.getName());
     }
 
-    public void markCoroutine(String functionName) {
-        if (allFunctions.containsKey(functionName)) {
-            allFunctions.remove(functionName);
-        }
-    }
-
     public void pruneIR() {
         for (Function f : getFunctions()) {
             new IRPruner(f, vt);

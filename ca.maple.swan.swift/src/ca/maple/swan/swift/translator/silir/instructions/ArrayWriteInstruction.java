@@ -14,20 +14,19 @@
 package ca.maple.swan.swift.translator.silir.instructions;
 
 import ca.maple.swan.swift.translator.silir.context.InstructionContext;
-import ca.maple.swan.swift.translator.silir.values.ArrayValue;
 import ca.maple.swan.swift.translator.silir.values.Value;
 
 public class ArrayWriteInstruction extends SILIRInstruction {
 
-    public final Value writeToArray;
+    public final Value base;
 
     public final int index;
 
     public final Value operand;
 
-    public ArrayWriteInstruction(String writeToArray, String operand, int index, InstructionContext ic) {
+    public ArrayWriteInstruction(String base, String operand, int index, InstructionContext ic) {
         super(ic);
-        this.writeToArray = ic.valueTable().getPossibleAlias(writeToArray);
+        this.base = ic.valueTable().getPossibleAlias(base);
         this.operand = ic.valueTable().getValue(operand);
         this.index = index;
     }
@@ -39,6 +38,6 @@ public class ArrayWriteInstruction extends SILIRInstruction {
 
     @Override
     public String toString() {
-        return writeToArray.simpleName() + "[" + this.index + "]" + " := " + operand.simpleName() + this.getComment();
+        return base.simpleName() + "[" + this.index + "]" + " := " + operand.simpleName() + this.getComment();
     }
 }

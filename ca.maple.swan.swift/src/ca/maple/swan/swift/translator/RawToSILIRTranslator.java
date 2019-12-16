@@ -878,7 +878,7 @@ public class RawToSILIRTranslator extends SILInstructionVisitor<SILIRInstruction
 
     private boolean handleInfixOperators(String resultName, String resultType, String operator, String operand1, String operand2, InstructionContext C) {
         String tempValue = UUID.randomUUID().toString();
-        String actualOperator = null;
+        String actualOperator;
         switch (operator) {
             case "-=":
                 actualOperator = "-";

@@ -13,7 +13,6 @@
 
 package ca.maple.swan.swift.translator.silir;
 
-import ca.maple.swan.swift.translator.silir.context.ProgramContext;
 import ca.maple.swan.swift.translator.silir.instructions.SILIRInstruction;
 import ca.maple.swan.swift.translator.silir.values.Argument;
 
@@ -51,6 +50,7 @@ public class BasicBlock {
     public BasicBlock(BasicBlock b) {
         this.number = b.getNumber();
         this.arguments = b.getArguments();
+        this.lineNumber = b.lineNumber;
         this.instructions = new ArrayList<>();
     }
 

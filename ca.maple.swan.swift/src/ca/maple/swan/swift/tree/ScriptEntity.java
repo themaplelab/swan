@@ -15,7 +15,6 @@ package ca.maple.swan.swift.tree;
 
 import com.ibm.wala.cast.ir.translator.AbstractScriptEntity;
 import com.ibm.wala.cast.tree.*;
-import com.ibm.wala.cast.tree.impl.CAstSourcePositionRecorder;
 
 import java.io.File;
 
