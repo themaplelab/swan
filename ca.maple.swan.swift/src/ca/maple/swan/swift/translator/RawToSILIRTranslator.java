@@ -958,8 +958,8 @@ public class RawToSILIRTranslator extends SILInstructionVisitor<SILIRInstruction
         } else if (refValue instanceof FunctionRefValue) {
             return new ApplyInstruction(FuncRefValue, result.Name, result.Type, args, C);
         } else {
-            Assertions.UNREACHABLE("Unexpected function ref value type");
-            return null;
+            // Note: Here function ref is dynamic
+            return new ApplyInstruction(FuncRefValue, result.Name, result.Type, args, C);
         }
     }
 
@@ -2348,8 +2348,8 @@ public class RawToSILIRTranslator extends SILInstructionVisitor<SILIRInstruction
         } else if (refValue instanceof FunctionRefValue) {
             return new TryApplyInstruction(FuncRefValue, C.bc.fc.function.getBlock(NormalBB), C.bc.fc.function.getBlock(ErrorBB), args, C);
         } else {
-            Assertions.UNREACHABLE("Unexpected function ref value type");
-            return null;
+            // Note: Here function ref is dynamic
+            return new TryApplyInstruction(FuncRefValue, C.bc.fc.function.getBlock(NormalBB), C.bc.fc.function.getBlock(ErrorBB), args, C);
         }
     }
 }
