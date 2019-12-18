@@ -88,6 +88,20 @@ public class SwiftToCAstTranslator extends NativeTranslatorToCAst {
 		return new SILIRToCAstTranslator().translate(new File((String)translatedModules.get(this.sourceFileName).getChild(0).getValue()), pc);
 	}
 
+	// For debugging, mainly.
+	public void translateToSILIR() {
+		assert(!translatedModules.isEmpty());
+		for (String sourceFileName : translatedModules.keySet()) {
+			ProgramContext pc = new RawToSILIRTranslator().translate(translatedModules.get(sourceFileName).getChild(1));
+			functionNames = pc.getFunctionNames();
+			if (DEBUG) {
+				pc.pruneIR();
+				pc.generateLineNumbers();
+				pc.printFunctions();
+			}
+		}
+	}
+
 	public String[] doTranslation(String[] rawArgs) {
 		return doTranslation(new ArrayList<>(Arrays.asList(rawArgs)));
 	}

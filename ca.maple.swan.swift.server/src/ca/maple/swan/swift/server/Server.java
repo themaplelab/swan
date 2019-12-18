@@ -34,7 +34,10 @@ public class Server {
 
     // TODO: Better exception handling across SWAN to report back to the frontend (extension).
 
-    static SDG<InstanceKey> sdg;
+    static SDG<InstanceKey> sdg = null;
+
+    // Set to false to only translate to SILIR (for debugging).
+    private static boolean GENERATE_SDG = false;
 
     public static void main(String[] args) throws IllegalArgumentException {
 
@@ -54,11 +57,20 @@ public class Server {
                 @Override
                 public void call(Object... args) {
                     try {
-                        System.out.println("Generating SDG (includes compilation)...");
                         JSONArray jsonArgs = (JSONArray)args[0];
-                        sdg = SwiftAnalysisEngineServerDriver.generateSDG(JSONArrayToJavaStringArray(jsonArgs));
-                        socket.emit("generatedSDG");
-                        System.out.println("Done generating SDG");
+
+                        if (GENERATE_SDG) {
+                            System.out.println("Generating SDG (includes compilation)...");
+                            sdg = SwiftAnalysisEngineServerDriver.generateSDG(JSONArrayToJavaStringArray(jsonArgs));
+                            socket.emit("generatedSDG");
+                            System.out.println("Done generating SDG");
+                        } else {
+                            System.out.println("GENERATE_SDG == false, only translating to SILIR");
+                            SwiftToCAstTranslator swiftToCAstTranslator = new SwiftToCAstTranslator();
+                            String[] modules = swiftToCAstTranslator.doTranslation(JSONArrayToJavaStringArray(jsonArgs));
+                            swiftToCAstTranslator.translateToSILIR();
+                            socket.emit("generatedSDG");
+                        }
                     } catch (Exception e) {
                         // TODO: This error emit doesn't seem to work.
                         socket.emit("error", e);
@@ -71,23 +83,27 @@ public class Server {
 
                 @Override
                 public void call(Object... args) {
-                    System.out.println("Running taint analysis...");
                     try {
-                        JSONObject sss = (JSONObject)args[0];
-                        JSONArray sources = (JSONArray)sss.get("Sources");
-                        JSONArray sinks = (JSONArray)sss.get("Sinks");
-                        JSONArray sanitizers = (JSONArray)sss.get("Sanitizers");
-                        List<List<CAstSourcePositionMap.Position>> paths = TaintAnalysisDriver.doTaintAnalysis(
-                                sdg,
-                                JSONArrayToJavaStringArray(sources),
-                                JSONArrayToJavaStringArray(sinks),
-                                JSONArrayToJavaStringArray(sanitizers)
-                        );
-                        JSONObject result = pathsToJSON(paths);
-                        JSONArray functions = new JSONArray(SwiftToCAstTranslator.functionNames);
-                        result.put("functions", functions);
-                        System.out.println("Returning taint analysis results...");
-                        socket.emit("taintAnalysisResults", result);
+                        if (GENERATE_SDG && sdg != null) {
+                            System.out.println("Running taint analysis...");
+                            JSONObject sss = (JSONObject)args[0];
+                            JSONArray sources = (JSONArray)sss.get("Sources");
+                            JSONArray sinks = (JSONArray)sss.get("Sinks");
+                            JSONArray sanitizers = (JSONArray)sss.get("Sanitizers");
+                            List<List<CAstSourcePositionMap.Position>> paths = TaintAnalysisDriver.doTaintAnalysis(
+                                    sdg,
+                                    JSONArrayToJavaStringArray(sources),
+                                    JSONArrayToJavaStringArray(sinks),
+                                    JSONArrayToJavaStringArray(sanitizers)
+                            );
+                            JSONObject result = pathsToJSON(paths);
+                            JSONArray functions = new JSONArray(SwiftToCAstTranslator.functionNames);
+                            result.put("functions", functions);
+                            System.out.println("Returning taint analysis results...");
+                            socket.emit("taintAnalysisResults", result);
+                        } else {
+                            System.out.println("GENERATE_SDG == false, no taint analysis");
+                        }
                     } catch (Exception e) {
                         socket.emit("error", e);
                         e.printStackTrace();
