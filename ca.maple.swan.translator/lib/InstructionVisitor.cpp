@@ -44,6 +44,7 @@ using namespace swan;
 //===------------------- MODULE/FUNCTION/BLOCK VISITORS ------------------===//
 
 void InstructionVisitor::visitSILModule(SILModule *M) {
+  // TEST CODE
   for (auto it = M->getWitnessTables().begin(); it != M->getWitnessTables().end(); ++it) {
     llvm::outs() << Demangle::demangleSymbolAsString(it->getName()) << "\n";
     for (auto it1 = it->getEntries().begin(); it1 != it->getEntries().end(); ++it1) {
@@ -51,6 +52,7 @@ void InstructionVisitor::visitSILModule(SILModule *M) {
       llvm::outs() << "\t" << Demangle::demangleSymbolAsString(it1->getMethodWitness().Witness->getName()) << "\n";
     }
   }
+
   for (SILFunction &F: *M) {
     if (F.empty()) { // Most likely a builtin or library (external) function, so we ignore it.
       // Can't get information like arguments from functions without a body :(

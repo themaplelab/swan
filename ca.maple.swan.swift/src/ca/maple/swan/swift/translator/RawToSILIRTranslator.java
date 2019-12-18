@@ -847,9 +847,12 @@ public class RawToSILIRTranslator extends SILInstructionVisitor<SILIRInstruction
 
     @Override
     // FREQUENCY: VERY COMMON
-    // STATUS: TRANSLATED
-    // CONFIDENCE: HIGH
+    // STATUS: NOT TRANSLATED
+    // CONFIDENCE:
     protected SILIRInstruction visitWitnessMethod(CAstNode N, InstructionContext C) {
+        // TODO: Not correctly translated, need to translate to an instruction that calls multiple functions.
+
+        // Temporary handling.
         return visitFunctionRef(N, C);
     }
 
