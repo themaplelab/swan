@@ -847,13 +847,18 @@ public class RawToSILIRTranslator extends SILInstructionVisitor<SILIRInstruction
 
     @Override
     // FREQUENCY: VERY COMMON
-    // STATUS: NOT TRANSLATED
-    // CONFIDENCE:
+    // STATUS: TRANSLATED
+    // CONFIDENCE: MED
     protected SILIRInstruction visitWitnessMethod(CAstNode N, InstructionContext C) {
-        // TODO: Not correctly translated, need to translate to an instruction that calls multiple functions.
-
-        // Temporary handling.
-        return visitFunctionRef(N, C);
+        RawValue result = getSingleResult(N);
+        ArrayList<Function> functions = new ArrayList<>();
+        for (CAstNode function : N.getChild(2).getChildren()) {
+            Function f = C.bc.fc.pc.getFunction((String)function.getValue());
+            Assertions.productionAssertion(f != null, "Strange if this can be null");
+            functions.add(f);
+        }
+        C.valueTable().add(new DynamicFunctionRefValue(result.Name, result.Type, functions));
+        return null;
     }
 
     private Function createFakeFunction(String name, String returnType, ArrayList<Argument> args, InstructionContext C) {
@@ -960,6 +965,15 @@ public class RawToSILIRTranslator extends SILInstructionVisitor<SILIRInstruction
             }
         } else if (refValue instanceof FunctionRefValue) {
             return new ApplyInstruction(FuncRefValue, result.Name, result.Type, args, C);
+        } else if (refValue instanceof DynamicFunctionRefValue) {
+            for (Function f : ((DynamicFunctionRefValue) refValue).getFunctions()) {
+                String funcRefValue = UUID.randomUUID().toString();
+                String funcRefValueType = "$Any"; // Whatever
+                C.bc.block.addInstruction(new FunctionRefInstruction(funcRefValue, funcRefValueType, f, C));
+                // FIXME?: The result here gets overridden by the last call. How to handle?
+                C.bc.block.addInstruction(new ApplyInstruction(funcRefValue, result.Name, result.Type, args, C));
+            }
+            return null;
         } else {
             // Note: Here function ref is dynamic
             return new ApplyInstruction(FuncRefValue, result.Name, result.Type, args, C);
@@ -1015,6 +1029,10 @@ public class RawToSILIRTranslator extends SILInstructionVisitor<SILIRInstruction
             inst.setComment("coroutine " + coroutine.function.getName());
             C.bc.block.addInstruction(inst);
             C.bc.block = bb;
+            return null;
+        } else if (refValue instanceof DynamicFunctionRefValue) {
+            // TODO?
+            Assertions.UNREACHABLE("Unhandled begin_apply on witness_method ref");
             return null;
         } else {
             Assertions.UNREACHABLE("Unexpected function ref value type");
