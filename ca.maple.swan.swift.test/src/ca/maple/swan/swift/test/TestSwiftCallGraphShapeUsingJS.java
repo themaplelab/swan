@@ -51,6 +51,8 @@ import com.ibm.wala.util.strings.Atom;
 
 /*
  * This class currently serves as a testing bed (entry-point) for SWAN.
+ *
+ * TODO: NO LONGER IN USE - BLOW AWAY. Mind the counter and test file folders.
  */
 
 public class TestSwiftCallGraphShapeUsingJS extends TestCallGraphShape {
