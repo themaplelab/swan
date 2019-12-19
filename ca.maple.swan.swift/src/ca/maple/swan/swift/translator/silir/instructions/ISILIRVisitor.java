@@ -13,6 +13,10 @@
 
 package ca.maple.swan.swift.translator.silir.instructions;
 
+/*
+ * Visitor for ALL SILIR instructions.
+ */
+
 public abstract class ISILIRVisitor {
 
     public abstract void visitApplyInstruction(ApplyInstruction instruction);

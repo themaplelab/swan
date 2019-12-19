@@ -14,11 +14,13 @@
 package ca.maple.swan.swift.server;
 
 import ca.maple.swan.swift.client.SwiftAnalysisEngine;
+import ca.maple.swan.swift.translator.RawData;
 import ca.maple.swan.swift.translator.SwiftToCAstTranslator;
 import ca.maple.swan.swift.translator.SwiftToCAstTranslatorFactory;
 import com.ibm.wala.cast.ir.ssa.AstIRFactory;
 import com.ibm.wala.cast.js.client.JavaScriptAnalysisEngine;
 import com.ibm.wala.cast.js.ipa.modref.JavaScriptModRef;
+import com.ibm.wala.cast.tree.impl.CAstImpl;
 import com.ibm.wala.classLoader.IClass;
 import com.ibm.wala.classLoader.IMethod;
 import com.ibm.wala.classLoader.Module;
@@ -94,15 +96,13 @@ public class SwiftAnalysisEngineServerDriver {
     public static SDG<InstanceKey> generateSDG(String[] args) throws Exception {
         JavaScriptAnalysisEngine Engine;
 
-        SwiftToCAstTranslator swiftToCAstTranslator = new SwiftToCAstTranslator();
+        RawData data = new RawData(args, new CAstImpl());
 
-        String[] modules = swiftToCAstTranslator.doTranslation(args);
+        SwiftToCAstTranslator.setRawData(data);
 
-        if (modules.length == 0) {
-            throw new Exception("Could not create modules");
-        }
+        String module = data.setup();
 
-        Engine = makeEngine(modules);
+        Engine = makeEngine(module);
         CallGraphBuilder builder = Engine.defaultCallGraphBuilder();
         CallGraph CG = builder.makeCallGraph(Engine.getOptions(), new NullProgressMonitor());
 

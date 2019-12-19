@@ -14,8 +14,11 @@
 package ca.maple.swan.swift.server;
 
 import ca.maple.swan.swift.taint.TaintAnalysisDriver;
+import ca.maple.swan.swift.translator.RawData;
 import ca.maple.swan.swift.translator.SwiftToCAstTranslator;
+import ca.maple.swan.swift.translator.SwiftToSPDSTranslator;
 import com.ibm.wala.cast.tree.CAstSourcePositionMap;
+import com.ibm.wala.cast.tree.impl.CAstImpl;
 import com.ibm.wala.ipa.callgraph.propagation.InstanceKey;
 import com.ibm.wala.ipa.slicer.SDG;
 import io.socket.client.IO;
@@ -36,8 +39,12 @@ public class Server {
 
     static SDG<InstanceKey> sdg = null;
 
-    // Set to false to only translate to SILIR (for debugging).
-    private static boolean GENERATE_SDG = false;
+    // Eventually move this to the frontend probably.
+    enum Mode {
+        SPDS,
+        WALA
+    }
+    private static Mode mode = Mode.WALA;
 
     public static void main(String[] args) throws IllegalArgumentException {
 
@@ -59,20 +66,20 @@ public class Server {
                     try {
                         JSONArray jsonArgs = (JSONArray)args[0];
 
-                        if (GENERATE_SDG) {
-                            System.out.println("Generating SDG (includes compilation)...");
+                        if (mode == Mode.WALA) {
+                            System.out.println("WALA Mode, Generating SDG (includes compilation)...");
                             sdg = SwiftAnalysisEngineServerDriver.generateSDG(JSONArrayToJavaStringArray(jsonArgs));
                             socket.emit("generatedSDG");
                             System.out.println("Done generating SDG");
-                        } else {
-                            System.out.println("GENERATE_SDG == false, only translating to SILIR");
-                            SwiftToCAstTranslator swiftToCAstTranslator = new SwiftToCAstTranslator();
-                            String[] modules = swiftToCAstTranslator.doTranslation(JSONArrayToJavaStringArray(jsonArgs));
-                            swiftToCAstTranslator.translateToSILIR();
+                        } else if (mode == Mode.SPDS){
+                            System.out.println("SPDS Mode, only translating to SILIR for now");
+                            RawData data = new RawData(JSONArrayToJavaStringArray(jsonArgs), new CAstImpl());
+                            data.setup();
+                            SwiftToSPDSTranslator translator = new SwiftToSPDSTranslator(data);
+                            translator.translateToProgramContext();
                             socket.emit("generatedSDG");
                         }
                     } catch (Exception e) {
-                        // TODO: This error emit doesn't seem to work.
                         socket.emit("error", e);
                         System.err.println("Could not generate SDG");
                         e.printStackTrace();
@@ -84,7 +91,7 @@ public class Server {
                 @Override
                 public void call(Object... args) {
                     try {
-                        if (GENERATE_SDG && sdg != null) {
+                        if (mode.equals(Mode.WALA) && sdg != null) {
                             System.out.println("Running taint analysis...");
                             JSONObject sss = (JSONObject)args[0];
                             JSONArray sources = (JSONArray)sss.get("Sources");
@@ -102,7 +109,7 @@ public class Server {
                             System.out.println("Returning taint analysis results...");
                             socket.emit("taintAnalysisResults", result);
                         } else {
-                            System.out.println("GENERATE_SDG == false, no taint analysis");
+                            System.out.println("SPDS mode, no taint analysis for now");
                         }
                     } catch (Exception e) {
                         socket.emit("error", e);

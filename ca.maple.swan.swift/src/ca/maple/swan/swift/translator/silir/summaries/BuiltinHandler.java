@@ -132,6 +132,7 @@ public class BuiltinHandler {
             }
 
             case "Swift.Array.subscript.getter : (Swift.Int) -> A" : {
+                // TODO:
                 String temp = UUID.randomUUID().toString();
                 Value index = C.valueTable().getValue(params.get(1));
                 Assertions.productionAssertion(index instanceof LiteralValue);
@@ -198,7 +199,7 @@ public class BuiltinHandler {
             "Swift.Dictionary.init() -> Swift.Dictionary<A, B>",
             "Swift.Dictionary.subscript.getter : (A) -> Swift.Optional<B>",
             "Swift.Dictionary.subscript.setter : (A) -> Swift.Optional<B>",
-            "Swift.Array.subscript.getter : (Swift.Int) -> A",
+            // "Swift.Array.subscript.getter : (Swift.Int) -> A",
             "Swift._allocateUninitializedArray<A>(Builtin.Word) -> (Swift.Array<A>, Builtin.RawPointer)",
             "default argument 1 of Swift.print(_: Any..., separator: Swift.String, terminator: Swift.String) -> ()",
             "default argument 2 of Swift.print(_: Any..., separator: Swift.String, terminator: Swift.String) -> ()",

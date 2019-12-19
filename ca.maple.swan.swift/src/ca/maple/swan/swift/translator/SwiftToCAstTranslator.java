@@ -30,7 +30,7 @@ import com.ibm.wala.cast.tree.rewrite.CAstRewriter.CopyKey;
 import com.ibm.wala.cast.tree.rewrite.CAstRewriter.RewriteContext;
 import com.ibm.wala.cast.tree.rewrite.CAstRewriterFactory;
 import com.ibm.wala.classLoader.ModuleEntry;
-import org.apache.commons.io.FilenameUtils;
+import com.ibm.wala.util.debug.Assertions;
 
 /*
  * This class translates the Swift code to a single CAstEntity
@@ -45,18 +45,22 @@ public class SwiftToCAstTranslator extends NativeTranslatorToCAst {
 	private URL dynamicSourceURL;
 	private String dynamicSourceFileName;
 
-	private static Map<String, CAstNode> translatedModules = new HashMap<>();
+	private static RawData rawData = null;
 
 	public static Set<String> functionNames = null;
-
-	private static Map<String, String> paths = new HashMap<>();
 
 	static {
 		SwiftTranslatorPathLoader.load();
 	}
 
-    public SwiftToCAstTranslator() {
-    	this(new CAstImpl(), null, null);
+	// Purely used for calling translateToCAstNodes.
+	SwiftToCAstTranslator() {
+		this(new CAstImpl(), null, null);
+	}
+
+	// NECESSARY CALL! SETS UP STATIC DATA LATER USED IN translateToCAst().
+	public static void setRawData(RawData data) {
+		rawData = data;
 	}
 
     public SwiftToCAstTranslator(ModuleEntry m) throws MalformedURLException {
@@ -77,132 +81,15 @@ public class SwiftToCAstTranslator extends NativeTranslatorToCAst {
 
 	@Override
 	public CAstEntity translateToCAst() {
-		assert(!translatedModules.isEmpty());
-		ProgramContext pc = new RawToSILIRTranslator().translate(translatedModules.get(this.sourceFileName).getChild(1));
+		Assertions.productionAssertion(rawData != null);
+		ProgramContext pc = new WALARawToSILIRTranslator().translate(rawData.getRawData().getChild(1));
 		functionNames = pc.getFunctionNames();
 		if (DEBUG) {
 			pc.pruneIR();
 			pc.generateLineNumbers();
 			pc.printFunctions();
 		}
-		return new SILIRToCAstTranslator().translate(new File((String)translatedModules.get(this.sourceFileName).getChild(0).getValue()), pc);
-	}
-
-	// For debugging, mainly.
-	public void translateToSILIR() {
-		assert(!translatedModules.isEmpty());
-		for (String sourceFileName : translatedModules.keySet()) {
-			ProgramContext pc = new RawToSILIRTranslator().translate(translatedModules.get(sourceFileName).getChild(1));
-			functionNames = pc.getFunctionNames();
-			if (DEBUG) {
-				pc.pruneIR();
-				pc.generateLineNumbers();
-				pc.printFunctions();
-			}
-		}
-	}
-
-	public String[] doTranslation(String[] rawArgs) {
-		return doTranslation(new ArrayList<>(Arrays.asList(rawArgs)));
-	}
-
-	public String[] doTranslation(ArrayList<String> args) {
-
-		// Find all files being analyzed so when setSource() is called later,
-		// we can set the full path for the file.
-		for (String s : args) {
-			File f = new File(s);
-			if (f.exists()) {
-				paths.put(f.getName(), f.getAbsolutePath());
-			}
-		}
-
-		// TODO: Do away with grouping by file, since we need to preserve ordering for globals.
-
-		// MAIN TRANSLATION CALL.
-		// Arguments will be directly fed to performFrontend() call.
-		ArrayList<CAstNode> roots = translateToCAstNodes(args);
-
-		// Module names - in reality, this will have a size of 1 since we are throwing
-		// everything into one module with the name being the common path of all files.
-		ArrayList<String> moduleNames = new ArrayList<>();
-
-		// Where all of the functions from every source file go, since we are using
-		// a single module.
-		ArrayList<CAstNode> newFunctions = new ArrayList<>();
-
-		// All paths so we can later find the common one.
-		ArrayList<String> paths = new ArrayList<>();
-
-		Collections.reverse(roots); // TODO: Blow away, temporary, see above note about file grouping/globals.
-
-		for (CAstNode root : roots) {
-			if (!root.getChild(0).getValue().equals("NO_SOURCE")) {
-				paths.add((String)root.getChild(0).getValue());
-			}
-
-			newFunctions.addAll(root.getChild(1).getChildren());
-		}
-
-		// In the case that the only function is "main", which has no source information, find the first instruction
-		// with a source filename and use that one for the function.
-		if (paths.isEmpty() && !roots.isEmpty()) {
-			CAstNode root = roots.get(0);
-			boolean cont = false;
-			if (root.getChild(0).getValue().equals("NO_SOURCE")) {
-				for (CAstNode block : root.getChild(1).getChild(0).getChild(4).getChildren()) {
-					if (cont) { break; }
-					for (CAstNode instruction: block.getChildren().subList(1, block.getChildren().size())) {
-						if (!((CAstSourcePositionMap.Position)instruction.getChild(1).getValue()).getURL().toString().equals("NO_SOURCE")) {
-							try {
-								paths.add(((CAstSourcePositionMap.Position)instruction.getChild(1).getValue()).getURL().toURI().getRawPath());
-							} catch (Exception e) {
-								e.printStackTrace();
-							}
-							cont = true;
-							break;
-						}
-					}
-				}
-			}
-		}
-
-		if (paths.isEmpty()) {
-			return new String[0];
-		}
-
-		String commonPath = longestCommonPath(paths);
-
-		// We generally don't want to have a specific file as the module name.
-		// E.g. In the case that there is another file with just the main function.
-		File tempFile = new File(commonPath);
-		if (FilenameUtils.getExtension(tempFile.getName()).equals("swift") && paths.size() > 1) {
-			commonPath = FilenameUtils.getPath(tempFile.getPath());
-		}
-
-		CAstNode newRoot = Ast.makeNode(CAstNode.PRIMITIVE,
-				Ast.makeConstant(commonPath),
-				Ast.makeNode(CAstNode.PRIMITIVE, newFunctions));
-
-		translatedModules.put(commonPath, newRoot);
-		moduleNames.add(commonPath);
-
-		return moduleNames.toArray(new String[0]);
-	}
-
-	private static String longestCommonPath(ArrayList<String> paths) {
-		if (paths.size() == 1) {
-			return paths.get(0);
-		}
-		String initialPath = paths.get(0);
-		for (String path : paths.subList(1, paths.size())) {
-			for (int i = 0; i < path.length() && i < initialPath.length(); ++i) {
-				if (initialPath.charAt(i) != path.charAt(i)) {
-					initialPath = initialPath.substring(0, i);
-				}
-			}
-		}
-		return initialPath;
+		return new SILIRToCAstTranslator().translate(new File((String)rawData.getRawData().getChild(0).getValue()), pc);
 	}
 
 	// Specifically meant to be used by the C++ translator.
@@ -211,8 +98,8 @@ public class SwiftToCAstTranslator extends NativeTranslatorToCAst {
 			File newFile =
 					new File(filename).exists() ?
 					new File(filename) :
-							(paths.containsKey(filename)) ?
-									new File(paths.get(filename)) :
+							(RawData.getPaths().containsKey(filename)) ?
+									new File(RawData.getPaths().get(filename)) :
 									new File(filename);
 
 			this.dynamicSourceURL = newFile.toURI().toURL();

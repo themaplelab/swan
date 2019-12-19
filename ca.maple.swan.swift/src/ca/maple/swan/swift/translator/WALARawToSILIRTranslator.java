@@ -1,4 +1,4 @@
-//===--- RawToSILIRTranslator.java ---------------------------------------===//
+//===--- WALARawToSILIRTranslator.java -----------------------------------===//
 //
 // This source file is part of the SWAN open source project
 //
@@ -51,7 +51,7 @@ import static ca.maple.swan.swift.translator.raw.RawUtil.*;
  */
 
 @SuppressWarnings("unused")
-public class RawToSILIRTranslator extends SILInstructionVisitor<SILIRInstruction, InstructionContext> {
+public class WALARawToSILIRTranslator extends SILInstructionVisitor<SILIRInstruction, InstructionContext> {
 
     public ProgramContext translate(CAstNode n) {
 
@@ -184,6 +184,15 @@ public class RawToSILIRTranslator extends SILInstructionVisitor<SILIRInstruction
     @Override
     protected CAstSourcePositionMap.Position getInstructionPosition(CAstNode N) {
         return (CAstSourcePositionMap.Position) N.getChild(1).getValue();
+    }
+
+    protected boolean isBuiltinSummarized(String builtinName) {
+        return BuiltinHandler.isSummarized(builtinName);
+    }
+
+    protected SILIRInstruction findBuiltinSummary(String funcName, String resultName, String resultType,
+                                                  ArrayList<String> params, InstructionContext C) {
+        return BuiltinHandler.findSummary(funcName, resultName, resultType, params, C);
     }
 
     /********************** INSTRUCTION TRANSLATION **********************
@@ -914,6 +923,16 @@ public class RawToSILIRTranslator extends SILInstructionVisitor<SILIRInstruction
         return true;
     }
 
+    protected void handleDynamicApply(RawValue result, ArrayList<String> args, DynamicFunctionRefValue refValue, InstructionContext C) {
+        for (Function f : refValue.getFunctions()) {
+            String funcRefValue = UUID.randomUUID().toString();
+            String funcRefValueType = "$Any"; // Whatever
+            C.bc.block.addInstruction(new FunctionRefInstruction(funcRefValue, funcRefValueType, f, C));
+            // FIXME?: The result here gets overridden by the last call. How to handle? Fine for WALA.
+            C.bc.block.addInstruction(new ApplyInstruction(funcRefValue, result.Name, result.Type, args, C));
+        }
+    }
+
     @Override
     // FREQUENCY: VERY COMMON
     // STATUS: TRANSLATED
@@ -949,8 +968,8 @@ public class RawToSILIRTranslator extends SILInstructionVisitor<SILIRInstruction
         }
         if (refValue instanceof BuiltinFunctionRefValue) {
             String name = ((BuiltinFunctionRefValue) refValue).getFunction();
-            if (BuiltinHandler.isSummarized(name)) {
-                return BuiltinHandler.findSummary(name, result.Name, result.Type, args, C);
+            if (isBuiltinSummarized(name)) {
+                return findBuiltinSummary(name, result.Name, result.Type, args, C);
             } else {
                 // Make a function for builtins we don't have summaries for.
                 ArrayList<Argument> funcArgs = new ArrayList<>();
@@ -966,13 +985,7 @@ public class RawToSILIRTranslator extends SILInstructionVisitor<SILIRInstruction
         } else if (refValue instanceof FunctionRefValue) {
             return new ApplyInstruction(FuncRefValue, result.Name, result.Type, args, C);
         } else if (refValue instanceof DynamicFunctionRefValue) {
-            for (Function f : ((DynamicFunctionRefValue) refValue).getFunctions()) {
-                String funcRefValue = UUID.randomUUID().toString();
-                String funcRefValueType = "$Any"; // Whatever
-                C.bc.block.addInstruction(new FunctionRefInstruction(funcRefValue, funcRefValueType, f, C));
-                // FIXME?: The result here gets overridden by the last call. How to handle?
-                C.bc.block.addInstruction(new ApplyInstruction(funcRefValue, result.Name, result.Type, args, C));
-            }
+            handleDynamicApply(result, args, (DynamicFunctionRefValue)refValue, C);
             return null;
         } else {
             // Note: Here function ref is dynamic
@@ -2349,8 +2362,8 @@ public class RawToSILIRTranslator extends SILInstructionVisitor<SILIRInstruction
                     C.bc.fc.function.getBlock(NormalBB).getArgument(0).name,
                     C.bc.fc.function.getBlock(NormalBB).getArgument(0).getType());
             String name = ((BuiltinFunctionRefValue) refValue).getFunction();
-            if (BuiltinHandler.isSummarized(name)) {
-                return BuiltinHandler.findSummary(name, result.Name, result.Type, args, C);
+            if (isBuiltinSummarized(name)) {
+                return findBuiltinSummary(name, result.Name, result.Type, args, C);
             } else {
                 // Make a function for builtins we don't have summaries for.
                 ArrayList<Argument> funcArgs = new ArrayList<>();

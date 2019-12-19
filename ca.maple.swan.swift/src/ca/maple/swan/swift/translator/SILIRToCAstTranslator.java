@@ -143,7 +143,7 @@ public class SILIRToCAstTranslator {
 
     }
 
-    private static class Visitor extends ISILIRVisitor {
+    private static class Visitor extends IWALASILIRVisitor {
 
         private WalkContext c;
 
