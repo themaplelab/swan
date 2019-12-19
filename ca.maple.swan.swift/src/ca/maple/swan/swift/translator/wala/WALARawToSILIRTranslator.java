@@ -11,8 +11,9 @@
 //
 //===---------------------------------------------------------------------===//
 
-package ca.maple.swan.swift.translator;
+package ca.maple.swan.swift.translator.wala;
 
+import ca.maple.swan.swift.translator.SILInstructionVisitor;
 import ca.maple.swan.swift.translator.raw.*;
 import ca.maple.swan.swift.translator.silir.BasicBlock;
 import ca.maple.swan.swift.translator.silir.Function;

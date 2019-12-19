@@ -17,5 +17,18 @@ package ca.maple.swan.swift.translator.silir.instructions;
  * Visitor for instructions pertaining to WALA translation.
  */
 
+import ca.maple.swan.swift.translator.silir.instructions.spds.DynamicApplyInstruction;
+import ca.maple.swan.swift.translator.silir.instructions.spds.RuleInstruction;
+
 public abstract class IWALASILIRVisitor extends ISILIRVisitor {
+
+    @Override
+    public void visitDynamicApplyInstruction(DynamicApplyInstruction instruction) {
+
+    }
+
+    @Override
+    public void visitRuleInstruction(RuleInstruction instruction) {
+
+    }
 }

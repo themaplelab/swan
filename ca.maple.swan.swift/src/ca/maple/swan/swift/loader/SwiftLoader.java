@@ -13,7 +13,7 @@
 
 package ca.maple.swan.swift.loader;
 
-import ca.maple.swan.swift.translator.SwiftAstTranslator;
+import ca.maple.swan.swift.translator.wala.SwiftAstTranslator;
 import ca.maple.swan.swift.translator.types.SILTypes;
 import com.ibm.wala.cast.ir.translator.TranslatorToIR;
 import com.ibm.wala.cast.js.loader.JavaScriptLoader;

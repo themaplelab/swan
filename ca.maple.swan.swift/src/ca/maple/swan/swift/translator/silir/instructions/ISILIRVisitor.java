@@ -17,7 +17,18 @@ package ca.maple.swan.swift.translator.silir.instructions;
  * Visitor for ALL SILIR instructions.
  */
 
+import ca.maple.swan.swift.translator.silir.instructions.spds.DynamicApplyInstruction;
+import ca.maple.swan.swift.translator.silir.instructions.spds.RuleInstruction;
+
 public abstract class ISILIRVisitor {
+
+    // SPDS
+
+    public abstract void visitDynamicApplyInstruction(DynamicApplyInstruction instruction);
+
+    public abstract void visitRuleInstruction(RuleInstruction instruction);
+
+    // Regular
 
     public abstract void visitApplyInstruction(ApplyInstruction instruction);
 

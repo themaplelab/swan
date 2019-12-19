@@ -11,10 +11,11 @@
 //
 //===---------------------------------------------------------------------===//
 
-package ca.maple.swan.swift.translator;
+package ca.maple.swan.swift.translator.spds;
 
 // WIP
 
+import ca.maple.swan.swift.translator.RawData;
 import ca.maple.swan.swift.translator.silir.context.ProgramContext;
 
 public class SwiftToSPDSTranslator {

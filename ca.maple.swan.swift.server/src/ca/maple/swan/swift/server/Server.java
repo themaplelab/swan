@@ -15,8 +15,8 @@ package ca.maple.swan.swift.server;
 
 import ca.maple.swan.swift.taint.TaintAnalysisDriver;
 import ca.maple.swan.swift.translator.RawData;
-import ca.maple.swan.swift.translator.SwiftToCAstTranslator;
-import ca.maple.swan.swift.translator.SwiftToSPDSTranslator;
+import ca.maple.swan.swift.translator.wala.SwiftToCAstTranslator;
+import ca.maple.swan.swift.translator.spds.SwiftToSPDSTranslator;
 import com.ibm.wala.cast.tree.CAstSourcePositionMap;
 import com.ibm.wala.cast.tree.impl.CAstImpl;
 import com.ibm.wala.ipa.callgraph.propagation.InstanceKey;

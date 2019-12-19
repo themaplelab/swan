@@ -11,13 +11,15 @@
 //
 //===---------------------------------------------------------------------===//
 
-package ca.maple.swan.swift.translator;
+package ca.maple.swan.swift.translator.wala;
 
 import java.io.*;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.*;
 
+import ca.maple.swan.swift.translator.RawData;
+import ca.maple.swan.swift.translator.SwiftTranslatorPathLoader;
 import ca.maple.swan.swift.translator.silir.context.ProgramContext;
 import com.ibm.wala.cast.ir.translator.NativeTranslatorToCAst;
 import com.ibm.wala.cast.tree.CAst;
@@ -54,7 +56,7 @@ public class SwiftToCAstTranslator extends NativeTranslatorToCAst {
 	}
 
 	// Purely used for calling translateToCAstNodes.
-	SwiftToCAstTranslator() {
+	public SwiftToCAstTranslator() {
 		this(new CAstImpl(), null, null);
 	}
 

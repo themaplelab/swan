@@ -16,6 +16,8 @@ package ca.maple.swan.swift.translator.silir.post;
 import ca.maple.swan.swift.translator.silir.BasicBlock;
 import ca.maple.swan.swift.translator.silir.Function;
 import ca.maple.swan.swift.translator.silir.instructions.*;
+import ca.maple.swan.swift.translator.silir.instructions.spds.DynamicApplyInstruction;
+import ca.maple.swan.swift.translator.silir.instructions.spds.RuleInstruction;
 import ca.maple.swan.swift.translator.silir.values.ValueTable;
 
 import java.util.ArrayList;
@@ -45,6 +47,16 @@ public class IRPruner extends ISILIRVisitor {
                 b.getInstructions().remove(instruction);
             }
         }
+    }
+
+    @Override
+    public void visitDynamicApplyInstruction(DynamicApplyInstruction instruction) {
+
+    }
+
+    @Override
+    public void visitRuleInstruction(RuleInstruction instruction) {
+
     }
 
     @Override

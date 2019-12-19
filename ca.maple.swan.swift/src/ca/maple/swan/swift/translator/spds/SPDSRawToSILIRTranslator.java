@@ -12,13 +12,15 @@
 //===---------------------------------------------------------------------===//
 
 
-package ca.maple.swan.swift.translator;
+package ca.maple.swan.swift.translator.spds;
 
 import ca.maple.swan.swift.translator.raw.RawUtil;
 import ca.maple.swan.swift.translator.silir.context.InstructionContext;
 import ca.maple.swan.swift.translator.silir.instructions.SILIRInstruction;
+import ca.maple.swan.swift.translator.silir.instructions.spds.DynamicApplyInstruction;
 import ca.maple.swan.swift.translator.silir.summaries.SPDSBuiltinHandler;
 import ca.maple.swan.swift.translator.silir.values.DynamicFunctionRefValue;
+import ca.maple.swan.swift.translator.wala.WALARawToSILIRTranslator;
 
 import java.util.ArrayList;
 
@@ -39,8 +41,7 @@ public class SPDSRawToSILIRTranslator extends WALARawToSILIRTranslator {
 
     @Override
     protected void handleDynamicApply(RawUtil.RawValue result, ArrayList<String> args, DynamicFunctionRefValue refValue, InstructionContext C) {
-        // TODO: Use SPDS dynamic apply instruction
-        super.handleDynamicApply(result, args, refValue, C);
+        C.bc.block.addInstruction(new DynamicApplyInstruction(refValue.getFunctions(), result.Name, result.Type, args, C));
     }
 
 }

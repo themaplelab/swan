@@ -29,7 +29,7 @@ extern "C" {
 /// JNI method called from the Java (analysis) side to start
 /// the translation process.
 JNIEXPORT jobject JNICALL
-Java_ca_maple_swan_swift_translator_SwiftToCAstTranslator_translateToCAstNodes(JNIEnv *env, jobject obj, jobject args);
+Java_ca_maple_swan_swift_translator_wala_SwiftToCAstTranslator_translateToCAstNodes(JNIEnv *env, jobject obj, jobject args);
 
 #ifdef __cplusplus
 }

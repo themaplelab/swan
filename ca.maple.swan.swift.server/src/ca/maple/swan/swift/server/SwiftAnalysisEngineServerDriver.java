@@ -15,8 +15,8 @@ package ca.maple.swan.swift.server;
 
 import ca.maple.swan.swift.client.SwiftAnalysisEngine;
 import ca.maple.swan.swift.translator.RawData;
-import ca.maple.swan.swift.translator.SwiftToCAstTranslator;
-import ca.maple.swan.swift.translator.SwiftToCAstTranslatorFactory;
+import ca.maple.swan.swift.translator.wala.SwiftToCAstTranslator;
+import ca.maple.swan.swift.translator.wala.SwiftToCAstTranslatorFactory;
 import com.ibm.wala.cast.ir.ssa.AstIRFactory;
 import com.ibm.wala.cast.js.client.JavaScriptAnalysisEngine;
 import com.ibm.wala.cast.js.ipa.modref.JavaScriptModRef;
