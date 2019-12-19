@@ -42,6 +42,11 @@ import java.util.*;
 /*
  * Translates SILIR to CAst. Nothing particularly interesting happens here since all of the
  * SIL nuanced are removed at the raw to SILIR translation step.
+ *
+ * // TODOS:
+ * 1. Handle arrays.
+ * 2. Dynamic fields (e.g. dictionaries) need to be handled.
+ * 3. Special WALA IR instruction needed for protocols?
  */
 
 public class SILIRToCAstTranslator {
