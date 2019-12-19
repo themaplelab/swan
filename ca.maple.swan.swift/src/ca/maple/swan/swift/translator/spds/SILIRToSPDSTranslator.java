@@ -18,9 +18,8 @@ import ca.maple.swan.swift.translator.silir.instructions.spds.DynamicApplyInstru
 import ca.maple.swan.swift.translator.silir.instructions.spds.RuleInstruction;
 
 public class SILIRToSPDSTranslator {
-    
-    private static class Visitor extends ISPDSSILIRVisitor {
 
+    private static class Visitor extends ISPDSSILIRVisitor {
 
         @Override
         public void visitDynamicApplyInstruction(DynamicApplyInstruction instruction) {

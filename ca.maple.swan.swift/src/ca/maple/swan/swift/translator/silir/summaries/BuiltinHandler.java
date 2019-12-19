@@ -35,7 +35,6 @@ public class BuiltinHandler {
         // TODO: Handle all Array, Set, and Dictionary container type functions.
         // TODO: os_log needs to have all values of given array sunk.
 
-
         // TODO:
         /*
         func $() `Swift.Array.append(__owned A) -> ()`(v0 : $*String, v1 : $*Array<String>)
@@ -185,7 +184,7 @@ public class BuiltinHandler {
                 return null;
             }
             default: {
-                Assertions.UNREACHABLE("Should not be called without checking isBuiltIn(): " + funcName);
+                Assertions.UNREACHABLE("Should not be called without checking isSummarized(): " + funcName);
                 return null;
             }
         }

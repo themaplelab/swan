@@ -29,7 +29,7 @@ public class SPDSBuiltinHandler {
     public static SILIRInstruction findSummary(String funcName, String resultName, String resultType, ArrayList<String> params, InstructionContext C) {
         switch (funcName) {
             default: {
-                Assertions.UNREACHABLE("Should not be called without checking isBuiltIn(): " + funcName);
+                Assertions.UNREACHABLE("Should not be called without checking isSummarized(): " + funcName);
                 return null;
             }
         }
