@@ -45,13 +45,18 @@ using namespace swan;
 //===------------------- MODULE/FUNCTION/BLOCK VISITORS ------------------===//
 
 void InstructionVisitor::visitSILModule(SILModule *M) {
+
   for (auto it = M->getWitnessTables().begin(); it != M->getWitnessTables().end(); ++it) {
-    llvm::outs() << Demangle::demangleSymbolAsString(it->getName()) << "\n";
+    std::string protocolName = it->getProtocol()->getName().str();
+    if (witnessTable.find(protocolName) == witnessTable.end()) {
+      witnessTable.insert({protocolName, std::vector<string>()});
+    }
     for (auto it1 = it->getEntries().begin(); it1 != it->getEntries().end(); ++it1) {
-      llvm::outs() << "\t" << Demangle::demangleSymbolAsString(it1->getMethodWitness().Witness->getName()) << "\n";
-      llvm::outs() << "\t" << Demangle::demangleSymbolAsString(it1->getMethodWitness().Witness->getName()) << "\n";
+      witnessTable.find(protocolName)->second.push_back(
+        Demangle::demangleSymbolAsString(it1->getMethodWitness().Witness->getName()));
     }
   }
+
   for (SILFunction &F: *M) {
     if (F.empty()) { // Most likely a builtin or library (external) function, so we ignore it.
       // Can't get information like arguments from functions without a body :(
@@ -125,6 +130,7 @@ void InstructionVisitor::visitSILFunction(SILFunction *F) {
       llvm::outs() << "[ARG]: " << addressToString(static_cast<ValueBase*>(arg)) << "\n";
     }
   }
+  // Note: Single file mode will print the SIL anyways.
   if (PRINT_SIL) {
     llvm::outs() << "<RAW SIL BEGIN> \n\n";
     F->print(llvm::outs(), true);
@@ -808,13 +814,23 @@ void InstructionVisitor::visitObjCSuperMethodInst(ObjCSuperMethodInst *ASMI) {
   ADD_PROP(MAKE_CONST(FunctionName.c_str()));
 }
 
+// Interesting code related to protocols
+// https://github.com/apple/swift/blob/c8be802c430ebfa6c38546f626ebe72fe2a07452/lib/SIL/Linker.cpp#L206
 void InstructionVisitor::visitWitnessMethodInst(WitnessMethodInst *WMI) {
   handleSimpleInstr(WMI);
   std::string FunctionName = Demangle::demangleSymbolAsString(WMI->getMember().mangle());
+  std::string protocolName = WMI->getLookupProtocol()->getName().str();
   if (SWAN_PRINT) {
-    llvm::outs() << "\t [CLASS METHOD]: " << FunctionName << "\n";
+    llvm::outs() << "\t [Function]: " << FunctionName << "\n";
+    llvm::outs() << "\t [PROTOCOL]: " << protocolName << "\n";
   }
-  ADD_PROP(MAKE_CONST(FunctionName.c_str()));
+  std::list<jobject> functions;
+  for (auto it = witnessTable.find(protocolName)->second.begin(); it != witnessTable.find(protocolName)->second.end(); ++it) {
+    if ((*it).find(FunctionName) != std::string::npos) {
+      functions.push_back(MAKE_CONST((*it).c_str()));
+    }
+  }
+  ADD_PROP(MAKE_NODE2(CAstWrapper::PRIMITIVE, MAKE_ARRAY(&functions)));
 }
 
 /*******************************************************************************/
