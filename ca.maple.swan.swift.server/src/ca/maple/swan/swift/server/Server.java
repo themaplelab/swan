@@ -44,7 +44,7 @@ public class Server {
         SPDS,
         WALA
     }
-    private static Mode mode = Mode.WALA;
+    private static Mode mode = Mode.SPDS;
 
     public static void main(String[] args) throws IllegalArgumentException {
 

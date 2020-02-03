@@ -2,7 +2,7 @@
 <img src="https://karimali.ca/resources/images/projects/swan.png" width="150">
 
 # SWAN
-A static program analysis framework for analyzing Swift (incl. iOS/macOS) applications using [WALA](https://github.com/wala/WALA) as the analysis core. 
+A static program analysis framework for analyzing Swift (incl. iOS/macOS) applications using [WALA](https://github.com/wala/WALA) as the analysis core.
 
 ## Introduction
 
@@ -25,16 +25,17 @@ The translator aims to support every SIL instruction seen in practice.
 First, you should consider that the final build **may be as large as ~70GB**. It is recommended for your system to have **at least 16GB of RAM**, as compiling Swift is known to not compile for some systems with less. Also, please read Swift's [README](https://github.com/apple/swift/blob/master/README.md) for the latest dependencies (e.g. Xcode beta version).
 
 ### Release support
-Supported Swift (incl. dependencies) and WALA releases on SWAN's `master` branch. 
+Supported Swift (incl. dependencies) and WALA releases on SWAN's `master` branch.
 
-| OS | Swift Release Tag | WALA Release Tag | 
+| OS | Swift Release Tag | WALA Release Tag |
 | -----------|:-------:|:-----:|
 | macOS Catalina | NOT SUPPORTED | |
-| macOS Mojave | [swift-DEVELOPMENT-SNAPSHOT-2019-09-15-a](https://github.com/apple/swift/releases/tag/swift-DEVELOPMENT-SNAPSHOT-2019-09-15-a) | [master](https://github.com/wala/WALA/tree/master/) |
+| macOS Mojave | [swift-DEVELOPMENT-SNAPSHOT-2020-01-24-a](https://github.com/apple/swift/releases/tag/swift-DEVELOPMENT-SNAPSHOT-2020-01-24-a) | [v1.5.4](https://github.com/wala/WALA/releases/tag/v1.5.4) |
 | Linux (Ubuntu 18.04) | [swift-DEVELOPMENT-SNAPSHOT-2019-09-15-a](https://github.com/apple/swift/releases/tag/swift-DEVELOPMENT-SNAPSHOT-2019-09-15-a)** | [master](https://github.com/wala/WALA/tree/master/) |
 
+Note: SWAN currently supports Xcode 11.3
 
-\*Has not worked for us. Error is produced when linking SWAN against the Swift compiler. We are currently running Catalina, but using a build that was built using Mojave. 
+\*Has not worked for us. Error is produced when linking SWAN against the Swift compiler. We are currently running Catalina, but using a build that was built using Mojave.
 
 \**Master does build on Linux, but we have not updated SWAN's C++ code to fit some new Swift compiler API changes.
 
@@ -53,7 +54,7 @@ git clone https://github.com/themaplelab/swan
 ### Build Dependencies
 See compatibility table above for supported release tags according to your OS. Please open up an issue if you are experiencing build issues or difficulties. You can ignore the `(--tag) SUPPORTED_TAG` part if `master` is supported.
 
-**These must be built in the exact order as below.** 
+**These must be built in the exact order as below.**
 
 #### Swift
 
@@ -61,7 +62,7 @@ See compatibility table above for supported release tags according to your OS. P
 cd ./swift
 git checkout SUPPORTED_TAG
 ./utils/update-checkout --clone --tag SUPPORTED_TAG
-./utils/build-script 
+./utils/build-script
 cd ..
 ```
 
