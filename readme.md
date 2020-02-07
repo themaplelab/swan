@@ -44,7 +44,7 @@ Note: SWAN currently supports Xcode 11.3
 We use the latest Swift compiler and WALA.
 ```
 mkdir swift-source
-cd swift-source
+cd swift-source/
 git clone https://github.com/apple/swift
 git clone https://github.com/wala/WALA
 git clone https://github.com/themaplelab/swan
@@ -59,7 +59,7 @@ See compatibility table above for supported release tags according to your OS. P
 #### Swift
 
 ```
-cd ./swift
+cd swift/
 git checkout SUPPORTED_TAG
 ./utils/update-checkout --clone --tag SUPPORTED_TAG
 ./utils/build-script
@@ -71,7 +71,7 @@ cd ..
 You must be using **Java 8** in order to compile WALA. If you need help switching to Java 8, please see our [guide](https://github.com/themaplelab/swan/wiki/Switching-to-Java-8) on it.
 
 ```
-cd ./WALA
+cd WALA/
 git checkout SUPPORTED_TAG
 ./gradlew assemble
 cd ..
@@ -80,7 +80,7 @@ cd ..
 #### Edit SWAN Configurations
 
 ```
-cd ./swan
+cd swan/
 cp gradle.properties.example gradle.properties
 ```
 
@@ -90,7 +90,6 @@ Edit `gradle.properties` and provide proper paths. Some example paths are alread
 #### Build SWAN
 
 ```
-cd ./swan
 ./gradlew assemble
 ```
 
