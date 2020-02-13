@@ -33,6 +33,6 @@ public class NewGlobalInstruction extends SILIRInstruction {
 
     @Override
     public String toString() {
-        return "global " + value.name + this.getComment();
+        return "new global " + value.name + this.getComment();
     }
 }

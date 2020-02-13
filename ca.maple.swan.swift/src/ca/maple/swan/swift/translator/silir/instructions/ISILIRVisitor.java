@@ -13,9 +13,28 @@
 
 package ca.maple.swan.swift.translator.silir.instructions;
 
+/*
+ * Visitor for ALL SILIR instructions.
+ */
+
+import ca.maple.swan.swift.translator.silir.instructions.spds.DynamicApplyInstruction;
+import ca.maple.swan.swift.translator.silir.instructions.spds.RuleInstruction;
+
 public abstract class ISILIRVisitor {
 
+    // SPDS
+
+    public abstract void visitDynamicApplyInstruction(DynamicApplyInstruction instruction);
+
+    public abstract void visitRuleInstruction(RuleInstruction instruction);
+
+    // Regular
+
     public abstract void visitApplyInstruction(ApplyInstruction instruction);
+
+    public abstract void visitArrayReadInstruction(ArrayReadInstruction instruction);
+
+    public abstract void visitArrayWriteInstruction(ArrayWriteInstruction instruction);
 
     public abstract void visitAssignGlobalInstruction(AssignGlobalInstruction instruction);
 
@@ -29,19 +48,13 @@ public abstract class ISILIRVisitor {
 
     public abstract void visitConditionalThrowInstruction(ConditionalThrowInstruction instruction);
 
-    public abstract void visitFieldAliasInstruction(FieldAliasInstruction instruction);
-
     public abstract void visitFieldReadInstruction(FieldReadInstruction instruction);
-
-    public abstract void visitFieldReadWriteInstruction(FieldReadWriteInstruction instruction);
 
     public abstract void visitFieldWriteInstruction(FieldWriteInstruction instruction);
 
     public abstract void visitFunctionRefInstruction(FunctionRefInstruction instruction);
 
     public abstract void visitGotoInstruction(GotoInstruction instruction);
-
-    public abstract void visitImplicitCopyInstruction(ImplicitCopyInstruction instruction);
 
     public abstract void visitLiteralInstruction(LiteralInstruction instruction);
 

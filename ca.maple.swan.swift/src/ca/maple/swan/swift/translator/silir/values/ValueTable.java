@@ -43,7 +43,7 @@ public class ValueTable {
     public Value getValue(String s) {
         Assertions.productionAssertion(has(s));
         // We need to know if aliases show up where they are not expected.
-        Assertions.productionAssertion(!(values.get(s) instanceof FieldAliasValue));
+        Assertions.productionAssertion(!(values.get(s) instanceof FieldAliasValue) && !(values.get(s) instanceof ArrayIndexAliasValue));
         usedValues.add(s);
         return values.get(s);
     }
@@ -57,6 +57,23 @@ public class ValueTable {
     public void replace(Value v1, Value v2) {
         this.values.remove(v1.name);
         this.values.put(v2.name, v2);
+    }
+
+    public void arrayAlias(String resultName, String resultType, String operandName, int index) {
+        Value operandValue = this.getValue(operandName);
+        Value resultValue = new ArrayIndexAliasValue(resultName, resultType, operandValue, index);
+        this.add(resultValue);
+    }
+
+    public void fieldAlias(String resultName, String resultType, String operandName, String operandField) {
+        Value operandValue = this.getValue(operandName);
+        Value resultValue = new FieldAliasValue(resultName, resultType, operandValue, operandField);
+        this.add(resultValue);
+
+    }
+
+    public void setUnused(String s) {
+        this.usedValues.remove(s);
     }
 
     public boolean isUsed(String s) {

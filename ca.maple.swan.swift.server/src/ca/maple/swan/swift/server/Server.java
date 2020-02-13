@@ -14,8 +14,11 @@
 package ca.maple.swan.swift.server;
 
 import ca.maple.swan.swift.taint.TaintAnalysisDriver;
-import ca.maple.swan.swift.translator.SwiftToCAstTranslator;
+import ca.maple.swan.swift.translator.RawData;
+import ca.maple.swan.swift.translator.wala.SwiftToCAstTranslator;
+import ca.maple.swan.swift.translator.spds.SwiftToSPDSTranslator;
 import com.ibm.wala.cast.tree.CAstSourcePositionMap;
+import com.ibm.wala.cast.tree.impl.CAstImpl;
 import com.ibm.wala.ipa.callgraph.propagation.InstanceKey;
 import com.ibm.wala.ipa.slicer.SDG;
 import io.socket.client.IO;
@@ -26,17 +29,22 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.net.URISyntaxException;
-import java.util.Arrays;
 import java.util.List;
 
 import static java.lang.System.exit;
 
 public class Server {
 
-    // TODO: Better exception handling across SWAN. Perhaps have some kind of
-    //  global optional exception listener.
+    // TODO: Better exception handling across SWAN to report back to the frontend (extension).
 
-    static SDG<InstanceKey> sdg;
+    static SDG<InstanceKey> sdg = null;
+
+    // Eventually move this to the frontend probably.
+    enum Mode {
+        SPDS,
+        WALA
+    }
+    private static Mode mode = Mode.SPDS;
 
     public static void main(String[] args) throws IllegalArgumentException {
 
@@ -56,13 +64,22 @@ public class Server {
                 @Override
                 public void call(Object... args) {
                     try {
-                        System.out.println("Generating SDG (includes compilation)...");
                         JSONArray jsonArgs = (JSONArray)args[0];
-                        sdg = SwiftAnalysisEngineServerDriver.generateSDG(JSONArrayToJavaStringArray(jsonArgs));
-                        socket.emit("generatedSDG");
-                        System.out.println("Done generating SDG");
+
+                        if (mode == Mode.WALA) {
+                            System.out.println("WALA Mode, Generating SDG (includes compilation)...");
+                            sdg = SwiftAnalysisEngineServerDriver.generateSDG(JSONArrayToJavaStringArray(jsonArgs));
+                            socket.emit("generatedSDG");
+                            System.out.println("Done generating SDG");
+                        } else if (mode == Mode.SPDS){
+                            System.out.println("SPDS Mode, only translating to SILIR for now");
+                            RawData data = new RawData(JSONArrayToJavaStringArray(jsonArgs), new CAstImpl());
+                            data.setup();
+                            SwiftToSPDSTranslator translator = new SwiftToSPDSTranslator(data);
+                            translator.translateToProgramContext();
+                            socket.emit("generatedSDG");
+                        }
                     } catch (Exception e) {
-                        // TODO: This error emit doesn't seem to work.
                         socket.emit("error", e);
                         System.err.println("Could not generate SDG");
                         e.printStackTrace();
@@ -73,23 +90,27 @@ public class Server {
 
                 @Override
                 public void call(Object... args) {
-                    System.out.println("Running taint analysis...");
                     try {
-                        JSONObject sss = (JSONObject)args[0];
-                        JSONArray sources = (JSONArray)sss.get("Sources");
-                        JSONArray sinks = (JSONArray)sss.get("Sinks");
-                        JSONArray sanitizers = (JSONArray)sss.get("Sanitizers");
-                        List<List<CAstSourcePositionMap.Position>> paths = TaintAnalysisDriver.doTaintAnalysis(
-                                sdg,
-                                JSONArrayToJavaStringArray(sources),
-                                JSONArrayToJavaStringArray(sinks),
-                                JSONArrayToJavaStringArray(sanitizers)
-                        );
-                        JSONObject result = pathsToJSON(paths);
-                        JSONArray functions = new JSONArray(SwiftToCAstTranslator.functionNames);
-                        result.put("functions", functions);
-                        System.out.println("Returning taint analysis results...");
-                        socket.emit("taintAnalysisResults", result);
+                        if (mode.equals(Mode.WALA) && sdg != null) {
+                            System.out.println("Running taint analysis...");
+                            JSONObject sss = (JSONObject)args[0];
+                            JSONArray sources = (JSONArray)sss.get("Sources");
+                            JSONArray sinks = (JSONArray)sss.get("Sinks");
+                            JSONArray sanitizers = (JSONArray)sss.get("Sanitizers");
+                            List<List<CAstSourcePositionMap.Position>> paths = TaintAnalysisDriver.doTaintAnalysis(
+                                    sdg,
+                                    JSONArrayToJavaStringArray(sources),
+                                    JSONArrayToJavaStringArray(sinks),
+                                    JSONArrayToJavaStringArray(sanitizers)
+                            );
+                            JSONObject result = pathsToJSON(paths);
+                            JSONArray functions = new JSONArray(SwiftToCAstTranslator.functionNames);
+                            result.put("functions", functions);
+                            System.out.println("Returning taint analysis results...");
+                            socket.emit("taintAnalysisResults", result);
+                        } else {
+                            System.out.println("SPDS mode, no taint analysis for now");
+                        }
                     } catch (Exception e) {
                         socket.emit("error", e);
                         e.printStackTrace();
@@ -121,7 +142,6 @@ public class Server {
     }
 
     private static JSONObject pathsToJSON(List<List<CAstSourcePositionMap.Position>> paths) throws JSONException {
-        // TEMPORARY DUMMY RESULT
         JSONObject returnObject = new JSONObject();
         JSONArray jsonPaths = new JSONArray();
         int counter = 0;

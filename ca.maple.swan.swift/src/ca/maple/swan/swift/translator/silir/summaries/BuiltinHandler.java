@@ -35,7 +35,6 @@ public class BuiltinHandler {
         // TODO: Handle all Array, Set, and Dictionary container type functions.
         // TODO: os_log needs to have all values of given array sunk.
 
-
         // TODO:
         /*
         func $() `Swift.Array.append(__owned A) -> ()`(v0 : $*String, v1 : $*Array<String>)
@@ -132,7 +131,12 @@ public class BuiltinHandler {
             }
 
             case "Swift.Array.subscript.getter : (Swift.Int) -> A" : {
-                return new FieldReadWriteInstruction(params.get(0), "value", params.get(2), params.get(1), true, C);
+                // TODO:
+                String temp = UUID.randomUUID().toString();
+                Value index = C.valueTable().getValue(params.get(1));
+                Assertions.productionAssertion(index instanceof LiteralValue);
+                C.bc.block.addInstruction(new ArrayReadInstruction(temp, "$Any", params.get(2), Integer.parseInt(((LiteralValue)index).literal.toString()), C));
+                C.bc.block.addInstruction(new FieldWriteInstruction(params.get(0), "value", temp, C));
             }
 
             case "Swift._allocateUninitializedArray<A>(Builtin.Word) -> (Swift.Array<A>, Builtin.RawPointer)" : {
@@ -160,7 +164,8 @@ public class BuiltinHandler {
             case "Swift.Double.init(_builtinIntegerLiteral: Builtin.IntLiteral) -> Swift.Double":
             case "Swift.UInt.init(_builtinIntegerLiteral: Builtin.IntLiteral) -> Swift.UInt":
             case "Swift.Double.init(Swift.Int) -> Swift.Double": {
-                return new ImplicitCopyInstruction(resultName, params.get(0), C);
+                C.valueTable().copy(resultName, params.get(0));
+                return null;
             }
             case "Swift.Bool.init(_builtinBooleanLiteral: Builtin.Int1) -> Swift.Bool": {
                 C.bc.block.addInstruction(new NewInstruction(resultName, resultType, C));
@@ -179,7 +184,7 @@ public class BuiltinHandler {
                 return null;
             }
             default: {
-                Assertions.UNREACHABLE("Should not be called without checking isBuiltIn(): " + funcName);
+                Assertions.UNREACHABLE("Should not be called without checking isSummarized(): " + funcName);
                 return null;
             }
         }
@@ -193,7 +198,7 @@ public class BuiltinHandler {
             "Swift.Dictionary.init() -> Swift.Dictionary<A, B>",
             "Swift.Dictionary.subscript.getter : (A) -> Swift.Optional<B>",
             "Swift.Dictionary.subscript.setter : (A) -> Swift.Optional<B>",
-            "Swift.Array.subscript.getter : (Swift.Int) -> A",
+            // "Swift.Array.subscript.getter : (Swift.Int) -> A",
             "Swift._allocateUninitializedArray<A>(Builtin.Word) -> (Swift.Array<A>, Builtin.RawPointer)",
             "default argument 1 of Swift.print(_: Any..., separator: Swift.String, terminator: Swift.String) -> ()",
             "default argument 2 of Swift.print(_: Any..., separator: Swift.String, terminator: Swift.String) -> ()",

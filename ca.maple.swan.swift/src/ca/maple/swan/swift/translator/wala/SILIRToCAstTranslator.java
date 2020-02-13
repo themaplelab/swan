@@ -11,7 +11,7 @@
 //
 //===---------------------------------------------------------------------===//
 
-package ca.maple.swan.swift.translator;
+package ca.maple.swan.swift.translator.wala;
 
 import ca.maple.swan.swift.translator.cast.SwiftCAstNode;
 import ca.maple.swan.swift.translator.operators.SILIRCAstOperator;
@@ -37,14 +37,16 @@ import com.ibm.wala.util.collections.Pair;
 import com.ibm.wala.util.debug.Assertions;
 
 import java.io.File;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Stack;
+import java.util.*;
 
 /*
  * Translates SILIR to CAst. Nothing particularly interesting happens here since all of the
  * SIL nuanced are removed at the raw to SILIR translation step.
+ *
+ * // TODOS:
+ * 1. Handle arrays.
+ * 2. Dynamic fields (e.g. dictionaries) need to be handled.
+ * 3. Special WALA IR instruction needed for protocols?
  */
 
 public class SILIRToCAstTranslator {
@@ -146,7 +148,7 @@ public class SILIRToCAstTranslator {
 
     }
 
-    private static class Visitor extends ISILIRVisitor {
+    private static class Visitor extends IWALASILIRVisitor {
 
         private WalkContext c;
 
@@ -274,6 +276,29 @@ public class SILIRToCAstTranslator {
                             callNode);
             setNodePosition(n, instruction);
             addNode(n);
+        }
+
+        @Override
+        public void visitArrayReadInstruction(ArrayReadInstruction instruction) {
+            // TODO
+            /*
+            CAstNode index = Ast.makeConstant(instruction.index);
+            CAstNode n =
+                    Ast.makeNode(
+                            CAstNode.ASSIGN,
+                            makeVarNode(instruction.result),
+                            Ast.makeNode(
+                                    CAstNode.ARRAY_REF,
+                                    makeVarNode(instruction.operand),
+                                    index));
+            setNodePosition(n, instruction);
+            addNode(n);
+             */
+        }
+
+        @Override
+        public void visitArrayWriteInstruction(ArrayWriteInstruction instruction) {
+            // TODO
         }
 
         @Override
@@ -426,13 +451,8 @@ public class SILIRToCAstTranslator {
         }
 
         @Override
-        public void visitFieldAliasInstruction(FieldAliasInstruction instruction) {
-            // NOP
-        }
-
-        @Override
         public void visitFieldReadInstruction(FieldReadInstruction instruction) {
-            CAstNode field = (instruction.isDynamic) ? makeVarNode(instruction.dynamicField) : Ast.makeConstant(instruction.field);
+            CAstNode field = (instruction.isDynamic) ? makeVarNode(Objects.requireNonNull(instruction.dynamicField)) : Ast.makeConstant(instruction.field);
             CAstNode n =
                     Ast.makeNode(
                             CAstNode.ASSIGN,
@@ -446,27 +466,8 @@ public class SILIRToCAstTranslator {
         }
 
         @Override
-        public void visitFieldReadWriteInstruction(FieldReadWriteInstruction instruction) {
-            CAstNode operandField = (instruction.operandIsDynamic) ?
-                    makeVarNode(instruction.dynamicOperandField) : Ast.makeConstant(instruction.operandField);
-            CAstNode n =
-                    Ast.makeNode(
-                            CAstNode.ASSIGN,
-                            Ast.makeNode(
-                                    CAstNode.OBJECT_REF,
-                                    makeVarNode(instruction.resultValue),
-                                    Ast.makeConstant(instruction.resultField)),
-                            Ast.makeNode(
-                                    CAstNode.OBJECT_REF,
-                                    makeVarNode(instruction.operandValue),
-                                    operandField));
-            setNodePosition(n, instruction);
-            addNode(n);
-        }
-
-        @Override
         public void visitFieldWriteInstruction(FieldWriteInstruction instruction) {
-            CAstNode field = (instruction.isDynamic) ? makeVarNode(instruction.dynamicField) : Ast.makeConstant(instruction.field);
+            CAstNode field = (instruction.isDynamic) ? makeVarNode(Objects.requireNonNull(instruction.dynamicField)) : Ast.makeConstant(instruction.field);
             CAstNode n =
                     Ast.makeNode(
                             CAstNode.ASSIGN,
@@ -543,11 +544,6 @@ public class SILIRToCAstTranslator {
             CAstNode n = makeGotoNode(instruction.bb);
             setNodePosition(n, instruction);
             addNode(n);
-        }
-
-        @Override
-        public void visitImplicitCopyInstruction(ImplicitCopyInstruction instruction) {
-            // NOP
         }
 
         @Override

@@ -14,7 +14,6 @@
 package ca.maple.swan.swift.translator.silir.instructions;
 
 import ca.maple.swan.swift.translator.silir.context.InstructionContext;
-import ca.maple.swan.swift.translator.silir.values.FunctionRefValue;
 import ca.maple.swan.swift.translator.silir.values.Value;
 
 import java.util.ArrayList;

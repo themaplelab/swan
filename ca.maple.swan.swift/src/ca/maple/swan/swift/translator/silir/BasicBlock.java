@@ -13,7 +13,6 @@
 
 package ca.maple.swan.swift.translator.silir;
 
-import ca.maple.swan.swift.translator.silir.context.ProgramContext;
 import ca.maple.swan.swift.translator.silir.instructions.SILIRInstruction;
 import ca.maple.swan.swift.translator.silir.values.Argument;
 
@@ -26,14 +25,13 @@ import java.util.Iterator;
 
 public class BasicBlock {
 
-    @SuppressWarnings("FieldCanBeLocal")
-    private final boolean PRINT_IMPLICIT_INSTRUCTIONS = false;
-
     private int number;
 
     private ArrayList<SILIRInstruction> instructions;
 
     private ArrayList<Argument> arguments;
+
+    private int lineNumber = -1;
 
     public BasicBlock(int number) {
         this(number, null);
@@ -52,11 +50,20 @@ public class BasicBlock {
     public BasicBlock(BasicBlock b) {
         this.number = b.getNumber();
         this.arguments = b.getArguments();
+        this.lineNumber = b.lineNumber;
         this.instructions = new ArrayList<>();
     }
 
     public void setNumber(int n) {
         this.number = n;
+    }
+
+    public void setLineNumber(int n) {
+        this.lineNumber = n;
+    }
+
+    public int getLineNumber() {
+        return this.lineNumber;
     }
 
     public int getNumber() {
@@ -100,12 +107,15 @@ public class BasicBlock {
 
         for (SILIRInstruction instruction : instructions) {
             try {
-                if (instruction.isExplicit() || PRINT_IMPLICIT_INSTRUCTIONS) {
-                    //noinspection ResultOfMethodCallIgnored
-                    instruction.toString(); // To trigger error
-                    s.append("        ");
-                    s.append(instruction.toString());
+                //noinspection ResultOfMethodCallIgnored
+                instruction.toString(); // To trigger error
+                s.append(instruction.getLineNumber());
+                // Lazy column building
+                int count = Integer.toString(instruction.getLineNumber()).length();
+                for (int i = 0; i < 8 - count; ++i) {
+                    s.append(" ");
                 }
+                s.append(instruction.toString());
             } catch (Exception e ){
                 System.err.println("(Block #" + getNumber() + ") Could not print instruction :" + instruction.getClass().getName());
             }

@@ -122,7 +122,7 @@ jobject WALAInstance::getRoots() {
 
 void WALAInstance::setSource(std::string url) {
   TRY(Exception, JavaEnv)
-      auto TranslatorClass = JavaEnv->FindClass("ca/maple/swan/swift/translator/SwiftToCAstTranslator");
+      auto TranslatorClass = JavaEnv->FindClass("ca/maple/swan/swift/translator/wala/SwiftToCAstTranslator");
       THROW_ANY_EXCEPTION(Exception);
       auto SetSource = JavaEnv->GetMethodID(TranslatorClass, "setSource", "(Ljava/lang/String;)V");
       THROW_ANY_EXCEPTION(Exception);

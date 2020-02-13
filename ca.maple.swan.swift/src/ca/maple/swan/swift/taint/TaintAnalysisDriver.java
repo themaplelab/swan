@@ -19,7 +19,6 @@ import com.ibm.wala.ipa.slicer.*;
 import com.ibm.wala.util.CancelException;
 import com.ibm.wala.util.graph.Graph;
 import com.ibm.wala.util.graph.GraphSlicer;
-import com.ibm.wala.viz.DotUtil;
 import com.ibm.wala.viz.NodeDecorator;
 
 import java.util.ArrayList;
@@ -119,8 +118,6 @@ public class TaintAnalysisDriver {
             String[] sources,
             String[] sinks,
             String[] sanitizers) {
-
-        // TODO: Combine with known SSS here.
 
         return findSSSPaths(
                 sdg,

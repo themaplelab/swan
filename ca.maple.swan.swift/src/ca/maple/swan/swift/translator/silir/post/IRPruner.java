@@ -11,11 +11,13 @@
 //
 //===---------------------------------------------------------------------===//
 
-package ca.maple.swan.swift.translator.silir.printing;
+package ca.maple.swan.swift.translator.silir.post;
 
 import ca.maple.swan.swift.translator.silir.BasicBlock;
 import ca.maple.swan.swift.translator.silir.Function;
 import ca.maple.swan.swift.translator.silir.instructions.*;
+import ca.maple.swan.swift.translator.silir.instructions.spds.DynamicApplyInstruction;
+import ca.maple.swan.swift.translator.silir.instructions.spds.RuleInstruction;
 import ca.maple.swan.swift.translator.silir.values.ValueTable;
 
 import java.util.ArrayList;
@@ -48,8 +50,28 @@ public class IRPruner extends ISILIRVisitor {
     }
 
     @Override
+    public void visitDynamicApplyInstruction(DynamicApplyInstruction instruction) {
+
+    }
+
+    @Override
+    public void visitRuleInstruction(RuleInstruction instruction) {
+
+    }
+
+    @Override
     public void visitApplyInstruction(ApplyInstruction instruction) {
         
+    }
+
+    @Override
+    public void visitArrayReadInstruction(ArrayReadInstruction instruction) {
+
+    }
+
+    @Override
+    public void visitArrayWriteInstruction(ArrayWriteInstruction instruction) {
+
     }
 
     @Override
@@ -87,17 +109,7 @@ public class IRPruner extends ISILIRVisitor {
     }
 
     @Override
-    public void visitFieldAliasInstruction(FieldAliasInstruction instruction) {
-        
-    }
-
-    @Override
     public void visitFieldReadInstruction(FieldReadInstruction instruction) {
-        
-    }
-
-    @Override
-    public void visitFieldReadWriteInstruction(FieldReadWriteInstruction instruction) {
         
     }
 
@@ -113,11 +125,6 @@ public class IRPruner extends ISILIRVisitor {
 
     @Override
     public void visitGotoInstruction(GotoInstruction instruction) {
-        
-    }
-
-    @Override
-    public void visitImplicitCopyInstruction(ImplicitCopyInstruction instruction) {
         
     }
 

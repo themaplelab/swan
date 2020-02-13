@@ -19,29 +19,29 @@ public abstract class SILIRInstruction {
 
     public final InstructionContext ic;
 
+    private int lineNumber = -1;
+
     private String comment = "";
 
     protected SILIRInstruction(InstructionContext ic) {
         this.ic = ic;
     }
 
-    private boolean isExplicit = true;
-
     @Override
     public abstract String toString();
 
     public abstract void visit(ISILIRVisitor v);
 
-    public boolean isExplicit() {
-        return this.isExplicit;
-    }
-
-    public void setImplicit() {
-        this.isExplicit = false;
-    }
-
     public void setComment(String s) {
         this.comment = s;
+    }
+
+    public void setLineNumber(int n) {
+        this.lineNumber = n;
+    }
+
+    public int getLineNumber() {
+        return this.lineNumber;
     }
 
     public String getComment() {

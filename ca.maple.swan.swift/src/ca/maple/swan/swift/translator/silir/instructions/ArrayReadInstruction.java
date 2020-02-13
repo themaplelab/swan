@@ -1,4 +1,4 @@
-//===--- ImplicitCopyInstruction.java ------------------------------------===//
+//===--- ArrayReadInstruction.java ---------------------------------------===//
 //
 // This source file is part of the SWAN open source project
 //
@@ -14,30 +14,32 @@
 package ca.maple.swan.swift.translator.silir.instructions;
 
 import ca.maple.swan.swift.translator.silir.context.InstructionContext;
-import ca.maple.swan.swift.translator.silir.printing.ValueNameSimplifier;
 import ca.maple.swan.swift.translator.silir.values.Value;
 
-public class ImplicitCopyInstruction extends SILIRInstruction {
+public class ArrayReadInstruction extends SILIRInstruction {
 
-    private final String to;
-    private final Value from;
+    public final Value result;
 
-    public ImplicitCopyInstruction(String to, String from, InstructionContext ic) {
+    public final int index;
+
+    public final Value operandBase;
+
+    public ArrayReadInstruction(String resultName, String resultType, String operand, int index, InstructionContext ic) {
         super(ic);
-        this.from = ic.valueTable().getPossibleAlias(from);
-        ic.valueTable().copy(to, from);
-        this.to = to;
-        this.setImplicit();
+        this.result = new Value(resultName, resultType);
+        ic.valueTable().add(this.result);
+        this.operandBase = ic.valueTable().getValue(operand);
+        this.index = index;
     }
 
     @Override
     public void visit(ISILIRVisitor v) {
-        v.visitImplicitCopyInstruction(this);
+        v.visitArrayReadInstruction(this);
     }
 
     @Override
     public String toString() {
-        return ValueNameSimplifier.get(to) + " := " + from.simpleName() + this.getComment();
+        return result.simpleName() + " := " + operandBase.simpleName() + "[" +
+                this.index + "]" + this.getComment();
     }
-
 }

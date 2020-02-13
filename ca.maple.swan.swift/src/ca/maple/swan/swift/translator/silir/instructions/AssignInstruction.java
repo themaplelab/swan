@@ -14,6 +14,7 @@
 package ca.maple.swan.swift.translator.silir.instructions;
 
 import ca.maple.swan.swift.translator.silir.context.InstructionContext;
+import ca.maple.swan.swift.translator.silir.values.ArrayIndexAliasValue;
 import ca.maple.swan.swift.translator.silir.values.FieldAliasValue;
 import ca.maple.swan.swift.translator.silir.values.Value;
 
@@ -40,6 +41,12 @@ public class AssignInstruction extends SILIRInstruction {
             ic.bc.block.addInstruction(new FieldReadInstruction(
                     toName, toType, ((FieldAliasValue) possibleFrom).value.name, ((FieldAliasValue) possibleFrom).field, ic));
             this.from = this.to; // To basically NOP the assign.
+        } else if (possibleFrom instanceof ArrayIndexAliasValue) {
+            this.to = new Value(toName, toType);
+            ic.valueTable().add(this.to);
+            ic.bc.block.addInstruction(new ArrayReadInstruction(
+                    toName, toType, ((ArrayIndexAliasValue) possibleFrom).value.name, ((ArrayIndexAliasValue) possibleFrom).index, ic));
+            this.from = this.to;
         } else {
             this.to = new Value(toName, toType);
             this.from = possibleFrom;

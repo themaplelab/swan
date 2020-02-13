@@ -14,8 +14,8 @@
 package ca.maple.swan.swift.test;
 
 import ca.maple.swan.swift.client.SwiftAnalysisEngine;
-import ca.maple.swan.swift.translator.SwiftToCAstTranslator;
-import ca.maple.swan.swift.translator.SwiftToCAstTranslatorFactory;
+import ca.maple.swan.swift.translator.wala.SwiftToCAstTranslator;
+import ca.maple.swan.swift.translator.wala.SwiftToCAstTranslatorFactory;
 import com.ibm.wala.cast.ir.ssa.AstIRFactory;
 import com.ibm.wala.cast.js.client.JavaScriptAnalysisEngine;
 import com.ibm.wala.cast.js.ipa.modref.JavaScriptModRef;
@@ -51,6 +51,8 @@ import com.ibm.wala.util.strings.Atom;
 
 /*
  * This class currently serves as a testing bed (entry-point) for SWAN.
+ *
+ * TODO: NO LONGER IN USE - BLOW AWAY. Mind the counter and test file folders.
  */
 
 public class TestSwiftCallGraphShapeUsingJS extends TestCallGraphShape {
@@ -132,13 +134,16 @@ public class TestSwiftCallGraphShapeUsingJS extends TestCallGraphShape {
 
     public static void main(String[] args) throws IllegalArgumentException {
 
+        /*
+
         TestSwiftCallGraphShapeUsingJS driver = new TestSwiftCallGraphShapeUsingJS();
 
         JavaScriptAnalysisEngine Engine;
 
         try {
 
-            String[] modules = new SwiftToCAstTranslator().doTranslation(args);
+
+            String[] modules = new SwiftToCAstTranslator().setupTranslation(args);
 
             if (modules.length == 0) {
                 System.err.println("Error: could not create modules");
@@ -157,5 +162,7 @@ public class TestSwiftCallGraphShapeUsingJS extends TestCallGraphShape {
             e.printStackTrace();
             System.exit(1);
         }
+
+         */
     }
 }

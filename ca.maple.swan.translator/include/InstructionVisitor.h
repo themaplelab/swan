@@ -35,6 +35,10 @@ namespace swan {
 
   class WALAInstance;
 
+  // NOTE: Printing using llvm::outs() is highly unreliable when using a JVM.
+  // Often, the output will not be complete.
+  // A possible solution is to burn CPU cycles so that the llvm printer can catch up.
+
   /// Decides whether to print the translation debug info to terminal at runtime.
   static bool SWAN_PRINT = false;
   /// Source information can be annoying/unnecessary for debugging, so there is an option to disable it.
@@ -87,6 +91,11 @@ namespace swan {
     std::unique_ptr<SILFunctionInfo> functionInfo;
     /// Source information about the SILModule.
     std::unique_ptr<SILModuleInfo> moduleInfo;
+
+
+    /// Witness table information for dynamic dispatch.
+    /// Key is the protocol name, value is a vector of strings representing all functions.
+    std::unordered_map<string, std::vector<string>> witnessTable;
 
     /// Handles any instruction with nothing but regular operands and results.
     /// Can also be used on complex instructions, but isn't garuanteed to contain
@@ -157,7 +166,7 @@ namespace swan {
     void visitStrongRetainInst(StrongRetainInst *SRTI);
     void visitStrongReleaseInst(StrongReleaseInst *SRLI);
     void visitSetDeallocatingInst(SetDeallocatingInst *SDI);
-    void visitCopyUnownedValueInst(CopyUnownedValueInst *CUVI);
+    void visitStrongCopyUnownedValueInst(StrongCopyUnownedValueInst *CUVI);
     void visitStrongRetainUnownedInst(StrongRetainUnownedInst *SRUI);
     void visitUnownedRetainInst(UnownedRetainInst *URTI);
     void visitUnownedReleaseInst(UnownedReleaseInst *URLI);

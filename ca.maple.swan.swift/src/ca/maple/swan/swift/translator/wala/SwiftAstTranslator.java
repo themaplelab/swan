@@ -11,7 +11,7 @@
 //
 //===---------------------------------------------------------------------===//
 
-package ca.maple.swan.swift.translator;
+package ca.maple.swan.swift.translator.wala;
 
 import ca.maple.swan.swift.loader.SwiftLoader;
 import ca.maple.swan.swift.translator.operators.SILIRBinaryOp;

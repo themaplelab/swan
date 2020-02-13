@@ -2,7 +2,7 @@
 <img src="https://karimali.ca/resources/images/projects/swan.png" width="150">
 
 # SWAN
-A static program analysis framework for analyzing Swift (incl. iOS/macOS) applications using [WALA](https://github.com/wala/WALA) as the analysis core. 
+A static program analysis framework for analyzing Swift (incl. iOS/macOS) applications using [WALA](https://github.com/wala/WALA) as the analysis core.
 
 ## Introduction
 
@@ -25,16 +25,17 @@ The translator aims to support every SIL instruction seen in practice.
 First, you should consider that the final build **may be as large as ~70GB**. It is recommended for your system to have **at least 16GB of RAM**, as compiling Swift is known to not compile for some systems with less. Also, please read Swift's [README](https://github.com/apple/swift/blob/master/README.md) for the latest dependencies (e.g. Xcode beta version).
 
 ### Release support
-Supported Swift (incl. dependencies) and WALA releases on SWAN's `master` branch. 
+Supported Swift (incl. dependencies) and WALA releases on SWAN's `master` branch.
 
-| OS | Swift Release Tag | WALA Release Tag | 
+| OS | Swift Release Tag | WALA Release Tag |
 | -----------|:-------:|:-----:|
-| macOS Catalina | NOT SUPPORTED, but build available for download* | |
-| macOS Mojave | [swift-DEVELOPMENT-SNAPSHOT-2019-09-15-a](https://github.com/apple/swift/releases/tag/swift-DEVELOPMENT-SNAPSHOT-2019-09-15-a) | [master](https://github.com/wala/WALA/tree/master/) |
+| macOS Catalina | NOT SUPPORTED* | |
+| macOS Mojave | [swift-DEVELOPMENT-SNAPSHOT-2020-01-24-a](https://github.com/apple/swift/releases/tag/swift-DEVELOPMENT-SNAPSHOT-2020-01-24-a) | [v1.5.4](https://github.com/wala/WALA/releases/tag/v1.5.4) |
 | Linux (Ubuntu 18.04) | [swift-DEVELOPMENT-SNAPSHOT-2019-09-15-a](https://github.com/apple/swift/releases/tag/swift-DEVELOPMENT-SNAPSHOT-2019-09-15-a)** | [master](https://github.com/wala/WALA/tree/master/) |
 
+Note: SWAN currently supports Xcode 11.3
 
-\*Has not worked for us. Error is produced when linking SWAN against the Swift compiler. We are currently running Catalina, but using a build that was built using Mojave. This build is available [here](https://drive.google.com/file/d/1kPPeFqMzR7T5b-GBw_EdnoTj_IOyE7Ij/view?usp=sharing) for download. Just extract it to `swift-source/` and set up everything else normally.
+\*Swift does not build on Catalina and Apple is still using Mojave for development.
 
 \**Master does build on Linux, but we have not updated SWAN's C++ code to fit some new Swift compiler API changes.
 
@@ -43,7 +44,7 @@ Supported Swift (incl. dependencies) and WALA releases on SWAN's `master` branch
 We use the latest Swift compiler and WALA.
 ```
 mkdir swift-source
-cd swift-source
+cd swift-source/
 git clone https://github.com/apple/swift
 git clone https://github.com/wala/WALA
 git clone https://github.com/themaplelab/swan
@@ -53,15 +54,15 @@ git clone https://github.com/themaplelab/swan
 ### Build Dependencies
 See compatibility table above for supported release tags according to your OS. Please open up an issue if you are experiencing build issues or difficulties. You can ignore the `(--tag) SUPPORTED_TAG` part if `master` is supported.
 
-**These must be built in the exact order as below.** 
+**These must be built in the exact order as below.**
 
 #### Swift
 
 ```
-cd ./swift
+cd swift/
 git checkout SUPPORTED_TAG
 ./utils/update-checkout --clone --tag SUPPORTED_TAG
-./utils/build-script 
+./utils/build-script
 cd ..
 ```
 
@@ -70,7 +71,7 @@ cd ..
 You must be using **Java 8** in order to compile WALA. If you need help switching to Java 8, please see our [guide](https://github.com/themaplelab/swan/wiki/Switching-to-Java-8) on it.
 
 ```
-cd ./WALA
+cd WALA/
 git checkout SUPPORTED_TAG
 ./gradlew assemble
 cd ..
@@ -79,7 +80,7 @@ cd ..
 #### Edit SWAN Configurations
 
 ```
-cd ./swan
+cd swan/
 cp gradle.properties.example gradle.properties
 ```
 
@@ -89,7 +90,6 @@ Edit `gradle.properties` and provide proper paths. Some example paths are alread
 #### Build SWAN
 
 ```
-cd ./swan
 ./gradlew assemble
 ```
 
