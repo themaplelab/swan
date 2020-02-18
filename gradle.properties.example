@@ -1,5 +1,0 @@
-WALA_DIR=/home/bob/swift-source/WALA
-WALA_PATH_TO_SWIFT_BUILD=/home/bob/swift-source/build/Ninja-DebugAssert/swift-linux-x86_64
-SWIFT_PATH_TO_LLVM_SOURCE=/home/bob/swift-source/llvm
-SWIFT_PATH_TO_LLVM_BUILD=/home/bob/swift-source/build/Ninja-DebugAssert/llvm-linux-x86_64
-SWIFT_PATH_TO_CMARK_BUILD=/home/bob/swift-source/build/Ninja-DebugAssert/cmark-linux-x86_64
