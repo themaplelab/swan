@@ -29,7 +29,7 @@ def clean_swift():
 
 def build_swift():
     print("Building Swift, this will take a while...")
-    os.system("./" + SWIFT_UTILS_DIR + "build-script")
+    os.system("/." + SWIFT_UTILS_DIR + "build-script")
 
 def build_wala(clean):
     os.chdir(WALA_DIR)
@@ -55,7 +55,7 @@ def main():
 
     if args.build == "all":
         build_swift()
-        build_wala()
+        build_wala(False)
     elif args.build == "wala-only":
         build_wala(args.clean_wala)
     elif args.build == "swift-only":
