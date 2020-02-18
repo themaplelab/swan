@@ -50,5 +50,8 @@ SUPPORTED_WALA_TAG = "v1.5.4"
 
 def check_dir():
     if not os.path.exists(ROOT + "/utils/build-swan"):
-        print(os.linesep + "ERROR: Script must be run from SWAN root directory!" + os.linesep)
+        spaced_print("ERROR: Script must be run from SWAN root directory!")
         sys.exit(1)
+
+def spaced_print(s):
+    print(os.linesep + s + os.linesep)

@@ -24,20 +24,20 @@ import sys
 from constants import *
 
 def clean_swift():
-    print("Cleaning Swift...")
+    spaced_print("Cleaning Swift...")
     os.system("rm -rf ROOT_BUILD")
 
 def build_swift():
-    print("Building Swift, this will take a while...")
+    spaced_print("Building Swift, this will take a while...")
     os.system("/." + SWIFT_UTILS_DIR + "build-script")
 
 def build_wala(clean):
     os.chdir(WALA_DIR)
     if clean:
-        print("Building clean WALA...")
+        spaced_print("Building clean WALA...")
         os.system("/." + WALA_DIR + "gradlew clean")
     else:
-        print("Building WALA...")
+        spaced_print("Building WALA...")
         os.system("/." + WALA_DIR + "gradlew assemble")
     os.chdir(ROOT)
 

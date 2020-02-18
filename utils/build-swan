@@ -24,13 +24,13 @@ import sys
 from constants import *
 
 def clean():
-    print("Cleaning SWAN...")
+    spaced_print("Cleaning SWAN...")
     os.system("./gradlew clean")
 
 def setup_swan():
     if path.exists('gradle.properties'):
         return
-    print("Configuring gradle.properties...")
+    spaced_print("Configuring gradle.properties...")
     with open('gradle.properties', 'w') as file:
         file.write(\
             "PACKAGES_DIR=" + PACKAGES_DIR + os.linesep\
@@ -38,9 +38,9 @@ def setup_swan():
             + "SWAN_DIR=" + ROOT + os.linesep)
 
 def build_swan():
-    print("Building SWAN...")
+    spaced_print("Building SWAN...")
     os.system("./gradlew assemble")
-    print(os.linesep + "NOTE: Make sure environment var `PATH_TO_SWAN` is set before running SWAN." + os.linesep)
+    spaced_print("NOTE: Make sure environment var `PATH_TO_SWAN` is set before running SWAN.")
 
 def main():
     check_dir()
