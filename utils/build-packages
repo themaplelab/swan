@@ -41,6 +41,12 @@ def build_wala(clean):
         os.system("/." + WALA_DIR + "gradlew assemble")
     os.chdir(ROOT)
 
+def build_swan_vscode():
+    spaced_print("Setting up swan-vscode...")
+    os.chdir(SWAN_VSCODE_DIR)
+    os.system("npm install")
+    os.chdir(ROOT)
+
 def main():
     check_dir()
 
