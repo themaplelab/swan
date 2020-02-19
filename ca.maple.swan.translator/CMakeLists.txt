@@ -16,7 +16,7 @@ endif()
 if (UNIX AND NOT APPLE)
 set(WALA_PATH_TO_SWIFT_BUILD "${PACKAGES_DIR}/build/Ninja-DebugAssert/swift-linux-x86_64")
 set(SWIFT_PATH_TO_LLVM_BUILD "${PACKAGES_DIR}/build/Ninja-DebugAssert/llvm-linux-x86_64")
-set(SWIFT_PATH_TO_CMARK_BUILD "${PACKAGES_DIR}/build/Ninja-DebugAssert/cmark-linx-x86_64")
+set(SWIFT_PATH_TO_CMARK_BUILD "${PACKAGES_DIR}/build/Ninja-DebugAssert/cmark-linux-x86_64")
 endif()
 
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake/modules")
