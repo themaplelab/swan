@@ -44,7 +44,7 @@ public class Server {
         SPDS,
         WALA
     }
-    private static Mode mode = Mode.SPDS;
+    private static Mode mode = Mode.WALA;
 
     public static void main(String[] args) throws IllegalArgumentException {
 
@@ -59,7 +59,7 @@ public class Server {
                     System.out.println("Connected");
                 }
 
-            }).on("generateSDG", new Emitter.Listener() {
+            }).on("doTranslation", new Emitter.Listener() {
 
                 @Override
                 public void call(Object... args) {
@@ -69,7 +69,7 @@ public class Server {
                         if (mode == Mode.WALA) {
                             System.out.println("WALA Mode, Generating SDG (includes compilation)...");
                             sdg = SwiftAnalysisEngineServerDriver.generateSDG(JSONArrayToJavaStringArray(jsonArgs));
-                            socket.emit("generatedSDG");
+                            socket.emit("translated");
                             System.out.println("Done generating SDG");
                         } else if (mode == Mode.SPDS){
                             System.out.println("SPDS Mode, only translating to SILIR for now");
@@ -77,11 +77,11 @@ public class Server {
                             data.setup();
                             SwiftToSPDSTranslator translator = new SwiftToSPDSTranslator(data);
                             translator.translateToProgramContext();
-                            socket.emit("generatedSDG");
+                            socket.emit("translated");
                         }
                     } catch (Exception e) {
                         socket.emit("error", e);
-                        System.err.println("Could not generate SDG");
+                        System.err.println("Could not translate");
                         e.printStackTrace();
                     }
                 }

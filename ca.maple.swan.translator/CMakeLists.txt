@@ -1,13 +1,22 @@
 cmake_minimum_required(VERSION 3.5.1)
 project(SwiftWalaTranslator)
 
-# CHANGE THESE
-if(NOT SWAN)
-set(WALA_DIR "/home/bob/swift-source/WALA")
-set(WALA_PATH_TO_SWIFT_BUILD "/home/bob/swift-source/build/Ninja-DebugAssert/swift-linux-x86_64")
-set(SWIFT_PATH_TO_LLVM_SOURCE "/home/bob/swift-source/llvm")
-set(SWIFT_PATH_TO_LLVM_BUILD "/home/bob/swift-source/build/Ninja-DebugAssert/llvm-linux-x86_64")
-set(SWIFT_PATH_TO_CMARK_BUILD "/home/bob/swift-source/build/Ninja-DebugAssert/cmark-linux-x86_64")
+# SET THIS FOR C++ IDE
+# set(PACKAGES_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../packages/")
+
+set(WALA_DIR "${PACKAGES_DIR}/WALA")
+set(SWIFT_PATH_TO_LLVM_SOURCE "${PACKAGES_DIR}/llvm")
+
+if (APPLE)
+set(WALA_PATH_TO_SWIFT_BUILD "${PACKAGES_DIR}/build/Ninja-DebugAssert/swift-macosx-x86_64")
+set(SWIFT_PATH_TO_LLVM_BUILD "${PACKAGES_DIR}/build/Ninja-DebugAssert/llvm-macosx-x86_64")
+set(SWIFT_PATH_TO_CMARK_BUILD "${PACKAGES_DIR}/build/Ninja-DebugAssert/cmark-macosx-x86_64")
+endif()
+
+if (UNIX AND NOT APPLE)
+set(WALA_PATH_TO_SWIFT_BUILD "${PACKAGES_DIR}/build/Ninja-DebugAssert/swift-linux-x86_64")
+set(SWIFT_PATH_TO_LLVM_BUILD "${PACKAGES_DIR}/build/Ninja-DebugAssert/llvm-linux-x86_64")
+set(SWIFT_PATH_TO_CMARK_BUILD "${PACKAGES_DIR}/build/Ninja-DebugAssert/cmark-linux-x86_64")
 endif()
 
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake/modules")

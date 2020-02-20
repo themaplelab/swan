@@ -27,9 +27,13 @@ public class SwiftTranslatorPathLoader {
         String SWANDir = "";
         try {
             SWANDir = System.getenv("PATH_TO_SWAN");
+            if (SWANDir.equals("null")) {
+                throw new Exception();
+            }
         } catch (Exception e) {
             System.err.println("Error: PATH_TO_SWAN path not set! Exiting...");
             e.printStackTrace();
+            System.exit(1);
         }
 
         // Try to load both dylib and so (instead of checking OS).

@@ -50,9 +50,6 @@ struct Observer : public FrontendObserver {
   /// This callback method is called by the compiler frontend once
   /// the compiler invocation is fully configured.
   void parsedArgs(CompilerInvocation &Invocation) override {
-    llvm::SmallString<128> LibPath(std::getenv("WALA_PATH_TO_SWIFT_BUILD"));
-    llvm::sys::path::append(LibPath, "lib", "swift");
-    Invocation.setRuntimeResourcePath(LibPath.str());
   }
 
   /// This callback method is called by the compiler frontend once the
