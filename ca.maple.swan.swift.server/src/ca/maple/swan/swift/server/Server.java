@@ -51,7 +51,10 @@ public class Server {
         System.out.println("Server started");
 
         try {
-            Socket socket = IO.socket("http://localhost:4040");
+            IO.Options opts = new IO.Options();
+            // TODO: Set heartbeat/timeout/whatver to be 15-20 minutes since
+            //  the native call can take that long and we are using blocking sockets.
+            Socket socket = IO.socket("http://localhost:4040", opts);
             socket.on(Socket.EVENT_CONNECT, new Emitter.Listener() {
 
                 @Override
@@ -124,6 +127,14 @@ public class Server {
                     socket.disconnect();
                     System.out.println("Disconnected. Exiting...");
                     exit(0);
+                }
+
+            }).on("rejected", new Emitter.Listener() {
+
+                @Override
+                public void call(Object... args) {
+                    System.out.println("Connection rejected. Exiting...");
+                    exit(0); // Maybe should be 1.
                 }
 
             });
