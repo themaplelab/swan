@@ -39,12 +39,12 @@ public class Server {
 
     static SDG<InstanceKey> sdg = null;
 
-    // Eventually move this to the frontend probably.
     enum Mode {
         SPDS,
         WALA
     }
-    private static Mode mode = Mode.WALA;
+
+    private static Mode mode = Mode.WALA; // Default doesn't matter.
 
     public static void main(String[] args) throws IllegalArgumentException {
 
@@ -68,13 +68,15 @@ public class Server {
                 public void call(Object... args) {
                     try {
                         JSONArray jsonArgs = (JSONArray)args[0];
+                        String analysisMode = (String)args[1];
+                        mode = (analysisMode.equals("WALA")) ? Mode.WALA : Mode.SPDS;
 
                         if (mode == Mode.WALA) {
                             System.out.println("WALA Mode, Generating SDG (includes compilation)...");
                             sdg = SwiftAnalysisEngineServerDriver.generateSDG(JSONArrayToJavaStringArray(jsonArgs));
                             socket.emit("translated");
                             System.out.println("Done generating SDG");
-                        } else if (mode == Mode.SPDS){
+                        } else if (mode == Mode.SPDS) {
                             System.out.println("SPDS Mode, only translating to SILIR for now");
                             RawData data = new RawData(JSONArrayToJavaStringArray(jsonArgs), new CAstImpl());
                             data.setup();
