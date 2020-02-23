@@ -51,10 +51,7 @@ public class Server {
         System.out.println("Server started");
 
         try {
-            IO.Options opts = new IO.Options();
-            // TODO: Set heartbeat/timeout/whatver to be 15-20 minutes since
-            //  the native call can take that long and we are using blocking sockets.
-            Socket socket = IO.socket("http://localhost:4040", opts);
+            Socket socket = IO.socket("http://localhost:4040");
             socket.on(Socket.EVENT_CONNECT, new Emitter.Listener() {
 
                 @Override
@@ -66,29 +63,34 @@ public class Server {
 
                 @Override
                 public void call(Object... args) {
-                    try {
-                        JSONArray jsonArgs = (JSONArray)args[0];
-                        String analysisMode = (String)args[1];
-                        mode = (analysisMode.equals("WALA")) ? Mode.WALA : Mode.SPDS;
+                    Thread thr = new Thread() {
+                        public void run() {
+                            try {
+                                JSONArray jsonArgs = (JSONArray) args[0];
+                                String analysisMode = (String) args[1];
+                                mode = (analysisMode.equals("WALA")) ? Mode.WALA : Mode.SPDS;
 
-                        if (mode == Mode.WALA) {
-                            System.out.println("WALA Mode, Generating SDG (includes compilation)...");
-                            sdg = SwiftAnalysisEngineServerDriver.generateSDG(JSONArrayToJavaStringArray(jsonArgs));
-                            socket.emit("translated");
-                            System.out.println("Done generating SDG");
-                        } else if (mode == Mode.SPDS) {
-                            System.out.println("SPDS Mode, only translating to SILIR for now");
-                            RawData data = new RawData(JSONArrayToJavaStringArray(jsonArgs), new CAstImpl());
-                            data.setup();
-                            SwiftToSPDSTranslator translator = new SwiftToSPDSTranslator(data);
-                            translator.translateToProgramContext();
-                            socket.emit("translated");
+                                if (mode == Mode.WALA) {
+                                    System.out.println("WALA Mode, Generating SDG (includes compilation)...");
+                                    sdg = SwiftAnalysisEngineServerDriver.generateSDG(JSONArrayToJavaStringArray(jsonArgs));
+                                    socket.emit("translated");
+                                    System.out.println("Done generating SDG");
+                                } else if (mode == Mode.SPDS) {
+                                    System.out.println("SPDS Mode, only translating to SILIR for now");
+                                    RawData data = new RawData(JSONArrayToJavaStringArray(jsonArgs), new CAstImpl());
+                                    data.setup();
+                                    SwiftToSPDSTranslator translator = new SwiftToSPDSTranslator(data);
+                                    translator.translateToProgramContext();
+                                    socket.emit("translated");
+                                }
+                            } catch (Exception e) {
+                                socket.emit("error", e);
+                                System.err.println("Could not translate");
+                                e.printStackTrace();
+                            }
                         }
-                    } catch (Exception e) {
-                        socket.emit("error", e);
-                        System.err.println("Could not translate");
-                        e.printStackTrace();
-                    }
+                    };
+                    thr.start();
                 }
 
             }).on("runTaintAnalysis", new Emitter.Listener() {
