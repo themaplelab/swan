@@ -58,7 +58,7 @@ void WALAInstance::analyze(const std::list<string> args) {
   // Call Swift compiler frontend.
   performFrontend(llvm::makeArrayRef(argv.data()+1,
                                      argv.data()+argv.size()),
-                  argv[0], (void *)(intptr_t)getExecutablePath,
+                  "swift", (void *)(intptr_t)getExecutablePath,
                   &observer);
 }
 

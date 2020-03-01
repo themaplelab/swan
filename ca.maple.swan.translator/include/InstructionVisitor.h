@@ -39,6 +39,8 @@ namespace swan {
   // Often, the output will not be complete.
   // A possible solution is to burn CPU cycles so that the llvm printer can catch up.
 
+  // TODO: Move these to env variables or something.
+
   /// Decides whether to print the translation debug info to terminal at runtime.
   static bool SWAN_PRINT = false;
   /// Source information can be annoying/unnecessary for debugging, so there is an option to disable it.
@@ -46,7 +48,7 @@ namespace swan {
   /// Disable printing memory and file information.
   static bool SWAN_PRINT_FILE_AND_MEMORY = false;
   /// Toggles printing the SIL for each function.
-  static bool PRINT_SIL = true;
+  static bool PRINT_SIL = false;
 
   /// This class translates SIL to CAst by using Swift's SILInstructionVisitor which has callbacks, including
   /// ones for every type of SILInstruction. This makes translating simple.
