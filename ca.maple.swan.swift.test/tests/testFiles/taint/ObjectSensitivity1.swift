@@ -1,3 +1,6 @@
+//#SWAN#sources: "ObjectSensitivity1.source() -> Swift.String"
+//#SWAN#sinks: "ObjectSensitivity1.sink(sunk: Swift.String) -> ()"
+
 class Datacontainer {
     var secret: String = "";
     var description: String = "";
@@ -5,11 +8,11 @@ class Datacontainer {
     init() { }
 
     func getSecret() -> String {
-        return self.secret;
+        return self.secret; //intermediate
     }
 
-    func setSecret(secret: String) {
-        self.secret = secret;
+    func setSecret(secret: String) { //intermediate
+        self.secret = secret; //intermediate
     }
 
     func getDescription() -> String {
@@ -32,10 +35,10 @@ func sink(sunk: String) {
 let d1 = Datacontainer();
 let d2 = Datacontainer();
 d1.setDescription(description: "abc");
-d1.setSecret(secret: source());
+d1.setSecret(secret: source()); //source
 d2.setDescription(description: "abc");
-d2.setSecret(secret: source());
-sink(sunk: d1.getSecret()); // Should be detected from with source being d1.setSecret(...) line
+d2.setSecret(secret: source()); //source
+sink(sunk: d1.getSecret()); //sink
 sink(sunk: d1.getDescription()); // Should not be detected
-sink(sunk: d2.getSecret()); // Should be detected from with source being d2.setSecret(...) line
+sink(sunk: d2.getSecret()); //sink
 sink(sunk: d2.getDescription()); // Should not be detected
