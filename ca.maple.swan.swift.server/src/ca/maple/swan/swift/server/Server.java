@@ -39,7 +39,7 @@ public class Server {
 
     static SDG<InstanceKey> sdg = null;
 
-    enum Mode {
+    public enum Mode {
         SPDS,
         WALA
     }

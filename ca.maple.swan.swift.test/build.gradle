@@ -1,0 +1,32 @@
+plugins {
+    id 'java'
+}
+
+group 'ca.maple.swan'
+
+sourceCompatibility = 1.8
+
+repositories {
+    mavenCentral()
+    jcenter()
+}
+
+sourceSets.main.java.srcDirs = ['src/']
+
+task(runTests, type: JavaExec) {
+    main = "ca.maple.swan.swift.test.Tester"
+    classpath = sourceSets.main.runtimeClasspath
+    standardInput = System.in
+}
+
+dependencies {
+    implementation project(":ca.maple.swan.swift")
+    implementation project(":ca.maple.swan.swift.server")
+    compile fileTree(dir: "${WALA_DIR}/com.ibm.wala.core/build/libs", include: '*.jar')
+    compile fileTree(dir: "${WALA_DIR}/com.ibm.wala.shrike/build/libs", include: '*.jar')
+    compile fileTree(dir: "${WALA_DIR}/com.ibm.wala.cast/build/libs", include: '*.jar')
+    compile fileTree(dir: "${WALA_DIR}/com.ibm.wala.cast.js/build/libs", include: '*.jar')
+    compile fileTree(dir: "${WALA_DIR}/com.ibm.wala.util/build/libs", include: '*.jar')
+    compile ('io.socket:socket.io-client:1.0.0')
+    compile group: "net.sourceforge.argparse4j", name: "argparse4j", version: "0.8.1"
+}

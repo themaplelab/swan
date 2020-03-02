@@ -31,7 +31,7 @@ SWAN_VSCODE_REPO_URL = "https://github.com/themaplelab/swan-vscode"
 ROOT = os.getcwd()
 PACKAGES_DIR = ROOT + "/packages/"
 SWIFT_UTILS_DIR = PACKAGES_DIR + "swift/utils/"
-CPP_TRANSLATOR_DIR = "ca.maple.swan.translator/"
+TEST_DIR = ROOT + "/ca.maple.swan.swift.test/"
 
 ROOT_BUILD = PACKAGES_DIR + "build/"
 BUILD_DIR = ROOT_BUILD + "Ninja-DebugAssert/"
