@@ -1,3 +1,6 @@
+//#SWAN#sources: "fieldSensitivity2.source() -> Swift.String"
+//#SWAN#sinks: "fieldSensitivity2.sink(sunk: Swift.String) -> ()"
+
 class A {
     var b : B?;
     init() {}
@@ -26,4 +29,4 @@ a.b = B();
 let b = a.b;
 b!.c = C();
 a.b!.c!.s = source(); //source
-sink(sunk: b!.c!.s);
+sink(sunk: b!.c!.s); //sink

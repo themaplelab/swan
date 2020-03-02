@@ -5,9 +5,9 @@ func source() -> String {
     return "I'm bad";
 }
 
-func sink(sunk: String) { //sink
+func sink(sunk: String) {
     print(sunk);
 }
 
 let sourced = source(); //source
-sink(sunk: sourced); //intermediate
+sink(sunk: sourced); //sink

@@ -7,7 +7,7 @@ class Datacontainer {
 
     init() { }
 
-    func getSecret() -> String { //intermediate
+    func getSecret() -> String {
         return self.secret; //intermediate
     }
 
@@ -28,7 +28,7 @@ func source() -> String {
     return "I'm bad";
 }
 
-func sink(sunk: String) { //sink
+func sink(sunk: String) {
     print(sunk);
 }
 
@@ -38,7 +38,7 @@ d1.setDescription(description: "abc");
 d1.setSecret(secret: source()); //source
 d2.setDescription(description: "abc");
 d2.setSecret(secret: source()); //source
-sink(sunk: d1.getSecret()); //intermediate
+sink(sunk: d1.getSecret()); //sink
 sink(sunk: d1.getDescription()); // Should not be detected
-sink(sunk: d2.getSecret()); //intermediate
+sink(sunk: d2.getSecret()); //sink
 sink(sunk: d2.getDescription()); // Should not be detected

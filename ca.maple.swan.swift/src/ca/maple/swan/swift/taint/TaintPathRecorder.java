@@ -126,7 +126,6 @@ public class TaintPathRecorder {
                     TaintBFSPathFinder finder = new TaintBFSPathFinder(g, src, t, s);
                     List<CAstSourcePositionMap.Position> path = getPositionsFromStatements(finder.find());
                     if (!path.isEmpty()) {
-                        path.add(getPositionFromStatement(target));
                         paths.add(path);
                     }
                 }
