@@ -54,8 +54,20 @@ SWAN uses its own [VSCode extension](https://github.com/themaplelab/swan-vscode)
 
 The extension can launch the JVM itself. Alternatively, you can first start the JVM via the Intellij run configuration called _Server_ before using the extension. This is useful for debugging.
 
-We hope to switch over to LSP in the future if the protocol is further developed.
+#### Test scripts
 
+There are two test scripts.
+
+
+Tests all files under `ca.maple.swan.swift.test/tests/testFiles/taint/` and verifies their annotations are correct.
+```
+./utils/run-tests -sdk <path_to_macosx_sdk>
+```
+
+Runs SWAN on a given file and prints the analysis results.
+```
+./utils/run-single-test -sdk <path_to_macosx_sdk> -path <path_to_test_file>
+```
 ## Contributing
 Please see the [page](https://github.com/themaplelab/swan/wiki/Contributing) on contributing.
 

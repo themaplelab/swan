@@ -66,8 +66,8 @@ def main():
     check_dir()
 
     parser = argparse.ArgumentParser()
-    parser.add_argument("--sdk", required=True)
-    parser.add_argument("--path", required=True)
+    parser.add_argument("-sdk", required=True)
+    parser.add_argument("-path", required=True)
     args = parser.parse_args()
 
     global SWIFTC_ARGS
