@@ -1,9 +1,10 @@
 package ca.maple.swan.swift.test;
 
 import ca.maple.swan.swift.server.SwiftAnalysisEngineServerDriver;
-import ca.maple.swan.swift.server.Server.Mode;
+import ca.maple.swan.swift.translator.Settings.Mode;
 import ca.maple.swan.swift.taint.TaintAnalysisDriver;
 import ca.maple.swan.swift.translator.RawData;
+import ca.maple.swan.swift.translator.Settings;
 import ca.maple.swan.swift.translator.spds.SwiftToSPDSTranslator;
 import com.ibm.wala.cast.tree.CAstSourcePositionMap;
 import com.ibm.wala.cast.tree.impl.CAstImpl;
@@ -36,20 +37,19 @@ public class Tester {
             System.exit(1);
         }
 
-        Mode mode = Mode.WALA;
         SDG<InstanceKey> sdg = null;
 
         // COMPILE
 
         try {
 
-            mode = (ns.get("engine").equals("WALA")) ? Mode.WALA : Mode.SPDS;
+            Settings.mode = (ns.get("engine").equals("WALA")) ? Mode.WALA : Mode.SPDS;
 
-            if (mode == Mode.WALA) {
+            if (Settings.mode == Mode.WALA) {
                 System.out.println("WALA Mode, Generating SDG (includes compilation)...");
                 sdg = SwiftAnalysisEngineServerDriver.generateSDG(((String)ns.get("swiftc_args")).split(" "));
                 System.out.println("Done generating SDG");
-            } else if (mode == Mode.SPDS) {
+            } else if (Settings.mode == Mode.SPDS) {
                 System.out.println("SPDS Mode, only translating to SILIR for now");
                 RawData data = new RawData(ns.get("swiftc_args"), new CAstImpl());
                 data.setup();
@@ -65,7 +65,7 @@ public class Tester {
         // RUN TAINT ANALYSIS
 
         try {
-            if (mode.equals(Mode.WALA)) {
+            if (Settings.mode.equals(Mode.WALA)) {
                 System.out.println("Running taint analysis...");
 
                 List<List<CAstSourcePositionMap.Position>> paths = TaintAnalysisDriver.doTaintAnalysis(

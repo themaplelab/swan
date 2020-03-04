@@ -14,6 +14,7 @@
 package ca.maple.swan.swift.translator.wala;
 
 import ca.maple.swan.swift.translator.SILInstructionVisitor;
+import ca.maple.swan.swift.translator.Settings;
 import ca.maple.swan.swift.translator.raw.*;
 import ca.maple.swan.swift.translator.silir.BasicBlock;
 import ca.maple.swan.swift.translator.silir.Function;
@@ -448,7 +449,9 @@ public class WALARawToSILIRTranslator extends SILInstructionVisitor<SILIRInstruc
     // CONFIDENCE:
     protected SILIRInstruction visitAssignByWrapper(CAstNode N, InstructionContext C) {
         // TODO
-        System.err.println("ERROR: Unhandled instruction: " + new Exception().getStackTrace()[0].getMethodName());
+        if (!Settings.ignoreMissingValues()) {
+            System.err.println("ERROR: Unhandled instruction: " + new Exception().getStackTrace()[0].getMethodName());
+        }
         return null;
     }
 
@@ -1102,7 +1105,9 @@ public class WALARawToSILIRTranslator extends SILInstructionVisitor<SILIRInstruc
     // CONFIDENCE:
     protected SILIRInstruction visitPartialApply(CAstNode N, InstructionContext C) {
         // TODO
-        System.err.println("ERROR: Unhandled instruction: " + new Exception().getStackTrace()[0].getMethodName());
+        if (!Settings.ignoreMissingValues()) {
+            System.err.println("ERROR: Unhandled instruction: " + new Exception().getStackTrace()[0].getMethodName());
+        }
         return null;
     }
 

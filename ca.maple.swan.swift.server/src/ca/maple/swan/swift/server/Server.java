@@ -15,6 +15,8 @@ package ca.maple.swan.swift.server;
 
 import ca.maple.swan.swift.taint.TaintAnalysisDriver;
 import ca.maple.swan.swift.translator.RawData;
+import ca.maple.swan.swift.translator.Settings;
+import ca.maple.swan.swift.translator.Settings.Mode;
 import ca.maple.swan.swift.translator.wala.SwiftToCAstTranslator;
 import ca.maple.swan.swift.translator.spds.SwiftToSPDSTranslator;
 import com.ibm.wala.cast.tree.CAstSourcePositionMap;
@@ -39,13 +41,6 @@ public class Server {
 
     static SDG<InstanceKey> sdg = null;
 
-    public enum Mode {
-        SPDS,
-        WALA
-    }
-
-    private static Mode mode = Mode.WALA; // Default doesn't matter.
-
     public static void main(String[] args) throws IllegalArgumentException {
 
         System.out.println("Server started");
@@ -63,19 +58,24 @@ public class Server {
 
                 @Override
                 public void call(Object... args) {
+
                     Thread thr = new Thread() {
                         public void run() {
                             try {
                                 JSONArray jsonArgs = (JSONArray) args[0];
-                                String analysisMode = (String) args[1];
-                                mode = (analysisMode.equals("WALA")) ? Mode.WALA : Mode.SPDS;
 
-                                if (mode == Mode.WALA) {
+                                System.out.println("Translating with args...");
+                                System.out.println(jsonArgs);
+
+                                String analysisMode = (String) args[1];
+                                Settings.mode = (analysisMode.equals("WALA")) ? Mode.WALA : Mode.SPDS;
+
+                                if (Settings.mode == Mode.WALA) {
                                     System.out.println("WALA Mode, Generating SDG (includes compilation)...");
                                     sdg = SwiftAnalysisEngineServerDriver.generateSDG(JSONArrayToJavaStringArray(jsonArgs));
                                     socket.emit("translated");
                                     System.out.println("Done generating SDG");
-                                } else if (mode == Mode.SPDS) {
+                                } else if (Settings.mode == Mode.SPDS) {
                                     System.out.println("SPDS Mode, only translating to SILIR for now");
                                     RawData data = new RawData(JSONArrayToJavaStringArray(jsonArgs), new CAstImpl());
                                     data.setup();
@@ -98,7 +98,7 @@ public class Server {
                 @Override
                 public void call(Object... args) {
                     try {
-                        if (mode.equals(Mode.WALA) && sdg != null) {
+                        if (Settings.mode.equals(Mode.WALA) && sdg != null) {
                             System.out.println("Running taint analysis...");
                             JSONObject sss = (JSONObject)args[0];
                             JSONArray sources = (JSONArray)sss.get("Sources");

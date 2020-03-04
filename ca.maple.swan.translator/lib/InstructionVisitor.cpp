@@ -52,6 +52,7 @@ void InstructionVisitor::visitSILModule(SILModule *M) {
       witnessTable.insert({protocolName, std::vector<string>()});
     }
     for (auto it1 = it->getEntries().begin(); it1 != it->getEntries().end(); ++it1) {
+      if (it1->getKind() == SILWitnessTable::WitnessKind::Method)
       witnessTable.find(protocolName)->second.push_back(
         Demangle::demangleSymbolAsString(it1->getMethodWitness().Witness->getName()));
     }
@@ -825,6 +826,9 @@ void InstructionVisitor::visitWitnessMethodInst(WitnessMethodInst *WMI) {
     llvm::outs() << "\t [PROTOCOL]: " << protocolName << "\n";
   }
   std::list<jobject> functions;
+  if (witnessTable.find(protocolName) == witnessTable.end()) {
+    return;
+  }
   for (auto it = witnessTable.find(protocolName)->second.begin(); it != witnessTable.find(protocolName)->second.end(); ++it) {
     if ((*it).find(FunctionName) != std::string::npos) {
       functions.push_back(MAKE_CONST((*it).c_str()));

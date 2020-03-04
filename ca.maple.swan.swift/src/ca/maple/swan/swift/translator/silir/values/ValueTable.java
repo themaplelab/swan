@@ -13,6 +13,7 @@
 
 package ca.maple.swan.swift.translator.silir.values;
 
+import ca.maple.swan.swift.translator.Settings;
 import com.ibm.wala.util.debug.Assertions;
 
 import java.util.HashMap;
@@ -35,12 +36,14 @@ public class ValueTable {
 
     // For implicit copies. Useful for reducing IR assignment statement bloat.
     public void copy(String to, String from) {
+        if (Settings.ignoreMissingValues() && !has(from)) { values.put(from, new Value(from, "FAKE_VAL")); }
         Assertions.productionAssertion(has(from));
         values.put(to, values.get(from));
         usedValues.add(from);
     }
 
     public Value getValue(String s) {
+        if (Settings.ignoreMissingValues() && !has(s)) { values.put(s, new Value(s, "FAKE_VAL")); }
         Assertions.productionAssertion(has(s));
         // We need to know if aliases show up where they are not expected.
         Assertions.productionAssertion(!(values.get(s) instanceof FieldAliasValue) && !(values.get(s) instanceof ArrayIndexAliasValue));
@@ -49,6 +52,7 @@ public class ValueTable {
     }
 
     public Value getPossibleAlias(String s) {
+        if (Settings.ignoreMissingValues() && !has(s)) { values.put(s, new Value(s, "FAKE_VAL")); }
         Assertions.productionAssertion(has(s));
         usedValues.add(s);
         return values.get(s);
