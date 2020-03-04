@@ -11,7 +11,7 @@
 //
 //===---------------------------------------------------------------------===//
 
-package ca.maple.swan.swift.translator;
+package ca.maple.swan.swift.translator.sil;
 
 import ca.maple.swan.swift.translator.wala.SwiftToCAstTranslator;
 import com.ibm.wala.cast.tree.CAst;

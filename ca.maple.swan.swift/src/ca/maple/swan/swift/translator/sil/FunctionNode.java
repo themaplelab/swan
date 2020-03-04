@@ -11,7 +11,7 @@
 //
 //===---------------------------------------------------------------------===//
 
-package ca.maple.swan.swift.translator.raw;
+package ca.maple.swan.swift.translator.sil;
 
 import com.ibm.wala.cast.tree.CAstNode;
 import com.ibm.wala.cast.tree.CAstSourcePositionMap.Position;

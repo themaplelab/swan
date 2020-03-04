@@ -11,7 +11,7 @@
 //
 //===---------------------------------------------------------------------===//
 
-package ca.maple.swan.swift.translator;
+package ca.maple.swan.swift.translator.sil;
 
 /*
  * This [janky] class is needed for now due to the fact that we are using a

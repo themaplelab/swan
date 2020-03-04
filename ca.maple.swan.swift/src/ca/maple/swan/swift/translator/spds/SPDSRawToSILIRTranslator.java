@@ -14,7 +14,7 @@
 
 package ca.maple.swan.swift.translator.spds;
 
-import ca.maple.swan.swift.translator.raw.RawUtil;
+import ca.maple.swan.swift.translator.sil.RawUtil;
 import ca.maple.swan.swift.translator.silir.context.InstructionContext;
 import ca.maple.swan.swift.translator.silir.instructions.SILIRInstruction;
 import ca.maple.swan.swift.translator.silir.instructions.spds.DynamicApplyInstruction;

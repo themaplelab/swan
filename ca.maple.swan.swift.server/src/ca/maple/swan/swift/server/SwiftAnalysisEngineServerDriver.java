@@ -14,7 +14,7 @@
 package ca.maple.swan.swift.server;
 
 import ca.maple.swan.swift.client.SwiftAnalysisEngine;
-import ca.maple.swan.swift.translator.RawData;
+import ca.maple.swan.swift.translator.sil.RawData;
 import ca.maple.swan.swift.translator.wala.SwiftToCAstTranslator;
 import ca.maple.swan.swift.translator.wala.SwiftToCAstTranslatorFactory;
 import com.ibm.wala.cast.ir.ssa.AstIRFactory;

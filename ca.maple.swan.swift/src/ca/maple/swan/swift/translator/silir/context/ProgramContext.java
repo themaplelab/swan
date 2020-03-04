@@ -13,7 +13,7 @@
 
 package ca.maple.swan.swift.translator.silir.context;
 
-import ca.maple.swan.swift.translator.raw.InstructionNode;
+import ca.maple.swan.swift.translator.sil.InstructionNode;
 import ca.maple.swan.swift.translator.silir.BasicBlock;
 import ca.maple.swan.swift.translator.silir.Function;
 import ca.maple.swan.swift.translator.silir.post.IRPruner;

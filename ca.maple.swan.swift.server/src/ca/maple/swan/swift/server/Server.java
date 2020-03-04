@@ -14,7 +14,7 @@
 package ca.maple.swan.swift.server;
 
 import ca.maple.swan.swift.taint.TaintAnalysisDriver;
-import ca.maple.swan.swift.translator.RawData;
+import ca.maple.swan.swift.translator.sil.RawData;
 import ca.maple.swan.swift.translator.Settings;
 import ca.maple.swan.swift.translator.Settings.Mode;
 import ca.maple.swan.swift.translator.wala.SwiftToCAstTranslator;

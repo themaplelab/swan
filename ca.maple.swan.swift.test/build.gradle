@@ -14,7 +14,13 @@ repositories {
 sourceSets.main.java.srcDirs = ['src/']
 
 task(runTests, type: JavaExec) {
-    main = "ca.maple.swan.swift.test.Tester"
+    main = "ca.maple.swan.swift.test.AnnotationTester"
+    classpath = sourceSets.main.runtimeClasspath
+    standardInput = System.in
+}
+
+task(runSingleTest, type: JavaExec) {
+    main = "ca.maple.swan.swift.test.GenericTester"
     classpath = sourceSets.main.runtimeClasspath
     standardInput = System.in
 }

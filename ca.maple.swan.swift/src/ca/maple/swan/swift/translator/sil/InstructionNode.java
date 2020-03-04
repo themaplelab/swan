@@ -1,4 +1,4 @@
-//===--- RootNode.java ---------------------------------------------------===//
+//===--- InstructionNode.java --------------------------------------------===//
 //
 // This source file is part of the SWAN open source project
 //
@@ -11,30 +11,32 @@
 //
 //===---------------------------------------------------------------------===//
 
-package ca.maple.swan.swift.translator.raw;
+package ca.maple.swan.swift.translator.sil;
 
 import com.ibm.wala.cast.tree.CAstNode;
 
-import java.util.ArrayList;
-
 /*
- * CAstNode accessor wrapper for the very root node, for convenience.
+ * CAstNode accessor wrapper for instructions, for convenience.
  * Coupled with C++ translator raw output format.
  */
 
-public class RootNode {
+@SuppressWarnings("FieldCanBeLocal")
+public class InstructionNode {
 
-    private final CAstNode root;
+    // CHANGE THESE FOR FORMAT
+    private final int NAME_IDX = 0;
 
-    public RootNode(CAstNode n) {
-        this.root = n;
+    private final CAstNode instruction;
+
+    public InstructionNode(CAstNode n) {
+        this.instruction = n;
     }
 
-    public ArrayList<FunctionNode> getFunctions() {
-        ArrayList<FunctionNode> functionNodes = new ArrayList<>();
-        for (CAstNode n : this.root.getChildren()) {
-            functionNodes.add(new FunctionNode(n));
-        }
-        return functionNodes;
+    public CAstNode getInstruction() {
+        return this.instruction;
+    }
+
+    public String getName() {
+        return RawUtil.getStringValue(this.instruction, NAME_IDX);
     }
 }

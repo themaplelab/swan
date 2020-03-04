@@ -13,9 +13,9 @@
 
 package ca.maple.swan.swift.translator.wala;
 
-import ca.maple.swan.swift.translator.SILInstructionVisitor;
+import ca.maple.swan.swift.translator.sil.SILInstructionVisitor;
 import ca.maple.swan.swift.translator.Settings;
-import ca.maple.swan.swift.translator.raw.*;
+import ca.maple.swan.swift.translator.sil.*;
 import ca.maple.swan.swift.translator.silir.BasicBlock;
 import ca.maple.swan.swift.translator.silir.Function;
 import ca.maple.swan.swift.translator.silir.context.*;
@@ -31,7 +31,7 @@ import com.ibm.wala.util.debug.Assertions;
 import java.math.BigDecimal;
 import java.util.*;
 
-import static ca.maple.swan.swift.translator.raw.RawUtil.*;
+import static ca.maple.swan.swift.translator.sil.RawUtil.*;
 
 /*
  * Translates the raw representation given from the C++ SIL translator to SILIR.
