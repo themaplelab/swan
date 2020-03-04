@@ -118,7 +118,7 @@ public class GenericTester extends Tester {
 
                     String line = Files.readAllLines(Paths.get(pos.getURL().toURI().getRawPath())).get(pos.getFirstLine() - 1);
 
-                    sb.append("    ");
+                    sb.append("   ");
 
                     if (p_idx == 0) { // Source
                         sb.append("-- SOURCE");
@@ -128,15 +128,20 @@ public class GenericTester extends Tester {
                         sb.append("-- INTERMEDIATE");
                     }
 
-                    sb.append("\n       ");
+                    sb.append("\n      ");
                     sb.append(pos.getFirstLine());
                     sb.append(":");
                     sb.append(pos.getFirstCol());
                     sb.append(" in ");
                     sb.append(pos.getURL().toURI().getRawPath());
-                    sb.append("\n       ");
+                    sb.append("\n      ");
+                    int count = line.indexOf(line.trim());
                     sb.append(line.trim());
-                    sb.append("\n");
+                    sb.append("\n      ");
+                    for (int i = 0; i < pos.getFirstCol() - count - 1; i++) {
+                        sb.append(" ");
+                    }
+                    sb.append("^\n");
                     System.out.print(sb.toString());
                     sb = new StringBuilder();
                 }
