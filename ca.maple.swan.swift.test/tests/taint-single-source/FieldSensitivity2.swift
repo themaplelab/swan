@@ -1,5 +1,5 @@
-//#SWAN#sources: "fieldSensitivity2.source() -> Swift.String"
-//#SWAN#sinks: "fieldSensitivity2.sink(sunk: Swift.String) -> ()"
+//#SWAN#sources: "FieldSensitivity2.source() -> Swift.String"
+//#SWAN#sinks: "FieldSensitivity2.sink(sunk: Swift.String) -> ()"
 
 class A {
     var b : B?;
