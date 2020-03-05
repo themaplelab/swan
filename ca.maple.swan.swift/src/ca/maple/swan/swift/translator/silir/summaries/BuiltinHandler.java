@@ -210,7 +210,7 @@ public class BuiltinHandler {
             "Swift.Double.init(_builtinIntegerLiteral: Builtin.IntLiteral) -> Swift.Double",
             "Swift.Double.init(Swift.Int) -> Swift.Double",
             "Swift.Bool.init(_builtinBooleanLiteral: Builtin.Int1) -> Swift.Bool",
-            "Swift.String.isEmpty.getter : Swift.Bool",
+            // "Swift.String.isEmpty.getter : Swift.Bool",
             "Swift.DefaultStringInterpolation.init(literalCapacity: Swift.Int, interpolationCount: Swift.Int) -> Swift.DefaultStringInterpolation",
             "Swift.String.init(stringInterpolation: Swift.DefaultStringInterpolation) -> Swift.String",
             "Swift.DefaultStringInterpolation.appendLiteral(Swift.String) -> ()",

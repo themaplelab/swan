@@ -1,4 +1,3 @@
-
 class UniversityClass{
   var term: String? = "Fall 2017"
   var size: UInt = 4

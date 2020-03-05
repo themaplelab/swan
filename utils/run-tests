@@ -48,6 +48,8 @@ def parse_file_SSS(file_string):
 def run_tests(dir):
     failed = []
     for filename in os.listdir(dir):
+        if not filename.endswith(".swift"):
+            continue
         fullname = dir + "/" + filename
         with open(fullname, 'r') as file:
             sss = parse_file_SSS(file.read())
@@ -92,8 +94,11 @@ def main():
 
     global SWIFTC_ARGS
     SWIFTC_ARGS = SWIFTC_ARGS + " -sdk " + args.sdk
-
-    run_tests(os.path.abspath(args.dir))
+    dir = os.path.abspath(args.dir)
+    if not os.path.exists(dir) or not os.path.isdir(dir):
+        print("Invalid directory given")
+        sys.exit(1)
+    run_tests(dir)
 
 if __name__ == "__main__":
     try:

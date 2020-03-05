@@ -7,10 +7,10 @@
 var num1 = 10
 var num2 = 15
 
-if(num1==num2){
+if(num1 == num2){
   print("The two numbers are the same")
 }
-else if(num1!=num2){
+else if(num1 != num2){
   print("The two numbers are not the same")
 }
 else{

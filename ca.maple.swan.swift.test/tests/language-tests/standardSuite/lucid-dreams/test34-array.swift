@@ -1,3 +1,5 @@
+// UNSUPPORTED
+
 /* arrays
  *
  * Testing out a lot of the standard functions of arrays 

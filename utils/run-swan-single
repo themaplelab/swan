@@ -73,7 +73,9 @@ def main():
     global SWIFTC_ARGS
     SWIFTC_ARGS = SWIFTC_ARGS + " -sdk " + args.sdk
     SWIFTC_ARGS = SWIFTC_ARGS + " " + os.path.abspath(args.path)
-
+    if not os.path.exists(args.path) or not args.path.endswith(".swift"):
+        print("Invalid path given")
+        sys.exit(1)
     run_test(args.path)
 
 if __name__ == "__main__":

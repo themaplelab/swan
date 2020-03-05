@@ -1,3 +1,5 @@
+// UNSUPPORTED
+
 protocol Car {
     var intValue : Int? { get set }
 }
