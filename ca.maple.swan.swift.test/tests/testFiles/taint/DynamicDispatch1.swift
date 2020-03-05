@@ -8,7 +8,7 @@ protocol Parent {
 class Child1 : Parent {
 
     func doSomething(s : String) { //intermediate:36 //intermediate:39 //intermediate:40
-        sink(sunk: s); //sink:36 //sink:39 //sink:40
+        sink(sunk: s); //sink:36 //sink:39 //sink:40 (FP)
     }
 }
 
