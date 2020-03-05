@@ -55,7 +55,7 @@ def run_test(filename):
         " -sinks " + " ".join(sss["sinks"]) + \
         " -sanitizers " + " ".join(sss["sanitizers"])
 
-    cmd = "./gradlew runSingleGenericTest --args=\'" + args + "\'"
+    cmd = "./gradlew runSingleTest --args=\'" + args + "\'"
 
     print("\nRunning test for " + filename + "...")
     print(cmd)

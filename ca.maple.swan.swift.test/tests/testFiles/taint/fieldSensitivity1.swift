@@ -8,11 +8,11 @@ class Datacontainer {
     init() { }
 
     func getSecret() -> String {
-        return self.secret; //intermediate
+        return self.secret; //intermediate:37
     }
 
-    func setSecret(secret: String) { //intermediate
-        self.secret = secret; //intermediate
+    func setSecret(secret: String) { //intermediate:37
+        self.secret = secret; //intermediate:37
     }
 
     func getDescription() -> String {
@@ -34,6 +34,6 @@ func sink(sunk: String) {
 
 let d1 = Datacontainer();
 d1.setDescription(description: "abc");
-d1.setSecret(secret: source()); //source
-sink(sunk: d1.getSecret()); //sink
+d1.setSecret(secret: source()); //source:37
+sink(sunk: d1.getSecret()); //sink:37
 sink(sunk: d1.getDescription()); // Should not be detected

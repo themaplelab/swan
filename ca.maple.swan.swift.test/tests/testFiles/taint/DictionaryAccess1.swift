@@ -14,6 +14,6 @@ func sink(sunk: String) {
 
 var dict = [String: String]();
 dict["notTainted"] = "neutral text";
-dict["tainted"] = source(); //source
+dict["tainted"] = source(); //source:17
 sink(sunk: dict["notTainted"]!);
-sink(sunk: dict["tainted"]!); //sink
+sink(sunk: dict["tainted"]!); //sink:17

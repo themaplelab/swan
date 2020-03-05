@@ -28,5 +28,5 @@ let a = A();
 a.b = B();
 let b = a.b;
 b!.c = C();
-a.b!.c!.s = source(); //source
-sink(sunk: b!.c!.s); //sink
+a.b!.c!.s = source(); //source:31
+sink(sunk: b!.c!.s); //sink:31

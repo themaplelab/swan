@@ -9,5 +9,5 @@ func sink(sunk: String) {
     print(sunk);
 }
 
-let sourced = source(); //source
-sink(sunk: sourced); //sink
+let sourced = source(); //source:12
+sink(sunk: sourced); //sink:12

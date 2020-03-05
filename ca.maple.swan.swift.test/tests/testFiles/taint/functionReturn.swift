@@ -10,8 +10,8 @@ func sink(sunk: String) {
 }
 
 
-func testFunc(toSink: String) -> Int { //intermediate
-    sink(sunk: toSink); //sink
+func testFunc(toSink: String) -> Int { //intermediate:23
+    sink(sunk: toSink); //sink:23
     return 1;
 }
 
@@ -20,4 +20,4 @@ func getFunc() -> (String) -> Int {
 }
 
 var f = getFunc();
-let x = f(source()); //source
+let x = f(source()); //source:23

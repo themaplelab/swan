@@ -27,11 +27,11 @@ func sink(sunk: String) {
 
 func foo(z : A) {
     let x = z.g;
-    let w = source(); //source
-    x.f = w; //intermediate
+    let w = source(); //source:30
+    x.f = w; //intermediate:30
 }
 
 let a = A();
 let b = a.g;
 foo(z: a);
-sink(sunk: b.f); //sink
+sink(sunk: b.f); //sink:30
