@@ -56,16 +56,19 @@ The extension can launch the JVM itself. Alternatively, you can first start the 
 
 #### Scripts
 
-There are two useful scripts.
-
-Runs SWAN on a given file and prints the analysis results.
+Runs SWAN on a given file and prints the analysis results (paths).
 ```
 ./utils/run-swan-single -sdk <path_to_macosx_sdk> -path <path_to_test_file>
 ```
 
-Tests all files under `ca.maple.swan.swift.test/tests/testFiles/taint/` and verifies their annotations are correct.
+Runs SWAN on a given file and verifies its annotations are correct.
 ```
-./utils/run-tests -sdk <path_to_macosx_sdk>
+./utils/run-swan-single-annotation -sdk <path_to_macosx_sdk> -path <path_to_test_file>
+```
+
+Tests all files under the given dir and verifies their annotations are correct. Test files can be found under `ca.maple.swan.swift.test/tests/`.
+```
+./utils/run-tests -sdk <path_to_macosx_sdk> -dir <path_to_swift_file>
 ```
 
 ## Contributing

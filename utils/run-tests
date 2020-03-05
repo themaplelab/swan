@@ -26,7 +26,6 @@ import sys
 import re
 from constants import *
 
-TAINT_TEST_DIR = TEST_DIR + "tests/testFiles/taint/"
 TEST_ENGINE = "WALA"
 SWIFTC_ARGS = "-emit-silgen -Onone"
 
@@ -46,10 +45,10 @@ def parse_file_SSS(file_string):
         sss["sanitizers"].append(found[0])
     return sss
 
-def run_tests():
+def run_tests(dir):
     failed = []
-    for filename in os.listdir(TAINT_TEST_DIR):
-        fullname = TAINT_TEST_DIR + filename
+    for filename in os.listdir(dir):
+        fullname = dir + "/" + filename
         with open(fullname, 'r') as file:
             sss = parse_file_SSS(file.read())
 
@@ -86,14 +85,15 @@ def run_tests():
 def main():
     check_dir()
 
-    parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser(description="Tests all .swift files (individually) in the given dir for correct annotations.")
     parser.add_argument("-sdk", required=True)
+    parser.add_argument("-dir", required=True)
     args = parser.parse_args()
 
     global SWIFTC_ARGS
     SWIFTC_ARGS = SWIFTC_ARGS + " -sdk " + args.sdk
 
-    run_tests()
+    run_tests(os.path.abspath(args.dir))
 
 if __name__ == "__main__":
     try:
