@@ -20,7 +20,7 @@ import java.util.*;
 
 import ca.maple.swan.swift.translator.sil.RawData;
 import ca.maple.swan.swift.translator.sil.SwiftTranslatorPathLoader;
-import ca.maple.swan.swift.translator.silir.context.ProgramContext;
+import ca.maple.swan.swift.translator.swanir.context.ProgramContext;
 import com.ibm.wala.cast.ir.translator.NativeTranslatorToCAst;
 import com.ibm.wala.cast.tree.CAst;
 import com.ibm.wala.cast.tree.CAstEntity;
@@ -84,14 +84,14 @@ public class SwiftToCAstTranslator extends NativeTranslatorToCAst {
 	@Override
 	public CAstEntity translateToCAst() {
 		Assertions.productionAssertion(rawData != null);
-		ProgramContext pc = new WALARawToSILIRTranslator().translate(rawData.getRawData().getChild(1));
+		ProgramContext pc = new WALARawToSWANIRTranslator().translate(rawData.getRawData().getChild(1));
 		functionNames = pc.getFunctionNames();
 		if (DEBUG) {
 			pc.pruneIR();
 			pc.generateLineNumbers();
 			pc.printFunctions();
 		}
-		return new SILIRToCAstTranslator().translate(new File((String)rawData.getRawData().getChild(0).getValue()), pc);
+		return new SWANIRToCAstTranslator().translate(new File((String)rawData.getRawData().getChild(0).getValue()), pc);
 	}
 
 	// Specifically meant to be used by the C++ translator.

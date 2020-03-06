@@ -66,7 +66,7 @@ public class GenericTester extends Tester {
                 sdg = SwiftAnalysisEngineServerDriver.generateSDG(((String)ns.get("swiftc_args")).split(" "));
                 System.out.println("Done generating SDG");
             } else if (Settings.mode == Mode.SPDS) {
-                System.out.println("SPDS Mode, only translating to SILIR for now");
+                System.out.println("SPDS Mode, only translating to SWANIR for now");
                 RawData data = new RawData(ns.get("swiftc_args"), new CAstImpl());
                 data.setup();
                 SwiftToSPDSTranslator translator = new SwiftToSPDSTranslator(data);

@@ -76,7 +76,7 @@ public class Server {
                                     socket.emit("translated");
                                     System.out.println("Done generating SDG");
                                 } else if (Settings.mode == Mode.SPDS) {
-                                    System.out.println("SPDS Mode, only translating to SILIR for now");
+                                    System.out.println("SPDS Mode, only translating to SWANIR for now");
                                     RawData data = new RawData(JSONArrayToJavaStringArray(jsonArgs), new CAstImpl());
                                     data.setup();
                                     SwiftToSPDSTranslator translator = new SwiftToSPDSTranslator(data);
