@@ -16,28 +16,13 @@ package ca.maple.swan.swift.translator.spds;
 
 import ca.maple.swan.swift.translator.sil.RawUtil;
 import ca.maple.swan.swift.translator.swanir.context.InstructionContext;
-import ca.maple.swan.swift.translator.swanir.instructions.SWANIRInstruction;
 import ca.maple.swan.swift.translator.swanir.instructions.spds.DynamicApplyInstruction;
-import ca.maple.swan.swift.translator.swanir.summaries.SPDSBuiltinHandler;
 import ca.maple.swan.swift.translator.swanir.values.DynamicFunctionRefValue;
 import ca.maple.swan.swift.translator.wala.WALARawToSWANIRTranslator;
 
 import java.util.ArrayList;
 
 public class SPDSRawToSWANIRTranslator extends WALARawToSWANIRTranslator {
-
-    @Override
-    protected boolean isBuiltinSummarized(String builtinName) {
-        return super.isBuiltinSummarized(builtinName) || SPDSBuiltinHandler.isSummarized(builtinName);
-    }
-
-    @Override
-    protected SWANIRInstruction findBuiltinSummary(String funcName, String resultName, String resultType, ArrayList<String> params, InstructionContext C) {
-        if (SPDSBuiltinHandler.isSummarized(funcName)) {
-            return SPDSBuiltinHandler.findSummary(funcName, resultName, resultType, params, C);
-        }
-        return super.findBuiltinSummary(funcName, resultName, resultType, params, C);
-    }
 
     @Override
     protected void handleDynamicApply(RawUtil.RawValue result, ArrayList<String> args, DynamicFunctionRefValue refValue, InstructionContext C) {

@@ -30,6 +30,7 @@ import java.util.*;
 public class ProgramContext {
 
     private HashMap<String, Function> allFunctions;
+    private HashMap<String, Function> summaries;
     public HashMap<BasicBlock, ArrayList<InstructionNode>> toTranslate;
     public ValueTable vt;
 
@@ -37,6 +38,7 @@ public class ProgramContext {
 
     public ProgramContext(HashMap<BasicBlock, ArrayList<InstructionNode>> toTranslate) {
         this.allFunctions = new LinkedHashMap<>(); // LinkedHashMap is important here! Ordering can affect global accessing.
+        this.summaries = new HashMap<>();
         this.toTranslate = toTranslate;
         this.vt = new ValueTable();
     }
@@ -48,6 +50,23 @@ public class ProgramContext {
     public Function getFunction(String s) {
         if (allFunctions.containsKey(s)) {
             return allFunctions.get(s);
+        }
+        return getSummary(s);
+    }
+
+    public void addSummaries(ArrayList<Function> functions) {
+        for (Function f : functions) {
+            this.summaries.put(f.getName(), f);
+        }
+    }
+
+    private Function getSummary(String s) {
+        if (summaries.containsKey(s)) {
+            Function f = summaries.get(s);
+            if (!allFunctions.containsKey(f.getName())) {
+                allFunctions.put(f.getName(), f);
+            }
+            return f;
         }
         return null;
     }

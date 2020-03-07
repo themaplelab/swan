@@ -93,9 +93,7 @@ public class IRPruner extends ISWANIRVisitor {
 
     @Override
     public void visitBuiltinInstruction(BuiltinInstruction instruction) {
-        if (!instruction.value.summaryCreated) {
-            kill = true;
-        }
+
     }
 
     @Override

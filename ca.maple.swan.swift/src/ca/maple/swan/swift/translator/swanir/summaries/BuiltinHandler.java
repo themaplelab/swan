@@ -87,10 +87,6 @@ public class BuiltinHandler {
                 return new FieldReadInstruction(resultName, resultType, params.get(1), "value", C);
             }
 
-            case "Swift.Dictionary.init() -> Swift.Dictionary<A, B>": {
-                return new NewInstruction(resultName, resultType, C);
-            }
-
             case "Swift.Dictionary.subscript.setter : (A) -> Swift.Optional<B>": {
                 // setter(v0, v1, v2)
                 // (v2.value).(v1.value) = v0.value.data
@@ -140,7 +136,6 @@ public class BuiltinHandler {
                 C.bc.block.addInstruction(new FieldWriteInstruction(params.get(0), "value", temp, C));
             }
             case "Swift.StaticString.init(_builtinStringLiteral: Builtin.RawPointer, utf8CodeUnitCount: Builtin.Word, isASCII: Builtin.Int1) -> Swift.StaticString":
-            case "Swift.Int.init(_builtinIntegerLiteral: Builtin.IntLiteral) -> Swift.Int":
             case "Swift.Double.init(_builtinFloatLiteral: Builtin.FPIEEE80) -> Swift.Double":
             case "Swift.Double.init(_builtinIntegerLiteral: Builtin.IntLiteral) -> Swift.Double":
             case "Swift.UInt.init(_builtinIntegerLiteral: Builtin.IntLiteral) -> Swift.UInt":
@@ -169,35 +164,5 @@ public class BuiltinHandler {
                 return null;
             }
         }
-    }
-
-    private static final String[] summarizedBuiltins = new String[] {
-            "Swift.StaticString.init(_builtinStringLiteral: Builtin.RawPointer, utf8CodeUnitCount: Builtin.Word, isASCII: Builtin.Int1) -> Swift.StaticString",
-            //"Swift.Array.append(__owned A) -> ()",
-            "(extension in Swift):Swift.BidirectionalCollection< where A.Element == Swift.String>.joined(separator: Swift.String) -> Swift.String",
-            "default argument 0 of (extension in Swift):Swift.BidirectionalCollection< where A.Element == Swift.String>.joined(separator: Swift.String) -> Swift.String",
-            "Swift.Dictionary.init() -> Swift.Dictionary<A, B>",
-            "Swift.Dictionary.subscript.getter : (A) -> Swift.Optional<B>",
-            "Swift.Dictionary.subscript.setter : (A) -> Swift.Optional<B>",
-            // "Swift.Array.subscript.getter : (Swift.Int) -> A",
-            "Swift.Int.init(_builtinIntegerLiteral: Builtin.IntLiteral) -> Swift.Int",
-            "Swift.UInt.init(_builtinIntegerLiteral: Builtin.IntLiteral) -> Swift.UInt",
-            "Swift.Double.init(_builtinFloatLiteral: Builtin.FPIEEE80) -> Swift.Double",
-            "Swift.Double.init(_builtinIntegerLiteral: Builtin.IntLiteral) -> Swift.Double",
-            "Swift.Double.init(Swift.Int) -> Swift.Double",
-            "Swift.Bool.init(_builtinBooleanLiteral: Builtin.Int1) -> Swift.Bool",
-            // "Swift.String.isEmpty.getter : Swift.Bool",
-            "Swift.DefaultStringInterpolation.init(literalCapacity: Swift.Int, interpolationCount: Swift.Int) -> Swift.DefaultStringInterpolation",
-            "Swift.String.init(stringInterpolation: Swift.DefaultStringInterpolation) -> Swift.String",
-            "Swift.DefaultStringInterpolation.appendLiteral(Swift.String) -> ()",
-            "Swift.DefaultStringInterpolation.appendInterpolation<A>(A) -> ()",
-            "Swift.DefaultStringInterpolation.appendInterpolation<A where A: Swift.CustomStringConvertible, A: Swift.TextOutputStreamable>(A) -> ()",
-            "Swift.DefaultStringInterpolation.appendInterpolation<A where A: Swift.CustomStringConvertible>(A) -> ()"
-    };
-
-    public static boolean isSummarized(String name) {
-        //noinspection SimplifyStreamApiCallChains
-        return false;
-        // return Arrays.stream(summarizedBuiltins).anyMatch(name::equals);
     }
 }

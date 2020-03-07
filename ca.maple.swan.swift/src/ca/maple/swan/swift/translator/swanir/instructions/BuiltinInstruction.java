@@ -36,6 +36,6 @@ public class BuiltinInstruction extends SWANIRInstruction {
 
     @Override
     public String toString() {
-        return value.simpleName() + " := " + (value.summaryCreated ? "func_ref " :  "builtin ") + functionName + this.getComment();
+        return value.simpleName() + " := builtin " + functionName + this.getComment();
     }
 }

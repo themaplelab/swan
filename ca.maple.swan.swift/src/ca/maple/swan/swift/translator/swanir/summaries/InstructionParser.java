@@ -131,8 +131,18 @@ public class InstructionParser {
         return null;
     }
 
+    // Must come before NewInstruction
+    private SWANIRInstruction parseNewArrayTupleInstruction(String line, InstructionContext ic) {
+        Matcher matcher = checkMatch(line, "v([0-9]+)\\s*:=\\s*new array tuple\\s*");
+        if (matcher != null) {
+            int result = Integer.parseInt(matcher.group(1));
+            return new NewArrayTupleInstruction(var(result), U_TYPE, ic);
+        }
+        return null;
+    }
+
     private SWANIRInstruction parseNewInstruction(String line, InstructionContext ic) {
-        Matcher matcher = checkMatch(line, "v([0-9]+)\\s*:=\\s*new\\s+([^\\s]*)\\s*");
+        Matcher matcher = checkMatch(line, "v([0-9]+)\\s*:=\\s*new\\s+(.*)");
         if (matcher != null) {
             int result = Integer.parseInt(matcher.group(1));
             String type = matcher.group(2);
@@ -246,15 +256,6 @@ public class InstructionParser {
         matcher = checkMatch(line, "return");
         if (matcher != null) {
             return new ReturnInstruction(ic);
-        }
-        return null;
-    }
-
-    private SWANIRInstruction parseNewArrayTupleInstruction(String line, InstructionContext ic) {
-        Matcher matcher = checkMatch(line, "v([0-9]+)\\s*:=\\s*new array tuple\\s*");
-        if (matcher != null) {
-            int result = Integer.parseInt(matcher.group(1));
-            return new NewArrayTupleInstruction(var(result), U_TYPE, ic);
         }
         return null;
     }

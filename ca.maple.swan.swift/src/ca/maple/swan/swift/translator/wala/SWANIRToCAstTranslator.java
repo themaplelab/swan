@@ -432,22 +432,22 @@ public class SWANIRToCAstTranslator {
 
         @Override
         public void visitBuiltinInstruction(BuiltinInstruction instruction) {
-            if (instruction.value.summaryCreated) {
-                CAstEntity entity = (c.allEntities.get(instruction.functionName));
-                Assertions.productionAssertion(entity != null);
-                CAstNode n =
-                        Ast.makeNode(
-                                CAstNode.ASSIGN,
-                                makeVarNode(instruction.value),
-                                Ast.makeNode(
-                                        CAstNode.FUNCTION_EXPR,
-                                        Ast.makeConstant(entity)));
-                if (!instruction.ic.bc.fc.function.getName().equals(instruction.value.getFunction())) {
-                    c.currentEntity.addScopedEntity(null, entity);
-                }
-                setNodePosition(n, instruction);
-                addNode(n);
+            // TODO: If a stub hasn't been created this will blow things up.
+            //  i.e. function ref to non-existent function.
+            CAstEntity entity = (c.allEntities.get(instruction.functionName));
+            Assertions.productionAssertion(entity != null);
+            CAstNode n =
+                    Ast.makeNode(
+                            CAstNode.ASSIGN,
+                            makeVarNode(instruction.value),
+                            Ast.makeNode(
+                                    CAstNode.FUNCTION_EXPR,
+                                    Ast.makeConstant(entity)));
+            if (!instruction.ic.bc.fc.function.getName().equals(instruction.value.getFunction())) {
+                c.currentEntity.addScopedEntity(null, entity);
             }
+            setNodePosition(n, instruction);
+            addNode(n);
         }
 
         @Override

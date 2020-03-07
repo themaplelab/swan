@@ -1,0 +1,16 @@
+func $Dictionary<String, String> `Swift.Dictionary.init() -> Swift.Dictionary<A, B>`(v0 : $@thin Dictionary<String, String>.Type) {
+    bb0(v0 : $@thin Dictionary<String, String>.Type) :
+        v1 := new $Dictionary<String, String>
+        return v1
+}
+
+
+func $() `Swift.Dictionary.subscript.setter : (A) -> Swift.Optional<B>`(v0 : $*Optional<String>, v1 : $*String, v2 : $*Dictionary<String, String>) {
+    bb0(v0 : $*Optional<String>, v1 : $*String, v2 : $*Dictionary<String, String>) :
+        return // TODO
+}
+
+func $() `Swift.Dictionary.subscript.getter : (A) -> Swift.Optional<B>`(v0 : $*Optional<String>, v1 : $*String, v2 : $Dictionary<String, String>) {
+    bb0(v0 : $*Optional<String>, v1 : $*String, v2 : $Dictionary<String, String>) :
+        return // TODO
+}

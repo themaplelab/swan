@@ -45,6 +45,6 @@ public abstract class SWANIRInstruction {
     }
 
     public String getComment() {
-        return this.comment.equals("") ? "\n" : "    // " + this.comment + "\n";
+        return this.comment.equals("") ? "\n" : " // " + this.comment + "\n";
     }
 }

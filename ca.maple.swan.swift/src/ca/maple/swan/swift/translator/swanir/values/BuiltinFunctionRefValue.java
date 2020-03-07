@@ -21,8 +21,6 @@ public class BuiltinFunctionRefValue extends Value {
 
     private final String function;
 
-    public boolean summaryCreated = false;
-
     public BuiltinFunctionRefValue(String name, String type, String function) {
         super(name, type);
         this.function = function;

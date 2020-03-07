@@ -83,21 +83,6 @@ public class SummaryParser {
 
     private static Function parseFunction(String returnType, String name, String rawArgs, ArrayList<String> lines, ProgramContext pc) {
 
-        /*
-        Function f = new Function(name, returnType, null, new ArrayList<>(), Function.Type.STUB);
-        FunctionContext fc = new FunctionContext(f, pc);
-        BasicBlock bb = new BasicBlock(0);
-        BlockContext bc = new BlockContext(bb, fc);
-        InstructionContext C = new InstructionContext(bc);
-        String randomName = UUID.randomUUID().toString();
-        bb.addInstruction(new NewInstruction(randomName, returnType, C));
-        bb.addInstruction(new ReturnInstruction(randomName, C));
-        f.addBlock(bb);
-        return f;
-
-         */
-
-
         InstructionParser instructionParser = new InstructionParser();
 
         ArrayList<Argument> args = parseArgs(rawArgs, instructionParser);
@@ -188,9 +173,18 @@ public class SummaryParser {
         InstructionContext ic = new InstructionContext(bc, new NullPosition());
 
         for (String line : lines) {
-            SWANIRInstruction inst = instructionParser.parse(line, ic);
-            if (inst != null) {
-                basicBlock.addInstruction(inst);
+            String comment = "";
+            try {
+                String[] pair = line.split("//");
+                line = pair[0].trim();
+                comment = pair[1].trim();
+            } catch (Exception e) {}
+            if (line.length() > 0) {
+                SWANIRInstruction inst = instructionParser.parse(line, ic);
+                if (inst != null) {
+                    inst.setComment(comment);
+                    basicBlock.addInstruction(inst);
+                }
             }
         }
 

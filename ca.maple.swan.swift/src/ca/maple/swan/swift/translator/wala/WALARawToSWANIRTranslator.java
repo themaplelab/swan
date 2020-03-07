@@ -20,7 +20,6 @@ import ca.maple.swan.swift.translator.swanir.BasicBlock;
 import ca.maple.swan.swift.translator.swanir.Function;
 import ca.maple.swan.swift.translator.swanir.context.*;
 import ca.maple.swan.swift.translator.swanir.instructions.*;
-import ca.maple.swan.swift.translator.swanir.summaries.BuiltinHandler;
 import ca.maple.swan.swift.translator.swanir.summaries.SummaryParser;
 import ca.maple.swan.swift.translator.swanir.values.*;
 import com.ibm.wala.cast.tree.CAstNode;
@@ -52,6 +51,9 @@ import static ca.maple.swan.swift.translator.sil.RawUtil.*;
  * Note: Some builtins (at least operators) take functions (closures) as parameters, and these are ignored when the
  *       operator call is replaced with an operator instruction.
  */
+
+// TODO: Remove summary functions that are not called before analysis.
+//  Or, alternatively add them as they are needed.
 
 @SuppressWarnings("unused")
 public class WALARawToSWANIRTranslator extends SILInstructionVisitor<SWANIRInstruction, InstructionContext> {
@@ -91,9 +93,7 @@ public class WALARawToSWANIRTranslator extends SILInstructionVisitor<SWANIRInstr
             pc.addFunction(functionName, f);
         }
 
-        for (Function f : SummaryParser.parseSummaries(pc)) {
-            pc.addFunction(f.getName(), f);
-        }
+        pc.addSummaries(SummaryParser.parseSummaries(pc));
 
         try {
             VisitProgram(pc);
@@ -194,15 +194,6 @@ public class WALARawToSWANIRTranslator extends SILInstructionVisitor<SWANIRInstr
     @Override
     protected CAstSourcePositionMap.Position getInstructionPosition(CAstNode N) {
         return (CAstSourcePositionMap.Position) N.getChild(1).getValue();
-    }
-
-    protected boolean isBuiltinSummarized(String builtinName) {
-        return BuiltinHandler.isSummarized(builtinName);
-    }
-
-    protected SWANIRInstruction findBuiltinSummary(String funcName, String resultName, String resultType,
-                                                  ArrayList<String> params, InstructionContext C) {
-        return BuiltinHandler.findSummary(funcName, resultName, resultType, params, C);
     }
 
     /********************** INSTRUCTION TRANSLATION **********************
@@ -761,9 +752,7 @@ public class WALARawToSWANIRTranslator extends SILInstructionVisitor<SWANIRInstr
         RawValue result = getSingleResult(N);
         String FuncName = RawUtil.getStringValue(N, 2);
         Function f = C.bc.fc.pc.getFunction(FuncName);
-        return (f == null)
-                ? new BuiltinInstruction(FuncName, result.Name, result.Type, C)
-                : new FunctionRefInstruction(result.Name, result.Type, f, C);
+        return new FunctionRefInstruction(result.Name, result.Type, f, C);
     }
 
     @Override
@@ -980,20 +969,21 @@ public class WALARawToSWANIRTranslator extends SILInstructionVisitor<SWANIRInstr
         }
         if (refValue instanceof BuiltinFunctionRefValue) {
             String name = ((BuiltinFunctionRefValue) refValue).getFunction();
-            if (isBuiltinSummarized(name)) {
-                return findBuiltinSummary(name, result.Name, result.Type, args, C);
-            } else {
-                // Make a function for builtins we don't have summaries for.
+
+            Function f = C.bc.fc.pc.getFunction(name);
+            if (f == null) {
+                // Make a function for builtins.
                 ArrayList<Argument> funcArgs = new ArrayList<>();
                 for (String arg : args) {
                     Argument a = new Argument(arg, C.valueTable().getValue(arg).type);
                     funcArgs.add(a);
                 }
-                Function f = createFakeFunction(((BuiltinFunctionRefValue) refValue).getFunction(), result.Type, funcArgs, C);
-                C.bc.fc.pc.addFunction(f.getName(), f);
-                ((BuiltinFunctionRefValue) refValue).summaryCreated = true;
-                return new ApplyInstruction(refValue.name, result.Name, result.Type, args, C);
+                C.bc.fc.pc.addFunction(
+                        name,
+                        createFakeFunction(((BuiltinFunctionRefValue) refValue).getFunction(), result.Type, funcArgs, C));
             }
+            return new ApplyInstruction(refValue.name, result.Name, result.Type, args, C);
+
         } else if (refValue instanceof FunctionRefValue) {
             return new ApplyInstruction(FuncRefValue, result.Name, result.Type, args, C);
         } else if (refValue instanceof DynamicFunctionRefValue) {
@@ -1136,9 +1126,12 @@ public class WALARawToSWANIRTranslator extends SILInstructionVisitor<SWANIRInstr
             funcArgs.add(a);
             args.add(arg);
         }
-        Function f = createFakeFunction(functionName, result.Type, funcArgs, C);
-        C.bc.fc.pc.addFunction(f.getName(), f);
-        ((BuiltinFunctionRefValue) C.valueTable().getValue(builtinIntermediate)).summaryCreated = true;
+        Function f = C.bc.fc.pc.getFunction(functionName);
+        if (f == null) {
+            C.bc.fc.pc.addFunction(
+                    functionName,
+                    createFakeFunction(functionName, result.Type, funcArgs, C));
+        }
         return new ApplyInstruction(builtinIntermediate, result.Name, result.Type, args, C);
     }
 
@@ -2376,23 +2369,24 @@ public class WALARawToSWANIRTranslator extends SILInstructionVisitor<SWANIRInstr
                     C.bc.fc.function.getBlock(NormalBB).getArgument(0).name,
                     C.bc.fc.function.getBlock(NormalBB).getArgument(0).getType());
             String name = ((BuiltinFunctionRefValue) refValue).getFunction();
-            if (isBuiltinSummarized(name)) {
-                return findBuiltinSummary(name, result.Name, result.Type, args, C);
-            } else {
-                // Make a function for builtins we don't have summaries for.
+
+            Function f = C.bc.fc.pc.getFunction(name);
+            if (f == null) {
+                // Make a function for builtins.
                 ArrayList<Argument> funcArgs = new ArrayList<>();
                 for (String arg : args) {
                     Argument a = new Argument(arg, C.valueTable().getValue(arg).type);
                     funcArgs.add(a);
                 }
-                Function f = createFakeFunction(((BuiltinFunctionRefValue) refValue).getFunction(), result.Type, funcArgs, C);
-                C.bc.fc.pc.addFunction(f.getName(), f);
-                ((BuiltinFunctionRefValue) refValue).summaryCreated = true;
-                ApplyInstruction inst = new ApplyInstruction(refValue.name, result.Name, result.Type, args, C);
-                inst.setComment("try_apply on builtin");
-                C.bc.block.addInstruction(inst);
-                return new GotoInstruction(C.bc.fc.function.getBlock(NormalBB), C); // Go straight to normal block.
+                C.bc.fc.pc.addFunction(
+                        name,
+                        createFakeFunction(((BuiltinFunctionRefValue) refValue).getFunction(), result.Type, funcArgs, C));
             }
+            ApplyInstruction inst = new ApplyInstruction(refValue.name, result.Name, result.Type, args, C);
+            inst.setComment("try_apply on builtin");
+            C.bc.block.addInstruction(inst);
+            return new GotoInstruction(C.bc.fc.function.getBlock(NormalBB), C); // Go straight to normal block.
+
         } else if (refValue instanceof FunctionRefValue) {
             return new TryApplyInstruction(FuncRefValue, C.bc.fc.function.getBlock(NormalBB), C.bc.fc.function.getBlock(ErrorBB), args, C);
         } else {
