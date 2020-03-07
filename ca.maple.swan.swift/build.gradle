@@ -11,7 +11,17 @@ repositories {
     jcenter()
 }
 
-sourceSets.main.java.srcDirs = ['src/']
+
+sourceSets {
+    main {
+        java {
+            srcDir 'src/'
+        }
+        resources {
+            srcDir 'src/resources'
+        }
+    }
+}
 
 dependencies {
     compile fileTree(dir: ":ca.maple.swan.translator")

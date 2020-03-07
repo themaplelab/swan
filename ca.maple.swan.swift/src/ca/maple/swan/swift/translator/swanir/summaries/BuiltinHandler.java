@@ -25,6 +25,7 @@ import java.util.UUID;
 
 /*
  * Builtin handler for SWANIR.
+ * !!! BLOW AWAY WHEN EVERYTHING IS REWRITTEN IN SWANIR SUMMARIES.
  */
 
 public class BuiltinHandler {
@@ -138,27 +139,7 @@ public class BuiltinHandler {
                 C.bc.block.addInstruction(new ArrayReadInstruction(temp, "$Any", params.get(2), Integer.parseInt(((LiteralValue)index).literal.toString()), C));
                 C.bc.block.addInstruction(new FieldWriteInstruction(params.get(0), "value", temp, C));
             }
-
-            case "Swift._allocateUninitializedArray<A>(Builtin.Word) -> (Swift.Array<A>, Builtin.RawPointer)" : {
-                C.bc.block.addInstruction(new NewArrayTupleInstruction(resultName, resultType, C));
-                String temp1 = UUID.randomUUID().toString();
-                String temp2 = UUID.randomUUID().toString();
-                C.bc.block.addInstruction(new NewInstruction(temp1, "$Array<Any>", C));
-                C.bc.block.addInstruction(new NewInstruction(temp2, "$Builtin.RawPointer", C));
-                C.bc.block.addInstruction(new FieldWriteInstruction(resultName, "0", temp1, C));
-                C.bc.block.addInstruction(new FieldWriteInstruction(resultName, "1", temp2, C));
-                return null;
-            }
-            case "default argument 1 of Swift.print(_: Any..., separator: Swift.String, terminator: Swift.String) -> ()":
-            case "default argument 2 of Swift.print(_: Any..., separator: Swift.String, terminator: Swift.String) -> ()": {
-                C.valueTable().add(new LiteralValue(resultName, resultType, ""));
-                return null;
-            }
-            case "Swift.print(_: Any..., separator: Swift.String, terminator: Swift.String) -> ()": {
-                return new PrintInstruction(params.get(0), C);
-            }
             case "Swift.StaticString.init(_builtinStringLiteral: Builtin.RawPointer, utf8CodeUnitCount: Builtin.Word, isASCII: Builtin.Int1) -> Swift.StaticString":
-            case "Swift.String.init(_builtinStringLiteral: Builtin.RawPointer, utf8CodeUnitCount: Builtin.Word, isASCII: Builtin.Int1) -> Swift.String":
             case "Swift.Int.init(_builtinIntegerLiteral: Builtin.IntLiteral) -> Swift.Int":
             case "Swift.Double.init(_builtinFloatLiteral: Builtin.FPIEEE80) -> Swift.Double":
             case "Swift.Double.init(_builtinIntegerLiteral: Builtin.IntLiteral) -> Swift.Double":
@@ -199,11 +180,6 @@ public class BuiltinHandler {
             "Swift.Dictionary.subscript.getter : (A) -> Swift.Optional<B>",
             "Swift.Dictionary.subscript.setter : (A) -> Swift.Optional<B>",
             // "Swift.Array.subscript.getter : (Swift.Int) -> A",
-            "Swift._allocateUninitializedArray<A>(Builtin.Word) -> (Swift.Array<A>, Builtin.RawPointer)",
-            "default argument 1 of Swift.print(_: Any..., separator: Swift.String, terminator: Swift.String) -> ()",
-            "default argument 2 of Swift.print(_: Any..., separator: Swift.String, terminator: Swift.String) -> ()",
-            "Swift.print(_: Any..., separator: Swift.String, terminator: Swift.String) -> ()",
-            "Swift.String.init(_builtinStringLiteral: Builtin.RawPointer, utf8CodeUnitCount: Builtin.Word, isASCII: Builtin.Int1) -> Swift.String",
             "Swift.Int.init(_builtinIntegerLiteral: Builtin.IntLiteral) -> Swift.Int",
             "Swift.UInt.init(_builtinIntegerLiteral: Builtin.IntLiteral) -> Swift.UInt",
             "Swift.Double.init(_builtinFloatLiteral: Builtin.FPIEEE80) -> Swift.Double",
@@ -221,6 +197,7 @@ public class BuiltinHandler {
 
     public static boolean isSummarized(String name) {
         //noinspection SimplifyStreamApiCallChains
-        return Arrays.stream(summarizedBuiltins).anyMatch(name::equals);
+        return false;
+        // return Arrays.stream(summarizedBuiltins).anyMatch(name::equals);
     }
 }

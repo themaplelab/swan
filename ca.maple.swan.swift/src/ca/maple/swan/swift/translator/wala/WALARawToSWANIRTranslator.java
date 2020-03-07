@@ -21,6 +21,7 @@ import ca.maple.swan.swift.translator.swanir.Function;
 import ca.maple.swan.swift.translator.swanir.context.*;
 import ca.maple.swan.swift.translator.swanir.instructions.*;
 import ca.maple.swan.swift.translator.swanir.summaries.BuiltinHandler;
+import ca.maple.swan.swift.translator.swanir.summaries.SummaryParser;
 import ca.maple.swan.swift.translator.swanir.values.*;
 import com.ibm.wala.cast.tree.CAstNode;
 import com.ibm.wala.cast.tree.CAstSourcePositionMap;
@@ -90,6 +91,10 @@ public class WALARawToSWANIRTranslator extends SILInstructionVisitor<SWANIRInstr
             pc.addFunction(functionName, f);
         }
 
+        for (Function f : SummaryParser.parseSummaries(pc)) {
+            pc.addFunction(f.getName(), f);
+        }
+
         try {
             VisitProgram(pc);
         } catch (Exception e) {
@@ -102,6 +107,9 @@ public class WALARawToSWANIRTranslator extends SILInstructionVisitor<SWANIRInstr
 
     private void VisitProgram(ProgramContext pc) {
         for (Function f : pc.getFunctions()) {
+            if (f.getType().equals(Function.Type.SUMMARY)) {
+                continue;
+            }
             // Check if it is a coroutine.
             // This is a bit inefficient. Ideally we could ask the Swift compiler if a function is a coroutine.
             for (BasicBlock b : f.getBlocks()) {
@@ -875,7 +883,7 @@ public class WALARawToSWANIRTranslator extends SILInstructionVisitor<SWANIRInstr
     }
 
     private Function createFakeFunction(String name, String returnType, ArrayList<Argument> args, InstructionContext C) {
-        Function f = new Function(name, returnType, null, args, true);
+        Function f = new Function(name, returnType, null, args, Function.Type.STUB);
         BasicBlock bb = new BasicBlock(0);
         String randomName = UUID.randomUUID().toString();
         bb.addInstruction(new NewInstruction(randomName, returnType, C));

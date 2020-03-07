@@ -17,6 +17,10 @@ import ca.maple.swan.swift.translator.swanir.context.InstructionContext;
 import ca.maple.swan.swift.translator.swanir.values.ArrayIndexAliasValue;
 import ca.maple.swan.swift.translator.swanir.values.FieldAliasValue;
 import ca.maple.swan.swift.translator.swanir.values.Value;
+import ca.maple.swan.swift.translator.swanir.values.ValueTable;
+
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class AssignInstruction extends SWANIRInstruction {
 
@@ -62,5 +66,15 @@ public class AssignInstruction extends SWANIRInstruction {
     @Override
     public String toString() {
         return to.simpleName() + " := " + from.simpleName() + this.getComment();
+    }
+
+    public static SWANIROperation parse2(String line) {
+        return (table) -> {
+            return null;
+        };
+    }
+
+    public interface SWANIROperation {
+        public SWANIRInstruction operation(ValueTable table);
     }
 }

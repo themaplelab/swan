@@ -19,7 +19,7 @@ public abstract class SWANIRInstruction {
 
     public final InstructionContext ic;
 
-    private int lineNumber = -1;
+    private int lineNumber = 0;
 
     private String comment = "";
 

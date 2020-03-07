@@ -1,0 +1,32 @@
+func $String `Swift.String.init(_builtinStringLiteral: Builtin.RawPointer, utf8CodeUnitCount: Builtin.Word, isASCII: Builtin.Int1) -> Swift.String`(v0 : $Builtin.RawPointer, v1 : $Builtin.Word, v2 : $Builtin.Int1, v3 : $@thin String.Type) {
+    bb0(v0 : $Builtin.RawPointer, v1 : $Builtin.Word, v2 : $Builtin.Int1, v3 : $@thin String.Type) :
+        return v0
+}
+
+func $(Array<Any>, Builtin.RawPointer) `Swift._allocateUninitializedArray<A>(Builtin.Word) -> (Swift.Array<A>, Builtin.RawPointer)`(v0 : $Builtin.Word) {
+    bb0(v0 : $Builtin.Word) :
+        v1 := new array tuple
+        v2 := new $Array<Any>
+        v3 := new $Builtin.RawPointer
+        v1.0 := v2
+        v1.1 := v3
+        return v1
+}
+
+func $String `default argument 1 of Swift.print(_: Any..., separator: Swift.String, terminator: Swift.String) -> ()`() {
+    bb0:
+        v0 := #""
+        return v0
+}
+
+func $String `default argument 2 of Swift.print(_: Any..., separator: Swift.String, terminator: Swift.String) -> ()`() {
+    bb0:
+        v0 := #""
+        return v0
+}
+
+func $() `Swift.print(_: Any..., separator: Swift.String, terminator: Swift.String) -> ()`(v0 : $Array<Any>, v1 : $String, v2 : $String) {
+    bb0(v0 : $Array<Any>, v1 : $String, v2 : $String) :
+        print v0
+        return
+}

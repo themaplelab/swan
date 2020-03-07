@@ -99,4 +99,17 @@ public class ValueTable {
     public boolean has(String s) {
         return values.containsKey(s);
     }
+
+    @Override
+    public String toString() {
+        StringBuilder sb = new StringBuilder();
+        sb.append("\n");
+        for (String key : values.keySet()) {
+            sb.append(values.get(key).name);
+            sb.append(" : ");
+            sb.append(values.get(key).type);
+            sb.append("\n");
+        }
+        return sb.toString();
+    }
 }

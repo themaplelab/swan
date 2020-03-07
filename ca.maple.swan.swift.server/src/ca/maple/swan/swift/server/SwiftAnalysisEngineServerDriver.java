@@ -43,7 +43,7 @@ import java.util.Set;
 
 public class SwiftAnalysisEngineServerDriver {
 
-    static final boolean PRINT = true;
+    static final boolean PRINT = false;
 
     private static final SSAOptions options = new SSAOptions();
     private static final IRFactory irFactory = AstIRFactory.makeDefaultFactory();

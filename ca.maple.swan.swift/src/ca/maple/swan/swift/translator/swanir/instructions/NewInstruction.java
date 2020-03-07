@@ -16,6 +16,8 @@ package ca.maple.swan.swift.translator.swanir.instructions;
 import ca.maple.swan.swift.translator.swanir.context.InstructionContext;
 import ca.maple.swan.swift.translator.swanir.values.Value;
 
+import java.util.regex.Pattern;
+
 public class NewInstruction extends SWANIRInstruction {
 
     public final Value value;

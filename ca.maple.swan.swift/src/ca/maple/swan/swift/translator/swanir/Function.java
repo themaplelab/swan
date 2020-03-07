@@ -27,6 +27,12 @@ import java.util.Iterator;
 
 public class Function {
 
+    public enum Type {
+        REAL,
+        STUB,
+        SUMMARY
+    }
+
     private ArrayList<BasicBlock> blocks;
 
     private ArrayList<Argument> arguments;
@@ -39,7 +45,7 @@ public class Function {
 
     private boolean isCoroutine = false;
 
-    private boolean isSWANIRGenerated = false;
+    private Type type = Type.REAL;
 
     private int lineNumber = -1;
 
@@ -47,9 +53,9 @@ public class Function {
         this(name, returnType, position, null);
     }
 
-    public Function(String name, String returnType, Position position, ArrayList<Argument> arguments, boolean isSWANIRGenerated) {
+    public Function(String name, String returnType, Position position, ArrayList<Argument> arguments, Type type) {
         this(name, returnType, position, arguments);
-        this.isSWANIRGenerated = isSWANIRGenerated;
+        this.type = type;
     }
 
     public Function(String name, String returnType, Position position, ArrayList<Argument> arguments) {
@@ -121,12 +127,18 @@ public class Function {
         isCoroutine = true;
     }
 
+    public Type getType() {
+        return this.type;
+    }
+
     @Override
     public String toString() {
         ValueNameSimplifier.clear();
         StringBuilder s = new StringBuilder();
-        if (isSWANIRGenerated) {
-            s.append("// Generated (fake)\n");
+        if (type.equals(Type.STUB)) {
+            s.append("// Generated (empty stub)\n");
+        } else if (type.equals(Type.SUMMARY)) {
+            s.append("// Generated (summary)\n");
         }
         s.append("func ");
         s.append(this.returnType);

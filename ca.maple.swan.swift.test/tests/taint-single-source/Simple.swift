@@ -1,5 +1,5 @@
-//#SWAN#sources: "SimpleTest.source() -> Swift.String"
-//#SWAN#sinks: "SimpleTest.sink(sunk: Swift.String) -> ()"
+//#SWAN#sources: "Simple.source() -> Swift.String"
+//#SWAN#sinks: "Simple.sink(sunk: Swift.String) -> ()"
 
 func source() -> String {
     return "I'm bad";
