@@ -16,6 +16,24 @@ package ca.maple.swan.swift.translator.swanir.summaries;
 import ca.maple.swan.swift.translator.swanir.Function;
 import ca.maple.swan.swift.translator.swanir.context.InstructionContext;
 import ca.maple.swan.swift.translator.swanir.instructions.*;
+import ca.maple.swan.swift.translator.swanir.instructions.basic.AssignGlobalInstruction;
+import ca.maple.swan.swift.translator.swanir.instructions.basic.LiteralInstruction;
+import ca.maple.swan.swift.translator.swanir.instructions.allocation.NewArrayTupleInstruction;
+import ca.maple.swan.swift.translator.swanir.instructions.allocation.NewGlobalInstruction;
+import ca.maple.swan.swift.translator.swanir.instructions.allocation.NewInstruction;
+import ca.maple.swan.swift.translator.swanir.instructions.array.*;
+import ca.maple.swan.swift.translator.swanir.instructions.basic.PrintInstruction;
+import ca.maple.swan.swift.translator.swanir.instructions.dictionary.DictionaryReadInstruction;
+import ca.maple.swan.swift.translator.swanir.instructions.dictionary.DictionaryWriteInstruction;
+import ca.maple.swan.swift.translator.swanir.instructions.field.DynamicFieldReadInstruction;
+import ca.maple.swan.swift.translator.swanir.instructions.field.DynamicFieldWriteInstruction;
+import ca.maple.swan.swift.translator.swanir.instructions.field.StaticFieldReadInstruction;
+import ca.maple.swan.swift.translator.swanir.instructions.field.StaticFieldWriteInstruction;
+import ca.maple.swan.swift.translator.swanir.instructions.functions.ApplyInstruction;
+import ca.maple.swan.swift.translator.swanir.instructions.functions.BuiltinInstruction;
+import ca.maple.swan.swift.translator.swanir.instructions.functions.FunctionRefInstruction;
+import ca.maple.swan.swift.translator.swanir.instructions.functions.ReturnInstruction;
+import ca.maple.swan.swift.translator.swanir.instructions.operators.BinaryOperatorInstruction;
 import com.ibm.wala.util.collections.Pair;
 
 import java.util.ArrayList;
@@ -71,6 +89,18 @@ public class InstructionParser {
         if (inst != null) { return inst; }
 
         inst = parsePrintInstruction(line, ic);
+        if (inst != null) { return inst; }
+
+        inst = parseArrayReadInstructions(line, ic);
+        if (inst != null) { return inst; }
+
+        inst = parseArrayWriteInstructions(line, ic);
+        if (inst != null) { return inst; }
+
+        inst = parseDictionaryReadInstruction(line, ic);
+        if (inst != null) { return inst; }
+
+        inst = parseDictionaryWriteInstruction(line, ic);
         if (inst != null) { return inst; }
 
         System.err.println("ERROR: Could not parse : " + line);
@@ -136,7 +166,7 @@ public class InstructionParser {
         Matcher matcher = checkMatch(line, "v([0-9]+)\\s*:=\\s*new array tuple\\s*");
         if (matcher != null) {
             int result = Integer.parseInt(matcher.group(1));
-            return new NewArrayTupleInstruction(var(result), U_TYPE, ic);
+            return new NewArrayTupleInstruction(var(result), "$(Array<Any>, Builtin.RawPointer)", ic);
         }
         return null;
     }
@@ -202,14 +232,14 @@ public class InstructionParser {
             int result = Integer.parseInt(matcher.group(1));
             int operand = Integer.parseInt(matcher.group(2));
             String field = matcher.group(3);
-            return new FieldReadInstruction(var(result), U_TYPE, var(operand), field, ic);
+            return new StaticFieldReadInstruction(var(result), U_TYPE, var(operand), field, ic);
         }
         matcher = checkMatch(line, "v([0-9]+)\\s*:=\\s*v([0-9]+)\\.v([0-9]+)");
         if (matcher != null) {
             int result = Integer.parseInt(matcher.group(1));
             int operand = Integer.parseInt(matcher.group(2));
             int field = Integer.parseInt(matcher.group(3));
-            return new FieldReadInstruction(var(result), U_TYPE, var(operand), var(field), true, ic);
+            return new DynamicFieldReadInstruction(var(result), U_TYPE, var(operand), var(field), ic);
         }
         return null;
     }
@@ -220,14 +250,14 @@ public class InstructionParser {
             int result = Integer.parseInt(matcher.group(1));
             String field = matcher.group(2);
             int operand = Integer.parseInt(matcher.group(3));
-            return new FieldWriteInstruction(var(result), field, var(operand), ic);
+            return new StaticFieldWriteInstruction(var(result), field, var(operand), ic);
         }
         matcher = checkMatch(line, "v([0-9]+)\\.v([0-9]+)\\s*:=\\s*v([0-9]+)");
         if (matcher != null) {
             int result = Integer.parseInt(matcher.group(1));
             int field =  Integer.parseInt(matcher.group(2));
             int operand = Integer.parseInt(matcher.group(3));
-            return new FieldWriteInstruction(var(result), var(field), var(operand), true, ic);
+            return new DynamicFieldWriteInstruction(var(result), var(field), var(operand), ic);
         }
         return null;
     }
@@ -265,6 +295,74 @@ public class InstructionParser {
         if (matcher != null) {
             int result = Integer.parseInt(matcher.group(1));
             return new PrintInstruction(var(result), ic);
+        }
+        return null;
+    }
+
+    private SWANIRInstruction parseArrayReadInstructions(String line, InstructionContext ic) {
+        Matcher matcher = checkMatch(line, "v([0-9]+)\\s*:=\\s*v([0-9]+)\\[\\s*v([0-9]*)\\s*\\]");
+        if (matcher != null) {
+            int result = Integer.parseInt(matcher.group(1));
+            int operand = Integer.parseInt(matcher.group(2));
+            int index = Integer.parseInt(matcher.group(3));
+            return new DynamicArrayReadInstruction(var(result), U_TYPE, var(operand), var(index), ic);
+        }
+        matcher = checkMatch(line, "v([0-9]+)\\s*:=\\s*v([0-9]+)\\[\\s*([0-9]*)\\s*\\]");
+        if (matcher != null) {
+            int result = Integer.parseInt(matcher.group(1));
+            int operand = Integer.parseInt(matcher.group(2));
+            int index = Integer.parseInt(matcher.group(3));
+            return new StaticArrayReadInstruction(var(result), U_TYPE, var(operand), index, ic);
+        }
+        matcher = checkMatch(line, "v([0-9]+)\\s*:=\\s*v([0-9]+)\\[\\*\\]");
+        if (matcher != null) {
+            int result = Integer.parseInt(matcher.group(1));
+            int operand = Integer.parseInt(matcher.group(2));
+            return new WildcardArrayReadInstruction(var(result), U_TYPE, var(operand), ic);
+        }
+        return null;
+    }
+
+    private SWANIRInstruction parseArrayWriteInstructions(String line, InstructionContext ic) {
+        Matcher matcher = checkMatch(line, "v([0-9]+)\\[\\s*v([0-9]+)\\s*\\]\\s*:=\\s*v([0-9]+)");
+        if (matcher != null) {
+            int result = Integer.parseInt(matcher.group(1));
+            int index = Integer.parseInt(matcher.group(2));
+            int operand = Integer.parseInt(matcher.group(3));
+            return new DynamicArrayWriteInstruction(var(result), var(operand), var(index), ic);
+        }
+        matcher = checkMatch(line, "v([0-9]+)\\[\\s*([0-9]+)\\s*\\]\\s*:=\\s*v([0-9]+)");
+        if (matcher != null) {
+            int result = Integer.parseInt(matcher.group(1));
+            int index = Integer.parseInt(matcher.group(2));
+            int operand = Integer.parseInt(matcher.group(3));
+            return new StaticArrayWriteInstruction(var(result), var(operand), index, ic);
+        }
+        matcher = checkMatch(line, "v([0-9]+)\\[\\*\\]\\s*:=\\s*v([0-9]+)");
+        if (matcher != null) {
+            int result = Integer.parseInt(matcher.group(1));
+            int operand = Integer.parseInt(matcher.group(2));
+            return new WildcardArrayWriteInstruction(var(result), var(operand), ic);
+        }
+        return null;
+    }
+
+    private SWANIRInstruction parseDictionaryReadInstruction(String line, InstructionContext ic) {
+        Matcher matcher = checkMatch(line, "v([0-9]+)\\s*:=\\s*v([0-9]+)\\[\\s*\\\"\\*\\\"\\s*\\]");
+        if (matcher != null) {
+            int result = Integer.parseInt(matcher.group(1));
+            int operand = Integer.parseInt(matcher.group(2));
+            return new DictionaryReadInstruction(var(result), U_TYPE, var(operand), ic);
+        }
+        return null;
+    }
+
+    private SWANIRInstruction parseDictionaryWriteInstruction(String line, InstructionContext ic) {
+        Matcher matcher = checkMatch(line, "v([0-9]+)\\[\\s*\\\"\\*\\\"\\s*\\]\\s*:=\\s*v([0-9]+)");
+        if (matcher != null) {
+            int result = Integer.parseInt(matcher.group(1));
+            int operand = Integer.parseInt(matcher.group(2));
+            return new DictionaryWriteInstruction(var(result), var(operand), ic);
         }
         return null;
     }

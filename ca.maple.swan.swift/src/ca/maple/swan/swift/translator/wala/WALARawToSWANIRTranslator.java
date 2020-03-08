@@ -20,6 +20,20 @@ import ca.maple.swan.swift.translator.swanir.BasicBlock;
 import ca.maple.swan.swift.translator.swanir.Function;
 import ca.maple.swan.swift.translator.swanir.context.*;
 import ca.maple.swan.swift.translator.swanir.instructions.*;
+import ca.maple.swan.swift.translator.swanir.instructions.basic.AssignGlobalInstruction;
+import ca.maple.swan.swift.translator.swanir.instructions.basic.AssignInstruction;
+import ca.maple.swan.swift.translator.swanir.instructions.basic.LiteralInstruction;
+import ca.maple.swan.swift.translator.swanir.instructions.allocation.NewGlobalInstruction;
+import ca.maple.swan.swift.translator.swanir.instructions.allocation.NewInstruction;
+import ca.maple.swan.swift.translator.swanir.instructions.array.StaticArrayWriteInstruction;
+import ca.maple.swan.swift.translator.swanir.instructions.array.StaticArrayReadInstruction;
+import ca.maple.swan.swift.translator.swanir.instructions.array.WildcardArrayWriteInstruction;
+import ca.maple.swan.swift.translator.swanir.instructions.control.*;
+import ca.maple.swan.swift.translator.swanir.instructions.field.StaticFieldReadInstruction;
+import ca.maple.swan.swift.translator.swanir.instructions.field.StaticFieldWriteInstruction;
+import ca.maple.swan.swift.translator.swanir.instructions.functions.*;
+import ca.maple.swan.swift.translator.swanir.instructions.operators.BinaryOperatorInstruction;
+import ca.maple.swan.swift.translator.swanir.instructions.operators.UnaryOperatorInstruction;
 import ca.maple.swan.swift.translator.swanir.summaries.SummaryParser;
 import ca.maple.swan.swift.translator.swanir.values.*;
 import com.ibm.wala.cast.tree.CAstNode;
@@ -365,24 +379,24 @@ public class WALARawToSWANIRTranslator extends SILInstructionVisitor<SWANIRInstr
     private SWANIRInstruction tryAliasWrite(String SourceName, String DestName, InstructionContext C) {
         Value v = C.valueTable().getPossibleAlias(DestName);
         if (v instanceof FieldAliasValue) {
-            return new FieldWriteInstruction(((FieldAliasValue) v).value.name, ((FieldAliasValue) v).field, SourceName, C);
+            return new StaticFieldWriteInstruction(((FieldAliasValue) v).value.name, ((FieldAliasValue) v).field, SourceName, C);
         } else if (v instanceof ArrayIndexAliasValue) {
-            return new ArrayWriteInstruction(((ArrayIndexAliasValue) v).value.name, SourceName, ((ArrayIndexAliasValue) v).index, C);
+            return new StaticArrayWriteInstruction(((ArrayIndexAliasValue) v).value.name, SourceName, ((ArrayIndexAliasValue) v).index, C);
         } else if (v instanceof ArrayValue) {
-            return new ArrayWriteInstruction(DestName, SourceName, 0, C);
+            return new WildcardArrayWriteInstruction(DestName, SourceName, C);
         } else {
-            return new FieldWriteInstruction(DestName, "value", SourceName, C);
+            return new StaticFieldWriteInstruction(DestName, "value", SourceName, C);
         }
     }
 
     private SWANIRInstruction tryAliasRead(RawValue result, String operand, String field, InstructionContext C) {
         Value v = C.valueTable().getPossibleAlias(operand);
         if (v instanceof FieldAliasValue) {
-            return new FieldReadInstruction(result.Name, result.Type, ((FieldAliasValue) v).value.name, ((FieldAliasValue) v).field, C);
+            return new StaticFieldReadInstruction(result.Name, result.Type, ((FieldAliasValue) v).value.name, ((FieldAliasValue) v).field, C);
         } else if (v instanceof ArrayIndexAliasValue) {
-            return new ArrayReadInstruction(result.Name, result.Type, ((ArrayIndexAliasValue) v).value.name, ((ArrayIndexAliasValue) v).index, C);
+            return new StaticArrayReadInstruction(result.Name, result.Type, ((ArrayIndexAliasValue) v).value.name, ((ArrayIndexAliasValue) v).index, C);
         } else {
-            return new FieldReadInstruction(result.Name, result.Type, operand, field, C);
+            return new StaticFieldReadInstruction(result.Name, result.Type, operand, field, C);
         }
     }
 
@@ -752,7 +766,9 @@ public class WALARawToSWANIRTranslator extends SILInstructionVisitor<SWANIRInstr
         RawValue result = getSingleResult(N);
         String FuncName = RawUtil.getStringValue(N, 2);
         Function f = C.bc.fc.pc.getFunction(FuncName);
-        return new FunctionRefInstruction(result.Name, result.Type, f, C);
+        return (f == null)
+                ? new BuiltinInstruction(FuncName, result.Name, result.Type, C)
+                : new FunctionRefInstruction(result.Name, result.Type, f, C);
     }
 
     @Override
@@ -888,7 +904,7 @@ public class WALARawToSWANIRTranslator extends SILInstructionVisitor<SWANIRInstr
             String temp = UUID.randomUUID().toString();
             C.bc.block.addInstruction(new BinaryOperatorInstruction(temp, "$Int", operator, operand1, operand2, C));
             C.bc.block.addInstruction(new NewInstruction(resultName, resultType, C));
-            C.bc.block.addInstruction(new FieldWriteInstruction(resultName, "_value", temp, C));
+            C.bc.block.addInstruction(new StaticFieldWriteInstruction(resultName, "_value", temp, C));
             return true;
         }
         return false;
@@ -917,10 +933,10 @@ public class WALARawToSWANIRTranslator extends SILInstructionVisitor<SWANIRInstr
             default:
                 return handleComparisonOperators(resultName, resultType, operator, operand1, operand2, C);
         }
-        FieldReadInstruction inst = new FieldReadInstruction(tempValue, C.valueTable().getValue(operand1).type, operand1, "value", C);
+        StaticFieldReadInstruction inst = new StaticFieldReadInstruction(tempValue, C.valueTable().getValue(operand1).type, operand1, "value", C);
         C.bc.block.addInstruction(inst);
         C.bc.block.addInstruction(new BinaryOperatorInstruction(tempValue, actualOperator, tempValue, operand2, C));
-        C.bc.block.addInstruction(new FieldWriteInstruction(operand1, "value", tempValue, C));
+        C.bc.block.addInstruction(new StaticFieldWriteInstruction(operand1, "value", tempValue, C));
         return true;
     }
 
@@ -1266,7 +1282,7 @@ public class WALARawToSWANIRTranslator extends SILInstructionVisitor<SWANIRInstr
         int index = 0;
         for (CAstNode field : N.getChild(2).getChildren()) {
             String FieldName = RawUtil.getStringValue(field, 0);
-            C.bc.block.addInstruction(new FieldWriteInstruction(TupleValue.name, String.valueOf(index), FieldName, C));
+            C.bc.block.addInstruction(new StaticFieldWriteInstruction(TupleValue.name, String.valueOf(index), FieldName, C));
             ++index;
         }
         return null;
@@ -1303,8 +1319,8 @@ public class WALARawToSWANIRTranslator extends SILInstructionVisitor<SWANIRInstr
         RawValue result1 = getResult(N, 0);
         RawValue result2 = getResult(N, 1);
         RawValue operand = getSingleOperand(N);
-        C.bc.block.addInstruction(new FieldReadInstruction(result1.Name, result1.Type, operand.Name, "0", C));
-        C.bc.block.addInstruction(new FieldReadInstruction(result2.Name, result2.Type, operand.Name, "1", C));
+        C.bc.block.addInstruction(new StaticFieldReadInstruction(result1.Name, result1.Type, operand.Name, "0", C));
+        C.bc.block.addInstruction(new StaticFieldReadInstruction(result2.Name, result2.Type, operand.Name, "1", C));
         // Handle allocateunitarray builtin.
         if (C.valueTable().getValue(operand.Name) instanceof ArrayTupleValue) {
             C.valueTable().replace(C.valueTable().getValue(result1.Name), new ArrayValue(result1.Name, result1.Type));
@@ -1326,7 +1342,7 @@ public class WALARawToSWANIRTranslator extends SILInstructionVisitor<SWANIRInstr
         for (CAstNode field : N.getChild(2).getChildren()) {
             String FieldName = RawUtil.getStringValue(field, 0);
             String FieldValue = RawUtil.getStringValue(field, 1);
-            C.bc.block.addInstruction(new FieldWriteInstruction(StructValue.name, FieldName, FieldValue, C));
+            C.bc.block.addInstruction(new StaticFieldWriteInstruction(StructValue.name, FieldName, FieldValue, C));
         }
         return null;
     }
@@ -1405,10 +1421,10 @@ public class WALARawToSWANIRTranslator extends SILInstructionVisitor<SWANIRInstr
         // Add the case name so we can later compare it in instructions such as switch typeof.
         String tempName = UUID.randomUUID().toString();
         C.bc.block.addInstruction(new LiteralInstruction(CaseName, tempName, "$String", C));
-        C.bc.block.addInstruction(new FieldWriteInstruction(result.Name, "type", tempName, C));
+        C.bc.block.addInstruction(new StaticFieldWriteInstruction(result.Name, "type", tempName, C));
         try {
             RawValue operand = getSingleOperand(N); // Is optional, so can cause exception.
-            C.bc.block.addInstruction(new FieldWriteInstruction(result.Name, "data", operand.Name, C));
+            C.bc.block.addInstruction(new StaticFieldWriteInstruction(result.Name, "data", operand.Name, C));
         } catch (Exception ignored) {
         }
         return null;
@@ -1473,7 +1489,7 @@ public class WALARawToSWANIRTranslator extends SILInstructionVisitor<SWANIRInstr
             defaultName = getStringValue(N, 4);
         }
         String enumTypeValue = UUID.randomUUID().toString();
-        C.bc.block.addInstruction(new FieldReadInstruction(enumTypeValue, "$String", EnumName, "type", C));
+        C.bc.block.addInstruction(new StaticFieldReadInstruction(enumTypeValue, "$String", EnumName, "type", C));
         return new SwitchAssignValueInstruction(result.Name, result.Type, enumTypeValue, cases, defaultName, C);
     }
 
@@ -1495,9 +1511,9 @@ public class WALARawToSWANIRTranslator extends SILInstructionVisitor<SWANIRInstr
             defaultName = getStringValue(N, 4);
         }
         String actualEnumValue = UUID.randomUUID().toString();
-        C.bc.block.addInstruction(new FieldReadInstruction(EnumName, "temp", EnumName, "value", C));
+        C.bc.block.addInstruction(new StaticFieldReadInstruction(EnumName, "temp", EnumName, "value", C));
         String enumTypeValue = UUID.randomUUID().toString();
-        C.bc.block.addInstruction(new FieldReadInstruction(enumTypeValue, "$String", actualEnumValue, "type", C));
+        C.bc.block.addInstruction(new StaticFieldReadInstruction(enumTypeValue, "$String", actualEnumValue, "type", C));
         return new SwitchAssignValueInstruction(result.Name, result.Type, enumTypeValue, cases, defaultName, C);
     }
 
@@ -1656,7 +1672,7 @@ public class WALARawToSWANIRTranslator extends SILInstructionVisitor<SWANIRInstr
         RawValue operand = getSingleOperand(N);
         RawValue result = getSingleResult(N);
         C.bc.block.addInstruction(new NewInstruction(result.Name, result.Type, C));
-        C.bc.block.addInstruction(new FieldWriteInstruction(result.Name, "value", operand.Name, C));
+        C.bc.block.addInstruction(new StaticFieldWriteInstruction(result.Name, "value", operand.Name, C));
         return null;
     }
 
@@ -2166,7 +2182,7 @@ public class WALARawToSWANIRTranslator extends SILInstructionVisitor<SWANIRInstr
             if (destBlock.getArguments().size() > 0) {
                 if (!createdGetInstruction) {
                     tempDataValueName = UUID.randomUUID().toString();
-                    C.bc.block.addInstruction(new FieldReadInstruction(tempDataValueName, destBlock.getArgument(0).type, CaseName, "data", C));
+                    C.bc.block.addInstruction(new StaticFieldReadInstruction(tempDataValueName, destBlock.getArgument(0).type, CaseName, "data", C));
                     createdGetInstruction = true;
                 }
                 C.valueTable().copy(destBlock.getArgument(0).name, tempDataValueName);
@@ -2213,7 +2229,7 @@ public class WALARawToSWANIRTranslator extends SILInstructionVisitor<SWANIRInstr
             if (destBlock.getArguments().size() > 0) {
                 if (!createdGetInstruction) {
                     tempDataValueName = UUID.randomUUID().toString();
-                    C.bc.block.addInstruction(new FieldReadInstruction(tempDataValueName, destBlock.getArgument(0).type, EnumName, "data", C));
+                    C.bc.block.addInstruction(new StaticFieldReadInstruction(tempDataValueName, destBlock.getArgument(0).type, EnumName, "data", C));
                     createdGetInstruction = true;
                 }
                 C.bc.block.addInstruction(new AssignInstruction(destBlock.getArgument(0).name, destBlock.getArgument(0).type, tempDataValueName, C));
@@ -2227,7 +2243,7 @@ public class WALARawToSWANIRTranslator extends SILInstructionVisitor<SWANIRInstr
             defaultBlock = C.bc.fc.function.getBlock(DestBB);
         }
         String tempName = UUID.randomUUID().toString();
-        C.bc.block.addInstruction(new FieldReadInstruction(tempName, "$String", EnumName, "type", C));
+        C.bc.block.addInstruction(new StaticFieldReadInstruction(tempName, "$String", EnumName, "type", C));
         return new SwitchValueInstruction(tempName, cases, defaultBlock, C);
     }
 
@@ -2250,7 +2266,7 @@ public class WALARawToSWANIRTranslator extends SILInstructionVisitor<SWANIRInstr
             if (destBlock.getArguments().size() > 0) {
                 if (!createdGetInstruction) {
                     tempDataValueName = UUID.randomUUID().toString();
-                    C.bc.block.addInstruction(new FieldReadInstruction(tempDataValueName, destBlock.getArgument(0).type, EnumName, "data", C));
+                    C.bc.block.addInstruction(new StaticFieldReadInstruction(tempDataValueName, destBlock.getArgument(0).type, EnumName, "data", C));
                     createdGetInstruction = true;
                 }
                 C.bc.block.addInstruction(new AssignInstruction(destBlock.getArgument(0).name, destBlock.getArgument(0).type, tempDataValueName, C));
@@ -2262,9 +2278,9 @@ public class WALARawToSWANIRTranslator extends SILInstructionVisitor<SWANIRInstr
             defaultBlock = C.bc.fc.function.getBlock(DestBB);
         }
         String actualEnumValue = UUID.randomUUID().toString();
-        C.bc.block.addInstruction(new FieldReadInstruction(actualEnumValue, "temp", EnumName, "value", C));
+        C.bc.block.addInstruction(new StaticFieldReadInstruction(actualEnumValue, "temp", EnumName, "value", C));
         String tempName = UUID.randomUUID().toString();
-        C.bc.block.addInstruction(new FieldReadInstruction(tempName, "$String", actualEnumValue, "type", C));
+        C.bc.block.addInstruction(new StaticFieldReadInstruction(tempName, "$String", actualEnumValue, "type", C));
         return new SwitchValueInstruction(tempName, cases, defaultBlock, C);
     }
 

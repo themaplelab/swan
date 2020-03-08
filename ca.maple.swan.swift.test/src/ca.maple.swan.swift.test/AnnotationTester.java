@@ -31,11 +31,13 @@ public class AnnotationTester extends GenericTester {
     }
 
     @Override
-    protected void verifyAndReportResults(List<List<CAstSourcePositionMap.Position>> results) {
+    protected void verifyAndReportResults(List<List<CAstSourcePositionMap.Position>> results, String testFile) {
 
         boolean failed = false;
 
-        HashMap<String, ArrayList<ArrayList<String>>> annotations = getAnnotations(results);
+        HashMap<String, ArrayList<ArrayList<String>>> annotations = getAnnotations(results, testFile);
+
+        System.err.println();
 
         try {
             for (List<CAstSourcePositionMap.Position> positions : results) {
@@ -115,8 +117,10 @@ public class AnnotationTester extends GenericTester {
     // Mapping of Filename to ArrayList (len == |file numbers|)
     // of ArrayList<String> which are the annotations
     // probably could be done more efficiently.
-    protected HashMap<String, ArrayList<ArrayList<String>>> getAnnotations(List<List<CAstSourcePositionMap.Position>> results) {
+    protected HashMap<String, ArrayList<ArrayList<String>>> getAnnotations(List<List<CAstSourcePositionMap.Position>> results, String testFile) {
         HashMap<String, ArrayList<ArrayList<String>>> map = new HashMap<>();
+
+        map.put(testFile, new ArrayList<>());
 
         // Populate an empty map
         for (List<CAstSourcePositionMap.Position> path : results) {

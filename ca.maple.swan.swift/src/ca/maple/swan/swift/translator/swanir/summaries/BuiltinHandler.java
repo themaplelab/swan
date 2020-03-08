@@ -15,12 +15,18 @@ package ca.maple.swan.swift.translator.swanir.summaries;
 
 import ca.maple.swan.swift.translator.swanir.context.InstructionContext;
 import ca.maple.swan.swift.translator.swanir.instructions.*;
+import ca.maple.swan.swift.translator.swanir.instructions.basic.LiteralInstruction;
+import ca.maple.swan.swift.translator.swanir.instructions.allocation.NewInstruction;
+import ca.maple.swan.swift.translator.swanir.instructions.array.StaticArrayReadInstruction;
+import ca.maple.swan.swift.translator.swanir.instructions.field.DynamicFieldReadInstruction;
+import ca.maple.swan.swift.translator.swanir.instructions.field.DynamicFieldWriteInstruction;
+import ca.maple.swan.swift.translator.swanir.instructions.field.StaticFieldReadInstruction;
+import ca.maple.swan.swift.translator.swanir.instructions.field.StaticFieldWriteInstruction;
 import ca.maple.swan.swift.translator.swanir.values.LiteralValue;
 import ca.maple.swan.swift.translator.swanir.values.Value;
 import com.ibm.wala.util.debug.Assertions;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.UUID;
 
 /*
@@ -71,11 +77,6 @@ public class BuiltinHandler {
 
         switch(funcName) {
 
-            case "Swift.Array.append(__owned A) -> ()": {
-                // append(v0, v1)
-                // v1.arr.append(v0.value)
-                // TODO
-            }
 
             case "default argument 0 of (extension in Swift):Swift.BidirectionalCollection< where A.Element == Swift.String>.joined(separator: Swift.String) -> Swift.String": {
                 return new LiteralInstruction("", resultName, resultName, C);
@@ -84,57 +85,11 @@ public class BuiltinHandler {
             case "(extension in Swift):Swift.BidirectionalCollection< where A.Element == Swift.String>.joined(separator: Swift.String) -> Swift.String": {
                 // TODO: here we need to add all elements of the array together and return it.
                 // This is temporary.
-                return new FieldReadInstruction(resultName, resultType, params.get(1), "value", C);
+                return new StaticFieldReadInstruction(resultName, resultType, params.get(1), "value", C);
             }
 
-            case "Swift.Dictionary.subscript.setter : (A) -> Swift.Optional<B>": {
-                // setter(v0, v1, v2)
-                // (v2.value).(v1.value) = v0.value.data
-                // These result types are not correct.
-                String temp1 = UUID.randomUUID().toString(); // v2.value
-                C.bc.block.addInstruction(new FieldReadInstruction(temp1, "$Swift.Dictionary<A, B>", params.get(2), "value", C));
-                String temp2 = UUID.randomUUID().toString(); // v0.value
-                C.bc.block.addInstruction(new FieldReadInstruction(temp2, "$*Optional<A>", params.get(0), "value", C));
-                String temp3 = UUID.randomUUID().toString(); // v0.value.data
-                C.bc.block.addInstruction(new FieldReadInstruction(temp3, "$Any", temp2, "data", C));
-                String temp4 = UUID.randomUUID().toString(); // v1.value
-                C.bc.block.addInstruction(new FieldReadInstruction(temp4, "$Any", params.get(1), "value", C));
-                // temp1.temp4 = temp3
-                C.bc.block.addInstruction(new FieldWriteInstruction(temp1, temp4, temp3, true, C));
-                return null;
-            }
 
-            case "Swift.Dictionary.subscript.getter : (A) -> Swift.Optional<B>": {
-                // getter(v0, v1, v2)
-                // v0.value = new $Swift.Optional<A>
-                // v0.value.data = v2.(v1.value)
-                // v0.value.type = "some"/"none"
-                // These result types are not correct.
-                String init = UUID.randomUUID().toString();
-                C.bc.block.addInstruction(new NewInstruction(init, "$Swift.Optional<A>", C));
-                C.bc.block.addInstruction(new FieldWriteInstruction(params.get(0), "value", init, C));
-                String temp1 = UUID.randomUUID().toString(); // (v1.value)
-                C.bc.block.addInstruction(new FieldReadInstruction(temp1, "$Any", params.get(1), "value", C));
-                String temp2 = UUID.randomUUID().toString(); // v2.(v1.value)
-                C.bc.block.addInstruction(new FieldReadInstruction(temp2, "$Any", params.get(2), temp1, true, C));
-                String temp3 = UUID.randomUUID().toString(); // v0.value
-                C.bc.block.addInstruction(new FieldReadInstruction(temp3, "$Any", params.get(0), "value", C));
-                C.bc.block.addInstruction(new FieldWriteInstruction(temp3, "data", temp2, C));
-                // Assume there is some.
-                String temp4 = UUID.randomUUID().toString(); // "some"
-                C.bc.block.addInstruction(new LiteralInstruction("some", temp4, "$String", C));
-                C.bc.block.addInstruction(new FieldWriteInstruction(temp3, "type", temp4,  C));
-                return null;
-            }
 
-            case "Swift.Array.subscript.getter : (Swift.Int) -> A" : {
-                // TODO:
-                String temp = UUID.randomUUID().toString();
-                Value index = C.valueTable().getValue(params.get(1));
-                Assertions.productionAssertion(index instanceof LiteralValue);
-                C.bc.block.addInstruction(new ArrayReadInstruction(temp, "$Any", params.get(2), Integer.parseInt(((LiteralValue)index).literal.toString()), C));
-                C.bc.block.addInstruction(new FieldWriteInstruction(params.get(0), "value", temp, C));
-            }
             case "Swift.StaticString.init(_builtinStringLiteral: Builtin.RawPointer, utf8CodeUnitCount: Builtin.Word, isASCII: Builtin.Int1) -> Swift.StaticString":
             case "Swift.Double.init(_builtinFloatLiteral: Builtin.FPIEEE80) -> Swift.Double":
             case "Swift.Double.init(_builtinIntegerLiteral: Builtin.IntLiteral) -> Swift.Double":
@@ -145,7 +100,7 @@ public class BuiltinHandler {
             }
             case "Swift.Bool.init(_builtinBooleanLiteral: Builtin.Int1) -> Swift.Bool": {
                 C.bc.block.addInstruction(new NewInstruction(resultName, resultType, C));
-                C.bc.block.addInstruction(new FieldWriteInstruction(resultName, "_value", params.get(0), C));
+                C.bc.block.addInstruction(new StaticFieldWriteInstruction(resultName, "_value", params.get(0), C));
                 return null;
             }
 

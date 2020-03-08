@@ -29,7 +29,7 @@ public abstract class Tester {
 
     protected abstract void doTest(Namespace ns);
 
-    protected abstract void verifyAndReportResults(List<List<CAstSourcePositionMap.Position>> results);
+    protected abstract void verifyAndReportResults(List<List<CAstSourcePositionMap.Position>> results, String file);
 
     protected abstract ArgumentParser configureParser();
 }

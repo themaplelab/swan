@@ -1,7 +1,7 @@
 package ca.maple.swan.swift.translator.swanir.context;
 
 import ca.maple.swan.swift.translator.swanir.BasicBlock;
-import ca.maple.swan.swift.translator.swanir.instructions.GotoInstruction;
+import ca.maple.swan.swift.translator.swanir.instructions.control.GotoInstruction;
 import ca.maple.swan.swift.translator.swanir.values.Value;
 
 import java.util.ArrayList;

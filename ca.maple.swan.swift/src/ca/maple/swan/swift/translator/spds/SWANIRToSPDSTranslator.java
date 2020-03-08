@@ -14,6 +14,24 @@
 package ca.maple.swan.swift.translator.spds;
 
 import ca.maple.swan.swift.translator.swanir.instructions.*;
+import ca.maple.swan.swift.translator.swanir.instructions.basic.AssignGlobalInstruction;
+import ca.maple.swan.swift.translator.swanir.instructions.basic.AssignInstruction;
+import ca.maple.swan.swift.translator.swanir.instructions.basic.LiteralInstruction;
+import ca.maple.swan.swift.translator.swanir.instructions.allocation.NewArrayTupleInstruction;
+import ca.maple.swan.swift.translator.swanir.instructions.allocation.NewGlobalInstruction;
+import ca.maple.swan.swift.translator.swanir.instructions.allocation.NewInstruction;
+import ca.maple.swan.swift.translator.swanir.instructions.array.*;
+import ca.maple.swan.swift.translator.swanir.instructions.basic.PrintInstruction;
+import ca.maple.swan.swift.translator.swanir.instructions.control.*;
+import ca.maple.swan.swift.translator.swanir.instructions.dictionary.DictionaryReadInstruction;
+import ca.maple.swan.swift.translator.swanir.instructions.dictionary.DictionaryWriteInstruction;
+import ca.maple.swan.swift.translator.swanir.instructions.field.DynamicFieldReadInstruction;
+import ca.maple.swan.swift.translator.swanir.instructions.field.DynamicFieldWriteInstruction;
+import ca.maple.swan.swift.translator.swanir.instructions.field.StaticFieldReadInstruction;
+import ca.maple.swan.swift.translator.swanir.instructions.field.StaticFieldWriteInstruction;
+import ca.maple.swan.swift.translator.swanir.instructions.functions.*;
+import ca.maple.swan.swift.translator.swanir.instructions.operators.BinaryOperatorInstruction;
+import ca.maple.swan.swift.translator.swanir.instructions.operators.UnaryOperatorInstruction;
 import ca.maple.swan.swift.translator.swanir.instructions.spds.DynamicApplyInstruction;
 import ca.maple.swan.swift.translator.swanir.instructions.spds.RuleInstruction;
 
@@ -37,12 +55,42 @@ public class SWANIRToSPDSTranslator {
         }
 
         @Override
-        public void visitArrayReadInstruction(ArrayReadInstruction instruction) {
+        public void visitWildcardArrayReadInstruction(WildcardArrayReadInstruction instruction) {
 
         }
 
         @Override
-        public void visitArrayWriteInstruction(ArrayWriteInstruction instruction) {
+        public void visitDynamicArrayReadInstruction(DynamicArrayReadInstruction instruction) {
+
+        }
+
+        @Override
+        public void visitStaticArrayReadInstruction(StaticArrayReadInstruction instruction) {
+
+        }
+
+        @Override
+        public void visitWildcardArrayWriteInstruction(WildcardArrayWriteInstruction instruction) {
+
+        }
+
+        @Override
+        public void visitDynamicArrayWriteInstruction(DynamicArrayWriteInstruction instruction) {
+
+        }
+
+        @Override
+        public void visitStaticArrayWriteInstruction(StaticArrayWriteInstruction instruction) {
+
+        }
+
+        @Override
+        public void visitDictionaryReadInstruction(DictionaryReadInstruction instruction) {
+
+        }
+
+        @Override
+        public void visitDictionaryWriteInstruction(DictionaryWriteInstruction instruction) {
 
         }
 
@@ -77,12 +125,22 @@ public class SWANIRToSPDSTranslator {
         }
 
         @Override
-        public void visitFieldReadInstruction(FieldReadInstruction instruction) {
+        public void visitDynamicFieldReadInstruction(DynamicFieldReadInstruction instruction) {
 
         }
 
         @Override
-        public void visitFieldWriteInstruction(FieldWriteInstruction instruction) {
+        public void visitStaticFieldReadInstruction(StaticFieldReadInstruction instruction) {
+
+        }
+
+        @Override
+        public void visitDynamicFieldWriteInstruction(DynamicFieldWriteInstruction instruction) {
+
+        }
+
+        @Override
+        public void visitStaticFieldWriteInstruction(StaticFieldWriteInstruction instruction) {
 
         }
 

@@ -1,6 +1,6 @@
 package ca.maple.swan.swift.translator.swanir.values;
 
-import ca.maple.swan.swift.translator.swanir.instructions.AssignGlobalInstruction;
+import ca.maple.swan.swift.translator.swanir.instructions.basic.AssignGlobalInstruction;
 
 import java.util.ArrayList;
 import java.util.HashMap;

@@ -92,7 +92,7 @@ public class GenericTester extends Tester {
                 );
 
                 System.out.println("Checking taint analysis results...\n");
-                verifyAndReportResults(paths);
+                verifyAndReportResults(paths, ns.get("file"));
             } else {
                 System.out.println("SPDS mode, no taint analysis for now");
                 System.exit(0);
@@ -105,7 +105,7 @@ public class GenericTester extends Tester {
     }
 
     @Override
-    protected void verifyAndReportResults(List<List<CAstSourcePositionMap.Position>> results) {
+    protected void verifyAndReportResults(List<List<CAstSourcePositionMap.Position>> results, String file) {
 
         System.out.println("\n========= RESULTS =========");
         for (List<CAstSourcePositionMap.Position> path : results) {
@@ -163,6 +163,9 @@ public class GenericTester extends Tester {
                 .required(false);
 
         parser.addArgument("-swiftc-args").required(true).type(String.class);
+
+        // Assume file is valid
+        parser.addArgument("-file").required(true).type(String.class);
 
         parser.addArgument("-sources").nargs("*").setDefault(new ArrayList<String>());
 

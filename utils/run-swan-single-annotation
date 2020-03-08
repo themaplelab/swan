@@ -51,6 +51,7 @@ def run_test(filename):
 
     args = "-engine \"" + TEST_ENGINE + \
         "\" -swiftc-args=\"" + SWIFTC_ARGS + "\"" + \
+        " -file " + filename + \
         " -sources " + " ".join(sss["sources"]) + \
         " -sinks " + " ".join(sss["sinks"]) + \
         " -sanitizers " + " ".join(sss["sanitizers"])

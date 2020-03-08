@@ -18,7 +18,26 @@ import ca.maple.swan.swift.translator.operators.SWANIRCAstOperator;
 import ca.maple.swan.swift.translator.swanir.BasicBlock;
 import ca.maple.swan.swift.translator.swanir.Function;
 import ca.maple.swan.swift.translator.swanir.context.ProgramContext;
-import ca.maple.swan.swift.translator.swanir.instructions.*;
+import ca.maple.swan.swift.translator.swanir.instructions.IWALASWANIRVisitor;
+import ca.maple.swan.swift.translator.swanir.instructions.SWANIRInstruction;
+import ca.maple.swan.swift.translator.swanir.instructions.allocation.NewArrayTupleInstruction;
+import ca.maple.swan.swift.translator.swanir.instructions.allocation.NewGlobalInstruction;
+import ca.maple.swan.swift.translator.swanir.instructions.allocation.NewInstruction;
+import ca.maple.swan.swift.translator.swanir.instructions.array.*;
+import ca.maple.swan.swift.translator.swanir.instructions.basic.AssignGlobalInstruction;
+import ca.maple.swan.swift.translator.swanir.instructions.basic.AssignInstruction;
+import ca.maple.swan.swift.translator.swanir.instructions.basic.LiteralInstruction;
+import ca.maple.swan.swift.translator.swanir.instructions.basic.PrintInstruction;
+import ca.maple.swan.swift.translator.swanir.instructions.control.*;
+import ca.maple.swan.swift.translator.swanir.instructions.dictionary.DictionaryReadInstruction;
+import ca.maple.swan.swift.translator.swanir.instructions.dictionary.DictionaryWriteInstruction;
+import ca.maple.swan.swift.translator.swanir.instructions.field.DynamicFieldReadInstruction;
+import ca.maple.swan.swift.translator.swanir.instructions.field.DynamicFieldWriteInstruction;
+import ca.maple.swan.swift.translator.swanir.instructions.field.StaticFieldReadInstruction;
+import ca.maple.swan.swift.translator.swanir.instructions.field.StaticFieldWriteInstruction;
+import ca.maple.swan.swift.translator.swanir.instructions.functions.*;
+import ca.maple.swan.swift.translator.swanir.instructions.operators.BinaryOperatorInstruction;
+import ca.maple.swan.swift.translator.swanir.instructions.operators.UnaryOperatorInstruction;
 import ca.maple.swan.swift.translator.swanir.values.Argument;
 import ca.maple.swan.swift.translator.swanir.values.Value;
 import ca.maple.swan.swift.translator.types.SILTypes;
@@ -279,7 +298,17 @@ public class SWANIRToCAstTranslator {
         }
 
         @Override
-        public void visitArrayReadInstruction(ArrayReadInstruction instruction) {
+        public void visitWildcardArrayReadInstruction(WildcardArrayReadInstruction instruction) {
+            // TODO
+        }
+
+        @Override
+        public void visitDynamicArrayReadInstruction(DynamicArrayReadInstruction instruction) {
+            // TODO
+        }
+
+        @Override
+        public void visitStaticArrayReadInstruction(StaticArrayReadInstruction instruction) {
             // TODO
             /*
             CAstNode index = Ast.makeConstant(instruction.index);
@@ -297,7 +326,27 @@ public class SWANIRToCAstTranslator {
         }
 
         @Override
-        public void visitArrayWriteInstruction(ArrayWriteInstruction instruction) {
+        public void visitWildcardArrayWriteInstruction(WildcardArrayWriteInstruction instruction) {
+            // TODO
+        }
+
+        @Override
+        public void visitDynamicArrayWriteInstruction(DynamicArrayWriteInstruction instruction) {
+            // TODO
+        }
+
+        @Override
+        public void visitStaticArrayWriteInstruction(StaticArrayWriteInstruction instruction) {
+            // TODO
+        }
+
+        @Override
+        public void visitDictionaryReadInstruction(DictionaryReadInstruction instruction) {
+            // TODO
+        }
+
+        @Override
+        public void visitDictionaryWriteInstruction(DictionaryWriteInstruction instruction) {
             // TODO
         }
 
@@ -432,8 +481,8 @@ public class SWANIRToCAstTranslator {
 
         @Override
         public void visitBuiltinInstruction(BuiltinInstruction instruction) {
-            // TODO: If a stub hasn't been created this will blow things up.
-            //  i.e. function ref to non-existent function.
+            // We assume this doesn't blow up because a builtin without a function
+            // is removed during IR pruning.
             CAstEntity entity = (c.allEntities.get(instruction.functionName));
             Assertions.productionAssertion(entity != null);
             CAstNode n =
@@ -451,8 +500,8 @@ public class SWANIRToCAstTranslator {
         }
 
         @Override
-        public void visitFieldReadInstruction(FieldReadInstruction instruction) {
-            CAstNode field = (instruction.isDynamic) ? makeVarNode(Objects.requireNonNull(instruction.dynamicField)) : Ast.makeConstant(instruction.field);
+        public void visitStaticFieldReadInstruction(StaticFieldReadInstruction instruction) {
+            CAstNode field = Ast.makeConstant(instruction.field);
             CAstNode n =
                     Ast.makeNode(
                             CAstNode.ASSIGN,
@@ -466,8 +515,38 @@ public class SWANIRToCAstTranslator {
         }
 
         @Override
-        public void visitFieldWriteInstruction(FieldWriteInstruction instruction) {
-            CAstNode field = (instruction.isDynamic) ? makeVarNode(Objects.requireNonNull(instruction.dynamicField)) : Ast.makeConstant(instruction.field);
+        public void visitDynamicFieldReadInstruction(DynamicFieldReadInstruction instruction) {
+            CAstNode field = makeVarNode(Objects.requireNonNull(instruction.field));
+            CAstNode n =
+                    Ast.makeNode(
+                            CAstNode.ASSIGN,
+                            makeVarNode(instruction.result),
+                            Ast.makeNode(
+                                    CAstNode.OBJECT_REF,
+                                    makeVarNode(instruction.operand),
+                                    field));
+            setNodePosition(n, instruction);
+            addNode(n);
+        }
+
+        @Override
+        public void visitStaticFieldWriteInstruction(StaticFieldWriteInstruction instruction) {
+            CAstNode field = Ast.makeConstant(instruction.field);
+            CAstNode n =
+                    Ast.makeNode(
+                            CAstNode.ASSIGN,
+                            Ast.makeNode(
+                                    CAstNode.OBJECT_REF,
+                                    makeVarNode(instruction.writeTo),
+                                    field),
+                            makeVarNode(instruction.operand));
+            setNodePosition(n, instruction);
+            addNode(n);
+        }
+
+        @Override
+        public void visitDynamicFieldWriteInstruction(DynamicFieldWriteInstruction instruction) {
+            CAstNode field =  makeVarNode(Objects.requireNonNull(instruction.field));
             CAstNode n =
                     Ast.makeNode(
                             CAstNode.ASSIGN,
