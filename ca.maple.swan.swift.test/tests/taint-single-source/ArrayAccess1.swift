@@ -10,5 +10,5 @@ func sink(sunk: String) {
 }
 
 var strings = [String]();
-strings.append(source());
-sink(sunk : strings[0]);
+strings.append(source()); //source:13
+sink(sunk : strings[0]); //sink:13

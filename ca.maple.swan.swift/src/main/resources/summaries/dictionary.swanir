@@ -4,15 +4,13 @@ func $Dictionary<String, String> `Swift.Dictionary.init() -> Swift.Dictionary<A,
         return v1
 }
 
-
 func $() `Swift.Dictionary.subscript.setter : (A) -> Swift.Optional<B>`(v0 : $*Optional<String>, v1 : $*String, v2 : $*Dictionary<String, String>) {
     bb0(v0 : $*Optional<String>, v1 : $*String, v2 : $*Dictionary<String, String>) :
         // We don't use v1 since it is the index.
         v3 := v0.value
         v4 := v3.data
-        v5 := #some
-        v3.type := v5
-        v2["*"] := v4
+        v6 := v2.value
+        v6["*"] := v4
         return
 }
 
@@ -20,7 +18,7 @@ func $() `Swift.Dictionary.subscript.getter : (A) -> Swift.Optional<B>`(v0 : $*O
     bb0(v0 : $*Optional<String>, v1 : $*String, v2 : $Dictionary<String, String>) :
         // We don't use v1 since it is the index.
         v3 := v2["*"]
-        v4 := v3.value
+        v4 := v0.value
         v4.data := v3
         v5 := #some
         v4.type := v5

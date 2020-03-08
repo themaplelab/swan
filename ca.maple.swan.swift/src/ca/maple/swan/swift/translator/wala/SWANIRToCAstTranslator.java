@@ -62,10 +62,7 @@ import java.util.*;
  * Translates SWANIR to CAst. Nothing particularly interesting happens here since all of the
  * SIL nuanced are removed at the raw to SWANIR translation step.
  *
- * // TODOS:
- * 1. Handle arrays.
- * 2. Dynamic fields (e.g. dictionaries) need to be handled.
- * 3. Special WALA IR instruction needed for protocols?
+ * // TODO: Finish array/dict handling (test/verify).
  */
 
 public class SWANIRToCAstTranslator {
@@ -299,55 +296,130 @@ public class SWANIRToCAstTranslator {
 
         @Override
         public void visitWildcardArrayReadInstruction(WildcardArrayReadInstruction instruction) {
-            // TODO
-        }
-
-        @Override
-        public void visitDynamicArrayReadInstruction(DynamicArrayReadInstruction instruction) {
-            // TODO
-        }
-
-        @Override
-        public void visitStaticArrayReadInstruction(StaticArrayReadInstruction instruction) {
-            // TODO
-            /*
-            CAstNode index = Ast.makeConstant(instruction.index);
             CAstNode n =
                     Ast.makeNode(
                             CAstNode.ASSIGN,
                             makeVarNode(instruction.result),
                             Ast.makeNode(
-                                    CAstNode.ARRAY_REF,
-                                    makeVarNode(instruction.operand),
-                                    index));
+                                    CAstNode.OBJECT_REF,
+                                    makeVarNode(instruction.operandBase),
+                                    Ast.makeConstant("*")
+                            )
+                    );
             setNodePosition(n, instruction);
             addNode(n);
-             */
+        }
+
+        @Override
+        public void visitDynamicArrayReadInstruction(DynamicArrayReadInstruction instruction) {
+            CAstNode n =
+                    Ast.makeNode(
+                            CAstNode.ASSIGN,
+                            makeVarNode(instruction.result),
+                            Ast.makeNode(
+                                    CAstNode.OBJECT_REF,
+                                    makeVarNode(instruction.operandBase),
+                                    makeVarNode(instruction.index)
+                            )
+                    );
+            setNodePosition(n, instruction);
+            addNode(n);
+        }
+
+        @Override
+        public void visitStaticArrayReadInstruction(StaticArrayReadInstruction instruction) {
+            CAstNode n =
+                    Ast.makeNode(
+                            CAstNode.ASSIGN,
+                            makeVarNode(instruction.result),
+                            Ast.makeNode(
+                                    CAstNode.OBJECT_REF,
+                                    makeVarNode(instruction.operandBase),
+                                    Ast.makeConstant(instruction.index)
+                            )
+                    );
+            setNodePosition(n, instruction);
+            addNode(n);
         }
 
         @Override
         public void visitWildcardArrayWriteInstruction(WildcardArrayWriteInstruction instruction) {
-            // TODO
+            CAstNode n =
+                    Ast.makeNode(
+                            CAstNode.ASSIGN,
+                            Ast.makeNode(
+                                    CAstNode.OBJECT_REF,
+                                    makeVarNode(instruction.base),
+                                    Ast.makeConstant("*")
+                            ),
+                            makeVarNode(instruction.operand)
+                    );
+            setNodePosition(n, instruction);
+            addNode(n);
         }
 
         @Override
         public void visitDynamicArrayWriteInstruction(DynamicArrayWriteInstruction instruction) {
-            // TODO
+            CAstNode n =
+                    Ast.makeNode(
+                            CAstNode.ASSIGN,
+                            Ast.makeNode(
+                                    CAstNode.OBJECT_REF,
+                                    makeVarNode(instruction.base),
+                                    makeVarNode(instruction.index)
+                            ),
+                            makeVarNode(instruction.operand)
+                    );
+            setNodePosition(n, instruction);
+            addNode(n);
         }
 
         @Override
         public void visitStaticArrayWriteInstruction(StaticArrayWriteInstruction instruction) {
-            // TODO
+            CAstNode n =
+                    Ast.makeNode(
+                            CAstNode.ASSIGN,
+                            Ast.makeNode(
+                                    CAstNode.OBJECT_REF,
+                                    makeVarNode(instruction.base),
+                                    Ast.makeConstant(instruction.index)
+                            ),
+                            makeVarNode(instruction.operand)
+                    );
+            setNodePosition(n, instruction);
+            addNode(n);
         }
 
         @Override
         public void visitDictionaryReadInstruction(DictionaryReadInstruction instruction) {
-            // TODO
+            CAstNode n =
+                    Ast.makeNode(
+                            CAstNode.ASSIGN,
+                            makeVarNode(instruction.result),
+                            Ast.makeNode(
+                                    CAstNode.OBJECT_REF,
+                                    makeVarNode(instruction.operandBase),
+                                    Ast.makeConstant("*")
+                            )
+                    );
+            setNodePosition(n, instruction);
+            addNode(n);
         }
 
         @Override
         public void visitDictionaryWriteInstruction(DictionaryWriteInstruction instruction) {
-            // TODO
+            CAstNode n =
+                    Ast.makeNode(
+                            CAstNode.ASSIGN,
+                            Ast.makeNode(
+                                    CAstNode.OBJECT_REF,
+                                    makeVarNode(instruction.result),
+                                    Ast.makeConstant("*")
+                            ),
+                            makeVarNode(instruction.operand)
+                    );
+            setNodePosition(n, instruction);
+            addNode(n);
         }
 
         @Override

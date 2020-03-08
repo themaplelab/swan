@@ -69,4 +69,9 @@ public class NullPosition implements CAstSourcePositionMap.Position {
     public int compareTo(IMethod.SourcePosition o) {
         return 0;
     }
+
+    @Override
+    public String toString() {
+        return "";
+    }
 }
