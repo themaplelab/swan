@@ -44,7 +44,7 @@ def clone_swan_vscode():
     if path.exists(PACKAGES_DIR + "/swan-vscode"):
         return
     os.chdir(PACKAGES_DIR)
-    os.system("git clone " + SWAN_VSCODE_REPO_URL)
+    os.system("git clone " + SWAN_VSCODE_REPO_URL + " --branch dev")
     os.chdir(ROOT)
 
 def main():
