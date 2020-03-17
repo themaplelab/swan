@@ -1,5 +1,5 @@
-//#SWAN#sources: "ObjectSensitivity1.source() -> Swift.String"
-//#SWAN#sinks: "ObjectSensitivity1.sink(sunk: Swift.String) -> ()"
+//SWAN:sources: "ObjectSensitivity1.source() -> Swift.String"
+//SWAN:sinks: "ObjectSensitivity1.sink(sunk: Swift.String) -> ()"
 
 class Datacontainer {
     var secret: String = "";

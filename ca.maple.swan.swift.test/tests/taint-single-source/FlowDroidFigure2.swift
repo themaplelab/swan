@@ -1,5 +1,5 @@
-//#SWAN#sources: "FlowDroidFigure2.source() -> Swift.String"
-//#SWAN#sinks: "FlowDroidFigure2.sink(sunk: Swift.String) -> ()"
+//SWAN:sources: "FlowDroidFigure2.source() -> Swift.String"
+//SWAN:sinks: "FlowDroidFigure2.sink(sunk: Swift.String) -> ()"
 
 class A {
     var g : B;

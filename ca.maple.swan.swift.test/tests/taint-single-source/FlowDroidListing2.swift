@@ -1,5 +1,5 @@
-//#SWAN#sources: "FlowDroidListing2.source() -> Swift.String"
-//#SWAN#sinks: "FlowDroidListing2.sink(sunk: Swift.String) -> ()"
+//SWAN:sources: "FlowDroidListing2.source() -> Swift.String"
+//SWAN:sinks: "FlowDroidListing2.sink(sunk: Swift.String) -> ()"
 
 class Data {
     var f : String;

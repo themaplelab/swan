@@ -1,5 +1,5 @@
-//#SWAN#sources: "StringConcat2.source() -> Swift.String"
-//#SWAN#sinks: "StringConcat2.sink(sunk: Swift.String) -> ()"
+//SWAN:sources: "StringConcat2.source() -> Swift.String"
+//SWAN:sinks: "StringConcat2.sink(sunk: Swift.String) -> ()"
 
 func source() -> String {
     return "I'm bad";

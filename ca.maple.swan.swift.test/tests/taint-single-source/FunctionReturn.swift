@@ -1,5 +1,5 @@
-//#SWAN#sources: "FunctionReturn.source() -> Swift.String"
-//#SWAN#sinks: "FunctionReturn.sink(sunk: Swift.String) -> ()"
+//SWAN:sources: "FunctionReturn.source() -> Swift.String"
+//SWAN:sinks: "FunctionReturn.sink(sunk: Swift.String) -> ()"
 
 func source() -> String {
     return "I'm bad";

@@ -1,5 +1,5 @@
-//#SWAN#sources: "ArrayAccess2.source() -> Swift.String"
-//#SWAN#sinks: "ArrayAccess2.sink(sunk: Swift.String) -> ()"
+//SWAN:sources: "ArrayAccess2.source() -> Swift.String"
+//SWAN:sinks: "ArrayAccess2.sink(sunk: Swift.String) -> ()"
 
 func source() -> String {
     return "I'm bad";

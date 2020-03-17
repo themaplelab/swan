@@ -1,5 +1,5 @@
-//#SWAN#sources: "DynamicDispatch1.source() -> Swift.String"
-//#SWAN#sinks: "DynamicDispatch1.sink(sunk: Swift.String) -> ()"
+//SWAN:sources: "DynamicDispatch1.source() -> Swift.String"
+//SWAN:sinks: "DynamicDispatch1.sink(sunk: Swift.String) -> ()"
 
 protocol Parent {
     func doSomething(s: String);

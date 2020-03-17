@@ -34,13 +34,13 @@ def parse_file_SSS(file_string):
     sss["sources"] = []
     sss["sinks"] = []
     sss["sanitizers"] = []
-    found = re.findall(r"\/\/#SWAN#sources:\s*(.*)\s", file_string)
+    found = re.findall(r"\/\/SWAN:sources:\s*(.*)\s", file_string)
     if found:
         sss["sources"].append(found[0])
-    found = re.findall(r"\/\/#SWAN#sinks:\s*(.*)\s", file_string)
+    found = re.findall(r"\/\/SWAN:sinks:\s*(.*)\s", file_string)
     if found:
         sss["sinks"].append(found[0])
-    found = re.findall(r"\/\/#SWAN#sanitizers:\s*(.*)\s", file_string)
+    found = re.findall(r"\/\/SWAN:sanitizers:\s*(.*)\s", file_string)
     if found:
         sss["sanitizers"].append(found[0])
     return sss

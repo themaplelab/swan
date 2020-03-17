@@ -1,5 +1,5 @@
-//#SWAN#sources: "DictionaryAccess1.source() -> Swift.String"
-//#SWAN#sinks: "DictionaryAccess1.sink(sunk: Swift.String) -> ()"
+//SWAN:sources: "DictionaryAccess1.source() -> Swift.String"
+//SWAN:sinks: "DictionaryAccess1.sink(sunk: Swift.String) -> ()"
 
 func source() -> String {
     return "I'm bad";
