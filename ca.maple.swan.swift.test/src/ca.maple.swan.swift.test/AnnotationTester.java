@@ -33,6 +33,8 @@ public class AnnotationTester extends GenericTester {
     @Override
     protected void verifyAndReportResults(List<List<CAstSourcePositionMap.Position>> results, String testFile) {
 
+        System.out.println("Checking taint analysis annotations...\n");
+
         boolean failed = false;
 
         HashMap<String, ArrayList<ArrayList<String>>> annotations = getAnnotations(results, testFile);

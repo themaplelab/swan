@@ -91,7 +91,6 @@ public class GenericTester extends Tester {
                         ((ArrayList<String>)ns.get("sanitizers")).toArray(new String[0])
                 );
 
-                System.out.println("Checking taint analysis results...\n");
                 verifyAndReportResults(paths, ns.get("file"));
             } else {
                 System.out.println("SPDS mode, no taint analysis for now");
@@ -106,6 +105,8 @@ public class GenericTester extends Tester {
 
     @Override
     protected void verifyAndReportResults(List<List<CAstSourcePositionMap.Position>> results, String file) {
+
+        System.out.println("Processing taint analysis results...\n");
 
         System.out.println("\n========= RESULTS =========");
         for (List<CAstSourcePositionMap.Position> path : results) {
