@@ -42,6 +42,14 @@ def clone_wala():
 
 def clone_swan_vscode():
     if path.exists(PACKAGES_DIR + "/swan-vscode"):
+        os.chdir(PACKAGES_DIR)
+        print("Updating VSCode Extension...")
+        try:
+            os.system("git fetch")
+            os.system("git pull")
+        except:
+            pass
+        os.chdir(ROOT)
         return
     os.chdir(PACKAGES_DIR)
     os.system("git clone " + SWAN_VSCODE_REPO_URL + " --branch dev")
