@@ -23,53 +23,91 @@ import subprocess
 import sys
 from constants import *
 
-def clone_swift():
-    if path.exists(PACKAGES_DIR + "/swift"):
-        return
-    os.chdir(PACKAGES_DIR)
-    os.system("git clone --branch " + SUPPORTED_SWIFT_TAG + " " + SWIFT_REPO_URL)
-    # First clone without tag since tag may not exist.
-    os.system("/." + SWIFT_UTILS_DIR + "update-checkout --clone")
-    os.system("/." + SWIFT_UTILS_DIR + "update-checkout --tag " + SUPPORTED_SWIFT_TAG)
-    os.chdir(ROOT)
+def same_tag(tag, branch=False):
+    cmd = "git rev-parse --abbrev-ref HEAD" if branch else "git describe --abbrev=0"
+    print(cmd)
+    proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True)
+    cur = proc.stdout.read().strip(' \t\n\r')
+    if tag != cur:
+        print("New tag detected. New: " + tag + ", Current: " + cur)
+    return tag == cur
 
-def clone_wala():
-    if path.exists(PACKAGES_DIR + "/WALA"):
+def update_swift(tag):
+    if not path.exists(SWIFT_DIR):
+        chdir(PACKAGES_DIR)
+        system("git clone --branch " + tag + " " + SWIFT_REPO_URL)
+        # First clone without tag since tag may not exist for each subrepo.
+        system("/." + SWIFT_UTILS_DIR + "update-checkout --clone")
+        system("/." + SWIFT_UTILS_DIR + "update-checkout --tag " + tag)
+        chdir(ROOT)
         return
-    os.chdir(PACKAGES_DIR)
-    os.system("git clone --branch " + SUPPORTED_WALA_TAG + " " + WALA_REPO_URL)
-    os.chdir(ROOT)
+    chdir(SWIFT_DIR)
+    if not same_tag(tag):
+        system("git reset --hard HEAD")
+        system("git fetch")
+        system("git checkout -f " + tag)
+        system("/." + SWIFT_UTILS_DIR + "update-checkout --tag " + tag)
+    chdir(ROOT)
 
-def clone_swan_vscode():
-    if path.exists(PACKAGES_DIR + "/swan-vscode"):
-        os.chdir(PACKAGES_DIR)
-        print("Updating VSCode Extension...")
-        try:
-            os.system("git fetch")
-            os.system("git pull")
-        except:
-            pass
-        os.chdir(ROOT)
+def update_wala(tag):
+    if not path.exists(WALA_DIR):
+        chdir(PACKAGES_DIR)
+        system("git clone --branch " + tag + " " + WALA_REPO_URL)
+        chdir(ROOT)
         return
-    os.chdir(PACKAGES_DIR)
-    os.system("git clone " + SWAN_VSCODE_REPO_URL + " --branch dev")
-    os.chdir(ROOT)
+    chdir(WALA_DIR)
+    if not same_tag(tag):
+        system("git fetch")
+        system("git checkout -f " + tag)
+    chdir(ROOT)
+
+def update_swan_vscode(tag):
+    if not path.exists(VSCODE_DIR):
+        chdir(PACKAGES_DIR)
+        system("git clone " + SWAN_VSCODE_REPO_URL + " --branch " + tag)
+        chdir(SWAN_VSCODE_DIR)
+        system("npm install")
+        chdir(ROOT)
+        return
+    chdir(SWAN_VSCODE_DIR)
+    if not same_tag(tag, True):
+        system("git fetch")
+        system("git checkout " + tag)
+        system("git pull")
+        system("npm install")
+    else: # Since we actively update the extension
+        system("git fetch")
+        system("git pull")
+        system("npm install")
+    chdir(ROOT)
+
+def get_tags():
+    tags = {}
+    with open(TAGS_FILE, 'r') as file:
+        for line in file:
+            if '=' in line:
+                key, value = line.split('=', 1)
+                tags[key.strip()] = value.strip()
+    return tags["SWIFT_TAG"], tags["WALA_TAG"], tags["VSCODE_BRANCH"]
 
 def main():
     check_dir()
 
     parser = argparse.ArgumentParser()
-    parser.add_argument("--clean", action="store_true")
+    parser.add_argument("--clean", help="Deletes packages/ and re-clones.", action="store_true")
     args = parser.parse_args()
 
     if args.clean:
-        os.system("rm -rf " + PACKAGES_DIR)
+        system("rm -rf " + PACKAGES_DIR)
 
     if not path.exists(PACKAGES_DIR):
-        os.system("mkdir " + PACKAGES_DIR)
-    clone_swift()
-    clone_wala()
-    clone_swan_vscode()
+        system("mkdir " + PACKAGES_DIR)
+
+    swift_tag, wala_tag, vscode_tag = get_tags()
+
+    update_swift(swift_tag)
+    update_wala(wala_tag)
+    update_swan_vscode(vscode_tag)
 
 if __name__ == "__main__":
     try:

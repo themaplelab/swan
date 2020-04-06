@@ -30,7 +30,8 @@ SWAN_VSCODE_REPO_URL = "https://github.com/themaplelab/swan-vscode"
 
 ROOT = os.getcwd()
 PACKAGES_DIR = ROOT + "/packages/"
-SWIFT_UTILS_DIR = PACKAGES_DIR + "swift/utils/"
+SWIFT_DIR= PACKAGES_DIR + "swift/"
+SWIFT_UTILS_DIR = SWIFT_DIR + "utils/"
 TEST_DIR = ROOT + "/ca.maple.swan.swift.test/"
 
 ROOT_BUILD = PACKAGES_DIR + "build/"
@@ -40,12 +41,9 @@ LLVM_BUILD_DIR = BUILD_DIR + "llvm-" + SYSTEM
 CMARK_BUILD_DIR = BUILD_DIR + "cmark-" + SYSTEM
 SWIFT_BUILD_DIR = BUILD_DIR + "swift-" + SYSTEM
 WALA_DIR = PACKAGES_DIR + "WALA/"
-SWAN_VSCODE_DIR = PACKAGES_DIR + "swan-vscode/swan/"
-
-# IMPORTANT TO MAINTAIN
-
-SUPPORTED_SWIFT_TAG = "swift-DEVELOPMENT-SNAPSHOT-2020-01-24-a"
-SUPPORTED_WALA_TAG = "v1.5.4"
+VSCODE_DIR = PACKAGES_DIR + "swan-vscode/"
+SWAN_VSCODE_DIR = VSCODE_DIR + "swan/"
+TAGS_FILE = ROOT + "/tags"
 
 # -----------------------------------------------------------------------------
 
@@ -56,3 +54,24 @@ def check_dir():
 
 def spaced_print(s):
     print(os.linesep + s + os.linesep)
+
+def system(cmd):
+    print(cmd)
+    os.system(cmd)
+
+def chdir(dir):
+    print("cd " + dir)
+    os.chdir(dir)
+
+def prompt():
+    # raw_input returns the empty string for "enter"
+    yes = {'yes','y', 'ye', ''}
+    no = {'no','n'}
+
+    choice = input().lower()
+    if choice in yes:
+       return True
+    elif choice in no:
+       return False
+    else:
+       sys.stdout.write("Please respond with 'yes' or 'no'")

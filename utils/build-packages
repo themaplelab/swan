@@ -24,28 +24,20 @@ import sys
 from constants import *
 
 def clean_swift():
-    spaced_print("Cleaning Swift...")
-    os.system("rm -rf ROOT_BUILD")
+    system("rm -rf " + ROOT_BUILD)
 
 def build_swift():
+    chdir(SWIFT_DIR)
     spaced_print("Building Swift, this will take a while...")
-    os.system("/." + SWIFT_UTILS_DIR + "build-script")
+    system("./utils/build-script")
+    chdir(ROOT)
 
 def build_wala(clean):
-    os.chdir(WALA_DIR)
+    chdir(WALA_DIR)
     if clean:
-        spaced_print("Building clean WALA...")
-        os.system("/." + WALA_DIR + "gradlew clean")
-    else:
-        spaced_print("Building WALA...")
-        os.system("/." + WALA_DIR + "gradlew assemble")
-    os.chdir(ROOT)
-
-def build_swan_vscode():
-    spaced_print("Setting up swan-vscode...")
-    os.chdir(SWAN_VSCODE_DIR)
-    os.system("npm install")
-    os.chdir(ROOT)
+        system("./gradlew clean")
+    system("./gradlew assemble")
+    chdir(ROOT)
 
 def main():
     check_dir()
@@ -61,7 +53,7 @@ def main():
 
     if args.build == "all":
         build_swift()
-        build_wala(False)
+        build_wala(args.clean_wala)
     elif args.build == "wala-only":
         build_wala(args.clean_wala)
     elif args.build == "swift-only":
