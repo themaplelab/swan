@@ -1,0 +1,5 @@
+rootProject.name = 'swan-spds'
+
+include 'ca.maple.swan.ir'
+include 'ca.maple.swan.parser'
+include 'ca.maple.swan.client'

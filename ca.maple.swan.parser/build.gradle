@@ -1,0 +1,9 @@
+plugins {
+    id 'java'
+}
+
+group 'ca.maple.swan'
+
+sourceCompatibility = 1.8
+
+sourceSets.main.java.srcDirs = ['src/']
