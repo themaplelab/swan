@@ -2,7 +2,7 @@ plugins {
     id 'java'
 }
 
-group 'ca.maple.swan'
+group 'ca.ualberta.maple.swan'
 
 sourceCompatibility = 1.8
 

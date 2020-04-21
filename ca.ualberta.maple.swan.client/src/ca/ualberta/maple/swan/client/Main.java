@@ -1,4 +1,4 @@
-package ca.maple.swan.client;
+package ca.ualberta.maple.swan.client;
 
 // PLACEHOLDER
 

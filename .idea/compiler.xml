@@ -2,6 +2,14 @@
 <project version="4">
   <component name="CompilerConfiguration">
     <bytecodeTargetLevel>
+      <module name="swan-spds.ca.maple.swan.client.main" target="1.8" />
+      <module name="swan-spds.ca.maple.swan.client.test" target="1.8" />
+      <module name="swan-spds.ca.maple.swan.ir.main" target="1.8" />
+      <module name="swan-spds.ca.maple.swan.ir.test" target="1.8" />
+      <module name="swan-spds.ca.maple.swan.parser.main" target="1.8" />
+      <module name="swan-spds.ca.maple.swan.parser.test" target="1.8" />
+      <module name="swan-spds.ca.maple.swan.utils.main" target="1.8" />
+      <module name="swan-spds.ca.maple.swan.utils.test" target="1.8" />
       <module name="swan-spds.main" target="1.8" />
       <module name="swan-spds.test" target="1.8" />
     </bytecodeTargetLevel>
