@@ -77,17 +77,15 @@ class SILParser {
     true
   }
 
-  // TODO finish
-  protected def take(/* while fn: (Character) -> Bool */): String = {
-    val result : Array[Char] = null  //chars.suffix(from: cursor).prefix(while: fn)
+  protected def take(whileFn: Char => Boolean): String = {
+    val result : Array[Char] = chars.takeRight(cursor).takeWhile(whileFn)
     cursor += result.length
     skipTrivia()
     new String(result)
   }
 
-  // TODO finish
-  protected def skip(/* while fn: (Character) -> Bool */): Boolean = {
-    val result : String = "" // = take(fn)
+  protected def skip(whileFn: Char => Boolean): Boolean = {
+    val result : String = take(whileFn)
     !result.isEmpty
   }
 
