@@ -32,21 +32,20 @@ class Printer {
 
   def print(when: Boolean, s: String): Unit = {
     if (!when) return
-    // TODO
-    /*
-      let lines = s.split(omittingEmptySubsequences: false) { $0.isNewline }
-        for (i, line) in lines.enumerated() {
-            if !indented && !line.isEmpty {
-                description += indentation
-                indented = true
-            }
-            description += line
-            if i < lines.count - 1 {
-                description += "\n"
-                indented = false
-            }
-        }
-     */
+    val lines = s.split('\n').iterator
+    while(lines.hasNext) {
+      val line = lines.next
+      if (!indented && !line.isEmpty) {
+        description += indentation
+        indented = true
+      }
+      description += line
+
+      if (!lines.hasNext) {
+        description += "\n"
+        indented = false
+      }
+    }
   }
 
   def print[T](x: Option[T], fn: (T) => Unit): Unit = {
