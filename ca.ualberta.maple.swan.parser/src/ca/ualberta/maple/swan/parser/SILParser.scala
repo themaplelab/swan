@@ -154,9 +154,9 @@ class SILParser {
 
   protected def parseError(message: String, at: Option[Int]): Error = {
     val position = if (at.isDefined) at.get else cursor
-    val newlines = null // TODO Swift: chars.enumerated().prefix(position).filter({ $0.element == "\n" })
-    val line = 0 // TODO Swift: newlines.count + 1
-    val column = 0 // TODO Swift: position - (newlines.last?.offset ?? 0) + 1
+    val newlines = chars.take(position).filter(_ == '\n')
+    val line = newlines.length + 1
+    val column = position - (if (chars.lastIndexOf('\n') == - 1) 0 else chars.lastIndexOf('\n')) + 1
     new Error(path, line, column, message)
   }
 
