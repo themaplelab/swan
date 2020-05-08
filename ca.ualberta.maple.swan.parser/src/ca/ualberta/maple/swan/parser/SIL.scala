@@ -155,9 +155,9 @@ object Case {
 
 sealed trait Convention
 object Convention {
-  case class c() extends Convention
-  case class method() extends Convention
-  case class thin() extends Convention
+  case object c extends Convention
+  case object method extends Convention
+  case object thin extends Convention
   case class witnessMethod(tpe: Type) extends Convention
 }
 
@@ -171,33 +171,33 @@ object DebugAttribute {
 
 sealed trait DeclKind
 object DeclKind {
-  case class allocator() extends DeclKind
-  case class deallocator() extends DeclKind
-  case class destroyer() extends DeclKind
-  case class enumElement() extends DeclKind
-  case class getter() extends DeclKind
-  case class globalAccessor() extends DeclKind
-  case class initializer() extends DeclKind
-  case class ivarDestroyer() extends DeclKind
-  case class ivarInitializer() extends DeclKind
-  case class setter() extends DeclKind
+  case object allocator extends DeclKind
+  case object deallocator extends DeclKind
+  case object destroyer extends DeclKind
+  case object enumElement extends DeclKind
+  case object getter extends DeclKind
+  case object globalAccessor extends DeclKind
+  case object initializer extends DeclKind
+  case object ivarDestroyer extends DeclKind
+  case object ivarInitializer extends DeclKind
+  case object setter extends DeclKind
 }
 
 class DeclRef(val name: Array[String], val kind: Option[DeclKind], val level: Option[Int])
 
 sealed trait Encoding
 object Encoding {
-  case class objcSelector() extends Encoding
-  case class utf8() extends Encoding
-  case class utf16() extends Encoding
+  case object objcSelector extends Encoding
+  case object utf8 extends Encoding
+  case object utf16 extends Encoding
 }
 
 sealed trait Enforcement
 object Enforcement {
-  case class dynamic() extends Enforcement
-  case class static() extends Enforcement
-  case class unknown() extends Enforcement
-  case class safe() extends Enforcement
+  case object dynamic extends Enforcement
+  case object static extends Enforcement
+  case object unknown extends Enforcement
+  case object unsafe extends Enforcement
 }
 
 sealed trait FunctionAttribute
@@ -242,8 +242,8 @@ class SourceInfo(val scopeRef: Option[Int], val loc: Option[Loc])
 
 sealed trait TupleElements
 object TupleElements {
-  case class labeled(tpe: Type, values: Array[String])
-  case class unlabeled(operands: Array[Operand])
+  case class labeled(tpe: Type, values: Array[String]) extends TupleElements
+  case class unlabeled(operands: Array[Operand]) extends TupleElements
 }
 
 sealed trait Type
