@@ -128,7 +128,7 @@ object Terminator {
   case class ret(operand: Operand) extends Terminator
   case class switchEnum(operand: Operand, cases: Array[Case]) extends Terminator
   case class unknown(name: String) extends Terminator
-  case class unreachable() extends Terminator
+  case object unreachable extends Terminator
 }
 
 sealed trait Instruction
@@ -165,8 +165,8 @@ sealed trait DebugAttribute
 object DebugAttribute {
   case class argno(index: Int) extends DebugAttribute
   case class name(name: String) extends DebugAttribute
-  case class let() extends DebugAttribute
-  case class variable() extends DebugAttribute
+  case object let extends DebugAttribute
+  case object variable extends DebugAttribute
 }
 
 sealed trait DeclKind
@@ -250,12 +250,12 @@ sealed trait Type
 object Type {
   case class addressType(tpe: Type) extends Type
   case class attributedType(attributes: Array[TypeAttribute], tpe: Type) extends Type
-  case class coroutineTokenType() extends Type
+  case object coroutineTokenType extends Type
   case class functionType(parameters: Array[Type], result: Type) extends Type
   case class genericType(parameters: Array[String], requirements: Array[TypeRequirement], tpe: Type) extends Type
   case class namedType(name: String) extends Type
   case class selectType(tpe: Type, name: String) extends Type
-  case class selfType() extends Type
+  case object selfType extends Type
   case class specializedType(tpe: Type, arguments: Array[Type]) extends Type
   case class tupleType(parameters: Array[Type]) extends Type
   case class withOwnership(attribute: TypeAttribute, tpe: Type) extends Type
@@ -269,19 +269,19 @@ object Type {
 
 sealed trait TypeAttribute
 object TypeAttribute {
-  case class calleeGuaranteed() extends TypeAttribute
+  case object calleeGuaranteed extends TypeAttribute
   case class convention(convention: Convention) extends TypeAttribute
-  case class guaranteed() extends TypeAttribute
-  case class inGuaranteed() extends TypeAttribute
-  case class in() extends TypeAttribute
-  case class inout() extends TypeAttribute
-  case class noescape() extends TypeAttribute
-  case class out() extends TypeAttribute
-  case class owned() extends TypeAttribute
-  case class thick() extends TypeAttribute
-  case class thin() extends TypeAttribute
-  case class yieldOnce() extends TypeAttribute
-  case class yields() extends TypeAttribute
+  case object guaranteed extends TypeAttribute
+  case object inGuaranteed extends TypeAttribute
+  case object in extends TypeAttribute
+  case object inout extends TypeAttribute
+  case object noescape extends TypeAttribute
+  case object out extends TypeAttribute
+  case object owned extends TypeAttribute
+  case object thick extends TypeAttribute
+  case object thin extends TypeAttribute
+  case object yieldOnce extends TypeAttribute
+  case object yields extends TypeAttribute
 }
 
 sealed trait TypeRequirement
@@ -292,14 +292,14 @@ object TypeRequirement {
 
 sealed trait LoadOwnership
 object LoadOwnership{
-  case class copy() extends LoadOwnership
-  case class take() extends LoadOwnership
-  case class trivial() extends LoadOwnership
+  case object copy extends LoadOwnership
+  case object take extends LoadOwnership
+  case object trivial extends LoadOwnership
 }
 
 sealed trait StoreOwnership
 object StoreOwnership {
-  case class init() extends StoreOwnership
-  case class trivial() extends StoreOwnership
+  case object init extends StoreOwnership
+  case object trivial extends StoreOwnership
 }
 

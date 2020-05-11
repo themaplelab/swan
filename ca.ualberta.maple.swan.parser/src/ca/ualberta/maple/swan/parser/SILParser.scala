@@ -320,17 +320,17 @@ class SILParser {
   def parseInstructionBody(instructionName: String): Instruction = {
     instructionName match {
       case "alloc_stack" => {
-        val `type` = parseType();
+        val tpe = parseType();
         val attributes = parseUntilNil( parseDebugAttribute )
-        Instruction.operator(Operator.allocStack(`type`, attributes))
+        Instruction.operator(Operator.allocStack(tpe, attributes))
       } case "apply" => {
         val nothrow = skip("[nothrow]")
         val value = parseValue()
         val substitutions = parseNilOrMany("<", ",",">", parseNakedType).get
         val arguments = parseMany("(",",",")", parseValue)
         take(":")
-        val `type` = parseType()
-        Instruction.operator(Operator.apply(nothrow,value,substitutions,arguments,`type`))
+        val tpe = parseType()
+        Instruction.operator(Operator.apply(nothrow,value,substitutions,arguments,tpe))
       } case "begin_access" => {
         take("[")
         val access = parseAccess()
@@ -342,52 +342,242 @@ class SILParser {
         val builtin = skip("[builtin]")
         val operand = parseOperand()
         Instruction.operator(Operator.beginAccess(access, enforcement, noNestedConflict, builtin, operand))
-      } case "begin_apply" => { // TODO: Continue instructions
+      } case "begin_apply" => {
+        val nothrow = skip("[nothrow]")
+        val value = parseValue()
+        val s : Option[Array[Type]] = parseNilOrMany("<",",",">",parseNakedType)
+        val substitutions = if (s.nonEmpty) s.get else new Array[Type](0)
+        val arguments = parseMany("(",",",")", parseValue)
+        take(":")
+        val tpe = parseType()
+        Instruction.operator(Operator.beginApply(nothrow, value, substitutions, arguments, tpe))
       } case "begin_borrow" => {
+        val operand = parseOperand()
+        Instruction.operator(Operator.beginBorrow(operand))
       } case "br" => {
+        val label = parseIdentifier()
+        val o : Option[Array[Operand]] = parseNilOrMany("(",",",")", parseOperand)
+        val operands = if (o.nonEmpty) o.get else new Array[Operand](0)
+        Instruction.terminator(Terminator.br(label, operands))
       } case "builtin" => {
+        val name = parseString()
+        val operands = parseMany("(",",",")",parseOperand)
+        take(":")
+        val tpe = parseType()
+        Instruction.operator(Operator.builtin(name, operands, tpe))
       } case "cond_br" => {
+        val cond = parseValueName()
+        take(":")
+        val trueLabel = parseIdentifier()
+        val to : Option[Array[Operand]] = parseNilOrMany("(",",",")",parseOperand)
+        val trueOperands = if (to.nonEmpty) to.get else new Array[Operand](0)
+        take(",")
+        val falseLabel = parseIdentifier()
+        val fo : Option[Array[Operand]] = parseNilOrMany("(",",",")",parseOperand)
+        val falseOperands = if (fo.nonEmpty) to.get else new Array[Operand](0)
+        Instruction.terminator(Terminator.condBr(cond, trueLabel, trueOperands, falseLabel, falseOperands))
       } case "cond_fail" => {
+        val operand = parseOperand()
+        take(",")
+        val message = parseString()
+        Instruction.operator(Operator.condFail(operand, message))
       } case "convert_escape_to_noescape" => {
+        val notGuaranteed = skip("[not_guaranteed]")
+        val escaped = skip("[escaped]")
+        val operand = parseOperand()
+        take("to")
+        val tpe = parseType()
+        Instruction.operator(Operator.convertEscapeToNoescape(notGuaranteed, escaped, operand, tpe))
       } case "convert_function" => {
+        val operand = parseOperand()
+        take("to")
+        val withoutActuallyEscaping = skip("[without_actually_escaping]")
+        val tpe = parseType()
+        Instruction.operator(Operator.convertFunction(operand, withoutActuallyEscaping, tpe))
       } case "copy_addr" => {
+        val take = skip("[take]")
+        val value = parseValue()
+        this.take("to")
+        val initialization = skip("[initialization]")
+        val operand = parseOperand()
+        Instruction.operator(Operator.copyAddr(take, value, initialization, operand))
       } case "copy_value" => {
+        val operand = parseOperand()
+        Instruction.operator(Operator.copyValue(operand))
       } case "dealloc_stack" => {
+        val operand = parseOperand()
+        Instruction.operator(Operator.deallocStack(operand))
       } case "debug_value" => {
+        val operand = parseOperand()
+        val attributes = parseUntilNil(parseDebugAttribute)
+        Instruction.operator(Operator.debugValue(operand, attributes))
       } case "debug_value_addr" => {
+        val operand = parseOperand()
+        val attributes = parseUntilNil(parseDebugAttribute)
+        Instruction.operator(Operator.debugValueAddr(operand, attributes))
       } case "destroy_value" => {
+        val operand = parseOperand()
+        Instruction.operator(Operator.destroyValue(operand))
       } case "destructure_tuple" => {
+        val operand = parseOperand()
+        Instruction.operator(Operator.destructureTuple(operand))
       } case "end_access" => {
+        val abort = skip("[abort]")
+        val operand = parseOperand()
+        Instruction.operator(Operator.endAccess(abort, operand))
       } case "end_apply" => {
+        val value = parseValue()
+        Instruction.operator(Operator.endApply(value))
       } case "end_borrow" => {
+        val operand = parseOperand()
+        Instruction.operator(Operator.endBorrow(operand))
       } case "enum" => {
+        val tpe = parseType()
+        take(",")
+        val declRef = parseDeclRef()
+        val operand = if (skip(",")) Some(parseOperand()) else None
+        Instruction.operator(Operator.`enum`(tpe, declRef, operand))
       } case "float_literal" => {
+        val tpe = parseType()
+        take(",")
+        take("0x")
+        val value = take((x : Char) => x.toString.matches("^[0-9a-fA-F]+$"))
+        Instruction.operator(Operator.floatLiteral(tpe, value))
       } case "function_ref" => {
+        val name = parseGlobalName()
+        take(":")
+        val tpe = parseType()
+        Instruction.operator(Operator.functionRef(name, tpe))
       } case "global_addr" => {
+        val name = parseGlobalName()
+        take(":")
+        val tpe = parseType()
+        Instruction.operator(Operator.globalAddr(name, tpe))
       } case "index_addr" => {
+        val addr = parseOperand()
+        take(",")
+        val index = parseOperand()
+        Instruction.operator(Operator.indexAddr(addr, index))
       } case "integer_literal" => {
+        val tpe = parseType()
+        take(",")
+        val value = parseInt()
+        Instruction.operator(Operator.integerLiteral(tpe, value))
       } case "load" => {
+        var ownership : Option[LoadOwnership] = None
+        if (skip("[copy]")) {
+          ownership = Some(LoadOwnership.copy)
+        } else if (skip("[take]")) {
+          ownership = Some(LoadOwnership.take)
+        } else if (skip("[trivial]")) {
+          ownership = Some(LoadOwnership.trivial)
+        }
+        val operand = parseOperand()
+        Instruction.operator(Operator.load(ownership, operand))
       } case "metatype" => {
+        val tpe = parseType()
+        Instruction.operator(Operator.metatype(tpe))
       } case "mark_dependence" => {
+        val operand = parseOperand()
+        take("on")
+        val on = parseOperand()
+        Instruction.operator(Operator.markDependence(operand, on))
       } case "partial_apply" => {
+        val calleeGuaranteed = skip("[callee_guaranteed]")
+        val onStack = skip("[on_stack]")
+        val value = parseValue()
+        val s = parseNilOrMany("<",",",">", parseNakedType)
+        val substitutions = if (s.nonEmpty) s.get else new Array[String](0)
+        val arguments = parseMany("(",",",")", parseValue)
+        take(":")
+        val tpe = parseType()
+        Instruction.operator(Operator.partialApply(calleeGuaranteed,onStack,value,substitutions,arguments,tpe))
       } case "pointer_to_address" => {
+        val operand = parseOperand()
+        take("to")
+        val strict = skip("[strict]")
+        val tpe = parseType()
+        Instruction.operator(Operator.pointerToAddress(operand, strict, tpe))
       } case "return" => {
+        val operand = parseOperand()
+        Instruction.terminator(Terminator.ret(operand))
       } case "release_value" => {
+        val operand = parseOperand()
+        Instruction.operator(Operator.releaseValue(operand))
       } case "retain_value" => {
+        val operand = parseOperand()
+        Instruction.operator(Operator.retainValue(operand))
       } case "select_enum" => {
+        val operand = parseOperand()
+        // TODO: Pass functions as nested arguments properly
+        val cases = parseUntilNil[Case](parseCase(parseValue))
+        take(":")
+        val tpe = parseType()
+        Instruction.operator(Operator.selectEnum(operand, cases, tpe))
       } case "store" => {
+        val value = parseValue()
+        take("to")
+        var ownership : Option[StoreOwnership] = None
+        if (skip("[init]")) {
+          ownership = Some(StoreOwnership.init)
+        } else if (skip("[trivial]")) {
+          ownership = Some(StoreOwnership.trivial)
+        }
+        val operand = parseOperand()
+        Instruction.operator(Operator.store(value, ownership, operand))
       } case "string_literal" => {
+        val encoding = parseEncoding()
+        val value = parseString()
+        Instruction.operator(Operator.stringLiteral(encoding, value))
       } case "strong_release" => {
+        val operand = parseOperand()
+        Instruction.operator(Operator.strongRelease(operand))
       } case "strong_retain" => {
+        val operand = parseOperand()
+        Instruction.operator(Operator.strongRetain(operand))
       } case "struct" => {
+        val tpe = parseType()
+        val operands = parseMany("(",",",")", parseOperand)
+        Instruction.operator(Operator.struct(tpe, operands))
       } case "struct_element_addr" => {
+        val operand = parseOperand()
+        take(",")
+        val declRef = parseDeclRef()
+        Instruction.operator(Operator.structElementAddr(operand, declRef))
       } case "struct_extract" => {
+        val operand = parseOperand()
+        take(",")
+        val declRef = parseDeclRef()
+        Instruction.operator(Operator.structExtract(operand, declRef))
       } case "switch_enum" => {
+        val operand = parseOperand()
+        // TODO: Pass functions as nested arguments properly
+        val cases = parseUntilNil(parseCase(parseIdentifier))
+        Instruction.terminator(Terminator.switchEnum(operand, cases))
       } case "thin_to_thick_function" => {
+        val operand = parseOperand()
+        take("to")
+        val tpe = parseType()
+        Instruction.operator(Operator.thinToThickFunction(operand, tpe))
       } case "tuple" => {
+        val elements = parseTupleElements()
+        Instruction.operator(Operator.tuple(elements))
       } case "tuple_extract" => {
+        val operand = parseOperand()
+        take(",")
+        val declRef = parseInt()
+        Instruction.operator(Operator.tupleExtract(operand, declRef))
       } case "unreachable" => {
+        Instruction.terminator(Terminator.unreachable)
       } case "witness_method" => {
+        val archeType = parseType()
+        take(",")
+        val declRef = parseDeclRef()
+        take(":")
+        var declType = parseNakedType()
+        take(":")
+        val tpe = parseType()
+        Instruction.operator(Operator.witnessMethod(archeType, declRef, declType, tpe))
       } case _ => {
         val _ = skip(_ != "\n")
         Instruction.operator(Operator.unknown(instructionName))
@@ -445,8 +635,8 @@ class SILParser {
       result = Convention.thin
     } else if (skip("witness_method")) {
       take(":")
-      val `type` = parseNakedType()
-      result = Convention.witnessMethod(`type`)
+      val tpe = parseNakedType()
+      result = Convention.witnessMethod(tpe)
     } else {
       throw parseError("unknown convention")
     }
@@ -648,15 +838,15 @@ class SILParser {
         reqs.clear()
         take(">")
       }
-      val `type` = parseNakedType()
-      Type.genericType(params.toArray, reqs.toArray, `type`)
+      val tpe = parseNakedType()
+      Type.genericType(params.toArray, reqs.toArray, tpe)
     } else if (peek("@")) {
       val attrs = parseMany("@", parseTypeAttribute)
-      val `type` = parseNakedType()
-      Type.attributedType(attrs, `type`)
+      val tpe = parseNakedType()
+      Type.attributedType(attrs, tpe)
     } else if (skip("*")) {
-      val `type` = parseNakedType()
-      Type.addressType(`type`)
+      val tpe = parseNakedType()
+      Type.addressType(tpe)
     } else if (skip("[")) {
       val subtype = parseNakedType()
       take("]")
@@ -675,15 +865,15 @@ class SILParser {
       }
     } else {
       @throws[Error]
-      def grow(`type`: Type): Type = {
+      def grow(tpe: Type): Type = {
         if (peek("<")) {
           val types = parseMany("<",",",">", parseNakedType)
-          grow(Type.specializedType(`type`, types))
+          grow(Type.specializedType(tpe, types))
         } else if (skip(".")) {
           val name = parseTypeName()
-          grow(Type.selectType(`type`, name))
+          grow(Type.selectType(tpe, name))
         } else {
-          `type`
+          tpe
         }
       }
       val name = parseTypeName()
@@ -697,8 +887,8 @@ class SILParser {
   def parseOperand(): Operand = {
     val valueName = parseValueName()
     take(":")
-    val `type` = parseType()
-    new Operand(valueName, `type`)
+    val tpe = parseType()
+    new Operand(valueName, tpe)
   }
 
   // https://github.com/apple/swift/blob/master/docs/SIL.rst#basic-blocks
@@ -751,9 +941,9 @@ class SILParser {
   // https://github.com/apple/swift/blob/master/docs/SIL.rst#tuple
   def parseTupleElements(): TupleElements = {
     if (peek("$")) {
-      val `type` = parseType()
+      val tpe = parseType()
       val values = parseMany("(",",",")", parseValue)
-      TupleElements.labeled(`type`, values)
+      TupleElements.labeled(tpe, values)
     } else {
       val operands = parseMany("(",",",")", parseOperand)
       TupleElements.unlabeled(operands)
