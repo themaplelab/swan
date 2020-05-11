@@ -49,6 +49,9 @@ class TerminatorDef(val terminator: Terminator, val sourceInfo: Option[SourceInf
 sealed trait InstructionDef {
   val instruction : Instruction
 }
+// TODO: I don't really like this operator/terminator duality. It doesn't make much sense
+//  and it isn't precise.
+//  We should divide the instructions into the same categories that are in SIL.rst.
 object InstructionDef {
   case class operator(val operatorDef: OperatorDef) extends InstructionDef {
     val instruction: Instruction = Instruction.operator(operatorDef.operator)
