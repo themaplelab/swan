@@ -329,7 +329,7 @@ class SILParser {
     // LP: Low priority (most likely because it doesn't affect analysis, we treat it
     // as a NOP)
     //
-    // Case instruction ordering based on latest SIL.rst (May 11, 2020).
+    // Case instruction ordering based on apple/swift tag swift-5.2-RELEASE SIL.rst
     instructionName match {
 
         // *** ALLOCATION AND DEALLOCATION ***
@@ -653,7 +653,7 @@ class SILParser {
       } case "init_block_storage_header" => { null // TODO: NPOTP
 
         // *** UNCHECKED CONVERSIONS ***
-        
+
       } case "upcast" => { null // TODO: NPOTP
       } case "address_to_pointer" => { null // TODO: NPOTP
       } case "pointer_to_address" => {
@@ -756,15 +756,6 @@ class SILParser {
       } case "checked_cast_value_br" => { null throw parseError("unhandled instruction") // NSIP
       } case "checked_cast_addr_br" => { null // TODO: NPOTP
       } case "try_apply" => { null // TODO: NPOTP
-
-        // *** DIFFERENTIABLE_PROGRAMMING ***
-
-        // TODO: I think these instructions are new.
-        // differentiable_function
-        // linear_function
-        // differentiable_function_extract
-        // linear_function_extract
-        // differentiability_witness_function
 
         // *** INSTRUCTIONS THAT TENSORFLOW PARSES BUT ARE NO LONGER IN SIL.rst ***
 
