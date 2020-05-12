@@ -1065,7 +1065,7 @@ class SILParser {
         }
       }
       val name = parseTypeName()
-      val base: Type = if (name != "Self") Type.namedType(name) else Type.selfType()
+      val base: Type = if (name != "Self") Type.namedType(name) else Type.selfType
       grow(base)
     }
   }
