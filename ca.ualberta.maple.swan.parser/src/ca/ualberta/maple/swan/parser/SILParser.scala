@@ -38,6 +38,7 @@ class SILParser {
     val data : Array[Byte] = if (Files.exists(path)) {
       Files.readAllBytes(path: Path)
     } else {
+      // TODO: This is a bit janky and probably doesn't work.
       ExceptionReporter.report(new Error(this.path, "file not found"))
       null
     }: Array[Byte]
@@ -86,7 +87,7 @@ class SILParser {
   }
 
   protected def skip(whileFn: Char => Boolean): Boolean = {
-    val result : String = take(whileFn)
+    val result : String = try take(whileFn)
     !result.isEmpty
   }
 
@@ -109,7 +110,7 @@ class SILParser {
   protected def maybeParse[T](f: () => Option[T]) : Option[T] = {
     val savedCursor = cursor
     try {
-      val result = f()
+      val result = try f()
       if (result.isEmpty) {
         cursor = savedCursor
       }
@@ -124,28 +125,28 @@ class SILParser {
     if (!peek(pre)) {
       return None
     }
-    Some(parseMany(pre, sep, suf, parseOne))
+    Some(try parseMany(pre, sep, suf, parseOne))
   }
 
   @throws[Error]
   protected def parseMany[T](pre: String, sep: String, suf: String, parseOne: () => T): Array[T] = {
-    take(pre)
+    try take(pre)
     val result = new ArrayBuffer[T]
     if (!peek(suf)) {
       var break = false
       while (!break) {
-        val element = parseOne()
+        val element = try parseOne()
         result.append(element)
         if (peek(suf)) {
           break = true
         } else {
           if (!sep.isEmpty) {
-            take(sep)
+            try take(sep)
           }
         }
       }
     }
-    take(suf)
+    try take(suf)
     result.toArray
   }
 
@@ -154,13 +155,13 @@ class SILParser {
     if (!peek(pre)) {
       return None
     }
-    Some(parseMany(pre, parseOne))
+    Some(try parseMany(pre, parseOne))
   }
 
   @throws[Error]
   protected def parseUntilNil[T](parseOne: () => Option[T]): Array[T] = {
     val result = new ArrayBuffer[T]
-    var break = false;
+    var break = false
     while (!break) {
       val element = parseOne()
       if (element.isEmpty) {
@@ -176,7 +177,7 @@ class SILParser {
   protected def parseMany[T](pre: String, parseOne: () => T): Array[T] = {
     val result = new ArrayBuffer[T]
     do {
-      val element = parseOne()
+      val element = try parseOne()
       result.append(element)
     } while (peek(pre))
     result.toArray
@@ -241,7 +242,7 @@ class SILParser {
   // https://github.com/apple/swift/blob/master/docs/SIL.rst#functions
   @throws[Error]
   def parseFunction(): Function = {
-    take("sil")
+    try take("sil")
     val linkage = try parseLinkage()
     val attributes = { try parseNilOrMany("[", parseOne = try parseFunctionAttribute) }.getOrElse(Array.empty[FunctionAttribute])
     val name = try parseGlobalName()
@@ -275,7 +276,10 @@ class SILParser {
       if(peek("bb") || peek("}")) {
         if(operatorDefs.lastOption.nonEmpty) {
           operatorDefs.last.operator match {
-            case Operator.unknown(instructionName) => { done = true; termDef = new TerminatorDef(Terminator.unknown(instructionName), None) }
+            case Operator.unknown(instructionName) => {
+              done = true
+              termDef = new TerminatorDef(Terminator.unknown(instructionName), None)
+            }
             case _ => throw parseError("block is missing a terminator")
           }
         }
@@ -302,9 +306,9 @@ class SILParser {
   // https://github.com/apple/swift/blob/master/docs/SIL.rst#instruction-set
   @throws[Error]
   def parseInstruction(): Instruction = {
-    val instructionName = take(x => x.isLetter || x == "_")
+    val instructionName = try take(x => x.isLetter || x == "_")
     try {
-      parseInstructionBody(instructionName)
+      try parseInstructionBody(instructionName)
     } catch {
       // Try to recover to a point where resuming the parsing is sensible
       // by skipping until the end of this line. This is only a heuristic:
@@ -319,7 +323,6 @@ class SILParser {
   @throws[Error]
   def parseInstructionBody(instructionName: String): Instruction = {
     // NPOTP: Not part of tensorflow parser
-    // We should parse all instructions, even if we don't handle them later.
     //
     // NSIP: Not seen in practice (generated SIL from apple/swift benchmarks and
     // never saw these instructions). Things could have changed since then as that
@@ -335,38 +338,64 @@ class SILParser {
         // *** ALLOCATION AND DEALLOCATION ***
 
       case "alloc_stack" => {
-        val tpe = parseType();
-        val attributes = parseUntilNil( parseDebugAttribute )
+        val tpe = try parseType();
+        val attributes = try parseUntilNil( try parseDebugAttribute )
         Instruction.operator(Operator.allocStack(tpe, attributes))
-      } case "alloc_ref" => { null // TODO: NPOTP
-      } case "alloc_ref_dynamic" => { null // TODO: NPOTP
-      } case "alloc_box" => { null // TODO: NPOTP
-      } case "alloc_value_buffer" => { throw parseError("unhandled instruction") // NSIP
-      } case "alloc_global" => { null // TODO: NPOTP
-      } case "dealloc_stack" => {
-        val operand = parseOperand()
+      }
+      case "alloc_ref" => {
+        null // TODO: NPOTP
+      }
+      case "alloc_ref_dynamic" => {
+        null // TODO: NPOTP
+      }
+      case "alloc_box" => {
+        null // TODO: NPOTP
+      }
+      case "alloc_value_buffer" => {
+        throw parseError("unhandled instruction") // NSIP
+      }
+      case "alloc_global" => {
+        null // TODO: NPOTP
+      }
+      case "dealloc_stack" => {
+        val operand = try parseOperand()
         Instruction.operator(Operator.deallocStack(operand))
-      } case "dealloc_box" => { null // TODO: NPTOP LP
-      } case "project_box" => { null // TODO: NPOTP
-      } case "dealloc_ref" => { null // TODO: NPOTP LP
-      } case "dealloc_partial_ref" => { throw parseError("unhandled instruction") // NSIP
-      } case "dealloc_value_buffer" => { throw parseError("unhandled instruction") // NSIP
-      } case "project_value_buffer" => { throw parseError("unhandled instruction") // NSIP
+      }
+      case "dealloc_box" => {
+        null // TODO: NPTOP LP
+      }
+      case "project_box" => {
+        null // TODO: NPOTP
+      }
+      case "dealloc_ref" => {
+        null // TODO: NPOTP LP
+      }
+      case "dealloc_partial_ref" => {
+        throw parseError("unhandled instruction") // NSIP
+      }
+      case "dealloc_value_buffer" => {
+        throw parseError("unhandled instruction") // NSIP
+      }
+      case "project_value_buffer" => {
+        throw parseError("unhandled instruction") // NSIP
+      }
 
         // *** DEBUG INFORMATION ***
 
-      } case "debug_value" => {
-        val operand = parseOperand()
+      case "debug_value" => {
+        val operand = try parseOperand()
         val attributes = parseUntilNil(parseDebugAttribute)
         Instruction.operator(Operator.debugValue(operand, attributes))
-      } case "debug_value_addr" => {
-        val operand = parseOperand()
+      }
+      case "debug_value_addr" => {
+        val operand = try parseOperand()
         val attributes = parseUntilNil(parseDebugAttribute)
         Instruction.operator(Operator.debugValueAddr(operand, attributes))
+      }
 
         // *** ACCESSING MEMORY ***
 
-      } case "load" => {
+      case "load" => {
         var ownership : Option[LoadOwnership] = None
         if (skip("[copy]")) {
           ownership = Some(LoadOwnership.copy)
@@ -375,397 +404,655 @@ class SILParser {
         } else if (skip("[trivial]")) {
           ownership = Some(LoadOwnership.trivial)
         }
-        val operand = parseOperand()
+        val operand = try parseOperand()
         Instruction.operator(Operator.load(ownership, operand))
-      } case "store" => {
-        val value = parseValue()
-        take("to")
+      }
+      case "store" => {
+        val value = try parseValue()
+        try take("to")
         var ownership : Option[StoreOwnership] = None
         if (skip("[init]")) {
           ownership = Some(StoreOwnership.init)
         } else if (skip("[trivial]")) {
           ownership = Some(StoreOwnership.trivial)
         }
-        val operand = parseOperand()
+        val operand = try parseOperand()
         Instruction.operator(Operator.store(value, ownership, operand))
-      } case "load_borrow" => { null // TODO: NPOTP
-      } case "end_borrow" => {
-        val operand = parseOperand()
+      }
+      case "load_borrow" => {
+        null // TODO: NPOTP
+      }
+      case "end_borrow" => {
+        val operand = try parseOperand()
         Instruction.operator(Operator.endBorrow(operand))
-      } case "assign" => { null // TODO: NPOTP
-      } case "assign_by_wrapper" => { null // TODO: NPOTP
-      } case "mark_uninitialized" => { null // TODO: NPOTP
-      } case "mark_function_escape" => { null // TODO: NPOTP
-      } case "mark_uninitialized_behaviour" => { throw parseError("unhandled instruction") // NSIP
-      } case "copy_addr" => {
+      }
+      case "assign" => {
+        null // TODO: NPOTP
+      }
+      case "assign_by_wrapper" => {
+        null // TODO: NPOTP
+      }
+      case "mark_uninitialized" => {
+        null // TODO: NPOTP
+      }
+      case "mark_function_escape" => {
+        null // TODO: NPOTP
+      }
+      case "mark_uninitialized_behaviour" => {
+        throw parseError("unhandled instruction") // NSIP
+      }
+      case "copy_addr" => {
         val take = skip("[take]")
-        val value = parseValue()
-        this.take("to")
+        val value = try parseValue()
+        try this.take("to")
         val initialization = skip("[initialization]")
-        val operand = parseOperand()
+        val operand = try parseOperand()
         Instruction.operator(Operator.copyAddr(take, value, initialization, operand))
-      } case "destroy_addr" => { null // TODO: NPOTP LP
-      } case "index_addr" => {
-        val addr = parseOperand()
-        take(",")
-        val index = parseOperand()
+      }
+      case "destroy_addr" => {
+        null // TODO: NPOTP LP
+      }
+      case "index_addr" => {
+        val addr = try parseOperand()
+        try take(",")
+        val index = try parseOperand()
         Instruction.operator(Operator.indexAddr(addr, index))
-      } case "tail_addr" => { throw parseError("unhandled instruction") // NSIP
-      } case "index_raw_pointer" => { throw parseError("unhandled instruction") // NSIP
-      } case "bind_memory" => { throw parseError("unhandled instruction") // NSIP
-      } case "begin_access" => {
-        take("[")
+      }
+      case "tail_addr" => {
+        throw parseError("unhandled instruction") // NSIP
+      }
+      case "index_raw_pointer" => {
+        throw parseError("unhandled instruction") // NSIP
+      }
+      case "bind_memory" => {
+        throw parseError("unhandled instruction") // NSIP
+      }
+      case "begin_access" => {
+        try take("[")
         val access = parseAccess()
-        take("]")
-        take("[")
+        try take("]")
+        try take("[")
         val enforcement = parseEnforcement()
-        take("]")
+        try take("]")
         val noNestedConflict = skip("[no_nested_conflict]")
         val builtin = skip("[builtin]")
-        val operand = parseOperand()
+        val operand = try parseOperand()
         Instruction.operator(Operator.beginAccess(access, enforcement, noNestedConflict, builtin, operand))
-      } case "end_access" => {
+      }
+      case "end_access" => {
         val abort = skip("[abort]")
-        val operand = parseOperand()
+        val operand = try parseOperand()
         Instruction.operator(Operator.endAccess(abort, operand))
-      } case "begin_unpaired_access" => { throw parseError("unhandled instruction") // NSIP
-      } case "end_unpaired_access" => { throw parseError("unhandled instruction") // NSIP
+      }
+      case "begin_unpaired_access" => {
+        throw parseError("unhandled instruction") // NSIP
+      }
+      case "end_unpaired_access" => {
+        throw parseError("unhandled instruction") // NSIP
+      }
 
         // *** REFERENCE COUNTING ***
 
-      } case "strong_retain" => {
-        val operand = parseOperand()
+      case "strong_retain" => {
+        val operand = try parseOperand()
         Instruction.operator(Operator.strongRetain(operand))
-      } case "strong_release" => {
-        val operand = parseOperand()
+      }
+      case "strong_release" => {
+        val operand = try parseOperand()
         Instruction.operator(Operator.strongRelease(operand))
-      } case "set_deallocating" => { throw parseError("unhandled instruction") // NSIP
-      } case "strong_copy_unowned_value" => { throw parseError("unhandled instruction") // NSIP
-      } case "strong_retain_unowned" => { throw parseError("unhandled instruction") // NSIP
-      } case "unowned_retain" => { throw parseError("unhandled instruction") // NSIP
-      } case "unowned_release" => { throw parseError("unhandled instruction") // NSIP
-      } case "load_weak" => { null // TODO: NPOTP LP
-      } case "store_weak" => { null // TODO: NPOTP
-      } case "load_unowned" => { null // TODO: NPOTP
-      } case "store_unowned" => { null // TODO: NPOTP
-      } case "fix_lifetime" => { throw parseError("unhandled instruction") // NSIP
-      } case "mark_dependence" => {
-        val operand = parseOperand()
-        take("on")
-        val on = parseOperand()
+      }
+      case "set_deallocating" => {
+        throw parseError("unhandled instruction") // NSIP
+      }
+      case "strong_copy_unowned_value" => {
+        throw parseError("unhandled instruction") // NSIP
+      }
+      case "strong_retain_unowned" => {
+        throw parseError("unhandled instruction") // NSIP
+      }
+      case "unowned_retain" => {
+        throw parseError("unhandled instruction") // NSIP
+      }
+      case "unowned_release" => {
+        throw parseError("unhandled instruction") // NSIP
+      }
+      case "load_weak" => {
+        null // TODO: NPOTP LP
+      }
+      case "store_weak" => {
+        null // TODO: NPOTP
+      }
+      case "load_unowned" => {
+        null // TODO: NPOTP
+      }
+      case "store_unowned" => {
+        null // TODO: NPOTP
+      }
+      case "fix_lifetime" => {
+        throw parseError("unhandled instruction") // NSIP
+      }
+      case "mark_dependence" => {
+        val operand = try parseOperand()
+        try take("on")
+        val on = try parseOperand()
         Instruction.operator(Operator.markDependence(operand, on))
-      } case "is_unique" => { throw parseError("unhandled instruction") // NSIP
-      } case "is_escaping_closure" => { null // TODO: NPOTP
-      } case "copy_block" => { null // TODO: NPOTP
-      } case "copy_block_without_escaping" => { null // TODO: NPOTP
-        // builtin "unsafeGuaranteed" not sure what to do about this one
-        // builtin "unsafeGuaranteedEnd" not sure what to do about this one
+      }
+      case "is_unique" => {
+        throw parseError("unhandled instruction") // NSIP
+      }
+      case "is_escaping_closure" => {
+        null // TODO: NPOTP
+      }
+      case "copy_block" => {
+        null // TODO: NPOTP
+      }
+      case "copy_block_without_escaping" => {
+        null // TODO: NPOTP
+      }
+      // builtin "unsafeGuaranteed" not sure what to do about this one
+      // builtin "unsafeGuaranteedEnd" not sure what to do about this one
 
         // *** LITERALS ***
 
-      } case "function_ref" => {
-        val name = parseGlobalName()
-        take(":")
-        val tpe = parseType()
+      case "function_ref" => {
+        val name = try parseGlobalName()
+        try take(":")
+        val tpe = try parseType()
         Instruction.operator(Operator.functionRef(name, tpe))
-      } case "dynamic_function_ref" => { null // TODO: NPOTP
-      } case "prev_dynamic_function_ref" => { null // TODO: NPOTP
-      } case "global_addr" => {
-        val name = parseGlobalName()
-        take(":")
-        val tpe = parseType()
+      }
+      case "dynamic_function_ref" => {
+        null // TODO: NPOTP
+      }
+      case "prev_dynamic_function_ref" => {
+        null // TODO: NPOTP
+      }
+      case "global_addr" => {
+        val name = try parseGlobalName()
+        try take(":")
+        val tpe = try parseType()
         Instruction.operator(Operator.globalAddr(name, tpe))
-      } case "global_value" => { throw parseError("unhandled instruction") // NSIP
-      } case "integer_literal" => {
-        val tpe = parseType()
-        take(",")
-        val value = parseInt()
+      }
+      case "global_value" => {
+        throw parseError("unhandled instruction") // NSIP
+      }
+      case "integer_literal" => {
+        val tpe = try parseType()
+        try take(",")
+        val value = try parseInt()
         Instruction.operator(Operator.integerLiteral(tpe, value))
-      } case "float_literal" => {
-        val tpe = parseType()
-        take(",")
-        take("0x")
-        val value = take((x : Char) => x.toString.matches("^[0-9a-fA-F]+$"))
+      }
+      case "float_literal" => {
+        val tpe = try parseType()
+        try take(",")
+        try take("0x")
+        val value = try take((x : Char) => x.toString.matches("^[0-9a-fA-F]+$"))
         Instruction.operator(Operator.floatLiteral(tpe, value))
-      } case "string_literal" => {
-        val encoding = parseEncoding()
-        val value = parseString()
+      }
+      case "string_literal" => {
+        val encoding = try parseEncoding()
+        val value = try parseString()
         Instruction.operator(Operator.stringLiteral(encoding, value))
+      }
 
         // *** DYNAMIC DISPATCH ***
 
-      } case "class_method" => { null // TODO: NPOTP
-      } case "objc_method" => { null // TODO: NPOTP
-      } case "super_method" => { throw parseError("unhandled instruction") // NSIP
-      } case "objc_super_method" => { null // TODO: NPOTP
-      } case "witness_method" => {
-        val archeType = parseType()
-        take(",")
-        val declRef = parseDeclRef()
-        take(":")
-        var declType = parseNakedType()
-        take(":")
-        val tpe = parseType()
+      case "class_method" => {
+        null // TODO: NPOTP
+      }
+      case "objc_method" => {
+        null // TODO: NPOTP
+      }
+      case "super_method" => {
+        throw parseError("unhandled instruction") // NSIP
+      }
+      case "objc_super_method" => {
+        null // TODO: NPOTP
+      }
+      case "witness_method" => {
+        val archeType = try parseType()
+        try take(",")
+        val declRef = try parseDeclRef()
+        try take(":")
+        var declType = try parseNakedType()
+        try take(":")
+        val tpe = try parseType()
         Instruction.operator(Operator.witnessMethod(archeType, declRef, declType, tpe))
+      }
 
         // *** FUNCTION APPLICATION ***
 
-      } case "apply" => {
+      case "apply" => {
         val nothrow = skip("[nothrow]")
-        val value = parseValue()
+        val value = try parseValue()
         val substitutions = parseNilOrMany("<", ",",">", parseNakedType).get
-        val arguments = parseMany("(",",",")", parseValue)
-        take(":")
-        val tpe = parseType()
+        val arguments = try parseMany("(",",",")", parseValue)
+        try take(":")
+        val tpe = try parseType()
         Instruction.operator(Operator.apply(nothrow,value,substitutions,arguments,tpe))
-      } case "begin_apply" => {
+      }
+      case "begin_apply" => {
         val nothrow = skip("[nothrow]")
-        val value = parseValue()
+        val value = try parseValue()
         val s : Option[Array[Type]] = parseNilOrMany("<",",",">",parseNakedType)
         val substitutions = if (s.nonEmpty) s.get else new Array[Type](0)
-        val arguments = parseMany("(",",",")", parseValue)
-        take(":")
-        val tpe = parseType()
+        val arguments = try parseMany("(",",",")", parseValue)
+        try take(":")
+        val tpe = try parseType()
         Instruction.operator(Operator.beginApply(nothrow, value, substitutions, arguments, tpe))
-      } case "abort_apply" => { null // TODO: NPOTP
-      } case "end_apply" => {
-        val value = parseValue()
+      }
+      case "abort_apply" => {
+        null // TODO: NPOTP
+      }
+      case "end_apply" => {
+        val value = try parseValue()
         Instruction.operator(Operator.endApply(value))
-      } case "partial_apply" => {
+      }
+      case "partial_apply" => {
         val calleeGuaranteed = skip("[callee_guaranteed]")
         val onStack = skip("[on_stack]")
-        val value = parseValue()
+        val value = try parseValue()
         val s = parseNilOrMany("<",",",">", parseNakedType)
         val substitutions = if (s.nonEmpty) s.get else new Array[Type](0)
-        val arguments = parseMany("(",",",")", parseValue)
-        take(":")
-        val tpe = parseType()
+        val arguments = try parseMany("(",",",")", parseValue)
+        try take(":")
+        val tpe = try parseType()
         Instruction.operator(Operator.partialApply(calleeGuaranteed,onStack,value,substitutions,arguments,tpe))
-      } case "builtin" => {
-        val name = parseString()
-        val operands = parseMany("(",",",")",parseOperand)
-        take(":")
-        val tpe = parseType()
+      }
+      case "builtin" => {
+        val name = try parseString()
+        val operands = try parseMany("(", ",", ")", parseOperand)
+        try take(":")
+        val tpe = try parseType()
         Instruction.operator(Operator.builtin(name, operands, tpe))
+      }
 
         // *** METATYPES ***
 
-
-      } case "metatype" => {
-        val tpe = parseType()
+      case "metatype" => {
+        val tpe = try parseType()
         Instruction.operator(Operator.metatype(tpe))
-      } case "value_metatype" => { null // TODO: NPOTP
-      } case "existential_metatype" => { null // TODO: NPOTP
-      } case "objc_protocol" => { null // TODO: NPOTP
+      }
+      case "value_metatype" => {
+        null // TODO: NPOTP
+      }
+      case "existential_metatype" => {
+        null // TODO: NPOTP
+      }
+      case "objc_protocol" => {
+        null // TODO: NPOTP
+      }
 
         // *** AGGREGATE TYPES ***
 
-      } case "retain_value" => {
-        val operand = parseOperand()
+      case "retain_value" => {
+        val operand = try parseOperand()
         Instruction.operator(Operator.retainValue(operand))
-      } case "retain_value_addr" => { throw parseError("unhandled instruction") // NSIP
-      } case "unmanaged_retain_value" => { throw parseError("unhandled instruction") // NSIP
-      } case "copy_value" => {
-        val operand = parseOperand()
+      }
+      case "retain_value_addr" => {
+        throw parseError("unhandled instruction") // NSIP
+      }
+      case "unmanaged_retain_value" => {
+        throw parseError("unhandled instruction") // NSIP
+      }
+      case "copy_value" => {
+        val operand = try parseOperand()
         Instruction.operator(Operator.copyValue(operand))
-      } case "release_value" => {
-        val operand = parseOperand()
+      }
+      case "release_value" => {
+        val operand = try parseOperand()
         Instruction.operator(Operator.releaseValue(operand))
-      } case "release_value_addr" => { throw parseError("unhandled instruction") // NSIP
-      } case "unmanaged_release_value" => { throw parseError("unhandled instruction") // NSIP
-      } case "destroy_value" => {
-        val operand = parseOperand()
+      }
+      case "release_value_addr" => {
+        throw parseError("unhandled instruction") // NSIP
+      }
+      case "unmanaged_release_value" => {
+        throw parseError("unhandled instruction") // NSIP
+      }
+      case "destroy_value" => {
+        val operand = try parseOperand()
         Instruction.operator(Operator.destroyValue(operand))
-      } case "autorelease_value" => { null // TODO: NPOTP
-      } case "tuple" => {
-        val elements = parseTupleElements()
+      }
+      case "autorelease_value" => {
+        null // TODO: NPOTP
+      }
+      case "tuple" => {
+        val elements = try parseTupleElements()
         Instruction.operator(Operator.tuple(elements))
-      } case "tuple_extract" => {
-        val operand = parseOperand()
-        take(",")
-        val declRef = parseInt()
+      }
+      case "tuple_extract" => {
+        val operand = try parseOperand()
+        try take(",")
+        val declRef = try parseInt()
         Instruction.operator(Operator.tupleExtract(operand, declRef))
-      } case "tuple_element_addr" => { null // TODO: NPOTP
-      } case "destructure_tuple" => {
-        val operand = parseOperand()
+      }
+      case "tuple_element_addr" => {
+        null // TODO: NPOTP
+      }
+      case "destructure_tuple" => {
+        val operand = try parseOperand()
         Instruction.operator(Operator.destructureTuple(operand))
-      } case "struct" => {
-        val tpe = parseType()
-        val operands = parseMany("(",",",")", parseOperand)
+      }
+      case "struct" => {
+        val tpe = try parseType()
+        val operands = try parseMany("(",",",")", parseOperand)
         Instruction.operator(Operator.struct(tpe, operands))
-      } case "struct_extract" => {
-        val operand = parseOperand()
-        take(",")
-        val declRef = parseDeclRef()
+      }
+      case "struct_extract" => {
+        val operand = try parseOperand()
+        try take(",")
+        val declRef = try parseDeclRef()
         Instruction.operator(Operator.structExtract(operand, declRef))
-      } case "struct_element_addr" => {
-        val operand = parseOperand()
-        take(",")
-        val declRef = parseDeclRef()
+      }
+      case "struct_element_addr" => {
+        val operand = try parseOperand()
+        try take(",")
+        val declRef = try parseDeclRef()
         Instruction.operator(Operator.structElementAddr(operand, declRef))
-      } case "destructure_struct" => { throw parseError("unhandled instruction") // NSIP
-      } case "object" => { throw parseError("unhandled instruction") // NSIP
-      } case "ref_element_addr" => { null // TODO: NPOTP
-      } case "ref_tail_addr" => { throw parseError("unhandled instruction") // NSIP
+      }
+      case "destructure_struct" => {
+        throw parseError("unhandled instruction") // NSIP
+      }
+      case "object" => {
+        throw parseError("unhandled instruction") // NSIP
+      }
+      case "ref_element_addr" => {
+        null // TODO: NPOTP
+      }
+      case "ref_tail_addr" => {
+        throw parseError("unhandled instruction") // NSIP
+      }
 
         // *** ENUMS ***
 
-      } case "enum" => {
-        val tpe = parseType()
-        take(",")
-        val declRef = parseDeclRef()
+      case "enum" => {
+        val tpe = try parseType()
+        try take(",")
+        val declRef = try parseDeclRef()
         val operand = if (skip(",")) Some(parseOperand()) else None
         Instruction.operator(Operator.`enum`(tpe, declRef, operand))
-      } case "unchecked_enum_data" => { null // TODO: NPOTP
-      } case "init_enum_data_addr" => { null // TODO: NPOTP
-      } case "inject_enum_addr" => { null // TODO: NPOTP LP
-      } case "unchecked_take_enum_data_addr" => { null // TODO: NPOTP
-      } case "select_enum" => {
-        val operand = parseOperand()
+      }
+      case "unchecked_enum_data" => {
+        null // TODO: NPOTP
+      }
+      case "init_enum_data_addr" => {
+        null // TODO: NPOTP
+      }
+      case "inject_enum_addr" => {
+        null // TODO: NPOTP LP
+      }
+      case "unchecked_take_enum_data_addr" => {
+        null // TODO: NPOTP
+      }
+      case "select_enum" => {
+        val operand = try parseOperand()
         // TODO: Pass functions as nested arguments properly
-        val cases = parseUntilNil[Case](parseCase(parseValue))
-        take(":")
-        val tpe = parseType()
+        val cases = parseUntilNil[Case](try parseCase(parseValue))
+        try take(":")
+        val tpe = try parseType()
         Instruction.operator(Operator.selectEnum(operand, cases, tpe))
-      } case "select_enum_addr" => { null // TODO: NPOTP
+      }
+      case "select_enum_addr" => {
+        null // TODO: NPOTP
+      }
 
         // *** PROTOCOL AND PROTOCOL COMPOSITION TYPES ***
 
-      } case "init_existential_addr" => { null // TODO: NPOTP
-      } case "init_existential_value" => { throw parseError("unhandled instruction") // NSIP
-      } case "deinit_existential_addr" => { null // TODO: NPOTP LP
-      } case "deinit_existential_value" => { throw parseError("unhandled instruction") // NSIP
-      } case "open_existential_addr" => { null // TODO: NPOTP
-      } case "open_existential_value" => { throw parseError("unhandled instruction") // NSIP
-      } case "init_existential_ref" => { null // TODO: NPOTP
-      } case "open_existential_ref" => { null // TODO: NPOTP
-      } case "init_existential_metatype" => { null // TODO: NPOTP
-      } case "open_existential_metatype" => { null // TODO: NPOTP
-      } case "alloc_existential_box" => { null // TODO: NPOTP
-      } case "project_existential_box" => { null // TODO: NPOTP
-      } case "open_existential_box" => { null // TODO: NPOTP
-      } case "open_existential_box_value" => { throw parseError("unhandled instruction") // NSIP
-      } case "dealloc_existential_box" => { null // TODO: NPOTP LP
+      case "init_existential_addr" => {
+        null // TODO: NPOTP
+      }
+      case "init_existential_value" => {
+        throw parseError("unhandled instruction") // NSIP
+      }
+      case "deinit_existential_addr" => {
+        null // TODO: NPOTP LP
+      }
+      case "deinit_existential_value" => {
+        throw parseError("unhandled instruction") // NSIP
+      }
+      case "open_existential_addr" => {
+        null // TODO: NPOTP
+      }
+      case "open_existential_value" => {
+        throw parseError("unhandled instruction") // NSIP
+      }
+      case "init_existential_ref" => {
+        null // TODO: NPOTP
+      }
+      case "open_existential_ref" => {
+        null // TODO: NPOTP
+      }
+      case "init_existential_metatype" => {
+        null // TODO: NPOTP
+      }
+      case "open_existential_metatype" => {
+        null // TODO: NPOTP
+      }
+      case "alloc_existential_box" => {
+        null // TODO: NPOTP
+      }
+      case "project_existential_box" => {
+        null // TODO: NPOTP
+      }
+      case "open_existential_box" => {
+        null // TODO: NPOTP
+      }
+      case "open_existential_box_value" => {
+        throw parseError("unhandled instruction") // NSIP
+      }
+      case "dealloc_existential_box" => {
+        null // TODO: NPOTP LP
+      }
 
         // *** BLOCKS ***
 
-      } case "project_block_storage" => { null // TODO: NPOTP
-      } case "init_block_storage_header" => { null // TODO: NPOTP
+      case "project_block_storage" => {
+        null // TODO: NPOTP
+      }
+      case "init_block_storage_header" => {
+        null // TODO: NPOTP
+      }
 
         // *** UNCHECKED CONVERSIONS ***
 
-      } case "upcast" => { null // TODO: NPOTP
-      } case "address_to_pointer" => { null // TODO: NPOTP
-      } case "pointer_to_address" => {
-        val operand = parseOperand()
-        take("to")
+      case "upcast" => {
+        null // TODO: NPOTP
+      }
+      case "address_to_pointer" => {
+        null // TODO: NPOTP
+      }
+      case "pointer_to_address" => {
+        val operand = try parseOperand()
+        try take("to")
         val strict = skip("[strict]")
-        val tpe = parseType()
+        val tpe = try parseType()
         Instruction.operator(Operator.pointerToAddress(operand, strict, tpe))
-      } case "unchecked_ref_cast" => { null // TODO: NPOTP
-      } case "unchecked_ref_cast_addr" => { throw parseError("unhandled instruction") // NSIP
-      } case "unchecked_addr_cast" => { null // TODO: NPOTP
-      } case "unchecked_trivial_bit_cast" => { null // TODO: NPOTP
-      } case "unchecked_bitwise_cast" => { throw parseError("unhandled instruction") // NSIP
-      } case "ref_to_raw_pointer" => { throw parseError("unhandled instruction") // NSIP
-      } case "raw_pointer_to_ref" => { throw parseError("unhandled instruction") // NSIP
-      } case "ref_to_unowned" => { null // TODO: NPOTP
-      } case "unowned_to_ref" => { throw parseError("unhandled instruction") // NSIP
-      } case "ref_to_unmanaged" => { null // TODO: NPOTP
-      } case "unmanaged_to_ref" => { null // TODO: NPOTP
-      } case "convert_function" => {
-        val operand = parseOperand()
-        take("to")
+      }
+      case "unchecked_ref_cast" => {
+        null // TODO: NPOTP
+      }
+      case "unchecked_ref_cast_addr" => {
+        throw parseError("unhandled instruction") // NSIP
+      }
+      case "unchecked_addr_cast" => {
+        null // TODO: NPOTP
+      }
+      case "unchecked_trivial_bit_cast" => {
+        null // TODO: NPOTP
+      }
+      case "unchecked_bitwise_cast" => {
+        throw parseError("unhandled instruction") // NSIP
+      }
+      case "ref_to_raw_pointer" => {
+        throw parseError("unhandled instruction") // NSIP
+      }
+      case "raw_pointer_to_ref" => {
+        throw parseError("unhandled instruction") // NSIP
+      }
+      case "ref_to_unowned" => {
+        null // TODO: NPOTP
+      }
+      case "unowned_to_ref" => {
+        throw parseError("unhandled instruction") // NSIP
+      }
+      case "ref_to_unmanaged" => {
+        null // TODO: NPOTP
+      }
+      case "unmanaged_to_ref" => {
+        null // TODO: NPOTP
+      }
+      case "convert_function" => {
+        val operand = try parseOperand()
+        try take("to")
         val withoutActuallyEscaping = skip("[without_actually_escaping]")
-        val tpe = parseType()
+        val tpe = try parseType()
         Instruction.operator(Operator.convertFunction(operand, withoutActuallyEscaping, tpe))
-      } case "convert_escape_to_noescape" => {
+      }
+      case "convert_escape_to_noescape" => {
         val notGuaranteed = skip("[not_guaranteed]")
         val escaped = skip("[escaped]")
-        val operand = parseOperand()
-        take("to")
-        val tpe = parseType()
+        val operand = try parseOperand()
+        try take("to")
+        val tpe = try parseType()
         Instruction.operator(Operator.convertEscapeToNoescape(notGuaranteed, escaped, operand, tpe))
-      } case "thin_function_to_pointer" => { throw parseError("unhandled instruction") // NSIP
-      } case "pointer_to_thin_function" => { throw parseError("unhandled instruction") // NSIP
-      } case "classify_bridge_object" => { throw parseError("unhandled instruction") // NSIP
-      } case "value_to_bridge_object" => { throw parseError("unhandled instruction") // NSIP
-      } case "ref_to_bridge_object" => { throw parseError("unhandled instruction") // NSIP
-      } case "bridge_object_to_ref" => { throw parseError("unhandled instruction") // NSIP
-      } case "bridge_object_to_word" => { throw parseError("unhandled instruction") // NSIP
-      } case "thin_to_thick_function" => {
-        val operand = parseOperand()
-        take("to")
-        val tpe = parseType()
+      }
+      case "thin_function_to_pointer" => {
+        throw parseError("unhandled instruction") // NSIP
+      }
+      case "pointer_to_thin_function" => {
+        throw parseError("unhandled instruction") // NSIP
+      }
+      case "classify_bridge_object" => {
+        throw parseError("unhandled instruction") // NSIP
+      }
+      case "value_to_bridge_object" => {
+        throw parseError("unhandled instruction") // NSIP
+      }
+      case "ref_to_bridge_object" => {
+        throw parseError("unhandled instruction") // NSIP
+      }
+      case "bridge_object_to_ref" => {
+        throw parseError("unhandled instruction") // NSIP
+      }
+      case "bridge_object_to_word" => {
+        throw parseError("unhandled instruction") // NSIP
+      }
+      case "thin_to_thick_function" => {
+        val operand = try parseOperand()
+        try take("to")
+        val tpe = try parseType()
         Instruction.operator(Operator.thinToThickFunction(operand, tpe))
-      } case "thick_to_objc_metatype" => { null // TODO: NPOTP
-      } case "objc_to_thick_metatype" => { null // TODO: NPOTP
-      } case "objc_metatype_to_object" => { null // TODO: NPOTP
-      } case "objc_existential_metatype_to_object" => { null // TODO: NPOTP
+      }
+      case "thick_to_objc_metatype" => {
+        null // TODO: NPOTP
+      }
+      case "objc_to_thick_metatype" => {
+        null // TODO: NPOTP
+      }
+      case "objc_metatype_to_object" => {
+        null // TODO: NPOTP
+      }
+      case "objc_existential_metatype_to_object" => {
+        null // TODO: NPOTP
+      }
 
         // *** CHECKED CONVERSIONS ***
 
-      } case "unconditional_checked_cast" => { null // TODO: NPOTP
-      } case "unconditional_checked_cast_addr" => { null // TODO: NPOTP
-      } case "unconditional_checked_cast_value" => { throw parseError("unhandled instruction") // NSIP
+      case "unconditional_checked_cast" => {
+        null // TODO: NPOTP
+      }
+      case "unconditional_checked_cast_addr" => {
+        null // TODO: NPOTP
+      }
+      case "unconditional_checked_cast_value" => {
+        throw parseError("unhandled instruction") // NSIP
+      }
 
         // *** RUNTIME FAILURES ***
 
-      } case "cond_fail" => {
-        val operand = parseOperand()
-        take(",")
-        val message = parseString()
+      case "cond_fail" => {
+        val operand = try parseOperand()
+        try take(",")
+        val message = try parseString()
         Instruction.operator(Operator.condFail(operand, message))
+      }
 
         // *** TERMINATORS ***
 
-      } case "unreachable" => {
+      case "unreachable" => {
         Instruction.terminator(Terminator.unreachable)
-      } case "return" => {
-        val operand = parseOperand()
+      }
+      case "return" => {
+        val operand = try parseOperand()
         Instruction.terminator(Terminator.ret(operand))
-      } case "throw" => { null // TODO: NPOTP
-      } case "yield" => { null // TODO: NPOTP
-      } case "unwind" => { null // TODO: NPOTP
-      } case "br" => {
-        val label = parseIdentifier()
+      }
+      case "throw" => {
+        null // TODO: NPOTP
+      }
+      case "yield" => {
+        null // TODO: NPOTP
+      }
+      case "unwind" => {
+        null // TODO: NPOTP
+      }
+      case "br" => {
+        val label = try parseIdentifier()
         val o : Option[Array[Operand]] = parseNilOrMany("(",",",")", parseOperand)
         val operands = if (o.nonEmpty) o.get else new Array[Operand](0)
         Instruction.terminator(Terminator.br(label, operands))
-      } case "cond_br" => {
-        val cond = parseValueName()
-        take(":")
-        val trueLabel = parseIdentifier()
+      }
+      case "cond_br" => {
+        val cond = try parseValueName()
+        try take(":")
+        val trueLabel = try parseIdentifier()
         val to : Option[Array[Operand]] = parseNilOrMany("(",",",")",parseOperand)
         val trueOperands = if (to.nonEmpty) to.get else new Array[Operand](0)
-        take(",")
-        val falseLabel = parseIdentifier()
+        try take(",")
+        val falseLabel = try parseIdentifier()
         val fo : Option[Array[Operand]] = parseNilOrMany("(",",",")",parseOperand)
         val falseOperands = if (fo.nonEmpty) to.get else new Array[Operand](0)
         Instruction.terminator(Terminator.condBr(cond, trueLabel, trueOperands, falseLabel, falseOperands))
-      } case "switch_value" => { null // TODO: NPOTP
-      } case "select_value" => { throw parseError("unhandled instruction") // NSIP
-      } case "switch_enum" => {
-        val operand = parseOperand()
+      }
+      case "switch_value" => {
+        null // TODO: NPOTP
+      }
+      case "select_value" => {
+        throw parseError("unhandled instruction") // NSIP
+      }
+      case "switch_enum" => {
+        val operand = try parseOperand()
         // TODO: Pass functions as nested arguments properly
-        val cases = parseUntilNil(parseCase(parseIdentifier))
+        val cases = parseUntilNil(try parseCase(parseIdentifier))
         Instruction.terminator(Terminator.switchEnum(operand, cases))
-      } case "switch_enum_addr" => { null // TODO: NPOTP
-      } case "dynamic_method_br" => { null // TODO: NPOTP
-      } case "checked_cast_br" => { null // TODO: NPOTP
-      } case "checked_cast_value_br" => { null throw parseError("unhandled instruction") // NSIP
-      } case "checked_cast_addr_br" => { null // TODO: NPOTP
-      } case "try_apply" => { null // TODO: NPOTP
+      }
+      case "switch_enum_addr" => {
+        null // TODO: NPOTP
+      }
+      case "dynamic_method_br" => {
+        null // TODO: NPOTP
+      }
+      case "checked_cast_br" => {
+        null // TODO: NPOTP
+      }
+      case "checked_cast_value_br" => {
+        throw parseError("unhandled instruction") // NSIP
+      }
+      case "checked_cast_addr_br" => {
+        null // TODO: NPOTP
+      }
+      case "try_apply" => {
+        null // TODO: NPOTP
+      }
 
         // *** INSTRUCTIONS THAT TENSORFLOW PARSES BUT ARE NO LONGER IN SIL.rst ***
 
-      } case "begin_borrow" => {
-        val operand = parseOperand()
+      case "begin_borrow" => {
+        val operand = try parseOperand()
         Instruction.operator(Operator.beginBorrow(operand))
+      }
 
         // *** DEFAULT FALLBACK ***
 
-      } case _ : String => {
+      case _ : String => {
         //val _ = skip(_ != "\n")
         //Instruction.operator(Operator.unknown(instructionName))
         throw parseError("unknown instruction")
@@ -798,12 +1085,12 @@ class SILParser {
     maybeParse(() => {
       if(!skip(",")) None
       if (skip("case")) {
-        val declRef = parseDeclRef()
-        take(":")
-        val identifier = parseElement()
+        val declRef = try parseDeclRef()
+        try take(":")
+        val identifier = try parseElement()
         Some(Case.cs(declRef, identifier))
       } else if (skip("default")) {
-        val identifier = parseElement()
+        val identifier = try parseElement()
         Some(Case.default(identifier))
       } else {
         None
@@ -813,7 +1100,7 @@ class SILParser {
 
   @throws[Error]
   def parseConvention(): Convention = {
-    take(":")
+    try take(":")
     var result: Convention = null
     if (skip("c")) {
       result = Convention.c
@@ -822,13 +1109,13 @@ class SILParser {
     } else if (skip("thin")) {
       result = Convention.thin
     } else if (skip("witness_method")) {
-      take(":")
-      val tpe = parseNakedType()
+      try take(":")
+      val tpe = try parseNakedType()
       result = Convention.witnessMethod(tpe)
     } else {
       throw parseError("unknown convention")
     }
-    take(")")
+    try take(")")
     result
   }
 
@@ -862,11 +1149,11 @@ class SILParser {
 
   @throws[Error]
   def parseDeclRef(): DeclRef = {
-    take("#")
+    try take("#")
     val name = new ArrayBuffer[String]
     var break = false
     while (!break) {
-      val identifier = parseIdentifier()
+      val identifier = try parseIdentifier()
       name.append(identifier)
       if (!skip(".")) {
         break = true
@@ -875,11 +1162,11 @@ class SILParser {
     if (!skip("!")) {
       new DeclRef(name.toArray, None, None)
     }
-    val kind = parseDeclKind()
+    val kind = try parseDeclKind()
     if (kind.nonEmpty && !skip(".")) {
       new DeclRef(name.toArray, kind, None)
     }
-    val level = parseInt()
+    val level = try parseInt()
     new DeclRef(name.toArray, kind, Some(level))
   }
 
@@ -940,7 +1227,7 @@ class SILParser {
     val start = position()
     if(skip("@")) {
       // TODO(#14): Make name parsing more thorough.
-      val name = take(x => x == "$" || x.isLetterOrDigit || x == "_" )
+      val name = try take(x => x == "$" || x.isLetterOrDigit || x == "_" )
       if(!name.isEmpty) {
         return name
       }
@@ -956,7 +1243,7 @@ class SILParser {
     } else {
       val start = position()
       // TODO(#14): Make name parsing more thorough.
-      val identifier = take(x => x.isLetterOrDigit || x == "_")
+      val identifier = try take(x => x.isLetterOrDigit || x == "_")
       if (!identifier.isEmpty) return identifier
       throw parseError("identifier expected", Some(start))
     }
@@ -967,8 +1254,12 @@ class SILParser {
     // TODO(#26): Make number parsing more thorough.
     val start = position()
     val radix = if(skip("0x")) 16 else 10
-    val s = take(x => x == "-" || x == "+" || Character.digit(x, 16) != -1)
-    val value = try { Integer.parseInt(s, radix) } catch { case _ => throw parseError("integer literal expected", Some(start))}
+    val s = try take(x => x == "-" || x == "+" || Character.digit(x, 16) != -1)
+    val value = try {
+        Integer.parseInt(s, radix)
+      } catch {
+        case _ => throw parseError("integer literal expected", Some(start))
+      }
     value
   }
 
@@ -1011,38 +1302,38 @@ class SILParser {
       val params = new ArrayBuffer[String]
       var break = false
       while (!break) {
-        val name = parseTypeName()
+        val name = try parseTypeName()
         params.append(name)
-        if (peek("where") || (peek(">"))) {
+        if (peek("where") || peek(">")) {
           break = true
         } else {
-          take(",")
+          try take(",")
         }
       }
       var reqs = new ArrayBuffer[TypeRequirement]
       if (peek("where")) {
-        reqs = parseMany("where", ",", ">", parseTypeRequirement).to(ArrayBuffer)
+        reqs = try parseMany("where", ",", ">", try parseTypeRequirement).to(ArrayBuffer)
       } else {
         reqs.clear()
-        take(">")
+        try take(">")
       }
-      val tpe = parseNakedType()
+      val tpe = try parseNakedType()
       Type.genericType(params.toArray, reqs.toArray, tpe)
     } else if (peek("@")) {
-      val attrs = parseMany("@", parseTypeAttribute)
-      val tpe = parseNakedType()
+      val attrs = try parseMany("@", try parseTypeAttribute)
+      val tpe = try parseNakedType()
       Type.attributedType(attrs, tpe)
     } else if (skip("*")) {
-      val tpe = parseNakedType()
+      val tpe = try parseNakedType()
       Type.addressType(tpe)
     } else if (skip("[")) {
-      val subtype = parseNakedType()
-      take("]")
+      val subtype = try parseNakedType()
+      try take("]")
       Type.specializedType(Type.namedType("Array"), Array[Type]{subtype})
     } else if (peek("(")) {
-      val types: Array[Type] = parseMany("(",",",")", parseNakedType)
+      val types: Array[Type] = try parseMany("(",",",")", try parseNakedType)
       if (skip("->")) {
-        val result = parseNakedType()
+        val result = try parseNakedType()
         Type.functionType(types, result)
       } else {
         if (types.count == 1) {
@@ -1055,27 +1346,27 @@ class SILParser {
       @throws[Error]
       def grow(tpe: Type): Type = {
         if (peek("<")) {
-          val types = parseMany("<",",",">", parseNakedType)
-          grow(Type.specializedType(tpe, types))
+          val types = try parseMany("<",",",">", try parseNakedType)
+          try grow(Type.specializedType(tpe, types))
         } else if (skip(".")) {
-          val name = parseTypeName()
-          grow(Type.selectType(tpe, name))
+          val name = try parseTypeName()
+          try grow(Type.selectType(tpe, name))
         } else {
           tpe
         }
       }
-      val name = parseTypeName()
+      val name = try parseTypeName()
       val base: Type = if (name != "Self") Type.namedType(name) else Type.selfType
-      grow(base)
+      try grow(base)
     }
   }
 
   // https://github.com/apple/swift/blob/master/docs/SIL.rst#values-and-operands
   @throws[Error]
   def parseOperand(): Operand = {
-    val valueName = parseValueName()
-    take(":")
-    val tpe = parseType()
+    val valueName = try parseValueName()
+    try take(":")
+    val tpe = try parseType()
     new Operand(valueName, tpe)
   }
 
@@ -1121,7 +1412,7 @@ class SILParser {
   def parseString(): String = {
     // TODO(#24): Parse string literals with control characters.
     try take("\"")
-    val s = take(_ != "\"")
+    val s = try take(_ != "\"")
     try take("\"")
     s
   }
@@ -1129,11 +1420,11 @@ class SILParser {
   // https://github.com/apple/swift/blob/master/docs/SIL.rst#tuple
   def parseTupleElements(): TupleElements = {
     if (peek("$")) {
-      val tpe = parseType()
-      val values = parseMany("(",",",")", parseValue)
+      val tpe = try parseType()
+      val values = try parseMany("(",",",")", try parseValue)
       TupleElements.labeled(tpe, values)
     } else {
-      val operands = parseMany("(",",",")", parseOperand)
+      val operands = try parseMany("(",",",")", try parseOperand)
       TupleElements.unlabeled(operands)
     }
   }
@@ -1147,7 +1438,7 @@ class SILParser {
   @throws[Error]
   def parseTypeAttribute(): TypeAttribute = {
     if(skip("@callee_guaranteed")) TypeAttribute.calleeGuaranteed
-    if(skip("@convention")) TypeAttribute.convention
+    if(skip("@convention")) TypeAttribute.convention(try parseConvention)
     if(skip("@guaranteed")) TypeAttribute.guaranteed
     if(skip("@in_guaranteed")) TypeAttribute.inGuaranteed
     // Must appear before "in" to parse correctly.
@@ -1168,19 +1459,19 @@ class SILParser {
     val start = position()
     val name : String = take(x => x.isLetter || Character.isDigit(x) || x == "_")
     if (!name.isEmpty) {
-      name
+      return name
     }
     throw parseError("type name expected", Some(start))
   }
 
   @throws[Error]
   def parseTypeRequirement(): TypeRequirement = {
-    val lhs = parseNakedType()
+    val lhs = try parseNakedType()
     if (skip(":")) {
-      val rhs = parseNakedType()
+      val rhs = try parseNakedType()
       TypeRequirement.conformance(lhs, rhs)
     } else if (skip("==")) {
-      val rhs = parseNakedType()
+      val rhs = try parseNakedType()
       TypeRequirement.equality(lhs, rhs)
     } else {
       throw parseError("expected '==' or ':'")

@@ -48,30 +48,30 @@ class Printer {
     }
   }
 
-  def print[T](x: Option[T], fn: (T) => Unit): Unit = {
+  def print[T](x: Option[T], fn: T => Unit): Unit = {
     if (x.isEmpty) return
     fn(x.get)
   }
 
-  def print[T](pre: String, x: Option[T], fn: (T) => Unit): Unit = {
+  def print[T](pre: String, x: Option[T], fn: T => Unit): Unit = {
     if (x.isEmpty) return
     print(pre)
     fn(x.get)
   }
 
-  def print[T](x: Option[T], suf: String, fn: (T) => Unit): Unit = {
+  def print[T](x: Option[T], suf: String, fn: T => Unit): Unit = {
     if (x.isEmpty) return
     fn(x.get)
     print(suf)
   }
 
-  def print[T, S <: Iterable[T]](xs: S, fn: (T) => Unit): Unit = {
+  def print[T, S <: Iterable[T]](xs: S, fn: T => Unit): Unit = {
     for (x <- xs) {
       fn(x)
     }
   }
 
-  def print[T, S <: Iterable[T]](xs: S, sep: String, fn: (T) => Unit): Unit = {
+  def print[T, S <: Iterable[T]](xs: S, sep: String, fn: T => Unit): Unit = {
     var needSep = false
     for (x <- xs) {
       if (needSep) {
