@@ -338,7 +338,7 @@ class SILParser {
         // *** ALLOCATION AND DEALLOCATION ***
 
       case "alloc_stack" => {
-        val tpe = try parseType();
+        val tpe = try parseType()
         val attributes = try parseUntilNil( try parseDebugAttribute )
         Instruction.operator(Operator.allocStack(tpe, attributes))
       }
@@ -613,7 +613,7 @@ class SILParser {
         try take(",")
         val declRef = try parseDeclRef()
         try take(":")
-        var declType = try parseNakedType()
+        val declType = try parseNakedType()
         try take(":")
         val tpe = try parseType()
         Instruction.operator(Operator.witnessMethod(archeType, declRef, declType, tpe))
