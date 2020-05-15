@@ -369,7 +369,8 @@ class SILParser {
         Instruction.operator(Operator.deallocBox(operand))
       }
       case "project_box" => {
-        null // TODO: NPOTP
+        val operand = try parseOperand()
+        Instruction.operator(Operator.projectBox(operand))
       }
       case "dealloc_ref" => {
         null // TODO: NPOTP LP
