@@ -1020,8 +1020,7 @@ class SILParser {
       }
       case "switch_enum" => {
         val operand = try parseOperand()
-        // TODO: Pass functions as nested arguments properly
-        val cases = parseUntilNil(try parseCase(parseIdentifier))
+        val cases = try parseUntilNil[Case]( () => try parseCase(parseIdentifier))
         Instruction.terminator(Terminator.switchEnum(operand, cases))
       }
       case "switch_enum_addr" => {
