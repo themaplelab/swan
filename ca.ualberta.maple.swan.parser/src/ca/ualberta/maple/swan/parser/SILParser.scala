@@ -785,8 +785,7 @@ class SILParser {
       }
       case "select_enum" => {
         val operand = try parseOperand()
-        // TODO: Pass functions as nested arguments properly
-        val cases = parseUntilNil[Case](try parseCase(parseValue))
+        val cases = try parseUntilNil[Case](() => try parseCase(parseValue))
         try take(":")
         val tpe = try parseType()
         Instruction.operator(Operator.selectEnum(operand, cases, tpe))
