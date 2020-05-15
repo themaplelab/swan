@@ -389,12 +389,12 @@ class SILParser {
 
       case "debug_value" => {
         val operand = try parseOperand()
-        val attributes = parseUntilNil(parseDebugAttribute)
+        val attributes = try parseUntilNil(parseDebugAttribute)
         Instruction.operator(Operator.debugValue(operand, attributes))
       }
       case "debug_value_addr" => {
         val operand = try parseOperand()
-        val attributes = parseUntilNil(parseDebugAttribute)
+        val attributes = try parseUntilNil(parseDebugAttribute)
         Instruction.operator(Operator.debugValueAddr(operand, attributes))
       }
 
