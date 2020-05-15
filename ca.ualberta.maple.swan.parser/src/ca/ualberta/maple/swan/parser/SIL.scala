@@ -64,6 +64,7 @@ object InstructionDef {
 sealed trait Operator
 object Operator {
   case class allocStack(tpe: Type, attributes: Array[DebugAttribute]) extends Operator
+  case class allocBox(tpe: Type, attributes: Array[DebugAttribute]) extends Operator
   case class apply(
                     nothrow: Boolean, value: String,
                     substitutions: Array[Type], arguments: Array[String], tpe: Type

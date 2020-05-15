@@ -346,10 +346,12 @@ class SILParser {
         null // TODO: NPOTP
       }
       case "alloc_ref_dynamic" => {
-        null // TODO: NPOTP
+        null //  TODO: NPOTP
       }
       case "alloc_box" => {
-        null // TODO: NPOTP
+        val tpe = try parseType()
+        val attributes = try parseUntilNil( try parseDebugAttribute )
+        Instruction.operator(Operator.allocBox(tpe, attributes))
       }
       case "alloc_value_buffer" => {
         throw parseError("unhandled instruction") // NSIP
