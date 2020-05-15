@@ -357,7 +357,8 @@ class SILParser {
         throw parseError("unhandled instruction") // NSIP
       }
       case "alloc_global" => {
-        null // TODO: NPOTP
+        val name = try parseGlobalName()
+        Instruction.operator(Operator.allocGlobal(name))
       }
       case "dealloc_stack" => {
         val operand = try parseOperand()
