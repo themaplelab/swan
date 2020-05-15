@@ -86,6 +86,7 @@ object Operator {
   case class copyAddr(take: Boolean, value: String, initialization: Boolean, operand: Operand) extends Operator
   case class copyValue(operand: Operand) extends Operator
   case class deallocStack(operand: Operand) extends Operator
+  case class deallocBox(operand: Operand) extends Operator
   case class debugValue(operand: Operand, attributes: Array[DebugAttribute]) extends Operator
   case class debugValueAddr(operand: Operand, attributes: Array[DebugAttribute]) extends Operator
   case class destroyValue(operand: Operand) extends Operator
