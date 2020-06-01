@@ -27,12 +27,31 @@ def main():
     parser.add_argument("-project-path", required=True)
     parser.add_argument("-xcode-options", required=True)
     parser.add_argument("-xconfig-path", required=True)
+    parser.add_argument("-output-path", required=True)
     args = parser.parse_args()
 
+    print("\n\n\n*** STARTING BUILD-SHIM ***\n\n\n")
+
+    # Generating SIL from xcodeproj
     cmd = "xcodebuild -project " + args.project_path + \
     " -xcconfig " + args.xconfig_path + " " + args.xcode_options
-    print(cmd)
     os.system(cmd)
+    print('Generating SIL in build directory: ' + args.project_path)
+    print(cmd)
+
+    # Removing the arm7 directory
+    dir = os.path.dirname(args.xconfig_path) + "/"
+    cmd = 'find ' + dir + ' -type d -name "armv7" -exec rm -rf {} \;'
+    print('\nRemoving armv7 folder')
+    os.system(cmd)
+    print(cmd)
+
+    # Moving SIL files to output_path folder
+    dir = os.path.dirname(args.xconfig_path) + "/."
+    cmd = 'find ' + dir + ' -type f -name "*.sil" -exec cp -n {} ' + args.output_path + ' \;'
+    os.system(cmd)
+    print('\nCopying SIL files from build directory to: ' + args.output_path)
+    print(cmd)
 
 if __name__ == "__main__":
     try:
