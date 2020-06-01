@@ -1,8 +1,7 @@
 ### Running the shim
 
-./xcodebuild-shim -project-path /path_to_swan_spds/benchmark/mobile-ios-vipergame/Memory.xcodeproj  -scheme Memory -xcode-options='CODE_SIGN_IDENTITY="" CODE_SIGNING_REQUIRED=NO CODE_SIGNING_ALLOWED="NO"'
+./xcodebuild-shim -xconfig-path /path_to_config/Config.xcconfig -project-path /path_to_config/Memory.xcodeproj -xcode-options='CODE_SIGN_IDENTITY="" CODE_SIGNING_REQUIRED=NO CODE_SIGNING_ALLOWED="NO"'
 
+### Running without shim
 
-### Running through config
-
-xcodebuild -xcconfig Config.xcconfig 
+xcodebuild -xcconfig /path_to_config/Config.xcconfig -project /path_to_config/Memory.xcodeproj

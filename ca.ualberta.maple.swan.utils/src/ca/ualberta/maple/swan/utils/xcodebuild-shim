@@ -21,54 +21,18 @@ import sys
 import subprocess
 from subprocess import Popen, PIPE, STDOUT
 
-def run_xcodebuild(cmd):
-    p = Popen(cmd, stdin=PIPE, stdout=PIPE, stderr=PIPE, shell=True)
-    stdout, stderr = p.communicate()
-    p_status = p.wait()
-    if (p_status != 0):
-        sys.stderr.write(stderr)
-        exit(1)
-    #with open("/tmp/SWAN_arguments.txt", 'r') as file:
-
-        args = sys.argv[1:].replace('\n', '').replace('\r', '')
-        print(args)
-        run_swiftc(args)
-
-def run_swiftc(args):
-    cmd = "swiftc " + args + " -driver-print-jobs"
-    p = Popen(cmd, stdin=PIPE, stdout=PIPE, stderr=PIPE, shell=True)
-    stdout, stderr = p.communicate()
-    p_status = p.wait()
-    if (p_status != 0):
-        sys.stderr.write(stderr)
-        exit(1)
-    jobs = stdout.replace('\n', ' ').replace('\r', '')
-    jobs = jobs.split(" ") # change this for path spaces
-    jobs = jobs[3:] # cut off '...swift -frontend -c'
-    try:
-        idx = jobs.index("-supplementary-output-file-map")
-        jobs = jobs[0:idx] + jobs[idx+2:]
-    except:
-        pass # argument doesn't exist, which is fine
-    jobs.append("-emit-silgen")
-    jobs = " ".join(jobs)
-
-    # print results (IMPORTANT)
-    sys.stdout.write(jobs)
-
 def main():
 
     parser = argparse.ArgumentParser()
     parser.add_argument("-project-path", required=True)
-    parser.add_argument("-scheme", required=True)
     parser.add_argument("-xcode-options", required=True)
+    parser.add_argument("-xconfig-path", required=True)
     args = parser.parse_args()
 
-    cmd = "xcodebuild build OTHER_SWIFT_FLAGS=\"$(inherited) -Xfrontend -gsil -Xllvm -sil-print-debuginfo\" -project " + args.project_path + \
-    " -scheme " + args.scheme + " " + args.xcode_options
+    cmd = "xcodebuild -project " + args.project_path + \
+    " -xcconfig " + args.xconfig_path + " " + args.xcode_options
     print(cmd)
     os.system(cmd)
-    #run_xcodebuild(cmd);
 
 if __name__ == "__main__":
     try:
