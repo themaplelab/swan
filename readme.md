@@ -6,14 +6,6 @@ A static program analysis framework for analyzing Swift (incl. iOS/macOS) applic
 
 ![](https://github.com/themaplelab/swan/blob/master/docs/readmeContent/exampleUse.gif)
 
-## Current work
-- Extending Swift language support
-- Extending taint analysis capabilities
-
-## Future plans
-- Lifecycle awareness for iOS and macOS applications
-- Sources, sinks, and sanitizers identified for iOS and macOS libraries
-
 ## Getting Started
 
 First, you should consider that the final build **may be as large as ~70GB**. It is recommended for your system to have **at least 16GB of RAM**, as compiling Swift is known to not compile for some systems with less.
@@ -24,10 +16,12 @@ Supported Swift (incl. dependencies) and WALA releases on SWAN's `master` branch
 | OS | Swift Release Tag | WALA Release Tag |
 | -----------|:-------:|:-----:|
 | macOS Catalina | NOT SUPPORTED | |
-| macOS Mojave | [swift-DEVELOPMENT-SNAPSHOT-2019-09-15-a](https://github.com/apple/swift/releases/tag/swift-DEVELOPMENT-SNAPSHOT-2019-09-15-a) | [v1.5.4](https://github.com/wala/WALA/releases/tag/v1.5.4) |
+| macOS Mojave | \**[swift-DEVELOPMENT-SNAPSHOT-2019-09-15-a](https://github.com/apple/swift/releases/tag/swift-DEVELOPMENT-SNAPSHOT-2019-09-15-a) | [v1.5.4](https://github.com/wala/WALA/releases/tag/v1.5.4) |
 | Linux (Ubuntu 18.04) | [swift-DEVELOPMENT-SNAPSHOT-2019-09-15-a](https://github.com/apple/swift/releases/tag/swift-DEVELOPMENT-SNAPSHOT-2019-09-15-a) | [v1.5.4](https://github.com/wala/WALA/releases/tag/v1.5.4) |
 
-Note: SWAN currently uses Xcode 11.2 Beta 2. It can be obtained through [here](https://xcodereleases.com).
+Note: SWAN currently uses Xcode 11.2 Beta 2.
+
+\** **We cannot gaurantee you can build the Swift tag anymore. We can no longer build that tag on macOS 10.14.6.** 
 
 ### Building SWAN
 
