@@ -16,12 +16,12 @@ Supported Swift (incl. dependencies) and WALA releases on SWAN's `master` branch
 | OS | Swift Release Tag | WALA Release Tag |
 | -----------|:-------:|:-----:|
 | macOS Catalina | NOT SUPPORTED | |
-| macOS Mojave | \**[swift-DEVELOPMENT-SNAPSHOT-2019-09-15-a](https://github.com/apple/swift/releases/tag/swift-DEVELOPMENT-SNAPSHOT-2019-09-15-a) | [v1.5.4](https://github.com/wala/WALA/releases/tag/v1.5.4) |
-| Linux (Ubuntu 18.04) | [swift-DEVELOPMENT-SNAPSHOT-2019-09-15-a](https://github.com/apple/swift/releases/tag/swift-DEVELOPMENT-SNAPSHOT-2019-09-15-a) | [v1.5.4](https://github.com/wala/WALA/releases/tag/v1.5.4) |
+| macOS Mojave | \*[swift-DEVELOPMENT-SNAPSHOT-2019-09-15-a](https://github.com/apple/swift/releases/tag/swift-DEVELOPMENT-SNAPSHOT-2019-09-15-a) | [v1.5.3](https://github.com/wala/WALA/releases/tag/v1.5.3) |
+| Linux (Ubuntu 18.04) | [swift-DEVELOPMENT-SNAPSHOT-2019-09-15-a](https://github.com/apple/swift/releases/tag/swift-DEVELOPMENT-SNAPSHOT-2019-09-15-a) | [v1.5.3](https://github.com/wala/WALA/releases/tag/v1.5.3) |
 
 Note: SWAN currently uses Xcode 11.2 Beta 2.
 
-\** **We cannot gaurantee you can build the Swift tag anymore. We can no longer build that tag on macOS 10.14.6.** 
+\* **We cannot gaurantee you can build the Swift tag anymore. We can no longer build that tag on macOS 10.14.6.** 
 
 ### Building SWAN
 
