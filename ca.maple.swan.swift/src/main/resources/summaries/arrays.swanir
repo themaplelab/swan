@@ -1,0 +1,36 @@
+func $Array<String> `Swift.Array.init() -> Swift.Array<A>`(v0 : $@thin Array<String>.Type) {
+    bb0(v0 : $@thin Array<String>.Type) :
+        v1 := new $Array<String>
+        return v1
+}
+
+func $() `Swift.Array.append(__owned A) -> ()`(v0 : $*String, v1 : $*Array<String>) {
+    bb0(v0 : $*String, v1 : $*Array<String>) :
+        v2 := v0.value
+        v3 := v1.value
+        v3[*] := v2
+        return
+}
+
+func $() `Swift.Array.subscript.getter : (Swift.Int) -> A`(v0 : $*String, v1 : $Int, v2 : $Array<String>) {
+    bb0(v0 : $*String, v1 : $Int, v2 : $Array<String>) :
+        v3 := v2[v1]
+        v0.value := v3
+        return
+}
+
+func $() `Swift.Array.removeAll(keepingCapacity: Swift.Bool) -> ()`(v0 : $Bool, v1 : $*Array<String>) {
+    bb0(v0 : $Bool, v1 : $*Array<String>):
+        v2 := func_ref Swift.Array.init() -> Swift.Array<A>
+        v3 := v2()
+        v1.value := v3
+        return
+}
+
+func $Bool `default argument 0 of Swift.Array.removeAll(keepingCapacity: Swift.Bool) -> ()`() {
+    bb0:
+        v0 := new $Bool
+        v1 := #0
+        v0._value := v1
+        return v0
+}

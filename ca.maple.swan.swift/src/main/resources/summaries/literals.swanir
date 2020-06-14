@@ -1,0 +1,4 @@
+func $Int `Swift.Int.init(_builtinIntegerLiteral: Builtin.IntLiteral) -> Swift.Int`(v0 : $Builtin.IntLiteral, v1 : $@thin Int.Type) {
+    bb0(v0 : $Builtin.IntLiteral, v1 : $@thin Int.Type) :
+        return v0
+}

@@ -86,20 +86,23 @@ public class TaintAnalysisDriver {
             HashSet<String> sinks,
             HashSet<String> sanitizers) {
 
-        System.out.println("SDGUtil.findSSSPaths running with\n");
+        if (!sources.isEmpty()) {
+            System.out.println("Sources: ");
+            sources.forEach(System.out::print);
+            System.out.println("\n");
+        }
 
-        System.out.println("Sources: ");
-        sources.forEach(System.out::print);
-        System.out.println("\n");
+        if (!sinks.isEmpty()) {
+            System.out.println("Sinks: ");
+            sinks.forEach(System.out::print);
+            System.out.println("\n");
+        }
 
-        System.out.println("Sinks: ");
-        sinks.forEach(System.out::print);
-        System.out.println("\n");
-
-        System.out.println("Sanitizers: ");
-        sanitizers.forEach(System.out::print);
-        System.out.println("\n");
-
+        if (!sanitizers.isEmpty()) {
+            System.out.println("Sanitizers: ");
+            sanitizers.forEach(System.out::print);
+            System.out.println("\n");
+        }
 
 
         try {

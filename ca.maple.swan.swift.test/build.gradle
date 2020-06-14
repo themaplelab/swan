@@ -14,7 +14,19 @@ repositories {
 sourceSets.main.java.srcDirs = ['src/']
 
 task(runTests, type: JavaExec) {
-    main = "ca.maple.swan.swift.test.Tester"
+    main = "ca.maple.swan.swift.test.AnnotationTester"
+    classpath = sourceSets.main.runtimeClasspath
+    standardInput = System.in
+}
+
+task(runSingleTest, type: JavaExec) {
+    main = "ca.maple.swan.swift.test.AnnotationTester"
+    classpath = sourceSets.main.runtimeClasspath
+    standardInput = System.in
+}
+
+task(runSingleGenericTest, type: JavaExec) {
+    main = "ca.maple.swan.swift.test.GenericTester"
     classpath = sourceSets.main.runtimeClasspath
     standardInput = System.in
 }
@@ -29,4 +41,18 @@ dependencies {
     compile fileTree(dir: "${WALA_DIR}/com.ibm.wala.util/build/libs", include: '*.jar')
     compile ('io.socket:socket.io-client:1.0.0')
     compile group: "net.sourceforge.argparse4j", name: "argparse4j", version: "0.8.1"
+}
+
+apply plugin: 'application'
+mainClassName = "ca.maple.swan.swift.test.GenericTester"
+
+// TODO: Add build for all 3 tasks (runTests, runSingleTest, runSingleGenericTest).
+// For now just compile GenericTester
+
+jar {
+    manifest {
+        attributes (
+                'Main-Class': 'ca.maple.swan.swift.test.GenericTester'
+        )
+    }
 }

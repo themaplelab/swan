@@ -14,7 +14,7 @@
 package ca.maple.swan.swift.server;
 
 import ca.maple.swan.swift.client.SwiftAnalysisEngine;
-import ca.maple.swan.swift.translator.RawData;
+import ca.maple.swan.swift.translator.sil.RawData;
 import ca.maple.swan.swift.translator.wala.SwiftToCAstTranslator;
 import ca.maple.swan.swift.translator.wala.SwiftToCAstTranslatorFactory;
 import com.ibm.wala.cast.ir.ssa.AstIRFactory;
@@ -43,7 +43,7 @@ import java.util.Set;
 
 public class SwiftAnalysisEngineServerDriver {
 
-    static final boolean PRINT = true;
+    static final boolean PRINT = false;
 
     private static final SSAOptions options = new SSAOptions();
     private static final IRFactory irFactory = AstIRFactory.makeDefaultFactory();
@@ -66,10 +66,19 @@ public class SwiftAnalysisEngineServerDriver {
 
     }
 
-    protected static JavaScriptAnalysisEngine makeEngine(JavaScriptAnalysisEngine engine, String... name) throws IllegalArgumentException, IOException {
+    protected static JavaScriptAnalysisEngine makeEngine(JavaScriptAnalysisEngine engine, String... name) throws IllegalArgumentException {
         Set<Module> modules = HashSetFactory.make();
         for(String n : name) {
-            modules.add(getScript(n));
+            try {
+                modules.add(getScript(n));
+            } catch (IOException e) {
+                // Ignore file (probably empty)
+                System.out.println(e.getMessage() + "\nIs the file empty?\n");
+            }
+
+        }
+        if (modules.size() == 0) {
+            return null;
         }
         engine.setModuleFiles(modules);
         return engine;
@@ -103,6 +112,12 @@ public class SwiftAnalysisEngineServerDriver {
         String module = data.setup();
 
         Engine = makeEngine(module);
+
+        if (Engine == null) {
+            System.out.println("Nothing to do, exiting...");
+            System.exit(0);
+        }
+
         CallGraphBuilder builder = Engine.defaultCallGraphBuilder();
         CallGraph CG = builder.makeCallGraph(Engine.getOptions(), new NullProgressMonitor());
 

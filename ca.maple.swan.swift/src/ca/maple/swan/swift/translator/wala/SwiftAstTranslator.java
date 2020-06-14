@@ -14,9 +14,9 @@
 package ca.maple.swan.swift.translator.wala;
 
 import ca.maple.swan.swift.loader.SwiftLoader;
-import ca.maple.swan.swift.translator.operators.SILIRBinaryOp;
-import ca.maple.swan.swift.translator.operators.SILIRCAstOperator;
-import ca.maple.swan.swift.translator.operators.SILIRUnaryOp;
+import ca.maple.swan.swift.translator.operators.SWANIRBinaryOp;
+import ca.maple.swan.swift.translator.operators.SWANIRCAstOperator;
+import ca.maple.swan.swift.translator.operators.SWANIRUnaryOp;
 import com.ibm.wala.cast.ir.ssa.CAstBinaryOp;
 import com.ibm.wala.cast.ir.translator.AstTranslator;
 import com.ibm.wala.cast.js.ssa.JSInstructionFactory;
@@ -389,10 +389,10 @@ public class SwiftAstTranslator extends AstTranslator {
             return com.ibm.wala.shrikeBT.IBinaryOpInstruction.Operator.AND;
         } else if (op == CAstOperator.OP_REL_OR) {
             return com.ibm.wala.shrikeBT.IBinaryOpInstruction.Operator.OR;
-        } else if (op == SILIRCAstOperator.OP_UNARY_ARBITRARY) {
-            return SILIRUnaryOp.ARB;
-        } else if (op == SILIRCAstOperator.OP_BINARY_ARBITRARY) {
-            return SILIRBinaryOp.ARB;
+        } else if (op == SWANIRCAstOperator.OP_UNARY_ARBITRARY) {
+            return SWANIRUnaryOp.ARB;
+        } else if (op == SWANIRCAstOperator.OP_BINARY_ARBITRARY) {
+            return SWANIRBinaryOp.ARB;
         } else {
             Assertions.UNREACHABLE("cannot translate " + CAstPrinter.print(op));
             return null;

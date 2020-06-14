@@ -15,8 +15,8 @@ package ca.maple.swan.swift.translator.spds;
 
 // WIP
 
-import ca.maple.swan.swift.translator.RawData;
-import ca.maple.swan.swift.translator.silir.context.ProgramContext;
+import ca.maple.swan.swift.translator.sil.RawData;
+import ca.maple.swan.swift.translator.swanir.context.ProgramContext;
 
 public class SwiftToSPDSTranslator {
 
@@ -29,7 +29,7 @@ public class SwiftToSPDSTranslator {
     }
 
     public ProgramContext translateToProgramContext() {
-        ProgramContext pc = new SPDSRawToSILIRTranslator().translate(this.rawData.getRawData().getChild(1));
+        ProgramContext pc = new SPDSRawToSWANIRTranslator().translate(this.rawData.getRawData().getChild(1));
         if (DEBUG) {
             pc.pruneIR();
             pc.generateLineNumbers();
@@ -38,9 +38,9 @@ public class SwiftToSPDSTranslator {
         return pc;
     }
 
-    public void translateSILIRtoSPDS() {
+    public void translateSWANIRtoSPDS() {
         // TODO
-        SPDSRawToSILIRTranslator translator =  new SPDSRawToSILIRTranslator();
+        SPDSRawToSWANIRTranslator translator =  new SPDSRawToSWANIRTranslator();
         // translator.translate() ?
     }
 

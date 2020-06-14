@@ -14,7 +14,7 @@
 package ca.maple.swan.swift.server;
 
 import ca.maple.swan.swift.taint.TaintAnalysisDriver;
-import ca.maple.swan.swift.translator.RawData;
+import ca.maple.swan.swift.translator.sil.RawData;
 import ca.maple.swan.swift.translator.Settings;
 import ca.maple.swan.swift.translator.Settings.Mode;
 import ca.maple.swan.swift.translator.wala.SwiftToCAstTranslator;
@@ -76,7 +76,7 @@ public class Server {
                                     socket.emit("translated");
                                     System.out.println("Done generating SDG");
                                 } else if (Settings.mode == Mode.SPDS) {
-                                    System.out.println("SPDS Mode, only translating to SILIR for now");
+                                    System.out.println("SPDS Mode, only translating to SWANIR for now");
                                     RawData data = new RawData(JSONArrayToJavaStringArray(jsonArgs), new CAstImpl());
                                     data.setup();
                                     SwiftToSPDSTranslator translator = new SwiftToSPDSTranslator(data);

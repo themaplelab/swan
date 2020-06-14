@@ -1,0 +1,14 @@
+func $() `Swift._diagnoseUnexpectedNilOptional(_filenameStart: Builtin.RawPointer, _filenameLength: Builtin.Word, _filenameIsASCII: Builtin.Int1, _line: Builtin.Word, _isImplicitUnwrap: Builtin.Int1) -> ()`(v0 : $Builtin.RawPointer, v1 : $Builtin.Word, v2 : $Builtin.Int1, v3 : $Builtin.Word, v4 : $Builtin.Int1) {
+    bb0(v0 : $Builtin.RawPointer, v1 : $Builtin.Word, v2 : $Builtin.Int1, v3 : $Builtin.Word, v4 : $Builtin.Int1) :
+        return
+}
+
+func $(Array<Any>, Builtin.RawPointer) `Swift._allocateUninitializedArray<A>(Builtin.Word) -> (Swift.Array<A>, Builtin.RawPointer)`(v0 : $Builtin.Word) {
+    bb0(v0 : $Builtin.Word) :
+        v1 := new array tuple
+        v2 := new $Array<Any>
+        v3 := new $Builtin.RawPointer
+        v1.0 := v2
+        v1.1 := v3
+        return v1
+}
