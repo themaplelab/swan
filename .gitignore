@@ -2,7 +2,8 @@
 # SWAN Build specific
 #==============================================================================#
 
-!lib/libswiftWala.dylib
+!lib/libswiftWala.dylib.tar
+lib/libswiftWala.dylib
 swan-release/
 swan-release.tar
 

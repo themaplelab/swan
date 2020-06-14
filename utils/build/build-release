@@ -17,6 +17,7 @@
 import os
 import os.path
 from os import path
+import argparse
 import subprocess
 import sys
 if __name__ == '__main__' and __package__ is None:
@@ -26,6 +27,10 @@ from shared.constants import *
 
 def main():
     check_dir()
+
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--make-ready", action="store_true")
+    args = parser.parse_args()
 
     print("Compiling SWAN for release.")
 
@@ -68,9 +73,12 @@ def main():
     system("rm -rf ./swan-release/vscode/node_modules")
     system("rm -rf ./swan-release/vscode/out")
 
-    print ("\n*** NOTE *** If you want to use the release VSCode distribution you need to run `npm install` in ./swan-release/vscode/\n")
-
     system("tar -czf swan-release.tar swan-release/")
+
+    if args.make_ready:
+        system("npm install --prefix ./swan-release/vscode")
+    else:
+        print("\n*** NOTE *** If you want to use the release VSCode distribution you need to run `npm install` in ./swan-release/vscode/\n")
 
 
 if __name__ == "__main__":

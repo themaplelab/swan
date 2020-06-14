@@ -28,6 +28,7 @@ if __name__ == '__main__' and __package__ is None:
 from shared.constants import *
 
 def build_wala(clean):
+    print("\nBuilding WALA...\n")
     chdir(WALA_DIR)
     if clean:
         system("./gradlew clean")
@@ -41,7 +42,7 @@ def main():
     parser.add_argument("--clean", action="store_true")
     args = parser.parse_args()
 
-    build_wala(args.clean_wala)
+    build_wala(args.clean)
 
 if __name__ == "__main__":
     try:

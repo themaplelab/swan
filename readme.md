@@ -6,6 +6,8 @@ A static program analysis framework for analyzing Swift (incl. iOS/macOS) applic
 
 ![](https://github.com/themaplelab/swan/blob/master/docs/readmeContent/exampleUse.gif)
 
+Note: This GIF shows an Xcode project being analyzed. We can no longer analyze Xcode projects due to nuances with building the Swift compiler. See "Important Notes" section for more details.
+
 -----------
 
 ## Using SWAN
@@ -129,10 +131,9 @@ To build a release
 ```
 ./utils/build/build-release
 ```
-This script will create a `swan-release/` directory and a `swan-release.tar` in `swan/` (root).
+This script will create a `swan-release/` directory and a `swan-release.tar` in `swan/` (root). You can also give the script the `--make-ready` argument if you wish to you use the VSCode extension located under `swan-release/vscode/`. This is mostly useful if you are actively testing the release.
 
 The reason the release uses a different VSCode extension branch is because the server instantiation is different (it does not use `gradlew`).
-
 
 ### Running SWAN for Development
 
@@ -160,10 +161,6 @@ Tests all files under the given dir and verifies their annotations are correct. 
 ```
 ./utils/dev/run-tests -sdk <path_to_macosx_sdk> -dir <path_to_swift_file>
 ```
-
-## Contributing
-Please see the [page](https://github.com/themaplelab/swan/wiki/Contributing) on contributing.
-
 --------------------
 
 :construction: **You should expect errors as SWAN is WIP and not fully functional.**
