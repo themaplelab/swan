@@ -159,7 +159,7 @@ Runs SWAN on a given file and verifies its annotations are correct.
 
 Tests all files under the given dir and verifies their annotations are correct. Test files can be found under `ca.maple.swan.swift.test/tests/`.
 ```
-./utils/dev/run-tests -sdk <path_to_macosx_sdk> -dir <path_to_swift_file>
+./utils/dev/run-tests -sdk <path_to_macosx_sdk> -dir <path_to_swift_files>
 ```
 --------------------
 
