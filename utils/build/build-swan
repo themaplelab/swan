@@ -21,7 +21,11 @@ import os.path
 from os import path
 import subprocess
 import sys
-from constants import *
+
+if __name__ == '__main__' and __package__ is None:
+    from os import sys, path
+    sys.path.append(path.dirname(path.dirname(path.abspath(__file__))))
+from shared.constants import *
 
 def clean():
     system("./gradlew clean")

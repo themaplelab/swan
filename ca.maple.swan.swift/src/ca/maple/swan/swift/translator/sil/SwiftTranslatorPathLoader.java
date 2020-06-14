@@ -21,8 +21,7 @@ package ca.maple.swan.swift.translator.sil;
 public class SwiftTranslatorPathLoader {
 
     public static void load() {
-        String sharedDir = "/ca.maple.swan.translator/build/libs/swiftWala/shared/";
-        String libName = "libswiftWala";
+        String libName = "/lib/libswiftWala";
 
         String SWANDir = "";
         try {
@@ -36,16 +35,11 @@ public class SwiftTranslatorPathLoader {
             System.exit(1);
         }
 
-        // Try to load both dylib and so (instead of checking OS).
         try {
-            System.load(SWANDir + sharedDir + libName + ".dylib");
+            System.load(SWANDir + libName + ".dylib");
         } catch (UnsatisfiedLinkError dylibException) {
-            try {
-                System.load(SWANDir + sharedDir + libName + ".so");
-            } catch (UnsatisfiedLinkError soException) {
-                System.err.println("Could not find shared library!");
-                soException.printStackTrace();
-            }
+            System.err.println("Could not find shared library!");
+            dylibException.printStackTrace();
         }
     }
 }

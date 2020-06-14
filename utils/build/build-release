@@ -1,0 +1,80 @@
+#!/usr/bin/env python
+
+"""
+//===---------------------------------------------------------------------===//
+//
+// This source file is part of the SWAN open source project
+//
+// Copyright (c) 2019 Maple @ University of Alberta
+// All rights reserved. This program and the accompanying materials (unless
+// otherwise specified by a license inside of the accompanying material)
+// are made available under the terms of the Eclipse Public License v2.0
+// which accompanies this distribution, and is available at
+// http://www.eclipse.org/legal/epl-v20.html
+//
+//===---------------------------------------------------------------------===//
+"""
+import os
+import os.path
+from os import path
+import subprocess
+import sys
+if __name__ == '__main__' and __package__ is None:
+    from os import sys, path
+    sys.path.append(path.dirname(path.dirname(path.abspath(__file__))))
+from shared.constants import *
+
+def main():
+    check_dir()
+
+    print("Compiling SWAN for release.")
+
+    system("./utils/build/build-swan --clean")
+
+    system("rm -rf swan-release")
+    system("rm -rf /tmp/swan-release")
+    system("rm swan-release.tar")
+
+    system("mkdir swan-release")
+
+    system("rm -rf /tmp/swan-release")
+    system("mkdir /tmp/swan-release")
+    system("mv ./ca.maple.swan.swift.server/build/distributions/ca.maple.swan.swift.server.tar /tmp/swan-release")
+    system("tar -C /tmp/swan-release -xf /tmp/swan-release/ca.maple.swan.swift.server.tar")
+    system("mkdir ./swan-release/bin")
+    system("mv /tmp/swan-release/ca.maple.swan.swift.server/lib ./swan-release/lib")
+    system("mv /tmp/swan-release/ca.maple.swan.swift.server/bin/ca.maple.swan.swift.server ./swan-release/bin")
+    system("mv ./swan-release/bin/ca.maple.swan.swift.server ./swan-release/bin/swan-server")
+
+    system("rm -rf /tmp/swan-release/*")
+    system("mv ./ca.maple.swan.swift.test/build/distributions/ca.maple.swan.swift.test.tar /tmp/swan-release")
+    system("tar -C /tmp/swan-release -xf /tmp/swan-release/ca.maple.swan.swift.test.tar")
+    system("mv /tmp/swan-release/ca.maple.swan.swift.test/bin/ca.maple.swan.swift.test ./swan-release/bin/")
+    system("mv ./swan-release/bin/ca.maple.swan.swift.test ./swan-release/bin/swan-single")
+
+    system("cp -n /tmp/swan-release/ca.maple.swan.swift.test/lib/* ./swan-release/lib/")
+
+    system("rm -rf /tmp/swan-release")
+
+    system("cp ./lib/libswiftWala.dylib ./swan-release/lib/")
+
+    system("mkdir ./swan-release/test-files")
+    system("cp -r ./ca.maple.swan.swift.test/tests/taint-single-source/* ./swan-release/test-files")
+
+    system("mkdir ./swan-release/cli")
+    system("cp ./utils/release/run-swan-single ./swan-release/cli/")
+
+    system("cp -r " + VSCODE_DIR + "/swan ./swan-release/vscode/")
+    system("rm -rf ./swan-release/vscode/node_modules")
+    system("rm -rf ./swan-release/vscode/out")
+
+    print ("\n*** NOTE *** If you want to use the release VSCode distribution you need to run `npm install` in ./swan-release/vscode/\n")
+
+    system("tar -czf swan-release.tar swan-release/")
+
+
+if __name__ == "__main__":
+    try:
+        sys.exit(main())
+    except KeyboardInterrupt:
+        sys.exit(1)

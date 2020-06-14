@@ -1,6 +1,8 @@
 rootProject.name = 'swan'
 
-include 'ca.maple.swan.translator'
+// Ignore translator since we can not longer compile it.
+// include 'ca.maple.swan.translator'
+
 include 'ca.maple.swan.swift'
 include 'ca.maple.swan.swift.test'
 include 'ca.maple.swan.swift.server'

@@ -48,7 +48,7 @@ TAGS_FILE = ROOT + "/tags"
 # -----------------------------------------------------------------------------
 
 def check_dir():
-    if not os.path.exists(ROOT + "/utils/build-swan"):
+    if not os.path.exists(ROOT + "/utils/build/build-swan"):
         spaced_print("ERROR: Script must be run from SWAN root directory!")
         sys.exit(1)
 

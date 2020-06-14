@@ -15,6 +15,8 @@
 //===---------------------------------------------------------------------===//
 """
 
+# NOTE: Standalone script (does not rely on constants.py)
+
 import argparse
 import os
 import subprocess
@@ -24,7 +26,6 @@ import os.path
 from os import path
 import sys
 import re
-from constants import *
 
 TEST_ENGINE = "WALA"
 SWIFTC_ARGS = "-emit-silgen -Onone"
@@ -62,10 +63,7 @@ def run_test(filename):
     print(cmd)
     os.system(cmd)
 
-
 def main():
-    check_dir()
-
     parser = argparse.ArgumentParser()
     parser.add_argument("-sdk", required=True)
     parser.add_argument("-path", required=True)
@@ -75,7 +73,7 @@ def main():
     SWIFTC_ARGS = SWIFTC_ARGS + " -sdk " + args.sdk
     SWIFTC_ARGS = SWIFTC_ARGS + " " + os.path.abspath(args.path)
     if not os.path.exists(args.path) or not args.path.endswith(".swift"):
-        print("Invalid path given")
+        print("Invalid path given. Please provide a full path.")
         sys.exit(1)
     run_test(args.path)
 

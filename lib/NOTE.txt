@@ -1,0 +1,2 @@
+This file exists here because it allows us to use the same path in SwiftTranslatorPathLoader.java for the dylib, for
+both the release and dev versions. That is, running SWAN using gradlew and running SWAN using the release executables.

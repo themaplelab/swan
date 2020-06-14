@@ -21,7 +21,11 @@ import os.path
 from os import path
 import subprocess
 import sys
-from constants import *
+
+if __name__ == '__main__' and __package__ is None:
+    from os import sys, path
+    sys.path.append(path.dirname(path.dirname(path.abspath(__file__))))
+from shared.constants import *
 
 def same_tag(tag, branch=False):
     cmd = "git rev-parse --abbrev-ref HEAD" if branch else "git describe --abbrev=0"
@@ -31,23 +35,6 @@ def same_tag(tag, branch=False):
     if tag != cur:
         print("New tag detected. New: " + tag + ", Current: " + cur)
     return tag == cur
-
-def update_swift(tag):
-    if not path.exists(SWIFT_DIR):
-        chdir(PACKAGES_DIR)
-        system("git clone --branch " + tag + " " + SWIFT_REPO_URL)
-        # First clone without tag since tag may not exist for each subrepo.
-        system("/." + SWIFT_UTILS_DIR + "update-checkout --clone")
-        system("/." + SWIFT_UTILS_DIR + "update-checkout --tag " + tag)
-        chdir(ROOT)
-        return
-    chdir(SWIFT_DIR)
-    if not same_tag(tag):
-        system("git reset --hard HEAD")
-        system("git fetch")
-        system("git checkout -f " + tag)
-        system("/." + SWIFT_UTILS_DIR + "update-checkout --tag " + tag)
-    chdir(ROOT)
 
 def update_wala(tag):
     if not path.exists(WALA_DIR):
@@ -83,12 +70,22 @@ def update_swan_vscode(tag):
 
 def get_tags():
     tags = {}
+    tags["CHERRY_PICK"] = []
     with open(TAGS_FILE, 'r') as file:
         for line in file:
-            if '=' in line:
+            line = line.strip()
+            if '=' in line and line[:2] != "--":
                 key, value = line.split('=', 1)
-                tags[key.strip()] = value.strip()
-    return tags["SWIFT_TAG"], tags["WALA_TAG"], tags["VSCODE_BRANCH"]
+                key = key.strip()
+                value = value.strip()
+                if key == "CHERRY_PICK":
+                    try:
+                        tags[key].append(value)
+                    except KeyError:
+                        tags[key] = [value]
+                else:
+                    tags[key] = value
+    return tags
 
 def main():
     check_dir()
@@ -103,11 +100,10 @@ def main():
     if not path.exists(PACKAGES_DIR):
         system("mkdir " + PACKAGES_DIR)
 
-    swift_tag, wala_tag, vscode_tag = get_tags()
+    tags = get_tags()
 
-    update_swift(swift_tag)
-    update_wala(wala_tag)
-    update_swan_vscode(vscode_tag)
+    update_wala(tags["WALA_TAG"])
+    update_swan_vscode(tags["VSCODE_BRANCH"])
 
 if __name__ == "__main__":
     try:

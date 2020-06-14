@@ -15,6 +15,8 @@
 //===---------------------------------------------------------------------===//
 """
 
+# NOTE: This is not part of release for now.
+
 import argparse
 import os
 import subprocess
@@ -24,7 +26,11 @@ import os.path
 from os import path
 import sys
 import re
-from constants import *
+
+if __name__ == '__main__' and __package__ is None:
+    from os import sys, path
+    sys.path.append(path.dirname(path.dirname(path.abspath(__file__))))
+from shared.constants import *
 
 TEST_ENGINE = "WALA"
 SWIFTC_ARGS = "-emit-silgen -Onone"
