@@ -31,14 +31,15 @@ def clean():
     system("./gradlew clean")
 
 def setup_swan():
-    if path.exists('gradle.properties'):
-        return
-    spaced_print("Configuring gradle.properties...")
-    with open('gradle.properties', 'w') as file:
-        file.write(\
-            "PACKAGES_DIR=" + PACKAGES_DIR + os.linesep\
-            + "WALA_DIR=" + WALA_DIR + os.linesep\
-            + "SWAN_DIR=" + ROOT + os.linesep)
+    if not path.exists("lib/libswiftWala.dylib"):
+        system("tar -xf lib/libswiftWala.dylib.tar -C lib/")
+    if not path.exists('gradle.properties'):
+        spaced_print("Configuring gradle.properties...")
+        with open('gradle.properties', 'w') as file:
+            file.write(\
+                "PACKAGES_DIR=" + PACKAGES_DIR + os.linesep\
+                + "WALA_DIR=" + WALA_DIR + os.linesep\
+                + "SWAN_DIR=" + ROOT + os.linesep)
 
 def build_swan():
     system("./gradlew assemble")
