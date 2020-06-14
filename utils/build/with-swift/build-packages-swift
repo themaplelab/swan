@@ -1,0 +1,70 @@
+#!/usr/bin/env python
+
+"""
+//===---------------------------------------------------------------------===//
+//
+// This source file is part of the SWAN open source project
+//
+// Copyright (c) 2019 Maple @ University of Alberta
+// All rights reserved. This program and the accompanying materials (unless
+// otherwise specified by a license inside of the accompanying material)
+// are made available under the terms of the Eclipse Public License v2.0
+// which accompanies this distribution, and is available at
+// http://www.eclipse.org/legal/epl-v20.html
+//
+//===---------------------------------------------------------------------===//
+"""
+
+import argparse
+import os
+import os.path
+from os import path
+import subprocess
+import sys
+
+if __name__ == '__main__' and __package__ is None:
+    from os import sys, path
+    sys.path.append(path.dirname(path.dirname(path.abspath(__file__))))
+from shared.constants import *
+
+def clean_swift():
+    system("rm -rf " + ROOT_BUILD)
+
+def build_swift():
+    chdir(SWIFT_DIR)
+    spaced_print("Building Swift, this will take a while...")
+    system("./utils/build-script")
+    chdir(ROOT)
+
+def build_wala(clean):
+    chdir(WALA_DIR)
+    if clean:
+        system("./gradlew clean")
+    system("./gradlew assemble")
+    chdir(ROOT)
+
+def main():
+    check_dir()
+
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--clean-swift", action="store_true")
+    parser.add_argument("--clean-wala", action="store_true")
+    parser.add_argument("--build", choices=["all", "wala-only", "swift-only"], default="all")
+    args = parser.parse_args()
+
+    if args.clean_swift:
+        clean_swift()
+
+    if args.build == "all":
+        build_swift()
+        build_wala(args.clean_wala)
+    elif args.build == "wala-only":
+        build_wala(args.clean_wala)
+    elif args.build == "swift-only":
+        build_swift()
+
+if __name__ == "__main__":
+    try:
+        sys.exit(main())
+    except KeyboardInterrupt:
+        sys.exit(1)

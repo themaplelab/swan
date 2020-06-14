@@ -1,0 +1,84 @@
+#!/usr/bin/env python
+
+"""
+//===---------------------------------------------------------------------===//
+//
+// This source file is part of the SWAN open source project
+//
+// Copyright (c) 2019 Maple @ University of Alberta
+// All rights reserved. This program and the accompanying materials (unless
+// otherwise specified by a license inside of the accompanying material)
+// are made available under the terms of the Eclipse Public License v2.0
+// which accompanies this distribution, and is available at
+// http://www.eclipse.org/legal/epl-v20.html
+//
+//===---------------------------------------------------------------------===//
+"""
+
+# NOTE: Standalone script (does not rely on constants.py)
+
+import argparse
+import os
+import subprocess
+from subprocess import Popen, PIPE, STDOUT
+
+import os.path
+from os import path
+import sys
+import re
+
+TEST_ENGINE = "WALA"
+SWIFTC_ARGS = "-emit-silgen -Onone"
+
+def parse_file_SSS(file_string):
+    sss = {}
+    sss["sources"] = []
+    sss["sinks"] = []
+    sss["sanitizers"] = []
+    found = re.findall(r"\/\/SWAN:sources:\s*(.*)\s", file_string)
+    if found:
+        sss["sources"].append(found[0])
+    found = re.findall(r"\/\/SWAN:sinks:\s*(.*)\s", file_string)
+    if found:
+        sss["sinks"].append(found[0])
+    found = re.findall(r"\/\/SWAN:sanitizers:\s*(.*)\s", file_string)
+    if found:
+        sss["sanitizers"].append(found[0])
+    return sss
+
+def run_test(filename):
+    with open(filename, 'r') as file:
+        sss = parse_file_SSS(file.read())
+
+    args = "-engine \"" + TEST_ENGINE + \
+        "\" -swiftc-args=\"" + SWIFTC_ARGS + "\"" + \
+        " -file " + filename + \
+        " -sources " + " ".join(sss["sources"]) + \
+        " -sinks " + " ".join(sss["sinks"]) + \
+        " -sanitizers " + " ".join(sss["sanitizers"])
+
+    cmd = "./gradlew runSingleGenericTest --args=\'" + args + "\'"
+
+    print("\nRunning test for " + filename + "...")
+    print(cmd)
+    os.system(cmd)
+
+def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("-sdk", required=True)
+    parser.add_argument("-path", required=True)
+    args = parser.parse_args()
+
+    global SWIFTC_ARGS
+    SWIFTC_ARGS = SWIFTC_ARGS + " -sdk " + args.sdk
+    SWIFTC_ARGS = SWIFTC_ARGS + " " + os.path.abspath(args.path)
+    if not os.path.exists(args.path) or not args.path.endswith(".swift"):
+        print("Invalid path given. Please provide a full path.")
+        sys.exit(1)
+    run_test(args.path)
+
+if __name__ == "__main__":
+    try:
+        sys.exit(main())
+    except KeyboardInterrupt:
+        sys.exit(1)

@@ -30,3 +30,11 @@ run {
     enableAssertions = true
     standardInput = System.in
 }
+
+jar {
+    manifest {
+        attributes (
+                'Main-Class': 'ca.maple.swan.swift.server.Server'
+        )
+    }
+}

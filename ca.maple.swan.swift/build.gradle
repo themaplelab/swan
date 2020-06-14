@@ -24,7 +24,8 @@ sourceSets {
 }
 
 dependencies {
-    compile fileTree(dir: ":ca.maple.swan.translator")
+    // Ignore translator since we can not longer compile it.
+    // compile fileTree(dir: ":ca.maple.swan.translator")
     compile fileTree(dir: "${WALA_DIR}/com.ibm.wala.core/build/libs", include: '*.jar')
     compile fileTree(dir: "${WALA_DIR}/com.ibm.wala.cast.java/build/libs", include: '*.jar')
     compile fileTree(dir: "${WALA_DIR}/com.ibm.wala.shrike/build/libs", include: '*.jar')

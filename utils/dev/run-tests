@@ -1,0 +1,114 @@
+#!/usr/bin/env python
+
+"""
+//===---------------------------------------------------------------------===//
+//
+// This source file is part of the SWAN open source project
+//
+// Copyright (c) 2019 Maple @ University of Alberta
+// All rights reserved. This program and the accompanying materials (unless
+// otherwise specified by a license inside of the accompanying material)
+// are made available under the terms of the Eclipse Public License v2.0
+// which accompanies this distribution, and is available at
+// http://www.eclipse.org/legal/epl-v20.html
+//
+//===---------------------------------------------------------------------===//
+"""
+
+# NOTE: This is not part of release for now.
+
+import argparse
+import os
+import subprocess
+from subprocess import Popen, PIPE, STDOUT
+
+import os.path
+from os import path
+import sys
+import re
+
+if __name__ == '__main__' and __package__ is None:
+    from os import sys, path
+    sys.path.append(path.dirname(path.dirname(path.abspath(__file__))))
+from shared.constants import *
+
+TEST_ENGINE = "WALA"
+SWIFTC_ARGS = "-emit-silgen -Onone"
+
+def parse_file_SSS(file_string):
+    sss = {}
+    sss["sources"] = []
+    sss["sinks"] = []
+    sss["sanitizers"] = []
+    found = re.findall(r"\/\/SWAN:sources:\s*(.*)\s", file_string)
+    if found:
+        sss["sources"].append(found[0])
+    found = re.findall(r"\/\/SWAN:sinks:\s*(.*)\s", file_string)
+    if found:
+        sss["sinks"].append(found[0])
+    found = re.findall(r"\/\/SWAN:sanitizers:\s*(.*)\s", file_string)
+    if found:
+        sss["sanitizers"].append(found[0])
+    return sss
+
+def run_tests(dir):
+    failed = []
+    for filename in os.listdir(dir):
+        if not filename.endswith(".swift"):
+            continue
+        fullname = dir + "/" + filename
+        with open(fullname, 'r') as file:
+            sss = parse_file_SSS(file.read())
+
+        args = "-engine \"" + TEST_ENGINE + \
+            "\" -swiftc-args=\"" + SWIFTC_ARGS + " " + fullname + "\"" + \
+            " -file " + fullname + \
+            " -sources " + " ".join(sss["sources"]) + \
+            " -sinks " + " ".join(sss["sinks"]) + \
+            " -sanitizers " + " ".join(sss["sanitizers"])
+
+        cmd = "./gradlew runTests --args=\'" + args + "\'"
+
+        print("\nRunning test for " + filename + "...")
+        print(cmd)
+        p = Popen(cmd, stdin=PIPE, stdout=PIPE, stderr=PIPE, shell=True)
+        stdout, stderr = p.communicate()
+        p_status = p.wait()
+        # Ideally we should log all output to a file for debugging purposes.
+        if (p_status != 0):
+            failed.append(tuple((fullname, stderr)))
+            print("Test FAILED!")
+        else:
+            print("Test passed")
+            
+    if failed:
+        print("\nFAILED TESTS:")
+        for fail in failed:
+            print("\n===================================\n")
+            print("Test failed for " + fail[0] + '\n')
+            print(fail[1])
+            print("\n===================================\n")
+    else:
+        print("\nAll tests passed!")    
+
+def main():
+    check_dir()
+
+    parser = argparse.ArgumentParser(description="Tests all .swift files (individually) in the given dir for correct annotations.")
+    parser.add_argument("-sdk", required=True)
+    parser.add_argument("-dir", required=True)
+    args = parser.parse_args()
+
+    global SWIFTC_ARGS
+    SWIFTC_ARGS = SWIFTC_ARGS + " -sdk " + args.sdk
+    dir = os.path.abspath(args.dir)
+    if not os.path.exists(dir) or not os.path.isdir(dir):
+        print("Invalid directory given")
+        sys.exit(1)
+    run_tests(dir)
+
+if __name__ == "__main__":
+    try:
+        sys.exit(main())
+    except KeyboardInterrupt:
+        sys.exit(1)

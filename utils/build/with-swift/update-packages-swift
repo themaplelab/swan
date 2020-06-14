@@ -1,0 +1,143 @@
+#!/usr/bin/env python
+
+"""
+//===---------------------------------------------------------------------===//
+//
+// This source file is part of the SWAN open source project
+//
+// Copyright (c) 2019 Maple @ University of Alberta
+// All rights reserved. This program and the accompanying materials (unless
+// otherwise specified by a license inside of the accompanying material)
+// are made available under the terms of the Eclipse Public License v2.0
+// which accompanies this distribution, and is available at
+// http://www.eclipse.org/legal/epl-v20.html
+//
+//===---------------------------------------------------------------------===//
+"""
+
+import argparse
+import os
+import os.path
+from os import path
+import subprocess
+import sys
+
+if __name__ == '__main__' and __package__ is None:
+    from os import sys, path
+    sys.path.append(path.dirname(path.dirname(path.abspath(__file__))))
+from shared.constants import *
+
+def same_tag(tag, branch=False):
+    cmd = "git rev-parse --abbrev-ref HEAD" if branch else "git describe --abbrev=0"
+    print(cmd)
+    proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True)
+    cur = proc.stdout.read().strip(' \t\n\r')
+    if tag != cur:
+        print("New tag detected. New: " + tag + ", Current: " + cur)
+    return tag == cur
+
+def cherry_pick(picks):
+    for pick in picks:
+        system("git cherry-pick " + pick)
+
+def update_swift(tag, picks):
+    if not path.exists(SWIFT_DIR):
+        chdir(PACKAGES_DIR)
+        system("git clone --branch " + tag + " " + SWIFT_REPO_URL)
+        # First clone without tag since tag may not exist for each subrepo.
+        system("/." + SWIFT_UTILS_DIR + "update-checkout --clone")
+        system("/." + SWIFT_UTILS_DIR + "update-checkout --tag " + tag)
+<<<<<<< Updated upstream
+=======
+        chdir(SWIFT_DIR)
+        cherry_pick(picks)
+>>>>>>> Stashed changes
+        chdir(ROOT)
+        return
+    chdir(SWIFT_DIR)
+    if not same_tag(tag):
+        system("git reset --hard HEAD")
+        system("git fetch")
+        system("git checkout -f " + tag)
+        system("/." + SWIFT_UTILS_DIR + "update-checkout --tag " + tag)
+<<<<<<< Updated upstream
+=======
+        cherry_pick(picks)
+>>>>>>> Stashed changes
+    chdir(ROOT)
+
+def update_wala(tag):
+    if not path.exists(WALA_DIR):
+        chdir(PACKAGES_DIR)
+        system("git clone --branch " + tag + " " + WALA_REPO_URL)
+        chdir(ROOT)
+        return
+    chdir(WALA_DIR)
+    if not same_tag(tag):
+        system("git fetch")
+        system("git checkout -f " + tag)
+    chdir(ROOT)
+
+def update_swan_vscode(tag):
+    if not path.exists(VSCODE_DIR):
+        chdir(PACKAGES_DIR)
+        system("git clone " + SWAN_VSCODE_REPO_URL + " --branch " + tag)
+        chdir(SWAN_VSCODE_DIR)
+        system("npm install")
+        chdir(ROOT)
+        return
+    chdir(SWAN_VSCODE_DIR)
+    if not same_tag(tag, True):
+        system("git fetch")
+        system("git checkout " + tag)
+        system("git pull")
+        system("npm install")
+    else: # Since we actively update the extension
+        system("git fetch")
+        system("git pull")
+        system("npm install")
+    chdir(ROOT)
+
+def get_tags():
+    tags = {}
+    tags["CHERRY_PICK"] = []
+    with open(TAGS_FILE, 'r') as file:
+        for line in file:
+            line = line.strip()
+            if '=' in line and line[:2] != "--":
+                key, value = line.split('=', 1)
+                key = key.strip()
+                value = value.strip()
+                if key == "CHERRY_PICK":
+                    try:
+                        tags[key].append(value)
+                    except KeyError:
+                        tags[key] = [value]
+                else:
+                    tags[key] = value
+    return tags
+
+def main():
+    check_dir()
+
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--clean", help="Deletes packages/ and re-clones.", action="store_true")
+    args = parser.parse_args()
+
+    if args.clean:
+        system("rm -rf " + PACKAGES_DIR)
+
+    if not path.exists(PACKAGES_DIR):
+        system("mkdir " + PACKAGES_DIR)
+
+    tags = get_tags()
+
+    update_swift(tags["SWIFT_TAG"], tags["CHERRY_PICK"])
+    update_wala(tags["WALA_TAG"])
+    update_swan_vscode(tags["VSCODE_BRANCH"])
+
+if __name__ == "__main__":
+    try:
+        sys.exit(main())
+    except KeyboardInterrupt:
+        sys.exit(1)

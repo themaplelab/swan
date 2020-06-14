@@ -1,4 +1,19 @@
+-- Comments start with "--"
+-- SWIFT stuff is still here but the current scripts
+-- do not use them.
+
+-- REQUIRED
+
 SWIFT_TAG=swift-DEVELOPMENT-SNAPSHOT-2019-09-15-a
 WALA_TAG=v1.5.4
 VSCODE_BRANCH=dev
+
+-- (OPTIONAL) commits to cherry pick on top of SWIFT_TAG
+-- Key is "CHERRY_PICK"
+
+-- https://forums.swift.org/t/cant-build-swift-5-1-toolchain/32403/5
+CHERRY_PICK=259afb2a567f7111fc692baa986f77d786999575
+
+-- Fix from https://forums.swift.org/t/re-adding-frontendobserver-methods-for-the-sake-of-external-static-analysis-tools/24672?u=tiganov
+-- _CHERRY_PICK=ca5b94f7d9cfced17c884ff999aed01ed65f4611
 
