@@ -10,6 +10,11 @@
 
 plugins {
     id 'java'
+    id 'scala'
+}
+
+repositories {
+    mavenCentral()
 }
 
 group 'ca.ualberta.maple.swan'
@@ -21,3 +26,14 @@ sourceSets.main.java.srcDirs = ['src/']
 dependencies {
     implementation project(":ca.ualberta.maple.swan.utils")
 }
+
+dependencies {
+    testImplementation('org.junit.jupiter:junit-jupiter-api:5.4.2')
+    testImplementation('org.junit.jupiter:junit-jupiter-params:5.4.2')
+    testRuntime('org.junit.jupiter:junit-jupiter-engine:5.4.2')
+}
+
+test {
+    useJUnitPlatform()
+}
+

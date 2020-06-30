@@ -65,13 +65,13 @@ class Printer {
     print(suf)
   }
 
-  def print[T, S <: Iterable[T]](xs: S, fn: T => Unit): Unit = {
+  def print[T](xs: Array[T], fn: T => Unit): Unit = {
     for (x <- xs) {
       fn(x)
     }
   }
 
-  def print[T, S <: Iterable[T]](xs: S, sep: String, fn: T => Unit): Unit = {
+  def print[T](xs: Array[T], sep: String, fn: T => Unit): Unit = {
     var needSep = false
     for (x <- xs) {
       if (needSep) {
@@ -82,7 +82,7 @@ class Printer {
     }
   }
 
-  def print[T, S <: Iterable[T]](whenEmpty: Boolean = true, pre: String, xs: S, sep: String, suf: String, fn: (T) => Unit): Unit = {
+  def print[T](whenEmpty: Boolean = true, pre: String, xs: Array[T], sep: String, suf: String, fn: (T) => Unit): Unit = {
     if (!(xs.nonEmpty || whenEmpty)) return
     print(pre)
     print(xs, sep, fn)
