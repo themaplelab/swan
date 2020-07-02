@@ -26,7 +26,7 @@ class Printer {
     indentation = new String(" " * count)
   }
 
-  def print[T](when: Boolean = true, i: T): Unit = {
+  def print[T](when: Boolean, i: T): Unit = {
     print(when, i.toString)
   }
 
@@ -34,7 +34,7 @@ class Printer {
     if (!when) return
     val lines = s.split('\n').iterator
     while(lines.hasNext) {
-      val line = lines.next
+      val line = lines.next()
       if (!indented && !line.isEmpty) {
         description += indentation
         indented = true
@@ -82,7 +82,7 @@ class Printer {
     }
   }
 
-  def print[T](whenEmpty: Boolean = true, pre: String, xs: Array[T], sep: String, suf: String, fn: (T) => Unit): Unit = {
+  def print[T](whenEmpty: Boolean, pre: String, xs: Array[T], sep: String, suf: String, fn: (T) => Unit): Unit = {
     if (!(xs.nonEmpty || whenEmpty)) return
     print(pre)
     print(xs, sep, fn)

@@ -13,6 +13,19 @@ plugins {
     id 'scala'
 }
 
+sourceSets {
+    main {
+        scala {
+            srcDirs = ['src/']
+        }
+    }
+    test {
+        java {
+            srcDirs = ['src/test/java']
+        }
+    }
+}
+
 repositories {
     mavenCentral()
 }
@@ -21,19 +34,18 @@ group 'ca.ualberta.maple.swan'
 
 sourceCompatibility = 1.8
 
-sourceSets.main.java.srcDirs = ['src/']
-
 dependencies {
-    implementation project(":ca.ualberta.maple.swan.utils")
-}
+    implementation 'org.scala-lang:scala-library:2.13.3'
+    testImplementation 'org.scala-lang:scala-library:2.13.3'
+    testImplementation 'org.scalatest:scalatest_2.13:3.2.0'
 
-dependencies {
     testImplementation('org.junit.jupiter:junit-jupiter-api:5.4.2')
     testImplementation('org.junit.jupiter:junit-jupiter-params:5.4.2')
     testRuntime('org.junit.jupiter:junit-jupiter-engine:5.4.2')
+
+    implementation project(":ca.ualberta.maple.swan.utils")
 }
 
 test {
     useJUnitPlatform()
 }
-

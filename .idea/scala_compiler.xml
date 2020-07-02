@@ -2,5 +2,12 @@
 <project version="4">
   <component name="ScalaCompilerConfiguration">
     <option name="implicitConversions" value="true" />
+    <profile name="Gradle 1" modules="swan-spds.ca.ualberta.maple.swan.parser.main,swan-spds.ca.ualberta.maple.swan.parser.test">
+      <option name="deprecationWarnings" value="true" />
+      <option name="uncheckedWarnings" value="true" />
+      <parameters>
+        <parameter value="-target:jvm-1.8" />
+      </parameters>
+    </profile>
   </component>
 </project>

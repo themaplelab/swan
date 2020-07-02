@@ -11,6 +11,7 @@
 package ca.ualberta.maple.swan.parser
 
 import ca.ualberta.maple.swan.utils.ExceptionReporter
+import ca.ualberta.maple.swan.parser.Error
 
 class SILPrinter extends Printer {
 
@@ -58,7 +59,7 @@ class SILPrinter extends Printer {
     print(terminatorDef.sourceInfo, (si: SourceInfo) => print(si))
   }
 
-  def print(op: Operator) {
+  def print(op: Operator): Unit = {
     op match {
       case Operator.allocStack(tpe, attributes) => {
         print("alloc_stack ")
@@ -552,7 +553,7 @@ class SILPrinter extends Printer {
   }
 
   def print(result: Result): Unit = {
-    if (result.valueNames.count == 1) {
+    if (result.valueNames.length == 1) {
       print(result.valueNames(0))
     } else {
       print(whenEmpty = true, "(", result.valueNames, ", ", ")", (v: String) => print(v))
@@ -644,7 +645,7 @@ class SILPrinter extends Printer {
       }
       case Type.withOwnership(_, _) => {
         // Note: "fatalError" in Swift, but I think exception is okay here.
-        ExceptionReporter.report(new Error("Types with ownership should be printed before naked tpe print!"))
+        ExceptionReporter.report(new Exception("Types with ownership should be printed before naked type print!"))
       }
     }
   }
@@ -754,8 +755,8 @@ class SILPrinter extends Printer {
 
   class InstructionDefPrinter(val id : InstructionDef) {
     val description: String = id match {
-      case Instruction.operator(op: Operator) => op.description
-      case Instruction.terminator(t: Terminator) => t.description
+      case InstructionDef.operator(op: OperatorDef) => op.description
+      case InstructionDef.terminator(t: TerminatorDef) => t.description
     }
   }
 

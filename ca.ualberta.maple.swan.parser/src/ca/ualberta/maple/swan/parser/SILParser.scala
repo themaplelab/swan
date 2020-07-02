@@ -17,6 +17,7 @@ import java.util
 import ca.ualberta.maple.swan.utils.ExceptionReporter
 
 import scala.collection.mutable.ArrayBuffer
+import scala.reflect.ClassTag
 import scala.util.control.Breaks
 
 class SILParser {
@@ -32,7 +33,7 @@ class SILParser {
   private[parser] var cursor: Int = 0
   def position(): Int = { cursor }
 
-  def this(path: Path) {
+  def this(path: Path) = {
     this()
     this.path = path.toString
     val data : Array[Byte] = if (Files.exists(path)) {
@@ -47,7 +48,7 @@ class SILParser {
     skipTrivia()
   }
 
-  def this(s: String) {
+  def this(s: String) = {
     this()
     this.path = "<memory>"
     this.chars = s.toCharArray
@@ -121,7 +122,7 @@ class SILParser {
   }
 
   @throws[Error]
-  protected def parseNilOrMany[T](pre: String, sep: String = "", suf: String = "", parseOne: () => T): Option[Array[T]] = {
+  protected def parseNilOrMany[T:ClassTag](pre: String, sep: String = "", suf: String = "", parseOne: () => T): Option[Array[T]] = {
     if (!peek(pre)) {
       return None
     }
@@ -129,7 +130,7 @@ class SILParser {
   }
 
   @throws[Error]
-  protected def parseMany[T](pre: String, sep: String, suf: String, parseOne: () => T): Array[T] = {
+  protected def parseMany[T:ClassTag](pre: String, sep: String, suf: String, parseOne: () => T): Array[T] = {
     try take(pre)
     val result = new ArrayBuffer[T]
     if (!peek(suf)) {
@@ -151,7 +152,7 @@ class SILParser {
   }
 
   @throws[Error]
-  protected def parseNilOrMany[T](pre: String, parseOne: () => T): Option[Array[T]] = {
+  protected def parseNilOrMany[T:ClassTag](pre: String, parseOne: () => T): Option[Array[T]] = {
     if (!peek(pre)) {
       return None
     }
@@ -159,7 +160,7 @@ class SILParser {
   }
 
   @throws[Error]
-  protected def parseUntilNil[T](parseOne: () => Option[T]): Array[T] = {
+  protected def parseUntilNil[T:ClassTag](parseOne: () => Option[T]): Array[T] = {
     val result = new ArrayBuffer[T]
     var break = false
     while (!break) {
@@ -174,7 +175,7 @@ class SILParser {
   }
 
   @throws[Error]
-  protected def parseMany[T](pre: String, parseOne: () => T): Array[T] = {
+  protected def parseMany[T:ClassTag](pre: String, parseOne: () => T): Array[T] = {
     val result = new ArrayBuffer[T]
     do {
       val element = try parseOne()
@@ -185,33 +186,12 @@ class SILParser {
 
   // ***** Error reporting *****
 
-  protected def parseError(message: String, at: Option[Int] = None[Int]): Error = {
+  protected def parseError(message: String, at: Option[Int] = None): Error = {
     val position = if (at.isDefined) at.get else cursor
     val newlines = chars.take(position).filter(_ == '\n')
     val line = newlines.length + 1
     val column = position - (if (chars.lastIndexOf('\n') == - 1) 0 else chars.lastIndexOf('\n')) + 1
     new Error(path, line, column, message)
-  }
-
-  class Error(path : String, message : String) extends Exception {
-    private[parser] var line : Option[Int] = None
-    private[parser] var column : Option[Int] = None
-
-    def this(path : String, line: Int, column : Int, message : String) {
-      this(path, message)
-      this.line = Some(line)
-      this.column = Some(column)
-    }
-
-    override def getMessage: String = {
-      if (line.isEmpty) {
-        return path + ": " + message
-      }
-      if (column.isEmpty) {
-        return path + ":" + line + ": " + message
-      }
-      path + ":" + line + ":" + column + ": " + message
-    }
   }
 
   /********** THIS CODE IS ORIGINALLY PART OF "SILParser" *******************/
@@ -231,7 +211,7 @@ class SILParser {
         functions :+= function
       } else {
         Breaks.breakable {
-          if(skip(_ != "\n")) Breaks.break
+          if(skip(_ != "\n")) Breaks.break()
         }
         done = true
       }
@@ -244,7 +224,7 @@ class SILParser {
   def parseFunction(): Function = {
     try take("sil")
     val linkage = try parseLinkage()
-    val attributes = { try parseNilOrMany("[", parseOne = try parseFunctionAttribute) }.getOrElse(Array.empty[FunctionAttribute])
+    val attributes = { try parseNilOrMany("[", try parseFunctionAttribute) }.getOrElse(Array.empty[FunctionAttribute])
     val name = try parseGlobalName()
     try take(":")
     val tpe = try parseType()
@@ -313,7 +293,7 @@ class SILParser {
       // Try to recover to a point where resuming the parsing is sensible
       // by skipping until the end of this line. This is only a heuristic:
       // I don't think that the SIL specification guarantees that.
-      case _ => {
+      case _ : Throwable => {
         skip(_ != "\n" )
         Instruction.operator(Operator.unknown(instructionName))
       }
@@ -1242,7 +1222,8 @@ class SILParser {
   @throws[Error]
   def parseIdentifier(): String = {
     if(peek("\"")) {
-      s"\"${try parseString()}\""
+      // https://github.com/scala/bug/issues/6476
+      '"' + s"${try parseString()}" + '"'
     } else {
       val start = position()
       // TODO(#14): Make name parsing more thorough.
@@ -1339,7 +1320,7 @@ class SILParser {
         val result = try parseNakedType()
         Type.functionType(types, result)
       } else {
-        if (types.count == 1) {
+        if (types.length == 1) {
          types(0)
         } else {
           Type.tupleType(types)
@@ -1500,5 +1481,26 @@ class SILParser {
     if(!skip("%")) throw parseError("value expected", Some(start))
     val identifier = try parseIdentifier()
     "%" + identifier
+  }
+}
+
+class Error(path : String, message : String) extends Exception {
+  private[parser] var line : Option[Int] = None
+  private[parser] var column : Option[Int] = None
+
+  def this(path : String, line: Int, column : Int, message : String) = {
+    this(path, message)
+    this.line = Some(line)
+    this.column = Some(column)
+  }
+
+  override def getMessage: String = {
+    if (line.isEmpty) {
+      return path + ": " + message
+    }
+    if (column.isEmpty) {
+      return path + ":" + line + ": " + message
+    }
+    path + ":" + line + ":" + column + ": " + message
   }
 }
