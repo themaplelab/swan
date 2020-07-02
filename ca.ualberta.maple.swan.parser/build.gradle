@@ -16,10 +16,16 @@ plugins {
 sourceSets {
     main {
         scala {
-            srcDirs = ['src/']
+            srcDirs = ['src/scala']
+        }
+        java {
+            srcDirs = []
         }
     }
     test {
+        scala {
+            srcDirs = []
+        }
         java {
             srcDirs = ['src/test/java']
         }

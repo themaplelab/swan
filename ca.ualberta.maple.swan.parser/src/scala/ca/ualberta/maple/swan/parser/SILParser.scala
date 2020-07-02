@@ -88,7 +88,7 @@ class SILParser {
   }
 
   protected def skip(whileFn: Char => Boolean): Boolean = {
-    val result : String = try take(whileFn)
+    val result : String = take(whileFn)
     !result.isEmpty
   }
 
@@ -98,7 +98,7 @@ class SILParser {
       cursor += 1
       skipTrivia()
     } else if (skip("//")) {
-      while (cursor < chars.length && chars(cursor) != "\n") { // Optimize?
+      while (cursor < chars.length && chars(cursor) != '\n') { // Optimize?
         cursor += 1
       }
       skipTrivia()
@@ -111,7 +111,7 @@ class SILParser {
   protected def maybeParse[T](f: () => Option[T]) : Option[T] = {
     val savedCursor = cursor
     try {
-      val result = try f()
+      val result = f()
       if (result.isEmpty) {
         cursor = savedCursor
       }
@@ -126,28 +126,28 @@ class SILParser {
     if (!peek(pre)) {
       return None
     }
-    Some(try parseMany(pre, sep, suf, parseOne))
+    Some(parseMany(pre, sep, suf, parseOne))
   }
 
   @throws[Error]
   protected def parseMany[T:ClassTag](pre: String, sep: String, suf: String, parseOne: () => T): Array[T] = {
-    try take(pre)
+    take(pre)
     val result = new ArrayBuffer[T]
     if (!peek(suf)) {
       var break = false
       while (!break) {
-        val element = try parseOne()
+        val element = parseOne()
         result.append(element)
         if (peek(suf)) {
           break = true
         } else {
           if (!sep.isEmpty) {
-            try take(sep)
+            take(sep)
           }
         }
       }
     }
-    try take(suf)
+    take(suf)
     result.toArray
   }
 
@@ -156,7 +156,7 @@ class SILParser {
     if (!peek(pre)) {
       return None
     }
-    Some(try parseMany(pre, parseOne))
+    Some(parseMany(pre, parseOne))
   }
 
   @throws[Error]
@@ -178,7 +178,7 @@ class SILParser {
   protected def parseMany[T:ClassTag](pre: String, parseOne: () => T): Array[T] = {
     val result = new ArrayBuffer[T]
     do {
-      val element = try parseOne()
+      val element = parseOne()
       result.append(element)
     } while (peek(pre))
     result.toArray
@@ -207,11 +207,11 @@ class SILParser {
       // Concretely: if the current line begins with "sil @", try to parse a Function.
       // Otherwise, skip to the end of line and repeat.
       if(peek("sil ")) {
-        val function = try parseFunction()
+        val function = parseFunction()
         functions :+= function
       } else {
         Breaks.breakable {
-          if(skip(_ != "\n")) Breaks.break()
+          if(skip(_ != '\n')) Breaks.break()
         }
         done = true
       }
@@ -222,23 +222,23 @@ class SILParser {
   // https://github.com/apple/swift/blob/master/docs/SIL.rst#functions
   @throws[Error]
   def parseFunction(): Function = {
-    try take("sil")
-    val linkage = try parseLinkage()
-    val attributes = { try parseNilOrMany("[", try parseFunctionAttribute) }.getOrElse(Array.empty[FunctionAttribute])
-    val name = try parseGlobalName()
-    try take(":")
-    val tpe = try parseType()
-    val blocks = { try parseNilOrMany("{", "", "}", try parseBlock) }.getOrElse(Array.empty[Block])
+    take("sil")
+    val linkage = parseLinkage()
+    val attributes = { parseNilOrMany("[", parseFunctionAttribute) }.getOrElse(Array.empty[FunctionAttribute])
+    val name = parseGlobalName()
+    take(":")
+    val tpe = parseType()
+    val blocks = { parseNilOrMany("{", "", "}", parseBlock) }.getOrElse(Array.empty[Block])
     new Function(linkage, attributes, name, tpe, blocks)
   }
 
   // https://github.com/apple/swift/blob/master/docs/SIL.rst#basic-blocks
   @throws[Error]
   def parseBlock(): Block = {
-    val identifier = try parseIdentifier()
-    val arguments = { try parseNilOrMany("(", ",", ")", try parseArgument) }.getOrElse(Array.empty[Argument])
-    try take(":")
-    val (operatorDefs, terminatorDef) = try parseInstructionDefs()
+    val identifier = parseIdentifier()
+    val arguments = { parseNilOrMany("(", ",", ")", parseArgument) }.getOrElse(Array.empty[Argument])
+    take(":")
+    val (operatorDefs, terminatorDef) = parseInstructionDefs()
     new Block(identifier, arguments, operatorDefs, terminatorDef)
   }
 
@@ -249,7 +249,7 @@ class SILParser {
     var done = false
     var termDef: TerminatorDef = null
     while(!done){
-      try parseInstructionDef() match {
+      parseInstructionDef() match {
         case InstructionDef.operator(operatorDef) => operatorDefs :+= operatorDef
         case InstructionDef.terminator(terminatorDef) => return (operatorDefs, terminatorDef)
       }
@@ -271,9 +271,9 @@ class SILParser {
   // https://github.com/apple/swift/blob/master/docs/SIL.rst#basic-blocks
   @throws[Error]
   def parseInstructionDef(): InstructionDef = {
-    val result = try parseResult()
+    val result = parseResult()
     val body = parseInstruction()
-    val sourceInfo = try parseSourceInfo()
+    val sourceInfo = parseSourceInfo()
     body match {
       case Instruction.operator(op) => InstructionDef.operator(new OperatorDef(result, op, sourceInfo))
       case Instruction.terminator(terminator) => {
@@ -286,15 +286,15 @@ class SILParser {
   // https://github.com/apple/swift/blob/master/docs/SIL.rst#instruction-set
   @throws[Error]
   def parseInstruction(): Instruction = {
-    val instructionName = try take(x => x.isLetter || x == "_")
+    val instructionName = take(x => x.isLetter || x == '_')
     try {
-      try parseInstructionBody(instructionName)
+      parseInstructionBody(instructionName)
     } catch {
       // Try to recover to a point where resuming the parsing is sensible
       // by skipping until the end of this line. This is only a heuristic:
       // I don't think that the SIL specification guarantees that.
       case _ : Throwable => {
-        skip(_ != "\n" )
+        skip(_ != '\n' )
         Instruction.operator(Operator.unknown(instructionName))
       }
     }
@@ -318,8 +318,8 @@ class SILParser {
         // *** ALLOCATION AND DEALLOCATION ***
 
       case "alloc_stack" => {
-        val tpe = try parseType()
-        val attributes = try parseUntilNil( try parseDebugAttribute )
+        val tpe = parseType()
+        val attributes = parseUntilNil( parseDebugAttribute )
         Instruction.operator(Operator.allocStack(tpe, attributes))
       }
       case "alloc_ref" => {
@@ -329,27 +329,28 @@ class SILParser {
         null //  TODO: NPOTP
       }
       case "alloc_box" => {
-        val tpe = try parseType()
-        val attributes = try parseUntilNil( try parseDebugAttribute )
+        val tpe = parseType()
+        val attributes = parseUntilNil( parseDebugAttribute )
         Instruction.operator(Operator.allocBox(tpe, attributes))
       }
       case "alloc_value_buffer" => {
         throw parseError("unhandled instruction") // NSIP
       }
       case "alloc_global" => {
-        val name = try parseGlobalName()
+        val name = parseGlobalName()
         Instruction.operator(Operator.allocGlobal(name))
       }
       case "dealloc_stack" => {
-        val operand = try parseOperand()
+        val operand = parseOperand()
         Instruction.operator(Operator.deallocStack(operand))
       }
       case "dealloc_box" => {
-        val operand = try parseOperand()
+        val operand = parseOperand()
         Instruction.operator(Operator.deallocBox(operand))
       }
       case "project_box" => {
-        val operand = try parseOperand()
+        // TODO: This is incorrect. project_box has a return value
+        val operand = parseOperand()
         Instruction.operator(Operator.projectBox(operand))
       }
       case "dealloc_ref" => {
@@ -368,13 +369,13 @@ class SILParser {
         // *** DEBUG INFORMATION ***
 
       case "debug_value" => {
-        val operand = try parseOperand()
-        val attributes = try parseUntilNil(parseDebugAttribute)
+        val operand = parseOperand()
+        val attributes = parseUntilNil(parseDebugAttribute)
         Instruction.operator(Operator.debugValue(operand, attributes))
       }
       case "debug_value_addr" => {
-        val operand = try parseOperand()
-        val attributes = try parseUntilNil(parseDebugAttribute)
+        val operand = parseOperand()
+        val attributes = parseUntilNil(parseDebugAttribute)
         Instruction.operator(Operator.debugValueAddr(operand, attributes))
       }
 
@@ -389,26 +390,26 @@ class SILParser {
         } else if (skip("[trivial]")) {
           ownership = Some(LoadOwnership.trivial)
         }
-        val operand = try parseOperand()
+        val operand = parseOperand()
         Instruction.operator(Operator.load(ownership, operand))
       }
       case "store" => {
-        val value = try parseValue()
-        try take("to")
+        val value = parseValue()
+        take("to")
         var ownership : Option[StoreOwnership] = None
         if (skip("[init]")) {
           ownership = Some(StoreOwnership.init)
         } else if (skip("[trivial]")) {
           ownership = Some(StoreOwnership.trivial)
         }
-        val operand = try parseOperand()
+        val operand = parseOperand()
         Instruction.operator(Operator.store(value, ownership, operand))
       }
       case "load_borrow" => {
         null // TODO: NPOTP
       }
       case "end_borrow" => {
-        val operand = try parseOperand()
+        val operand = parseOperand()
         Instruction.operator(Operator.endBorrow(operand))
       }
       case "assign" => {
@@ -428,19 +429,19 @@ class SILParser {
       }
       case "copy_addr" => {
         val take = skip("[take]")
-        val value = try parseValue()
-        try this.take("to")
+        val value = parseValue()
+        this.take("to")
         val initialization = skip("[initialization]")
-        val operand = try parseOperand()
+        val operand = parseOperand()
         Instruction.operator(Operator.copyAddr(take, value, initialization, operand))
       }
       case "destroy_addr" => {
         null // TODO: NPOTP LP
       }
       case "index_addr" => {
-        val addr = try parseOperand()
-        try take(",")
-        val index = try parseOperand()
+        val addr = parseOperand()
+        take(",")
+        val index = parseOperand()
         Instruction.operator(Operator.indexAddr(addr, index))
       }
       case "tail_addr" => {
@@ -453,20 +454,20 @@ class SILParser {
         throw parseError("unhandled instruction") // NSIP
       }
       case "begin_access" => {
-        try take("[")
+        take("[")
         val access = parseAccess()
-        try take("]")
-        try take("[")
+        take("]")
+        take("[")
         val enforcement = parseEnforcement()
-        try take("]")
+        take("]")
         val noNestedConflict = skip("[no_nested_conflict]")
         val builtin = skip("[builtin]")
-        val operand = try parseOperand()
+        val operand = parseOperand()
         Instruction.operator(Operator.beginAccess(access, enforcement, noNestedConflict, builtin, operand))
       }
       case "end_access" => {
         val abort = skip("[abort]")
-        val operand = try parseOperand()
+        val operand = parseOperand()
         Instruction.operator(Operator.endAccess(abort, operand))
       }
       case "begin_unpaired_access" => {
@@ -479,11 +480,11 @@ class SILParser {
         // *** REFERENCE COUNTING ***
 
       case "strong_retain" => {
-        val operand = try parseOperand()
+        val operand = parseOperand()
         Instruction.operator(Operator.strongRetain(operand))
       }
       case "strong_release" => {
-        val operand = try parseOperand()
+        val operand = parseOperand()
         Instruction.operator(Operator.strongRelease(operand))
       }
       case "set_deallocating" => {
@@ -517,9 +518,9 @@ class SILParser {
         throw parseError("unhandled instruction") // NSIP
       }
       case "mark_dependence" => {
-        val operand = try parseOperand()
-        try take("on")
-        val on = try parseOperand()
+        val operand = parseOperand()
+        take("on")
+        val on = parseOperand()
         Instruction.operator(Operator.markDependence(operand, on))
       }
       case "is_unique" => {
@@ -540,9 +541,9 @@ class SILParser {
         // *** LITERALS ***
 
       case "function_ref" => {
-        val name = try parseGlobalName()
-        try take(":")
-        val tpe = try parseType()
+        val name = parseGlobalName()
+        take(":")
+        val tpe = parseType()
         Instruction.operator(Operator.functionRef(name, tpe))
       }
       case "dynamic_function_ref" => {
@@ -552,30 +553,30 @@ class SILParser {
         null // TODO: NPOTP
       }
       case "global_addr" => {
-        val name = try parseGlobalName()
-        try take(":")
-        val tpe = try parseType()
+        val name = parseGlobalName()
+        take(":")
+        val tpe = parseType()
         Instruction.operator(Operator.globalAddr(name, tpe))
       }
       case "global_value" => {
         throw parseError("unhandled instruction") // NSIP
       }
       case "integer_literal" => {
-        val tpe = try parseType()
-        try take(",")
-        val value = try parseInt()
+        val tpe = parseType()
+        take(",")
+        val value = parseInt()
         Instruction.operator(Operator.integerLiteral(tpe, value))
       }
       case "float_literal" => {
-        val tpe = try parseType()
-        try take(",")
-        try take("0x")
-        val value = try take((x : Char) => x.toString.matches("^[0-9a-fA-F]+$"))
+        val tpe = parseType()
+        take(",")
+        take("0x")
+        val value = take((x : Char) => x.toString.matches("^[0-9a-fA-F]+$"))
         Instruction.operator(Operator.floatLiteral(tpe, value))
       }
       case "string_literal" => {
-        val encoding = try parseEncoding()
-        val value = try parseString()
+        val encoding = parseEncoding()
+        val value = parseString()
         Instruction.operator(Operator.stringLiteral(encoding, value))
       }
 
@@ -594,13 +595,13 @@ class SILParser {
         null // TODO: NPOTP
       }
       case "witness_method" => {
-        val archeType = try parseType()
-        try take(",")
-        val declRef = try parseDeclRef()
-        try take(":")
-        val declType = try parseNakedType()
-        try take(":")
-        val tpe = try parseType()
+        val archeType = parseType()
+        take(",")
+        val declRef = parseDeclRef()
+        take(":")
+        val declType = parseNakedType()
+        take(":")
+        val tpe = parseType()
         Instruction.operator(Operator.witnessMethod(archeType, declRef, declType, tpe))
       }
 
@@ -608,53 +609,53 @@ class SILParser {
 
       case "apply" => {
         val nothrow = skip("[nothrow]")
-        val value = try parseValue()
+        val value = parseValue()
         val substitutions = parseNilOrMany("<", ",",">", parseNakedType).get
-        val arguments = try parseMany("(",",",")", parseValue)
-        try take(":")
-        val tpe = try parseType()
+        val arguments = parseMany("(",",",")", parseValue)
+        take(":")
+        val tpe = parseType()
         Instruction.operator(Operator.apply(nothrow,value,substitutions,arguments,tpe))
       }
       case "begin_apply" => {
         val nothrow = skip("[nothrow]")
-        val value = try parseValue()
+        val value = parseValue()
         val s : Option[Array[Type]] = parseNilOrMany("<",",",">",parseNakedType)
         val substitutions = if (s.nonEmpty) s.get else new Array[Type](0)
-        val arguments = try parseMany("(",",",")", parseValue)
-        try take(":")
-        val tpe = try parseType()
+        val arguments = parseMany("(",",",")", parseValue)
+        take(":")
+        val tpe = parseType()
         Instruction.operator(Operator.beginApply(nothrow, value, substitutions, arguments, tpe))
       }
       case "abort_apply" => {
         null // TODO: NPOTP
       }
       case "end_apply" => {
-        val value = try parseValue()
+        val value = parseValue()
         Instruction.operator(Operator.endApply(value))
       }
       case "partial_apply" => {
         val calleeGuaranteed = skip("[callee_guaranteed]")
         val onStack = skip("[on_stack]")
-        val value = try parseValue()
+        val value = parseValue()
         val s = parseNilOrMany("<",",",">", parseNakedType)
         val substitutions = if (s.nonEmpty) s.get else new Array[Type](0)
-        val arguments = try parseMany("(",",",")", parseValue)
-        try take(":")
-        val tpe = try parseType()
+        val arguments = parseMany("(",",",")", parseValue)
+        take(":")
+        val tpe = parseType()
         Instruction.operator(Operator.partialApply(calleeGuaranteed,onStack,value,substitutions,arguments,tpe))
       }
       case "builtin" => {
-        val name = try parseString()
-        val operands = try parseMany("(", ",", ")", parseOperand)
-        try take(":")
-        val tpe = try parseType()
+        val name = parseString()
+        val operands = parseMany("(", ",", ")", parseOperand)
+        take(":")
+        val tpe = parseType()
         Instruction.operator(Operator.builtin(name, operands, tpe))
       }
 
         // *** METATYPES ***
 
       case "metatype" => {
-        val tpe = try parseType()
+        val tpe = parseType()
         Instruction.operator(Operator.metatype(tpe))
       }
       case "value_metatype" => {
@@ -670,7 +671,7 @@ class SILParser {
         // *** AGGREGATE TYPES ***
 
       case "retain_value" => {
-        val operand = try parseOperand()
+        val operand = parseOperand()
         Instruction.operator(Operator.retainValue(operand))
       }
       case "retain_value_addr" => {
@@ -680,11 +681,11 @@ class SILParser {
         throw parseError("unhandled instruction") // NSIP
       }
       case "copy_value" => {
-        val operand = try parseOperand()
+        val operand = parseOperand()
         Instruction.operator(Operator.copyValue(operand))
       }
       case "release_value" => {
-        val operand = try parseOperand()
+        val operand = parseOperand()
         Instruction.operator(Operator.releaseValue(operand))
       }
       case "release_value_addr" => {
@@ -694,44 +695,44 @@ class SILParser {
         throw parseError("unhandled instruction") // NSIP
       }
       case "destroy_value" => {
-        val operand = try parseOperand()
+        val operand = parseOperand()
         Instruction.operator(Operator.destroyValue(operand))
       }
       case "autorelease_value" => {
         null // TODO: NPOTP
       }
       case "tuple" => {
-        val elements = try parseTupleElements()
+        val elements = parseTupleElements()
         Instruction.operator(Operator.tuple(elements))
       }
       case "tuple_extract" => {
-        val operand = try parseOperand()
-        try take(",")
-        val declRef = try parseInt()
+        val operand = parseOperand()
+        take(",")
+        val declRef = parseInt()
         Instruction.operator(Operator.tupleExtract(operand, declRef))
       }
       case "tuple_element_addr" => {
         null // TODO: NPOTP
       }
       case "destructure_tuple" => {
-        val operand = try parseOperand()
+        val operand = parseOperand()
         Instruction.operator(Operator.destructureTuple(operand))
       }
       case "struct" => {
-        val tpe = try parseType()
-        val operands = try parseMany("(",",",")", parseOperand)
+        val tpe = parseType()
+        val operands = parseMany("(",",",")", parseOperand)
         Instruction.operator(Operator.struct(tpe, operands))
       }
       case "struct_extract" => {
-        val operand = try parseOperand()
-        try take(",")
-        val declRef = try parseDeclRef()
+        val operand = parseOperand()
+        take(",")
+        val declRef = parseDeclRef()
         Instruction.operator(Operator.structExtract(operand, declRef))
       }
       case "struct_element_addr" => {
-        val operand = try parseOperand()
-        try take(",")
-        val declRef = try parseDeclRef()
+        val operand = parseOperand()
+        take(",")
+        val declRef = parseDeclRef()
         Instruction.operator(Operator.structElementAddr(operand, declRef))
       }
       case "destructure_struct" => {
@@ -750,9 +751,9 @@ class SILParser {
         // *** ENUMS ***
 
       case "enum" => {
-        val tpe = try parseType()
-        try take(",")
-        val declRef = try parseDeclRef()
+        val tpe = parseType()
+        take(",")
+        val declRef = parseDeclRef()
         val operand = if (skip(",")) Some(parseOperand()) else None
         Instruction.operator(Operator.`enum`(tpe, declRef, operand))
       }
@@ -769,10 +770,10 @@ class SILParser {
         null // TODO: NPOTP
       }
       case "select_enum" => {
-        val operand = try parseOperand()
-        val cases = try parseUntilNil[Case](() => try parseCase(parseValue))
-        try take(":")
-        val tpe = try parseType()
+        val operand = parseOperand()
+        val cases = parseUntilNil[Case](() => parseCase(parseValue))
+        take(":")
+        val tpe = parseType()
         Instruction.operator(Operator.selectEnum(operand, cases, tpe))
       }
       case "select_enum_addr" => {
@@ -845,10 +846,10 @@ class SILParser {
         null // TODO: NPOTP
       }
       case "pointer_to_address" => {
-        val operand = try parseOperand()
-        try take("to")
+        val operand = parseOperand()
+        take("to")
         val strict = skip("[strict]")
-        val tpe = try parseType()
+        val tpe = parseType()
         Instruction.operator(Operator.pointerToAddress(operand, strict, tpe))
       }
       case "unchecked_ref_cast" => {
@@ -885,18 +886,18 @@ class SILParser {
         null // TODO: NPOTP
       }
       case "convert_function" => {
-        val operand = try parseOperand()
-        try take("to")
+        val operand = parseOperand()
+        take("to")
         val withoutActuallyEscaping = skip("[without_actually_escaping]")
-        val tpe = try parseType()
+        val tpe = parseType()
         Instruction.operator(Operator.convertFunction(operand, withoutActuallyEscaping, tpe))
       }
       case "convert_escape_to_noescape" => {
         val notGuaranteed = skip("[not_guaranteed]")
         val escaped = skip("[escaped]")
-        val operand = try parseOperand()
-        try take("to")
-        val tpe = try parseType()
+        val operand = parseOperand()
+        take("to")
+        val tpe = parseType()
         Instruction.operator(Operator.convertEscapeToNoescape(notGuaranteed, escaped, operand, tpe))
       }
       case "thin_function_to_pointer" => {
@@ -921,9 +922,9 @@ class SILParser {
         throw parseError("unhandled instruction") // NSIP
       }
       case "thin_to_thick_function" => {
-        val operand = try parseOperand()
-        try take("to")
-        val tpe = try parseType()
+        val operand = parseOperand()
+        take("to")
+        val tpe = parseType()
         Instruction.operator(Operator.thinToThickFunction(operand, tpe))
       }
       case "thick_to_objc_metatype" => {
@@ -954,9 +955,9 @@ class SILParser {
         // *** RUNTIME FAILURES ***
 
       case "cond_fail" => {
-        val operand = try parseOperand()
-        try take(",")
-        val message = try parseString()
+        val operand = parseOperand()
+        take(",")
+        val message = parseString()
         Instruction.operator(Operator.condFail(operand, message))
       }
 
@@ -966,7 +967,7 @@ class SILParser {
         Instruction.terminator(Terminator.unreachable)
       }
       case "return" => {
-        val operand = try parseOperand()
+        val operand = parseOperand()
         Instruction.terminator(Terminator.ret(operand))
       }
       case "throw" => {
@@ -979,19 +980,19 @@ class SILParser {
         null // TODO: NPOTP
       }
       case "br" => {
-        val label = try parseIdentifier()
+        val label = parseIdentifier()
         val o : Option[Array[Operand]] = parseNilOrMany("(",",",")", parseOperand)
         val operands = if (o.nonEmpty) o.get else new Array[Operand](0)
         Instruction.terminator(Terminator.br(label, operands))
       }
       case "cond_br" => {
-        val cond = try parseValueName()
-        try take(":")
-        val trueLabel = try parseIdentifier()
+        val cond = parseValueName()
+        take(":")
+        val trueLabel = parseIdentifier()
         val to : Option[Array[Operand]] = parseNilOrMany("(",",",")",parseOperand)
         val trueOperands = if (to.nonEmpty) to.get else new Array[Operand](0)
-        try take(",")
-        val falseLabel = try parseIdentifier()
+        take(",")
+        val falseLabel = parseIdentifier()
         val fo : Option[Array[Operand]] = parseNilOrMany("(",",",")",parseOperand)
         val falseOperands = if (fo.nonEmpty) to.get else new Array[Operand](0)
         Instruction.terminator(Terminator.condBr(cond, trueLabel, trueOperands, falseLabel, falseOperands))
@@ -1003,8 +1004,8 @@ class SILParser {
         throw parseError("unhandled instruction") // NSIP
       }
       case "switch_enum" => {
-        val operand = try parseOperand()
-        val cases = try parseUntilNil[Case]( () => try parseCase(parseIdentifier))
+        val operand = parseOperand()
+        val cases = parseUntilNil[Case]( () => parseCase(parseIdentifier))
         Instruction.terminator(Terminator.switchEnum(operand, cases))
       }
       case "switch_enum_addr" => {
@@ -1029,7 +1030,7 @@ class SILParser {
         // *** INSTRUCTIONS THAT TENSORFLOW PARSES BUT ARE NO LONGER IN SIL.rst ***
 
       case "begin_borrow" => {
-        val operand = try parseOperand()
+        val operand = parseOperand()
         Instruction.operator(Operator.beginBorrow(operand))
       }
 
@@ -1056,9 +1057,9 @@ class SILParser {
   // https://github.com/apple/swift/blob/master/docs/SIL.rst#basic-blocks
   @throws[Error]
   def parseArgument(): Argument = {
-    val valueName = try parseValueName()
-    try take(":")
-    val tpe = try parseType()
+    val valueName = parseValueName()
+    take(":")
+    val tpe = parseType()
     new Argument(valueName, tpe)
   }
 
@@ -1068,12 +1069,12 @@ class SILParser {
     maybeParse(() => {
       if(!skip(",")) None
       if (skip("case")) {
-        val declRef = try parseDeclRef()
-        try take(":")
-        val identifier = try parseElement()
+        val declRef = parseDeclRef()
+        take(":")
+        val identifier = parseElement()
         Some(Case.cs(declRef, identifier))
       } else if (skip("default")) {
-        val identifier = try parseElement()
+        val identifier = parseElement()
         Some(Case.default(identifier))
       } else {
         None
@@ -1083,7 +1084,7 @@ class SILParser {
 
   @throws[Error]
   def parseConvention(): Convention = {
-    try take(":")
+    take(":")
     var result: Convention = null
     if (skip("c")) {
       result = Convention.c
@@ -1092,13 +1093,13 @@ class SILParser {
     } else if (skip("thin")) {
       result = Convention.thin
     } else if (skip("witness_method")) {
-      try take(":")
-      val tpe = try parseNakedType()
+      take(":")
+      val tpe = parseNakedType()
       result = Convention.witnessMethod(tpe)
     } else {
       throw parseError("unknown convention")
     }
-    try take(")")
+    take(")")
     result
   }
 
@@ -1132,11 +1133,11 @@ class SILParser {
 
   @throws[Error]
   def parseDeclRef(): DeclRef = {
-    try take("#")
+    take("#")
     val name = new ArrayBuffer[String]
     var break = false
     while (!break) {
-      val identifier = try parseIdentifier()
+      val identifier = parseIdentifier()
       name.append(identifier)
       if (!skip(".")) {
         break = true
@@ -1145,11 +1146,11 @@ class SILParser {
     if (!skip("!")) {
       new DeclRef(name.toArray, None, None)
     }
-    val kind = try parseDeclKind()
+    val kind = parseDeclKind()
     if (kind.nonEmpty && !skip(".")) {
       new DeclRef(name.toArray, kind, None)
     }
-    val level = try parseInt()
+    val level = parseInt()
     new DeclRef(name.toArray, kind, Some(level))
   }
 
@@ -1177,27 +1178,27 @@ class SILParser {
   def parseFunctionAttribute(): FunctionAttribute = {
     @throws[Error]
     def parseDifferentiable(): FunctionAttribute = {
-      try take("[differentiable")
-      val spec = try take(_ != "]" )
-      try take("]")
+      take("[differentiable")
+      val spec = take(_ != ']' )
+      take("]")
       FunctionAttribute.differentiable(spec)
     }
 
     @throws[Error]
     def parseSemantics(): FunctionAttribute = {
-      try take("[_semantics")
-      val value = try parseString()
-      try take("]")
+      take("[_semantics")
+      val value = parseString()
+      take("]")
       FunctionAttribute.semantics(value)
     }
 
     if(skip("[always_inline]")) FunctionAttribute.alwaysInline
-    if(peek("[differentiable")) try parseDifferentiable()
+    if(peek("[differentiable")) parseDifferentiable()
     if(skip("[dynamically_replacable]")) FunctionAttribute.dynamicallyReplacable
     if(skip("[noinline]")) FunctionAttribute.noInline
     if(skip("[ossa]")) FunctionAttribute.noncanonical(NoncanonicalFunctionAttribute.ownershipSSA)
     if(skip("[readonly]")) FunctionAttribute.readonly
-    if(peek("[_semantics")) try parseSemantics()
+    if(peek("[_semantics")) parseSemantics()
     if(skip("[serialized]")) FunctionAttribute.serialized
     if(skip("[thunk]")) FunctionAttribute.thunk
     if(skip("[transparent]")) FunctionAttribute.transparent
@@ -1210,7 +1211,7 @@ class SILParser {
     val start = position()
     if(skip("@")) {
       // TODO(#14): Make name parsing more thorough.
-      val name = try take(x => x == "$" || x.isLetterOrDigit || x == "_" )
+      val name = take(x => x == '$' || x.isLetterOrDigit || x == '_' )
       if(!name.isEmpty) {
         return name
       }
@@ -1223,11 +1224,12 @@ class SILParser {
   def parseIdentifier(): String = {
     if(peek("\"")) {
       // https://github.com/scala/bug/issues/6476
-      '"' + s"${try parseString()}" + '"'
+      // https://stackoverflow.com/questions/21086263/how-to-insert-double-quotes-into-string-with-interpolation-in-scala
+      s""""${parseString()}""""
     } else {
       val start = position()
       // TODO(#14): Make name parsing more thorough.
-      val identifier = try take(x => x.isLetterOrDigit || x == "_")
+      val identifier = take(x => x.isLetterOrDigit || x == '_')
       if (!identifier.isEmpty) return identifier
       throw parseError("identifier expected", Some(start))
     }
@@ -1238,11 +1240,11 @@ class SILParser {
     // TODO(#26): Make number parsing more thorough.
     val start = position()
     val radix = if(skip("0x")) 16 else 10
-    val s = try take(x => x == "-" || x == "+" || Character.digit(x, 16) != -1)
+    val s = take(x => x == '-' || x == '+' || Character.digit(x, 16) != -1)
     val value = try {
         Integer.parseInt(s, radix)
       } catch {
-        case _ => throw parseError("integer literal expected", Some(start))
+        case _ : Throwable => throw parseError("integer literal expected", Some(start))
       }
     value
   }
@@ -1268,11 +1270,11 @@ class SILParser {
   @throws[Error]
   def parseLoc(): Option[Loc] = {
     if(!skip("loc")) None
-    val path = try parseString()
-    try take(":")
-    val line = try parseInt()
-    try take(":")
-    val column = try parseInt()
+    val path = parseString()
+    take(":")
+    val line = parseInt()
+    take(":")
+    val column = parseInt()
     Some(new Loc(path, line, column))
   }
 
@@ -1286,38 +1288,38 @@ class SILParser {
       val params = new ArrayBuffer[String]
       var break = false
       while (!break) {
-        val name = try parseTypeName()
+        val name = parseTypeName()
         params.append(name)
         if (peek("where") || peek(">")) {
           break = true
         } else {
-          try take(",")
+          take(",")
         }
       }
       var reqs = new ArrayBuffer[TypeRequirement]
       if (peek("where")) {
-        reqs = try parseMany("where", ",", ">", try parseTypeRequirement).to(ArrayBuffer)
+        reqs = parseMany("where", ",", ">", parseTypeRequirement).to(ArrayBuffer)
       } else {
         reqs.clear()
-        try take(">")
+        take(">")
       }
-      val tpe = try parseNakedType()
+      val tpe = parseNakedType()
       Type.genericType(params.toArray, reqs.toArray, tpe)
     } else if (peek("@")) {
-      val attrs = try parseMany("@", try parseTypeAttribute)
-      val tpe = try parseNakedType()
+      val attrs = parseMany("@", parseTypeAttribute)
+      val tpe = parseNakedType()
       Type.attributedType(attrs, tpe)
     } else if (skip("*")) {
-      val tpe = try parseNakedType()
+      val tpe = parseNakedType()
       Type.addressType(tpe)
     } else if (skip("[")) {
-      val subtype = try parseNakedType()
-      try take("]")
+      val subtype = parseNakedType()
+      take("]")
       Type.specializedType(Type.namedType("Array"), Array[Type]{subtype})
     } else if (peek("(")) {
-      val types: Array[Type] = try parseMany("(",",",")", try parseNakedType)
+      val types: Array[Type] = parseMany("(",",",")", parseNakedType)
       if (skip("->")) {
-        val result = try parseNakedType()
+        val result = parseNakedType()
         Type.functionType(types, result)
       } else {
         if (types.length == 1) {
@@ -1330,27 +1332,27 @@ class SILParser {
       @throws[Error]
       def grow(tpe: Type): Type = {
         if (peek("<")) {
-          val types = try parseMany("<",",",">", try parseNakedType)
-          try grow(Type.specializedType(tpe, types))
+          val types = parseMany("<",",",">", parseNakedType)
+          grow(Type.specializedType(tpe, types))
         } else if (skip(".")) {
-          val name = try parseTypeName()
-          try grow(Type.selectType(tpe, name))
+          val name = parseTypeName()
+          grow(Type.selectType(tpe, name))
         } else {
           tpe
         }
       }
-      val name = try parseTypeName()
+      val name = parseTypeName()
       val base: Type = if (name != "Self") Type.namedType(name) else Type.selfType
-      try grow(base)
+      grow(base)
     }
   }
 
   // https://github.com/apple/swift/blob/master/docs/SIL.rst#values-and-operands
   @throws[Error]
   def parseOperand(): Operand = {
-    val valueName = try parseValueName()
-    try take(":")
-    val tpe = try parseType()
+    val valueName = parseValueName()
+    take(":")
+    val tpe = parseType()
     new Operand(valueName, tpe)
   }
 
@@ -1358,12 +1360,12 @@ class SILParser {
   @throws[Error]
   def parseResult(): Option[Result] = {
     if(peek("%")) {
-      val valueName = try parseValueName()
-      try take("=")
+      val valueName = parseValueName()
+      take("=")
       Some(new Result(Array(valueName)))
     } else if(peek("(")) {
-      val valueNames = try parseMany("(", ",", ")", try parseValueName)
-      try take("=")
+      val valueNames = parseMany("(", ",", ")", parseValueName)
+      take("=")
       Some(new Result(valueNames))
     } else {
       None
@@ -1374,7 +1376,7 @@ class SILParser {
   @throws[Error]
   def parseScopeRef(): Option[Int] = {
     if(!skip("scope")) None
-    Some(try parseInt())
+    Some(parseInt())
   }
 
   // https://github.com/apple/swift/blob/master/docs/SIL.rst#basic-blocks
@@ -1383,9 +1385,9 @@ class SILParser {
     // NB: The SIL docs say that scope refs precede locations, but this is
     //     not true once you look at the compiler outputs or its source code.
     if(!skip(",")) None
-    val loc = try parseLoc()
+    val loc = parseLoc()
     // NB: No skipping if we failed to parse the location.
-    val scopeRef = if(loc.isEmpty || skip(",")) try parseScopeRef() else None
+    val scopeRef = if(loc.isEmpty || skip(",")) parseScopeRef() else None
     // We've skipped the comma, so failing to parse any of those two
     // components is an error.
     if(scopeRef.isEmpty && loc.isEmpty) throw parseError("Failed to parse source info")
@@ -1395,20 +1397,20 @@ class SILParser {
   @throws[Error]
   def parseString(): String = {
     // TODO(#24): Parse string literals with control characters.
-    try take("\"")
-    val s = try take(_ != "\"")
-    try take("\"")
+    take("\"")
+    val s = take(_ != '\"')
+    take("\"")
     s
   }
 
   // https://github.com/apple/swift/blob/master/docs/SIL.rst#tuple
   def parseTupleElements(): TupleElements = {
     if (peek("$")) {
-      val tpe = try parseType()
-      val values = try parseMany("(",",",")", try parseValue)
+      val tpe = parseType()
+      val values = parseMany("(",",",")", parseValue)
       TupleElements.labeled(tpe, values)
     } else {
-      val operands = try parseMany("(",",",")", try parseOperand)
+      val operands = parseMany("(",",",")", parseOperand)
       TupleElements.unlabeled(operands)
     }
   }
@@ -1422,7 +1424,7 @@ class SILParser {
   @throws[Error]
   def parseTypeAttribute(): TypeAttribute = {
     if(skip("@callee_guaranteed")) TypeAttribute.calleeGuaranteed
-    if(skip("@convention")) TypeAttribute.convention(try parseConvention)
+    if(skip("@convention")) TypeAttribute.convention(parseConvention())
     if(skip("@guaranteed")) TypeAttribute.guaranteed
     if(skip("@in_guaranteed")) TypeAttribute.inGuaranteed
     // Must appear before "in" to parse correctly.
@@ -1441,7 +1443,7 @@ class SILParser {
   @throws[Error]
   def parseTypeName(): String = {
     val start = position()
-    val name : String = take(x => x.isLetter || Character.isDigit(x) || x == "_")
+    val name : String = take(x => x.isLetter || Character.isDigit(x) || x == '_')
     if (!name.isEmpty) {
       return name
     }
@@ -1450,12 +1452,12 @@ class SILParser {
 
   @throws[Error]
   def parseTypeRequirement(): TypeRequirement = {
-    val lhs = try parseNakedType()
+    val lhs = parseNakedType()
     if (skip(":")) {
-      val rhs = try parseNakedType()
+      val rhs = parseNakedType()
       TypeRequirement.conformance(lhs, rhs)
     } else if (skip("==")) {
-      val rhs = try parseNakedType()
+      val rhs = parseNakedType()
       TypeRequirement.equality(lhs, rhs)
     } else {
       throw parseError("expected '==' or ':'")
@@ -1466,7 +1468,7 @@ class SILParser {
   @throws[Error]
   def parseValue(): String = {
     if(peek("%")) {
-      try parseValueName()
+      parseValueName()
     } else if(skip("undef")) {
       "undef"
     } else {
@@ -1479,7 +1481,7 @@ class SILParser {
   def parseValueName(): String = {
     val start = position()
     if(!skip("%")) throw parseError("value expected", Some(start))
-    val identifier = try parseIdentifier()
+    val identifier = parseIdentifier()
     "%" + identifier
   }
 }

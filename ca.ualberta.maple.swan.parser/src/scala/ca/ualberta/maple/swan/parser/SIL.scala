@@ -19,14 +19,14 @@ class Module(val functions: Array[Function]) {
   object Parse {
     @throws[Error]
     def parsePath(silPath: Path): Module = {
-      val parser = try new SILParser(silPath)
-      try parser.parseModule()
+      val parser = new SILParser(silPath)
+      parser.parseModule()
     }
 
     @throws[Error]
     def parseString(silString: String): Module = {
       val parser = new SILParser(silString)
-      try parser.parseModule()
+      parser.parseModule()
     }
   }
 }

@@ -66,6 +66,16 @@ class SILPrinter extends Printer {
         print(tpe)
         print(whenEmpty = false, ", ", attributes, ", ", "", (a: DebugAttribute) => print(a))
       }
+      case Operator.allocBox(tpe, attributes) => {
+        print("alloc_box ")
+        print(tpe)
+        print(whenEmpty = false, ", ", attributes, ", ", "", (a: DebugAttribute) => print(a))
+      }
+      case Operator.allocGlobal(name) => {
+        print("alloc_global ")
+        print("@")
+        print(name)
+      }
       case Operator.apply(nothrow, value, substitutions, arguments, tpe) => {
         print("apply ")
         print(when = nothrow, "[nothrow] ")
@@ -143,6 +153,15 @@ class SILPrinter extends Printer {
       case Operator.deallocStack(operand) => {
         print("dealloc_stack ")
         print(operand)
+      }
+      case Operator.deallocBox(operand) => {
+        print("dealloc_box ")
+        // NOTE: Not sure if this is correct
+        // dealloc_box %0 : $@box T
+        print(operand)
+      }
+      case Operator.projectBox(operand) => {
+        // TODO
       }
       case Operator.debugValue(operand, attributes) => {
         print("debug_value ")
@@ -338,6 +357,7 @@ class SILPrinter extends Printer {
         print(" : ")
         print(tpe)
       }
+        // TODO: Finish
     }
   }
 
@@ -478,7 +498,7 @@ class SILPrinter extends Printer {
       print(declRef.kind.get)
     }
     if (declRef.level.nonEmpty) {
-      print( if (declRef.kind.empty == true) "!" else ".")
+      print( if (declRef.kind.isEmpty == true) "!" else ".")
       literal(declRef.level.get)
     }
   }
