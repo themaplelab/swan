@@ -29,6 +29,7 @@ public class ParserTests {
             InstructionDef i = parser.parseInstructionDef();
             // TODO: Finish
         } catch (Exception e) {
+            e.printStackTrace();
             Assertions.fail();
         }
     }

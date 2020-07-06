@@ -81,7 +81,7 @@ class SILParser {
   }
 
   protected def take(whileFn: Char => Boolean): String = {
-    val result : Array[Char] = chars.takeRight(cursor).takeWhile(whileFn)
+    val result : Array[Char] = chars.takeRight(chars.length - cursor).takeWhile(whileFn)
     cursor += result.length
     skipTrivia()
     new String(result)
@@ -93,7 +93,7 @@ class SILParser {
   }
 
   protected def skipTrivia(): Unit = {
-    if (cursor < chars.length) return
+    if (cursor >= chars.length) return
     if (Character.isWhitespace(chars(cursor))) {
       cursor += 1
       skipTrivia()
@@ -1084,7 +1084,7 @@ class SILParser {
 
   @throws[Error]
   def parseConvention(): Convention = {
-    take(":")
+    take("(")
     var result: Convention = null
     if (skip("c")) {
       result = Convention.c
@@ -1375,7 +1375,7 @@ class SILParser {
   // https://github.com/apple/swift/blob/master/docs/SIL.rst#debug-information
   @throws[Error]
   def parseScopeRef(): Option[Int] = {
-    if(!skip("scope")) None
+    if(!skip("scope")) return None
     Some(parseInt())
   }
 
@@ -1384,10 +1384,10 @@ class SILParser {
   def parseSourceInfo(): Option[SourceInfo] = {
     // NB: The SIL docs say that scope refs precede locations, but this is
     //     not true once you look at the compiler outputs or its source code.
-    if(!skip(",")) None
+    if(!skip(",")) return None
     val loc = parseLoc()
     // NB: No skipping if we failed to parse the location.
-    val scopeRef = if(loc.isEmpty || skip(",")) parseScopeRef() else None
+    val scopeRef = if(loc.isEmpty || skip(",")) parseScopeRef() else return None
     // We've skipped the comma, so failing to parse any of those two
     // components is an error.
     if(scopeRef.isEmpty && loc.isEmpty) throw parseError("Failed to parse source info")
@@ -1418,25 +1418,54 @@ class SILParser {
   // https://github.com/apple/swift/blob/master/docs/SIL.rst#sil-types
   @throws[Error]
   def parseType(): Type = {
-    null // TODO: still needs conversion from the Swift codebase
+    // NB: Ownership SSA has a surprising convention of printing the
+    //     ownership type before the actual type, so we first try to
+    //     parse the type attribute.
+    try {
+      take("$")
+    } catch {
+      case _: Error => {
+        val attr : Option[TypeAttribute] = {
+          try {
+            Some(parseTypeAttribute())
+          } catch {
+            case _: Error => None
+          }
+        }
+        // Take the $ for real even if the attribute was not there, because
+        // that's the error message we want to show anyway.
+        take("$")
+        // We want to throw our own exception type here so we rethrow
+        // if attr.get fails (it's needed just below the try/catch).
+        try {
+          attr.get
+        } catch {
+          case e : Throwable => {
+            throw parseError(e.getMessage)
+          }
+        }
+        Type.withOwnership(attr.get, parseNakedType())
+      }
+    }
+    parseNakedType()
   }
 
   @throws[Error]
   def parseTypeAttribute(): TypeAttribute = {
-    if(skip("@callee_guaranteed")) TypeAttribute.calleeGuaranteed
-    if(skip("@convention")) TypeAttribute.convention(parseConvention())
-    if(skip("@guaranteed")) TypeAttribute.guaranteed
-    if(skip("@in_guaranteed")) TypeAttribute.inGuaranteed
+    if(skip("@callee_guaranteed")) return TypeAttribute.calleeGuaranteed
+    if(skip("@convention")) return TypeAttribute.convention(parseConvention())
+    if(skip("@guaranteed")) return TypeAttribute.guaranteed
+    if(skip("@in_guaranteed")) return TypeAttribute.inGuaranteed
     // Must appear before "in" to parse correctly.
-    if(skip("@inout")) TypeAttribute.inout
-    if(skip("@in")) TypeAttribute.in
-    if(skip("@noescape")) TypeAttribute.noescape
-    if(skip("@thick")) TypeAttribute.thick
-    if(skip("@out")) TypeAttribute.out
-    if(skip("@owned")) TypeAttribute.owned
-    if(skip("@thin")) TypeAttribute.thin
-    if(skip("@yield_once")) TypeAttribute.yieldOnce
-    if(skip("@yields")) TypeAttribute.yields
+    if(skip("@inout")) return TypeAttribute.inout
+    if(skip("@in")) return TypeAttribute.in
+    if(skip("@noescape")) return TypeAttribute.noescape
+    if(skip("@thick")) return TypeAttribute.thick
+    if(skip("@out")) return TypeAttribute.out
+    if(skip("@owned")) return TypeAttribute.owned
+    if(skip("@thin")) return TypeAttribute.thin
+    if(skip("@yield_once")) return TypeAttribute.yieldOnce
+    if(skip("@yields")) return TypeAttribute.yields
     throw parseError("unknown attribute")
   }
 
