@@ -123,9 +123,7 @@ class SILParser {
 
   @throws[Error]
   protected def parseNilOrMany[T:ClassTag](pre: String, sep: String = "", suf: String = "", parseOne: () => T): Option[Array[T]] = {
-    if (!peek(pre)) {
-      return None
-    }
+    if (!peek(pre)) return None
     Some(parseMany(pre, sep, suf, parseOne))
   }
 
@@ -153,9 +151,7 @@ class SILParser {
 
   @throws[Error]
   protected def parseNilOrMany[T:ClassTag](pre: String, parseOne: () => T): Option[Array[T]] = {
-    if (!peek(pre)) {
-      return None
-    }
+    if (!peek(pre)) return None
     Some(parseMany(pre, parseOne))
   }
 
@@ -1047,10 +1043,10 @@ class SILParser {
   // https://github.com/apple/swift/blob/master/docs/SIL.rst#begin-access
   @throws[Error]
   def parseAccess(): Access = {
-    if(skip("deinit")) Access.deinit
-    if(skip("init")) Access.init
-    if(skip("modify")) Access.modify
-    if(skip("read")) Access.read
+    if(skip("deinit")) return Access.deinit
+    if(skip("init")) return Access.init
+    if(skip("modify")) return Access.modify
+    if(skip("read")) return Access.read
     throw parseError("unknown access")
   }
 
@@ -1067,7 +1063,7 @@ class SILParser {
   @throws[Error]
   def parseCase(parseElement: () => String): Option[Case] = {
     maybeParse(() => {
-      if(!skip(",")) None
+      if(!skip(",")) return None
       if (skip("case")) {
         val declRef = parseDeclRef()
         take(":")
@@ -1107,27 +1103,27 @@ class SILParser {
   @throws[Error]
   def parseDebugAttribute(): Option[DebugAttribute] = {
     maybeParse(() => {
-      if(!skip(",")) None
-      if(skip("argno")) DebugAttribute.argno(parseInt())
-      if(skip("name")) DebugAttribute.name(parseString())
-      if(skip("let")) DebugAttribute.let
-      if(skip("var")) DebugAttribute.variable
+      if(!skip(",")) return None
+      if(skip("argno")) return Some(DebugAttribute.argno(parseInt()))
+      if(skip("name")) return Some(DebugAttribute.name(parseString()))
+      if(skip("let")) return Some(DebugAttribute.let)
+      if(skip("var")) return Some(DebugAttribute.variable)
       None
     })
   }
 
   @throws[Error]
   def parseDeclKind(): Option[DeclKind] = {
-    if(skip("allocator")) Some(DeclKind.allocator)
-    if(skip("deallocator")) Some(DeclKind.deallocator)
-    if(skip("destroyer")) Some(DeclKind.destroyer)
-    if(skip("enumelt")) Some(DeclKind.enumElement)
-    if(skip("getter")) Some(DeclKind.getter)
-    if(skip("globalaccessor")) Some(DeclKind.globalAccessor)
-    if(skip("initializer")) Some(DeclKind.initializer)
-    if(skip("ivardestroyer")) Some(DeclKind.ivarDestroyer)
-    if(skip("ivarinitializer")) Some(DeclKind.ivarInitializer)
-    if(skip("setter")) Some(DeclKind.setter)
+    if(skip("allocator")) return Some(DeclKind.allocator)
+    if(skip("deallocator")) return Some(DeclKind.deallocator)
+    if(skip("destroyer")) return Some(DeclKind.destroyer)
+    if(skip("enumelt")) return Some(DeclKind.enumElement)
+    if(skip("getter")) return Some(DeclKind.getter)
+    if(skip("globalaccessor")) return Some(DeclKind.globalAccessor)
+    if(skip("initializer")) return Some(DeclKind.initializer)
+    if(skip("ivardestroyer")) return Some(DeclKind.ivarDestroyer)
+    if(skip("ivarinitializer")) return Some(DeclKind.ivarInitializer)
+    if(skip("setter")) return Some(DeclKind.setter)
     None
   }
 
@@ -1157,19 +1153,19 @@ class SILParser {
   // https://github.com/apple/swift/blob/master/docs/SIL.rst#string-literal
   @throws[Error]
   def parseEncoding(): Encoding = {
-    if(skip("objc_selector")) Encoding.objcSelector
-    if(skip("utf8")) Encoding.utf8
-    if(skip("utf16")) Encoding.utf16
+    if(skip("objc_selector")) return Encoding.objcSelector
+    if(skip("utf8")) return Encoding.utf8
+    if(skip("utf16")) return Encoding.utf16
     throw parseError("unknown encoding")
   }
 
   // https://github.com/apple/swift/blob/master/docs/SIL.rst#begin-access
   @throws[Error]
   def parseEnforcement(): Enforcement = {
-    if(skip("dynamic")) Enforcement.dynamic
-    if(skip("")) Enforcement.static
-    if(skip("")) Enforcement.unknown
-    if(skip("")) Enforcement.unsafe
+    if(skip("dynamic")) return Enforcement.dynamic
+    if(skip("")) return Enforcement.static
+    if(skip("")) return Enforcement.unknown
+    if(skip("")) return Enforcement.unsafe
     throw parseError("unknown enforcement")
   }
 
@@ -1192,16 +1188,16 @@ class SILParser {
       FunctionAttribute.semantics(value)
     }
 
-    if(skip("[always_inline]")) FunctionAttribute.alwaysInline
-    if(peek("[differentiable")) parseDifferentiable()
-    if(skip("[dynamically_replacable]")) FunctionAttribute.dynamicallyReplacable
-    if(skip("[noinline]")) FunctionAttribute.noInline
-    if(skip("[ossa]")) FunctionAttribute.noncanonical(NoncanonicalFunctionAttribute.ownershipSSA)
-    if(skip("[readonly]")) FunctionAttribute.readonly
-    if(peek("[_semantics")) parseSemantics()
-    if(skip("[serialized]")) FunctionAttribute.serialized
-    if(skip("[thunk]")) FunctionAttribute.thunk
-    if(skip("[transparent]")) FunctionAttribute.transparent
+    if(skip("[always_inline]")) return FunctionAttribute.alwaysInline
+    if(peek("[differentiable")) return parseDifferentiable()
+    if(skip("[dynamically_replacable]")) return FunctionAttribute.dynamicallyReplacable
+    if(skip("[noinline]")) return FunctionAttribute.noInline
+    if(skip("[ossa]")) return FunctionAttribute.noncanonical(NoncanonicalFunctionAttribute.ownershipSSA)
+    if(skip("[readonly]")) return FunctionAttribute.readonly
+    if(peek("[_semantics")) return parseSemantics()
+    if(skip("[serialized]")) return FunctionAttribute.serialized
+    if(skip("[thunk]")) return FunctionAttribute.thunk
+    if(skip("[transparent]")) return FunctionAttribute.transparent
     throw parseError("unknown function attribute")
   }
 
@@ -1254,22 +1250,22 @@ class SILParser {
   def parseLinkage(): Linkage = {
     // The order in here is a bit relaxed because longer words need to come
     // before the shorter ones to parse correctly.
-    if(skip("hidden_external")) Linkage.hiddenExternal
-    if(skip("hidden")) Linkage.hidden
-    if(skip("private_external")) Linkage.privateExternal
-    if(skip("private")) Linkage.priv
-    if(skip("public_external")) Linkage.publicExternal
-    if(skip("non_abi")) Linkage.publicNonABI
-    if(skip("public")) Linkage.public
-    if(skip("shared_external")) Linkage.sharedExternal
-    if(skip("shared")) Linkage.shared
+    if(skip("hidden_external")) return Linkage.hiddenExternal
+    if(skip("hidden")) return Linkage.hidden
+    if(skip("private_external")) return Linkage.privateExternal
+    if(skip("private")) return Linkage.priv
+    if(skip("public_external")) return Linkage.publicExternal
+    if(skip("non_abi")) return Linkage.publicNonABI
+    if(skip("public")) return Linkage.public
+    if(skip("shared_external")) return Linkage.sharedExternal
+    if(skip("shared")) return Linkage.shared
     Linkage.public
   }
 
   // https://github.com/apple/swift/blob/master/docs/SIL.rst#debug-information
   @throws[Error]
   def parseLoc(): Option[Loc] = {
-    if(!skip("loc")) None
+    if(!skip("loc")) return None
     val path = parseString()
     take(":")
     val line = parseInt()
