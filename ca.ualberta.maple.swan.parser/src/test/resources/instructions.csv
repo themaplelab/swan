@@ -1,6 +1,6 @@
 # ============== From real SIL ==============
 
-%3 = alloc_stack $Hasher, scope 110             // users: %48, %47, %44, %7~
+#%3 = alloc_stack $Hasher, scope 110             // users: %48, %47, %44, %7~
 #"%14 = alloc_ref [stack] [tail_elems $Card * %11 : $Builtin.Word] $_ContiguousArrayStorage<Card>, scope 306 // users: %43, %42, %32, %31, %22, %15, %44"~
 # Missing "alloc_ref_dynamic"
 #"%182 = alloc_box ${ var @sil_weak Optional<CardCell> }, loc \"/Users/abdulalib/Documents/swan-spds/benchmark/mobile-ios-vipergame/Memory/Modules/Game/User Interface/View/CardCell.swift\":65:76, scope 1144 // users: %204, %199, %191, %186, %183"~
