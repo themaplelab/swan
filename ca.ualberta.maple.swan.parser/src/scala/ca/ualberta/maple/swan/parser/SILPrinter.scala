@@ -16,7 +16,7 @@ import ca.ualberta.maple.swan.parser.Error
 class SILPrinter extends Printer {
 
   def print(module: Module): Unit = {
-    module.functions.foreach( f => {
+    module.functions.foreach(f => {
       print(f)
       print("\n\n")
     })
@@ -49,7 +49,9 @@ class SILPrinter extends Printer {
   }
 
   def print(operatorDef: OperatorDef): Unit = {
-    print(operatorDef.result, " = ", (r: Result) => {print(r)})
+    print(operatorDef.result, " = ", (r: Result) => {
+      print(r)
+    })
     print(operatorDef.operator)
     print(operatorDef.sourceInfo, (si: SourceInfo) => print(si))
   }
@@ -78,7 +80,7 @@ class SILPrinter extends Printer {
       }
       case Operator.apply(nothrow, value, substitutions, arguments, tpe) => {
         print("apply ")
-        print(when = nothrow, "[nothrow] ")
+        print( "[nothrow] ", nothrow)
         print(value)
         print(whenEmpty = false, "<", substitutions, ", ", ">", (t: Type) => naked(t))
         print(whenEmpty = true, "(", arguments, ", ", ")", (a: String) => print(a))
@@ -93,13 +95,13 @@ class SILPrinter extends Printer {
         print("[")
         print(enforcement)
         print("] ")
-        print(when = noNestedConflict, "[noNestedConflict] ")
-        print(when =  builtin, "[builtin] ")
+        print("[noNestedConflict] ", noNestedConflict)
+        print("[builtin] ", builtin)
         print(operand)
       }
       case Operator.beginApply(nothrow, value, substitutions, arguments, tpe) => {
         print("begin_apply ")
-        print(when = nothrow, "[nothrow] ")
+        print( "[nothrow] ", nothrow)
         print(value)
         print(whenEmpty = false, "<", substitutions, ", ", ">", (t: Type) => naked(t))
         print(whenEmpty = true, "(", arguments, ", ", ")", (a: String) => print(a))
@@ -125,8 +127,8 @@ class SILPrinter extends Printer {
       }
       case Operator.convertEscapeToNoescape(notGuaranteed, escaped, operand, tpe) => {
         print("convert_escape_to_noescape ")
-        print(when = notGuaranteed, "[not_guaranteed] ")
-        print(when = escaped, "[escaped] ")
+        print( "[not_guaranteed] ", notGuaranteed)
+        print( "[escaped] ", escaped)
         print(operand)
         print(" to ")
         print(tpe)
@@ -135,15 +137,15 @@ class SILPrinter extends Printer {
         print("convert_function ")
         print(operand)
         print(" to ")
-        print(when = withoutActuallyEscaping, "[without_actually_escaping] ")
+        print( "[without_actually_escaping] ", withoutActuallyEscaping)
         print(tpe)
       }
       case Operator.copyAddr(take, value, initialization, operand) => {
         print("copy_addr ")
-        print(when = take, "[take] ")
+        print( "[take] ", take)
         print(value)
         print(" to ")
-        print(when = initialization, "[initialization] ")
+        print( "[initialization] ", initialization)
         print(operand)
       }
       case Operator.copyValue(operand) => {
@@ -183,7 +185,7 @@ class SILPrinter extends Printer {
       }
       case Operator.endAccess(abort, operand) => {
         print("end_access ")
-        print(when = abort, "[abort] ")
+        print( "[abort] ", abort)
         print(operand)
       }
       case Operator.endApply(value) => {
@@ -256,11 +258,11 @@ class SILPrinter extends Printer {
       }
       case Operator.partialApply(calleeGuaranteed, onStack, value, substitutions, arguments, tpe) => {
         print("partial_apply ")
-        print(when = calleeGuaranteed, "[callee_guaranteed] ")
-        print(when = onStack, "[on_stack] ")
+        print( "[callee_guaranteed] ", calleeGuaranteed)
+        print( "[on_stack] ", onStack)
         print(value)
         print(whenEmpty = false, "<", substitutions, ", ", ">", (t: Type) => naked(t))
-        print(whenEmpty = true, "(", arguments, ", ", ")", (a : String) => print(a))
+        print(whenEmpty = true, "(", arguments, ", ", ")", (a: String) => print(a))
         print(" : ")
         print(tpe)
       }
@@ -268,7 +270,7 @@ class SILPrinter extends Printer {
         print("pointer_to_address ")
         print(operand)
         print(" to ")
-        print(when = strict, "[strict] ")
+        print( "[strict] ", strict)
         print(tpe)
       }
       case Operator.releaseValue(operand) => {
@@ -282,7 +284,7 @@ class SILPrinter extends Printer {
       case Operator.selectEnum(operand, cases, tpe) => {
         print("select_enum ")
         print(operand)
-        print(whenEmpty = false, "", cases, "", "", (c : Case) => print(c))
+        print(whenEmpty = false, "", cases, "", "", (c: Case) => print(c))
         print(" : ")
         print(tpe)
       }
@@ -313,7 +315,7 @@ class SILPrinter extends Printer {
       case Operator.struct(tpe, operands) => {
         print("struct ")
         print(tpe)
-        print(whenEmpty = true," (", operands, ", ", ")", (o: Operand) => print(o))
+        print(whenEmpty = true, " (", operands, ", ", ")", (o: Operand) => print(o))
       }
       case Operator.structElementAddr(operand, declRef) => {
         print("struct_element_addr ")
@@ -357,7 +359,7 @@ class SILPrinter extends Printer {
         print(" : ")
         print(tpe)
       }
-        // TODO: Finish
+      // TODO: Finish
     }
   }
 
@@ -452,8 +454,8 @@ class SILPrinter extends Printer {
         print("witness_method: ")
         naked(tpe)
       }
-      print(")")
     }
+    print(")")
   }
 
   def print(attribute: DebugAttribute): Unit = {
@@ -498,7 +500,7 @@ class SILPrinter extends Printer {
       print(declRef.kind.get)
     }
     if (declRef.level.nonEmpty) {
-      print( if (declRef.kind.isEmpty == true) "!" else ".")
+      print(if (declRef.kind.isEmpty == true) "!" else ".")
       literal(declRef.level.get)
     }
   }
@@ -583,7 +585,7 @@ class SILPrinter extends Printer {
   def print(sourceInfo: SourceInfo): Unit = {
     // The SIL docs say that scope refs precede locations, but this is
     // not true once you look at the compiler outputs or its source code.
-    print(", ", sourceInfo.loc, (l : Loc) => print(l))
+    print(", ", sourceInfo.loc, (l: Loc) => print(l))
     print(", scope ", sourceInfo.scopeRef, (ref: Int) => literal(ref))
   }
 
@@ -633,17 +635,15 @@ class SILPrinter extends Printer {
       }
       case Type.genericType(params, reqs, tpe) => {
         print(whenEmpty = true, "<", params, ", ", "", (p: String) => print(p))
-        print(whenEmpty = false, " where ", reqs, ", ", "", (r : TypeRequirement) => print(r))
+        print(whenEmpty = false, " where ", reqs, ", ", "", (r: TypeRequirement) => print(r))
         print(">")
         // This is a weird corner case of -emit-sil, so we have to go the extra mile.
-        /* TODO
-        if case .genericType = type {
-          naked(type)
+        if (tpe.isInstanceOf[Type.genericType]) {
+          naked(tpe)
         } else {
           print(" ")
-          naked(type)
+          naked(tpe)
         }
-         */
       }
       case Type.namedType(name) => {
         print(name)
@@ -658,10 +658,10 @@ class SILPrinter extends Printer {
       }
       case Type.specializedType(tpe, args) => {
         naked(tpe)
-        print(whenEmpty = true, "<", args, ", ", ">", (t : Type) => naked(t))
+        print(whenEmpty = true, "<", args, ", ", ">", (t: Type) => naked(t))
       }
       case Type.tupleType(params) => {
-          print(whenEmpty = true, "(", params, ", ", ")", (t: Type) => naked(t))
+        print(whenEmpty = true, "(", params, ", ", ")", (t: Type) => naked(t))
       }
       case Type.withOwnership(_, _) => {
         // Note: "fatalError" in Swift, but I think exception is okay here.
@@ -721,93 +721,5 @@ class SILPrinter extends Printer {
     }
   }
 
-  // Add description field to types.
 
-  class ModulePrinter(val m : Module) {
-    val description: String = {
-      val p = new SILPrinter()
-      p.print(m)
-      p.description
-    }
-  }
-
-  implicit def moduleToPrinter(m : Module): ModulePrinter = new ModulePrinter(m)
-
-  class FunctionPrinter(val f : Function) {
-    val description: String = {
-      val p = new SILPrinter()
-      p.print(f)
-      p.description
-    }
-  }
-  
-  implicit def functionToPrinter(f : Function): FunctionPrinter = new FunctionPrinter(f)
-
-  class BlockPrinter(val b : Block) {
-    val description: String = {
-      val p = new SILPrinter()
-      p.print(b)
-      p.description
-    }
-  }
-
-  implicit def blockToPrinter(b : Block): BlockPrinter = new BlockPrinter(b)
-
-  class OperatorDefPrinter(val od : OperatorDef) {
-    val description: String = {
-      val p = new SILPrinter()
-      p.print(od)
-      p.description
-    }
-  }
-
-  implicit def operatorDefToPrinter(od : OperatorDef): OperatorDefPrinter = new OperatorDefPrinter(od)
-
-  class TerminatorDefPrinter(val td : TerminatorDef) {
-    val description: String = {
-      val p = new SILPrinter()
-      p.print(td)
-      p.description
-    }
-  }
-
-  implicit def terminatorDefToPrinter(td : TerminatorDef): TerminatorDefPrinter = new TerminatorDefPrinter(td)
-
-  class InstructionDefPrinter(val id : InstructionDef) {
-    val description: String = id match {
-      case InstructionDef.operator(op: OperatorDef) => op.description
-      case InstructionDef.terminator(t: TerminatorDef) => t.description
-    }
-  }
-
-  implicit def instructionDefToPrinter(id : InstructionDef): InstructionDefPrinter = new InstructionDefPrinter(id)
-
-  class OperatorPrinter(val o : Operator) {
-    val description: String = {
-      val p = new SILPrinter()
-      p.print(o)
-      p.description
-    }
-  }
-
-  implicit def operatorToPrinter(o : Operator): OperatorPrinter = new OperatorPrinter(o)
-
-  class TerminatorPrinter(val t : Terminator) {
-    val description: String = {
-      val p = new SILPrinter()
-      p.print(t)
-      p.description
-    }
-  }
-
-  implicit def terminatorToPrinter(t : Terminator): TerminatorPrinter = new TerminatorPrinter(t)
-
-  class InstructionPrinter(val i : Instruction) {
-    val description: String = i match {
-      case Instruction.operator(op: Operator) => op.description
-      case Instruction.terminator(t: Terminator) => t.description
-    }
-  }
-
-  implicit def instructionDefToPrinter(i : Instruction): InstructionPrinter = new InstructionPrinter(i)
 }

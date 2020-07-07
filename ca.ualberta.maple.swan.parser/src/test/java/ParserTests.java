@@ -8,10 +8,7 @@
  *
  */
 
-import ca.ualberta.maple.swan.parser.Instruction;
-import ca.ualberta.maple.swan.parser.InstructionDef;
-import ca.ualberta.maple.swan.parser.SILParser;
-import ca.ualberta.maple.swan.parser.SILPrinter;
+import ca.ualberta.maple.swan.parser.*;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -25,13 +22,23 @@ public class ParserTests {
     })
     void testInstruction(String inst) {
         try {
+            inst = doReplacements(inst);
             SILParser parser = new SILParser(inst);
             InstructionDef i = parser.parseInstructionDef();
-            // TODO: Finish
+            Assertions.assertEquals(
+                    inst,
+                    PrintExtensions$.MODULE$.InstructionDefPrinter(i).description());
         } catch (Exception e) {
             e.printStackTrace();
             Assertions.fail();
         }
+    }
+
+    // Account for any known transformations that the parser does,
+    // such as superficial type conversions, here.
+    String doReplacements(String inst) {
+        inst = inst.replaceAll("\\[Int\\]", "Array<Int>");
+        return inst;
     }
 
 }

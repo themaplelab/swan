@@ -26,13 +26,12 @@ class Printer {
     indentation = new String(" " * count)
   }
 
-  def print[T](when: Boolean, i: T): Unit = {
-    print(when, i.toString)
-  }
-
-  def print(when: Boolean, s: String): Unit = {
+  def print[T](i: T, when: Boolean = true): Unit = {
     if (!when) return
+    val s = i.toString
+    System.out.print(s)
     val lines = s.split('\n').iterator
+    var lineIdx = 0
     while(lines.hasNext) {
       val line = lines.next()
       if (!indented && !line.isEmpty) {
@@ -41,10 +40,11 @@ class Printer {
       }
       description += line
 
-      if (!lines.hasNext) {
+      if (lineIdx < lines.length - 1) {
         description += "\n"
         indented = false
       }
+      lineIdx += 1
     }
   }
 
@@ -87,10 +87,6 @@ class Printer {
     print(pre)
     print(xs, sep, fn)
     print(suf)
-  }
-
-  def print(s : String): Unit = {
-    System.out.print(s) // replace?
   }
 
   def literal(b: Boolean): Unit = {
