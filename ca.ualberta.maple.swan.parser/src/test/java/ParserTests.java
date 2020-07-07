@@ -10,24 +10,33 @@
 
 import ca.ualberta.maple.swan.parser.*;
 import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.ValueSource;
+import org.junit.jupiter.params.provider.CsvFileSource;
 
 public class ParserTests {
 
+    // This test parses every instruction in instructions.csv and checks that
+    // what the SILPrinter outputs is consistent with the input. Every
+    // instruction in the CSV must end with the '~' delimiter because
+    // optionally a specific string to check against can be supplied.
+    // The CSV can contain comments as long as they start with "//" and end
+    // with '~'.
     @ParameterizedTest
-    @ValueSource(strings = {
-            "%149 = apply %148<[Int], PartialRangeFrom<Int>>(%143, %146, %144) : $@convention(method) <τ_0_0 where τ_0_0 : MutableCollection><τ_1_0 where τ_1_0 : RangeExpression, τ_0_0.Index == τ_1_0.Bound> (@in_guaranteed τ_1_0, @in_guaranteed τ_0_0) -> @out τ_0_0.SubSequence"
-    })
-    void testInstruction(String inst) {
+    // Use '~' because it's never used in SIL (I think).
+    @CsvFileSource(resources = "instructions.csv", delimiter = '~')
+    void testSingleInstruction(String inst, String compareTo) {
+        // Handle comments in the CSV.
+        if (inst.startsWith("//")) {
+            return;
+        }
         try {
             inst = doReplacements(inst);
             SILParser parser = new SILParser(inst);
             InstructionDef i = parser.parseInstructionDef();
-            Assertions.assertEquals(
-                    inst,
-                    PrintExtensions$.MODULE$.InstructionDefPrinter(i).description());
+            if (compareTo == null || compareTo.equals("")) {
+                compareTo = PrintExtensions$.MODULE$.InstructionDefPrinter(i).description();
+            }
+            Assertions.assertEquals(inst, compareTo);
         } catch (Exception e) {
             e.printStackTrace();
             Assertions.fail();
