@@ -19,16 +19,11 @@ public class ParserTests {
     // what the SILPrinter outputs is consistent with the input. Every
     // instruction in the CSV must end with the '~' delimiter because
     // optionally a specific string to check against can be supplied.
-    // The CSV can contain comments as long as they start with "//" and end
-    // with '~'.
+    // The CSV can contain comments as long as they start with "#".
     @ParameterizedTest
     // Use '~' because it's never used in SIL (I think).
     @CsvFileSource(resources = "instructions.csv", delimiter = '~')
     void testSingleInstruction(String inst, String compareTo) {
-        // Handle comments in the CSV.
-        if (inst.startsWith("//")) {
-            return;
-        }
         try {
             inst = doReplacements(inst);
             SILParser parser = new SILParser(inst);
