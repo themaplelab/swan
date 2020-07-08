@@ -443,15 +443,10 @@ class SILPrinter extends Printer {
   def print(convention: Convention): Unit = {
     print("(")
     convention match {
-      case Convention.c => {
-        print("c")
-      }
-      case Convention.method => {
-        print("method")
-      }
-      case Convention.thin => {
-        print("thin")
-      }
+      case Convention.c => print("c")
+      case Convention.method => print("method")
+      case Convention.thin => print("thin")
+      case Convention.block => print("block")
       case Convention.witnessMethod(tpe) => {
         print("witness_method: ")
         naked(tpe)
@@ -690,6 +685,8 @@ class SILPrinter extends Printer {
       case TypeAttribute.thin => print("@thin")
       case TypeAttribute.yieldOnce => print("@yield_once")
       case TypeAttribute.yields => print("@yields")
+      case TypeAttribute.error => print("@error")
+      case TypeAttribute.objcMetatype => print("@objc_metatype")
     }
   }
 

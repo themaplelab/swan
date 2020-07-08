@@ -283,8 +283,14 @@ class SILParser {
   @throws[Error]
   def parseInstruction(): Instruction = {
     val instructionName = take(x => x.isLetter || x == '_')
-    try {
+    // In the original parser this method would return
+    // Instruction.operator(Operator.unknown(instructionName)) if
+    // parseInstructionBody failed. I think we should just blow up
+    // for now and maybe have some error recovery options for
+    // production later.
+    // try {
       parseInstructionBody(instructionName)
+    /*
     } catch {
       // Try to recover to a point where resuming the parsing is sensible
       // by skipping until the end of this line. This is only a heuristic:
@@ -294,6 +300,7 @@ class SILParser {
         Instruction.operator(Operator.unknown(instructionName))
       }
     }
+     */
   }
 
   @throws[Error]
@@ -606,11 +613,19 @@ class SILParser {
       case "apply" => {
         val nothrow = skip("[nothrow]")
         val value = parseValue()
-        val substitutions = parseNilOrMany("<", ",",">", parseNakedType).get
+        val substitutions = parseNilOrMany("<", ",",">", parseNakedType)
+        // I'm sure there's a more elegant way to do this.
+        val substitutionsNonOptional: Array[Type] = {
+          if (substitutions.isEmpty) {
+            new Array[Type](0)
+          } else {
+            substitutions.get
+          }
+        }
         val arguments = parseMany("(",",",")", parseValue)
         take(":")
         val tpe = parseType()
-        Instruction.operator(Operator.apply(nothrow,value,substitutions,arguments,tpe))
+        Instruction.operator(Operator.apply(nothrow,value,substitutionsNonOptional,arguments,tpe))
       }
       case "begin_apply" => {
         val nothrow = skip("[nothrow]")
@@ -1088,6 +1103,8 @@ class SILParser {
       result = Convention.method
     } else if (skip("thin")) {
       result = Convention.thin
+    } else if (skip("block")) {
+      result = Convention.block
     } else if (skip("witness_method")) {
       take(":")
       val tpe = parseNakedType()
@@ -1146,8 +1163,17 @@ class SILParser {
     if (kind.nonEmpty && !skip(".")) {
       new DeclRef(name.toArray, kind, None)
     }
-    val level = parseInt()
-    new DeclRef(name.toArray, kind, Some(level))
+    // Note: In the original parser there was no try/catch here.
+    // However, parseInt() can fail in practice when there is no level,
+    // so I just threw a try/catch around it. Not sure if this is the final
+    // solution.
+    try {
+      val level = parseInt()
+      new DeclRef(name.toArray, kind, Some(level))
+    } catch {
+      case _ : Error => { }
+    }
+    new DeclRef(name.toArray, kind, None)
   }
 
   // https://github.com/apple/swift/blob/master/docs/SIL.rst#string-literal
@@ -1278,6 +1304,8 @@ class SILParser {
   // This is different from `parseType` because most usages of types in SIL are prefixed with
   // `$` (so it made sense to have a shorter name for that common case).
   // Type format has been reverse-engineered since it doesn't seem to be mentioned in the spec.
+  // TODO: Handle types used in [at least] alloc_box.
+  //  e.g. ${ var @sil_weak Optional<CardCell> }
   @throws[Error]
   def parseNakedType(): Type = {
     if (skip("<")) {
@@ -1462,6 +1490,8 @@ class SILParser {
     if(skip("@thin")) return TypeAttribute.thin
     if(skip("@yield_once")) return TypeAttribute.yieldOnce
     if(skip("@yields")) return TypeAttribute.yields
+    if(skip("@error")) return TypeAttribute.error
+    if(skip("@objc_metatype")) return TypeAttribute.objcMetatype
     throw parseError("unknown attribute")
   }
 

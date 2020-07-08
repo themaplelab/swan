@@ -165,6 +165,7 @@ object Convention {
   case object c extends Convention
   case object method extends Convention
   case object thin extends Convention
+  case object block extends Convention
   case class witnessMethod(tpe: Type) extends Convention
 }
 
@@ -289,6 +290,8 @@ object TypeAttribute {
   case object thin extends TypeAttribute
   case object yieldOnce extends TypeAttribute
   case object yields extends TypeAttribute
+  case object error extends TypeAttribute
+  case object objcMetatype extends TypeAttribute
 }
 
 sealed trait TypeRequirement
