@@ -54,11 +54,13 @@ class SILPrinter extends Printer {
     })
     print(operatorDef.operator)
     print(operatorDef.sourceInfo, (si: SourceInfo) => print(si))
+    System.out.println()
   }
 
   def print(terminatorDef: TerminatorDef): Unit = {
     print(terminatorDef.terminator)
     print(terminatorDef.sourceInfo, (si: SourceInfo) => print(si))
+    System.out.println()
   }
 
   def print(op: Operator): Unit = {

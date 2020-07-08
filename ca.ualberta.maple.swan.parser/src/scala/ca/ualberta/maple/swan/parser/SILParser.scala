@@ -162,7 +162,7 @@ class SILParser {
     while (!break) {
       val element = parseOne()
       if (element.isEmpty) {
-        break = false
+        break = true
       } else {
         result.append(element.get)
       }

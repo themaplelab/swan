@@ -42,6 +42,8 @@ public class ParserTests {
     // such as superficial type conversions, here.
     String doReplacements(String inst) {
         inst = inst.replaceAll("\\[Int\\]", "Array<Int>");
+        inst = inst.split("//")[0];
+        inst = inst.trim();
         return inst;
     }
 
