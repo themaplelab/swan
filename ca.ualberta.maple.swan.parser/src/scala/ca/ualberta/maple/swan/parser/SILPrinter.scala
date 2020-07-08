@@ -124,8 +124,10 @@ class SILPrinter extends Printer {
       case Operator.condFail(operand, message) => {
         print("cond_fail ")
         print(operand)
-        print(", ")
-        literal(message)
+        if (message.nonEmpty) {
+          print(", ")
+          literal(message.get)
+        }
       }
       case Operator.convertEscapeToNoescape(notGuaranteed, escaped, operand, tpe) => {
         print("convert_escape_to_noescape ")

@@ -260,6 +260,7 @@ release_value %103 : $Optional<GameWireFrameProtocol>, loc "<compiler-generated>
 # unconditional_checked_cast_addr Card in %101 : $*Card to Any in %91 : $*Any, scope 1406 // id: %103~
 
 cond_fail %14 : $Builtin.Int1, scope 450        // id: %15~
+cond_fail %15 : $Builtin.Int1, "failure message", scope 450        // id: %15~
 
 unreachable , scope 838                         // id: %60~
 

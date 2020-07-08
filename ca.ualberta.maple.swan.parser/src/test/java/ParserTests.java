@@ -9,9 +9,12 @@
  */
 
 import ca.ualberta.maple.swan.parser.*;
+import ca.ualberta.maple.swan.parser.Error;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvFileSource;
+
+import java.util.HashSet;
 
 public class ParserTests {
 
@@ -23,25 +26,25 @@ public class ParserTests {
     @ParameterizedTest
     // Use '~' because it's never used in SIL (I think).
     @CsvFileSource(resources = "instructions.csv", delimiter = '~')
-    void testSingleInstruction(String inst, String compareTo) {
-        try {
-            inst = doReplacements(inst);
-            SILParser parser = new SILParser(inst);
-            InstructionDef i = parser.parseInstructionDef();
-            if (compareTo == null || compareTo.equals("")) {
-                compareTo = PrintExtensions$.MODULE$.InstructionDefPrinter(i).description();
-            }
-            Assertions.assertEquals(inst, compareTo);
-        } catch (Exception e) {
-            e.printStackTrace();
-            Assertions.fail();
+    void testSingleInstruction(String inst, String compareTo) throws Error {
+        inst = doReplacements(inst);
+        SILParser parser = new SILParser(inst);
+        InstructionDef i = parser.parseInstructionDef();
+        if (compareTo == null || compareTo.equals("")) {
+            compareTo = PrintExtensions$.MODULE$.InstructionDefPrinter(i).description();
         }
+        Assertions.assertEquals(inst, compareTo);
     }
 
     // Account for any known transformations that the parser does,
     // such as superficial type conversions, here.
     String doReplacements(String inst) {
         inst = inst.replaceAll("\\[Int\\]", "Array<Int>");
+        // Sometimes there is a space after unreachable.
+        inst = inst.replaceAll("unreachable ,", "unreachable,");
+        // Not sure why this .1 appears in practice after "enumelt". Doesn't seem
+        // necessary.
+        inst = inst.replaceAll("enumelt\\.1", "enumelt");
         inst = inst.split("//")[0];
         inst = inst.trim();
         return inst;

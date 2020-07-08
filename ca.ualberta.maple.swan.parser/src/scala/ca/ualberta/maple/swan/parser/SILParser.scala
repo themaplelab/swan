@@ -117,7 +117,10 @@ class SILParser {
       }
       result
     } catch {
-      case e : Error => throw e
+      case e : Error => {
+        cursor = savedCursor
+        throw e
+      }
     }
   }
 
@@ -765,7 +768,22 @@ class SILParser {
         val tpe = parseType()
         take(",")
         val declRef = parseDeclRef()
-        val operand = if (skip(",")) Some(parseOperand()) else None
+        // Just because we see "," doesn't mean there will be an operand.
+        // It could be `[...], scope [...]`
+        val operand = {
+          try {
+            maybeParse(() => {
+              if (skip(",")) {
+                Some(parseOperand())
+              } else {
+                None
+              }
+            }: Option[Operand])
+          } catch {
+            case _ : Error => None
+          }
+
+        }
         Instruction.operator(Operator.`enum`(tpe, declRef, operand))
       }
       case "unchecked_enum_data" => {
@@ -967,14 +985,25 @@ class SILParser {
 
       case "cond_fail" => {
         val operand = parseOperand()
-        take(",")
-        val message = parseString()
+        // According to the spec, the message is non-optional but
+        // that doesn't seem to be the case in practice.
+        val message = {
+          try {
+            maybeParse(() => {
+              take(",")
+              Some(parseString())
+            } : Option[String] )
+          } catch {
+            case _: Error => None
+          }
+        }
         Instruction.operator(Operator.condFail(operand, message))
       }
 
         // *** TERMINATORS ***
 
       case "unreachable" => {
+        // Note: For some reason there is a space after sometimes.
         Instruction.terminator(Terminator.unreachable)
       }
       case "return" => {
@@ -998,7 +1027,7 @@ class SILParser {
       }
       case "cond_br" => {
         val cond = parseValueName()
-        take(":")
+        take(",")
         val trueLabel = parseIdentifier()
         val to : Option[Array[Operand]] = parseNilOrMany("(",",",")",parseOperand)
         val trueOperands = if (to.nonEmpty) to.get else new Array[Operand](0)

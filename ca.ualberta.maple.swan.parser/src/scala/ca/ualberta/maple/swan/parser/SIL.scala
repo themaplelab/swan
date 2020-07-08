@@ -80,7 +80,7 @@ object Operator {
                        ) extends Operator
   case class beginBorrow(operand: Operand) extends Operator
   case class builtin(name: String, operands: Array[Operand], tpe: Type) extends Operator
-  case class condFail(operand: Operand, message: String) extends Operator
+  case class condFail(operand: Operand, message: Option[String]) extends Operator
   case class convertEscapeToNoescape(notGuaranteed: Boolean, escaped: Boolean, operand: Operand, tpe: Type) extends Operator
   case class convertFunction(operand: Operand, withoutActuallyEscaping: Boolean, tpe: Type) extends Operator
   case class copyAddr(take: Boolean, value: String, initialization: Boolean, operand: Operand) extends Operator
