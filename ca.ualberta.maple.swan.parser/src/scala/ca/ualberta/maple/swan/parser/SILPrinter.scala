@@ -179,6 +179,10 @@ class SILPrinter extends Printer {
         print(operand)
         print(whenEmpty = false, ", ", attributes, ", ", "", (a: DebugAttribute) => print(a))
       }
+      case Operator.destroyAddr(operand) => {
+        print("destroy_addr ")
+        print(operand)
+      }
       case Operator.destroyValue(operand) => {
         print("destroy_value ")
         print(operand)
@@ -390,6 +394,11 @@ class SILPrinter extends Printer {
       }
       case Terminator.switchEnum(operand, cases) => {
         print("switch_enum ")
+        print(operand)
+        print(whenEmpty = false, "", cases, "", "", (c: Case) => print(c))
+      }
+      case Terminator.switchEnumAddr(operand, cases) => {
+        print("switch_enum_addr ")
         print(operand)
         print(whenEmpty = false, "", cases, "", "", (c: Case) => print(c))
       }

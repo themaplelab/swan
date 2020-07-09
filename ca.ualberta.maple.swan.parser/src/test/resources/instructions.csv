@@ -46,8 +46,7 @@ store %31 to %58 : $*Array<Card>, loc "/Users/abdulalib/Documents/swan-spds/benc
 
 copy_addr [take] %105 to [initialization] %107 : $*UUID, loc "/Users/abdulalib/Documents/swan-spds/benchmark/mobile-ios-vipergame/Memory/Modules/Game/Application Logic/Entity/Card.swift":35:25, scope 820 // id: %108~
 
-# Not yet implemented
-# destroy_addr %28 : $*DispatchWorkItemFlags, loc "/Users/abdulalib/Documents/swan-spds/benchmark/mobile-ios-vipergame/Memory/Utilities/UIImage.swift":89:9, scope 877 // id: %47~
+destroy_addr %28 : $*DispatchWorkItemFlags, loc "/Users/abdulalib/Documents/swan-spds/benchmark/mobile-ios-vipergame/Memory/Utilities/UIImage.swift":89:9, scope 877 // id: %47~
 
 %28 = index_addr %19 : $*JSONSerialization.ReadingOptions, %27 : $Builtin.Word, scope 185 // user: %29~
 
@@ -283,8 +282,7 @@ cond_br %101, bb10, bb14, scope 459             // id: %102~
 
 switch_enum %91 : $Optional<FloatingPointSign>, case #Optional.some!enumelt.1: bb23, case #Optional.none!enumelt: bb22, scope 123 // id: %92~
 
-# Not yet implemented
-# switch_enum_addr %52 : $*Optional<S.Element>, case #Optional.some!enumelt.1: bb8, case #Optional.none!enumelt: bb7, scope 58 // id: %54~
+switch_enum_addr %52 : $*Optional<S.Element>, case #Optional.some!enumelt.1: bb8, case #Optional.none!enumelt: bb7, scope 58 // id: %54~
 
 # Missing "dynamic_method_br"
 

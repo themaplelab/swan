@@ -90,6 +90,7 @@ object Operator {
   case class projectBox(operand: Operand) extends Operator
   case class debugValue(operand: Operand, attributes: Array[DebugAttribute]) extends Operator
   case class debugValueAddr(operand: Operand, attributes: Array[DebugAttribute]) extends Operator
+  case class destroyAddr(operand: Operand) extends Operator
   case class destroyValue(operand: Operand) extends Operator
   case class destructureTuple(operand: Operand) extends Operator
   case class endAccess(abort: Boolean, operand: Operand) extends Operator
@@ -134,6 +135,7 @@ object Terminator {
                     falseLabel: String, falseOperands: Array[Operand]) extends Terminator
   case class ret(operand: Operand) extends Terminator
   case class switchEnum(operand: Operand, cases: Array[Case]) extends Terminator
+  case class switchEnumAddr(operand: Operand, cases: Array[Case]) extends Terminator
   case class unknown(name: String) extends Terminator
   case object unreachable extends Terminator
 }

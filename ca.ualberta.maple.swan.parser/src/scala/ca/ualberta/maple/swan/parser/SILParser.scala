@@ -388,6 +388,8 @@ class SILParser {
         // *** ACCESSING MEMORY ***
 
       case "load" => {
+        // According to sil.rst, there is no optional
+        // ownership for load. Original parser has ownership, though.
         var ownership : Option[LoadOwnership] = None
         if (skip("[copy]")) {
           ownership = Some(LoadOwnership.copy)
@@ -442,7 +444,8 @@ class SILParser {
         Instruction.operator(Operator.copyAddr(take, value, initialization, operand))
       }
       case "destroy_addr" => {
-        null // TODO: NPOTP LP
+        val operand = parseOperand()
+        Instruction.operator(Operator.destroyAddr(operand))
       }
       case "index_addr" => {
         val addr = parseOperand()
@@ -507,9 +510,6 @@ class SILParser {
       }
       case "unowned_release" => {
         throw parseError("unhandled instruction") // NSIP
-      }
-      case "load_weak" => {
-        null // TODO: NPOTP LP
       }
       case "store_weak" => {
         null // TODO: NPOTP
@@ -1049,7 +1049,9 @@ class SILParser {
         Instruction.terminator(Terminator.switchEnum(operand, cases))
       }
       case "switch_enum_addr" => {
-        null // TODO: NPOTP
+        val operand = parseOperand()
+        val cases = parseUntilNil[Case]( () => parseCase(parseIdentifier))
+        Instruction.terminator(Terminator.switchEnumAddr(operand, cases))
       }
       case "dynamic_method_br" => {
         null // TODO: NPOTP
