@@ -355,7 +355,6 @@ class SILParser {
         Instruction.operator(Operator.deallocBox(operand))
       }
       case "project_box" => {
-        // TODO: This is incorrect. project_box has a return value
         val operand = parseOperand()
         Instruction.operator(Operator.projectBox(operand))
       }

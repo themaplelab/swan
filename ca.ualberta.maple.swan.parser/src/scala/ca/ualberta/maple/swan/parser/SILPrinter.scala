@@ -167,7 +167,8 @@ class SILPrinter extends Printer {
         print(operand)
       }
       case Operator.projectBox(operand) => {
-        // TODO
+        print("project_box ")
+        print(operand)
       }
       case Operator.debugValue(operand, attributes) => {
         print("debug_value ")
