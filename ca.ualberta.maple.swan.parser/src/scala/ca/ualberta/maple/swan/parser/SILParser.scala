@@ -510,8 +510,17 @@ class SILParser {
       case "unowned_release" => {
         throw parseError("unhandled instruction") // NSIP
       }
+      case "load_weak" => {
+        val take = skip("[take]")
+        val operand = parseOperand()
+        Instruction.operator(Operator.loadWeak(take, operand))
+      }
       case "store_weak" => {
-        null // TODO: NPOTP
+        var value = parseValue()
+        take("to")
+        val initialization = skip("[initialization]")
+        var operand = parseOperand()
+        Instruction.operator(Operator.storeWeak(value, initialization, operand))
       }
       case "load_unowned" => {
         null // TODO: NPOTP
@@ -1012,7 +1021,6 @@ class SILParser {
         // *** TERMINATORS ***
 
       case "unreachable" => {
-        // Note: For some reason there is a space after sometimes.
         Instruction.terminator(Terminator.unreachable)
       }
       case "return" => {
@@ -1020,13 +1028,14 @@ class SILParser {
         Instruction.terminator(Terminator.ret(operand))
       }
       case "throw" => {
-        null // TODO: NPOTP
+        val operand = parseOperand()
+        Instruction.terminator(Terminator.thro(operand))
       }
       case "yield" => {
         null // TODO: NPOTP
       }
       case "unwind" => {
-        null // TODO: NPOTP
+        Instruction.terminator(Terminator.unwind)
       }
       case "br" => {
         val label = parseIdentifier()
@@ -1532,6 +1541,7 @@ class SILParser {
     if(skip("@yields")) return TypeAttribute.yields
     if(skip("@error")) return TypeAttribute.error
     if(skip("@objc_metatype")) return TypeAttribute.objcMetatype
+    if(skip("@sil_weak")) return TypeAttribute.silWeak
     throw parseError("unknown attribute")
   }
 

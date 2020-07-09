@@ -104,6 +104,8 @@ object Operator {
   case class indexAddr(addr: Operand, index: Operand) extends Operator
   case class integerLiteral(tpe: Type, value: Int) extends Operator
   case class load(kind: Option[LoadOwnership], operand: Operand) extends Operator
+  case class loadWeak(take: Boolean, operand: Operand) extends Operator
+  case class storeWeak(value: String, initialization: Boolean, operand: Operand) extends Operator
   case class markDependence(operand: Operand, on: Operand) extends Operator
   case class metatype(tpe: Type) extends Operator
   case class partialApply(
@@ -138,6 +140,8 @@ object Terminator {
                     trueLabel: String, trueOperands: Array[Operand],
                     falseLabel: String, falseOperands: Array[Operand]) extends Terminator
   case class ret(operand: Operand) extends Terminator
+  case class thro(operand: Operand) extends Terminator
+  case object unwind extends Terminator
   case class switchEnum(operand: Operand, cases: Array[Case]) extends Terminator
   case class switchEnumAddr(operand: Operand, cases: Array[Case]) extends Terminator
   case class unknown(name: String) extends Terminator
@@ -298,6 +302,7 @@ object TypeAttribute {
   case object yields extends TypeAttribute
   case object error extends TypeAttribute
   case object objcMetatype extends TypeAttribute
+  case object silWeak extends TypeAttribute
 }
 
 sealed trait TypeRequirement

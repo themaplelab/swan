@@ -58,11 +58,9 @@ strong_retain %0 : $Builtin.BridgeObject, loc "<compiler-generated>":0:0, scope 
 
 strong_release %21 : $@convention(block) () -> (), loc "<compiler-generated>":0:0, scope 876 // id: %51~
 
-# Not yet implemented
-# %14 = load_weak %13 : $*@sil_weak Optional<UILabel>, scope 1225 // users: %26, %17~
+%14 = load_weak %13 : $*@sil_weak Optional<UILabel>, scope 1225 // users: %26, %17~
 
-# Not yet implemented
-# store_weak %54 to [initialization] %53 : $*@sil_weak Optional<UIViewController>, loc "/Users/abdulalib/Documents/swan-spds/benchmark/mobile-ios-vipergame/Memory/Utilities/ErrorAlert.swift":35:42, scope 843 // id: %55~
+store_weak %54 to [initialization] %53 : $*@sil_weak Optional<UIViewController>, loc "/Users/abdulalib/Documents/swan-spds/benchmark/mobile-ios-vipergame/Memory/Utilities/ErrorAlert.swift":35:42, scope 843 // id: %55~
 
 # Missing "load_unowned"
 
@@ -259,14 +257,12 @@ unreachable , scope 838                         // id: %60~
 
 return %23 : $JSONSerialization.ReadingOptions, scope 129 // id: %24~
 
-# Not yet implemented
-# throw %22 : $Error, scope 115                   // id: %27~
+throw %22 : $Error, scope 115                   // id: %27~
 
 # Not yet implemented
 # yield %2 : $*Element, resume bb2, unwind bb1, scope 630 // id: %5~
 
-# Not yet implemented
-# unwind , scope 48
+unwind , scope 48~
 
 br bb4(%92 : $Builtin.Int64, %93 : $Builtin.Int64), scope 459 // id: %154~
 

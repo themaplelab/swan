@@ -40,8 +40,6 @@ public class ParserTests {
     // such as superficial type conversions, here.
     String doReplacements(String inst) {
         inst = inst.replaceAll("\\[Int\\]", "Array<Int>");
-        // Sometimes there is a space after unreachable.
-        inst = inst.replaceAll("unreachable ,", "unreachable,");
         // Not sure why this .1 appears in practice after "enumelt". Doesn't seem
         // necessary.
         inst = inst.replaceAll("enumelt\\.1", "enumelt");

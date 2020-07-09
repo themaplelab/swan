@@ -259,6 +259,18 @@ class SILPrinter extends Printer {
         }
         print(operand)
       }
+      case Operator.loadWeak(take: Boolean, operand) => {
+        print("load_weak ")
+        print("[take]", take)
+        print(operand)
+      }
+      case Operator.storeWeak(value, initialization, operand) => {
+        print("store_weak ")
+        print(value)
+        print(" to ")
+        print("[initialization] ", initialization)
+        print(operand)
+      }
       case Operator.markDependence(operand, on) => {
         print("mark_dependence ")
         print(operand)
@@ -414,6 +426,13 @@ class SILPrinter extends Printer {
         print("return ")
         print(operand)
       }
+      case Terminator.thro(operand) => {
+        print("throw ")
+        print(operand)
+      }
+      case Terminator.unwind => {
+        print("unwind ")
+      }
       case Terminator.switchEnum(operand, cases) => {
         print("switch_enum ")
         print(operand)
@@ -429,7 +448,7 @@ class SILPrinter extends Printer {
         print(" <?>")
       }
       case Terminator.unreachable => {
-        print("unreachable")
+        print("unreachable ")
       }
     }
   }
@@ -720,6 +739,7 @@ class SILPrinter extends Printer {
       case TypeAttribute.yields => print("@yields")
       case TypeAttribute.error => print("@error")
       case TypeAttribute.objcMetatype => print("@objc_metatype")
+      case TypeAttribute.silWeak => print("@sil_weak")
     }
   }
 
