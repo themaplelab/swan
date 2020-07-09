@@ -107,8 +107,7 @@ strong_release %21 : $@convention(block) () -> (), loc "<compiler-generated>":0:
 
 (%38, %39) = begin_apply %16<C>(%34, %36) : $@yield_once @convention(witness_method: Collection) <τ_0_0 where τ_0_0 : Collection> (@in_guaranteed τ_0_0.Index, @in_guaranteed τ_0_0) -> @yields @in_guaranteed τ_0_0.Element, scope 74 // users: %41, %42~
 
-# Not yet implemented
-# abort_apply %6, scope 1                         // id: %8~
+abort_apply %6, scope 1                         // id: %8~
 
 end_apply %22, scope 102                        // id: %24~
 
@@ -122,9 +121,6 @@ end_apply %22, scope 102                        // id: %24~
 %10 = metatype $@objc_metatype Bundle.Type, loc "/Users/abdulalib/Documents/swan-spds/benchmark/mobile-ios-vipergame/Memory/Utilities/File.swift":48:64, scope 1564 // users: %12, %11~
 
 # Missing "value_metatype"
-
-# Not yet implemented
-# %12 = init_existential_metatype %11 : $@thick CardCell.Type, $@thick AnyObject.Type, loc "/Users/abdulalib/Documents/swan-spds/benchmark/mobile-ios-vipergame/Memory/Modules/Game/User Interface/View/GameView.swift":44:33, scope 838 // user: %13~
 
 # Missing "objc_protocol"
 
@@ -191,13 +187,11 @@ release_value %103 : $Optional<GameWireFrameProtocol>, loc "<compiler-generated>
 # Not yet implemented
 # %56 = open_existential_ref %55 : $GamePresenterProtocol to $@opened("3AE48EC6-A446-11EA-A04F-38F9D356CDAF") GamePresenterProtocol, loc "/Users/abdulalib/Documents/swan-spds/benchmark/mobile-ios-vipergame/Memory/Modules/Game/User Interface/View/GameView.swift":67:36, scope 905 // user: %57~
 
-# Not yet implemented
-#  %2 = init_existential_metatype %1 : $@thick Element.Type, $@thick Any.Type, scope 99 // user: %3~
+%2 = init_existential_metatype %1 : $@thick Element.Type, $@thick Any.Type, scope 99 // user: %3~
 
-# Missing "open_existential_metatype"
+%1 = open_existential_metatype %0 : $@thick AnyObject.Type to $@thick AnyObject.Type~
 
-# Not yet implemented
-# %89 = alloc_existential_box $Error, $FileError, loc "/Users/abdulalib/Documents/swan-spds/benchmark/mobile-ios-vipergame/Memory/Utilities/File.swift":51:29, scope 250 // users: %93, %92, %90~
+%89 = alloc_existential_box $Error, $FileError, loc "/Users/abdulalib/Documents/swan-spds/benchmark/mobile-ios-vipergame/Memory/Utilities/File.swift":51:29, scope 250 // users: %93, %92, %90~
 
 # Not yet implemented
 # %90 = project_existential_box $FileError in %89 : $Error, loc "/Users/abdulalib/Documents/swan-spds/benchmark/mobile-ios-vipergame/Memory/Utilities/File.swift":51:29, scope 250 // user: %91~

@@ -95,6 +95,7 @@ object Operator {
   case class destructureTuple(operand: Operand) extends Operator
   case class endAccess(abort: Boolean, operand: Operand) extends Operator
   case class endApply(value: String) extends Operator
+  case class abortApply(value: String) extends Operator
   case class endBorrow(operand: Operand) extends Operator
   case class enum(tpe: Type, declRef: DeclRef, operand: Option[Operand]) extends Operator
   case class floatLiteral(tpe: Type, value: String) extends Operator
@@ -125,6 +126,9 @@ object Operator {
   case class tupleExtract(operand: Operand, declRef: Int) extends Operator
   case class unknown(name: String) extends Operator
   case class witnessMethod(archeType: Type, declRef: DeclRef, declType: Type, tpe: Type) extends Operator
+  case class initExistentialMetatype(operand: Operand, tpe: Type) extends Operator
+  case class openExistentialMetatype(operand: Operand, tpe: Type) extends Operator
+  case class allocExistentialBox(tpeP: Type, tpeT: Type) extends Operator
 }
 
 sealed trait Terminator

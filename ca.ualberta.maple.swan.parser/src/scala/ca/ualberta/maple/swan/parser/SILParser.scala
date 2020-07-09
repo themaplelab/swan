@@ -641,7 +641,8 @@ class SILParser {
         Instruction.operator(Operator.beginApply(nothrow, value, substitutions, arguments, tpe))
       }
       case "abort_apply" => {
-        null // TODO: NPOTP
+        val value = parseValue()
+        Instruction.operator(Operator.abortApply(value))
       }
       case "end_apply" => {
         val value = parseValue()
@@ -836,13 +837,22 @@ class SILParser {
         null // TODO: NPOTP
       }
       case "init_existential_metatype" => {
-        null // TODO: NPOTP
+        val operand = parseOperand()
+        take(",")
+        val tpe = parseType()
+        Instruction.operator(Operator.initExistentialMetatype(operand,tpe))
       }
       case "open_existential_metatype" => {
-        null // TODO: NPOTP
+        val operand = parseOperand()
+        take("to")
+        val tpe = parseType()
+        Instruction.operator(Operator.openExistentialMetatype(operand,tpe))
       }
       case "alloc_existential_box" => {
-        null // TODO: NPOTP
+        val tpeP = parseType()
+        take(",")
+        val tpeT = parseType()
+        Instruction.operator(Operator.allocExistentialBox(tpeP, tpeT))
       }
       case "project_existential_box" => {
         null // TODO: NPOTP

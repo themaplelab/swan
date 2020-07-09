@@ -200,6 +200,10 @@ class SILPrinter extends Printer {
         print("end_apply ")
         print(value)
       }
+      case Operator.abortApply(value) => {
+        print("abort_apply ")
+        print(value)
+      }
       case Operator.endBorrow(operand) => {
         print("end_borrow ")
         print(operand)
@@ -367,7 +371,24 @@ class SILPrinter extends Printer {
         print(" : ")
         print(tpe)
       }
-      // TODO: Finish
+      case Operator.initExistentialMetatype(operand, tpe) => {
+        print("init_existential_metatype ")
+        print(operand)
+        print(", ")
+        print(tpe)
+      }
+      case Operator.openExistentialMetatype(operand, tpe) => {
+        print("open_existential_metatype ")
+        print(operand)
+        print(" to ")
+        print(tpe)
+      }
+      case Operator.allocExistentialBox(tpeP, tpeT) => {
+        print("alloc_existential_box ")
+        print(tpeP)
+        print(", ")
+        print(tpeT)
+      }
     }
   }
 
