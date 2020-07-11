@@ -14,8 +14,6 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvFileSource;
 
-import java.util.HashSet;
-
 public class ParserTests {
 
     // This test parses every instruction in instructions.csv and checks that
@@ -29,7 +27,7 @@ public class ParserTests {
     void testSingleInstruction(String inst, String compareTo) throws Error {
         inst = doReplacements(inst);
         SILParser parser = new SILParser(inst);
-        InstructionDef i = parser.parseInstructionDef();
+        SILInstructionDef i = parser.parseInstructionDef();
         if (compareTo == null || compareTo.equals("")) {
             compareTo = PrintExtensions$.MODULE$.InstructionDefPrinter(i).description();
         }

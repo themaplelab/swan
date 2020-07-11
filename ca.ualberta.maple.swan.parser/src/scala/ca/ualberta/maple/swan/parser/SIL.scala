@@ -14,313 +14,313 @@ import java.nio.file.Path
 
 import ca.ualberta.maple.swan
 
-class Module(val functions: Array[Function]) {
+class SILModule(val functions: Array[SILFunction]) {
 
   object Parse {
     @throws[Error]
-    def parsePath(silPath: Path): Module = {
+    def parsePath(silPath: Path): SILModule = {
       val parser = new SILParser(silPath)
       parser.parseModule()
     }
 
     @throws[Error]
-    def parseString(silString: String): Module = {
+    def parseString(silString: String): SILModule = {
       val parser = new SILParser(silString)
       parser.parseModule()
     }
   }
 }
 
-class Function(val linkage: Linkage, val attributes: Array[FunctionAttribute],
-               val name: String, val tpe: Type, val blocks: Array[Block])
+class SILFunction(val linkage: SILLinkage, val attributes: Array[SILFunctionAttribute],
+                  val name: String, val tpe: SILType, val blocks: Array[SILBlock])
 
-class Block(val identifier: String, val arguments: Array[Argument],
-            val operatorDefs: Array[OperatorDef], val terminatorDef: TerminatorDef) {
+class SILBlock(val identifier: String, val arguments: Array[SILArgument],
+               val operatorDefs: Array[SILOperatorDef], val terminatorDef: SILTerminatorDef) {
 
-  def ==(that: Block): Boolean = {
+  def ==(that: SILBlock): Boolean = {
     (identifier, arguments, operatorDefs, terminatorDef) == (that.identifier, that.arguments, that.operatorDefs, that.terminatorDef)
   }
 }
 
-class OperatorDef(val result: Option[Result], val operator: Operator, val sourceInfo: Option[SourceInfo])
+class SILOperatorDef(val result: Option[SILResult], val operator: SILOperator, val sourceInfo: Option[SILSourceInfo])
 
-class TerminatorDef(val terminator: Terminator, val sourceInfo: Option[SourceInfo])
+class SILTerminatorDef(val terminator: SILTerminator, val sourceInfo: Option[SILSourceInfo])
 
-sealed trait InstructionDef {
-  val instruction : Instruction
+sealed trait SILInstructionDef {
+  val instruction : SILInstruction
 }
 // TODO: I don't really like this operator/terminator duality. It doesn't make much sense
 //  and it isn't precise.
 //  We should divide the instructions into the same categories that are in SIL.rst.
-object InstructionDef {
-  case class operator(val operatorDef: OperatorDef) extends InstructionDef {
-    val instruction: Instruction = Instruction.operator(operatorDef.operator)
+object SILInstructionDef {
+  case class operator(val operatorDef: SILOperatorDef) extends SILInstructionDef {
+    val instruction: SILInstruction = SILInstruction.operator(operatorDef.operator)
   }
-  case class terminator(val terminatorDef: TerminatorDef) extends InstructionDef {
-    val instruction: Instruction = Instruction.terminator(terminatorDef.terminator)
+  case class terminator(val terminatorDef: SILTerminatorDef) extends SILInstructionDef {
+    val instruction: SILInstruction = SILInstruction.terminator(terminatorDef.terminator)
   }
 }
 
-sealed trait Operator
-object Operator {
-  case class allocStack(tpe: Type, attributes: Array[DebugAttribute]) extends Operator
-  case class allocBox(tpe: Type, attributes: Array[DebugAttribute]) extends Operator
-  case class allocGlobal(name: String) extends Operator
+sealed trait SILOperator
+object SILOperator {
+  case class allocStack(tpe: SILType, attributes: Array[SILDebugAttribute]) extends SILOperator
+  case class allocBox(tpe: SILType, attributes: Array[SILDebugAttribute]) extends SILOperator
+  case class allocGlobal(name: String) extends SILOperator
   case class apply(
                     nothrow: Boolean, value: String,
-                    substitutions: Array[Type], arguments: Array[String], tpe: Type
-                  ) extends Operator
+                    substitutions: Array[SILType], arguments: Array[String], tpe: SILType
+                  ) extends SILOperator
   case class beginAccess(
-                          access: Access, enforcement: Enforcement, noNestedConflict: Boolean, builtin: Boolean,
-                          operand: Operand
-                        ) extends Operator
+                          access: SILAccess, enforcement: SILEnforcement, noNestedConflict: Boolean, builtin: Boolean,
+                          operand: SILOperand
+                        ) extends SILOperator
   case class beginApply(
                          nothrow: Boolean, value: String,
-                         substitutions: Array[Type], arguments: Array[String], tpe: Type
-                       ) extends Operator
-  case class beginBorrow(operand: Operand) extends Operator
-  case class builtin(name: String, operands: Array[Operand], tpe: Type) extends Operator
-  case class condFail(operand: Operand, message: Option[String]) extends Operator
-  case class convertEscapeToNoescape(notGuaranteed: Boolean, escaped: Boolean, operand: Operand, tpe: Type) extends Operator
-  case class convertFunction(operand: Operand, withoutActuallyEscaping: Boolean, tpe: Type) extends Operator
-  case class copyAddr(take: Boolean, value: String, initialization: Boolean, operand: Operand) extends Operator
-  case class copyValue(operand: Operand) extends Operator
-  case class deallocStack(operand: Operand) extends Operator
-  case class deallocBox(operand: Operand) extends Operator
-  case class projectBox(operand: Operand) extends Operator
-  case class debugValue(operand: Operand, attributes: Array[DebugAttribute]) extends Operator
-  case class debugValueAddr(operand: Operand, attributes: Array[DebugAttribute]) extends Operator
-  case class destroyAddr(operand: Operand) extends Operator
-  case class destroyValue(operand: Operand) extends Operator
-  case class destructureTuple(operand: Operand) extends Operator
-  case class endAccess(abort: Boolean, operand: Operand) extends Operator
-  case class endApply(value: String) extends Operator
-  case class abortApply(value: String) extends Operator
-  case class endBorrow(operand: Operand) extends Operator
-  case class enum(tpe: Type, declRef: DeclRef, operand: Option[Operand]) extends Operator
-  case class floatLiteral(tpe: Type, value: String) extends Operator
-  case class functionRef(name: String, tpe: Type) extends Operator
-  case class globalAddr(name: String, tpe: Type) extends Operator
-  case class indexAddr(addr: Operand, index: Operand) extends Operator
-  case class integerLiteral(tpe: Type, value: Int) extends Operator
-  case class load(kind: Option[LoadOwnership], operand: Operand) extends Operator
-  case class loadWeak(take: Boolean, operand: Operand) extends Operator
-  case class storeWeak(value: String, initialization: Boolean, operand: Operand) extends Operator
-  case class markDependence(operand: Operand, on: Operand) extends Operator
-  case class metatype(tpe: Type) extends Operator
+                         substitutions: Array[SILType], arguments: Array[String], tpe: SILType
+                       ) extends SILOperator
+  case class beginBorrow(operand: SILOperand) extends SILOperator
+  case class builtin(name: String, operands: Array[SILOperand], tpe: SILType) extends SILOperator
+  case class condFail(operand: SILOperand, message: Option[String]) extends SILOperator
+  case class convertEscapeToNoescape(notGuaranteed: Boolean, escaped: Boolean, operand: SILOperand, tpe: SILType) extends SILOperator
+  case class convertFunction(operand: SILOperand, withoutActuallyEscaping: Boolean, tpe: SILType) extends SILOperator
+  case class copyAddr(take: Boolean, value: String, initialization: Boolean, operand: SILOperand) extends SILOperator
+  case class copyValue(operand: SILOperand) extends SILOperator
+  case class deallocStack(operand: SILOperand) extends SILOperator
+  case class deallocBox(operand: SILOperand) extends SILOperator
+  case class projectBox(operand: SILOperand) extends SILOperator
+  case class debugValue(operand: SILOperand, attributes: Array[SILDebugAttribute]) extends SILOperator
+  case class debugValueAddr(operand: SILOperand, attributes: Array[SILDebugAttribute]) extends SILOperator
+  case class destroyAddr(operand: SILOperand) extends SILOperator
+  case class destroyValue(operand: SILOperand) extends SILOperator
+  case class destructureTuple(operand: SILOperand) extends SILOperator
+  case class endAccess(abort: Boolean, operand: SILOperand) extends SILOperator
+  case class endApply(value: String) extends SILOperator
+  case class abortApply(value: String) extends SILOperator
+  case class endBorrow(operand: SILOperand) extends SILOperator
+  case class enm(tpe: SILType, declRef: SILDeclRef, operand: Option[SILOperand]) extends SILOperator
+  case class floatLiteral(tpe: SILType, value: String) extends SILOperator
+  case class functionRef(name: String, tpe: SILType) extends SILOperator
+  case class globalAddr(name: String, tpe: SILType) extends SILOperator
+  case class indexAddr(addr: SILOperand, index: SILOperand) extends SILOperator
+  case class integerLiteral(tpe: SILType, value: Int) extends SILOperator
+  case class load(kind: Option[SILLoadOwnership], operand: SILOperand) extends SILOperator
+  case class loadWeak(take: Boolean, operand: SILOperand) extends SILOperator
+  case class storeWeak(value: String, initialization: Boolean, operand: SILOperand) extends SILOperator
+  case class markDependence(operand: SILOperand, on: SILOperand) extends SILOperator
+  case class metatype(tpe: SILType) extends SILOperator
   case class partialApply(
                            calleeGuaranteed: Boolean, onStack: Boolean, value: String,
-                           substitutions: Array[Type], arguments: Array[String], tpe: Type
-                         ) extends Operator
-  case class pointerToAddress(operand: Operand, strict: Boolean, tpe: Type) extends Operator
-  case class releaseValue(operand: Operand) extends Operator
-  case class retainValue(operand: Operand) extends Operator
-  case class selectEnum(operand: Operand, cases: Array[Case], tpe: Type) extends Operator
-  case class store(value: String, kind: Option[StoreOwnership], operand: Operand) extends Operator
-  case class stringLiteral(encoding: Encoding, value: String) extends Operator
-  case class strongRelease(operand: Operand) extends Operator
-  case class strongRetain(operand: Operand) extends Operator
-  case class struct(tpe: Type, operands: Array[Operand]) extends Operator
-  case class structElementAddr(operand: Operand, declRef: DeclRef) extends Operator
-  case class structExtract(operand: Operand, declRef: DeclRef) extends Operator
-  case class thinToThickFunction(operand: Operand, tpe: Type) extends Operator
-  case class tuple(elements: TupleElements) extends Operator
-  case class tupleExtract(operand: Operand, declRef: Int) extends Operator
-  case class unknown(name: String) extends Operator
-  case class witnessMethod(archeType: Type, declRef: DeclRef, declType: Type, tpe: Type) extends Operator
-  case class initExistentialMetatype(operand: Operand, tpe: Type) extends Operator
-  case class openExistentialMetatype(operand: Operand, tpe: Type) extends Operator
-  case class allocExistentialBox(tpeP: Type, tpeT: Type) extends Operator
+                           substitutions: Array[SILType], arguments: Array[String], tpe: SILType
+                         ) extends SILOperator
+  case class pointerToAddress(operand: SILOperand, strict: Boolean, tpe: SILType) extends SILOperator
+  case class releaseValue(operand: SILOperand) extends SILOperator
+  case class retainValue(operand: SILOperand) extends SILOperator
+  case class selectEnum(operand: SILOperand, cases: Array[SILCase], tpe: SILType) extends SILOperator
+  case class store(value: String, kind: Option[SILStoreOwnership], operand: SILOperand) extends SILOperator
+  case class stringLiteral(encoding: SILEncoding, value: String) extends SILOperator
+  case class strongRelease(operand: SILOperand) extends SILOperator
+  case class strongRetain(operand: SILOperand) extends SILOperator
+  case class struct(tpe: SILType, operands: Array[SILOperand]) extends SILOperator
+  case class structElementAddr(operand: SILOperand, declRef: SILDeclRef) extends SILOperator
+  case class structExtract(operand: SILOperand, declRef: SILDeclRef) extends SILOperator
+  case class thinToThickFunction(operand: SILOperand, tpe: SILType) extends SILOperator
+  case class tuple(elements: SILTupleElements) extends SILOperator
+  case class tupleExtract(operand: SILOperand, declRef: Int) extends SILOperator
+  case class unknown(name: String) extends SILOperator
+  case class witnessMethod(archeType: SILType, declRef: SILDeclRef, declType: SILType, tpe: SILType) extends SILOperator
+  case class initExistentialMetatype(operand: SILOperand, tpe: SILType) extends SILOperator
+  case class openExistentialMetatype(operand: SILOperand, tpe: SILType) extends SILOperator
+  case class allocExistentialBox(tpeP: SILType, tpeT: SILType) extends SILOperator
 }
 
-sealed trait Terminator
-object Terminator {
-  case class br(label: String, operands: Array[Operand]) extends Terminator
+sealed trait SILTerminator
+object SILTerminator {
+  case class br(label: String, operands: Array[SILOperand]) extends SILTerminator
   case class condBr(cond: String,
-                    trueLabel: String, trueOperands: Array[Operand],
-                    falseLabel: String, falseOperands: Array[Operand]) extends Terminator
-  case class ret(operand: Operand) extends Terminator
-  case class thro(operand: Operand) extends Terminator
-  case object unwind extends Terminator
-  case class switchEnum(operand: Operand, cases: Array[Case]) extends Terminator
-  case class switchEnumAddr(operand: Operand, cases: Array[Case]) extends Terminator
-  case class unknown(name: String) extends Terminator
-  case object unreachable extends Terminator
+                    trueLabel: String, trueOperands: Array[SILOperand],
+                    falseLabel: String, falseOperands: Array[SILOperand]) extends SILTerminator
+  case class ret(operand: SILOperand) extends SILTerminator
+  case class thro(operand: SILOperand) extends SILTerminator
+  case object unwind extends SILTerminator
+  case class switchEnum(operand: SILOperand, cases: Array[SILCase]) extends SILTerminator
+  case class switchEnumAddr(operand: SILOperand, cases: Array[SILCase]) extends SILTerminator
+  case class unknown(name: String) extends SILTerminator
+  case object unreachable extends SILTerminator
 }
 
-sealed trait Instruction
-object Instruction {
-  case class operator(op: Operator) extends Instruction
-  case class terminator(t: Terminator) extends  Instruction
+sealed trait SILInstruction
+object SILInstruction {
+  case class operator(op: SILOperator) extends SILInstruction
+  case class terminator(t: SILTerminator) extends  SILInstruction
 }
 
-sealed trait Access
-object Access {
-  case object deinit extends Access
-  case object init extends Access
-  case object modify extends Access
-  case object read extends Access
+sealed trait SILAccess
+object SILAccess {
+  case object deinit extends SILAccess
+  case object init extends SILAccess
+  case object modify extends SILAccess
+  case object read extends SILAccess
 }
 
-class Argument(val valueName: String, val tpe: Type)
+class SILArgument(val valueName: String, val tpe: SILType)
 
-sealed trait Case
-object Case {
-  case class cs(declRef: DeclRef, result: String) extends Case
-  case class default(result: String) extends Case
+sealed trait SILCase
+object SILCase {
+  case class cs(declRef: SILDeclRef, result: String) extends SILCase
+  case class default(result: String) extends SILCase
 }
 
-sealed trait Convention
-object Convention {
-  case object c extends Convention
-  case object method extends Convention
-  case object thin extends Convention
-  case object block extends Convention
-  case class witnessMethod(tpe: Type) extends Convention
+sealed trait SILConvention
+object SILConvention {
+  case object c extends SILConvention
+  case object method extends SILConvention
+  case object thin extends SILConvention
+  case object block extends SILConvention
+  case class witnessMethod(tpe: SILType) extends SILConvention
 }
 
-sealed trait DebugAttribute
-object DebugAttribute {
-  case class argno(index: Int) extends DebugAttribute
-  case class name(name: String) extends DebugAttribute
-  case object let extends DebugAttribute
-  case object variable extends DebugAttribute
+sealed trait SILDebugAttribute
+object SILDebugAttribute {
+  case class argno(index: Int) extends SILDebugAttribute
+  case class name(name: String) extends SILDebugAttribute
+  case object let extends SILDebugAttribute
+  case object variable extends SILDebugAttribute
 }
 
-sealed trait DeclKind
-object DeclKind {
-  case object allocator extends DeclKind
-  case object deallocator extends DeclKind
-  case object destroyer extends DeclKind
-  case object enumElement extends DeclKind
-  case object getter extends DeclKind
-  case object globalAccessor extends DeclKind
-  case object initializer extends DeclKind
-  case object ivarDestroyer extends DeclKind
-  case object ivarInitializer extends DeclKind
-  case object setter extends DeclKind
+sealed trait SILDeclKind
+object SILDeclKind {
+  case object allocator extends SILDeclKind
+  case object deallocator extends SILDeclKind
+  case object destroyer extends SILDeclKind
+  case object enumElement extends SILDeclKind
+  case object getter extends SILDeclKind
+  case object globalAccessor extends SILDeclKind
+  case object initializer extends SILDeclKind
+  case object ivarDestroyer extends SILDeclKind
+  case object ivarInitializer extends SILDeclKind
+  case object setter extends SILDeclKind
 }
 
-class DeclRef(val name: Array[String], val kind: Option[DeclKind], val level: Option[Int])
+class SILDeclRef(val name: Array[String], val kind: Option[SILDeclKind], val level: Option[Int])
 
-sealed trait Encoding
-object Encoding {
-  case object objcSelector extends Encoding
-  case object utf8 extends Encoding
-  case object utf16 extends Encoding
+sealed trait SILEncoding
+object SILEncoding {
+  case object objcSelector extends SILEncoding
+  case object utf8 extends SILEncoding
+  case object utf16 extends SILEncoding
 }
 
-sealed trait Enforcement
-object Enforcement {
-  case object dynamic extends Enforcement
-  case object static extends Enforcement
-  case object unknown extends Enforcement
-  case object unsafe extends Enforcement
+sealed trait SILEnforcement
+object SILEnforcement {
+  case object dynamic extends SILEnforcement
+  case object static extends SILEnforcement
+  case object unknown extends SILEnforcement
+  case object unsafe extends SILEnforcement
 }
 
-sealed trait FunctionAttribute
-object FunctionAttribute {
-  case object alwaysInline extends FunctionAttribute
-  case class differentiable(spec: String) extends FunctionAttribute
-  case object dynamicallyReplacable extends FunctionAttribute
-  case object noInline extends FunctionAttribute
-  case object readonly extends FunctionAttribute
-  case class semantics(value: String) extends FunctionAttribute
-  case object serialized extends FunctionAttribute
-  case object thunk extends FunctionAttribute
-  case object transparent extends FunctionAttribute
-  case class noncanonical(attr: NoncanonicalFunctionAttribute) extends FunctionAttribute
+sealed trait SILFunctionAttribute
+object SILFunctionAttribute {
+  case object alwaysInline extends SILFunctionAttribute
+  case class differentiable(spec: String) extends SILFunctionAttribute
+  case object dynamicallyReplacable extends SILFunctionAttribute
+  case object noInline extends SILFunctionAttribute
+  case object readonly extends SILFunctionAttribute
+  case class semantics(value: String) extends SILFunctionAttribute
+  case object serialized extends SILFunctionAttribute
+  case object thunk extends SILFunctionAttribute
+  case object transparent extends SILFunctionAttribute
+  case class noncanonical(attr: SILNoncanonicalFunctionAttribute) extends SILFunctionAttribute
 }
 
-sealed trait NoncanonicalFunctionAttribute
-object NoncanonicalFunctionAttribute {
-  case object ownershipSSA extends NoncanonicalFunctionAttribute
+sealed trait SILNoncanonicalFunctionAttribute
+object SILNoncanonicalFunctionAttribute {
+  case object ownershipSSA extends SILNoncanonicalFunctionAttribute
 }
 
-sealed trait Linkage
-object Linkage {
-  case object hidden extends Linkage
-  case object hiddenExternal extends Linkage
-  case object priv extends Linkage
-  case object privateExternal extends Linkage
-  case object public extends Linkage
-  case object publicExternal extends Linkage
-  case object publicNonABI extends Linkage
-  case object shared extends Linkage
-  case object sharedExternal extends Linkage
+sealed trait SILLinkage
+object SILLinkage {
+  case object hidden extends SILLinkage
+  case object hiddenExternal extends SILLinkage
+  case object priv extends SILLinkage
+  case object privateExternal extends SILLinkage
+  case object public extends SILLinkage
+  case object publicExternal extends SILLinkage
+  case object publicNonABI extends SILLinkage
+  case object shared extends SILLinkage
+  case object sharedExternal extends SILLinkage
 }
 
-class Loc(val path: String, val line: Int, val column: Int)
+class SILLoc(val path: String, val line: Int, val column: Int)
 
-class Operand(val value: String, val tpe: Type)
+class SILOperand(val value: String, val tpe: SILType)
 
-class Result(val valueNames: Array[String])
+class SILResult(val valueNames: Array[String])
 
-class SourceInfo(val scopeRef: Option[Int], val loc: Option[Loc])
+class SILSourceInfo(val scopeRef: Option[Int], val loc: Option[SILLoc])
 
-sealed trait TupleElements
-object TupleElements {
-  case class labeled(tpe: Type, values: Array[String]) extends TupleElements
-  case class unlabeled(operands: Array[Operand]) extends TupleElements
+sealed trait SILTupleElements
+object SILTupleElements {
+  case class labeled(tpe: SILType, values: Array[String]) extends SILTupleElements
+  case class unlabeled(operands: Array[SILOperand]) extends SILTupleElements
 }
 
-sealed trait Type
-object Type {
-  case class addressType(tpe: Type) extends Type
-  case class attributedType(attributes: Array[TypeAttribute], tpe: Type) extends Type
-  case object coroutineTokenType extends Type
-  case class functionType(parameters: Array[Type], result: Type) extends Type
-  case class genericType(parameters: Array[String], requirements: Array[TypeRequirement], tpe: Type) extends Type
-  case class namedType(name: String) extends Type
-  case class selectType(tpe: Type, name: String) extends Type
-  case object selfType extends Type
-  case class specializedType(tpe: Type, arguments: Array[Type]) extends Type
-  case class tupleType(parameters: Array[Type]) extends Type
-  case class withOwnership(attribute: TypeAttribute, tpe: Type) extends Type
+sealed trait SILType
+object SILType {
+  case class addressType(tpe: SILType) extends SILType
+  case class attributedType(attributes: Array[SILTypeAttribute], tpe: SILType) extends SILType
+  case object coroutineTokenType extends SILType
+  case class functionType(parameters: Array[SILType], result: SILType) extends SILType
+  case class genericType(parameters: Array[String], requirements: Array[SILTypeRequirement], tpe: SILType) extends SILType
+  case class namedType(name: String) extends SILType
+  case class selectType(tpe: SILType, name: String) extends SILType
+  case object selfType extends SILType
+  case class specializedType(tpe: SILType, arguments: Array[SILType]) extends SILType
+  case class tupleType(parameters: Array[SILType]) extends SILType
+  case class withOwnership(attribute: SILTypeAttribute, tpe: SILType) extends SILType
 
   @throws[Error]
-  def parse(silString: String): Type = {
+  def parse(silString: String): SILType = {
     val parser = new SILParser(silString)
     parser.parseType()
   }
 }
 
-sealed trait TypeAttribute
-object TypeAttribute {
-  case object calleeGuaranteed extends TypeAttribute
-  case class convention(convention: Convention) extends TypeAttribute
-  case object guaranteed extends TypeAttribute
-  case object inGuaranteed extends TypeAttribute
-  case object in extends TypeAttribute
-  case object inout extends TypeAttribute
-  case object noescape extends TypeAttribute
-  case object out extends TypeAttribute
-  case object owned extends TypeAttribute
-  case object thick extends TypeAttribute
-  case object thin extends TypeAttribute
-  case object yieldOnce extends TypeAttribute
-  case object yields extends TypeAttribute
-  case object error extends TypeAttribute
-  case object objcMetatype extends TypeAttribute
-  case object silWeak extends TypeAttribute
+sealed trait SILTypeAttribute
+object SILTypeAttribute {
+  case object calleeGuaranteed extends SILTypeAttribute
+  case class convention(convention: SILConvention) extends SILTypeAttribute
+  case object guaranteed extends SILTypeAttribute
+  case object inGuaranteed extends SILTypeAttribute
+  case object in extends SILTypeAttribute
+  case object inout extends SILTypeAttribute
+  case object noescape extends SILTypeAttribute
+  case object out extends SILTypeAttribute
+  case object owned extends SILTypeAttribute
+  case object thick extends SILTypeAttribute
+  case object thin extends SILTypeAttribute
+  case object yieldOnce extends SILTypeAttribute
+  case object yields extends SILTypeAttribute
+  case object error extends SILTypeAttribute
+  case object objcMetatype extends SILTypeAttribute
+  case object silWeak extends SILTypeAttribute
 }
 
-sealed trait TypeRequirement
-object TypeRequirement {
-  case class conformance(lhs: Type, rhs: Type) extends TypeRequirement
-  case class equality(lhs: Type, rhs: Type) extends TypeRequirement
+sealed trait SILTypeRequirement
+object SILTypeRequirement {
+  case class conformance(lhs: SILType, rhs: SILType) extends SILTypeRequirement
+  case class equality(lhs: SILType, rhs: SILType) extends SILTypeRequirement
 }
 
-sealed trait LoadOwnership
-object LoadOwnership{
-  case object copy extends LoadOwnership
-  case object take extends LoadOwnership
-  case object trivial extends LoadOwnership
+sealed trait SILLoadOwnership
+object SILLoadOwnership{
+  case object copy extends SILLoadOwnership
+  case object take extends SILLoadOwnership
+  case object trivial extends SILLoadOwnership
 }
 
-sealed trait StoreOwnership
-object StoreOwnership {
-  case object init extends StoreOwnership
-  case object trivial extends StoreOwnership
+sealed trait SILStoreOwnership
+object SILStoreOwnership {
+  case object init extends SILStoreOwnership
+  case object trivial extends SILStoreOwnership
 }
 

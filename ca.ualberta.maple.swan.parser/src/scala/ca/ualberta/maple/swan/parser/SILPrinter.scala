@@ -15,27 +15,27 @@ import ca.ualberta.maple.swan.parser.Error
 
 class SILPrinter extends Printer {
 
-  def print(module: Module): Unit = {
+  def print(module: SILModule): Unit = {
     module.functions.foreach(f => {
       print(f)
       print("\n\n")
     })
   }
 
-  def print(function: Function): Unit = {
+  def print(function: SILFunction): Unit = {
     print("sil ")
     print(function.linkage)
-    print(whenEmpty = false, "", function.attributes, " ", " ", (attribute: FunctionAttribute) => print(attribute))
+    print(whenEmpty = false, "", function.attributes, " ", " ", (attribute: SILFunctionAttribute) => print(attribute))
     print("@")
     print(function.name)
     print(" : ")
     print(function.tpe)
-    print(whenEmpty = false, " {\n", function.blocks, "\n", "}", (block: Block) => print(block))
+    print(whenEmpty = false, " {\n", function.blocks, "\n", "}", (block: SILBlock) => print(block))
   }
 
-  def print(block: Block): Unit = {
+  def print(block: SILBlock): Unit = {
     print(block.identifier)
-    print(whenEmpty = false, "(", block.arguments, ", ", ")", (arg: Argument) => print(arg))
+    print(whenEmpty = false, "(", block.arguments, ", ", ")", (arg: SILArgument) => print(arg))
     print(":")
     indent()
     block.operatorDefs.foreach({
@@ -48,48 +48,48 @@ class SILPrinter extends Printer {
     unindent()
   }
 
-  def print(operatorDef: OperatorDef): Unit = {
-    print(operatorDef.result, " = ", (r: Result) => {
+  def print(operatorDef: SILOperatorDef): Unit = {
+    print(operatorDef.result, " = ", (r: SILResult) => {
       print(r)
     })
     print(operatorDef.operator)
-    print(operatorDef.sourceInfo, (si: SourceInfo) => print(si))
+    print(operatorDef.sourceInfo, (si: SILSourceInfo) => print(si))
     System.out.println()
   }
 
-  def print(terminatorDef: TerminatorDef): Unit = {
+  def print(terminatorDef: SILTerminatorDef): Unit = {
     print(terminatorDef.terminator)
-    print(terminatorDef.sourceInfo, (si: SourceInfo) => print(si))
+    print(terminatorDef.sourceInfo, (si: SILSourceInfo) => print(si))
     System.out.println()
   }
 
-  def print(op: Operator): Unit = {
+  def print(op: SILOperator): Unit = {
     op match {
-      case Operator.allocStack(tpe, attributes) => {
+      case SILOperator.allocStack(tpe, attributes) => {
         print("alloc_stack ")
         print(tpe)
-        print(whenEmpty = false, ", ", attributes, ", ", "", (a: DebugAttribute) => print(a))
+        print(whenEmpty = false, ", ", attributes, ", ", "", (a: SILDebugAttribute) => print(a))
       }
-      case Operator.allocBox(tpe, attributes) => {
+      case SILOperator.allocBox(tpe, attributes) => {
         print("alloc_box ")
         print(tpe)
-        print(whenEmpty = false, ", ", attributes, ", ", "", (a: DebugAttribute) => print(a))
+        print(whenEmpty = false, ", ", attributes, ", ", "", (a: SILDebugAttribute) => print(a))
       }
-      case Operator.allocGlobal(name) => {
+      case SILOperator.allocGlobal(name) => {
         print("alloc_global ")
         print("@")
         print(name)
       }
-      case Operator.apply(nothrow, value, substitutions, arguments, tpe) => {
+      case SILOperator.apply(nothrow, value, substitutions, arguments, tpe) => {
         print("apply ")
         print( "[nothrow] ", nothrow)
         print(value)
-        print(whenEmpty = false, "<", substitutions, ", ", ">", (t: Type) => naked(t))
+        print(whenEmpty = false, "<", substitutions, ", ", ">", (t: SILType) => naked(t))
         print(whenEmpty = true, "(", arguments, ", ", ")", (a: String) => print(a))
         print(" : ")
         print(tpe)
       }
-      case Operator.beginAccess(access, enforcement, noNestedConflict, builtin, operand) => {
+      case SILOperator.beginAccess(access, enforcement, noNestedConflict, builtin, operand) => {
         print("begin_access ")
         print("[")
         print(access)
@@ -101,27 +101,27 @@ class SILPrinter extends Printer {
         print("[builtin] ", builtin)
         print(operand)
       }
-      case Operator.beginApply(nothrow, value, substitutions, arguments, tpe) => {
+      case SILOperator.beginApply(nothrow, value, substitutions, arguments, tpe) => {
         print("begin_apply ")
         print( "[nothrow] ", nothrow)
         print(value)
-        print(whenEmpty = false, "<", substitutions, ", ", ">", (t: Type) => naked(t))
+        print(whenEmpty = false, "<", substitutions, ", ", ">", (t: SILType) => naked(t))
         print(whenEmpty = true, "(", arguments, ", ", ")", (a: String) => print(a))
         print(" : ")
         print(tpe)
       }
-      case Operator.beginBorrow(operand) => {
+      case SILOperator.beginBorrow(operand) => {
         print("begin_borrow ")
         print(operand)
       }
-      case Operator.builtin(name, operands, tpe) => {
+      case SILOperator.builtin(name, operands, tpe) => {
         print("builtin ")
         literal(name)
-        print(whenEmpty = true, "(", operands, ", ", ")", (o: Operand) => print(o))
+        print(whenEmpty = true, "(", operands, ", ", ")", (o: SILOperand) => print(o))
         print(" : ")
         print(tpe)
       }
-      case Operator.condFail(operand, message) => {
+      case SILOperator.condFail(operand, message) => {
         print("cond_fail ")
         print(operand)
         if (message.nonEmpty) {
@@ -129,7 +129,7 @@ class SILPrinter extends Printer {
           literal(message.get)
         }
       }
-      case Operator.convertEscapeToNoescape(notGuaranteed, escaped, operand, tpe) => {
+      case SILOperator.convertEscapeToNoescape(notGuaranteed, escaped, operand, tpe) => {
         print("convert_escape_to_noescape ")
         print( "[not_guaranteed] ", notGuaranteed)
         print( "[escaped] ", escaped)
@@ -137,14 +137,14 @@ class SILPrinter extends Printer {
         print(" to ")
         print(tpe)
       }
-      case Operator.convertFunction(operand, withoutActuallyEscaping, tpe) => {
+      case SILOperator.convertFunction(operand, withoutActuallyEscaping, tpe) => {
         print("convert_function ")
         print(operand)
         print(" to ")
         print( "[without_actually_escaping] ", withoutActuallyEscaping)
         print(tpe)
       }
-      case Operator.copyAddr(take, value, initialization, operand) => {
+      case SILOperator.copyAddr(take, value, initialization, operand) => {
         print("copy_addr ")
         print( "[take] ", take)
         print(value)
@@ -152,64 +152,64 @@ class SILPrinter extends Printer {
         print( "[initialization] ", initialization)
         print(operand)
       }
-      case Operator.copyValue(operand) => {
+      case SILOperator.copyValue(operand) => {
         print("copy_value ")
         print(operand)
       }
-      case Operator.deallocStack(operand) => {
+      case SILOperator.deallocStack(operand) => {
         print("dealloc_stack ")
         print(operand)
       }
-      case Operator.deallocBox(operand) => {
+      case SILOperator.deallocBox(operand) => {
         print("dealloc_box ")
         // NOTE: Not sure if this is correct
         // dealloc_box %0 : $@box T
         print(operand)
       }
-      case Operator.projectBox(operand) => {
+      case SILOperator.projectBox(operand) => {
         print("project_box ")
         print(operand)
       }
-      case Operator.debugValue(operand, attributes) => {
+      case SILOperator.debugValue(operand, attributes) => {
         print("debug_value ")
         print(operand)
-        print(whenEmpty = false, ", ", attributes, ", ", "", (a: DebugAttribute) => print(a))
+        print(whenEmpty = false, ", ", attributes, ", ", "", (a: SILDebugAttribute) => print(a))
       }
-      case Operator.debugValueAddr(operand, attributes) => {
+      case SILOperator.debugValueAddr(operand, attributes) => {
         print("debug_value_addr ")
         print(operand)
-        print(whenEmpty = false, ", ", attributes, ", ", "", (a: DebugAttribute) => print(a))
+        print(whenEmpty = false, ", ", attributes, ", ", "", (a: SILDebugAttribute) => print(a))
       }
-      case Operator.destroyAddr(operand) => {
+      case SILOperator.destroyAddr(operand) => {
         print("destroy_addr ")
         print(operand)
       }
-      case Operator.destroyValue(operand) => {
+      case SILOperator.destroyValue(operand) => {
         print("destroy_value ")
         print(operand)
       }
-      case Operator.destructureTuple(operand) => {
+      case SILOperator.destructureTuple(operand) => {
         print("destructure_tuple ")
         print(operand)
       }
-      case Operator.endAccess(abort, operand) => {
+      case SILOperator.endAccess(abort, operand) => {
         print("end_access ")
         print( "[abort] ", abort)
         print(operand)
       }
-      case Operator.endApply(value) => {
+      case SILOperator.endApply(value) => {
         print("end_apply ")
         print(value)
       }
-      case Operator.abortApply(value) => {
+      case SILOperator.abortApply(value) => {
         print("abort_apply ")
         print(value)
       }
-      case Operator.endBorrow(operand) => {
+      case SILOperator.endBorrow(operand) => {
         print("end_borrow ")
         print(operand)
       }
-      case Operator.enum(tpe, declRef, operand: Option[Operand]) => {
+      case SILOperator.enm(tpe, declRef, operand: Option[SILOperand]) => {
         print("enum ")
         print(tpe)
         print(", ")
@@ -219,39 +219,39 @@ class SILPrinter extends Printer {
           print(operand.get)
         }
       }
-      case Operator.floatLiteral(tpe, value) => {
+      case SILOperator.floatLiteral(tpe, value) => {
         print("float_literal ")
         print(tpe)
         print(", 0x")
         print(value)
       }
-      case Operator.functionRef(name, tpe) => {
+      case SILOperator.functionRef(name, tpe) => {
         print("function_ref ")
         print("@")
         print(name)
         print(" : ")
         print(tpe)
       }
-      case Operator.globalAddr(name, tpe) => {
+      case SILOperator.globalAddr(name, tpe) => {
         print("global_addr ")
         print("@")
         print(name)
         print(" : ")
         print(tpe)
       }
-      case Operator.indexAddr(addr, index) => {
+      case SILOperator.indexAddr(addr, index) => {
         print("index_addr ")
         print(addr)
         print(", ")
         print(index)
       }
-      case Operator.integerLiteral(tpe, value) => {
+      case SILOperator.integerLiteral(tpe, value) => {
         print("integer_literal ")
         print(tpe)
         print(", ")
         literal(value)
       }
-      case Operator.load(kind: Option[LoadOwnership], operand) => {
+      case SILOperator.load(kind: Option[SILLoadOwnership], operand) => {
         print("load ")
         if (kind.nonEmpty) {
           print(kind.get)
@@ -259,61 +259,61 @@ class SILPrinter extends Printer {
         }
         print(operand)
       }
-      case Operator.loadWeak(take: Boolean, operand) => {
+      case SILOperator.loadWeak(take: Boolean, operand) => {
         print("load_weak ")
         print("[take]", take)
         print(operand)
       }
-      case Operator.storeWeak(value, initialization, operand) => {
+      case SILOperator.storeWeak(value, initialization, operand) => {
         print("store_weak ")
         print(value)
         print(" to ")
         print("[initialization] ", initialization)
         print(operand)
       }
-      case Operator.markDependence(operand, on) => {
+      case SILOperator.markDependence(operand, on) => {
         print("mark_dependence ")
         print(operand)
         print(" on ")
         print(on)
       }
-      case Operator.metatype(tpe) => {
+      case SILOperator.metatype(tpe) => {
         print("metatype ")
         print(tpe)
       }
-      case Operator.partialApply(calleeGuaranteed, onStack, value, substitutions, arguments, tpe) => {
+      case SILOperator.partialApply(calleeGuaranteed, onStack, value, substitutions, arguments, tpe) => {
         print("partial_apply ")
         print( "[callee_guaranteed] ", calleeGuaranteed)
         print( "[on_stack] ", onStack)
         print(value)
-        print(whenEmpty = false, "<", substitutions, ", ", ">", (t: Type) => naked(t))
+        print(whenEmpty = false, "<", substitutions, ", ", ">", (t: SILType) => naked(t))
         print(whenEmpty = true, "(", arguments, ", ", ")", (a: String) => print(a))
         print(" : ")
         print(tpe)
       }
-      case Operator.pointerToAddress(operand, strict, tpe) => {
+      case SILOperator.pointerToAddress(operand, strict, tpe) => {
         print("pointer_to_address ")
         print(operand)
         print(" to ")
         print( "[strict] ", strict)
         print(tpe)
       }
-      case Operator.releaseValue(operand) => {
+      case SILOperator.releaseValue(operand) => {
         print("release_value ")
         print(operand)
       }
-      case Operator.retainValue(operand) => {
+      case SILOperator.retainValue(operand) => {
         print("retain_value ")
         print(operand)
       }
-      case Operator.selectEnum(operand, cases, tpe) => {
+      case SILOperator.selectEnum(operand, cases, tpe) => {
         print("select_enum ")
         print(operand)
-        print(whenEmpty = false, "", cases, "", "", (c: Case) => print(c))
+        print(whenEmpty = false, "", cases, "", "", (c: SILCase) => print(c))
         print(" : ")
         print(tpe)
       }
-      case Operator.store(value, kind: Option[StoreOwnership], operand) => {
+      case SILOperator.store(value, kind: Option[SILStoreOwnership], operand) => {
         print("store ")
         print(value)
         print(" to ")
@@ -323,58 +323,58 @@ class SILPrinter extends Printer {
         }
         print(operand)
       }
-      case Operator.stringLiteral(encoding, value) => {
+      case SILOperator.stringLiteral(encoding, value) => {
         print("string_literal ")
         print(encoding)
         print(" ")
         literal(value)
       }
-      case Operator.strongRelease(operand) => {
+      case SILOperator.strongRelease(operand) => {
         print("strong_release ")
         print(operand)
       }
-      case Operator.strongRetain(operand) => {
+      case SILOperator.strongRetain(operand) => {
         print("strong_retain ")
         print(operand)
       }
-      case Operator.struct(tpe, operands) => {
+      case SILOperator.struct(tpe, operands) => {
         print("struct ")
         print(tpe)
-        print(whenEmpty = true, " (", operands, ", ", ")", (o: Operand) => print(o))
+        print(whenEmpty = true, " (", operands, ", ", ")", (o: SILOperand) => print(o))
       }
-      case Operator.structElementAddr(operand, declRef) => {
+      case SILOperator.structElementAddr(operand, declRef) => {
         print("struct_element_addr ")
         print(operand)
         print(", ")
         print(declRef)
       }
-      case Operator.structExtract(operand, declRef) => {
+      case SILOperator.structExtract(operand, declRef) => {
         print("struct_extract ")
         print(operand)
         print(", ")
         print(declRef)
       }
-      case Operator.thinToThickFunction(operand, tpe) => {
+      case SILOperator.thinToThickFunction(operand, tpe) => {
         print("thin_to_thick_function ")
         print(operand)
         print(" to ")
         print(tpe)
       }
-      case Operator.tuple(elements) => {
+      case SILOperator.tuple(elements) => {
         print("tuple ")
         print(elements)
       }
-      case Operator.tupleExtract(operand, declRef) => {
+      case SILOperator.tupleExtract(operand, declRef) => {
         print("tuple_extract ")
         print(operand)
         print(", ")
         literal(declRef)
       }
-      case Operator.unknown(name) => {
+      case SILOperator.unknown(name) => {
         print(name)
         print(" <?>")
       }
-      case Operator.witnessMethod(archeType, declRef, declType, tpe) => {
+      case SILOperator.witnessMethod(archeType, declRef, declType, tpe) => {
         print("witness_method ")
         print(archeType)
         print(", ")
@@ -384,19 +384,19 @@ class SILPrinter extends Printer {
         print(" : ")
         print(tpe)
       }
-      case Operator.initExistentialMetatype(operand, tpe) => {
+      case SILOperator.initExistentialMetatype(operand, tpe) => {
         print("init_existential_metatype ")
         print(operand)
         print(", ")
         print(tpe)
       }
-      case Operator.openExistentialMetatype(operand, tpe) => {
+      case SILOperator.openExistentialMetatype(operand, tpe) => {
         print("open_existential_metatype ")
         print(operand)
         print(" to ")
         print(tpe)
       }
-      case Operator.allocExistentialBox(tpeP, tpeT) => {
+      case SILOperator.allocExistentialBox(tpeP, tpeT) => {
         print("alloc_existential_box ")
         print(tpeP)
         print(", ")
@@ -405,101 +405,101 @@ class SILPrinter extends Printer {
     }
   }
 
-  def print(terminator: Terminator): Unit = {
+  def print(terminator: SILTerminator): Unit = {
     terminator match {
-      case Terminator.br(label, operands) => {
+      case SILTerminator.br(label, operands) => {
         print("br ")
         print(label)
-        print(whenEmpty = false, "(", operands, ", ", ")", (o: Operand) => print(o))
+        print(whenEmpty = false, "(", operands, ", ", ")", (o: SILOperand) => print(o))
       }
-      case Terminator.condBr(cond, trueLabel, trueOperands, falseLabel, falseOperands) => {
+      case SILTerminator.condBr(cond, trueLabel, trueOperands, falseLabel, falseOperands) => {
         print("cond_br ")
         print(cond)
         print(", ")
         print(trueLabel)
-        print(whenEmpty = false, "(", trueOperands, ", ", ")", (o: Operand) => print(o))
+        print(whenEmpty = false, "(", trueOperands, ", ", ")", (o: SILOperand) => print(o))
         print(", ")
         print(falseLabel)
-        print(whenEmpty = false, "(", falseOperands, ", ", ")", (o: Operand) => print(o))
+        print(whenEmpty = false, "(", falseOperands, ", ", ")", (o: SILOperand) => print(o))
       }
-      case Terminator.ret(operand) => {
+      case SILTerminator.ret(operand) => {
         print("return ")
         print(operand)
       }
-      case Terminator.thro(operand) => {
+      case SILTerminator.thro(operand) => {
         print("throw ")
         print(operand)
       }
-      case Terminator.unwind => {
+      case SILTerminator.unwind => {
         print("unwind ")
       }
-      case Terminator.switchEnum(operand, cases) => {
+      case SILTerminator.switchEnum(operand, cases) => {
         print("switch_enum ")
         print(operand)
-        print(whenEmpty = false, "", cases, "", "", (c: Case) => print(c))
+        print(whenEmpty = false, "", cases, "", "", (c: SILCase) => print(c))
       }
-      case Terminator.switchEnumAddr(operand, cases) => {
+      case SILTerminator.switchEnumAddr(operand, cases) => {
         print("switch_enum_addr ")
         print(operand)
-        print(whenEmpty = false, "", cases, "", "", (c: Case) => print(c))
+        print(whenEmpty = false, "", cases, "", "", (c: SILCase) => print(c))
       }
-      case Terminator.unknown(name) => {
+      case SILTerminator.unknown(name) => {
         print(name)
         print(" <?>")
       }
-      case Terminator.unreachable => {
+      case SILTerminator.unreachable => {
         print("unreachable ")
       }
     }
   }
 
-  def print(access: Access): Unit = {
+  def print(access: SILAccess): Unit = {
     access match {
-      case Access.deinit => {
+      case SILAccess.deinit => {
         print("deinit")
       }
-      case Access.init => {
+      case SILAccess.init => {
         print("init")
       }
-      case Access.modify => {
+      case SILAccess.modify => {
         print("modify")
       }
-      case Access.read => {
+      case SILAccess.read => {
         print("read")
       }
     }
   }
 
-  def print(argument: Argument): Unit = {
+  def print(argument: SILArgument): Unit = {
     print(argument.valueName)
     print(" : ")
     print(argument.tpe)
   }
 
-  def print(cse: Case): Unit = {
+  def print(cse: SILCase): Unit = {
     print(", ")
     cse match {
-      case Case.cs(declRef, result) => {
+      case SILCase.cs(declRef, result) => {
         print("case ")
         print(declRef)
         print(": ")
         print(result)
       }
-      case Case.default(result) => {
+      case SILCase.default(result) => {
         print("default ")
         print(result)
       }
     }
   }
 
-  def print(convention: Convention): Unit = {
+  def print(convention: SILConvention): Unit = {
     print("(")
     convention match {
-      case Convention.c => print("c")
-      case Convention.method => print("method")
-      case Convention.thin => print("thin")
-      case Convention.block => print("block")
-      case Convention.witnessMethod(tpe) => {
+      case SILConvention.c => print("c")
+      case SILConvention.method => print("method")
+      case SILConvention.thin => print("thin")
+      case SILConvention.block => print("block")
+      case SILConvention.witnessMethod(tpe) => {
         print("witness_method: ")
         naked(tpe)
       }
@@ -507,41 +507,41 @@ class SILPrinter extends Printer {
     print(")")
   }
 
-  def print(attribute: DebugAttribute): Unit = {
+  def print(attribute: SILDebugAttribute): Unit = {
     attribute match {
-      case DebugAttribute.argno(index) => {
+      case SILDebugAttribute.argno(index) => {
         print("argno ")
         literal(index)
       }
-      case DebugAttribute.name(name) => {
+      case SILDebugAttribute.name(name) => {
         print("name ")
         literal(name)
       }
-      case DebugAttribute.let => {
+      case SILDebugAttribute.let => {
         print("let")
       }
-      case DebugAttribute.variable => {
+      case SILDebugAttribute.variable => {
         print("var")
       }
     }
   }
 
-  def print(declKind: DeclKind): Unit = {
+  def print(declKind: SILDeclKind): Unit = {
     declKind match {
-      case DeclKind.allocator => print("allocator")
-      case DeclKind.deallocator => print("deallocator")
-      case DeclKind.destroyer => print("destroyer")
-      case DeclKind.enumElement => print("enumelt")
-      case DeclKind.getter => print("getter")
-      case DeclKind.globalAccessor => print("globalaccessor")
-      case DeclKind.initializer => print("initializer")
-      case DeclKind.ivarDestroyer => print("ivardestroyer")
-      case DeclKind.ivarInitializer => print("ivarinitializer")
-      case DeclKind.setter => print("setter")
+      case SILDeclKind.allocator => print("allocator")
+      case SILDeclKind.deallocator => print("deallocator")
+      case SILDeclKind.destroyer => print("destroyer")
+      case SILDeclKind.enumElement => print("enumelt")
+      case SILDeclKind.getter => print("getter")
+      case SILDeclKind.globalAccessor => print("globalaccessor")
+      case SILDeclKind.initializer => print("initializer")
+      case SILDeclKind.ivarDestroyer => print("ivardestroyer")
+      case SILDeclKind.ivarInitializer => print("ivarinitializer")
+      case SILDeclKind.setter => print("setter")
     }
   }
 
-  def print(declRef: DeclRef): Unit = {
+  def print(declRef: SILDeclRef): Unit = {
     print("#")
     print(declRef.name.mkString("."))
     if (declRef.kind.nonEmpty) {
@@ -554,61 +554,61 @@ class SILPrinter extends Printer {
     }
   }
 
-  def print(encoding: Encoding): Unit = {
+  def print(encoding: SILEncoding): Unit = {
     encoding match {
-      case Encoding.objcSelector => print("objcSelector")
-      case Encoding.utf8 => print("utf8")
-      case Encoding.utf16 => print("utf16")
+      case SILEncoding.objcSelector => print("objcSelector")
+      case SILEncoding.utf8 => print("utf8")
+      case SILEncoding.utf16 => print("utf16")
     }
   }
 
-  def print(enforcement: Enforcement): Unit = {
+  def print(enforcement: SILEnforcement): Unit = {
     enforcement match {
-      case Enforcement.dynamic => print("dynamic")
-      case Enforcement.static => print("static")
-      case Enforcement.unknown => print("unknown")
-      case Enforcement.unsafe => print("unsafe")
+      case SILEnforcement.dynamic => print("dynamic")
+      case SILEnforcement.static => print("static")
+      case SILEnforcement.unknown => print("unknown")
+      case SILEnforcement.unsafe => print("unsafe")
     }
   }
 
-  def print(attribute: FunctionAttribute): Unit = {
+  def print(attribute: SILFunctionAttribute): Unit = {
     attribute match {
-      case FunctionAttribute.alwaysInline => print("[always_inline]")
-      case FunctionAttribute.differentiable(spec) => {
+      case SILFunctionAttribute.alwaysInline => print("[always_inline]")
+      case SILFunctionAttribute.differentiable(spec) => {
         print("[differentiable ")
         print(spec)
         print("]")
       }
-      case FunctionAttribute.dynamicallyReplacable => print("[dynamically_replacable]")
-      case FunctionAttribute.noInline => print("[noinline]")
-      case FunctionAttribute.noncanonical(NoncanonicalFunctionAttribute.ownershipSSA) => print("[ossa]")
-      case FunctionAttribute.readonly => print("[readonly]")
-      case FunctionAttribute.semantics(value) => {
+      case SILFunctionAttribute.dynamicallyReplacable => print("[dynamically_replacable]")
+      case SILFunctionAttribute.noInline => print("[noinline]")
+      case SILFunctionAttribute.noncanonical(SILNoncanonicalFunctionAttribute.ownershipSSA) => print("[ossa]")
+      case SILFunctionAttribute.readonly => print("[readonly]")
+      case SILFunctionAttribute.semantics(value) => {
         print("[_semantics ")
         literal(value)
         print("]")
       }
-      case FunctionAttribute.serialized => print("[serialized]")
-      case FunctionAttribute.thunk => print("[thunk]")
-      case FunctionAttribute.transparent => print("[transparent]")
+      case SILFunctionAttribute.serialized => print("[serialized]")
+      case SILFunctionAttribute.thunk => print("[thunk]")
+      case SILFunctionAttribute.transparent => print("[transparent]")
     }
   }
 
-  def print(linkage: Linkage): Unit = {
+  def print(linkage: SILLinkage): Unit = {
     linkage match {
-      case Linkage.hidden => print("hidden ")
-      case Linkage.hiddenExternal => print("hidden_external ")
-      case Linkage.priv => print("private ")
-      case Linkage.privateExternal => print("private_external ")
-      case Linkage.public => print("")
-      case Linkage.publicExternal => print("public_external ")
-      case Linkage.publicNonABI => print("non_abi ")
-      case Linkage.shared => print("shared ")
-      case Linkage.sharedExternal => print("shared_external ")
+      case SILLinkage.hidden => print("hidden ")
+      case SILLinkage.hiddenExternal => print("hidden_external ")
+      case SILLinkage.priv => print("private ")
+      case SILLinkage.privateExternal => print("private_external ")
+      case SILLinkage.public => print("")
+      case SILLinkage.publicExternal => print("public_external ")
+      case SILLinkage.publicNonABI => print("non_abi ")
+      case SILLinkage.shared => print("shared ")
+      case SILLinkage.sharedExternal => print("shared_external ")
     }
   }
 
-  def print(loc: Loc): Unit = {
+  def print(loc: SILLoc): Unit = {
     print("loc ")
     literal(loc.path)
     print(":")
@@ -617,13 +617,13 @@ class SILPrinter extends Printer {
     literal(loc.column)
   }
 
-  def print(operand: Operand): Unit = {
+  def print(operand: SILOperand): Unit = {
     print(operand.value)
     print(" : ")
     print(operand.tpe)
   }
 
-  def print(result: Result): Unit = {
+  def print(result: SILResult): Unit = {
     if (result.valueNames.length == 1) {
       print(result.valueNames(0))
     } else {
@@ -631,28 +631,28 @@ class SILPrinter extends Printer {
     }
   }
 
-  def print(sourceInfo: SourceInfo): Unit = {
+  def print(sourceInfo: SILSourceInfo): Unit = {
     // The SIL docs say that scope refs precede locations, but this is
     // not true once you look at the compiler outputs or its source code.
-    print(", ", sourceInfo.loc, (l: Loc) => print(l))
+    print(", ", sourceInfo.loc, (l: SILLoc) => print(l))
     print(", scope ", sourceInfo.scopeRef, (ref: Int) => literal(ref))
   }
 
-  def print(elements: TupleElements): Unit = {
+  def print(elements: SILTupleElements): Unit = {
     elements match {
-      case TupleElements.labeled(tpe, values) => {
+      case SILTupleElements.labeled(tpe, values) => {
         print(tpe)
         print(whenEmpty = true, " (", values, ", ", ")", (v: String) => print(v))
       }
-      case TupleElements.unlabeled(operands) => {
-        print(whenEmpty = true, "(", operands, ", ", ")", (o: Operand) => print(o))
+      case SILTupleElements.unlabeled(operands) => {
+        print(whenEmpty = true, "(", operands, ", ", ")", (o: SILOperand) => print(o))
       }
     }
   }
 
-  def print(tpe: Type): Unit = {
+  def print(tpe: SILType): Unit = {
     tpe match {
-      case Type.withOwnership(attribute, subtype) => {
+      case SILType.withOwnership(attribute, subtype) => {
         print(attribute)
         print(" ")
         print(subtype)
@@ -664,93 +664,93 @@ class SILPrinter extends Printer {
     }
   }
 
-  def naked(tpe: Type): Unit = {
+  def naked(tpe: SILType): Unit = {
     tpe match {
-      case Type.addressType(tpe) => {
+      case SILType.addressType(tpe) => {
         print("*")
         naked(tpe)
       }
-      case Type.attributedType(attrs, tpe) => {
-        print(whenEmpty = true, "", attrs, " ", " ", (t: TypeAttribute) => print(t))
+      case SILType.attributedType(attrs, tpe) => {
+        print(whenEmpty = true, "", attrs, " ", " ", (t: SILTypeAttribute) => print(t))
         naked(tpe)
       }
-      case Type.coroutineTokenType => {
+      case SILType.coroutineTokenType => {
         print("!CoroutineTokenType!")
       }
-      case Type.functionType(params, result) => {
-        print(whenEmpty = true, "(", params, ", ", ")", (t: Type) => naked(t))
+      case SILType.functionType(params, result) => {
+        print(whenEmpty = true, "(", params, ", ", ")", (t: SILType) => naked(t))
         print(" -> ")
         naked(result)
       }
-      case Type.genericType(params, reqs, tpe) => {
+      case SILType.genericType(params, reqs, tpe) => {
         print(whenEmpty = true, "<", params, ", ", "", (p: String) => print(p))
-        print(whenEmpty = false, " where ", reqs, ", ", "", (r: TypeRequirement) => print(r))
+        print(whenEmpty = false, " where ", reqs, ", ", "", (r: SILTypeRequirement) => print(r))
         print(">")
         // This is a weird corner case of -emit-sil, so we have to go the extra mile.
-        if (tpe.isInstanceOf[Type.genericType]) {
+        if (tpe.isInstanceOf[SILType.genericType]) {
           naked(tpe)
         } else {
           print(" ")
           naked(tpe)
         }
       }
-      case Type.namedType(name) => {
+      case SILType.namedType(name) => {
         print(name)
       }
-      case Type.selectType(tpe, name) => {
+      case SILType.selectType(tpe, name) => {
         naked(tpe)
         print(".")
         print(name)
       }
-      case Type.selfType => {
+      case SILType.selfType => {
         print("Self")
       }
-      case Type.specializedType(tpe, args) => {
+      case SILType.specializedType(tpe, args) => {
         naked(tpe)
-        print(whenEmpty = true, "<", args, ", ", ">", (t: Type) => naked(t))
+        print(whenEmpty = true, "<", args, ", ", ">", (t: SILType) => naked(t))
       }
-      case Type.tupleType(params) => {
-        print(whenEmpty = true, "(", params, ", ", ")", (t: Type) => naked(t))
+      case SILType.tupleType(params) => {
+        print(whenEmpty = true, "(", params, ", ", ")", (t: SILType) => naked(t))
       }
-      case Type.withOwnership(_, _) => {
+      case SILType.withOwnership(_, _) => {
         // Note: "fatalError" in Swift, but I think exception is okay here.
         ExceptionReporter.report(new Exception("Types with ownership should be printed before naked type print!"))
       }
     }
   }
 
-  def print(attribute: TypeAttribute): Unit = {
+  def print(attribute: SILTypeAttribute): Unit = {
     attribute match {
-      case TypeAttribute.calleeGuaranteed => print("@callee_guaranteed")
-      case TypeAttribute.convention(convention) => {
+      case SILTypeAttribute.calleeGuaranteed => print("@callee_guaranteed")
+      case SILTypeAttribute.convention(convention) => {
         print("@convention")
         print(convention)
       }
-      case TypeAttribute.guaranteed => print("@guaranteed")
-      case TypeAttribute.inGuaranteed => print("@in_guaranteed")
-      case TypeAttribute.in => print("@in")
-      case TypeAttribute.inout => print("@inout")
-      case TypeAttribute.noescape => print("@noescape")
-      case TypeAttribute.out => print("@out")
-      case TypeAttribute.owned => print("@owned")
-      case TypeAttribute.thick => print("@thick")
-      case TypeAttribute.thin => print("@thin")
-      case TypeAttribute.yieldOnce => print("@yield_once")
-      case TypeAttribute.yields => print("@yields")
-      case TypeAttribute.error => print("@error")
-      case TypeAttribute.objcMetatype => print("@objc_metatype")
-      case TypeAttribute.silWeak => print("@sil_weak")
+      case SILTypeAttribute.guaranteed => print("@guaranteed")
+      case SILTypeAttribute.inGuaranteed => print("@in_guaranteed")
+      case SILTypeAttribute.in => print("@in")
+      case SILTypeAttribute.inout => print("@inout")
+      case SILTypeAttribute.noescape => print("@noescape")
+      case SILTypeAttribute.out => print("@out")
+      case SILTypeAttribute.owned => print("@owned")
+      case SILTypeAttribute.thick => print("@thick")
+      case SILTypeAttribute.thin => print("@thin")
+      case SILTypeAttribute.yieldOnce => print("@yield_once")
+      case SILTypeAttribute.yields => print("@yields")
+      case SILTypeAttribute.error => print("@error")
+      case SILTypeAttribute.objcMetatype => print("@objc_metatype")
+      case SILTypeAttribute.silWeak => print("@sil_weak")
     }
   }
 
-  def print(requirement: TypeRequirement): Unit = {
+  def print(requirement: SILTypeRequirement): Unit = {
     requirement match {
-      case TypeRequirement.conformance(lhs, rhs) => {
+      case SILTypeRequirement.conformance(lhs, rhs) => {
         naked(lhs)
         print(" : ")
         naked(rhs)
       }
-      case TypeRequirement.equality(lhs, rhs) => {
+      case SILTypeRequirement.equality(lhs, rhs) => {
         naked(lhs)
         print(" == ")
         naked(rhs)
@@ -758,18 +758,18 @@ class SILPrinter extends Printer {
     }
   }
 
-  def print(ownership: LoadOwnership): Unit = {
+  def print(ownership: SILLoadOwnership): Unit = {
     ownership match {
-      case LoadOwnership.copy => print("[copy]")
-      case LoadOwnership.take => print("[take]")
-      case LoadOwnership.trivial => print("[trivial]")
+      case SILLoadOwnership.copy => print("[copy]")
+      case SILLoadOwnership.take => print("[take]")
+      case SILLoadOwnership.trivial => print("[trivial]")
     }
   }
 
-  def print(storeOwnership: StoreOwnership): Unit = {
+  def print(storeOwnership: SILStoreOwnership): Unit = {
     storeOwnership match {
-      case StoreOwnership.init => print("[init]")
-      case StoreOwnership.trivial => print("[trivial]")
+      case SILStoreOwnership.init => print("[init]")
+      case SILStoreOwnership.trivial => print("[trivial]")
     }
   }
 

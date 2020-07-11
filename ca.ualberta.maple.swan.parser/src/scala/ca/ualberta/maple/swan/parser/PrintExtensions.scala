@@ -19,7 +19,7 @@ object PrintExtensions {
 
   // Add description field to types.
 
-  implicit class ModulePrinter(val m : Module) {
+  implicit class ModulePrinter(val m : SILModule) {
     val description: String = {
       val p = new SILPrinter()
       p.print(m)
@@ -27,7 +27,7 @@ object PrintExtensions {
     }
   }
 
-  implicit class FunctionPrinter(val f : Function) {
+  implicit class FunctionPrinter(val f : SILFunction) {
     val description: String = {
       val p = new SILPrinter()
       p.print(f)
@@ -35,7 +35,7 @@ object PrintExtensions {
     }
   }
 
-  implicit class BlockPrinter(val b : Block) {
+  implicit class BlockPrinter(val b : SILBlock) {
     val description: String = {
       val p = new SILPrinter()
       p.print(b)
@@ -43,7 +43,7 @@ object PrintExtensions {
     }
   }
 
-  implicit class OperatorDefPrinter(val od : OperatorDef) {
+  implicit class OperatorDefPrinter(val od : SILOperatorDef) {
     val description: String = {
       val p = new SILPrinter()
       p.print(od)
@@ -51,7 +51,7 @@ object PrintExtensions {
     }
   }
 
-  implicit class TerminatorDefPrinter(val td : TerminatorDef) {
+  implicit class TerminatorDefPrinter(val td : SILTerminatorDef) {
     val description: String = {
       val p = new SILPrinter()
       p.print(td)
@@ -59,14 +59,14 @@ object PrintExtensions {
     }
   }
 
-  implicit class InstructionDefPrinter(val id : InstructionDef) {
+  implicit class InstructionDefPrinter(val id : SILInstructionDef) {
     val description: String = id match {
-      case InstructionDef.operator(op: OperatorDef) => op.description
-      case InstructionDef.terminator(t: TerminatorDef) => t.description
+      case SILInstructionDef.operator(op: SILOperatorDef) => op.description
+      case SILInstructionDef.terminator(t: SILTerminatorDef) => t.description
     }
   }
 
-  implicit class OperatorPrinter(val o : Operator) {
+  implicit class OperatorPrinter(val o : SILOperator) {
     val description: String = {
       val p = new SILPrinter()
       p.print(o)
@@ -74,7 +74,7 @@ object PrintExtensions {
     }
   }
 
-  implicit class TerminatorPrinter(val t : Terminator) {
+  implicit class TerminatorPrinter(val t : SILTerminator) {
     val description: String = {
       val p = new SILPrinter()
       p.print(t)
@@ -82,10 +82,10 @@ object PrintExtensions {
     }
   }
 
-  implicit class InstructionPrinter(val i : Instruction) {
+  implicit class InstructionPrinter(val i : SILInstruction) {
     val description: String = i match {
-      case Instruction.operator(op: Operator) => op.description
-      case Instruction.terminator(t: Terminator) => t.description
+      case SILInstruction.operator(op: SILOperator) => op.description
+      case SILInstruction.terminator(t: SILTerminator) => t.description
     }
   }
 }
