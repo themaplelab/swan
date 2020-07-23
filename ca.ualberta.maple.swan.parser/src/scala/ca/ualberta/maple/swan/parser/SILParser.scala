@@ -329,7 +329,21 @@ class SILParser {
         SILInstruction.operator(SILOperator.allocStack(tpe, attributes))
       }
       case "alloc_ref" => {
-        null // TODO: NPOTP
+        var allocAttributes = new Array[SILAllocAttribute](0)
+        if(skip("[objc]")) allocAttributes = allocAttributes :+ SILAllocAttribute.objc
+        if(skip("[stack]")) { allocAttributes = allocAttributes :+ SILAllocAttribute.stack }
+        var tailElems: Array[(SILType, SILOperand)] = new Array[(SILType, SILOperand)](0)
+        while(peek("[")) {
+          take("[")
+          take("tail_elems")
+          val tailType: SILType = parseType()
+          take("*")
+          val operand: SILOperand = parseOperand()
+          take("]")
+          tailElems = tailElems :+ (tailType, operand)
+        }
+        val tpe: SILType = parseType()
+        SILInstruction.operator(SILOperator.allocRef(allocAttributes, tailElems, tpe))
       }
       case "alloc_ref_dynamic" => {
         null //  TODO: NPOTP
@@ -1032,7 +1046,24 @@ class SILParser {
         SILInstruction.terminator(SILTerminator.thro(operand))
       }
       case "yield" => {
-        null // TODO: NPOTP
+        // Multiple yielded values -> values are inside parentheses.
+        // Single yielded value -> no parentheses.
+        val operands: Array[SILOperand] = {
+          if(peek("(")) {
+            parseMany("(", ",", ")", parseOperand)
+          } else {
+            val arr = new Array[SILOperand](1)
+            arr(0) = parseOperand()
+            arr
+          }
+        }
+        take(",")
+        take("resume")
+        val resumeLabel: String = parseIdentifier()
+        take(",")
+        take("unwind")
+        val unwindLabel: String = parseIdentifier()
+        SILInstruction.terminator(SILTerminator.yld(operands, resumeLabel, unwindLabel))
       }
       case "unwind" => {
         SILInstruction.terminator(SILTerminator.unwind)

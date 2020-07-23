@@ -80,6 +80,21 @@ class SILPrinter extends Printer {
         print("@")
         print(name)
       }
+      case SILOperator.allocRef(attributes, tailElems, tpe) => {
+        print("alloc_ref ")
+        print(whenEmpty = false, "", attributes, " ", "", (a: SILAllocAttribute) => print(a))
+        print(" ")
+        print(whenEmpty = false, "", tailElems, " ", "",
+          (te: (SILType, SILOperand)) => {
+            print("[tail_elems ")
+            print(te._1)
+            print(" * ")
+            print(te._2)
+            print("]")
+        })
+        print(" ")
+        print(tpe)
+      }
       case SILOperator.apply(nothrow, value, substitutions, arguments, tpe) => {
         print("apply ")
         print( "[nothrow] ", nothrow)
@@ -433,6 +448,18 @@ class SILPrinter extends Printer {
       case SILTerminator.unwind => {
         print("unwind ")
       }
+      case SILTerminator.yld(operands, resumeLabel, unwindLabel) => {
+        print("yield ")
+        if (operands.length > 1) {
+          print(whenEmpty = false, "(", operands, ", ", ")", (o: SILOperand) => print(o))
+        } else {
+          print(operands(0))
+        }
+        print(", resume ")
+        print(resumeLabel)
+        print(", unwind ")
+        print(unwindLabel)
+      }
       case SILTerminator.switchEnum(operand, cases) => {
         print("switch_enum ")
         print(operand)
@@ -740,6 +767,13 @@ class SILPrinter extends Printer {
       case SILTypeAttribute.error => print("@error")
       case SILTypeAttribute.objcMetatype => print("@objc_metatype")
       case SILTypeAttribute.silWeak => print("@sil_weak")
+    }
+  }
+
+  def print(allocAttribute: SILAllocAttribute): Unit = {
+    allocAttribute match {
+      case SILAllocAttribute.objc => print("[objc]")
+      case SILAllocAttribute.stack => print("[stack]")
     }
   }
 

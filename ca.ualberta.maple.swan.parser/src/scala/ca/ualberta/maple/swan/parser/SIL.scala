@@ -66,6 +66,7 @@ object SILOperator {
   case class allocStack(tpe: SILType, attributes: Array[SILDebugAttribute]) extends SILOperator
   case class allocBox(tpe: SILType, attributes: Array[SILDebugAttribute]) extends SILOperator
   case class allocGlobal(name: String) extends SILOperator
+  case class allocRef(attributes: Array[SILAllocAttribute], tailElems: Array[(SILType, SILOperand)], tpe: SILType) extends SILOperator
   case class apply(
                     nothrow: Boolean, value: String,
                     substitutions: Array[SILType], arguments: Array[String], tpe: SILType
@@ -146,6 +147,7 @@ object SILTerminator {
   case class switchEnumAddr(operand: SILOperand, cases: Array[SILCase]) extends SILTerminator
   case class unknown(name: String) extends SILTerminator
   case object unreachable extends SILTerminator
+  case class yld(operands: Array[SILOperand], resumeLabel: String, unwindLabel: String) extends SILTerminator
 }
 
 sealed trait SILInstruction
@@ -303,6 +305,12 @@ object SILTypeAttribute {
   case object error extends SILTypeAttribute
   case object objcMetatype extends SILTypeAttribute
   case object silWeak extends SILTypeAttribute
+}
+
+sealed trait SILAllocAttribute
+object SILAllocAttribute {
+  case object objc extends SILAllocAttribute
+  case object stack extends SILAllocAttribute
 }
 
 sealed trait SILTypeRequirement
