@@ -2,8 +2,9 @@
 
 %3 = alloc_stack $Hasher, scope 110             // users: %48, %47, %44, %7~
 
+%14 = alloc_ref [stack] $_ContiguousArrayStorage<Card>, scope 306 // users: %43, %42, %32, %31, %22, %15, %44~
 %14 = alloc_ref [stack] [tail_elems $Card * %11 : $Builtin.Word] $_ContiguousArrayStorage<Card>, scope 306 // users: %43, %42, %32, %31, %22, %15, %44~
-alloc_ref  [tail_elems $Val * %0 : $Builtin.Word] [tail_elems $Aleph * %1 : $Builtin.Word] $Class1~
+%14 = alloc_ref  [tail_elems $Val * %0 : $Builtin.Word] [tail_elems $Aleph * %1 : $Builtin.Word] $Class1~
 
 # Missing "alloc_ref_dynamic"
 
@@ -21,8 +22,7 @@ dealloc_stack %33 : $*URL, scope 1766           // id: %59~
 # types ${...} are not yet handled
 # %53 = project_box %52 : ${ var @sil_weak Optional<UIViewController> }, 0, loc "/Users/abdulalib/Documents/swan-spds/benchmark/mobile-ios-vipergame/Memory/Utilities/ErrorAlert.swift":35:42, scope 843 // user: %55~
 
-# Not yet implemented
-# dealloc_ref [stack] %81 : $_ContiguousArrayStorage<Card>, scope 715 // id: %132~
+dealloc_ref [stack] %81 : $_ContiguousArrayStorage<Card>, scope 715 // id: %132~
 
 debug_value %3 : $UInt, let, name "rawValue", argno 1, scope 1805 // id: %4~
 
@@ -70,8 +70,7 @@ store_weak %54 to [initialization] %53 : $*@sil_weak Optional<UIViewController>,
 
 # Missing "is_escaping_closure"
 
-# Not yet implemented
-# %63 = copy_block %62 : $@convention(block) () -> (), loc "/Users/abdulalib/Documents/swan-spds/benchmark/mobile-ios-vipergame/Memory/Utilities/ErrorAlert.swift":35:34, scope 836 // users: %95, %90~
+%63 = copy_block %62 : $@convention(block) () -> (), loc "/Users/abdulalib/Documents/swan-spds/benchmark/mobile-ios-vipergame/Memory/Utilities/ErrorAlert.swift":35:34, scope 836 // users: %95, %90~
 
 # Missing "copy_block_without_escaping"
 
@@ -97,7 +96,7 @@ store_weak %54 to [initialization] %53 : $*@sil_weak Optional<UIViewController>,
 # Not yet implemented
 # %45 = objc_super_method %1 : $CardCell, #UICollectionViewCell.init!initializer.1.foreign : (UICollectionViewCell.Type) -> (NSCoder) -> UICollectionViewCell?, $@convention(objc_method) (NSCoder, @owned UICollectionViewCell) -> @owned Optional<UICollectionViewCell>, scope 908 // user: %46~
 
-# TODO: FAILING
+# TODO: Failing.
 # %52 = witness_method $DispatchWorkItemFlags, #SetAlgebra.init!allocator.1 : <Self where Self : SetAlgebra><S where S : Sequence, Self.Element == S.Element> (Self.Type) -> (__owned S) -> Self : $@convention(witness_method: SetAlgebra) <τ_0_0 where τ_0_0 : SetAlgebra><τ_1_0 where τ_1_0 : Sequence, τ_0_0.Element == τ_1_0.Element> (@in τ_1_0, @thick τ_0_0.Type) -> @out τ_0_0, scope 867 // user: %55~
 
 %149 = apply %148<[Int], PartialRangeFrom<Int>>(%143, %146, %144) : $@convention(method) <τ_0_0 where τ_0_0 : MutableCollection><τ_1_0 where τ_1_0 : RangeExpression, τ_0_0.Index == τ_1_0.Bound> (@in_guaranteed τ_1_0, @in_guaranteed τ_0_0) -> @out τ_0_0.SubSequence~
@@ -138,7 +137,7 @@ release_value %103 : $Optional<GameWireFrameProtocol>, loc "<compiler-generated>
 
 %35 = tuple_extract %34 : $(Builtin.Int64, Builtin.Int1), 0, scope 124 // users: %38, %36~
 
-# Not yet implemented
+# TODO: We don't handle types with ":"
 # %20 = tuple_element_addr %19 : $*(lower: Bound, upper: Bound), 0, scope 27 // users: %26, %22~
 
 # Missing "destructure_tuple"
@@ -150,13 +149,11 @@ release_value %103 : $Optional<GameWireFrameProtocol>, loc "<compiler-generated>
 
 %5 = struct_element_addr %1 : $*UIView.AnimationOptions, #UIView.AnimationOptions.rawValue, scope 2446 // user: %6~
 
-# Not yet implemented
-# %19 = ref_element_addr %18 : $__ContiguousArrayStorageBase, #__ContiguousArrayStorageBase.countAndCapacity, scope 750 // user: %2~
+%19 = ref_element_addr %18 : $__ContiguousArrayStorageBase, #__ContiguousArrayStorageBase.countAndCapacity, scope 750 // user: %2~
 
 %15 = enum $Optional<GameInteractorInputProtocol>, #Optional.none!enumelt, scope 918 // user: %18~
 
-# Not yet implemented
-# %34 = unchecked_enum_data %18 : $Optional<FloatingPointSign>, #Optional.some!enumelt.1, scope 122 // user: %35~
+%34 = unchecked_enum_data %18 : $Optional<FloatingPointSign>, #Optional.some!enumelt.1, scope 122 // user: %35~
 
 # Not yet implemented
 # %15 = init_enum_data_addr %0 : $*Optional<Self.Element>, #Optional.some!enumelt.1, scope 102 // user: %23~

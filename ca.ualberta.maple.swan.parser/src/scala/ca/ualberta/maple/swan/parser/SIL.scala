@@ -61,93 +61,244 @@ object SILInstructionDef {
   }
 }
 
+// NSIP: Not seen in practice
 sealed trait SILOperator
 object SILOperator {
+  /***** ALLOCATION AND DEALLOCATION *****/
   case class allocStack(tpe: SILType, attributes: Array[SILDebugAttribute]) extends SILOperator
-  case class allocBox(tpe: SILType, attributes: Array[SILDebugAttribute]) extends SILOperator
-  case class allocGlobal(name: String) extends SILOperator
   case class allocRef(attributes: Array[SILAllocAttribute], tailElems: Array[(SILType, SILOperand)], tpe: SILType) extends SILOperator
-  case class apply(
-                    nothrow: Boolean, value: String,
-                    substitutions: Array[SILType], arguments: Array[String], tpe: SILType
-                  ) extends SILOperator
+  case class allocRefDynamic(objc: Boolean, tailElems: Array[(SILType, SILOperand)], operand: SILOperand, tpe: SILType) extends SILOperator
+  case class allocBox(tpe: SILType, attributes: Array[SILDebugAttribute]) extends SILOperator
+  // NSIP: alloc_value_buffer
+  case class allocGlobal(name: String) extends SILOperator
+  case class deallocStack(operand: SILOperand) extends SILOperator
+  case class deallocBox(operand: SILOperand) extends SILOperator
+  case class projectBox(operand: SILOperand) extends SILOperator
+  case class deallocRef(stack: Boolean, operand: SILOperand) extends SILOperator
+  // NSIP: dealloc_partial_ref
+  // NSIP: dealloc_value_buffer
+  // NSIP: project_value_buffer
+
+  /***** DEBUG INFORMATION *****/
+  case class debugValue(operand: SILOperand, attributes: Array[SILDebugAttribute]) extends SILOperator
+  case class debugValueAddr(operand: SILOperand, attributes: Array[SILDebugAttribute]) extends SILOperator
+
+  /***** ACCESSING MEMORY *****/
+  case class load(kind: Option[SILLoadOwnership], operand: SILOperand) extends SILOperator
+  case class store(value: String, kind: Option[SILStoreOwnership], operand: SILOperand) extends SILOperator
+  case class loadBorrow(value: String) extends SILOperator
+  // begin_borrow has T0D0 in SIL.rst and I think it's NSIP, but tensorflow had parsing for it so use it.
+  case class beginBorrow(operand: SILOperand) extends SILOperator
+  // NOTE: The SIL.rst for end_borrow is not consistent with in-practice instructions at all.
+  case class endBorrow(operand: SILOperand) extends SILOperator
+  case class assign(from: String, to: SILOperand) extends SILOperator
+  case class assignByWrapper(from: SILOperand, to: SILOperand, init: SILOperand, set: SILOperand) extends SILOperator
+  case class markUninitialized(muKind: SILMUKind, operand: SILOperand) extends SILOperator
+  // In SIL.rst, apparently there can be a second operand, but I think this is NSIP.
+  case class markFunctionEscape(operand: SILOperand) extends SILOperator
+  // NSIP: mark_uninitialized_behaviour
+  case class copyAddr(take: Boolean, value: String, initialization: Boolean, operand: SILOperand) extends SILOperator
+  case class destroyAddr(operand: SILOperand) extends SILOperator
+  case class indexAddr(addr: SILOperand, index: SILOperand) extends SILOperator
+  // NSIP: tail_addr
+  // NSIP: index_raw_pointer
+  // NSIP: bind_memory
   case class beginAccess(
                           access: SILAccess, enforcement: SILEnforcement, noNestedConflict: Boolean, builtin: Boolean,
                           operand: SILOperand
                         ) extends SILOperator
+  case class endAccess(abort: Boolean, operand: SILOperand) extends SILOperator
+  // NSIP: begin_unpaired_access
+  // NSIP: end_unpaired_access
+  
+  /***** REFERENCE COUNTING *****/
+  case class strongRetain(operand: SILOperand) extends SILOperator
+  case class strongRelease(operand: SILOperand) extends SILOperator
+  // NSIP: set_deallocating
+  // NSIP: strong_copy_unowned_value
+  // NSIP: strong_retain_unowned
+  // NSIP: unowned_retain
+  // NSIP: unowned_release
+  case class loadWeak(take: Boolean, operand: SILOperand) extends SILOperator
+  case class storeWeak(value: String, initialization: Boolean, operand: SILOperand) extends SILOperator
+  // TODO: load_unowned (nothing in SIL.rst for this instruction)
+  // TODO: store_unowned (nothing in SIL.rst for this instruction)
+  // NSIP: fix_lifetime
+  case class markDependence(operand: SILOperand, on: SILOperand) extends SILOperator
+  // NSIP: is_unique
+  // Skip begin_cow_mutation and end_cow_mutation for now (new instructions)
+  case class isEscapingClosure(operand: SILOperand) extends SILOperator
+  case class copyBlock(operand: SILOperand) extends SILOperator
+  case class copyBlockWithoutEscaping(operand1: SILOperand, operand2: SILOperand) extends SILOperator
+  // builtin "unsafeGuaranteed" not sure what to do about this one
+  // builtin "unsafeGuaranteedEnd" not sure what to do about this one
+
+  /***** LITERALS *****/
+  case class functionRef(name: String, tpe: SILType) extends SILOperator
+  case class dynamicFunctionRef(name: String, tpe: SILType) extends SILOperator
+  case class prevDynamicFunctionRef(name: String, tpe: SILType) extends SILOperator
+  case class globalAddr(name: String, tpe: SILType) extends SILOperator
+  // NSIP: global_value
+  case class integerLiteral(tpe: SILType, value: Int) extends SILOperator
+  case class floatLiteral(tpe: SILType, value: String) extends SILOperator
+  case class stringLiteral(encoding: SILEncoding, value: String) extends SILOperator
+  // Skip base_addr_for_offset for now (new instruction)
+
+  /***** DYNAMIC DISPATCH *****/
+  // NOTE: All of the dynamic dispatch instructions have a "sil-method-attributes?" component.
+  //       It is unclear what this attribute is.
+  case class classMethod(attribute: Option[SILType], operand: SILOperand, declRef: SILDeclRef, tpe: SILType) extends SILOperator
+  case class objcMethod(attribute: Option[SILType], operand: SILOperand, declRef: SILDeclRef, tpe: SILType) extends SILOperator
+  // NSIP: super_method
+  case class objcSuperMethod(attribute: Option[SILType], operand: SILOperand, declRef: SILDeclRef, tpe: SILType) extends SILOperator
+  case class witnessMethod(attribute: Option[SILType], operand: SILOperand, declRef: SILDeclRef, tpe: SILType) extends SILOperator
+
+  /***** FUNCTION APPLICATION *****/
+  case class apply(
+                    nothrow: Boolean, value: String,
+                    substitutions: Array[SILType], arguments: Array[String], tpe: SILType
+                  ) extends SILOperator
   case class beginApply(
                          nothrow: Boolean, value: String,
                          substitutions: Array[SILType], arguments: Array[String], tpe: SILType
                        ) extends SILOperator
-  case class beginBorrow(operand: SILOperand) extends SILOperator
-  case class builtin(name: String, operands: Array[SILOperand], tpe: SILType) extends SILOperator
-  case class condFail(operand: SILOperand, message: Option[String]) extends SILOperator
-  case class convertEscapeToNoescape(notGuaranteed: Boolean, escaped: Boolean, operand: SILOperand, tpe: SILType) extends SILOperator
-  case class convertFunction(operand: SILOperand, withoutActuallyEscaping: Boolean, tpe: SILType) extends SILOperator
-  case class copyAddr(take: Boolean, value: String, initialization: Boolean, operand: SILOperand) extends SILOperator
-  case class copyValue(operand: SILOperand) extends SILOperator
-  case class deallocStack(operand: SILOperand) extends SILOperator
-  case class deallocBox(operand: SILOperand) extends SILOperator
-  case class projectBox(operand: SILOperand) extends SILOperator
-  case class debugValue(operand: SILOperand, attributes: Array[SILDebugAttribute]) extends SILOperator
-  case class debugValueAddr(operand: SILOperand, attributes: Array[SILDebugAttribute]) extends SILOperator
-  case class destroyAddr(operand: SILOperand) extends SILOperator
-  case class destroyValue(operand: SILOperand) extends SILOperator
-  case class destructureTuple(operand: SILOperand) extends SILOperator
-  case class endAccess(abort: Boolean, operand: SILOperand) extends SILOperator
-  case class endApply(value: String) extends SILOperator
   case class abortApply(value: String) extends SILOperator
-  case class endBorrow(operand: SILOperand) extends SILOperator
-  case class enm(tpe: SILType, declRef: SILDeclRef, operand: Option[SILOperand]) extends SILOperator
-  case class floatLiteral(tpe: SILType, value: String) extends SILOperator
-  case class functionRef(name: String, tpe: SILType) extends SILOperator
-  case class globalAddr(name: String, tpe: SILType) extends SILOperator
-  case class indexAddr(addr: SILOperand, index: SILOperand) extends SILOperator
-  case class integerLiteral(tpe: SILType, value: Int) extends SILOperator
-  case class load(kind: Option[SILLoadOwnership], operand: SILOperand) extends SILOperator
-  case class loadWeak(take: Boolean, operand: SILOperand) extends SILOperator
-  case class storeWeak(value: String, initialization: Boolean, operand: SILOperand) extends SILOperator
-  case class markDependence(operand: SILOperand, on: SILOperand) extends SILOperator
-  case class metatype(tpe: SILType) extends SILOperator
+  case class endApply(value: String) extends SILOperator
   case class partialApply(
                            calleeGuaranteed: Boolean, onStack: Boolean, value: String,
                            substitutions: Array[SILType], arguments: Array[String], tpe: SILType
                          ) extends SILOperator
-  case class pointerToAddress(operand: SILOperand, strict: Boolean, tpe: SILType) extends SILOperator
-  case class releaseValue(operand: SILOperand) extends SILOperator
+  case class builtin(name: String, operands: Array[SILOperand], tpe: SILType) extends SILOperator
+
+  /***** METATYPES *****/
+  case class metatype(tpe: SILType) extends SILOperator
+  case class valueMetatype(tpe: SILType, operand: SILOperand) extends SILOperator
+  case class existentialMetatype(tpe: SILType, operand: SILOperand) extends SILOperator
+  // Unclear what the "protocol-decl" is. Assume as just an identifier for now.
+  case class objcProtocol(protocolDecl: String, tpe: SILType) extends SILOperator
+
+  /***** AGGREGATE TYPES *****/
   case class retainValue(operand: SILOperand) extends SILOperator
-  case class selectEnum(operand: SILOperand, cases: Array[SILCase], tpe: SILType) extends SILOperator
-  case class store(value: String, kind: Option[SILStoreOwnership], operand: SILOperand) extends SILOperator
-  case class stringLiteral(encoding: SILEncoding, value: String) extends SILOperator
-  case class strongRelease(operand: SILOperand) extends SILOperator
-  case class strongRetain(operand: SILOperand) extends SILOperator
-  case class struct(tpe: SILType, operands: Array[SILOperand]) extends SILOperator
-  case class structElementAddr(operand: SILOperand, declRef: SILDeclRef) extends SILOperator
-  case class structExtract(operand: SILOperand, declRef: SILDeclRef) extends SILOperator
-  case class thinToThickFunction(operand: SILOperand, tpe: SILType) extends SILOperator
+  // NSIP: retain_value_addr
+  // NSIP: unmanaged_retain_value
+  // Skip strong_copy_unmanaged_value for now (new instruction?).
+  case class copyValue(operand: SILOperand) extends SILOperator
+  case class releaseValue(operand: SILOperand) extends SILOperator
+  // NSIP: release_value_addr
+  // NSIP: unmanaged_release_value
+  case class destroyValue(operand: SILOperand) extends SILOperator
+  case class autoreleaseValue(operand: SILOperand) extends SILOperator
   case class tuple(elements: SILTupleElements) extends SILOperator
   case class tupleExtract(operand: SILOperand, declRef: Int) extends SILOperator
-  case class unknown(name: String) extends SILOperator
-  case class witnessMethod(archeType: SILType, declRef: SILDeclRef, declType: SILType, tpe: SILType) extends SILOperator
+  case class tupleElementAddr(operand: SILOperand, declRef: Int) extends SILOperator
+  case class destructureTuple(operand: SILOperand) extends SILOperator
+  case class struct(tpe: SILType, operands: Array[SILOperand]) extends SILOperator
+  case class structExtract(operand: SILOperand, declRef: SILDeclRef) extends SILOperator
+  case class structElementAddr(operand: SILOperand, declRef: SILDeclRef) extends SILOperator
+  // NSIP: destructure_struct
+  // NSIP: object
+  case class refElementAddr(immutable: Boolean, operand: SILOperand, declRef: SILDeclRef) extends SILOperator
+  // NSIP: ref_tail_addr
+
+  /***** ENUMS *****/
+  case class enm(tpe: SILType, declRef: SILDeclRef, operand: Option[SILOperand]) extends SILOperator
+  case class uncheckedEnumData(operand: SILOperand, declRef: SILDeclRef) extends SILOperator
+  case class initEnumDataAddr(operand: SILOperand, declRef: SILDeclRef) extends SILOperator
+  case class injectEnumAddr(operand: SILOperand, declRef: SILDeclRef) extends SILOperator
+  case class uncheckedTakeEnumDataAddr(operand: SILOperand, declRef: SILDeclRef) extends SILOperator
+  case class selectEnum(operand: SILOperand, cases: Array[SILCase], tpe: SILType) extends SILOperator
+  case class selectEnumAddr(operand: SILOperand, cases: Array[SILCase], tpe: SILType) extends SILOperator
+
+  /***** PROTOCOL AND PROTOCOL COMPOSITION TYPES *****/
+  case class initExistentialAddr(operand: SILOperand, tpe: SILType) extends SILOperator
+  // NSIP: init_existential_value
+  case class deinitExistentialAddr(operand: SILOperand) extends SILOperator
+  // NSIP: deinit_existential_value
+  case class openExistentialAddr(access: SILAllowedAccess, operand: SILOperand, tpe: SILType) extends SILOperator
+  // NSIP: open_existential_value
+  case class initExistentialRef(operand: SILOperand, tpeC: SILType, tpeP: SILType) extends SILOperator
+  case class openExistentialRef(operand: SILOperand, tpe: SILType) extends SILOperator
   case class initExistentialMetatype(operand: SILOperand, tpe: SILType) extends SILOperator
   case class openExistentialMetatype(operand: SILOperand, tpe: SILType) extends SILOperator
   case class allocExistentialBox(tpeP: SILType, tpeT: SILType) extends SILOperator
+  case class projectExistentialBox(tpe: SILType, operand: SILOperand) extends SILOperator
+  case class openExistentialBox(operand: SILOperand, tpe: SILType) extends SILOperator
+  // NSIP: open_existential_box_value
+  case class deallocExistentialBox(operand: SILOperand, tpe: SILType) extends SILOperator
+
+  /***** BLOCKS *****/
+  case class projectBlockStorage(operand: SILOperand, tpe: SILType) extends SILOperator
+  // TODO: init_block_storage_header (no info)
+
+  /***** UNCHECKED CONVERSIONS *****/
+  case class upcast(operand: SILOperand, tpe: SILType) extends SILOperator
+  case class addressToPointer(operand: SILOperand, tpe: SILType) extends SILOperator
+  case class pointerToAddress(operand: SILOperand, strict: Boolean, tpe: SILType) extends SILOperator
+  case class uncheckedRefCast(operand: SILOperand, tpe: SILType) extends SILOperator
+  // NSIP: unchecked_ref_cast_addr
+  case class uncheckedAddrCast(operand: SILOperand, tpe: SILType) extends SILOperator
+  case class uncheckedTrivialBitCast(operand: SILOperand, tpe: SILType) extends SILOperator
+  // NSIP: unchecked_bitwise_cast
+  // NSIP: ref_to_raw_pointer
+  // NSIP: raw_pointer_to_ref
+  case class refToUnowned(operand: SILOperand) extends SILOperator
+  // NSIP: unowned_to_ref
+  // TODO: ref_to_unmanaged (no info)
+  // TODO: unmanaged_to_ref (no info)
+  case class convertFunction(operand: SILOperand, withoutActuallyEscaping: Boolean, tpe: SILType) extends SILOperator
+  case class convertEscapeToNoescape(notGuaranteed: Boolean, escaped: Boolean,
+                                     operand: SILOperand, tpe: SILType) extends SILOperator
+  // NSIP: thin_function_to_pointer
+  // NSIP: pointer_to_thin_function
+  // NSIP: classify_bridge_object
+  // NSIP: value_to_bridge_object
+  // NSIP: ref_to_bridge_object
+  // NSIP: bridge_object_to_ref
+  // NSIP: bridge_object_to_word
+  case class thinToThickFunction(operand: SILOperand, tpe: SILType) extends SILOperator
+  case class thickToObjcMetatype(operand: SILOperand, tpe: SILType) extends SILOperator
+  case class objcToThickMetatype(operand: SILOperand, tpe: SILType) extends SILOperator
+  // TODO: objc_metatype_to_object (no info)
+  // TODO: object_existential_metatype_to_object
+
+  /***** CHECKED CONVERSIONS *****/
+  case class unconditionalCheckedCast(operand: SILOperand, tpe: SILType) extends SILOperator
+  case class unconditionalCheckedCastAddr(fromTpe: SILType, fromOperand: SILOperand, toType: SILType,
+                                          toOperand: SILOperand) extends SILOperator
+  // NSIP: unconditional_checked_cast_value
+
+  /***** RUNTIME FAILURES *****/
+  case class condFail(operand: SILOperand, message: Option[String]) extends SILOperator
+
+  /***** UNKNOWN FALLBACK *****/
+  case class unknown(name: String) extends SILOperator
 }
 
 sealed trait SILTerminator
 object SILTerminator {
+  case object unreachable extends SILTerminator
+  case class ret(operand: SILOperand) extends SILTerminator
+  case class thro(operand: SILOperand) extends SILTerminator
+  case class yld(operands: Array[SILOperand], resumeLabel: String, unwindLabel: String) extends SILTerminator
+  case object unwind extends SILTerminator
   case class br(label: String, operands: Array[SILOperand]) extends SILTerminator
   case class condBr(cond: String,
                     trueLabel: String, trueOperands: Array[SILOperand],
                     falseLabel: String, falseOperands: Array[SILOperand]) extends SILTerminator
-  case class ret(operand: SILOperand) extends SILTerminator
-  case class thro(operand: SILOperand) extends SILTerminator
-  case object unwind extends SILTerminator
+  // TODO: switch_value
+  // NSIP: select_value
   case class switchEnum(operand: SILOperand, cases: Array[SILCase]) extends SILTerminator
   case class switchEnumAddr(operand: SILOperand, cases: Array[SILCase]) extends SILTerminator
+  case class dynamicMethodBr(operand: SILOperand, declRef: SILDeclRef,
+                             namedLabel: String, notNamedLabel: String) extends SILTerminator
+  case class checkedCastBr(exact: Boolean, operand: SILOperand, tpe: SILType,
+                           succeedLabel: String, failureLabel: String) extends SILTerminator
+  // NSIP: checked_cast_value_br
+  case class checkedCastAddrBr(kind: SILCastConsumptionKind, fromTpe: SILType, fromOperand: SILOperand,
+                               toType: SILType, toOperand: SILOperand, succeedLabel: String, failureLabel: String) extends SILTerminator
+  case class tryApply(value: String, substitutions: Array[SILType], arguments: Array[String], tpe: SILType) extends SILTerminator
+
   case class unknown(name: String) extends SILTerminator
-  case object unreachable extends SILTerminator
-  case class yld(operands: Array[SILOperand], resumeLabel: String, unwindLabel: String) extends SILTerminator
 }
 
 sealed trait SILInstruction
@@ -162,6 +313,19 @@ object SILAccess {
   case object init extends SILAccess
   case object modify extends SILAccess
   case object read extends SILAccess
+}
+
+sealed trait SILAllowedAccess
+object SILAllowedAccess {
+  case object immutable extends SILAllowedAccess
+  case object mutable extends SILAllowedAccess
+}
+
+sealed trait SILCastConsumptionKind
+object SILCastConsumptionKind {
+  case object takeAlways extends SILCastConsumptionKind
+  case object takeOnSuccess extends SILCastConsumptionKind
+  case object copyOnSuccess extends SILCastConsumptionKind
 }
 
 class SILArgument(val valueName: String, val tpe: SILType)
@@ -311,6 +475,18 @@ sealed trait SILAllocAttribute
 object SILAllocAttribute {
   case object objc extends SILAllocAttribute
   case object stack extends SILAllocAttribute
+}
+
+// mark_uninitialized kind
+sealed trait SILMUKind
+object SILMUKind {
+  case object varr extends SILMUKind
+  case object rootSelf extends SILMUKind
+  case object crossModuleRootSelf extends SILMUKind
+  case object derivedSelf extends SILMUKind
+  case object derivedSelfOnly extends SILMUKind
+  case object delegatingSelf extends SILMUKind
+  case object delegatingSelfAllocated extends SILMUKind
 }
 
 sealed trait SILTypeRequirement

@@ -373,7 +373,9 @@ class SILParser {
         SILInstruction.operator(SILOperator.projectBox(operand))
       }
       case "dealloc_ref" => {
-        null // TODO: NPOTP LP
+        val stack: Boolean = skip("[stack]")
+        val operand: SILOperand = parseOperand()
+        SILInstruction.operator(SILOperator.deallocRef(stack, operand))
       }
       case "dealloc_partial_ref" => {
         throw parseError("unhandled instruction") // NSIP
@@ -428,6 +430,10 @@ class SILParser {
       }
       case "load_borrow" => {
         null // TODO: NPOTP
+      }
+      case "begin_borrow" => {
+        val operand = parseOperand()
+        SILInstruction.operator(SILOperator.beginBorrow(operand))
       }
       case "end_borrow" => {
         val operand = parseOperand()
@@ -555,13 +561,18 @@ class SILParser {
         throw parseError("unhandled instruction") // NSIP
       }
       case "is_escaping_closure" => {
-        null // TODO: NPOTP
+        val operand = parseOperand()
+        SILInstruction.operator(SILOperator.isEscapingClosure(operand))
       }
       case "copy_block" => {
-        null // TODO: NPOTP
+        val operand = parseOperand()
+        SILInstruction.operator(SILOperator.copyBlock(operand))
       }
       case "copy_block_without_escaping" => {
-        null // TODO: NPOTP
+        val operand1 = parseOperand()
+        take("withoutEscaping")
+        val operand2 = parseOperand()
+        SILInstruction.operator(SILOperator.copyBlockWithoutEscaping(operand1, operand2))
       }
       // builtin "unsafeGuaranteed" not sure what to do about this one
       // builtin "unsafeGuaranteedEnd" not sure what to do about this one
@@ -623,14 +634,16 @@ class SILParser {
         null // TODO: NPOTP
       }
       case "witness_method" => {
-        val archeType = parseType()
+        val attribute: Option[SILType] = maybeParse(() => {
+            val tpe = parseType()
+            Some(tpe)
+          })
+        val operand = parseOperand()
         take(",")
         val declRef = parseDeclRef()
         take(":")
-        val declType = parseNakedType()
-        take(":")
         val tpe = parseType()
-        SILInstruction.operator(SILOperator.witnessMethod(archeType, declRef, declType, tpe))
+        SILInstruction.operator(SILOperator.witnessMethod(attribute, operand, declRef, tpe))
       }
 
         // *** FUNCTION APPLICATION ***
@@ -749,7 +762,10 @@ class SILParser {
         SILInstruction.operator(SILOperator.tupleExtract(operand, declRef))
       }
       case "tuple_element_addr" => {
-        null // TODO: NPOTP
+        val operand = parseOperand()
+        take(",")
+        val declRef = parseInt()
+        SILInstruction.operator(SILOperator.tupleElementAddr(operand, declRef))
       }
       case "destructure_tuple" => {
         val operand = parseOperand()
@@ -779,7 +795,11 @@ class SILParser {
         throw parseError("unhandled instruction") // NSIP
       }
       case "ref_element_addr" => {
-        null // TODO: NPOTP
+        val immutable: Boolean = skip("[immutable]")
+        val operand: SILOperand = parseOperand()
+        take(",")
+        val declRef: SILDeclRef = parseDeclRef()
+        SILInstruction.operator(SILOperator.refElementAddr(immutable, operand, declRef))
       }
       case "ref_tail_addr" => {
         throw parseError("unhandled instruction") // NSIP
@@ -810,7 +830,10 @@ class SILParser {
         SILInstruction.operator(SILOperator.enm(tpe, declRef, operand))
       }
       case "unchecked_enum_data" => {
-        null // TODO: NPOTP
+        val operand = parseOperand()
+        take(",")
+        val declRef = parseDeclRef()
+        SILInstruction.operator(SILOperator.uncheckedEnumData(operand, declRef))
       }
       case "init_enum_data_addr" => {
         null // TODO: NPOTP
@@ -1118,13 +1141,6 @@ class SILParser {
         null // TODO: NPOTP
       }
 
-        // *** INSTRUCTIONS THAT TENSORFLOW PARSES BUT ARE NO LONGER IN SIL.rst ***
-
-      case "begin_borrow" => {
-        val operand = parseOperand()
-        SILInstruction.operator(SILOperator.beginBorrow(operand))
-      }
-
         // *** DEFAULT FALLBACK ***
 
       case _ : String => {
@@ -1386,6 +1402,8 @@ class SILParser {
   // Type format has been reverse-engineered since it doesn't seem to be mentioned in the spec.
   // TODO: Handle types used in [at least] alloc_box.
   //  e.g. ${ var @sil_weak Optional<CardCell> }
+  // TODO: Handle types with ":"
+  //  tuple type e.g. $*(lower: Bound, upper: Bound)
   @throws[Error]
   def parseNakedType(): SILType = {
     if (skip("<")) {
