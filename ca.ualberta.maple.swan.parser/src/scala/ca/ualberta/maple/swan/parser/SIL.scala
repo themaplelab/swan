@@ -94,7 +94,7 @@ object SILOperator {
   case class assign(from: String, to: SILOperand) extends SILOperator
   case class assignByWrapper(from: SILOperand, to: SILOperand, init: SILOperand, set: SILOperand) extends SILOperator
   case class markUninitialized(muKind: SILMUKind, operand: SILOperand) extends SILOperator
-  // In SIL.rst, apparently there can be a second operand, but I think this is NSIP.
+  // In SIL.rst, apparently there can be a second operand, but I think the second operand is NSIP.
   case class markFunctionEscape(operand: SILOperand) extends SILOperator
   // NSIP: mark_uninitialized_behaviour
   case class copyAddr(take: Boolean, value: String, initialization: Boolean, operand: SILOperand) extends SILOperator
@@ -296,7 +296,8 @@ object SILTerminator {
   // NSIP: checked_cast_value_br
   case class checkedCastAddrBr(kind: SILCastConsumptionKind, fromTpe: SILType, fromOperand: SILOperand,
                                toType: SILType, toOperand: SILOperand, succeedLabel: String, failureLabel: String) extends SILTerminator
-  case class tryApply(value: String, substitutions: Array[SILType], arguments: Array[String], tpe: SILType) extends SILTerminator
+  case class tryApply(value: String, substitutions: Array[SILType],
+                      arguments: Array[String], tpe: SILType, normalLabel: String, errorLabel: String) extends SILTerminator
 
   case class unknown(name: String) extends SILTerminator
 }

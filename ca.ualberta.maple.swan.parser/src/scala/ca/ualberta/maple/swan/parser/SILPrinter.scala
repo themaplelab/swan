@@ -91,6 +91,7 @@ class SILPrinter extends Printer {
         print(tpe)
       }
       case SILOperator.allocRefDynamic(objc, tailElems, operand, tpe) => {
+        print("alloc_ref_dynamic ")
         print("NOT YET HANDLED") // TODO
       }
       case SILOperator.allocBox(tpe, attributes) => {
@@ -119,8 +120,10 @@ class SILPrinter extends Printer {
       }
       case SILOperator.deallocRef(stack, operand) => {
         print("dealloc_ref ")
-        if (stack) print(SILAllocAttribute.stack)
-        print(" ")
+        if (stack) {
+          print(SILAllocAttribute.stack)
+          print(" ")
+        }
         print(operand)
       }
 
@@ -158,7 +161,8 @@ class SILPrinter extends Printer {
         print(operand)
       }
       case SILOperator.loadBorrow(value) => {
-        print("NOT YET HANDLED") // TODO
+        print("load_borrow ")
+        print(value)
       }
       case SILOperator.beginBorrow(operand) => {
         print("begin_borrow ")
@@ -169,16 +173,30 @@ class SILPrinter extends Printer {
         print(operand)
       }
       case SILOperator.assign(from, to) => {
-        print("NOT YET HANDLED") // TODO
+        print("assign ")
+        print(from)
+        print(" to ")
+        print(to)
       }
       case SILOperator.assignByWrapper(from, to, init, set) => {
-        print("NOT YET HANDLED") // TODO
+        print("assign_by_wrapper ")
+        print(from)
+        print(" to ")
+        print(to)
+        print(", init ")
+        print(init)
+        print(", set ")
+        print(set)
       }
       case SILOperator.markUninitialized(muKind, operand) => {
-        print("NOT YET HANDLED") // TODO
+        print("mark_uninitialized ")
+        print(muKind)
+        print(" ")
+        print(operand)
       }
       case SILOperator.markFunctionEscape(operand) => {
-        print("NOT YET HANDLED") // TODO
+        print("mark_function_escape ")
+        print(operand)
       }
       case SILOperator.copyAddr(take, value, initialization, operand) => {
         print("copy_addr ")
@@ -269,10 +287,16 @@ class SILPrinter extends Printer {
         print(tpe)
       }
       case SILOperator.dynamicFunctionRef(name, tpe) => {
-        print("NOT YET HANDLED") // TODO
+        print("dynamic_function_ref ")
+        print(name)
+        print(" : ")
+        print(tpe)
       }
       case SILOperator.prevDynamicFunctionRef(name, tpe) => {
-        print("NOT YET HANDLED") // TODO
+        print("prev_dynamic_function_ref ")
+        print(name)
+        print(" : ")
+        print(tpe)
       }
       case SILOperator.globalAddr(name, tpe) => {
         print("global_addr ")
@@ -303,12 +327,15 @@ class SILPrinter extends Printer {
         // *** DYNAMIC DISPATCH ***
 
       case SILOperator.classMethod(attribute, operand, declRef, tpe) => {
+        print("class_method ")
         print("NOT YET HANDLED") // TODO
       }
       case SILOperator.objcMethod(attribute, operand, declRef, tpe) => {
+        print("objc_method ")
         print("NOT YET HANDLED") // TODO
       }
       case SILOperator.objcSuperMethod(attribute, operand, declRef, tpe) => {
+        print("objc_super_method ")
         print("NOT YET HANDLED") // TODO
       }
       case SILOperator.witnessMethod(attribute, operand, declRef, tpe) => {
@@ -374,13 +401,22 @@ class SILPrinter extends Printer {
         print(tpe)
       }
       case SILOperator.valueMetatype(tpe, operand) => {
-        print("NOT YET HANDLED") // TODO
+        print("value_metatype ")
+        print(tpe)
+        print(", ")
+        print(operand)
       }
       case SILOperator.existentialMetatype(tpe, operand) => {
-        print("NOT YET HANDLED") // TODO
+        print("existential_metatype ")
+        print(tpe)
+        print(", ")
+        print(operand)
       }
       case SILOperator.objcProtocol(protocolDecl, tpe) => {
-        print("NOT YET HANDLED") // TODO
+        print("objc_protocol ")
+        print(protocolDecl)
+        print(" : ")
+        print(tpe)
       }
 
         // *** AGGREGATE TYPES ***
@@ -470,13 +506,22 @@ class SILPrinter extends Printer {
         print(declRef)
       }
       case SILOperator.initEnumDataAddr(operand, declRef) => {
-        print("NOT YET HANDLED") // TODO
+        print("init_enum_data_addr ")
+        print(operand)
+        print(", ")
+        print(declRef)
       }
       case SILOperator.injectEnumAddr(operand, declRef) => {
-        print("NOT YET HANDLED") // TODO
+        print("inject_enum_addr ")
+        print(operand)
+        print(", ")
+        print(declRef)
       }
       case SILOperator.uncheckedTakeEnumDataAddr(operand, declRef) => {
-        print("NOT YET HANDLED") // TODO
+        print("unchecked_take_enum_data_addr ")
+        print(operand)
+        print(", ")
+        print(declRef)
       }
       case SILOperator.selectEnum(operand, cases, tpe) => {
         print("select_enum ")
@@ -496,19 +541,36 @@ class SILPrinter extends Printer {
         // *** PROTOCOL AND PROTOCOL COMPOSITION TYPES ***
 
       case SILOperator.initExistentialAddr(operand, tpe) => {
-        print("NOT YET HANDLED") // TODO
+        print("init_existential_addr ")
+        print(operand)
+        print(", ")
+        print(tpe)
       }
       case SILOperator.deinitExistentialAddr(operand) => {
-        print("NOT YET HANDLED") // TODO
+        print("deinit_existential_addr ")
+        print(operand)
       }
       case SILOperator.openExistentialAddr(access, operand, tpe) => {
-        print("NOT YET HANDLED") // TODO
+        print("open_existential_addr ")
+        print(access)
+        print(" ")
+        print(operand)
+        print(" to ")
+        print(tpe)
       }
       case SILOperator.initExistentialRef(operand, tpeC, tpeP) => {
-        print("NOT YET HANDLED") // TODO
+        print("init_existential_ref ")
+        print(operand)
+        print(" : ")
+        print(tpeC)
+        print(", ")
+        print(tpeP)
       }
       case SILOperator.openExistentialRef(operand, tpe) => {
-        print("NOT YET HANDLED") // TODO
+        print("open_existential_ref ")
+        print(operand)
+        print(" to ")
+        print(tpe)
       }
       case SILOperator.initExistentialMetatype(operand, tpe) => {
         print("init_existential_metatype ")
@@ -529,28 +591,46 @@ class SILPrinter extends Printer {
         print(tpeT)
       }
       case SILOperator.projectExistentialBox(tpe, operand) => {
-        print("NOT YET HANDLED") // TODO
+        print("project_existential_box ")
+        print(tpe)
+        print(" in ")
+        print(operand)
       }
       case SILOperator.openExistentialBox(operand, tpe) => {
-        print("NOT YET HANDLED") // TODO
+        print("open_existential_box ")
+        print(operand)
+        print(" to ")
+        print(tpe)
       }
       case SILOperator.deallocExistentialBox(operand, tpe) => {
-        print("NOT YET HANDLED") // TODO
+        print("dealloc_existential_box ")
+        print(operand)
+        print(", ")
+        print(tpe)
       }
 
         // *** BLOCKS ***
 
       case SILOperator.projectBlockStorage(operand, tpe) => {
-        print("NOT YET HANDLED") // TODO
+        print("project_block_storage ")
+        print(operand)
+        print(" : ")
+        print(tpe)
       }
 
         // *** UNCHECKED CONVERSIONS ***
 
       case SILOperator.upcast(operand, tpe) => {
-        print("NOT YET HANDLED") // TODO
+        print("upcast ")
+        print(operand)
+        print(" to ")
+        print(tpe)
       }
       case SILOperator.addressToPointer(operand, tpe) => {
-        print("NOT YET HANDLED") // TODO
+        print("address_to_pointer ")
+        print(operand)
+        print(" to ")
+        print(tpe)
       }
       case SILOperator.pointerToAddress(operand, strict, tpe) => {
         print("pointer_to_address ")
@@ -560,16 +640,26 @@ class SILPrinter extends Printer {
         print(tpe)
       }
       case SILOperator.uncheckedRefCast(operand, tpe) => {
-        print("NOT YET HANDLED") // TODO
+        print("unchecked_ref_cast ")
+        print(operand)
+        print(" to ")
+        print(tpe)
       }
       case SILOperator.uncheckedAddrCast(operand, tpe) => {
-        print("NOT YET HANDLED") // TODO
+        print("unchecked_addr_cast ")
+        print(operand)
+        print(" to ")
+        print(tpe)
       }
       case SILOperator.uncheckedTrivialBitCast(operand, tpe) => {
-        print("NOT YET HANDLED") // TODO
+        print("unchecked_trivial_bit_cast ")
+        print(operand)
+        print(" to ")
+        print(tpe)
       }
       case SILOperator.refToUnowned(operand) => {
-        print("NOT YET HANDLED") // TODO
+        print("ref_to_unowned ")
+        print(operand)
       }
       case SILOperator.convertFunction(operand, withoutActuallyEscaping, tpe) => {
         print("convert_function ")
@@ -593,19 +683,35 @@ class SILPrinter extends Printer {
         print(tpe)
       }
       case SILOperator.thickToObjcMetatype(operand, tpe) => {
-        print("NOT YET HANDLED") // TODO
+        print("thick_to_objc_metatype ")
+        print(operand)
+        print(" to ")
+        print(tpe)
       }
       case SILOperator.objcToThickMetatype(operand, tpe) => {
-        print("NOT YET HANDLED") // TODO
+        print("objc_to_thick_metatype ")
+        print(operand)
+        print(" to ")
+        print(tpe)
       }
 
         // *** CHECKED CONVERSIONS ***
 
       case SILOperator.unconditionalCheckedCast(operand, tpe) => {
-        print("NOT YET HANDLED") // TODO
+        print("unconditional_checked_cast ")
+        print(operand)
+        print(" to ")
+        print(tpe)
       }
       case SILOperator.unconditionalCheckedCastAddr(fromTpe, fromOperand, toType, toOperand) => {
-        print("NOT YET HANDLED") // TODO
+        print("unconditional_checked_cast_addr ")
+        print(fromTpe)
+        print(" in ")
+        print(fromOperand)
+        print(" to ")
+        print(toType)
+        print(" in ")
+        print(toOperand)
       }
 
         // *** RUNTIME FAILURES ***
@@ -682,16 +788,54 @@ class SILPrinter extends Printer {
         print(whenEmpty = false, "", cases, "", "", (c: SILCase) => print(c))
       }
       case SILTerminator.dynamicMethodBr(operand, declRef, namedLabel, notNamedLabel) => {
-        print("NOT YET HANDLED") // TODO
+        print("dynamic_method_br ")
+        print(operand)
+        print(", ")
+        print(declRef)
+        print(", ")
+        print(namedLabel)
+        print(", ")
+        print(notNamedLabel)
       }
       case SILTerminator.checkedCastBr(exact, operand, tpe, succeedLabel, failureLabel) => {
-        print("NOT YET HANDLED") // TODO
+        print("checked_cast_br ")
+        print("[exact] ", exact)
+        print(operand)
+        print(" to ")
+        print(tpe)
+        print(", ")
+        print(succeedLabel)
+        print(", ")
+        print(failureLabel)
       }
       case SILTerminator.checkedCastAddrBr(kind, fromTpe, fromOperand, toType, toOperand, succeedLabel, failureLabel) => {
-        print("NOT YET HANDLED") // TODO
+        print("checked_cast_addr_br ")
+        print(kind)
+        print(" ")
+        print(fromTpe)
+        print(" in ")
+        print(fromOperand)
+        print(" to ")
+        print(toType)
+        print(" in ")
+        print(toOperand)
+        print(", ")
+        print(succeedLabel)
+        print(", ")
+        print(failureLabel)
       }
-      case SILTerminator.tryApply(value, substitutions, arguments, tpe) => {
-        print("NOT YET HANDLED") // TODO
+      case SILTerminator.tryApply(value, substitutions, arguments, tpe, normalLabel, errorLabel) => {
+        // NOTE: This is a multi-line instruction.
+        print("try_apply ")
+        print(value)
+        print(whenEmpty = false, "<", substitutions, ", ", ">", (t: SILType) => naked(t))
+        print(whenEmpty = true, "(", arguments, ", ", ")", (a: String) => print(a))
+        print(" : ")
+        print(tpe)
+        print("\n  normal ")
+        print(normalLabel)
+        print(", error ")
+        print(errorLabel)
       }
       // *** UNKNOWN FALLBACK ***
       case SILTerminator.unknown(name) => {
@@ -716,6 +860,21 @@ class SILPrinter extends Printer {
       case SILAccess.read => {
         print("read")
       }
+    }
+  }
+
+  def print(access: SILAllowedAccess): Unit = {
+    access match {
+      case SILAllowedAccess.immutable => print("immutable_access")
+      case SILAllowedAccess.mutable => print("mutable_access")
+    }
+  }
+
+  def print(kind: SILCastConsumptionKind): Unit = {
+    kind match {
+      case SILCastConsumptionKind.takeAlways => print("take_always")
+      case SILCastConsumptionKind.takeOnSuccess => print("take_on_success")
+      case SILCastConsumptionKind.copyOnSuccess => print("copy_on_success")
     }
   }
 
@@ -996,6 +1155,18 @@ class SILPrinter extends Printer {
     allocAttribute match {
       case SILAllocAttribute.objc => print("[objc]")
       case SILAllocAttribute.stack => print("[stack]")
+    }
+  }
+
+  def print(muKind: SILMUKind): Unit = {
+    muKind match {
+      case SILMUKind.varr => print("var")
+      case SILMUKind.rootSelf => print("rootself")
+      case SILMUKind.crossModuleRootSelf => print("crossmodulerootself")
+      case SILMUKind.derivedSelf => print("derivedself")
+      case SILMUKind.derivedSelfOnly => print("derivedselfonly")
+      case SILMUKind.delegatingSelf => print("delegatingself")
+      case SILMUKind.delegatingSelfAllocated => print("delegatingselfallocated")
     }
   }
 

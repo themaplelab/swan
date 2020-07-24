@@ -1138,6 +1138,7 @@ class SILParser {
         null // TODO: NPOTP
       }
       case "try_apply" => {
+        // NOTE: This is a multi-line instruction.
         null // TODO: NPOTP
       }
 
