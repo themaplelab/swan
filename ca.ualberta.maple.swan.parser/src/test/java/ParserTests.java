@@ -23,6 +23,7 @@ public class ParserTests {
     // The CSV can contain comments as long as they start with "#".
     @ParameterizedTest
     // Use '~' because it's never used in SIL (I think).
+    // Although, it might be used in a string (e.g. string_literal).
     @CsvFileSource(resources = "instructions.csv", delimiter = '~')
     void testSingleInstruction(String inst, String compareTo) throws Error {
         inst = doReplacements(inst);

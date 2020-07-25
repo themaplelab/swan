@@ -1,23 +1,23 @@
-# ============== From real SIL ==============
-
 %3 = alloc_stack $Hasher, scope 110             // users: %48, %47, %44, %7~
 
 %14 = alloc_ref [stack] $_ContiguousArrayStorage<Card>, scope 306 // users: %43, %42, %32, %31, %22, %15, %44~
 %14 = alloc_ref [stack] [tail_elems $Card * %11 : $Builtin.Word] $_ContiguousArrayStorage<Card>, scope 306 // users: %43, %42, %32, %31, %22, %15, %44~
-%14 = alloc_ref  [tail_elems $Val * %0 : $Builtin.Word] [tail_elems $Aleph * %1 : $Builtin.Word] $Class1~
+%14 = alloc_ref [tail_elems $Val * %0 : $Builtin.Word] [tail_elems $Aleph * %1 : $Builtin.Word] $Class1~
 
-# Missing "alloc_ref_dynamic"
+%5 = alloc_ref_dynamic [objc] %4 : $@objc_metatype Gizmo.Type, $Gizmo~
+%2 = alloc_ref_dynamic %1 : $@thick A.Type, $A~
 
 # types ${...} are not yet handled
 # %182 = alloc_box ${ var @sil_weak Optional<CardCell> }, loc \"/Users/abdulalib/Documents/swan-spds/benchmark/mobile-ios-vipergame/Memory/Modules/Game/User Interface/View/CardCell.swift\":65:76, scope 1144 // users: %204, %199, %191, %186, %183~
 
-# Missing "alloc_value_buffer"
+%0 = alloc_value_buffer $Int in %b : $*Builtin.UnsafeValueBuffer~
 
 alloc_global @$s6Memory10imageCache33_09824A4F0B3ADFC1D63FE8FD1BE2AC3BLLSo7NSCacheCySo8NSStringCSo7UIImageCGvp, loc "/Users/abdulalib/Documents/swan-spds/benchmark/mobile-ios-vipergame/Memory/Utilities/UIImage.swift":29:13, scope 1743 // id: %0~
 
 dealloc_stack %33 : $*URL, scope 1766           // id: %59~
 
-# Missing "dealloc_box"
+# types ${...} are not yet handled
+# dealloc_box %b : $<τ_0_0> { var τ_0_0 } <Int>~
 
 # types ${...} are not yet handled
 # %53 = project_box %52 : ${ var @sil_weak Optional<UIViewController> }, 0, loc "/Users/abdulalib/Documents/swan-spds/benchmark/mobile-ios-vipergame/Memory/Utilities/ErrorAlert.swift":35:42, scope 843 // user: %55~
@@ -32,17 +32,20 @@ debug_value_addr %57 : $*Content, let, name "content", argno 1, loc "/Users/abdu
 
 store %31 to %58 : $*Array<Card>, loc "/Users/abdulalib/Documents/swan-spds/benchmark/mobile-ios-vipergame/Memory/Modules/Game/Application Logic/Interactor/GameInteractor.swift":35:17, scope 936 // id: %59~
 
-# Missing "load_borrow"
+%2 = load_borrow %0 : $*Builtin.NativeObject~
 
-# Missing "end_borrow"
+end_borrow %1 : $Builtin.NativeObject~
 
-# Missing "assign"
+assign %0 to %1 : $*Int~
 
-# Missing "assign_by_wrapper"
+# From SIL.rst
+assign_by_wrapper %0 : $S to %1 : $*T, init %2 : $F, set %3 : $G~
 
-# Missing "mark_uninitialized"
+%3 = mark_uninitialized [rootself] %0 : $RootClassWithIVars~
 
-# Missing "mark_function_escape"
+mark_function_escape undef : $*(), loc "undef.sil":3:4, scope 1~
+mark_function_escape %ba : $*Int~
+mark_function_escape %ba : $*Int, %ca : $*Int~
 
 copy_addr [take] %105 to [initialization] %107 : $*UUID, loc "/Users/abdulalib/Documents/swan-spds/benchmark/mobile-ios-vipergame/Memory/Modules/Game/Application Logic/Entity/Card.swift":35:25, scope 820 // id: %108~
 
@@ -62,9 +65,12 @@ strong_release %21 : $@convention(block) () -> (), loc "<compiler-generated>":0:
 
 store_weak %54 to [initialization] %53 : $*@sil_weak Optional<UIViewController>, loc "/Users/abdulalib/Documents/swan-spds/benchmark/mobile-ios-vipergame/Memory/Utilities/ErrorAlert.swift":35:42, scope 843 // id: %55~
 
-# Missing "load_unowned"
+# @sil_unowned not supported
+# %t = load_unowned %u1 : $*@sil_unowned CP~
 
-# Missing "store_unowned"
+# @sil_unowned not supported
+# store_unowned %1 to [initialization] %0 : $*@sil_unowned C~
+# store_unowned %1 to %0 : $*@sil_unowned C~
 
 %40 = mark_dependence %39 : $@noescape @callee_guaranteed (UnsafeMutablePointer<Self.Element>, Int) -> () on %2 : $*C, scope 149 // user: %42~
 
@@ -76,9 +82,10 @@ store_weak %54 to [initialization] %53 : $*@sil_weak Optional<UIViewController>,
 
 %32 = function_ref @$sSS10FoundationE19_bridgeToObjectiveCSo8NSStringCyF : $@convention(method) (@guaranteed String) -> @owned NSString, scope 901 // user: %33~
 
-# Missing "dynamic_function_ref"
+%0 = dynamic_function_ref @test_dynamically_replaceable : $@convention(thin) () -> ()~
+%5 = dynamic_function_ref @closureCapturingByStorageAddress2 : $@convention(thin) (@inout_aliasable Builtin.Int64) -> ()~
 
-# Missing "prev_dynamic_function_ref"
+%0 = prev_dynamic_function_ref @test_dynamic_replacement_for : $@convention(thin) () -> ()~
 
 %91 = global_addr @globalinit_33_09824A4F0B3ADFC1D63FE8FD1BE2AC3B_token1 : $*Builtin.Word, loc "/Users/abdulalib/Documents/swan-spds/benchmark/mobile-ios-vipergame/Memory/Utilities/UIImage.swift":29:13, scope 1774 // user: %92~
 
@@ -96,7 +103,7 @@ store_weak %54 to [initialization] %53 : $*@sil_weak Optional<UIViewController>,
 # Not yet implemented
 # %45 = objc_super_method %1 : $CardCell, #UICollectionViewCell.init!initializer.1.foreign : (UICollectionViewCell.Type) -> (NSCoder) -> UICollectionViewCell?, $@convention(objc_method) (NSCoder, @owned UICollectionViewCell) -> @owned Optional<UICollectionViewCell>, scope 908 // user: %46~
 
-# TODO: Failing.
+# TODO: Failing
 # %52 = witness_method $DispatchWorkItemFlags, #SetAlgebra.init!allocator.1 : <Self where Self : SetAlgebra><S where S : Sequence, Self.Element == S.Element> (Self.Type) -> (__owned S) -> Self : $@convention(witness_method: SetAlgebra) <τ_0_0 where τ_0_0 : SetAlgebra><τ_1_0 where τ_1_0 : Sequence, τ_0_0.Element == τ_1_0.Element> (@in τ_1_0, @thick τ_0_0.Type) -> @out τ_0_0, scope 867 // user: %55~
 
 %149 = apply %148<[Int], PartialRangeFrom<Int>>(%143, %146, %144) : $@convention(method) <τ_0_0 where τ_0_0 : MutableCollection><τ_1_0 where τ_1_0 : RangeExpression, τ_0_0.Index == τ_1_0.Bound> (@in_guaranteed τ_1_0, @in_guaranteed τ_0_0) -> @out τ_0_0.SubSequence~
@@ -117,9 +124,11 @@ end_apply %22, scope 102                        // id: %24~
 %106 = metatype $@thick AnyObject.Protocol, scope 1620 // user: %107~
 %10 = metatype $@objc_metatype Bundle.Type, loc "/Users/abdulalib/Documents/swan-spds/benchmark/mobile-ios-vipergame/Memory/Utilities/File.swift":48:64, scope 1564 // users: %12, %11~
 
-# Missing "value_metatype"
+%2 = value_metatype $@thick Optional<Any.Type>.Type, %1 : $*Optional<@thick Any.Type>~
 
-# Missing "objc_protocol"
+%2 = existential_metatype $@thick SwiftKlassP.Type, %0 : $SwiftKlassP~
+
+%0 = objc_protocol #NSBurrito : $Protocol~
 
 retain_value %0 : $Optional<@callee_guaranteed (@guaranteed Optional<UIImage>) -> ()>, loc "<compiler-generated>":0:0, scope 1749 // id: %8~
 retain_value %0 : $Array<Card>, loc "<compiler-generated>":0:0, scope 601 // id: %34~
@@ -130,17 +139,17 @@ release_value %103 : $Optional<GameWireFrameProtocol>, loc "<compiler-generated>
 
 # Missing "destroy_value"
 
-# Missing "autorelease_value"
+autorelease_value %4 : $Optional<Hive>~
 
 %12 = tuple (%4 : $Array<Element>, %10 : $UnsafeMutablePointer<Element>), scope 80 // user: %13~
 %46 = tuple (), scope 103                       // user: %47~
 
 %35 = tuple_extract %34 : $(Builtin.Int64, Builtin.Int1), 0, scope 124 // users: %38, %36~
 
-# TODO: We don't handle types with ":"
+# types with ":" are not supported
 # %20 = tuple_element_addr %19 : $*(lower: Bound, upper: Bound), 0, scope 27 // users: %26, %22~
 
-# Missing "destructure_tuple"
+(%2, %3) = destructure_tuple %0 : $(Builtin.NativeObject, Builtin.Int32)~
 
 %36 = struct $Array<DispatchWorkItemFlags> (%35 : $_ArrayBuffer<DispatchWorkItemFlags>), scope 889 // user: %38~
 %47 = struct $_BridgeStorage<__ContiguousArrayStorageBase> (%46 : $Builtin.BridgeObject), scope 875 // user: %48~
@@ -155,31 +164,26 @@ release_value %103 : $Optional<GameWireFrameProtocol>, loc "<compiler-generated>
 
 %34 = unchecked_enum_data %18 : $Optional<FloatingPointSign>, #Optional.some!enumelt.1, scope 122 // user: %35~
 
-# Not yet implemented
-# %15 = init_enum_data_addr %0 : $*Optional<Self.Element>, #Optional.some!enumelt.1, scope 102 // user: %23~
+%15 = init_enum_data_addr %0 : $*Optional<Self.Element>, #Optional.some!enumelt.1, scope 102 // user: %23~
 
-# Not yet implemented
-# inject_enum_addr %0 : $*Optional<Self>, #Optional.some!enumelt.1, scope 116 // id: %18~
+inject_enum_addr %0 : $*Optional<Self>, #Optional.some!enumelt.1, scope 116 // id: %18~
 
-# Not yet implemented
-# %112 = unchecked_take_enum_data_addr %84 : $*Optional<S.Element>, #Optional.some!enumelt.1, scope 58 // user: %113~
+%112 = unchecked_take_enum_data_addr %84 : $*Optional<S.Element>, #Optional.some!enumelt.1, scope 58 // user: %113~
 
 %757 = select_enum %754 : $FloatingPointSign, case #FloatingPointSign.plus!enumelt: %755, case #FloatingPointSign.minus!enumelt: %756 : $Builtin.Int64, scope 115 // user: %758~
 
-# Missing "select_enum_addr"
+%b = select_enum_addr %7 : $*Optional<SomeClass>, case #Optional.some!enumelt: %t, case #Optional.none!enumelt: %f : $Builtin.Int1~
 
-# Not yet implemented
-# %141 = init_existential_addr %140 : $*Content, $Logo, loc "/Users/abdulalib/Documents/swan-spds/benchmark/mobile-ios-vipergame/Memory/Modules/Game/Application Logic/DataManager/Local/GameLocalDataManager.swift":60:27, scope 1595 // user: %14~
+%141 = init_existential_addr %140 : $*Content, $Logo, loc "/Users/abdulalib/Documents/swan-spds/benchmark/mobile-ios-vipergame/Memory/Modules/Game/Application Logic/DataManager/Local/GameLocalDataManager.swift":60:27, scope 1595 // user: %14~
 
-# Missing "deinit_existential_addr"
+deinit_existential_addr %exist_container : $*Existential~
 
-# Not yet implemented
+# @opened types not supported
 # %43 = open_existential_addr immutable_access %41 : $*Content to $*@opened("3B29F16E-A446-11EA-A04F-38F9D356CDAF") Content, loc "/Users/abdulalib/Documents/swan-spds/benchmark/mobile-ios-vipergame/Memory/Modules/Game/Application Logic/Entity/Card.swift":53:29, scope 454 // user: %45~
 
-# Not yet implemented
-# %15 = init_existential_ref %14 : $__ContiguousArrayStorageBase : $__ContiguousArrayStorageBase, $AnyObject, scope 174 // user: %16~
+%15 = init_existential_ref %14 : $__ContiguousArrayStorageBase : $__ContiguousArrayStorageBase, $AnyObject, scope 174 // user: %16~
 
-# Not yet implemented
+# @opened types not supported
 # %56 = open_existential_ref %55 : $GamePresenterProtocol to $@opened("3AE48EC6-A446-11EA-A04F-38F9D356CDAF") GamePresenterProtocol, loc "/Users/abdulalib/Documents/swan-spds/benchmark/mobile-ios-vipergame/Memory/Modules/Game/User Interface/View/GameView.swift":67:36, scope 905 // user: %57~
 
 %2 = init_existential_metatype %1 : $@thick Element.Type, $@thick Any.Type, scope 99 // user: %3~
@@ -188,64 +192,58 @@ release_value %103 : $Optional<GameWireFrameProtocol>, loc "<compiler-generated>
 
 %89 = alloc_existential_box $Error, $FileError, loc "/Users/abdulalib/Documents/swan-spds/benchmark/mobile-ios-vipergame/Memory/Utilities/File.swift":51:29, scope 250 // users: %93, %92, %90~
 
-# Not yet implemented
-# %90 = project_existential_box $FileError in %89 : $Error, loc "/Users/abdulalib/Documents/swan-spds/benchmark/mobile-ios-vipergame/Memory/Utilities/File.swift":51:29, scope 250 // user: %91~
+%90 = project_existential_box $FileError in %89 : $Error, loc "/Users/abdulalib/Documents/swan-spds/benchmark/mobile-ios-vipergame/Memory/Utilities/File.swift":51:29, scope 250 // user: %91~
 
-# Not yet implemented
+# @opened types not supported
 # %13 = open_existential_box %0 : $Error to $*@opened("3AF9DBA0-A446-11EA-A04F-38F9D356CDAF") Error, loc "/Users/abdulalib/Documents/swan-spds/benchmark/mobile-ios-vipergame/Memory/Utilities/ErrorAlert.swift":32:68, scope 836 // users: %16, %16~
 
-# Missing "dealloc_existential_box"
+dealloc_existential_box %1 : $Error, $SomeError~
 
-# Not yet implemented
+# @block_storage not supported
 # %59 = project_block_storage %58 : $*@block_storage @callee_guaranteed () -> (), loc "/Users/abdulalib/Documents/swan-spds/benchmark/mobile-ios-vipergame/Memory/Utilities/ErrorAlert.swift":35:34, scope 836 // users: %96, %60~
 
-# Not yet implemented
+# Not yet implemented, @block_storage not supported
 # %62 = init_block_storage_header %58 : $*@block_storage @callee_guaranteed () -> (), invoke %61 : $@convention(c) (@inout_aliasable @block_storage @callee_guaranteed () -> ()) -> (), type $@convention(block) () -> (), loc "/Users/abdulalib/Documents/swan-spds/benchmark/mobile-ios-vipergame/Memory/Utilities/ErrorAlert.swift":35:34, scope 836 // user: %63~
 
-# Missing "uncast"
+%69 = upcast %3 : $MD5 to $Hash~
 
-# Not yet implemented
-# %3 = address_to_pointer %2 : $*_SwiftEmptyArrayStorage to $Builtin.RawPointer, scope 1443 // user: %4~
+%3 = address_to_pointer %2 : $*_SwiftEmptyArrayStorage to $Builtin.RawPointer, scope 1443 // user: %4~
 
 %170 = pointer_to_address %167 : $Builtin.RawPointer to [strict] $*S.Element, scope 58 // user: %171~
 
-# Not yet implemented
-# %89 = unchecked_ref_cast %81 : $_ContiguousArrayStorage<Card> to $Builtin.BridgeObject, scope 803 // user: %90~
+%89 = unchecked_ref_cast %81 : $_ContiguousArrayStorage<Card> to $Builtin.BridgeObject, scope 803 // user: %90~
 
-# Not yet implemented
-# %144 = unchecked_addr_cast %103 : $*Builtin.BridgeObject to $*Builtin.NativeObject, scope 1636 // user: %145~
+%144 = unchecked_addr_cast %103 : $*Builtin.BridgeObject to $*Builtin.NativeObject, scope 1636 // user: %145~
 
-# Not yet implemented
+# @dynamic_self not supported
 # %1 = unchecked_trivial_bit_cast %0 : $@thick UIViewController.Type to $@thick @dynamic_self UIViewController.Type, loc "/Users/abdulalib/Documents/swan-spds/benchmark/mobile-ios-vipergame/Memory/Utilities/UIStoryboard.swift":34:16, scope 785 // type-defs: %0; users: %5, %2~
 
-# Missing "ref_to_unowned"
+# @sil_unowned not supported
+# %5 = ref_to_unowned %4 : $SomeClass to $@sil_unowned SomeClass~
 
-# Not yet implemented
+# @sil_unmanaged not supported
 # %10 = ref_to_unmanaged %8 : $Optional<NSError> to $@sil_unmanaged Optional<NSError>, scope 115 // user: %11~
 
-# Not yet implemented
+# @sil_unmanaged not supported
 # %17 = unmanaged_to_ref %16 : $@sil_unmanaged Optional<NSError> to $Optional<NSError>, scope 115 // users: %23, %29, %21, %22~
 
-# Missing "convert_function"
+%c = convert_function %m : $@noescape @callee_guaranteed (@guaranteed BigStruct) -> () to $@noescape @callee_guaranteed (@guaranteed BigStruct) -> (@error Error)~
 
 %24 = convert_escape_to_noescape %23 : $@callee_guaranteed (UnsafeMutablePointer<Content>, Int) -> () to $@noescape @callee_guaranteed (UnsafeMutablePointer<Content>, Int) -> (), scope 554 // user: %26~
 
 %1 = thin_to_thick_function %0 : $@convention(thin) (UnsafeMutablePointer<Content>, Int) -> () to $@callee_guaranteed (UnsafeMutablePointer<Content>, Int) -> (), scope 570 // user: %2~
 
-# Not yet implemented
-# %3 = thick_to_objc_metatype %2 : $@thick NSData.Type to $@objc_metatype NSData.Type, scope 115 // user: %4~
+%3 = thick_to_objc_metatype %2 : $@thick NSData.Type to $@objc_metatype NSData.Type, scope 115 // user: %4~
 
-# Missing "objc_to_thick_metatype"
+objc_to_thick_metatype undef : $@objc_metatype C.Type to $@thick C.Type~
 
-# Missing "objc_metatype_to_object"
+%x = objc_metatype_to_object %a : $@objc_metatype SomeClass.Type to $AnyObject~
 
-# Missing "objc_existential_metatype_to_object"
+%y = objc_existential_metatype_to_object %b : $@objc_metatype SomeClassProtocol.Type to $AnyObject~
 
-# Not yet implemented
-# %8 = unconditional_checked_cast %7 : $UIViewController to $T, loc "/Users/abdulalib/Documents/swan-spds/benchmark/mobile-ios-vipergame/Memory/Utilities/UIStoryboard.swift":43:56, scope 1536 // user: %9~
+%8 = unconditional_checked_cast %7 : $UIViewController to $T, loc "/Users/abdulalib/Documents/swan-spds/benchmark/mobile-ios-vipergame/Memory/Utilities/UIStoryboard.swift":43:56, scope 1536 // user: %9~
 
-# Not yet implemented
-# unconditional_checked_cast_addr Card in %101 : $*Card to Any in %91 : $*Any, scope 1406 // id: %103~
+unconditional_checked_cast_addr Card in %101 : $*Card to Any in %91 : $*Any, scope 1406 // id: %103~
 
 cond_fail %14 : $Builtin.Int1, scope 450        // id: %15~
 cond_fail %15 : $Builtin.Int1, "failure message", scope 450        // id: %15~
@@ -265,19 +263,22 @@ br bb4(%92 : $Builtin.Int64, %93 : $Builtin.Int64), scope 459 // id: %154~
 
 cond_br %101, bb10, bb14, scope 459             // id: %102~
 
-# Missing "switch_value"
+# Not yet implemented
+# switch_value %1 : $Builtin.Word, case %1: bb1, case %2: bb2~
+# need switch_value example with sil-switch-value-case and sil-switch-default
 
 switch_enum %91 : $Optional<FloatingPointSign>, case #Optional.some!enumelt.1: bb23, case #Optional.none!enumelt: bb22, scope 123 // id: %92~
 
 switch_enum_addr %52 : $*Optional<S.Element>, case #Optional.some!enumelt.1: bb8, case #Optional.none!enumelt: bb7, scope 58 // id: %54~
 
-# Missing "dynamic_method_br"
+# declref "#ProtocolA.funcA!foreign" causes failure
+# dynamic_method_br %0 : $ProtocolA, #ProtocolA.funcA!foreign, bb1, bb2~
+# @opened types not supported
+# dynamic_method_br %2 : $@opened("01234567-89ab-cdef-0123-000000000000") AnyObject, #X.f!foreign, bb1, bb2~
 
-# Not yet implemented
-# checked_cast_br %33 : $AnyObject to $NSDictionary, bb6, bb7, scope 125 // id: %35~
+checked_cast_br %33 : $AnyObject to $NSDictionary, bb6, bb7, scope 125 // id: %35~
 
-# Not yet implemented
-# checked_cast_addr_br take_always Any in %97 : $*Any to NSDictionary in %99 : $*NSDictionary, bb6, bb7, loc "/Users/abdulalib/Documents/swan-spds/benchmark/mobile-ios-vipergame/Memory/Utilities/File.swift":55:77, scope 251 // id: %100~
+checked_cast_addr_br take_always Any in %97 : $*Any to NSDictionary in %99 : $*NSDictionary, bb6, bb7, loc "/Users/abdulalib/Documents/swan-spds/benchmark/mobile-ios-vipergame/Memory/Utilities/File.swift":55:77, scope 251 // id: %100~
 
 # Not yet implemented
 # try_apply %6<Element, R>(%3, %5, %2) : $@convention(method) <τ_0_0><τ_1_0> (@noescape @callee_guaranteed (UnsafeBufferPointer<τ_0_0>) -> (@out τ_1_0, @error Error), @guaranteed Array<τ_0_0>) -> (@out τ_1_0, @error Error), normal bb2, error bb1, scope 2 // id: %7~

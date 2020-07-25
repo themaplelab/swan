@@ -14,6 +14,7 @@ import java.nio.charset.StandardCharsets
 import java.nio.file.{Files, Path}
 import java.util
 
+import ca.ualberta.maple.swan.parser
 import ca.ualberta.maple.swan.utils.ExceptionReporter
 
 import scala.collection.mutable.ArrayBuffer
@@ -39,7 +40,6 @@ class SILParser {
     val data : Array[Byte] = if (Files.exists(path)) {
       Files.readAllBytes(path: Path)
     } else {
-      // TODO: This is a bit janky and probably doesn't work.
       ExceptionReporter.report(new Error(this.path, "file not found"))
       null
     }: Array[Byte]
@@ -201,7 +201,7 @@ class SILParser {
     var functions = Array[SILFunction]()
     var done = false
     while(!done) {
-      // TODO(#8): Parse sections of SIL printouts that don't start with "sil @".
+      // tensorflow: T0D0(#8): Parse sections of SIL printouts that don't start with "sil @".
       // Meanwhile, skip those sections since we don't have a representation for them yet.
       // Concretely: if the current line begins with "sil @", try to parse a Function.
       // Otherwise, skip to the end of line and repeat.
@@ -346,7 +346,21 @@ class SILParser {
         SILInstruction.operator(SILOperator.allocRef(allocAttributes, tailElems, tpe))
       }
       case "alloc_ref_dynamic" => {
-        null //  TODO: NPOTP
+        val objc: Boolean =  skip("[objc]")
+        var tailElems: Array[(SILType, SILOperand)] = new Array[(SILType, SILOperand)](0)
+        while(peek("[")) {
+          take("[")
+          take("tail_elems")
+          val tailType: SILType = parseType()
+          take("*")
+          val operand: SILOperand = parseOperand()
+          take("]")
+          tailElems = tailElems :+ (tailType, operand)
+        }
+        val operand: SILOperand = parseOperand()
+        take(",")
+        val tpe: SILType = parseType()
+        SILInstruction.operator(SILOperator.allocRefDynamic(objc, tailElems, operand, tpe))
       }
       case "alloc_box" => {
         val tpe = parseType()
@@ -354,7 +368,10 @@ class SILParser {
         SILInstruction.operator(SILOperator.allocBox(tpe, attributes))
       }
       case "alloc_value_buffer" => {
-        throw parseError("unhandled instruction") // NSIP
+        val tpe = parseType()
+        take("in")
+        val operand = parseOperand()
+        SILInstruction.operator(SILOperator.allocValueBuffer(tpe, operand))
       }
       case "alloc_global" => {
         val name = parseGlobalName()
@@ -429,7 +446,8 @@ class SILParser {
         SILInstruction.operator(SILOperator.store(value, ownership, operand))
       }
       case "load_borrow" => {
-        null // TODO: NPOTP
+        val operand = parseOperand()
+        SILInstruction.operator(SILOperator.loadBorrow(operand))
       }
       case "begin_borrow" => {
         val operand = parseOperand()
@@ -440,16 +458,43 @@ class SILParser {
         SILInstruction.operator(SILOperator.endBorrow(operand))
       }
       case "assign" => {
-        null // TODO: NPOTP
+        val value = parseValue()
+        take("to")
+        val operand = parseOperand()
+        SILInstruction.operator(SILOperator.assign(value, operand))
       }
       case "assign_by_wrapper" => {
-        null // TODO: NPOTP
+        val from = parseOperand()
+        take("to")
+        val to = parseOperand()
+        take(",")
+        take("init")
+        val init = parseOperand()
+        take(",")
+        take("set")
+        val set = parseOperand()
+        SILInstruction.operator(SILOperator.assignByWrapper(from, to, init, set))
       }
       case "mark_uninitialized" => {
-        null // TODO: NPOTP
+        take("[")
+        val kind = parseMUKind()
+        take("]")
+        val operand = parseOperand()
+        SILInstruction.operator(SILOperator.markUninitialized(kind, operand))
       }
       case "mark_function_escape" => {
-        null // TODO: NPOTP
+        val operand1 = parseOperand()
+        val operand2: Option[SILOperand] = {
+          try {
+            maybeParse(() => {
+              take(",")
+              Some(parseOperand())
+            })
+          } catch {
+            case _: Error => None
+          }
+        }
+        SILInstruction.operator(SILOperator.markFunctionEscape(operand1, operand2))
       }
       case "mark_uninitialized_behaviour" => {
         throw parseError("unhandled instruction") // NSIP
@@ -536,17 +581,22 @@ class SILParser {
         SILInstruction.operator(SILOperator.loadWeak(take, operand))
       }
       case "store_weak" => {
-        var value = parseValue()
+        val value = parseValue()
         take("to")
         val initialization = skip("[initialization]")
-        var operand = parseOperand()
+        val operand = parseOperand()
         SILInstruction.operator(SILOperator.storeWeak(value, initialization, operand))
       }
       case "load_unowned" => {
-        null // TODO: NPOTP
+        val operand = parseOperand()
+        SILInstruction.operator(SILOperator.loadUnowned(operand))
       }
       case "store_unowned" => {
-        null // TODO: NPOTP
+        val value = parseValue()
+        take("to")
+        val initialization = skip("[initialization]")
+        val operand = parseOperand()
+        SILInstruction.operator(SILOperator.storeUnowned(value, initialization, operand))
       }
       case "fix_lifetime" => {
         throw parseError("unhandled instruction") // NSIP
@@ -586,10 +636,16 @@ class SILParser {
         SILInstruction.operator(SILOperator.functionRef(name, tpe))
       }
       case "dynamic_function_ref" => {
-        null // TODO: NPOTP
+        val name = parseGlobalName()
+        take(":")
+        val tpe = parseType()
+        SILInstruction.operator(SILOperator.dynamicFunctionRef(name, tpe))
       }
       case "prev_dynamic_function_ref" => {
-        null // TODO: NPOTP
+        val name = parseGlobalName()
+        take(":")
+        val tpe = parseType()
+        SILInstruction.operator(SILOperator.prevDynamicFunctionRef(name, tpe))
       }
       case "global_addr" => {
         val name = parseGlobalName()
@@ -634,16 +690,14 @@ class SILParser {
         null // TODO: NPOTP
       }
       case "witness_method" => {
-        val attribute: Option[SILType] = maybeParse(() => {
-            val tpe = parseType()
-            Some(tpe)
-          })
-        val operand = parseOperand()
+        val archeType = parseType()
         take(",")
         val declRef = parseDeclRef()
         take(":")
+        val declType = parseNakedType()
+        take(":")
         val tpe = parseType()
-        SILInstruction.operator(SILOperator.witnessMethod(attribute, operand, declRef, tpe))
+        SILInstruction.operator(SILOperator.witnessMethod(archeType, declRef, declType, tpe))
       }
 
         // *** FUNCTION APPLICATION ***
@@ -709,13 +763,22 @@ class SILParser {
         SILInstruction.operator(SILOperator.metatype(tpe))
       }
       case "value_metatype" => {
-        null // TODO: NPOTP
+        val tpe = parseType()
+        take(",")
+        val operand = parseOperand()
+        SILInstruction.operator(SILOperator.valueMetatype(tpe, operand))
       }
       case "existential_metatype" => {
-        null // TODO: NPOTP
+        val tpe = parseType()
+        take(",")
+        val operand = parseOperand()
+        SILInstruction.operator(SILOperator.existentialMetatype(tpe, operand))
       }
       case "objc_protocol" => {
-        null // TODO: NPOTP
+        val protocolDecl = parseDeclRef()
+        take(":")
+        val tpe = parseType()
+        SILInstruction.operator(SILOperator.objcProtocol(protocolDecl, tpe))
       }
 
         // *** AGGREGATE TYPES ***
@@ -749,7 +812,8 @@ class SILParser {
         SILInstruction.operator(SILOperator.destroyValue(operand))
       }
       case "autorelease_value" => {
-        null // TODO: NPOTP
+        val operand = parseOperand()
+        SILInstruction.operator(SILOperator.autoreleaseValue(operand))
       }
       case "tuple" => {
         val elements = parseTupleElements()
@@ -836,13 +900,22 @@ class SILParser {
         SILInstruction.operator(SILOperator.uncheckedEnumData(operand, declRef))
       }
       case "init_enum_data_addr" => {
-        null // TODO: NPOTP
+        val operand = parseOperand()
+        take(",")
+        val declRef = parseDeclRef()
+        SILInstruction.operator(SILOperator.initEnumDataAddr(operand, declRef))
       }
       case "inject_enum_addr" => {
-        null // TODO: NPOTP LP
+        val operand = parseOperand()
+        take(",")
+        val declRef = parseDeclRef()
+        SILInstruction.operator(SILOperator.injectEnumAddr(operand, declRef))
       }
       case "unchecked_take_enum_data_addr" => {
-        null // TODO: NPOTP
+        val operand = parseOperand()
+        take(",")
+        val declRef = parseDeclRef()
+        SILInstruction.operator(SILOperator.uncheckedTakeEnumDataAddr(operand, declRef))
       }
       case "select_enum" => {
         val operand = parseOperand()
@@ -852,34 +925,54 @@ class SILParser {
         SILInstruction.operator(SILOperator.selectEnum(operand, cases, tpe))
       }
       case "select_enum_addr" => {
-        null // TODO: NPOTP
+        val operand = parseOperand()
+        val cases = parseUntilNil[SILCase](() => parseCase(parseValue))
+        take(":")
+        val tpe = parseType()
+        SILInstruction.operator(SILOperator.selectEnumAddr(operand, cases, tpe))
       }
 
         // *** PROTOCOL AND PROTOCOL COMPOSITION TYPES ***
 
       case "init_existential_addr" => {
-        null // TODO: NPOTP
+        val operand = parseOperand()
+        take(",")
+        val tpe = parseType()
+        SILInstruction.operator(SILOperator.initExistentialAddr(operand, tpe))
       }
       case "init_existential_value" => {
         throw parseError("unhandled instruction") // NSIP
       }
       case "deinit_existential_addr" => {
-        null // TODO: NPOTP LP
+        val operand = parseOperand()
+        SILInstruction.operator(SILOperator.deinitExistentialAddr(operand))
       }
       case "deinit_existential_value" => {
         throw parseError("unhandled instruction") // NSIP
       }
       case "open_existential_addr" => {
-        null // TODO: NPOTP
+        val access = parseAllowedAccess()
+        val operand = parseOperand()
+        take("to")
+        val tpe = parseType()
+        SILInstruction.operator(SILOperator.openExistentialAddr(access, operand, tpe))
       }
       case "open_existential_value" => {
         throw parseError("unhandled instruction") // NSIP
       }
       case "init_existential_ref" => {
-        null // TODO: NPOTP
+        val operand = parseOperand()
+        take(":")
+        val tpeC = parseType()
+        take(",")
+        val tpeP = parseType()
+        SILInstruction.operator(SILOperator.initExistentialRef(operand, tpeC, tpeP))
       }
       case "open_existential_ref" => {
-        null // TODO: NPOTP
+        val operand = parseOperand()
+        take("to")
+        val tpe = parseType()
+        SILInstruction.operator(SILOperator.openExistentialRef(operand, tpe))
       }
       case "init_existential_metatype" => {
         val operand = parseOperand()
@@ -900,22 +993,34 @@ class SILParser {
         SILInstruction.operator(SILOperator.allocExistentialBox(tpeP, tpeT))
       }
       case "project_existential_box" => {
-        null // TODO: NPOTP
+        val tpe = parseType()
+        take("in")
+        val operand = parseOperand()
+        SILInstruction.operator(SILOperator.projectExistentialBox(tpe, operand))
       }
       case "open_existential_box" => {
-        null // TODO: NPOTP
+        val operand = parseOperand()
+        take("to")
+        val tpe = parseType()
+        SILInstruction.operator(SILOperator.openExistentialBox(operand, tpe))
       }
       case "open_existential_box_value" => {
         throw parseError("unhandled instruction") // NSIP
       }
       case "dealloc_existential_box" => {
-        null // TODO: NPOTP LP
+        val operand = parseOperand()
+        take(",")
+        val tpe = parseType()
+        SILInstruction.operator(SILOperator.deallocExistentialBox(operand, tpe))
       }
 
         // *** BLOCKS ***
 
       case "project_block_storage" => {
-        null // TODO: NPOTP
+        val operand = parseOperand()
+        take(":")
+        val tpe = parseType()
+        SILInstruction.operator(SILOperator.projectBlockStorage(operand, tpe))
       }
       case "init_block_storage_header" => {
         null // TODO: NPOTP
@@ -924,10 +1029,16 @@ class SILParser {
         // *** UNCHECKED CONVERSIONS ***
 
       case "upcast" => {
-        null // TODO: NPOTP
+        val operand = parseOperand()
+        take("to")
+        val tpe = parseType()
+        SILInstruction.operator(SILOperator.upcast(operand, tpe))
       }
       case "address_to_pointer" => {
-        null // TODO: NPOTP
+        val operand = parseOperand()
+        take("to")
+        val tpe = parseType()
+        SILInstruction.operator(SILOperator.addressToPointer(operand, tpe))
       }
       case "pointer_to_address" => {
         val operand = parseOperand()
@@ -937,16 +1048,25 @@ class SILParser {
         SILInstruction.operator(SILOperator.pointerToAddress(operand, strict, tpe))
       }
       case "unchecked_ref_cast" => {
-        null // TODO: NPOTP
+        val operand = parseOperand()
+        take("to")
+        val tpe = parseType()
+        SILInstruction.operator(SILOperator.uncheckedRefCast(operand, tpe))
       }
       case "unchecked_ref_cast_addr" => {
         throw parseError("unhandled instruction") // NSIP
       }
       case "unchecked_addr_cast" => {
-        null // TODO: NPOTP
+        val operand = parseOperand()
+        take("to")
+        val tpe = parseType()
+        SILInstruction.operator(SILOperator.uncheckedAddrCast(operand, tpe))
       }
       case "unchecked_trivial_bit_cast" => {
-        null // TODO: NPOTP
+        val operand = parseOperand()
+        take("to")
+        val tpe = parseType()
+        SILInstruction.operator(SILOperator.uncheckedTrivialBitCast(operand, tpe))
       }
       case "unchecked_bitwise_cast" => {
         throw parseError("unhandled instruction") // NSIP
@@ -958,16 +1078,25 @@ class SILParser {
         throw parseError("unhandled instruction") // NSIP
       }
       case "ref_to_unowned" => {
-        null // TODO: NPOTP
+        val operand = parseOperand()
+        take("to")
+        val tpe = parseType()
+        SILInstruction.operator(SILOperator.refToUnowned(operand, tpe))
       }
       case "unowned_to_ref" => {
         throw parseError("unhandled instruction") // NSIP
       }
       case "ref_to_unmanaged" => {
-        null // TODO: NPOTP
+        val operand = parseOperand()
+        take("to")
+        val tpe = parseType()
+        SILInstruction.operator(SILOperator.refToUnmanaged(operand, tpe))
       }
       case "unmanaged_to_ref" => {
-        null // TODO: NPOTP
+        val operand = parseOperand()
+        take("to")
+        val tpe = parseType()
+        SILInstruction.operator(SILOperator.unmanagedToRef(operand, tpe))
       }
       case "convert_function" => {
         val operand = parseOperand()
@@ -1012,25 +1141,49 @@ class SILParser {
         SILInstruction.operator(SILOperator.thinToThickFunction(operand, tpe))
       }
       case "thick_to_objc_metatype" => {
-        null // TODO: NPOTP
+        val operand = parseOperand()
+        take("to")
+        val tpe = parseType()
+        SILInstruction.operator(SILOperator.thickToObjcMetatype(operand, tpe))
       }
       case "objc_to_thick_metatype" => {
-        null // TODO: NPOTP
+        val operand = parseOperand()
+        take("to")
+        val tpe = parseType()
+        SILInstruction.operator(SILOperator.objcToThickMetatype(operand, tpe))
       }
       case "objc_metatype_to_object" => {
-        null // TODO: NPOTP
+        val operand = parseOperand()
+        take("to")
+        val tpe = parseType()
+        SILInstruction.operator(SILOperator.objcMetatypeToObject(operand, tpe))
       }
       case "objc_existential_metatype_to_object" => {
-        null // TODO: NPOTP
+        val operand = parseOperand()
+        take("to")
+        val tpe = parseType()
+        SILInstruction.operator(SILOperator.objcExistentialMetatypeToObject(operand, tpe))
       }
 
         // *** CHECKED CONVERSIONS ***
 
       case "unconditional_checked_cast" => {
-        null // TODO: NPOTP
+        val operand = parseOperand()
+        take("to")
+        val tpe = parseType()
+        SILInstruction.operator(SILOperator.unconditionalCheckedCast(operand, tpe))
       }
       case "unconditional_checked_cast_addr" => {
-        null // TODO: NPOTP
+        // For some reason fromTpe nor toTpe have a "$" prefix.
+        // e.g. unconditional_checked_cast_addr Card in %101 : $*Card to Any in %91 : $*Any
+        val fromTpe = parseType(true)
+        take("in")
+        val fromOperand = parseOperand()
+        take("to")
+        val toTpe = parseType(true)
+        take("in")
+        val toOperand = parseOperand()
+        SILInstruction.operator(SILOperator.unconditionalCheckedCastAddr(fromTpe, fromOperand, toTpe, toOperand))
       }
       case "unconditional_checked_cast_value" => {
         throw parseError("unhandled instruction") // NSIP
@@ -1126,16 +1279,45 @@ class SILParser {
         SILInstruction.terminator(SILTerminator.switchEnumAddr(operand, cases))
       }
       case "dynamic_method_br" => {
-        null // TODO: NPOTP
+        val operand = parseOperand()
+        take(",")
+        val declRef = parseDeclRef()
+        take(",")
+        val namedLabel = parseIdentifier()
+        take(",")
+        val notNamedLabel = parseIdentifier()
+        SILInstruction.terminator(SILTerminator.dynamicMethodBr(operand, declRef, namedLabel, notNamedLabel))
       }
       case "checked_cast_br" => {
-        null // TODO: NPOTP
+        val exact = skip("[exact]")
+        val operand = parseOperand()
+        take("to")
+        val tpe = parseType()
+        take(",")
+        val succeedLabel = parseIdentifier()
+        take(",")
+        val failureLabel = parseIdentifier()
+        SILInstruction.terminator(SILTerminator.checkedCastBr(exact, operand, tpe, succeedLabel, failureLabel))
       }
       case "checked_cast_value_br" => {
         throw parseError("unhandled instruction") // NSIP
       }
       case "checked_cast_addr_br" => {
-        null // TODO: NPOTP
+        // For some reason fromTpe nor toTpe have a "$" prefix.
+        val kind = parseCastConsumptionKind()
+        val fromTpe = parseType(true)
+        take("in")
+        val fromOperand = parseOperand()
+        take("to")
+        val toTpe = parseType(true)
+        take("in")
+        val toOperand = parseOperand()
+        take(",")
+        val succeedLabel = parseIdentifier()
+        take(",")
+        val failureLabel = parseIdentifier()
+        SILInstruction.terminator(SILTerminator.checkedCastAddrBr(
+          kind, fromTpe, fromOperand, toTpe, toOperand, succeedLabel, failureLabel))
       }
       case "try_apply" => {
         // NOTE: This is a multi-line instruction.
@@ -1160,6 +1342,23 @@ class SILParser {
     if(skip("modify")) return SILAccess.modify
     if(skip("read")) return SILAccess.read
     throw parseError("unknown access")
+  }
+
+  // https://github.com/apple/swift/blob/master/docs/SIL.rst#open-existential-addr
+  @throws[Error]
+  def parseAllowedAccess(): SILAllowedAccess = {
+    if(skip("immutable_access")) return SILAllowedAccess.immutable
+    if(skip("mutable_access")) return SILAllowedAccess.mutable
+    throw parseError("unknown allowed access")
+  }
+
+  // https://github.com/apple/swift/blob/master/docs/SIL.rst#checked-cast-addr-br
+  @throws[Error]
+  def parseCastConsumptionKind(): SILCastConsumptionKind = {
+    if(skip("take_always")) return SILCastConsumptionKind.takeAlways
+    if(skip("take_on_success")) return SILCastConsumptionKind.takeOnSuccess
+    if(skip("copy_on_success")) return SILCastConsumptionKind.copyOnSuccess
+    throw parseError("unknown cast consumption kind")
   }
 
   // https://github.com/apple/swift/blob/master/docs/SIL.rst#basic-blocks
@@ -1241,8 +1440,10 @@ class SILParser {
     None
   }
 
+  // https://github.com/apple/swift/blob/master/docs/SIL.rst#declaration-references
   @throws[Error]
   def parseDeclRef(): SILDeclRef = {
+    // TODO: handle "#ProtocolA.funcA!foreign"
     take("#")
     val name = new ArrayBuffer[String]
     var break = false
@@ -1329,7 +1530,7 @@ class SILParser {
   def parseGlobalName(): String = {
     val start = position()
     if(skip("@")) {
-      // TODO(#14): Make name parsing more thorough.
+      // tensorflow: T0D0(#14): Make name parsing more thorough.
       val name = take(x => x == '$' || x.isLetterOrDigit || x == '_' )
       if(!name.isEmpty) {
         return name
@@ -1347,7 +1548,7 @@ class SILParser {
       s""""${parseString()}""""
     } else {
       val start = position()
-      // TODO(#14): Make name parsing more thorough.
+      // tensorflow: T0D0(#14): Make name parsing more thorough.
       val identifier = take(x => x.isLetterOrDigit || x == '_')
       if (!identifier.isEmpty) return identifier
       throw parseError("identifier expected", Some(start))
@@ -1356,7 +1557,7 @@ class SILParser {
 
   @throws[Error]
   def parseInt(): Int = {
-    // TODO(#26): Make number parsing more thorough.
+    // tensorflow: T0D0(#26): Make number parsing more thorough.
     val start = position()
     val radix = if(skip("0x")) 16 else 10
     val s = take(x => x == '-' || x == '+' || Character.digit(x, 16) != -1)
@@ -1405,6 +1606,16 @@ class SILParser {
   //  e.g. ${ var @sil_weak Optional<CardCell> }
   // TODO: Handle types with ":"
   //  tuple type e.g. $*(lower: Bound, upper: Bound)
+  // TODO: Handle @opened types
+  //  e.g. $*@opened("3B29F16E-A446-11EA-A04F-38F9D356CDAF")
+  // TODO: Handle @block_storage (project_block_storage, init_block_storage_header)
+  //  e.g. $*@block_storage
+  // TODO: Handle @dynamic_self
+  //  e.g. %1 = unchecked_trivial_bit_cast %0 : $@thick UIViewController.Type to $@thick @dynamic_self UIViewController.Type
+  // TODO: Handle @sil_unowned
+  //  e.g. %5 = ref_to_unowned %4 : $SomeClass to $@sil_unowned SomeClass
+  // TODO: Handle @sil_unmanaged
+  //  e.g. %10 = ref_to_unmanaged %8 : $Optional<NSError> to $@sil_unmanaged Optional<NSError>
   @throws[Error]
   def parseNakedType(): SILType = {
     if (skip("<")) {
@@ -1473,7 +1684,7 @@ class SILParser {
   // https://github.com/apple/swift/blob/master/docs/SIL.rst#values-and-operands
   @throws[Error]
   def parseOperand(): SILOperand = {
-    val valueName = parseValueName()
+    val valueName = parseValue()
     take(":")
     val tpe = parseType()
     new SILOperand(valueName, tpe)
@@ -1519,11 +1730,16 @@ class SILParser {
 
   @throws[Error]
   def parseString(): String = {
-    // TODO(#24): Parse string literals with control characters.
+    // tensorflow: T0D0(#24): Parse string literals with control characters.
     take("\"")
     val s = take(_ != '\"')
     take("\"")
     s
+  }
+
+  @throws[Error]
+  def parseNakedString(): String = {
+    take(_ != ' ')
   }
 
   // https://github.com/apple/swift/blob/master/docs/SIL.rst#tuple
@@ -1539,13 +1755,15 @@ class SILParser {
   }
 
   // https://github.com/apple/swift/blob/master/docs/SIL.rst#sil-types
+  // Naked arg is for parsing types without a $ prefix. This can be seen
+  // in unconditional_checked_cast_addr instruction.
   @throws[Error]
-  def parseType(): SILType = {
+  def parseType(naked: Boolean = false): SILType = {
     // NB: Ownership SSA has a surprising convention of printing the
     //     ownership type before the actual type, so we first try to
     //     parse the type attribute.
     try {
-      take("$")
+      if (naked) skip("$") else take("$")
     } catch {
       case _: Error => {
         val attr : Option[SILTypeAttribute] = {
@@ -1579,6 +1797,8 @@ class SILParser {
     if(skip("@convention")) return SILTypeAttribute.convention(parseConvention())
     if(skip("@guaranteed")) return SILTypeAttribute.guaranteed
     if(skip("@in_guaranteed")) return SILTypeAttribute.inGuaranteed
+    // Must appear before "inout" to parse correctly.
+    if(skip("@inout_aliasable")) return SILTypeAttribute.inoutAliasable
     // Must appear before "in" to parse correctly.
     if(skip("@inout")) return SILTypeAttribute.inout
     if(skip("@in")) return SILTypeAttribute.in
@@ -1593,6 +1813,19 @@ class SILParser {
     if(skip("@objc_metatype")) return SILTypeAttribute.objcMetatype
     if(skip("@sil_weak")) return SILTypeAttribute.silWeak
     throw parseError("unknown attribute")
+  }
+
+  // https://github.com/apple/swift/blob/master/docs/SIL.rst#mark_uninitialized
+  @throws[Error]
+  def parseMUKind(): SILMUKind = {
+    if(skip("var")) return SILMUKind.varr
+    if(skip("rootself")) return SILMUKind.rootSelf
+    if(skip("crossmodulerootself")) return SILMUKind.crossModuleRootSelf
+    if(skip("derivedself")) return SILMUKind.derivedSelf
+    if(skip("derivedselfonly")) return SILMUKind.derivedSelfOnly
+    if(skip("delegatingself")) return SILMUKind.delegatingSelf
+    if(skip("delegatingselfallocated")) return SILMUKind.delegatingSelfAllocated
+    throw parseError("unknown MU kind")
   }
 
   @throws[Error]

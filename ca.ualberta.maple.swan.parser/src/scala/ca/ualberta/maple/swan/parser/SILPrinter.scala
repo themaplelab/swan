@@ -76,7 +76,7 @@ class SILPrinter extends Printer {
       case SILOperator.allocRef(attributes, tailElems, tpe) => {
         print("alloc_ref ")
         print(whenEmpty = false, "", attributes, " ", "", (a: SILAllocAttribute) => print(a))
-        print(" ")
+        if (attributes.nonEmpty) print(" ")
         if (tailElems.nonEmpty) {
           print(whenEmpty = false, "", tailElems, " ", "",
             (te: (SILType, SILOperand)) => {
@@ -92,12 +92,35 @@ class SILPrinter extends Printer {
       }
       case SILOperator.allocRefDynamic(objc, tailElems, operand, tpe) => {
         print("alloc_ref_dynamic ")
-        print("NOT YET HANDLED") // TODO
+        if (objc) {
+          print(SILAllocAttribute.objc)
+          print(" ")
+        }
+        if (tailElems.nonEmpty) {
+          print(whenEmpty = false, "", tailElems, " ", "",
+            (te: (SILType, SILOperand)) => {
+              print("[tail_elems ")
+              print(te._1)
+              print(" * ")
+              print(te._2)
+              print("]")
+            })
+          print(" ")
+        }
+        print(operand)
+        print(", ")
+        print(tpe)
       }
       case SILOperator.allocBox(tpe, attributes) => {
         print("alloc_box ")
         print(tpe)
         print(whenEmpty = false, ", ", attributes, ", ", "", (a: SILDebugAttribute) => print(a))
+      }
+      case SILOperator.allocValueBuffer(tpe, operand) => {
+        print("alloc_value_buffer ")
+        print(tpe)
+        print(" in ")
+        print(operand)
       }
       case SILOperator.allocGlobal(name) => {
         print("alloc_global ")
@@ -160,9 +183,9 @@ class SILPrinter extends Printer {
         }
         print(operand)
       }
-      case SILOperator.loadBorrow(value) => {
+      case SILOperator.loadBorrow(operand) => {
         print("load_borrow ")
-        print(value)
+        print(operand)
       }
       case SILOperator.beginBorrow(operand) => {
         print("begin_borrow ")
@@ -190,13 +213,18 @@ class SILPrinter extends Printer {
       }
       case SILOperator.markUninitialized(muKind, operand) => {
         print("mark_uninitialized ")
+        print("[")
         print(muKind)
-        print(" ")
+        print("] ")
         print(operand)
       }
-      case SILOperator.markFunctionEscape(operand) => {
+      case SILOperator.markFunctionEscape(operand1, operand2) => {
         print("mark_function_escape ")
-        print(operand)
+        print(operand1)
+        if (operand2.nonEmpty) {
+          print(", ")
+          print(operand2.get)
+        }
       }
       case SILOperator.copyAddr(take, value, initialization, operand) => {
         print("copy_addr ")
@@ -256,6 +284,17 @@ class SILPrinter extends Printer {
         print("[initialization] ", initialization)
         print(operand)
       }
+      case SILOperator.loadUnowned(operand) => {
+        print("load_unowned ")
+        print(operand)
+      }
+      case SILOperator.storeUnowned(value, initialization, operand) => {
+        print("store_unowned ")
+        print(value)
+        print(" to ")
+        print("[initialization] ", initialization)
+        print(operand)
+      }
       case SILOperator.markDependence(operand, on) => {
         print("mark_dependence ")
         print(operand)
@@ -288,12 +327,14 @@ class SILPrinter extends Printer {
       }
       case SILOperator.dynamicFunctionRef(name, tpe) => {
         print("dynamic_function_ref ")
+        print("@")
         print(name)
         print(" : ")
         print(tpe)
       }
       case SILOperator.prevDynamicFunctionRef(name, tpe) => {
         print("prev_dynamic_function_ref ")
+        print("@")
         print(name)
         print(" : ")
         print(tpe)
@@ -326,24 +367,25 @@ class SILPrinter extends Printer {
 
         // *** DYNAMIC DISPATCH ***
 
-      case SILOperator.classMethod(attribute, operand, declRef, tpe) => {
+      case SILOperator.classMethod(operand, declRef, declType, tpe) => {
         print("class_method ")
         print("NOT YET HANDLED") // TODO
       }
-      case SILOperator.objcMethod(attribute, operand, declRef, tpe) => {
+      case SILOperator.objcMethod(operand, declRef, declType, tpe) => {
         print("objc_method ")
         print("NOT YET HANDLED") // TODO
       }
-      case SILOperator.objcSuperMethod(attribute, operand, declRef, tpe) => {
+      case SILOperator.objcSuperMethod(operand, declRef, declType, tpe) => {
         print("objc_super_method ")
         print("NOT YET HANDLED") // TODO
       }
-      case SILOperator.witnessMethod(attribute, operand, declRef, tpe) => {
+      case SILOperator.witnessMethod(archetype, declRef, declType, tpe) => {
         print("witness_method ")
-        if (attribute.nonEmpty) { print(attribute); print(" ") }
-        print(operand)
+        print(archetype)
         print(", ")
         print(declRef)
+        print(" : ")
+        print(declType)
         print(" : ")
         naked(tpe)
       }
@@ -657,9 +699,23 @@ class SILPrinter extends Printer {
         print(" to ")
         print(tpe)
       }
-      case SILOperator.refToUnowned(operand) => {
+      case SILOperator.refToUnowned(operand, tpe) => {
         print("ref_to_unowned ")
         print(operand)
+        print(" to ")
+        print(tpe)
+      }
+      case SILOperator.refToUnmanaged(operand, tpe) => {
+        print("ref_to_unmanaged ")
+        print(operand)
+        print(" to ")
+        print(tpe)
+      }
+      case SILOperator.unmanagedToRef(operand, tpe) => {
+        print("unmanaged_to_ref ")
+        print(operand)
+        print(" to ")
+        print(tpe)
       }
       case SILOperator.convertFunction(operand, withoutActuallyEscaping, tpe) => {
         print("convert_function ")
@@ -694,6 +750,18 @@ class SILPrinter extends Printer {
         print(" to ")
         print(tpe)
       }
+      case SILOperator.objcMetatypeToObject(operand, tpe) => {
+        print("objc_metatype_to_object ")
+        print(operand)
+        print(" to ")
+        print(tpe)
+      }
+      case SILOperator.objcExistentialMetatypeToObject(operand, tpe) => {
+        print("objc_existential_metatype_to_object ")
+        print(operand)
+        print(" to ")
+        print(tpe)
+      }
 
         // *** CHECKED CONVERSIONS ***
 
@@ -705,11 +773,11 @@ class SILPrinter extends Printer {
       }
       case SILOperator.unconditionalCheckedCastAddr(fromTpe, fromOperand, toType, toOperand) => {
         print("unconditional_checked_cast_addr ")
-        print(fromTpe)
+        naked(fromTpe)
         print(" in ")
         print(fromOperand)
         print(" to ")
-        print(toType)
+        naked(toType)
         print(" in ")
         print(toOperand)
       }
@@ -808,15 +876,15 @@ class SILPrinter extends Printer {
         print(", ")
         print(failureLabel)
       }
-      case SILTerminator.checkedCastAddrBr(kind, fromTpe, fromOperand, toType, toOperand, succeedLabel, failureLabel) => {
+      case SILTerminator.checkedCastAddrBr(kind, fromTpe, fromOperand, toTpe, toOperand, succeedLabel, failureLabel) => {
         print("checked_cast_addr_br ")
         print(kind)
         print(" ")
-        print(fromTpe)
+        naked(fromTpe)
         print(" in ")
         print(fromOperand)
         print(" to ")
-        print(toType)
+        naked(toTpe)
         print(" in ")
         print(toOperand)
         print(", ")
@@ -1088,7 +1156,12 @@ class SILPrinter extends Printer {
       case SILType.functionType(params, result) => {
         print(whenEmpty = true, "(", params, ", ", ")", (t: SILType) => naked(t))
         print(" -> ")
+        // It seems that "@error Error" needs to be wrapped in parenthesis. There may be other cases.
+        val parenthesis: Boolean = result.isInstanceOf[SILType.attributedType] &&
+          result.asInstanceOf[SILType.attributedType].attributes.contains(SILTypeAttribute.error)
+        print("(", parenthesis)
         naked(result)
+        print(")", parenthesis)
       }
       case SILType.genericType(params, reqs, tpe) => {
         print(whenEmpty = true, "<", params, ", ", "", (p: String) => print(p))
@@ -1138,6 +1211,7 @@ class SILPrinter extends Printer {
       case SILTypeAttribute.inGuaranteed => print("@in_guaranteed")
       case SILTypeAttribute.in => print("@in")
       case SILTypeAttribute.inout => print("@inout")
+      case SILTypeAttribute.inoutAliasable => print("@inout_aliasable")
       case SILTypeAttribute.noescape => print("@noescape")
       case SILTypeAttribute.out => print("@out")
       case SILTypeAttribute.owned => print("@owned")

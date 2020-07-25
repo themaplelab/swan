@@ -69,7 +69,7 @@ object SILOperator {
   case class allocRef(attributes: Array[SILAllocAttribute], tailElems: Array[(SILType, SILOperand)], tpe: SILType) extends SILOperator
   case class allocRefDynamic(objc: Boolean, tailElems: Array[(SILType, SILOperand)], operand: SILOperand, tpe: SILType) extends SILOperator
   case class allocBox(tpe: SILType, attributes: Array[SILDebugAttribute]) extends SILOperator
-  // NSIP: alloc_value_buffer
+  case class allocValueBuffer(tpe: SILType, operand: SILOperand) extends SILOperator
   case class allocGlobal(name: String) extends SILOperator
   case class deallocStack(operand: SILOperand) extends SILOperator
   case class deallocBox(operand: SILOperand) extends SILOperator
@@ -86,7 +86,8 @@ object SILOperator {
   /***** ACCESSING MEMORY *****/
   case class load(kind: Option[SILLoadOwnership], operand: SILOperand) extends SILOperator
   case class store(value: String, kind: Option[SILStoreOwnership], operand: SILOperand) extends SILOperator
-  case class loadBorrow(value: String) extends SILOperator
+  // SIL.rst says that load_borrow takes a sil-value, but in reality it takes a sil-operand.
+  case class loadBorrow(operand: SILOperand) extends SILOperator
   // begin_borrow has T0D0 in SIL.rst and I think it's NSIP, but tensorflow had parsing for it so use it.
   case class beginBorrow(operand: SILOperand) extends SILOperator
   // NOTE: The SIL.rst for end_borrow is not consistent with in-practice instructions at all.
@@ -94,8 +95,7 @@ object SILOperator {
   case class assign(from: String, to: SILOperand) extends SILOperator
   case class assignByWrapper(from: SILOperand, to: SILOperand, init: SILOperand, set: SILOperand) extends SILOperator
   case class markUninitialized(muKind: SILMUKind, operand: SILOperand) extends SILOperator
-  // In SIL.rst, apparently there can be a second operand, but I think the second operand is NSIP.
-  case class markFunctionEscape(operand: SILOperand) extends SILOperator
+  case class markFunctionEscape(operand1: SILOperand, operand2: Option[SILOperand]) extends SILOperator
   // NSIP: mark_uninitialized_behaviour
   case class copyAddr(take: Boolean, value: String, initialization: Boolean, operand: SILOperand) extends SILOperator
   case class destroyAddr(operand: SILOperand) extends SILOperator
@@ -121,8 +121,8 @@ object SILOperator {
   // NSIP: unowned_release
   case class loadWeak(take: Boolean, operand: SILOperand) extends SILOperator
   case class storeWeak(value: String, initialization: Boolean, operand: SILOperand) extends SILOperator
-  // TODO: load_unowned (nothing in SIL.rst for this instruction)
-  // TODO: store_unowned (nothing in SIL.rst for this instruction)
+  case class loadUnowned(operand: SILOperand) extends SILOperator
+  case class storeUnowned(value: String, initialization: Boolean, operand: SILOperand) extends SILOperator
   // NSIP: fix_lifetime
   case class markDependence(operand: SILOperand, on: SILOperand) extends SILOperator
   // NSIP: is_unique
@@ -146,12 +146,12 @@ object SILOperator {
 
   /***** DYNAMIC DISPATCH *****/
   // NOTE: All of the dynamic dispatch instructions have a "sil-method-attributes?" component.
-  //       It is unclear what this attribute is.
-  case class classMethod(attribute: Option[SILType], operand: SILOperand, declRef: SILDeclRef, tpe: SILType) extends SILOperator
-  case class objcMethod(attribute: Option[SILType], operand: SILOperand, declRef: SILDeclRef, tpe: SILType) extends SILOperator
+  //       It is unclear what this attribute is. I've never seen it used.
+  case class classMethod(operand: SILOperand, declRef: SILDeclRef, declType: SILType, tpe: SILType) extends SILOperator
+  case class objcMethod(operand: SILOperand, declRef: SILDeclRef, declType: SILType, tpe: SILType) extends SILOperator
   // NSIP: super_method
-  case class objcSuperMethod(attribute: Option[SILType], operand: SILOperand, declRef: SILDeclRef, tpe: SILType) extends SILOperator
-  case class witnessMethod(attribute: Option[SILType], operand: SILOperand, declRef: SILDeclRef, tpe: SILType) extends SILOperator
+  case class objcSuperMethod(operand: SILOperand, declRef: SILDeclRef, declType: SILType, tpe: SILType) extends SILOperator
+  case class witnessMethod(archetype: SILType, declRef: SILDeclRef, declType: SILType, tpe: SILType) extends SILOperator
 
   /***** FUNCTION APPLICATION *****/
   case class apply(
@@ -174,8 +174,7 @@ object SILOperator {
   case class metatype(tpe: SILType) extends SILOperator
   case class valueMetatype(tpe: SILType, operand: SILOperand) extends SILOperator
   case class existentialMetatype(tpe: SILType, operand: SILOperand) extends SILOperator
-  // Unclear what the "protocol-decl" is. Assume as just an identifier for now.
-  case class objcProtocol(protocolDecl: String, tpe: SILType) extends SILOperator
+  case class objcProtocol(protocolDecl: SILDeclRef, tpe: SILType) extends SILOperator
 
   /***** AGGREGATE TYPES *****/
   case class retainValue(operand: SILOperand) extends SILOperator
@@ -228,7 +227,7 @@ object SILOperator {
 
   /***** BLOCKS *****/
   case class projectBlockStorage(operand: SILOperand, tpe: SILType) extends SILOperator
-  // TODO: init_block_storage_header (no info)
+  // TODO: init_block_storage_header
 
   /***** UNCHECKED CONVERSIONS *****/
   case class upcast(operand: SILOperand, tpe: SILType) extends SILOperator
@@ -241,10 +240,12 @@ object SILOperator {
   // NSIP: unchecked_bitwise_cast
   // NSIP: ref_to_raw_pointer
   // NSIP: raw_pointer_to_ref
-  case class refToUnowned(operand: SILOperand) extends SILOperator
+  // SIL.rst: sil-instruction ::= 'ref_to_unowned' sil-operand
+  // reality: sil-instruction ::= 'ref_to_unowned' sil-operand 'to' sil-type
+  case class refToUnowned(operand: SILOperand, tpe: SILType) extends SILOperator
   // NSIP: unowned_to_ref
-  // TODO: ref_to_unmanaged (no info)
-  // TODO: unmanaged_to_ref (no info)
+  case class refToUnmanaged(operand: SILOperand, tpe: SILType) extends SILOperator
+  case class unmanagedToRef(operand: SILOperand, tpe: SILType) extends SILOperator
   case class convertFunction(operand: SILOperand, withoutActuallyEscaping: Boolean, tpe: SILType) extends SILOperator
   case class convertEscapeToNoescape(notGuaranteed: Boolean, escaped: Boolean,
                                      operand: SILOperand, tpe: SILType) extends SILOperator
@@ -258,8 +259,8 @@ object SILOperator {
   case class thinToThickFunction(operand: SILOperand, tpe: SILType) extends SILOperator
   case class thickToObjcMetatype(operand: SILOperand, tpe: SILType) extends SILOperator
   case class objcToThickMetatype(operand: SILOperand, tpe: SILType) extends SILOperator
-  // TODO: objc_metatype_to_object (no info)
-  // TODO: object_existential_metatype_to_object
+  case class objcMetatypeToObject(operand: SILOperand, tpe: SILType) extends SILOperator
+  case class objcExistentialMetatypeToObject(operand: SILOperand, tpe: SILType) extends SILOperator
 
   /***** CHECKED CONVERSIONS *****/
   case class unconditionalCheckedCast(operand: SILOperand, tpe: SILType) extends SILOperator
@@ -295,7 +296,7 @@ object SILTerminator {
                            succeedLabel: String, failureLabel: String) extends SILTerminator
   // NSIP: checked_cast_value_br
   case class checkedCastAddrBr(kind: SILCastConsumptionKind, fromTpe: SILType, fromOperand: SILOperand,
-                               toType: SILType, toOperand: SILOperand, succeedLabel: String, failureLabel: String) extends SILTerminator
+                               toTpe: SILType, toOperand: SILOperand, succeedLabel: String, failureLabel: String) extends SILTerminator
   case class tryApply(value: String, substitutions: Array[SILType],
                       arguments: Array[String], tpe: SILType, normalLabel: String, errorLabel: String) extends SILTerminator
 
@@ -460,6 +461,7 @@ object SILTypeAttribute {
   case object inGuaranteed extends SILTypeAttribute
   case object in extends SILTypeAttribute
   case object inout extends SILTypeAttribute
+  case object inoutAliasable extends SILTypeAttribute
   case object noescape extends SILTypeAttribute
   case object out extends SILTypeAttribute
   case object owned extends SILTypeAttribute
