@@ -277,23 +277,23 @@ class SILPrinter extends Printer {
         print("[take]", take)
         print(operand)
       }
-      case SILOperator.storeWeak(value, initialization, operand) => {
+      case SILOperator.storeWeak(from, initialization, to) => {
         print("store_weak ")
-        print(value)
+        print(from)
         print(" to ")
         print("[initialization] ", initialization)
-        print(operand)
+        print(to)
       }
       case SILOperator.loadUnowned(operand) => {
         print("load_unowned ")
         print(operand)
       }
-      case SILOperator.storeUnowned(value, initialization, operand) => {
+      case SILOperator.storeUnowned(from, initialization, to) => {
         print("store_unowned ")
-        print(value)
+        print(from)
         print(" to ")
         print("[initialization] ", initialization)
-        print(operand)
+        print(to)
       }
       case SILOperator.markDependence(operand, on) => {
         print("mark_dependence ")
@@ -792,13 +792,6 @@ class SILPrinter extends Printer {
           literal(message.get)
         }
       }
-
-        // *** UNKNOWN FALLBACK ***
-
-      case SILOperator.unknown(name) => {
-        print(name)
-        print(" <?>")
-      }
     }
   }
 
@@ -905,12 +898,6 @@ class SILPrinter extends Printer {
         print(", error ")
         print(errorLabel)
       }
-      // *** UNKNOWN FALLBACK ***
-      case SILTerminator.unknown(name) => {
-        print(name)
-        print(" <?>")
-      }
-
     }
   }
 

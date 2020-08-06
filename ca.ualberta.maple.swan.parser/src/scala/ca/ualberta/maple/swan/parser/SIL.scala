@@ -85,7 +85,7 @@ object SILOperator {
 
   /***** ACCESSING MEMORY *****/
   case class load(kind: Option[SILLoadOwnership], operand: SILOperand) extends SILOperator
-  case class store(value: String, kind: Option[SILStoreOwnership], operand: SILOperand) extends SILOperator
+  case class store(from: String, kind: Option[SILStoreOwnership], to: SILOperand) extends SILOperator
   // SIL.rst says that load_borrow takes a sil-value, but in reality it takes a sil-operand.
   case class loadBorrow(operand: SILOperand) extends SILOperator
   // begin_borrow has T0D0 in SIL.rst and I think it's NSIP, but tensorflow had parsing for it so use it.
@@ -120,9 +120,9 @@ object SILOperator {
   // NSIP: unowned_retain
   // NSIP: unowned_release
   case class loadWeak(take: Boolean, operand: SILOperand) extends SILOperator
-  case class storeWeak(value: String, initialization: Boolean, operand: SILOperand) extends SILOperator
+  case class storeWeak(from: String, initialization: Boolean, to: SILOperand) extends SILOperator
   case class loadUnowned(operand: SILOperand) extends SILOperator
-  case class storeUnowned(value: String, initialization: Boolean, operand: SILOperand) extends SILOperator
+  case class storeUnowned(from: String, initialization: Boolean, to: SILOperand) extends SILOperator
   // NSIP: fix_lifetime
   case class markDependence(operand: SILOperand, on: SILOperand) extends SILOperator
   // NSIP: is_unique
@@ -270,9 +270,6 @@ object SILOperator {
 
   /***** RUNTIME FAILURES *****/
   case class condFail(operand: SILOperand, message: Option[String]) extends SILOperator
-
-  /***** UNKNOWN FALLBACK *****/
-  case class unknown(name: String) extends SILOperator
 }
 
 sealed trait SILTerminator
@@ -299,8 +296,6 @@ object SILTerminator {
                                toTpe: SILType, toOperand: SILOperand, succeedLabel: String, failureLabel: String) extends SILTerminator
   case class tryApply(value: String, substitutions: Array[SILType],
                       arguments: Array[String], tpe: SILType, normalLabel: String, errorLabel: String) extends SILTerminator
-
-  case class unknown(name: String) extends SILTerminator
 }
 
 sealed trait SILInstruction

@@ -1,2 +1,9 @@
 group 'ca.maple.swan'
 version '1.0-SNAPSHOT'
+
+allprojects {
+    repositories {
+        mavenCentral()
+        jcenter()
+    }
+}

@@ -253,6 +253,8 @@ class SILParser {
         case SILInstructionDef.terminator(terminatorDef) => return (operatorDefs, terminatorDef)
       }
       if(peek("bb") || peek("}")) {
+        done = true
+        /*
         if(operatorDefs.lastOption.nonEmpty) {
           operatorDefs.last.operator match {
             case SILOperator.unknown(instructionName) => {
@@ -262,6 +264,7 @@ class SILParser {
             case _ => throw parseError("block is missing a terminator")
           }
         }
+         */
       }
     }
     (operatorDefs, termDef)
@@ -458,10 +461,10 @@ class SILParser {
         SILInstruction.operator(SILOperator.endBorrow(operand))
       }
       case "assign" => {
-        val value = parseValue()
+        val from = parseValue()
         take("to")
-        val operand = parseOperand()
-        SILInstruction.operator(SILOperator.assign(value, operand))
+        val to = parseOperand()
+        SILInstruction.operator(SILOperator.assign(from, to))
       }
       case "assign_by_wrapper" => {
         val from = parseOperand()
@@ -581,22 +584,22 @@ class SILParser {
         SILInstruction.operator(SILOperator.loadWeak(take, operand))
       }
       case "store_weak" => {
-        val value = parseValue()
+        val from = parseValue()
         take("to")
         val initialization = skip("[initialization]")
-        val operand = parseOperand()
-        SILInstruction.operator(SILOperator.storeWeak(value, initialization, operand))
+        val to = parseOperand()
+        SILInstruction.operator(SILOperator.storeWeak(from, initialization, to))
       }
       case "load_unowned" => {
         val operand = parseOperand()
         SILInstruction.operator(SILOperator.loadUnowned(operand))
       }
       case "store_unowned" => {
-        val value = parseValue()
+        val from = parseValue()
         take("to")
         val initialization = skip("[initialization]")
-        val operand = parseOperand()
-        SILInstruction.operator(SILOperator.storeUnowned(value, initialization, operand))
+        val to = parseOperand()
+        SILInstruction.operator(SILOperator.storeUnowned(from, initialization, to))
       }
       case "fix_lifetime" => {
         throw parseError("unhandled instruction") // NSIP

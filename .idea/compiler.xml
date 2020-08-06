@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="CompilerConfiguration">
-    <bytecodeTargetLevel>
+    <bytecodeTargetLevel target="1.8">
       <module name="swan-spds.ca.maple.swan.client.main" target="1.8" />
       <module name="swan-spds.ca.maple.swan.client.test" target="1.8" />
       <module name="swan-spds.ca.maple.swan.ir.main" target="1.8" />
