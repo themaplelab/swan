@@ -667,6 +667,7 @@ class SILParser {
         // *** DYNAMIC DISPATCH ***
 
       case "class_method" => {
+        // TODO: not working
         val operand = parseOperand()
         take(",")
         val declRef = parseDeclRef()
@@ -677,6 +678,7 @@ class SILParser {
         SILInstruction.operator(SILOperator.classMethod(operand, declRef, declType, tpe))
       }
       case "objc_method" => {
+        // TODO: not working
         val operand = parseOperand()
         take(",")
         val declRef = parseDeclRef()
@@ -688,6 +690,7 @@ class SILParser {
         throw parseError("unhandled instruction") // NSIP
       }
       case "objc_super_method" => {
+        // TODO: not working
         val operand = parseOperand()
         take(",")
         val declRef = parseDeclRef()
@@ -698,6 +701,7 @@ class SILParser {
         SILInstruction.operator(SILOperator.objcSuperMethod(operand, declRef, declType, tpe))
       }
       case "witness_method" => {
+        // TODO: not working
         val archeType = parseType()
         take(",")
         val declRef = parseDeclRef()
