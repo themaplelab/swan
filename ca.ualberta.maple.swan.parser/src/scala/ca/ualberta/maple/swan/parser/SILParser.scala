@@ -14,16 +14,14 @@ import java.nio.charset.StandardCharsets
 import java.nio.file.{Files, Path}
 import java.util
 
-import ca.ualberta.maple.swan.parser
 import ca.ualberta.maple.swan.utils.ExceptionReporter
 
 import scala.collection.mutable.ArrayBuffer
 import scala.reflect.ClassTag
 import scala.util.control.Breaks
 
+// TODO: Parse witness tables
 class SILParser {
-
-  /********** THIS CODE IS ORIGINALLY PART OF "Parser" **********************/
 
   // Default constructor should not be called.
   // I can't think of an elegant way to address the exclusive or
@@ -224,7 +222,7 @@ class SILParser {
     take("sil")
     val linkage = parseLinkage()
     val attributes = { parseNilOrMany("[", parseFunctionAttribute) }.getOrElse(Array.empty[SILFunctionAttribute])
-    val name = parseGlobalName()
+    val name = new SILFunctionName(parseGlobalName())
     take(":")
     val tpe = parseType()
     val blocks = { parseNilOrMany("{", "", "}", parseBlock) }.getOrElse(Array.empty[SILBlock])
@@ -246,7 +244,6 @@ class SILParser {
   def parseInstructionDefs(): (Array[SILOperatorDef], SILTerminatorDef) = {
     var operatorDefs = Array[SILOperatorDef]()
     var done = false
-    var termDef: SILTerminatorDef = null
     while(!done){
       parseInstructionDef() match {
         case SILInstructionDef.operator(operatorDef) => operatorDefs :+= operatorDef
@@ -254,20 +251,9 @@ class SILParser {
       }
       if(peek("bb") || peek("}")) {
         done = true
-        /*
-        if(operatorDefs.lastOption.nonEmpty) {
-          operatorDefs.last.operator match {
-            case SILOperator.unknown(instructionName) => {
-              done = true
-              termDef = new SILTerminatorDef(SILTerminator.unknown(instructionName), None)
-            }
-            case _ => throw parseError("block is missing a terminator")
-          }
-        }
-         */
       }
     }
-    (operatorDefs, termDef)
+    throw parseError("block is missing a terminator")
   }
 
   // https://github.com/apple/swift/blob/master/docs/SIL.rst#basic-blocks
@@ -500,7 +486,7 @@ class SILParser {
         SILInstruction.operator(SILOperator.markFunctionEscape(operand1, operand2))
       }
       case "mark_uninitialized_behaviour" => {
-        throw parseError("unhandled instruction") // NSIP
+        null // TODO
       }
       case "copy_addr" => {
         val take = skip("[take]")
@@ -633,19 +619,19 @@ class SILParser {
         // *** LITERALS ***
 
       case "function_ref" => {
-        val name = parseGlobalName()
+        val name = new SILFunctionName(parseGlobalName())
         take(":")
         val tpe = parseType()
         SILInstruction.operator(SILOperator.functionRef(name, tpe))
       }
       case "dynamic_function_ref" => {
-        val name = parseGlobalName()
+        val name = new SILFunctionName(parseGlobalName())
         take(":")
         val tpe = parseType()
         SILInstruction.operator(SILOperator.dynamicFunctionRef(name, tpe))
       }
       case "prev_dynamic_function_ref" => {
-        val name = parseGlobalName()
+        val name = new SILFunctionName(parseGlobalName())
         take(":")
         val tpe = parseType()
         SILInstruction.operator(SILOperator.prevDynamicFunctionRef(name, tpe))
@@ -681,16 +667,35 @@ class SILParser {
         // *** DYNAMIC DISPATCH ***
 
       case "class_method" => {
-        null // TODO: NPOTP
+        val operand = parseOperand()
+        take(",")
+        val declRef = parseDeclRef()
+        take(":")
+        val declType = parseNakedType()
+        take(":")
+        val tpe = parseType()
+        SILInstruction.operator(SILOperator.classMethod(operand, declRef, declType, tpe))
       }
       case "objc_method" => {
-        null // TODO: NPOTP
+        val operand = parseOperand()
+        take(",")
+        val declRef = parseDeclRef()
+        take(":")
+        val tpe = parseType()
+        SILInstruction.operator(SILOperator.objcMethod(operand, declRef, tpe))
       }
       case "super_method" => {
         throw parseError("unhandled instruction") // NSIP
       }
       case "objc_super_method" => {
-        null // TODO: NPOTP
+        val operand = parseOperand()
+        take(",")
+        val declRef = parseDeclRef()
+        take(":")
+        val declType = parseNakedType()
+        take(":")
+        val tpe = parseType()
+        SILInstruction.operator(SILOperator.objcSuperMethod(operand, declRef, declType, tpe))
       }
       case "witness_method" => {
         val archeType = parseType()
@@ -1323,8 +1328,26 @@ class SILParser {
           kind, fromTpe, fromOperand, toTpe, toOperand, succeedLabel, failureLabel))
       }
       case "try_apply" => {
-        // NOTE: This is a multi-line instruction.
-        null // TODO: NPOTP
+        val value = parseValue()
+        val substitutions = parseNilOrMany("<", ",",">", parseNakedType)
+        // I'm sure there's a more elegant way to do this.
+        val substitutionsNonOptional: Array[SILType] = {
+          if (substitutions.isEmpty) {
+            new Array[SILType](0)
+          } else {
+            substitutions.get
+          }
+        }
+        val arguments = parseMany("(",",",")", parseValue)
+        take(":")
+        val tpe = parseType()
+        take(",")
+        take("normal")
+        val normal = parseIdentifier()
+        take(",")
+        take("error")
+        val error = parseIdentifier()
+        SILInstruction.terminator(SILTerminator.tryApply(value, substitutionsNonOptional, arguments, tpe, normal, error))
       }
 
         // *** DEFAULT FALLBACK ***

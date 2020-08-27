@@ -415,15 +415,24 @@ class SILToRawSWANIRCompiler extends ISILToRawSWANIRCompiler {
   }
 
   override protected def visitStruct(r: Option[SILResult], I: SILOperator.struct): Array[InstructionDef] = {
+    // TODO: We do not know the field names of a struct so we cannot write to them.
     null
   }
 
   override protected def visitStructExtract(r: Option[SILResult], I: SILOperator.structExtract): Array[InstructionDef] = {
-    null
+    val result: Symbol = {
+      assertSILResult(r, 1)
+      new Symbol(r.get.valueNames(0), new Type()) // TODO: need type here
+    }
+    makeOperator(new Operator.fieldRead(result, false, I.operand.value, Utils.SILStructFieldDeclRefToString(I.declRef)))
   }
 
   override protected def visitStructElementAddr(r: Option[SILResult], I: SILOperator.structElementAddr): Array[InstructionDef] = {
-    null
+    val result: Symbol = {
+      assertSILResult(r, 1)
+      new Symbol(r.get.valueNames(0), new Type()) // TODO: need type here (pointer)
+    }
+    makeOperator(new Operator.fieldRead(result, false, I.operand.value, Utils.SILStructFieldDeclRefToString(I.declRef)))
   }
 
   override protected def visitRefElementAddr(r: Option[SILResult], I: SILOperator.refElementAddr): Array[InstructionDef] = {

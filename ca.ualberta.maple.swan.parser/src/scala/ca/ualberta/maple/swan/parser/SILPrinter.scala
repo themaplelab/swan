@@ -27,7 +27,7 @@ class SILPrinter extends Printer {
     print(function.linkage)
     print(whenEmpty = false, "", function.attributes, " ", " ", (attribute: SILFunctionAttribute) => print(attribute))
     print("@")
-    print(function.name)
+    print(function.name.mangled)
     print(" : ")
     print(function.tpe)
     print(whenEmpty = false, " {\n", function.blocks, "\n", "}", (block: SILBlock) => print(block))
@@ -321,21 +321,21 @@ class SILPrinter extends Printer {
       case SILOperator.functionRef(name, tpe) => {
         print("function_ref ")
         print("@")
-        print(name)
+        print(name.mangled)
         print(" : ")
         print(tpe)
       }
       case SILOperator.dynamicFunctionRef(name, tpe) => {
         print("dynamic_function_ref ")
         print("@")
-        print(name)
+        print(name.mangled)
         print(" : ")
         print(tpe)
       }
       case SILOperator.prevDynamicFunctionRef(name, tpe) => {
         print("prev_dynamic_function_ref ")
         print("@")
-        print(name)
+        print(name.mangled)
         print(" : ")
         print(tpe)
       }
@@ -369,15 +369,31 @@ class SILPrinter extends Printer {
 
       case SILOperator.classMethod(operand, declRef, declType, tpe) => {
         print("class_method ")
-        print("NOT YET HANDLED") // TODO
+        print(operand)
+        print(", ")
+        print(declRef)
+        print(" : ")
+        print(declType)
+        print(" : ")
+        naked(tpe)
       }
-      case SILOperator.objcMethod(operand, declRef, declType, tpe) => {
+      case SILOperator.objcMethod(operand, declRef, tpe) => {
         print("objc_method ")
-        print("NOT YET HANDLED") // TODO
+        print(operand)
+        print(", ")
+        print(declRef)
+        print(" : ")
+        naked(tpe)
       }
       case SILOperator.objcSuperMethod(operand, declRef, declType, tpe) => {
         print("objc_super_method ")
-        print("NOT YET HANDLED") // TODO
+        print(operand)
+        print(", ")
+        print(declRef)
+        print(" : ")
+        print(declType)
+        print(" : ")
+        naked(tpe)
       }
       case SILOperator.witnessMethod(archetype, declRef, declType, tpe) => {
         print("witness_method ")
@@ -893,7 +909,7 @@ class SILPrinter extends Printer {
         print(whenEmpty = true, "(", arguments, ", ", ")", (a: String) => print(a))
         print(" : ")
         print(tpe)
-        print("\n  normal ")
+        print(", normal ")
         print(normalLabel)
         print(", error ")
         print(errorLabel)

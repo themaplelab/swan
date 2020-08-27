@@ -10,7 +10,7 @@
 
 package ca.ualberta.maple.swan.ir
 
-import ca.ualberta.maple.swan.parser.{SILArgument, SILOperand, SILResult, SILSourceInfo, SILTupleElements, SILType}
+import ca.ualberta.maple.swan.parser.{SILArgument, SILDeclRef, SILOperand, SILResult, SILSourceInfo, SILTupleElements, SILType}
 
 object Utils {
 
@@ -45,6 +45,10 @@ object Utils {
   // pointer specifies whether the type is a pointer (tuple_element_addr case)
   def SILTupleTypeToType(tupleType: SILType, index: Int, pointer: Boolean): Type = {
     new Type(tupleType.toString) // TODO: Temp
+  }
+
+  def SILStructFieldDeclRefToString(declRef: SILDeclRef): String = {
+    "" // TODO: Temp
   }
 
   def SILTupleElementsToType(elements: SILTupleElements): Type = {

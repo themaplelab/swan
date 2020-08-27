@@ -12,7 +12,7 @@ package ca.ualberta.maple.swan.parser
 
 import java.nio.file.Path
 
-import ca.ualberta.maple.swan
+import sys.process._
 
 class SILModule(val functions: Array[SILFunction]) {
 
@@ -32,7 +32,7 @@ class SILModule(val functions: Array[SILFunction]) {
 }
 
 class SILFunction(val linkage: SILLinkage, val attributes: Array[SILFunctionAttribute],
-                  val name: String, val tpe: SILType, val blocks: Array[SILBlock])
+                  val name: SILFunctionName, val tpe: SILType, val blocks: Array[SILBlock])
 
 class SILBlock(val identifier: String, val arguments: Array[SILArgument],
                val operatorDefs: Array[SILOperatorDef], val terminatorDef: SILTerminatorDef) {
@@ -134,9 +134,9 @@ object SILOperator {
   // builtin "unsafeGuaranteedEnd" not sure what to do about this one
 
   /***** LITERALS *****/
-  case class functionRef(name: String, tpe: SILType) extends SILOperator
-  case class dynamicFunctionRef(name: String, tpe: SILType) extends SILOperator
-  case class prevDynamicFunctionRef(name: String, tpe: SILType) extends SILOperator
+  case class functionRef(name: SILFunctionName, tpe: SILType) extends SILOperator
+  case class dynamicFunctionRef(name: SILFunctionName, tpe: SILType) extends SILOperator
+  case class prevDynamicFunctionRef(name: SILFunctionName, tpe: SILType) extends SILOperator
   case class globalAddr(name: String, tpe: SILType) extends SILOperator
   // NSIP: global_value
   case class integerLiteral(tpe: SILType, value: Int) extends SILOperator
@@ -148,7 +148,7 @@ object SILOperator {
   // NOTE: All of the dynamic dispatch instructions have a "sil-method-attributes?" component.
   //       It is unclear what this attribute is. I've never seen it used.
   case class classMethod(operand: SILOperand, declRef: SILDeclRef, declType: SILType, tpe: SILType) extends SILOperator
-  case class objcMethod(operand: SILOperand, declRef: SILDeclRef, declType: SILType, tpe: SILType) extends SILOperator
+  case class objcMethod(operand: SILOperand, declRef: SILDeclRef, tpe: SILType) extends SILOperator
   // NSIP: super_method
   case class objcSuperMethod(operand: SILOperand, declRef: SILDeclRef, declType: SILType, tpe: SILType) extends SILOperator
   case class witnessMethod(archetype: SILType, declRef: SILDeclRef, declType: SILType, tpe: SILType) extends SILOperator
@@ -379,6 +379,13 @@ object SILEnforcement {
   case object static extends SILEnforcement
   case object unknown extends SILEnforcement
   case object unsafe extends SILEnforcement
+}
+
+class SILFunctionName(val mangled: String) {
+  val demangled: String = {
+    // TODO: ship demangler with SWAN
+    ("/Library/Developer/CommandLineTools/usr/bin/swift-demangle -compact \'" + mangled + '\'').!!.replaceAll(System.lineSeparator(), "")
+  }
 }
 
 sealed trait SILFunctionAttribute

@@ -1,0 +1,22 @@
+sil public_external @$ss15ContiguousArrayV23withUnsafeBufferPointeryqd__qd__SRyxGKXEKlF : $@convention(method) <Element><R> (@noescape @callee_guaranteed (UnsafeBufferPointer<Element>) -> (@out R, @error Error), @guaranteed ContiguousArray<Element>) -> (@out R, @error Error) {
+// %0                                             // user: %7
+// %1                                             // user: %7
+// %2                                             // users: %9, %12, %3
+bb0(%0 : $*R, %1 : $@noescape @callee_guaranteed (UnsafeBufferPointer<Element>) -> (@out R, @error Error), %2 : $ContiguousArray<Element>):
+  %3 = struct_extract %2 : $ContiguousArray<Element>, #ContiguousArray._buffer, scope 11 // users: %7, %5
+  // function_ref _ContiguousArrayBuffer.withUnsafeBufferPointer<A>(_:)
+  %4 = function_ref @$ss22_ContiguousArrayBufferV010withUnsafeC7Pointeryqd__qd__SRyxGKXEKlF : $@convention(method) <τ_0_0><τ_1_0> (@noescape @callee_guaranteed (UnsafeBufferPointer<τ_0_0>) -> (@out τ_1_0, @error Error), @guaranteed _ContiguousArrayBuffer<τ_0_0>) -> (@out τ_1_0, @error Error), scope 11 // user: %7
+  %5 = struct_extract %3 : $_ContiguousArrayBuffer<Element>, #_ContiguousArrayBuffer._storage, scope 11 // user: %6
+  strong_retain %5 : $__ContiguousArrayStorageBase, scope 11 // id: %6
+  try_apply %4<Element, R>(%0, %1, %3) : $@convention(method) <τ_0_0><τ_1_0> (@noescape @callee_guaranteed (UnsafeBufferPointer<τ_0_0>) -> (@out τ_1_0, @error Error), @guaranteed _ContiguousArrayBuffer<τ_0_0>) -> (@out τ_1_0, @error Error), normal bb2, error bb1, scope 11 // id: %7
+
+// %8                                             // user: %10
+bb1(%8 : $Error):                                 // Preds: bb0
+  release_value %2 : $ContiguousArray<Element>, loc "<compiler-generated>":0:0, scope 11 // id: %9
+  throw %8 : $Error, scope 11                     // id: %10
+
+bb2(%11 : $()):                                   // Preds: bb0
+  release_value %2 : $ContiguousArray<Element>, loc "<compiler-generated>":0:0, scope 11 // id: %12
+  %13 = tuple (), scope 11                        // user: %14
+  return %13 : $(), scope 11                      // id: %14
+} // end sil function '$ss15ContiguousArrayV23withUnsafeBufferPointeryqd__qd__SRyxGKXEKlF'

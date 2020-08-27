@@ -11,8 +11,13 @@
 import ca.ualberta.maple.swan.parser.*;
 import ca.ualberta.maple.swan.parser.Error;
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvFileSource;
+
+import java.io.File;
+import java.net.URISyntaxException;
+import java.util.Objects;
 
 public class ParserTests {
 
@@ -26,13 +31,35 @@ public class ParserTests {
     // Although, it might be used in a string (e.g. string_literal).
     @CsvFileSource(resources = "instructions.csv", delimiter = '~')
     void testSingleInstruction(String inst, String compareTo) throws Error {
-        inst = doReplacements(inst);
         SILParser parser = new SILParser(inst);
         SILInstructionDef i = parser.parseInstructionDef();
+        inst = doReplacements(inst);
         if (compareTo == null || compareTo.equals("")) {
             compareTo = PrintExtensions$.MODULE$.InstructionDefPrinter(i).description();
         }
         Assertions.assertEquals(inst, compareTo);
+    }
+
+    // Test demangler
+    @Test
+    void testFunctionDemangling() throws Error {
+        String inst = "%32 = function_ref @$sSS10FoundationE19_bridgeToObjectiveCSo8NSStringCyF : $@convention(method) (@guaranteed String) -> @owned NSString, scope 901 // user: %33~";
+        String demangledFunctionName = "(extension in Foundation):Swift.String._bridgeToObjectiveC() -> __C.NSString";
+        SILParser parser = new SILParser(inst);
+        SILInstructionDef i = parser.parseInstructionDef();
+        Assertions.assertTrue(i.instruction() instanceof SILInstruction.operator);
+        SILOperator op = ((SILInstruction.operator) i.instruction()).op();
+        Assertions.assertTrue(op instanceof SILOperator.functionRef);
+        Assertions.assertEquals(((SILOperator.functionRef) op).name().demangled(), demangledFunctionName);
+    }
+
+    // Test parsing whole functions
+    @Test
+    void testFunctionParsing() throws Error, NullPointerException, URISyntaxException {
+        SILParser parser = new SILParser(new File(getClass().getClassLoader()
+                .getResource("programs/function1.sil").toURI()).toPath());
+        SILFunction function = parser.parseFunction();
+        Assertions.assertTrue(true);
     }
 
     // Account for any known transformations that the parser does,
