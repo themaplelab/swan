@@ -13,7 +13,7 @@ package ca.ualberta.maple.swan.ir
 import ca.ualberta.maple.swan.parser.{SILOperator, SILResult, SILTerminator, SILType}
 
 // TODO: "box type issue" -> Are boxes just another form of pointer? Is special handling needed?
-class SILToRawSWANIRCompiler extends ISILToRawSWANIRCompiler {
+class SILToRawSWANIR extends ISILToRawSWANIR {
 
   private def makeOperator(operator: Operator*): Array[InstructionDef] = {
     val arr: Array[InstructionDef] = new Array[InstructionDef](operator.length)

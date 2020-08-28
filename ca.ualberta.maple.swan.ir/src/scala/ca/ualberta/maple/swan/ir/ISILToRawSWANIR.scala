@@ -19,7 +19,7 @@ import scala.util.control.Breaks.{break, breakable}
  * This is does not include the compilation of each instruction
  * simply to keep it cleaner.
  */
-trait ISILToRawSWANIRCompiler {
+trait ISILToRawSWANIR {
 
   val NOP = null
 
