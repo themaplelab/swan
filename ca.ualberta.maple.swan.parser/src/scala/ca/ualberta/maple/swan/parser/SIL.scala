@@ -92,11 +92,11 @@ object SILOperator {
   case class beginBorrow(operand: SILOperand) extends SILOperator
   // NOTE: The SIL.rst for end_borrow is not consistent with in-practice instructions at all.
   case class endBorrow(operand: SILOperand) extends SILOperator
-  case class assign(from: String, to: SILOperand) extends SILOperator
-  case class assignByWrapper(from: SILOperand, to: SILOperand, init: SILOperand, set: SILOperand) extends SILOperator
-  case class markUninitialized(muKind: SILMUKind, operand: SILOperand) extends SILOperator
-  case class markFunctionEscape(operand1: SILOperand, operand2: Option[SILOperand]) extends SILOperator
-  // NSIP: mark_uninitialized_behaviour
+  // Raw SIL only: assign
+  // Raw SIL only: assign_by_wrapper
+  // Raw SIL only: mark_uninitialized
+  // Raw SIL only: mark_function_escape
+  // Raw SIL only: mark_uninitialized_behaviour
   case class copyAddr(take: Boolean, value: String, initialization: Boolean, operand: SILOperand) extends SILOperator
   case class destroyAddr(operand: SILOperand) extends SILOperator
   case class indexAddr(addr: SILOperand, index: SILOperand) extends SILOperator

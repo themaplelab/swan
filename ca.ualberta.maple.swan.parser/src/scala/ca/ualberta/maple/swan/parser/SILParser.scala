@@ -446,48 +446,6 @@ class SILParser {
         val operand = parseOperand()
         SILInstruction.operator(SILOperator.endBorrow(operand))
       }
-      case "assign" => {
-        val from = parseValue()
-        take("to")
-        val to = parseOperand()
-        SILInstruction.operator(SILOperator.assign(from, to))
-      }
-      case "assign_by_wrapper" => {
-        val from = parseOperand()
-        take("to")
-        val to = parseOperand()
-        take(",")
-        take("init")
-        val init = parseOperand()
-        take(",")
-        take("set")
-        val set = parseOperand()
-        SILInstruction.operator(SILOperator.assignByWrapper(from, to, init, set))
-      }
-      case "mark_uninitialized" => {
-        take("[")
-        val kind = parseMUKind()
-        take("]")
-        val operand = parseOperand()
-        SILInstruction.operator(SILOperator.markUninitialized(kind, operand))
-      }
-      case "mark_function_escape" => {
-        val operand1 = parseOperand()
-        val operand2: Option[SILOperand] = {
-          try {
-            maybeParse(() => {
-              take(",")
-              Some(parseOperand())
-            })
-          } catch {
-            case _: Error => None
-          }
-        }
-        SILInstruction.operator(SILOperator.markFunctionEscape(operand1, operand2))
-      }
-      case "mark_uninitialized_behaviour" => {
-        null // TODO
-      }
       case "copy_addr" => {
         val take = skip("[take]")
         val value = parseValue()

@@ -195,37 +195,6 @@ class SILPrinter extends Printer {
         print("end_borrow ")
         print(operand)
       }
-      case SILOperator.assign(from, to) => {
-        print("assign ")
-        print(from)
-        print(" to ")
-        print(to)
-      }
-      case SILOperator.assignByWrapper(from, to, init, set) => {
-        print("assign_by_wrapper ")
-        print(from)
-        print(" to ")
-        print(to)
-        print(", init ")
-        print(init)
-        print(", set ")
-        print(set)
-      }
-      case SILOperator.markUninitialized(muKind, operand) => {
-        print("mark_uninitialized ")
-        print("[")
-        print(muKind)
-        print("] ")
-        print(operand)
-      }
-      case SILOperator.markFunctionEscape(operand1, operand2) => {
-        print("mark_function_escape ")
-        print(operand1)
-        if (operand2.nonEmpty) {
-          print(", ")
-          print(operand2.get)
-        }
-      }
       case SILOperator.copyAddr(take, value, initialization, operand) => {
         print("copy_addr ")
         print( "[take] ", take)

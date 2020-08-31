@@ -38,7 +38,7 @@ trait ISILToRawSWANIR {
       blocks :+ compileSILBlock(silBlock)
     })
     val coroutine = if(isCoroutine(silFunction)) Some(FunctionAttribute.coroutine) else None
-    new Function(coroutine, silFunction.name, Utils.SILTypeToType(silFunction.tpe), blocks)
+    new Function(coroutine, silFunction.name.demangled, Utils.SILTypeToType(silFunction.tpe), blocks)
   }
 
   private def compileSILBlock(silBlock: SILBlock): Block = {
@@ -52,7 +52,7 @@ trait ISILToRawSWANIR {
         val position: Option[Position] = Utils.SILSourceInfoToPosition(silOperatorDef.sourceInfo)
         val instructions: Array[InstructionDef] = compileSILInstruction(SILInstructionDef.operator(silOperatorDef))
         if (instructions == NOP) {
-          break
+          break()
         }
         instructions.foreach( (inst: InstructionDef) => {
           assert(inst.isInstanceOf[InstructionDef.operator])
@@ -119,10 +119,6 @@ trait ISILToRawSWANIR {
           case inst: SILOperator.loadBorrow => visitLoadBorrow(result, inst)
           case inst: SILOperator.beginBorrow => visitBeginBorrow(result, inst)
           case inst: SILOperator.endBorrow => visitEndBorrow(result, inst)
-          case inst: SILOperator.assign => visitAssign(result, inst)
-          case inst: SILOperator.assignByWrapper => visitAssignByWrapper(result, inst)
-          case inst: SILOperator.markUninitialized => visitMarkUninitialized(result, inst)
-          case inst: SILOperator.markFunctionEscape => visitMarkFunctionEscape(result, inst)
           case inst: SILOperator.copyAddr => visitCopyAddr(result, inst)
           case inst: SILOperator.destroyAddr => visitDestroyAddr(result, inst)
           case inst: SILOperator.indexAddr => visitIndexAddr(result, inst)
@@ -270,11 +266,6 @@ trait ISILToRawSWANIR {
   protected def visitLoadBorrow(r: Option[SILResult], I: SILOperator.loadBorrow): Array[InstructionDef]
   protected def visitBeginBorrow(r: Option[SILResult], I: SILOperator.beginBorrow): Array[InstructionDef]
   protected def visitEndBorrow(r: Option[SILResult], I: SILOperator.endBorrow): Array[InstructionDef]
-  protected def visitAssign(r: Option[SILResult], I: SILOperator.assign): Array[InstructionDef]
-  protected def visitAssignByWrapper(r: Option[SILResult], I: SILOperator.assignByWrapper): Array[InstructionDef]
-  protected def visitMarkUninitialized(r: Option[SILResult], I: SILOperator.markUninitialized): Array[InstructionDef]
-  protected def visitMarkFunctionEscape(r: Option[SILResult], I: SILOperator.markFunctionEscape): Array[InstructionDef]
-  // protected def visitMarkUninitializedBehavior(r: Option[SILResult], I: SILOperator.markUninitializedBehavior): Array[InstructionDef]
   protected def visitCopyAddr(r: Option[SILResult], I: SILOperator.copyAddr): Array[InstructionDef]
   protected def visitDestroyAddr(r: Option[SILResult], I: SILOperator.destroyAddr): Array[InstructionDef]
   protected def visitIndexAddr(r: Option[SILResult], I: SILOperator.indexAddr): Array[InstructionDef]

@@ -36,17 +36,6 @@ store %31 to %58 : $*Array<Card>, loc "/Users/abdulalib/Documents/swan-spds/benc
 
 end_borrow %1 : $Builtin.NativeObject~
 
-assign %0 to %1 : $*Int~
-
-# From SIL.rst
-assign_by_wrapper %0 : $S to %1 : $*T, init %2 : $F, set %3 : $G~
-
-%3 = mark_uninitialized [rootself] %0 : $RootClassWithIVars~
-
-mark_function_escape undef : $*(), loc "undef.sil":3:4, scope 1~
-mark_function_escape %ba : $*Int~
-mark_function_escape %ba : $*Int, %ca : $*Int~
-
 copy_addr [take] %105 to [initialization] %107 : $*UUID, loc "/Users/abdulalib/Documents/swan-spds/benchmark/mobile-ios-vipergame/Memory/Modules/Game/Application Logic/Entity/Card.swift":35:25, scope 820 // id: %108~
 
 destroy_addr %28 : $*DispatchWorkItemFlags, loc "/Users/abdulalib/Documents/swan-spds/benchmark/mobile-ios-vipergame/Memory/Utilities/UIImage.swift":89:9, scope 877 // id: %47~

@@ -127,22 +127,6 @@ class SILToRawSWANIR extends ISILToRawSWANIR {
     NOP
   }
 
-  override protected def visitAssign(r: Option[SILResult], I: SILOperator.assign): Array[InstructionDef] = {
-    makeOperator(new Operator.pointerWrite(I.from, I.to.value))
-  }
-
-  override protected def visitAssignByWrapper(r: Option[SILResult], I: SILOperator.assignByWrapper): Array[InstructionDef] = {
-    null // TODO: Complex
-  }
-
-  override protected def visitMarkUninitialized(r: Option[SILResult], I: SILOperator.markUninitialized): Array[InstructionDef] = {
-    NOP
-  }
-
-  override protected def visitMarkFunctionEscape(r: Option[SILResult], I: SILOperator.markFunctionEscape): Array[InstructionDef] = {
-    NOP
-  }
-
   override protected def visitCopyAddr(r: Option[SILResult], I: SILOperator.copyAddr): Array[InstructionDef] = {
     val pointerReadResult: Symbol = {
       new Symbol(generateSymbol(r.get.valueNames(0)), Utils.SILPointerTypeToType(I.operand.tpe))
@@ -235,7 +219,7 @@ class SILToRawSWANIR extends ISILToRawSWANIR {
       assertSILResult(r, 1)
       new Symbol(r.get.valueNames(0), Utils.SILTypeToType(I.tpe))
     }
-    makeOperator(new Operator.functionRef(result, I.name))
+    makeOperator(new Operator.functionRef(result, I.name.demangled))
   }
 
   override protected def visitDynamicFunctionRef(r: Option[SILResult], I: SILOperator.dynamicFunctionRef): Array[InstructionDef] = {
@@ -243,7 +227,7 @@ class SILToRawSWANIR extends ISILToRawSWANIR {
       assertSILResult(r, 1)
       new Symbol(r.get.valueNames(0), Utils.SILTypeToType(I.tpe))
     }
-    makeOperator(new Operator.functionRef(result, I.name))
+    makeOperator(new Operator.functionRef(result, I.name.demangled))
   }
 
   override protected def visitPrevDynamicFunctionRef(r: Option[SILResult], I: SILOperator.prevDynamicFunctionRef): Array[InstructionDef] = {
@@ -251,7 +235,7 @@ class SILToRawSWANIR extends ISILToRawSWANIR {
       assertSILResult(r, 1)
       new Symbol(r.get.valueNames(0), Utils.SILTypeToType(I.tpe))
     }
-    makeOperator(new Operator.functionRef(result, I.name))
+    makeOperator(new Operator.functionRef(result, I.name.demangled))
   }
 
   override protected def visitGlobalAddr(r: Option[SILResult], I: SILOperator.globalAddr): Array[InstructionDef] = {
