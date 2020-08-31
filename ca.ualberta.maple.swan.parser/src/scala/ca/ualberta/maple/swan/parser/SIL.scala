@@ -370,7 +370,7 @@ object SILDeclKind {
   case object setter extends SILDeclKind
 }
 
-class SILDeclRef(val name: Array[String], val kind: Option[SILDeclKind], val level: Option[Int])
+class SILDeclRef(val name: Array[String], val kind: Option[SILDeclKind], val level: Option[Int], val foreign: Boolean = false)
 
 sealed trait SILEncoding
 object SILEncoding {

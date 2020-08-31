@@ -68,7 +68,6 @@ public class ParserTests {
         inst = inst.replaceAll("\\[Int\\]", "Array<Int>");
         // Not sure why this .1 appears in practice after "enumelt". Doesn't seem
         // necessary.
-        inst = inst.replaceAll("enumelt\\.1", "enumelt");
         inst = inst.split("//")[0];
         inst = inst.trim();
         return inst;

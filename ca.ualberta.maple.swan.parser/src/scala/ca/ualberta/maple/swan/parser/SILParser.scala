@@ -1452,7 +1452,6 @@ class SILParser {
   // https://github.com/apple/swift/blob/master/docs/SIL.rst#declaration-references
   @throws[Error]
   def parseDeclRef(): SILDeclRef = {
-    // TODO: handle "#ProtocolA.funcA!foreign"
     take("#")
     val name = new ArrayBuffer[String]
     var break = false
@@ -1464,21 +1463,23 @@ class SILParser {
       }
     }
     if (!skip("!")) {
-      new SILDeclRef(name.toArray, None, None)
+      return new SILDeclRef(name.toArray, None, None)
     }
     val kind = parseDeclKind()
     if (kind.nonEmpty && !skip(".")) {
-      new SILDeclRef(name.toArray, kind, None)
+      return new SILDeclRef(name.toArray, kind, None)
     }
-    // Note: In the original parser there was no try/catch here.
-    // However, parseInt() can fail in practice when there is no level,
-    // so I just threw a try/catch around it. Not sure if this is the final
-    // solution.
     try {
-      val level = parseInt()
-      new SILDeclRef(name.toArray, kind, Some(level))
+      maybeParse(() => {
+        val level = parseInt()
+        return new SILDeclRef(name.toArray, kind, Some(level))
+      })
     } catch {
-      case _ : Error => { }
+      case _: Error =>
+    }
+
+    if (skip("foreign")) {
+      return new SILDeclRef(name.toArray, kind, None, true)
     }
     new SILDeclRef(name.toArray, kind, None)
   }
@@ -1570,12 +1571,11 @@ class SILParser {
     val start = position()
     val radix = if(skip("0x")) 16 else 10
     val s = take(x => x == '-' || x == '+' || Character.digit(x, 16) != -1)
-    val value = try {
-        Integer.parseInt(s, radix)
-      } catch {
-        case _ : Throwable => throw parseError("integer literal expected", Some(start))
-      }
-    value
+    try {
+      return Integer.parseInt(s, radix)
+    } catch {
+      case _ : Throwable => throw parseError("integer literal expected", Some(start))
+    }
   }
 
   // https://github.com/apple/swift/blob/master/docs/SIL.rst#linkage
@@ -1666,7 +1666,7 @@ class SILParser {
         SILType.functionType(types, result)
       } else {
         if (types.length == 1) {
-         types(0)
+          types(0)
         } else {
           SILType.tupleType(types)
         }

@@ -372,7 +372,7 @@ class SILPrinter extends Printer {
         print(" : ")
         print(declType)
         print(" : ")
-        naked(tpe)
+        print(tpe)
       }
 
         // *** FUNCTION APPLICATION ***
@@ -1018,8 +1018,12 @@ class SILPrinter extends Printer {
       print(declRef.kind.get)
     }
     if (declRef.level.nonEmpty) {
-      print(if (declRef.kind.isEmpty == true) "!" else ".")
+      print(if (declRef.kind.isEmpty) "!" else ".")
       literal(declRef.level.get)
+    }
+    if (declRef.foreign) {
+      print(if (declRef.kind.isEmpty && declRef.level.isEmpty) "!" else ".")
+      print("foreign")
     }
   }
 
@@ -1122,19 +1126,23 @@ class SILPrinter extends Printer {
   def print(tpe: SILType): Unit = {
     tpe match {
       case SILType.withOwnership(attribute, subtype) => {
+        print("$")
         print(attribute)
         print(" ")
         print(subtype)
       }
-      case default => {
+      case SILType.genericType(_, _, _) => {
+        naked(tpe) // No "$"
+      }
+      case _ => {
         print("$")
         naked(tpe)
       }
     }
   }
 
-  def naked(tpe: SILType): Unit = {
-    tpe match {
+  def naked(nakedTpe: SILType): Unit = {
+    nakedTpe match {
       case SILType.addressType(tpe) => {
         print("*")
         naked(tpe)
