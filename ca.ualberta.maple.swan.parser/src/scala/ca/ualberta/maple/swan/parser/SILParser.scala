@@ -889,14 +889,14 @@ class SILParser {
       }
       case "select_enum" => {
         val operand = parseOperand()
-        val cases = parseUntilNil[SILCase](() => parseCase(parseValue))
+        val cases = parseUntilNil[SILSwitchEnumCase](() => parseSwitchEnumCase(parseValue))
         take(":")
         val tpe = parseType()
         SILInstruction.operator(SILOperator.selectEnum(operand, cases, tpe))
       }
       case "select_enum_addr" => {
         val operand = parseOperand()
-        val cases = parseUntilNil[SILCase](() => parseCase(parseValue))
+        val cases = parseUntilNil[SILSwitchEnumCase](() => parseSwitchEnumCase(parseValue))
         take(":")
         val tpe = parseType()
         SILInstruction.operator(SILOperator.selectEnumAddr(operand, cases, tpe))
@@ -993,7 +993,7 @@ class SILParser {
         SILInstruction.operator(SILOperator.projectBlockStorage(operand, tpe))
       }
       case "init_block_storage_header" => {
-        null // TODO: NPOTP
+        null // TODO: NPOTP, No SIL.rst documentation.
       }
 
         // *** UNCHECKED CONVERSIONS ***
@@ -1233,19 +1233,21 @@ class SILParser {
         SILInstruction.terminator(SILTerminator.condBr(cond, trueLabel, trueOperands, falseLabel, falseOperands))
       }
       case "switch_value" => {
-        null // TODO: NPOTP
+        val operand = parseOperand()
+        val cases = parseUntilNil[SILSwitchValueCase](() => parseSwitchValueCase(parseIdentifier))
+        SILInstruction.terminator(SILTerminator.switchValue(operand, cases))
       }
       case "select_value" => {
         throw parseError("unhandled instruction") // NSIP
       }
       case "switch_enum" => {
         val operand = parseOperand()
-        val cases = parseUntilNil[SILCase](() => parseCase(parseIdentifier))
+        val cases = parseUntilNil[SILSwitchEnumCase](() => parseSwitchEnumCase(parseIdentifier))
         SILInstruction.terminator(SILTerminator.switchEnum(operand, cases))
       }
       case "switch_enum_addr" => {
         val operand = parseOperand()
-        val cases = parseUntilNil[SILCase](() => parseCase(parseIdentifier))
+        val cases = parseUntilNil[SILSwitchEnumCase](() => parseSwitchEnumCase(parseIdentifier))
         SILInstruction.terminator(SILTerminator.switchEnumAddr(operand, cases))
       }
       case "dynamic_method_br" => {
@@ -1360,17 +1362,36 @@ class SILParser {
 
   // https://github.com/apple/swift/blob/master/docs/SIL.rst#switch-enum
   @throws[Error]
-  def parseCase(parseElement: () => String): Option[SILCase] = {
+  def parseSwitchEnumCase(parseElement: () => String): Option[SILSwitchEnumCase] = {
     maybeParse(() => {
       if(!skip(",")) return None
       if (skip("case")) {
         val declRef = parseDeclRef()
         take(":")
         val identifier = parseElement()
-        Some(SILCase.cs(declRef, identifier))
+        Some(SILSwitchEnumCase.cs(declRef, identifier))
       } else if (skip("default")) {
         val identifier = parseElement()
-        Some(SILCase.default(identifier))
+        Some(SILSwitchEnumCase.default(identifier))
+      } else {
+        None
+      }
+    })
+  }
+
+  // https://github.com/apple/swift/blob/master/docs/SIL.rst#switch-value
+  @throws[Error]
+  def parseSwitchValueCase(parseElement: () => String): Option[SILSwitchValueCase] = {
+    maybeParse(() => {
+      if(!skip(",")) return None
+      if (skip("case")) {
+        val value = parseValue()
+        take(":")
+        val label = parseIdentifier()
+        Some(SILSwitchValueCase.cs(value, label))
+      } else if (skip("default")) {
+        val label = parseIdentifier()
+        Some(SILSwitchValueCase.default(label))
       } else {
         None
       }

@@ -205,8 +205,8 @@ object SILOperator {
   case class initEnumDataAddr(operand: SILOperand, declRef: SILDeclRef) extends SILOperator
   case class injectEnumAddr(operand: SILOperand, declRef: SILDeclRef) extends SILOperator
   case class uncheckedTakeEnumDataAddr(operand: SILOperand, declRef: SILDeclRef) extends SILOperator
-  case class selectEnum(operand: SILOperand, cases: Array[SILCase], tpe: SILType) extends SILOperator
-  case class selectEnumAddr(operand: SILOperand, cases: Array[SILCase], tpe: SILType) extends SILOperator
+  case class selectEnum(operand: SILOperand, cases: Array[SILSwitchEnumCase], tpe: SILType) extends SILOperator
+  case class selectEnumAddr(operand: SILOperand, cases: Array[SILSwitchEnumCase], tpe: SILType) extends SILOperator
 
   /***** PROTOCOL AND PROTOCOL COMPOSITION TYPES *****/
   case class initExistentialAddr(operand: SILOperand, tpe: SILType) extends SILOperator
@@ -283,10 +283,10 @@ object SILTerminator {
   case class condBr(cond: String,
                     trueLabel: String, trueOperands: Array[SILOperand],
                     falseLabel: String, falseOperands: Array[SILOperand]) extends SILTerminator
-  // TODO: switch_value
+  case class switchValue(operand: SILOperand, cases: Array[SILSwitchValueCase]) extends SILTerminator
   // NSIP: select_value
-  case class switchEnum(operand: SILOperand, cases: Array[SILCase]) extends SILTerminator
-  case class switchEnumAddr(operand: SILOperand, cases: Array[SILCase]) extends SILTerminator
+  case class switchEnum(operand: SILOperand, cases: Array[SILSwitchEnumCase]) extends SILTerminator
+  case class switchEnumAddr(operand: SILOperand, cases: Array[SILSwitchEnumCase]) extends SILTerminator
   case class dynamicMethodBr(operand: SILOperand, declRef: SILDeclRef,
                              namedLabel: String, notNamedLabel: String) extends SILTerminator
   case class checkedCastBr(exact: Boolean, operand: SILOperand, tpe: SILType,
@@ -327,10 +327,16 @@ object SILCastConsumptionKind {
 
 class SILArgument(val valueName: String, val tpe: SILType)
 
-sealed trait SILCase
-object SILCase {
-  case class cs(declRef: SILDeclRef, result: String) extends SILCase
-  case class default(result: String) extends SILCase
+sealed trait SILSwitchEnumCase
+object SILSwitchEnumCase {
+  case class cs(declRef: SILDeclRef, result: String) extends SILSwitchEnumCase
+  case class default(result: String) extends SILSwitchEnumCase
+}
+
+sealed trait SILSwitchValueCase
+object SILSwitchValueCase {
+  case class cs(value: String, label: String) extends SILSwitchValueCase
+  case class default(label: String) extends SILSwitchValueCase
 }
 
 sealed trait SILConvention

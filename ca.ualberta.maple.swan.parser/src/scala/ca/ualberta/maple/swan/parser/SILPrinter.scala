@@ -553,14 +553,14 @@ class SILPrinter extends Printer {
       case SILOperator.selectEnum(operand, cases, tpe) => {
         print("select_enum ")
         print(operand)
-        print(whenEmpty = false, "", cases, "", "", (c: SILCase) => print(c))
+        print(whenEmpty = false, "", cases, "", "", (c: SILSwitchEnumCase) => print(c))
         print(" : ")
         print(tpe)
       }
       case SILOperator.selectEnumAddr(operand, cases, tpe) => {
         print("select_enum_addr ")
         print(operand)
-        print(whenEmpty = false, "", cases, "", "", (c: SILCase) => print(c))
+        print(whenEmpty = false, "", cases, "", "", (c: SILSwitchEnumCase) => print(c))
         print(" : ")
         print(tpe)
       }
@@ -823,15 +823,20 @@ class SILPrinter extends Printer {
         print(falseLabel)
         print(whenEmpty = false, "(", falseOperands, ", ", ")", (o: SILOperand) => print(o))
       }
+      case SILTerminator.switchValue(operand, cases) => {
+        print("switch_value ")
+        print(operand)
+        print(whenEmpty = false, "", cases, "", "", (c: SILSwitchValueCase) => print(c))
+      }
       case SILTerminator.switchEnum(operand, cases) => {
         print("switch_enum ")
         print(operand)
-        print(whenEmpty = false, "", cases, "", "", (c: SILCase) => print(c))
+        print(whenEmpty = false, "", cases, "", "", (c: SILSwitchEnumCase) => print(c))
       }
       case SILTerminator.switchEnumAddr(operand, cases) => {
         print("switch_enum_addr ")
         print(operand)
-        print(whenEmpty = false, "", cases, "", "", (c: SILCase) => print(c))
+        print(whenEmpty = false, "", cases, "", "", (c: SILSwitchEnumCase) => print(c))
       }
       case SILTerminator.dynamicMethodBr(operand, declRef, namedLabel, notNamedLabel) => {
         print("dynamic_method_br ")
@@ -924,18 +929,34 @@ class SILPrinter extends Printer {
     print(argument.tpe)
   }
 
-  def print(cse: SILCase): Unit = {
+  def print(cse: SILSwitchEnumCase): Unit = {
     print(", ")
     cse match {
-      case SILCase.cs(declRef, result) => {
+      case SILSwitchEnumCase.cs(declRef, result) => {
         print("case ")
         print(declRef)
         print(": ")
         print(result)
       }
-      case SILCase.default(result) => {
+      case SILSwitchEnumCase.default(result) => {
         print("default ")
         print(result)
+      }
+    }
+  }
+
+  def print(cse: SILSwitchValueCase): Unit = {
+    print(", ")
+    cse match {
+      case SILSwitchValueCase.cs(value, label) => {
+        print("case ")
+        print(value)
+        print(": ")
+        print(label)
+      }
+      case SILSwitchValueCase.default(label) => {
+        print("default ")
+        print(label)
       }
     }
   }

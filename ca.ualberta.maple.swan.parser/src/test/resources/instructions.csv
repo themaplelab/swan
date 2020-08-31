@@ -253,8 +253,8 @@ br bb4(%92 : $Builtin.Int64, %93 : $Builtin.Int64), scope 459 // id: %154~
 cond_br %101, bb10, bb14, scope 459             // id: %102~
 
 # Not yet implemented
-# switch_value %1 : $Builtin.Word, case %1: bb1, case %2: bb2~
-# need switch_value example with sil-switch-value-case and sil-switch-default
+switch_value %1 : $Builtin.Word, case %1: bb1, case %2: bb2~
+switch_value %3 : $Builtin.Int32, case %1: bb1, case %2: bb2, default bb3~
 
 switch_enum %91 : $Optional<FloatingPointSign>, case #Optional.some!enumelt.1: bb23, case #Optional.none!enumelt: bb22, scope 123 // id: %92~
 

@@ -603,6 +603,10 @@ class SILToRawSWANIR extends ISILToRawSWANIR {
     null
   }
 
+  override protected def visitSwitchValue(I: SILTerminator.switchValue): Array[InstructionDef] = {
+    null
+  }
+
   override protected def visitSwitchEnum(I: SILTerminator.switchEnum): Array[InstructionDef] = {
     null
   }

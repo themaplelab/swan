@@ -219,6 +219,7 @@ trait ISILToRawSWANIR {
           case SILTerminator.unwind => visitUnwind()
           case inst: SILTerminator.br => visitBr(inst)
           case inst: SILTerminator.condBr => visitCondBr(inst)
+          case inst: SILTerminator.switchValue => visitSwitchValue(inst)
           case inst: SILTerminator.switchEnum => visitSwitchEnum(inst)
           case inst: SILTerminator.switchEnumAddr => visitSwitchEnumAddr(inst)
           case inst: SILTerminator.dynamicMethodBr => visitDynamicMethodBr(inst)
@@ -431,7 +432,7 @@ trait ISILToRawSWANIR {
   protected def visitBr(I: SILTerminator.br): Array[InstructionDef]
   protected def visitCondBr(I: SILTerminator.condBr): Array[InstructionDef]
 
-  // protected def visitSwitchValue(I: SILTerminator.switchValue): Array[InstructionDef]
+  protected def visitSwitchValue(I: SILTerminator.switchValue): Array[InstructionDef]
   // protected def visitSelectValue(I: SILTerminator.selectValue): Array[InstructionDef]
   protected def visitSwitchEnum(I: SILTerminator.switchEnum): Array[InstructionDef]
   protected def visitSwitchEnumAddr(I: SILTerminator.switchEnumAddr): Array[InstructionDef]
