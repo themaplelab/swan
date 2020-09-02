@@ -38,9 +38,9 @@ class SILPrinter extends Printer {
     print(whenEmpty = false, "(", block.arguments, ", ", ")", (arg: SILArgument) => print(arg))
     print(":")
     indent()
-    block.operatorDefs.foreach({
+    block.operatorDefs.foreach(block => {
       print("\n")
-      print
+      print(block)
     })
     print("\n")
     print(block.terminatorDef)
@@ -888,6 +888,86 @@ class SILPrinter extends Printer {
         print(", error ")
         print(errorLabel)
       }
+    }
+  }
+
+  def print(witnessTable: SILWitnessTable): Unit = {
+    print("sil_witness_table ")
+    print(witnessTable.linkage)
+    if(witnessTable.attribute.nonEmpty) {
+      print(witnessTable.attribute.get)
+      print(" ")
+    }
+    print(witnessTable.normalProtocolConformance)
+    print(" {\n")
+    indent()
+    witnessTable.entries.foreach(entry => {
+      print(entry)
+      print("\n")
+    })
+    unindent()
+    print("}\n")
+  }
+
+  def print(witnessEntry: SILWitnessEntry): Unit = {
+    witnessEntry match {
+      case SILWitnessEntry.baseProtocol(identifier, pc) => {
+        print("base_protocol ")
+        print(identifier)
+        print(": ")
+        print(pc)
+      }
+      case SILWitnessEntry.method(declRef, declType, functionName) => {
+        print("method ")
+        print(declRef)
+        print(": ")
+        print(declType)
+        print(" : ")
+        print("@")
+        print(functionName.mangled)
+      }
+      case SILWitnessEntry.associatedType(identifier) => {
+        print("associated_type ")
+        print(identifier)
+      }
+      case SILWitnessEntry.associatedTypeProtocol(identifier0, identifier1, pc) => {
+        print("associated_type_protocol ")
+        print("( ")
+        print(identifier0)
+        print(" : ")
+        print(identifier1)
+        print(" )")
+        print(" : ")
+        print(pc)
+      }
+    }
+  }
+
+  def print(normalProtocolConformance: SILNormalProtocolConformance): Unit = {
+    print(normalProtocolConformance.identifier0)
+    print(": ")
+    print(normalProtocolConformance.identifier1)
+    print(" module ")
+    print(normalProtocolConformance.identifier2)
+  }
+
+  def print(protocolConformance: SILProtocolConformance): Unit = {
+    protocolConformance match {
+      case SILProtocolConformance.normal(pc) => print(pc)
+      case SILProtocolConformance.inherit(pc) => {
+        print("inherit ")
+        print("( ")
+        print(pc)
+        print(" )")
+      }
+      case SILProtocolConformance.specialize(substitutions, pc) => {
+        print("specialize " )
+        print(whenEmpty = false, "<", substitutions, ", ", ">", (t: SILType) => naked(t))
+        print("( ")
+        print(pc)
+        print(" )")
+      }
+      case SILProtocolConformance.dependent => print("dependent")
     }
   }
 

@@ -29,7 +29,30 @@ class Printer {
   def print[T](i: T, when: Boolean = true): Unit = {
     if (!when) return
     val s = i.toString
+
+    // <DEBUG>
+    if (!indented) {
+      System.out.print(indentation)
+    }
     System.out.print(s)
+    // </DEBUG>
+
+    // "\n"
+    if (s.equals("\n")) {
+      description += "\n"
+      indented = false
+      return
+    }
+    // "mystring\n"
+    if (s.count(_ == '\n') == 1 && s.endsWith("\n")) {
+      if (!indented) {
+        description += indentation
+      }
+      description += s
+      indented = false
+      return
+    }
+    // "string0\nstring1\nstring2[\n]"
     val lines = s.split('\n').iterator
     var lineIdx = 0
     while(lines.hasNext) {

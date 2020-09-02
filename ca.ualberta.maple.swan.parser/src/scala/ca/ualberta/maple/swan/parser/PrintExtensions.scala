@@ -88,5 +88,13 @@ object PrintExtensions {
       case SILInstruction.terminator(t: SILTerminator) => t.description
     }
   }
+
+  implicit class WitnessTablePrinter(val t : SILWitnessTable) {
+    val description: String = {
+      val p = new SILPrinter()
+      p.print(t)
+      p.description
+    }
+  }
 }
 

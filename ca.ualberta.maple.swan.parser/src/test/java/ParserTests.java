@@ -15,9 +15,11 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvFileSource;
 
-import java.io.File;
+import java.io.*;
 import java.net.URISyntaxException;
+import java.nio.file.Files;
 import java.util.Objects;
+import java.util.stream.Collectors;
 
 public class ParserTests {
 
@@ -53,13 +55,27 @@ public class ParserTests {
         Assertions.assertEquals(((SILOperator.functionRef) op).name().demangled(), demangledFunctionName);
     }
 
-    // Test parsing whole functions
+    // Test parsing whole function
     @Test
     void testFunctionParsing() throws Error, NullPointerException, URISyntaxException {
-        SILParser parser = new SILParser(new File(getClass().getClassLoader()
-                .getResource("programs/function1.sil").toURI()).toPath());
+        File testFile = new File(getClass().getClassLoader()
+                .getResource("programs/function1.sil").toURI());
+        SILParser parser = new SILParser(testFile.toPath());
         SILFunction function = parser.parseFunction();
-        Assertions.assertTrue(true);
+        Assertions.assertTrue(true); // Just check we don't blow up for now
+    }
+
+    // Test parsing witness table
+    @Test
+    void testWitnessTableParsing() throws Error, NullPointerException, URISyntaxException, IOException {
+        String testFilePath = "programs/witness-table1.sil";
+        File testFile = new File(getClass().getClassLoader()
+                .getResource(testFilePath).toURI());
+        SILParser parser = new SILParser(testFile.toPath());
+        SILWitnessTable table = parser.parseWitnessTable();
+        String parsedTable = PrintExtensions$.MODULE$.WitnessTablePrinter(table).description();
+        String expected = readFile(testFilePath);
+        Assertions.assertEquals(expected, parsedTable);
     }
 
     // Account for any known transformations that the parser does,
@@ -71,6 +87,19 @@ public class ParserTests {
         inst = inst.split("//")[0];
         inst = inst.trim();
         return inst;
+    }
+
+    String readFile(String filename) throws IOException {
+        InputStream in = getClass().getClassLoader().getResourceAsStream(filename);
+        assert in != null;
+        BufferedReader reader = new BufferedReader(new InputStreamReader(in));
+        StringBuilder result = new StringBuilder();
+        String line;
+        while((line = reader.readLine()) != null) {
+            result.append(line);
+            result.append(System.lineSeparator());
+        }
+        return result.toString();
     }
 
 }

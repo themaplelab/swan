@@ -14,7 +14,7 @@ import java.nio.file.Path
 
 import sys.process._
 
-class SILModule(val functions: Array[SILFunction]) {
+class SILModule(val functions: Array[SILFunction], val witnessTables: Array[SILWitnessTable]) {
 
   object Parse {
     @throws[Error]
@@ -519,3 +519,23 @@ object SILStoreOwnership {
   case object trivial extends SILStoreOwnership
 }
 
+class SILWitnessTable(val linkage: SILLinkage, val attribute: Option[SILFunctionAttribute],
+                      val normalProtocolConformance: SILNormalProtocolConformance, val entries: Array[SILWitnessEntry])
+
+sealed trait SILWitnessEntry
+object SILWitnessEntry {
+  case class baseProtocol(identifier: String, pc: SILProtocolConformance) extends SILWitnessEntry
+  case class method(declRef: SILDeclRef, declType: SILType, functionName: SILFunctionName) extends SILWitnessEntry
+  case class associatedType(identifier: String) extends SILWitnessEntry
+  case class associatedTypeProtocol(identifier0: String, identifier1: String, pc: SILProtocolConformance) extends SILWitnessEntry
+}
+
+class SILNormalProtocolConformance(val identifier0: String, val identifier1: String, val identifier2: String)
+
+sealed trait SILProtocolConformance
+object SILProtocolConformance {
+  case class normal(pc: SILNormalProtocolConformance) extends SILProtocolConformance
+  case class inherit(pc: SILProtocolConformance) extends SILProtocolConformance
+  case class specialize(substitutions: Array[SILType], pc: SILProtocolConformance) extends SILProtocolConformance
+  case object dependent extends SILProtocolConformance
+}

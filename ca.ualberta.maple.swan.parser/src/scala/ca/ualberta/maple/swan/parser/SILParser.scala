@@ -213,7 +213,20 @@ class SILParser {
         done = true
       }
     }
-    new SILModule(functions)
+    var witnessTables = Array[SILWitnessTable]()
+    done = false
+    while(!done) {
+      if(peek("sil_witness_table ")) {
+        val table = parseWitnessTable()
+        witnessTables :+= table
+      } else {
+        Breaks.breakable {
+          if(skip(_ != '\n')) Breaks.break()
+        }
+        done = true
+      }
+    }
+    new SILModule(functions, witnessTables)
   }
 
   // https://github.com/apple/swift/blob/master/docs/SIL.rst#functions
@@ -293,6 +306,17 @@ class SILParser {
       }
     }
      */
+  }
+
+  // https://github.com/apple/swift/blob/master/docs/SIL.rst#witness-tables
+  @throws[Error]
+  def parseWitnessTable(): SILWitnessTable = {
+    take("sil_witness_table")
+    val linkage = parseLinkage()
+    val functionAttribute = try { Some(parseFunctionAttribute()) } catch { case _: Error => None }
+    val normalProtocolConformance = parseNormalProtocolConformance()
+    val entries = { parseNilOrMany("{", "", "}", parseWitnessEntry) }.getOrElse(Array.empty[SILWitnessEntry])
+    new SILWitnessTable(linkage, functionAttribute, normalProtocolConformance, entries)
   }
 
   @throws[Error]
@@ -1293,15 +1317,8 @@ class SILParser {
       }
       case "try_apply" => {
         val value = parseValue()
-        val substitutions = parseNilOrMany("<", ",",">", parseNakedType)
-        // I'm sure there's a more elegant way to do this.
-        val substitutionsNonOptional: Array[SILType] = {
-          if (substitutions.isEmpty) {
-            new Array[SILType](0)
-          } else {
-            substitutions.get
-          }
-        }
+        val s = parseNilOrMany("<",",",">", parseNakedType)
+        val substitutions = if (s.nonEmpty) s.get else new Array[SILType](0)
         val arguments = parseMany("(",",",")", parseValue)
         take(":")
         val tpe = parseType()
@@ -1311,7 +1328,7 @@ class SILParser {
         take(",")
         take("error")
         val error = parseIdentifier()
-        SILInstruction.terminator(SILTerminator.tryApply(value, substitutionsNonOptional, arguments, tpe, normal, error))
+        SILInstruction.terminator(SILTerminator.tryApply(value, substitutions, arguments, tpe, normal, error))
       }
 
         // *** DEFAULT FALLBACK ***
@@ -1579,7 +1596,6 @@ class SILParser {
   }
 
   // https://github.com/apple/swift/blob/master/docs/SIL.rst#linkage
-  @throws[Error]
   def parseLinkage(): SILLinkage = {
     // The order in here is a bit relaxed because longer words need to come
     // before the shorter ones to parse correctly.
@@ -1593,6 +1609,68 @@ class SILParser {
     if(skip("shared_external")) return SILLinkage.sharedExternal
     if(skip("shared")) return SILLinkage.shared
     SILLinkage.public
+  }
+
+  // https://github.com/apple/swift/blob/master/docs/SIL.rst#witness-tables
+  def parseNormalProtocolConformance(): SILNormalProtocolConformance = {
+    val identifier0 = parseIdentifier()
+    take(":")
+    val identifier1 = parseIdentifier()
+    take("module")
+    val identifier2 = parseIdentifier()
+    new SILNormalProtocolConformance(identifier0, identifier1, identifier2)
+  }
+
+  def parseProtocolConformance(): SILProtocolConformance = {
+    if(skip("inherit")) {
+      take("(")
+      val protocolConformance = parseProtocolConformance()
+      take(")")
+      SILProtocolConformance.inherit(protocolConformance)
+    }
+    if(skip("specialize")) {
+      val s = parseNilOrMany("<",",",">", parseNakedType)
+      val substitutions = if (s.nonEmpty) s.get else new Array[SILType](0)
+      take("(")
+      val protocolConformance = parseProtocolConformance()
+      take(")")
+      SILProtocolConformance.specialize(substitutions, protocolConformance)
+    }
+    if(skip("dependent")) return SILProtocolConformance.dependent
+    // Otherwise assume normal-protocol-conformance
+    SILProtocolConformance.normal(parseNormalProtocolConformance())
+  }
+
+  def parseWitnessEntry(): SILWitnessEntry = {
+    if(skip("base_protocol")) {
+      val identifier = parseIdentifier()
+      take(":")
+      val protocolConformance = parseProtocolConformance()
+      return SILWitnessEntry.baseProtocol(identifier, protocolConformance)
+    }
+    if(skip("method")) {
+      val declRef = parseDeclRef()
+      take(":")
+      val declType = parseNakedType()
+      take(":")
+      val functionName = new SILFunctionName(parseGlobalName())
+      return SILWitnessEntry.method(declRef, declType, functionName)
+    }
+    if(skip("associated_type")) {
+      val identifier = parseIdentifier()
+      return SILWitnessEntry.associatedType(identifier)
+    }
+    if(skip("associated_type_protocol")) {
+      take("(")
+      val identifier0 = parseIdentifier()
+      take(":")
+      val identifier1 = parseIdentifier()
+      take(")")
+      take(":")
+      val protocolConformance = parseProtocolConformance()
+      return SILWitnessEntry.associatedTypeProtocol(identifier0, identifier1, protocolConformance)
+    }
+    throw parseError("Unknown witness entry")
   }
 
   // https://github.com/apple/swift/blob/master/docs/SIL.rst#debug-information

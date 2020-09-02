@@ -1,0 +1,7 @@
+sil_witness_table public_external [serialized] Int: Comparable module Swift {
+  base_protocol Equatable: Int: Equatable module Swift
+  method #Comparable."<"!1: <Self where Self : Comparable> (Self.Type) -> (Self, Self) -> Bool : @$sSiSLsSL1loiySbx_xtFZTW
+  method #Comparable."<="!1: <Self where Self : Comparable> (Self.Type) -> (Self, Self) -> Bool : @$sSiSLsSL2leoiySbx_xtFZTW
+  method #Comparable.">="!1: <Self where Self : Comparable> (Self.Type) -> (Self, Self) -> Bool : @$sSiSLsSL2geoiySbx_xtFZTW
+  method #Comparable.">"!1: <Self where Self : Comparable> (Self.Type) -> (Self, Self) -> Bool : @$sSiSLsSL1goiySbx_xtFZTW
+}
