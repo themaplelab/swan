@@ -346,6 +346,7 @@ object SILConvention {
   case object thin extends SILConvention
   case object block extends SILConvention
   case class witnessMethod(tpe: SILType) extends SILConvention
+  case object objc extends SILConvention
 }
 
 sealed trait SILDebugAttribute

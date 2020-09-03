@@ -20,7 +20,7 @@ import scala.collection.mutable.ArrayBuffer
 import scala.reflect.ClassTag
 import scala.util.control.Breaks
 
-// TODO: Parse witness tables
+// TODO: Parse v tables
 class SILParser {
 
   // Default constructor should not be called.
@@ -672,13 +672,14 @@ class SILParser {
         throw parseError("unhandled instruction") // NSIP
       }
       case "objc_super_method" => {
-        // TODO: not working
         val operand = parseOperand()
         take(",")
         val declRef = parseDeclRef()
         take(":")
         val declType = parseNakedType()
-        take(":")
+        // Not sure why this is "," and not ":".
+        // This is not consistent with SIL.rst.
+        take(",")
         val tpe = parseType()
         SILInstruction.operator(SILOperator.objcSuperMethod(operand, declRef, declType, tpe))
       }
@@ -1430,6 +1431,8 @@ class SILParser {
       take(":")
       val tpe = parseNakedType()
       result = SILConvention.witnessMethod(tpe)
+    } else if (skip("objc_method")) {
+      result = SILConvention.objc
     } else {
       throw parseError("unknown convention")
     }
@@ -1486,14 +1489,16 @@ class SILParser {
       return new SILDeclRef(name.toArray, kind, None)
     }
     try {
-      maybeParse(() => {
+      return maybeParse(() => {
         val level = parseInt()
+        if (skip(".")) {
+          return new SILDeclRef(name.toArray, kind, Some(level), skip("foreign"))
+        }
         return new SILDeclRef(name.toArray, kind, Some(level))
-      })
+      }).get
     } catch {
       case _: Error =>
     }
-
     if (skip("foreign")) {
       return new SILDeclRef(name.toArray, kind, None, true)
     }
@@ -1699,8 +1704,6 @@ class SILParser {
   //  e.g. $*@opened("3B29F16E-A446-11EA-A04F-38F9D356CDAF")
   // TODO: Handle @block_storage (project_block_storage, init_block_storage_header)
   //  e.g. $*@block_storage
-  // TODO: Handle @dynamic_self
-  //  e.g. %1 = unchecked_trivial_bit_cast %0 : $@thick UIViewController.Type to $@thick @dynamic_self UIViewController.Type
   // TODO: Handle @sil_unowned
   //  e.g. %5 = ref_to_unowned %4 : $SomeClass to $@sil_unowned SomeClass
   // TODO: Handle @sil_unmanaged

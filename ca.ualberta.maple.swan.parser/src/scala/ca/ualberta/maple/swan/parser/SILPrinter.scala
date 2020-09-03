@@ -360,9 +360,9 @@ class SILPrinter extends Printer {
         print(", ")
         print(declRef)
         print(" : ")
-        print(declType)
-        print(" : ")
-        naked(tpe)
+        naked(declType)
+        print(", ")
+        print(tpe)
       }
       case SILOperator.witnessMethod(archetype, declRef, declType, tpe) => {
         print("witness_method ")
@@ -1054,6 +1054,7 @@ class SILPrinter extends Printer {
         print("witness_method: ")
         naked(tpe)
       }
+      case SILConvention.objc => print("objc_method")
     }
     print(")")
   }

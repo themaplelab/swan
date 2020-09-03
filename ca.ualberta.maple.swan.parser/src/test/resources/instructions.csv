@@ -89,8 +89,7 @@ store_weak %54 to [initialization] %53 : $*@sil_weak Optional<UIViewController>,
 # Not yet implemented
 # %35 = objc_method %33 : $UIViewController, #UIViewController.present!1.foreign : (UIViewController) -> (UIViewController, Bool, (() -> ())?) -> (), $@convention(objc_method) (UIViewController, Bool, Optional<@convention(block) () -> ()>, UIViewController) -> (), loc "/Users/abdulalib/Documents/swan-spds/benchmark/mobile-ios-vipergame/Memory/Utilities/ErrorAlert.swift":36:19, scope 1786 // user: %36~
 
-# Not yet implemented
-# %45 = objc_super_method %1 : $CardCell, #UICollectionViewCell.init!initializer.1.foreign : (UICollectionViewCell.Type) -> (NSCoder) -> UICollectionViewCell?, $@convention(objc_method) (NSCoder, @owned UICollectionViewCell) -> @owned Optional<UICollectionViewCell>, scope 908 // user: %46~
+%45 = objc_super_method %1 : $CardCell, #UICollectionViewCell.init!initializer.1.foreign : (UICollectionViewCell.Type) -> (NSCoder) -> UICollectionViewCell?, $@convention(objc_method) (NSCoder, @owned UICollectionViewCell) -> @owned Optional<UICollectionViewCell>, scope 908 // user: %46~
 
 %52 = witness_method $DispatchWorkItemFlags, #SetAlgebra.init!allocator.1 : <Self where Self : SetAlgebra><S where S : Sequence, Self.Element == S.Element> (Self.Type) -> (__owned S) -> Self : $@convention(witness_method: SetAlgebra) <τ_0_0 where τ_0_0 : SetAlgebra><τ_1_0 where τ_1_0 : Sequence, τ_0_0.Element == τ_1_0.Element> (@in τ_1_0, @thick τ_0_0.Type) -> @out τ_0_0, scope 867 // user: %55~
 witness_method $Self, #Comparable."<="!1 : <Self where Self : Comparable> (Self.Type) -> (Self, Self) -> Bool : $@convention(witness_method: Comparable) <τ_0_0 where τ_0_0 : Comparable> (@in_guaranteed τ_0_0, @in_guaranteed τ_0_0, @thick τ_0_0.Type) -> Bool~
