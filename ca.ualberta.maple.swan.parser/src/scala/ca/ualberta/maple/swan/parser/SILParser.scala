@@ -683,7 +683,6 @@ class SILParser {
         SILInstruction.operator(SILOperator.objcSuperMethod(operand, declRef, declType, tpe))
       }
       case "witness_method" => {
-        // TODO: not working
         val archeType = parseType()
         take(",")
         val declRef = parseDeclRef()
@@ -1613,12 +1612,12 @@ class SILParser {
 
   // https://github.com/apple/swift/blob/master/docs/SIL.rst#witness-tables
   def parseNormalProtocolConformance(): SILNormalProtocolConformance = {
-    val identifier0 = parseIdentifier()
+    val tpe = parseType(true)
     take(":")
-    val identifier1 = parseIdentifier()
+    val protocol = parseIdentifier()
     take("module")
-    val identifier2 = parseIdentifier()
-    new SILNormalProtocolConformance(identifier0, identifier1, identifier2)
+    val module = parseIdentifier()
+    new SILNormalProtocolConformance(tpe, protocol, module)
   }
 
   def parseProtocolConformance(): SILProtocolConformance = {
@@ -1656,10 +1655,7 @@ class SILParser {
       val functionName = new SILFunctionName(parseGlobalName())
       return SILWitnessEntry.method(declRef, declType, functionName)
     }
-    if(skip("associated_type")) {
-      val identifier = parseIdentifier()
-      return SILWitnessEntry.associatedType(identifier)
-    }
+    // NOTE: Must come before associated_type
     if(skip("associated_type_protocol")) {
       take("(")
       val identifier0 = parseIdentifier()
@@ -1669,6 +1665,12 @@ class SILParser {
       take(":")
       val protocolConformance = parseProtocolConformance()
       return SILWitnessEntry.associatedTypeProtocol(identifier0, identifier1, protocolConformance)
+    }
+    if(skip("associated_type")) {
+      val identifier0 = parseIdentifier()
+      take(":")
+      val identifier1 = parseIdentifier()
+      return SILWitnessEntry.associatedType(identifier0, identifier1)
     }
     throw parseError("Unknown witness entry")
   }
@@ -1730,6 +1732,18 @@ class SILParser {
       val attrs = parseMany("@", parseTypeAttribute)
       val tpe = parseNakedType()
       SILType.attributedType(attrs, tpe)
+    } else if (peek("inout")) {
+      take("inout")
+      val tpe = parseNakedType()
+      SILType.attributedType(Array[SILTypeAttribute]{SILTypeAttribute.typeSpecifierInOut}, tpe)
+    } else if (peek("__owned")) {
+      take("__owned")
+      val tpe = parseNakedType()
+      SILType.attributedType(Array[SILTypeAttribute]{SILTypeAttribute.typeSpecifierOwned}, tpe)
+    } else if (peek("__shared")) {
+      take("__shared")
+      val tpe = parseNakedType()
+      SILType.attributedType(Array[SILTypeAttribute]{SILTypeAttribute.typeSpecifierUnowned}, tpe)
     } else if (skip("*")) {
       val tpe = parseNakedType()
       SILType.addressType(tpe)
@@ -1763,7 +1777,13 @@ class SILParser {
         }
       }
       val name = parseTypeName()
-      val base: SILType = if (name != "Self") SILType.namedType(name) else SILType.selfType
+      val base: SILType = {
+        name match {
+          case "Self?" => SILType.selfTypeOptional
+          case "Self" => SILType.selfType
+          case _ => SILType.namedType(name)
+        }
+      }
       grow(base)
     }
   }
@@ -1879,6 +1899,8 @@ class SILParser {
   }
 
   @throws[Error]
+  // IMPORTANT: TypeSpecifiers are handled in parseNakedType() because they
+  // don't start with '@'.
   def parseTypeAttribute(): SILTypeAttribute = {
     if(skip("@callee_guaranteed")) return SILTypeAttribute.calleeGuaranteed
     if(skip("@convention")) return SILTypeAttribute.convention(parseConvention())
@@ -1899,6 +1921,7 @@ class SILParser {
     if(skip("@error")) return SILTypeAttribute.error
     if(skip("@objc_metatype")) return SILTypeAttribute.objcMetatype
     if(skip("@sil_weak")) return SILTypeAttribute.silWeak
+    if(skip("@dynamic_self")) return SILTypeAttribute.dynamicSelf
     throw parseError("unknown attribute")
   }
 
@@ -1918,7 +1941,10 @@ class SILParser {
   @throws[Error]
   def parseTypeName(): String = {
     val start = position()
-    val name : String = take(x => x.isLetter || Character.isDigit(x) || x == '_')
+    var name: String = take(x => x.isLetter || Character.isDigit(x) || x == '_' || x == '?')
+    if(skip("...")) {
+      name += "..."
+    }
     if (!name.isEmpty) {
       return name
     }

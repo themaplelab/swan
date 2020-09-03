@@ -449,7 +449,11 @@ object SILType {
   case class genericType(parameters: Array[String], requirements: Array[SILTypeRequirement], tpe: SILType) extends SILType
   case class namedType(name: String) extends SILType
   case class selectType(tpe: SILType, name: String) extends SILType
+  // This isn't in SIL.rst. e.g. "[..] -> (inserted: Bool, memberAfterInsert: Self.Element) [...]"
+  // named is SILType because of how parseNakedType works. Should just be namedType always, though.
+  // case class namedArgType(name: String, tpe: SILType) extends SILType
   case object selfType extends SILType
+  case object selfTypeOptional extends SILType
   case class specializedType(tpe: SILType, arguments: Array[SILType]) extends SILType
   case class tupleType(parameters: Array[SILType]) extends SILType
   case class withOwnership(attribute: SILTypeAttribute, tpe: SILType) extends SILType
@@ -480,6 +484,12 @@ object SILTypeAttribute {
   case object error extends SILTypeAttribute
   case object objcMetatype extends SILTypeAttribute
   case object silWeak extends SILTypeAttribute
+  case object dynamicSelf extends SILTypeAttribute
+  // type-specifier -> 'inout' | '__owned' | '__unowned'
+  // Not in SIL.rst but used in naked types. e.g. "[...] -> (__owned Self) [..]"
+  case object typeSpecifierInOut extends SILTypeAttribute
+  case object typeSpecifierOwned extends SILTypeAttribute
+  case object typeSpecifierUnowned extends SILTypeAttribute
 }
 
 sealed trait SILAllocAttribute
@@ -526,11 +536,11 @@ sealed trait SILWitnessEntry
 object SILWitnessEntry {
   case class baseProtocol(identifier: String, pc: SILProtocolConformance) extends SILWitnessEntry
   case class method(declRef: SILDeclRef, declType: SILType, functionName: SILFunctionName) extends SILWitnessEntry
-  case class associatedType(identifier: String) extends SILWitnessEntry
+  case class associatedType(identifier0: String, identifier1: String) extends SILWitnessEntry
   case class associatedTypeProtocol(identifier0: String, identifier1: String, pc: SILProtocolConformance) extends SILWitnessEntry
 }
 
-class SILNormalProtocolConformance(val identifier0: String, val identifier1: String, val identifier2: String)
+class SILNormalProtocolConformance(val tpe: SILType, val protocol: String, val module: String)
 
 sealed trait SILProtocolConformance
 object SILProtocolConformance {

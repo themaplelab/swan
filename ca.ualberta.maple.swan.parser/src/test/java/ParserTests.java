@@ -85,7 +85,7 @@ public class ParserTests {
         // Not sure why this .1 appears in practice after "enumelt". Doesn't seem
         // necessary.
         inst = inst.split("//")[0];
-        inst = inst.trim();
+        inst = inst.replaceAll("\\s+$", ""); // right trim
         return inst;
     }
 
@@ -96,8 +96,12 @@ public class ParserTests {
         StringBuilder result = new StringBuilder();
         String line;
         while((line = reader.readLine()) != null) {
-            result.append(line);
-            result.append(System.lineSeparator());
+            line = doReplacements(line);
+            // For commented out lines
+            if (line.trim().length() > 0) {
+                result.append(line);
+                result.append(System.lineSeparator());
+            }
         }
         return result.toString();
     }

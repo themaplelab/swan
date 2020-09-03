@@ -926,29 +926,31 @@ class SILPrinter extends Printer {
         print("@")
         print(functionName.mangled)
       }
-      case SILWitnessEntry.associatedType(identifier) => {
+      case SILWitnessEntry.associatedType(identifier0, identifier1) => {
         print("associated_type ")
-        print(identifier)
+        print(identifier0)
+        print(": ")
+        print(identifier1)
       }
       case SILWitnessEntry.associatedTypeProtocol(identifier0, identifier1, pc) => {
         print("associated_type_protocol ")
-        print("( ")
+        print("(")
         print(identifier0)
-        print(" : ")
+        print(": ")
         print(identifier1)
-        print(" )")
-        print(" : ")
+        print(")")
+        print(": ")
         print(pc)
       }
     }
   }
 
   def print(normalProtocolConformance: SILNormalProtocolConformance): Unit = {
-    print(normalProtocolConformance.identifier0)
+    naked(normalProtocolConformance.tpe)
     print(": ")
-    print(normalProtocolConformance.identifier1)
+    print(normalProtocolConformance.protocol)
     print(" module ")
-    print(normalProtocolConformance.identifier2)
+    print(normalProtocolConformance.module)
   }
 
   def print(protocolConformance: SILProtocolConformance): Unit = {
@@ -1267,6 +1269,9 @@ class SILPrinter extends Printer {
       case SILType.selfType => {
         print("Self")
       }
+      case SILType.selfTypeOptional => {
+        print("Self?")
+      }
       case SILType.specializedType(tpe, args) => {
         naked(tpe)
         print(whenEmpty = true, "<", args, ", ", ">", (t: SILType) => naked(t))
@@ -1303,6 +1308,10 @@ class SILPrinter extends Printer {
       case SILTypeAttribute.error => print("@error")
       case SILTypeAttribute.objcMetatype => print("@objc_metatype")
       case SILTypeAttribute.silWeak => print("@sil_weak")
+      case SILTypeAttribute.dynamicSelf => print("@dynamic_self")
+      case SILTypeAttribute.typeSpecifierInOut => print("inout")
+      case SILTypeAttribute.typeSpecifierOwned => print("__owned")
+      case SILTypeAttribute.typeSpecifierUnowned => print("__unowned")
     }
   }
 
