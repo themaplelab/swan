@@ -4,6 +4,10 @@
 # SWAN
 A static program analysis framework for analyzing Swift (incl. iOS/macOS) applications using [WALA](https://github.com/wala/WALA) as the analysis core. SWAN is being developed for detecting security vulnerabilities in Swift applications using taint analysis.
 
+:page_facing_up: [SWAN: A Static Analysis Framework for Swift](https://karimali.ca/resources/papers/swan.pdf)
+
+:tv: [Video demonstration](https://www.youtube.com/watch?v=AZwfhOGqwFs)
+
 ![](https://github.com/themaplelab/swan/blob/master/docs/readmeContent/exampleUse.gif)
 
 Note: This GIF shows an Xcode project being analyzed. We can no longer analyze Xcode projects due to nuances with building the Swift compiler. See "Important Notes" section for more details.
