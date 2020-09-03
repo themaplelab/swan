@@ -148,7 +148,7 @@ object SILOperator {
   // NOTE: All of the dynamic dispatch instructions have a "sil-method-attributes?" component.
   //       It is unclear what this attribute is. I've never seen it used.
   case class classMethod(operand: SILOperand, declRef: SILDeclRef, declType: SILType, tpe: SILType) extends SILOperator
-  case class objcMethod(operand: SILOperand, declRef: SILDeclRef, tpe: SILType) extends SILOperator
+  case class objcMethod(operand: SILOperand, declRef: SILDeclRef, declType: SILType, tpe: SILType) extends SILOperator
   // NSIP: super_method
   case class objcSuperMethod(operand: SILOperand, declRef: SILDeclRef, declType: SILType, tpe: SILType) extends SILOperator
   case class witnessMethod(archetype: SILType, declRef: SILDeclRef, declType: SILType, tpe: SILType) extends SILOperator

@@ -86,7 +86,7 @@ store_weak %54 to [initialization] %53 : $*@sil_weak Optional<UIViewController>,
 
 # Missing "class_method"
 
-# Not yet implemented
+# Failing
 # %35 = objc_method %33 : $UIViewController, #UIViewController.present!1.foreign : (UIViewController) -> (UIViewController, Bool, (() -> ())?) -> (), $@convention(objc_method) (UIViewController, Bool, Optional<@convention(block) () -> ()>, UIViewController) -> (), loc "/Users/abdulalib/Documents/swan-spds/benchmark/mobile-ios-vipergame/Memory/Utilities/ErrorAlert.swift":36:19, scope 1786 // user: %36~
 
 %45 = objc_super_method %1 : $CardCell, #UICollectionViewCell.init!initializer.1.foreign : (UICollectionViewCell.Type) -> (NSCoder) -> UICollectionViewCell?, $@convention(objc_method) (NSCoder, @owned UICollectionViewCell) -> @owned Optional<UICollectionViewCell>, scope 908 // user: %46~

@@ -655,7 +655,7 @@ class SILParser {
         val declRef = parseDeclRef()
         take(":")
         val declType = parseNakedType()
-        take(":")
+        take(",")
         val tpe = parseType()
         SILInstruction.operator(SILOperator.classMethod(operand, declRef, declType, tpe))
       }
@@ -665,8 +665,10 @@ class SILParser {
         take(",")
         val declRef = parseDeclRef()
         take(":")
+        val declType = parseNakedType()
+        take(",")
         val tpe = parseType()
-        SILInstruction.operator(SILOperator.objcMethod(operand, declRef, tpe))
+        SILInstruction.operator(SILOperator.objcMethod(operand, declRef, declType, tpe))
       }
       case "super_method" => {
         throw parseError("unhandled instruction") // NSIP

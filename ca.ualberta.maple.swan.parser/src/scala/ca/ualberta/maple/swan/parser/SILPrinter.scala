@@ -342,17 +342,19 @@ class SILPrinter extends Printer {
         print(", ")
         print(declRef)
         print(" : ")
-        print(declType)
-        print(" : ")
-        naked(tpe)
+        naked(declType)
+        print(", ")
+        print(tpe)
       }
-      case SILOperator.objcMethod(operand, declRef, tpe) => {
+      case SILOperator.objcMethod(operand, declRef, declType, tpe) => {
         print("objc_method ")
         print(operand)
         print(", ")
         print(declRef)
         print(" : ")
-        naked(tpe)
+        naked(declType)
+        print(", ")
+        print(tpe)
       }
       case SILOperator.objcSuperMethod(operand, declRef, declType, tpe) => {
         print("objc_super_method ")
