@@ -14,16 +14,14 @@ import java.nio.charset.StandardCharsets
 import java.nio.file.{Files, Path}
 import java.util
 
-import ca.ualberta.maple.swan.parser
 import ca.ualberta.maple.swan.utils.ExceptionReporter
 
 import scala.collection.mutable.ArrayBuffer
 import scala.reflect.ClassTag
 import scala.util.control.Breaks
 
+// TODO: Parse v tables
 class SILParser {
-
-  /********** THIS CODE IS ORIGINALLY PART OF "Parser" **********************/
 
   // Default constructor should not be called.
   // I can't think of an elegant way to address the exclusive or
@@ -215,7 +213,20 @@ class SILParser {
         done = true
       }
     }
-    new SILModule(functions)
+    var witnessTables = Array[SILWitnessTable]()
+    done = false
+    while(!done) {
+      if(peek("sil_witness_table ")) {
+        val table = parseWitnessTable()
+        witnessTables :+= table
+      } else {
+        Breaks.breakable {
+          if(skip(_ != '\n')) Breaks.break()
+        }
+        done = true
+      }
+    }
+    new SILModule(functions, witnessTables)
   }
 
   // https://github.com/apple/swift/blob/master/docs/SIL.rst#functions
@@ -224,7 +235,7 @@ class SILParser {
     take("sil")
     val linkage = parseLinkage()
     val attributes = { parseNilOrMany("[", parseFunctionAttribute) }.getOrElse(Array.empty[SILFunctionAttribute])
-    val name = parseGlobalName()
+    val name = new SILFunctionName(parseGlobalName())
     take(":")
     val tpe = parseType()
     val blocks = { parseNilOrMany("{", "", "}", parseBlock) }.getOrElse(Array.empty[SILBlock])
@@ -246,25 +257,16 @@ class SILParser {
   def parseInstructionDefs(): (Array[SILOperatorDef], SILTerminatorDef) = {
     var operatorDefs = Array[SILOperatorDef]()
     var done = false
-    var termDef: SILTerminatorDef = null
     while(!done){
       parseInstructionDef() match {
         case SILInstructionDef.operator(operatorDef) => operatorDefs :+= operatorDef
         case SILInstructionDef.terminator(terminatorDef) => return (operatorDefs, terminatorDef)
       }
       if(peek("bb") || peek("}")) {
-        if(operatorDefs.lastOption.nonEmpty) {
-          operatorDefs.last.operator match {
-            case SILOperator.unknown(instructionName) => {
-              done = true
-              termDef = new SILTerminatorDef(SILTerminator.unknown(instructionName), None)
-            }
-            case _ => throw parseError("block is missing a terminator")
-          }
-        }
+        done = true
       }
     }
-    (operatorDefs, termDef)
+    throw parseError("block is missing a terminator")
   }
 
   // https://github.com/apple/swift/blob/master/docs/SIL.rst#basic-blocks
@@ -304,6 +306,17 @@ class SILParser {
       }
     }
      */
+  }
+
+  // https://github.com/apple/swift/blob/master/docs/SIL.rst#witness-tables
+  @throws[Error]
+  def parseWitnessTable(): SILWitnessTable = {
+    take("sil_witness_table")
+    val linkage = parseLinkage()
+    val functionAttribute = try { Some(parseFunctionAttribute()) } catch { case _: Error => None }
+    val normalProtocolConformance = parseNormalProtocolConformance()
+    val entries = { parseNilOrMany("{", "", "}", parseWitnessEntry) }.getOrElse(Array.empty[SILWitnessEntry])
+    new SILWitnessTable(linkage, functionAttribute, normalProtocolConformance, entries)
   }
 
   @throws[Error]
@@ -457,48 +470,6 @@ class SILParser {
         val operand = parseOperand()
         SILInstruction.operator(SILOperator.endBorrow(operand))
       }
-      case "assign" => {
-        val value = parseValue()
-        take("to")
-        val operand = parseOperand()
-        SILInstruction.operator(SILOperator.assign(value, operand))
-      }
-      case "assign_by_wrapper" => {
-        val from = parseOperand()
-        take("to")
-        val to = parseOperand()
-        take(",")
-        take("init")
-        val init = parseOperand()
-        take(",")
-        take("set")
-        val set = parseOperand()
-        SILInstruction.operator(SILOperator.assignByWrapper(from, to, init, set))
-      }
-      case "mark_uninitialized" => {
-        take("[")
-        val kind = parseMUKind()
-        take("]")
-        val operand = parseOperand()
-        SILInstruction.operator(SILOperator.markUninitialized(kind, operand))
-      }
-      case "mark_function_escape" => {
-        val operand1 = parseOperand()
-        val operand2: Option[SILOperand] = {
-          try {
-            maybeParse(() => {
-              take(",")
-              Some(parseOperand())
-            })
-          } catch {
-            case _: Error => None
-          }
-        }
-        SILInstruction.operator(SILOperator.markFunctionEscape(operand1, operand2))
-      }
-      case "mark_uninitialized_behaviour" => {
-        throw parseError("unhandled instruction") // NSIP
-      }
       case "copy_addr" => {
         val take = skip("[take]")
         val value = parseValue()
@@ -581,22 +552,22 @@ class SILParser {
         SILInstruction.operator(SILOperator.loadWeak(take, operand))
       }
       case "store_weak" => {
-        val value = parseValue()
+        val from = parseValue()
         take("to")
         val initialization = skip("[initialization]")
-        val operand = parseOperand()
-        SILInstruction.operator(SILOperator.storeWeak(value, initialization, operand))
+        val to = parseOperand()
+        SILInstruction.operator(SILOperator.storeWeak(from, initialization, to))
       }
       case "load_unowned" => {
         val operand = parseOperand()
         SILInstruction.operator(SILOperator.loadUnowned(operand))
       }
       case "store_unowned" => {
-        val value = parseValue()
+        val from = parseValue()
         take("to")
         val initialization = skip("[initialization]")
-        val operand = parseOperand()
-        SILInstruction.operator(SILOperator.storeUnowned(value, initialization, operand))
+        val to = parseOperand()
+        SILInstruction.operator(SILOperator.storeUnowned(from, initialization, to))
       }
       case "fix_lifetime" => {
         throw parseError("unhandled instruction") // NSIP
@@ -630,19 +601,19 @@ class SILParser {
         // *** LITERALS ***
 
       case "function_ref" => {
-        val name = parseGlobalName()
+        val name = new SILFunctionName(parseGlobalName())
         take(":")
         val tpe = parseType()
         SILInstruction.operator(SILOperator.functionRef(name, tpe))
       }
       case "dynamic_function_ref" => {
-        val name = parseGlobalName()
+        val name = new SILFunctionName(parseGlobalName())
         take(":")
         val tpe = parseType()
         SILInstruction.operator(SILOperator.dynamicFunctionRef(name, tpe))
       }
       case "prev_dynamic_function_ref" => {
-        val name = parseGlobalName()
+        val name = new SILFunctionName(parseGlobalName())
         take(":")
         val tpe = parseType()
         SILInstruction.operator(SILOperator.prevDynamicFunctionRef(name, tpe))
@@ -678,16 +649,41 @@ class SILParser {
         // *** DYNAMIC DISPATCH ***
 
       case "class_method" => {
-        null // TODO: NPOTP
+        // TODO: not working
+        val operand = parseOperand()
+        take(",")
+        val declRef = parseDeclRef()
+        take(":")
+        val declType = parseNakedType()
+        take(",")
+        val tpe = parseType()
+        SILInstruction.operator(SILOperator.classMethod(operand, declRef, declType, tpe))
       }
       case "objc_method" => {
-        null // TODO: NPOTP
+        // TODO: not working
+        val operand = parseOperand()
+        take(",")
+        val declRef = parseDeclRef()
+        take(":")
+        val declType = parseNakedType()
+        take(",")
+        val tpe = parseType()
+        SILInstruction.operator(SILOperator.objcMethod(operand, declRef, declType, tpe))
       }
       case "super_method" => {
         throw parseError("unhandled instruction") // NSIP
       }
       case "objc_super_method" => {
-        null // TODO: NPOTP
+        val operand = parseOperand()
+        take(",")
+        val declRef = parseDeclRef()
+        take(":")
+        val declType = parseNakedType()
+        // Not sure why this is "," and not ":".
+        // This is not consistent with SIL.rst.
+        take(",")
+        val tpe = parseType()
+        SILInstruction.operator(SILOperator.objcSuperMethod(operand, declRef, declType, tpe))
       }
       case "witness_method" => {
         val archeType = parseType()
@@ -919,14 +915,14 @@ class SILParser {
       }
       case "select_enum" => {
         val operand = parseOperand()
-        val cases = parseUntilNil[SILCase](() => parseCase(parseValue))
+        val cases = parseUntilNil[SILSwitchEnumCase](() => parseSwitchEnumCase(parseValue))
         take(":")
         val tpe = parseType()
         SILInstruction.operator(SILOperator.selectEnum(operand, cases, tpe))
       }
       case "select_enum_addr" => {
         val operand = parseOperand()
-        val cases = parseUntilNil[SILCase](() => parseCase(parseValue))
+        val cases = parseUntilNil[SILSwitchEnumCase](() => parseSwitchEnumCase(parseValue))
         take(":")
         val tpe = parseType()
         SILInstruction.operator(SILOperator.selectEnumAddr(operand, cases, tpe))
@@ -1023,7 +1019,7 @@ class SILParser {
         SILInstruction.operator(SILOperator.projectBlockStorage(operand, tpe))
       }
       case "init_block_storage_header" => {
-        null // TODO: NPOTP
+        null // TODO: NPOTP, No SIL.rst documentation.
       }
 
         // *** UNCHECKED CONVERSIONS ***
@@ -1263,19 +1259,21 @@ class SILParser {
         SILInstruction.terminator(SILTerminator.condBr(cond, trueLabel, trueOperands, falseLabel, falseOperands))
       }
       case "switch_value" => {
-        null // TODO: NPOTP
+        val operand = parseOperand()
+        val cases = parseUntilNil[SILSwitchValueCase](() => parseSwitchValueCase(parseIdentifier))
+        SILInstruction.terminator(SILTerminator.switchValue(operand, cases))
       }
       case "select_value" => {
         throw parseError("unhandled instruction") // NSIP
       }
       case "switch_enum" => {
         val operand = parseOperand()
-        val cases = parseUntilNil[SILCase](() => parseCase(parseIdentifier))
+        val cases = parseUntilNil[SILSwitchEnumCase](() => parseSwitchEnumCase(parseIdentifier))
         SILInstruction.terminator(SILTerminator.switchEnum(operand, cases))
       }
       case "switch_enum_addr" => {
         val operand = parseOperand()
-        val cases = parseUntilNil[SILCase](() => parseCase(parseIdentifier))
+        val cases = parseUntilNil[SILSwitchEnumCase](() => parseSwitchEnumCase(parseIdentifier))
         SILInstruction.terminator(SILTerminator.switchEnumAddr(operand, cases))
       }
       case "dynamic_method_br" => {
@@ -1320,8 +1318,19 @@ class SILParser {
           kind, fromTpe, fromOperand, toTpe, toOperand, succeedLabel, failureLabel))
       }
       case "try_apply" => {
-        // NOTE: This is a multi-line instruction.
-        null // TODO: NPOTP
+        val value = parseValue()
+        val s = parseNilOrMany("<",",",">", parseNakedType)
+        val substitutions = if (s.nonEmpty) s.get else new Array[SILType](0)
+        val arguments = parseMany("(",",",")", parseValue)
+        take(":")
+        val tpe = parseType()
+        take(",")
+        take("normal")
+        val normal = parseIdentifier()
+        take(",")
+        take("error")
+        val error = parseIdentifier()
+        SILInstruction.terminator(SILTerminator.tryApply(value, substitutions, arguments, tpe, normal, error))
       }
 
         // *** DEFAULT FALLBACK ***
@@ -1372,17 +1381,36 @@ class SILParser {
 
   // https://github.com/apple/swift/blob/master/docs/SIL.rst#switch-enum
   @throws[Error]
-  def parseCase(parseElement: () => String): Option[SILCase] = {
+  def parseSwitchEnumCase(parseElement: () => String): Option[SILSwitchEnumCase] = {
     maybeParse(() => {
       if(!skip(",")) return None
       if (skip("case")) {
         val declRef = parseDeclRef()
         take(":")
         val identifier = parseElement()
-        Some(SILCase.cs(declRef, identifier))
+        Some(SILSwitchEnumCase.cs(declRef, identifier))
       } else if (skip("default")) {
         val identifier = parseElement()
-        Some(SILCase.default(identifier))
+        Some(SILSwitchEnumCase.default(identifier))
+      } else {
+        None
+      }
+    })
+  }
+
+  // https://github.com/apple/swift/blob/master/docs/SIL.rst#switch-value
+  @throws[Error]
+  def parseSwitchValueCase(parseElement: () => String): Option[SILSwitchValueCase] = {
+    maybeParse(() => {
+      if(!skip(",")) return None
+      if (skip("case")) {
+        val value = parseValue()
+        take(":")
+        val label = parseIdentifier()
+        Some(SILSwitchValueCase.cs(value, label))
+      } else if (skip("default")) {
+        val label = parseIdentifier()
+        Some(SILSwitchValueCase.default(label))
       } else {
         None
       }
@@ -1405,6 +1433,8 @@ class SILParser {
       take(":")
       val tpe = parseNakedType()
       result = SILConvention.witnessMethod(tpe)
+    } else if (skip("objc_method")) {
+      result = SILConvention.objc
     } else {
       throw parseError("unknown convention")
     }
@@ -1443,7 +1473,6 @@ class SILParser {
   // https://github.com/apple/swift/blob/master/docs/SIL.rst#declaration-references
   @throws[Error]
   def parseDeclRef(): SILDeclRef = {
-    // TODO: handle "#ProtocolA.funcA!foreign"
     take("#")
     val name = new ArrayBuffer[String]
     var break = false
@@ -1455,21 +1484,25 @@ class SILParser {
       }
     }
     if (!skip("!")) {
-      new SILDeclRef(name.toArray, None, None)
+      return new SILDeclRef(name.toArray, None, None)
     }
     val kind = parseDeclKind()
     if (kind.nonEmpty && !skip(".")) {
-      new SILDeclRef(name.toArray, kind, None)
+      return new SILDeclRef(name.toArray, kind, None)
     }
-    // Note: In the original parser there was no try/catch here.
-    // However, parseInt() can fail in practice when there is no level,
-    // so I just threw a try/catch around it. Not sure if this is the final
-    // solution.
     try {
-      val level = parseInt()
-      new SILDeclRef(name.toArray, kind, Some(level))
+      return maybeParse(() => {
+        val level = parseInt()
+        if (skip(".")) {
+          return new SILDeclRef(name.toArray, kind, Some(level), skip("foreign"))
+        }
+        return new SILDeclRef(name.toArray, kind, Some(level))
+      }).get
     } catch {
-      case _ : Error => { }
+      case _: Error =>
+    }
+    if (skip("foreign")) {
+      return new SILDeclRef(name.toArray, kind, None, true)
     }
     new SILDeclRef(name.toArray, kind, None)
   }
@@ -1561,16 +1594,14 @@ class SILParser {
     val start = position()
     val radix = if(skip("0x")) 16 else 10
     val s = take(x => x == '-' || x == '+' || Character.digit(x, 16) != -1)
-    val value = try {
-        Integer.parseInt(s, radix)
-      } catch {
-        case _ : Throwable => throw parseError("integer literal expected", Some(start))
-      }
-    value
+    try {
+      return Integer.parseInt(s, radix)
+    } catch {
+      case _ : Throwable => throw parseError("integer literal expected", Some(start))
+    }
   }
 
   // https://github.com/apple/swift/blob/master/docs/SIL.rst#linkage
-  @throws[Error]
   def parseLinkage(): SILLinkage = {
     // The order in here is a bit relaxed because longer words need to come
     // before the shorter ones to parse correctly.
@@ -1584,6 +1615,71 @@ class SILParser {
     if(skip("shared_external")) return SILLinkage.sharedExternal
     if(skip("shared")) return SILLinkage.shared
     SILLinkage.public
+  }
+
+  // https://github.com/apple/swift/blob/master/docs/SIL.rst#witness-tables
+  def parseNormalProtocolConformance(): SILNormalProtocolConformance = {
+    val tpe = parseType(true)
+    take(":")
+    val protocol = parseIdentifier()
+    take("module")
+    val module = parseIdentifier()
+    new SILNormalProtocolConformance(tpe, protocol, module)
+  }
+
+  def parseProtocolConformance(): SILProtocolConformance = {
+    if(skip("inherit")) {
+      take("(")
+      val protocolConformance = parseProtocolConformance()
+      take(")")
+      SILProtocolConformance.inherit(protocolConformance)
+    }
+    if(skip("specialize")) {
+      val s = parseNilOrMany("<",",",">", parseNakedType)
+      val substitutions = if (s.nonEmpty) s.get else new Array[SILType](0)
+      take("(")
+      val protocolConformance = parseProtocolConformance()
+      take(")")
+      SILProtocolConformance.specialize(substitutions, protocolConformance)
+    }
+    if(skip("dependent")) return SILProtocolConformance.dependent
+    // Otherwise assume normal-protocol-conformance
+    SILProtocolConformance.normal(parseNormalProtocolConformance())
+  }
+
+  def parseWitnessEntry(): SILWitnessEntry = {
+    if(skip("base_protocol")) {
+      val identifier = parseIdentifier()
+      take(":")
+      val protocolConformance = parseProtocolConformance()
+      return SILWitnessEntry.baseProtocol(identifier, protocolConformance)
+    }
+    if(skip("method")) {
+      val declRef = parseDeclRef()
+      take(":")
+      val declType = parseNakedType()
+      take(":")
+      val functionName = new SILFunctionName(parseGlobalName())
+      return SILWitnessEntry.method(declRef, declType, functionName)
+    }
+    // NOTE: Must come before associated_type
+    if(skip("associated_type_protocol")) {
+      take("(")
+      val identifier0 = parseIdentifier()
+      take(":")
+      val identifier1 = parseIdentifier()
+      take(")")
+      take(":")
+      val protocolConformance = parseProtocolConformance()
+      return SILWitnessEntry.associatedTypeProtocol(identifier0, identifier1, protocolConformance)
+    }
+    if(skip("associated_type")) {
+      val identifier0 = parseIdentifier()
+      take(":")
+      val identifier1 = parseIdentifier()
+      return SILWitnessEntry.associatedType(identifier0, identifier1)
+    }
+    throw parseError("Unknown witness entry")
   }
 
   // https://github.com/apple/swift/blob/master/docs/SIL.rst#debug-information
@@ -1610,8 +1706,6 @@ class SILParser {
   //  e.g. $*@opened("3B29F16E-A446-11EA-A04F-38F9D356CDAF")
   // TODO: Handle @block_storage (project_block_storage, init_block_storage_header)
   //  e.g. $*@block_storage
-  // TODO: Handle @dynamic_self
-  //  e.g. %1 = unchecked_trivial_bit_cast %0 : $@thick UIViewController.Type to $@thick @dynamic_self UIViewController.Type
   // TODO: Handle @sil_unowned
   //  e.g. %5 = ref_to_unowned %4 : $SomeClass to $@sil_unowned SomeClass
   // TODO: Handle @sil_unmanaged
@@ -1643,6 +1737,18 @@ class SILParser {
       val attrs = parseMany("@", parseTypeAttribute)
       val tpe = parseNakedType()
       SILType.attributedType(attrs, tpe)
+    } else if (peek("inout")) {
+      take("inout")
+      val tpe = parseNakedType()
+      SILType.attributedType(Array[SILTypeAttribute]{SILTypeAttribute.typeSpecifierInOut}, tpe)
+    } else if (peek("__owned")) {
+      take("__owned")
+      val tpe = parseNakedType()
+      SILType.attributedType(Array[SILTypeAttribute]{SILTypeAttribute.typeSpecifierOwned}, tpe)
+    } else if (peek("__shared")) {
+      take("__shared")
+      val tpe = parseNakedType()
+      SILType.attributedType(Array[SILTypeAttribute]{SILTypeAttribute.typeSpecifierUnowned}, tpe)
     } else if (skip("*")) {
       val tpe = parseNakedType()
       SILType.addressType(tpe)
@@ -1657,7 +1763,7 @@ class SILParser {
         SILType.functionType(types, result)
       } else {
         if (types.length == 1) {
-         types(0)
+          types(0)
         } else {
           SILType.tupleType(types)
         }
@@ -1676,7 +1782,13 @@ class SILParser {
         }
       }
       val name = parseTypeName()
-      val base: SILType = if (name != "Self") SILType.namedType(name) else SILType.selfType
+      val base: SILType = {
+        name match {
+          case "Self?" => SILType.selfTypeOptional
+          case "Self" => SILType.selfType
+          case _ => SILType.namedType(name)
+        }
+      }
       grow(base)
     }
   }
@@ -1792,6 +1904,8 @@ class SILParser {
   }
 
   @throws[Error]
+  // IMPORTANT: TypeSpecifiers are handled in parseNakedType() because they
+  // don't start with '@'.
   def parseTypeAttribute(): SILTypeAttribute = {
     if(skip("@callee_guaranteed")) return SILTypeAttribute.calleeGuaranteed
     if(skip("@convention")) return SILTypeAttribute.convention(parseConvention())
@@ -1812,6 +1926,7 @@ class SILParser {
     if(skip("@error")) return SILTypeAttribute.error
     if(skip("@objc_metatype")) return SILTypeAttribute.objcMetatype
     if(skip("@sil_weak")) return SILTypeAttribute.silWeak
+    if(skip("@dynamic_self")) return SILTypeAttribute.dynamicSelf
     throw parseError("unknown attribute")
   }
 
@@ -1831,7 +1946,10 @@ class SILParser {
   @throws[Error]
   def parseTypeName(): String = {
     val start = position()
-    val name : String = take(x => x.isLetter || Character.isDigit(x) || x == '_')
+    var name: String = take(x => x.isLetter || Character.isDigit(x) || x == '_' || x == '?')
+    if(skip("...")) {
+      name += "..."
+    }
     if (!name.isEmpty) {
       return name
     }

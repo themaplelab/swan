@@ -27,7 +27,7 @@ class SILPrinter extends Printer {
     print(function.linkage)
     print(whenEmpty = false, "", function.attributes, " ", " ", (attribute: SILFunctionAttribute) => print(attribute))
     print("@")
-    print(function.name)
+    print(function.name.mangled)
     print(" : ")
     print(function.tpe)
     print(whenEmpty = false, " {\n", function.blocks, "\n", "}", (block: SILBlock) => print(block))
@@ -38,9 +38,9 @@ class SILPrinter extends Printer {
     print(whenEmpty = false, "(", block.arguments, ", ", ")", (arg: SILArgument) => print(arg))
     print(":")
     indent()
-    block.operatorDefs.foreach({
+    block.operatorDefs.foreach(block => {
       print("\n")
-      print
+      print(block)
     })
     print("\n")
     print(block.terminatorDef)
@@ -195,37 +195,6 @@ class SILPrinter extends Printer {
         print("end_borrow ")
         print(operand)
       }
-      case SILOperator.assign(from, to) => {
-        print("assign ")
-        print(from)
-        print(" to ")
-        print(to)
-      }
-      case SILOperator.assignByWrapper(from, to, init, set) => {
-        print("assign_by_wrapper ")
-        print(from)
-        print(" to ")
-        print(to)
-        print(", init ")
-        print(init)
-        print(", set ")
-        print(set)
-      }
-      case SILOperator.markUninitialized(muKind, operand) => {
-        print("mark_uninitialized ")
-        print("[")
-        print(muKind)
-        print("] ")
-        print(operand)
-      }
-      case SILOperator.markFunctionEscape(operand1, operand2) => {
-        print("mark_function_escape ")
-        print(operand1)
-        if (operand2.nonEmpty) {
-          print(", ")
-          print(operand2.get)
-        }
-      }
       case SILOperator.copyAddr(take, value, initialization, operand) => {
         print("copy_addr ")
         print( "[take] ", take)
@@ -277,23 +246,23 @@ class SILPrinter extends Printer {
         print("[take]", take)
         print(operand)
       }
-      case SILOperator.storeWeak(value, initialization, operand) => {
+      case SILOperator.storeWeak(from, initialization, to) => {
         print("store_weak ")
-        print(value)
+        print(from)
         print(" to ")
         print("[initialization] ", initialization)
-        print(operand)
+        print(to)
       }
       case SILOperator.loadUnowned(operand) => {
         print("load_unowned ")
         print(operand)
       }
-      case SILOperator.storeUnowned(value, initialization, operand) => {
+      case SILOperator.storeUnowned(from, initialization, to) => {
         print("store_unowned ")
-        print(value)
+        print(from)
         print(" to ")
         print("[initialization] ", initialization)
-        print(operand)
+        print(to)
       }
       case SILOperator.markDependence(operand, on) => {
         print("mark_dependence ")
@@ -321,21 +290,21 @@ class SILPrinter extends Printer {
       case SILOperator.functionRef(name, tpe) => {
         print("function_ref ")
         print("@")
-        print(name)
+        print(name.mangled)
         print(" : ")
         print(tpe)
       }
       case SILOperator.dynamicFunctionRef(name, tpe) => {
         print("dynamic_function_ref ")
         print("@")
-        print(name)
+        print(name.mangled)
         print(" : ")
         print(tpe)
       }
       case SILOperator.prevDynamicFunctionRef(name, tpe) => {
         print("prev_dynamic_function_ref ")
         print("@")
-        print(name)
+        print(name.mangled)
         print(" : ")
         print(tpe)
       }
@@ -369,15 +338,33 @@ class SILPrinter extends Printer {
 
       case SILOperator.classMethod(operand, declRef, declType, tpe) => {
         print("class_method ")
-        print("NOT YET HANDLED") // TODO
+        print(operand)
+        print(", ")
+        print(declRef)
+        print(" : ")
+        naked(declType)
+        print(", ")
+        print(tpe)
       }
       case SILOperator.objcMethod(operand, declRef, declType, tpe) => {
         print("objc_method ")
-        print("NOT YET HANDLED") // TODO
+        print(operand)
+        print(", ")
+        print(declRef)
+        print(" : ")
+        naked(declType)
+        print(", ")
+        print(tpe)
       }
       case SILOperator.objcSuperMethod(operand, declRef, declType, tpe) => {
         print("objc_super_method ")
-        print("NOT YET HANDLED") // TODO
+        print(operand)
+        print(", ")
+        print(declRef)
+        print(" : ")
+        naked(declType)
+        print(", ")
+        print(tpe)
       }
       case SILOperator.witnessMethod(archetype, declRef, declType, tpe) => {
         print("witness_method ")
@@ -387,7 +374,7 @@ class SILPrinter extends Printer {
         print(" : ")
         print(declType)
         print(" : ")
-        naked(tpe)
+        print(tpe)
       }
 
         // *** FUNCTION APPLICATION ***
@@ -568,14 +555,14 @@ class SILPrinter extends Printer {
       case SILOperator.selectEnum(operand, cases, tpe) => {
         print("select_enum ")
         print(operand)
-        print(whenEmpty = false, "", cases, "", "", (c: SILCase) => print(c))
+        print(whenEmpty = false, "", cases, "", "", (c: SILSwitchEnumCase) => print(c))
         print(" : ")
         print(tpe)
       }
       case SILOperator.selectEnumAddr(operand, cases, tpe) => {
         print("select_enum_addr ")
         print(operand)
-        print(whenEmpty = false, "", cases, "", "", (c: SILCase) => print(c))
+        print(whenEmpty = false, "", cases, "", "", (c: SILSwitchEnumCase) => print(c))
         print(" : ")
         print(tpe)
       }
@@ -792,13 +779,6 @@ class SILPrinter extends Printer {
           literal(message.get)
         }
       }
-
-        // *** UNKNOWN FALLBACK ***
-
-      case SILOperator.unknown(name) => {
-        print(name)
-        print(" <?>")
-      }
     }
   }
 
@@ -845,15 +825,20 @@ class SILPrinter extends Printer {
         print(falseLabel)
         print(whenEmpty = false, "(", falseOperands, ", ", ")", (o: SILOperand) => print(o))
       }
+      case SILTerminator.switchValue(operand, cases) => {
+        print("switch_value ")
+        print(operand)
+        print(whenEmpty = false, "", cases, "", "", (c: SILSwitchValueCase) => print(c))
+      }
       case SILTerminator.switchEnum(operand, cases) => {
         print("switch_enum ")
         print(operand)
-        print(whenEmpty = false, "", cases, "", "", (c: SILCase) => print(c))
+        print(whenEmpty = false, "", cases, "", "", (c: SILSwitchEnumCase) => print(c))
       }
       case SILTerminator.switchEnumAddr(operand, cases) => {
         print("switch_enum_addr ")
         print(operand)
-        print(whenEmpty = false, "", cases, "", "", (c: SILCase) => print(c))
+        print(whenEmpty = false, "", cases, "", "", (c: SILSwitchEnumCase) => print(c))
       }
       case SILTerminator.dynamicMethodBr(operand, declRef, namedLabel, notNamedLabel) => {
         print("dynamic_method_br ")
@@ -900,17 +885,93 @@ class SILPrinter extends Printer {
         print(whenEmpty = true, "(", arguments, ", ", ")", (a: String) => print(a))
         print(" : ")
         print(tpe)
-        print("\n  normal ")
+        print(", normal ")
         print(normalLabel)
         print(", error ")
         print(errorLabel)
       }
-      // *** UNKNOWN FALLBACK ***
-      case SILTerminator.unknown(name) => {
-        print(name)
-        print(" <?>")
-      }
+    }
+  }
 
+  def print(witnessTable: SILWitnessTable): Unit = {
+    print("sil_witness_table ")
+    print(witnessTable.linkage)
+    if(witnessTable.attribute.nonEmpty) {
+      print(witnessTable.attribute.get)
+      print(" ")
+    }
+    print(witnessTable.normalProtocolConformance)
+    print(" {\n")
+    indent()
+    witnessTable.entries.foreach(entry => {
+      print(entry)
+      print("\n")
+    })
+    unindent()
+    print("}\n")
+  }
+
+  def print(witnessEntry: SILWitnessEntry): Unit = {
+    witnessEntry match {
+      case SILWitnessEntry.baseProtocol(identifier, pc) => {
+        print("base_protocol ")
+        print(identifier)
+        print(": ")
+        print(pc)
+      }
+      case SILWitnessEntry.method(declRef, declType, functionName) => {
+        print("method ")
+        print(declRef)
+        print(": ")
+        print(declType)
+        print(" : ")
+        print("@")
+        print(functionName.mangled)
+      }
+      case SILWitnessEntry.associatedType(identifier0, identifier1) => {
+        print("associated_type ")
+        print(identifier0)
+        print(": ")
+        print(identifier1)
+      }
+      case SILWitnessEntry.associatedTypeProtocol(identifier0, identifier1, pc) => {
+        print("associated_type_protocol ")
+        print("(")
+        print(identifier0)
+        print(": ")
+        print(identifier1)
+        print(")")
+        print(": ")
+        print(pc)
+      }
+    }
+  }
+
+  def print(normalProtocolConformance: SILNormalProtocolConformance): Unit = {
+    naked(normalProtocolConformance.tpe)
+    print(": ")
+    print(normalProtocolConformance.protocol)
+    print(" module ")
+    print(normalProtocolConformance.module)
+  }
+
+  def print(protocolConformance: SILProtocolConformance): Unit = {
+    protocolConformance match {
+      case SILProtocolConformance.normal(pc) => print(pc)
+      case SILProtocolConformance.inherit(pc) => {
+        print("inherit ")
+        print("( ")
+        print(pc)
+        print(" )")
+      }
+      case SILProtocolConformance.specialize(substitutions, pc) => {
+        print("specialize " )
+        print(whenEmpty = false, "<", substitutions, ", ", ">", (t: SILType) => naked(t))
+        print("( ")
+        print(pc)
+        print(" )")
+      }
+      case SILProtocolConformance.dependent => print("dependent")
     }
   }
 
@@ -952,18 +1013,34 @@ class SILPrinter extends Printer {
     print(argument.tpe)
   }
 
-  def print(cse: SILCase): Unit = {
+  def print(cse: SILSwitchEnumCase): Unit = {
     print(", ")
     cse match {
-      case SILCase.cs(declRef, result) => {
+      case SILSwitchEnumCase.cs(declRef, result) => {
         print("case ")
         print(declRef)
         print(": ")
         print(result)
       }
-      case SILCase.default(result) => {
+      case SILSwitchEnumCase.default(result) => {
         print("default ")
         print(result)
+      }
+    }
+  }
+
+  def print(cse: SILSwitchValueCase): Unit = {
+    print(", ")
+    cse match {
+      case SILSwitchValueCase.cs(value, label) => {
+        print("case ")
+        print(value)
+        print(": ")
+        print(label)
+      }
+      case SILSwitchValueCase.default(label) => {
+        print("default ")
+        print(label)
       }
     }
   }
@@ -979,6 +1056,7 @@ class SILPrinter extends Printer {
         print("witness_method: ")
         naked(tpe)
       }
+      case SILConvention.objc => print("objc_method")
     }
     print(")")
   }
@@ -1025,8 +1103,12 @@ class SILPrinter extends Printer {
       print(declRef.kind.get)
     }
     if (declRef.level.nonEmpty) {
-      print(if (declRef.kind.isEmpty == true) "!" else ".")
+      print(if (declRef.kind.isEmpty) "!" else ".")
       literal(declRef.level.get)
+    }
+    if (declRef.foreign) {
+      print(if (declRef.kind.isEmpty && declRef.level.isEmpty) "!" else ".")
+      print("foreign")
     }
   }
 
@@ -1129,19 +1211,23 @@ class SILPrinter extends Printer {
   def print(tpe: SILType): Unit = {
     tpe match {
       case SILType.withOwnership(attribute, subtype) => {
+        print("$")
         print(attribute)
         print(" ")
         print(subtype)
       }
-      case default => {
+      case SILType.genericType(_, _, _) => {
+        naked(tpe) // No "$"
+      }
+      case _ => {
         print("$")
         naked(tpe)
       }
     }
   }
 
-  def naked(tpe: SILType): Unit = {
-    tpe match {
+  def naked(nakedTpe: SILType): Unit = {
+    nakedTpe match {
       case SILType.addressType(tpe) => {
         print("*")
         naked(tpe)
@@ -1186,6 +1272,9 @@ class SILPrinter extends Printer {
       case SILType.selfType => {
         print("Self")
       }
+      case SILType.selfTypeOptional => {
+        print("Self?")
+      }
       case SILType.specializedType(tpe, args) => {
         naked(tpe)
         print(whenEmpty = true, "<", args, ", ", ">", (t: SILType) => naked(t))
@@ -1222,6 +1311,10 @@ class SILPrinter extends Printer {
       case SILTypeAttribute.error => print("@error")
       case SILTypeAttribute.objcMetatype => print("@objc_metatype")
       case SILTypeAttribute.silWeak => print("@sil_weak")
+      case SILTypeAttribute.dynamicSelf => print("@dynamic_self")
+      case SILTypeAttribute.typeSpecifierInOut => print("inout")
+      case SILTypeAttribute.typeSpecifierOwned => print("__owned")
+      case SILTypeAttribute.typeSpecifierUnowned => print("__unowned")
     }
   }
 

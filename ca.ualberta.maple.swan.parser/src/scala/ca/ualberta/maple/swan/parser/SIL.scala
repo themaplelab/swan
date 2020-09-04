@@ -12,9 +12,9 @@ package ca.ualberta.maple.swan.parser
 
 import java.nio.file.Path
 
-import ca.ualberta.maple.swan
+import sys.process._
 
-class SILModule(val functions: Array[SILFunction]) {
+class SILModule(val functions: Array[SILFunction], val witnessTables: Array[SILWitnessTable]) {
 
   object Parse {
     @throws[Error]
@@ -32,7 +32,7 @@ class SILModule(val functions: Array[SILFunction]) {
 }
 
 class SILFunction(val linkage: SILLinkage, val attributes: Array[SILFunctionAttribute],
-                  val name: String, val tpe: SILType, val blocks: Array[SILBlock])
+                  val name: SILFunctionName, val tpe: SILType, val blocks: Array[SILBlock])
 
 class SILBlock(val identifier: String, val arguments: Array[SILArgument],
                val operatorDefs: Array[SILOperatorDef], val terminatorDef: SILTerminatorDef) {
@@ -85,18 +85,18 @@ object SILOperator {
 
   /***** ACCESSING MEMORY *****/
   case class load(kind: Option[SILLoadOwnership], operand: SILOperand) extends SILOperator
-  case class store(value: String, kind: Option[SILStoreOwnership], operand: SILOperand) extends SILOperator
+  case class store(from: String, kind: Option[SILStoreOwnership], to: SILOperand) extends SILOperator
   // SIL.rst says that load_borrow takes a sil-value, but in reality it takes a sil-operand.
   case class loadBorrow(operand: SILOperand) extends SILOperator
   // begin_borrow has T0D0 in SIL.rst and I think it's NSIP, but tensorflow had parsing for it so use it.
   case class beginBorrow(operand: SILOperand) extends SILOperator
   // NOTE: The SIL.rst for end_borrow is not consistent with in-practice instructions at all.
   case class endBorrow(operand: SILOperand) extends SILOperator
-  case class assign(from: String, to: SILOperand) extends SILOperator
-  case class assignByWrapper(from: SILOperand, to: SILOperand, init: SILOperand, set: SILOperand) extends SILOperator
-  case class markUninitialized(muKind: SILMUKind, operand: SILOperand) extends SILOperator
-  case class markFunctionEscape(operand1: SILOperand, operand2: Option[SILOperand]) extends SILOperator
-  // NSIP: mark_uninitialized_behaviour
+  // Raw SIL only: assign
+  // Raw SIL only: assign_by_wrapper
+  // Raw SIL only: mark_uninitialized
+  // Raw SIL only: mark_function_escape
+  // Raw SIL only: mark_uninitialized_behaviour
   case class copyAddr(take: Boolean, value: String, initialization: Boolean, operand: SILOperand) extends SILOperator
   case class destroyAddr(operand: SILOperand) extends SILOperator
   case class indexAddr(addr: SILOperand, index: SILOperand) extends SILOperator
@@ -120,9 +120,9 @@ object SILOperator {
   // NSIP: unowned_retain
   // NSIP: unowned_release
   case class loadWeak(take: Boolean, operand: SILOperand) extends SILOperator
-  case class storeWeak(value: String, initialization: Boolean, operand: SILOperand) extends SILOperator
+  case class storeWeak(from: String, initialization: Boolean, to: SILOperand) extends SILOperator
   case class loadUnowned(operand: SILOperand) extends SILOperator
-  case class storeUnowned(value: String, initialization: Boolean, operand: SILOperand) extends SILOperator
+  case class storeUnowned(from: String, initialization: Boolean, to: SILOperand) extends SILOperator
   // NSIP: fix_lifetime
   case class markDependence(operand: SILOperand, on: SILOperand) extends SILOperator
   // NSIP: is_unique
@@ -134,9 +134,9 @@ object SILOperator {
   // builtin "unsafeGuaranteedEnd" not sure what to do about this one
 
   /***** LITERALS *****/
-  case class functionRef(name: String, tpe: SILType) extends SILOperator
-  case class dynamicFunctionRef(name: String, tpe: SILType) extends SILOperator
-  case class prevDynamicFunctionRef(name: String, tpe: SILType) extends SILOperator
+  case class functionRef(name: SILFunctionName, tpe: SILType) extends SILOperator
+  case class dynamicFunctionRef(name: SILFunctionName, tpe: SILType) extends SILOperator
+  case class prevDynamicFunctionRef(name: SILFunctionName, tpe: SILType) extends SILOperator
   case class globalAddr(name: String, tpe: SILType) extends SILOperator
   // NSIP: global_value
   case class integerLiteral(tpe: SILType, value: Int) extends SILOperator
@@ -205,8 +205,8 @@ object SILOperator {
   case class initEnumDataAddr(operand: SILOperand, declRef: SILDeclRef) extends SILOperator
   case class injectEnumAddr(operand: SILOperand, declRef: SILDeclRef) extends SILOperator
   case class uncheckedTakeEnumDataAddr(operand: SILOperand, declRef: SILDeclRef) extends SILOperator
-  case class selectEnum(operand: SILOperand, cases: Array[SILCase], tpe: SILType) extends SILOperator
-  case class selectEnumAddr(operand: SILOperand, cases: Array[SILCase], tpe: SILType) extends SILOperator
+  case class selectEnum(operand: SILOperand, cases: Array[SILSwitchEnumCase], tpe: SILType) extends SILOperator
+  case class selectEnumAddr(operand: SILOperand, cases: Array[SILSwitchEnumCase], tpe: SILType) extends SILOperator
 
   /***** PROTOCOL AND PROTOCOL COMPOSITION TYPES *****/
   case class initExistentialAddr(operand: SILOperand, tpe: SILType) extends SILOperator
@@ -270,9 +270,6 @@ object SILOperator {
 
   /***** RUNTIME FAILURES *****/
   case class condFail(operand: SILOperand, message: Option[String]) extends SILOperator
-
-  /***** UNKNOWN FALLBACK *****/
-  case class unknown(name: String) extends SILOperator
 }
 
 sealed trait SILTerminator
@@ -286,10 +283,10 @@ object SILTerminator {
   case class condBr(cond: String,
                     trueLabel: String, trueOperands: Array[SILOperand],
                     falseLabel: String, falseOperands: Array[SILOperand]) extends SILTerminator
-  // TODO: switch_value
+  case class switchValue(operand: SILOperand, cases: Array[SILSwitchValueCase]) extends SILTerminator
   // NSIP: select_value
-  case class switchEnum(operand: SILOperand, cases: Array[SILCase]) extends SILTerminator
-  case class switchEnumAddr(operand: SILOperand, cases: Array[SILCase]) extends SILTerminator
+  case class switchEnum(operand: SILOperand, cases: Array[SILSwitchEnumCase]) extends SILTerminator
+  case class switchEnumAddr(operand: SILOperand, cases: Array[SILSwitchEnumCase]) extends SILTerminator
   case class dynamicMethodBr(operand: SILOperand, declRef: SILDeclRef,
                              namedLabel: String, notNamedLabel: String) extends SILTerminator
   case class checkedCastBr(exact: Boolean, operand: SILOperand, tpe: SILType,
@@ -299,8 +296,6 @@ object SILTerminator {
                                toTpe: SILType, toOperand: SILOperand, succeedLabel: String, failureLabel: String) extends SILTerminator
   case class tryApply(value: String, substitutions: Array[SILType],
                       arguments: Array[String], tpe: SILType, normalLabel: String, errorLabel: String) extends SILTerminator
-
-  case class unknown(name: String) extends SILTerminator
 }
 
 sealed trait SILInstruction
@@ -332,10 +327,16 @@ object SILCastConsumptionKind {
 
 class SILArgument(val valueName: String, val tpe: SILType)
 
-sealed trait SILCase
-object SILCase {
-  case class cs(declRef: SILDeclRef, result: String) extends SILCase
-  case class default(result: String) extends SILCase
+sealed trait SILSwitchEnumCase
+object SILSwitchEnumCase {
+  case class cs(declRef: SILDeclRef, result: String) extends SILSwitchEnumCase
+  case class default(result: String) extends SILSwitchEnumCase
+}
+
+sealed trait SILSwitchValueCase
+object SILSwitchValueCase {
+  case class cs(value: String, label: String) extends SILSwitchValueCase
+  case class default(label: String) extends SILSwitchValueCase
 }
 
 sealed trait SILConvention
@@ -345,6 +346,7 @@ object SILConvention {
   case object thin extends SILConvention
   case object block extends SILConvention
   case class witnessMethod(tpe: SILType) extends SILConvention
+  case object objc extends SILConvention
 }
 
 sealed trait SILDebugAttribute
@@ -369,7 +371,7 @@ object SILDeclKind {
   case object setter extends SILDeclKind
 }
 
-class SILDeclRef(val name: Array[String], val kind: Option[SILDeclKind], val level: Option[Int])
+class SILDeclRef(val name: Array[String], val kind: Option[SILDeclKind], val level: Option[Int], val foreign: Boolean = false)
 
 sealed trait SILEncoding
 object SILEncoding {
@@ -384,6 +386,13 @@ object SILEnforcement {
   case object static extends SILEnforcement
   case object unknown extends SILEnforcement
   case object unsafe extends SILEnforcement
+}
+
+class SILFunctionName(val mangled: String) {
+  val demangled: String = {
+    // TODO: ship demangler with SWAN
+    ("/Library/Developer/CommandLineTools/usr/bin/swift-demangle -compact \'" + mangled + '\'').!!.replaceAll(System.lineSeparator(), "")
+  }
 }
 
 sealed trait SILFunctionAttribute
@@ -441,7 +450,11 @@ object SILType {
   case class genericType(parameters: Array[String], requirements: Array[SILTypeRequirement], tpe: SILType) extends SILType
   case class namedType(name: String) extends SILType
   case class selectType(tpe: SILType, name: String) extends SILType
+  // This isn't in SIL.rst. e.g. "[..] -> (inserted: Bool, memberAfterInsert: Self.Element) [...]"
+  // named is SILType because of how parseNakedType works. Should just be namedType always, though.
+  // case class namedArgType(name: String, tpe: SILType) extends SILType
   case object selfType extends SILType
+  case object selfTypeOptional extends SILType
   case class specializedType(tpe: SILType, arguments: Array[SILType]) extends SILType
   case class tupleType(parameters: Array[SILType]) extends SILType
   case class withOwnership(attribute: SILTypeAttribute, tpe: SILType) extends SILType
@@ -472,6 +485,12 @@ object SILTypeAttribute {
   case object error extends SILTypeAttribute
   case object objcMetatype extends SILTypeAttribute
   case object silWeak extends SILTypeAttribute
+  case object dynamicSelf extends SILTypeAttribute
+  // type-specifier -> 'inout' | '__owned' | '__unowned'
+  // Not in SIL.rst but used in naked types. e.g. "[...] -> (__owned Self) [..]"
+  case object typeSpecifierInOut extends SILTypeAttribute
+  case object typeSpecifierOwned extends SILTypeAttribute
+  case object typeSpecifierUnowned extends SILTypeAttribute
 }
 
 sealed trait SILAllocAttribute
@@ -511,3 +530,23 @@ object SILStoreOwnership {
   case object trivial extends SILStoreOwnership
 }
 
+class SILWitnessTable(val linkage: SILLinkage, val attribute: Option[SILFunctionAttribute],
+                      val normalProtocolConformance: SILNormalProtocolConformance, val entries: Array[SILWitnessEntry])
+
+sealed trait SILWitnessEntry
+object SILWitnessEntry {
+  case class baseProtocol(identifier: String, pc: SILProtocolConformance) extends SILWitnessEntry
+  case class method(declRef: SILDeclRef, declType: SILType, functionName: SILFunctionName) extends SILWitnessEntry
+  case class associatedType(identifier0: String, identifier1: String) extends SILWitnessEntry
+  case class associatedTypeProtocol(identifier0: String, identifier1: String, pc: SILProtocolConformance) extends SILWitnessEntry
+}
+
+class SILNormalProtocolConformance(val tpe: SILType, val protocol: String, val module: String)
+
+sealed trait SILProtocolConformance
+object SILProtocolConformance {
+  case class normal(pc: SILNormalProtocolConformance) extends SILProtocolConformance
+  case class inherit(pc: SILProtocolConformance) extends SILProtocolConformance
+  case class specialize(substitutions: Array[SILType], pc: SILProtocolConformance) extends SILProtocolConformance
+  case object dependent extends SILProtocolConformance
+}

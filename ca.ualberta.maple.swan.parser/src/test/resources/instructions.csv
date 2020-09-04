@@ -36,17 +36,6 @@ store %31 to %58 : $*Array<Card>, loc "/Users/abdulalib/Documents/swan-spds/benc
 
 end_borrow %1 : $Builtin.NativeObject~
 
-assign %0 to %1 : $*Int~
-
-# From SIL.rst
-assign_by_wrapper %0 : $S to %1 : $*T, init %2 : $F, set %3 : $G~
-
-%3 = mark_uninitialized [rootself] %0 : $RootClassWithIVars~
-
-mark_function_escape undef : $*(), loc "undef.sil":3:4, scope 1~
-mark_function_escape %ba : $*Int~
-mark_function_escape %ba : $*Int, %ca : $*Int~
-
 copy_addr [take] %105 to [initialization] %107 : $*UUID, loc "/Users/abdulalib/Documents/swan-spds/benchmark/mobile-ios-vipergame/Memory/Modules/Game/Application Logic/Entity/Card.swift":35:25, scope 820 // id: %108~
 
 destroy_addr %28 : $*DispatchWorkItemFlags, loc "/Users/abdulalib/Documents/swan-spds/benchmark/mobile-ios-vipergame/Memory/Utilities/UIImage.swift":89:9, scope 877 // id: %47~
@@ -97,14 +86,13 @@ store_weak %54 to [initialization] %53 : $*@sil_weak Optional<UIViewController>,
 
 # Missing "class_method"
 
-# Not yet implemented
+# Failing
 # %35 = objc_method %33 : $UIViewController, #UIViewController.present!1.foreign : (UIViewController) -> (UIViewController, Bool, (() -> ())?) -> (), $@convention(objc_method) (UIViewController, Bool, Optional<@convention(block) () -> ()>, UIViewController) -> (), loc "/Users/abdulalib/Documents/swan-spds/benchmark/mobile-ios-vipergame/Memory/Utilities/ErrorAlert.swift":36:19, scope 1786 // user: %36~
 
-# Not yet implemented
-# %45 = objc_super_method %1 : $CardCell, #UICollectionViewCell.init!initializer.1.foreign : (UICollectionViewCell.Type) -> (NSCoder) -> UICollectionViewCell?, $@convention(objc_method) (NSCoder, @owned UICollectionViewCell) -> @owned Optional<UICollectionViewCell>, scope 908 // user: %46~
+%45 = objc_super_method %1 : $CardCell, #UICollectionViewCell.init!initializer.1.foreign : (UICollectionViewCell.Type) -> (NSCoder) -> UICollectionViewCell?, $@convention(objc_method) (NSCoder, @owned UICollectionViewCell) -> @owned Optional<UICollectionViewCell>, scope 908 // user: %46~
 
-# TODO: Failing
-# %52 = witness_method $DispatchWorkItemFlags, #SetAlgebra.init!allocator.1 : <Self where Self : SetAlgebra><S where S : Sequence, Self.Element == S.Element> (Self.Type) -> (__owned S) -> Self : $@convention(witness_method: SetAlgebra) <τ_0_0 where τ_0_0 : SetAlgebra><τ_1_0 where τ_1_0 : Sequence, τ_0_0.Element == τ_1_0.Element> (@in τ_1_0, @thick τ_0_0.Type) -> @out τ_0_0, scope 867 // user: %55~
+%52 = witness_method $DispatchWorkItemFlags, #SetAlgebra.init!allocator.1 : <Self where Self : SetAlgebra><S where S : Sequence, Self.Element == S.Element> (Self.Type) -> (__owned S) -> Self : $@convention(witness_method: SetAlgebra) <τ_0_0 where τ_0_0 : SetAlgebra><τ_1_0 where τ_1_0 : Sequence, τ_0_0.Element == τ_1_0.Element> (@in τ_1_0, @thick τ_0_0.Type) -> @out τ_0_0, scope 867 // user: %55~
+witness_method $Self, #Comparable."<="!1 : <Self where Self : Comparable> (Self.Type) -> (Self, Self) -> Bool : $@convention(witness_method: Comparable) <τ_0_0 where τ_0_0 : Comparable> (@in_guaranteed τ_0_0, @in_guaranteed τ_0_0, @thick τ_0_0.Type) -> Bool~
 
 %149 = apply %148<[Int], PartialRangeFrom<Int>>(%143, %146, %144) : $@convention(method) <τ_0_0 where τ_0_0 : MutableCollection><τ_1_0 where τ_1_0 : RangeExpression, τ_0_0.Index == τ_1_0.Bound> (@in_guaranteed τ_1_0, @in_guaranteed τ_0_0) -> @out τ_0_0.SubSequence~
 %59 = apply %58(%34, %35, %41, %33, %25) : $@convention(method) (@guaranteed Optional<DispatchGroup>, @in_guaranteed DispatchQoS, @in_guaranteed DispatchWorkItemFlags, @guaranteed @convention(block) () -> (), @guaranteed DispatchQueue) -> (), loc "/Users/abdulalib/Documents/swan-spds/benchmark/mobile-ios-vipergame/Memory/Utilities/UIImage.swift":56:32, scope 861~
@@ -264,15 +252,14 @@ br bb4(%92 : $Builtin.Int64, %93 : $Builtin.Int64), scope 459 // id: %154~
 cond_br %101, bb10, bb14, scope 459             // id: %102~
 
 # Not yet implemented
-# switch_value %1 : $Builtin.Word, case %1: bb1, case %2: bb2~
-# need switch_value example with sil-switch-value-case and sil-switch-default
+switch_value %1 : $Builtin.Word, case %1: bb1, case %2: bb2~
+switch_value %3 : $Builtin.Int32, case %1: bb1, case %2: bb2, default bb3~
 
 switch_enum %91 : $Optional<FloatingPointSign>, case #Optional.some!enumelt.1: bb23, case #Optional.none!enumelt: bb22, scope 123 // id: %92~
 
 switch_enum_addr %52 : $*Optional<S.Element>, case #Optional.some!enumelt.1: bb8, case #Optional.none!enumelt: bb7, scope 58 // id: %54~
 
-# declref "#ProtocolA.funcA!foreign" causes failure
-# dynamic_method_br %0 : $ProtocolA, #ProtocolA.funcA!foreign, bb1, bb2~
+dynamic_method_br %0 : $ProtocolA, #ProtocolA.funcA!foreign, bb1, bb2~
 # @opened types not supported
 # dynamic_method_br %2 : $@opened("01234567-89ab-cdef-0123-000000000000") AnyObject, #X.f!foreign, bb1, bb2~
 
@@ -280,8 +267,7 @@ checked_cast_br %33 : $AnyObject to $NSDictionary, bb6, bb7, scope 125 // id: %3
 
 checked_cast_addr_br take_always Any in %97 : $*Any to NSDictionary in %99 : $*NSDictionary, bb6, bb7, loc "/Users/abdulalib/Documents/swan-spds/benchmark/mobile-ios-vipergame/Memory/Utilities/File.swift":55:77, scope 251 // id: %100~
 
-# Not yet implemented
-# try_apply %6<Element, R>(%3, %5, %2) : $@convention(method) <τ_0_0><τ_1_0> (@noescape @callee_guaranteed (UnsafeBufferPointer<τ_0_0>) -> (@out τ_1_0, @error Error), @guaranteed Array<τ_0_0>) -> (@out τ_1_0, @error Error), normal bb2, error bb1, scope 2 // id: %7~
+try_apply %6<Element, R>(%3, %5, %2) : $@convention(method) <τ_0_0><τ_1_0> (@noescape @callee_guaranteed (UnsafeBufferPointer<τ_0_0>) -> (@out τ_1_0, @error Error), @guaranteed Array<τ_0_0>) -> (@out τ_1_0, @error Error), normal bb2, error bb1, scope 2 // id: %7~
 
 
 
