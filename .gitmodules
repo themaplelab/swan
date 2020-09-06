@@ -1,0 +1,3 @@
+[submodule "ca.ualberta.maple.swan.parser/src/test/resources/xcodeproj/swift-2048"]
+	path = ca.ualberta.maple.swan.parser/src/test/resources/xcodeproj/swift-2048
+	url = https://github.com/austinzheng/swift-2048

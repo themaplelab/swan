@@ -23,7 +23,7 @@ import subprocess
 from subprocess import Popen, PIPE, STDOUT
 
 XCODEBUILD_LOG_FILE="xcodebuild.log"
-OUTPUT_SIL_FOLDER="sil/"
+OUTPUT_SIL_FOLDER="/sil/"
 
 def info(msg, prepend = ""):
   sys.stdout.write(prepend + "[swan-xcodebuild] " + msg + "\n")
@@ -32,19 +32,36 @@ def error_info(msg, prepend = ""):
   sys.stderr.write("[swan-xcodebuild] ERROR: " + msg + "\n")
 
 def extract_sil():
+  # Write the SIL to the directory of the xcodeproj
+  
+  # Get the directory the xcodeproj is in (this is a bit janky).
+  project_dir = ""
+  for arg in sys.argv[1:]:
+    if arg.endswith(".xcodeproj") or arg.endswith(".xcodeproj/"):
+      # in case xcodeproj ends with "/", which would mess up splitting
+      arg = arg.split(".xcodeproj")[0]
+      project_dir = "."
+      if os.path.sep in arg:
+        project_dir = arg.rsplit(os.path.sep, 1)[0]
+      break
+  if project_dir == "":
+    error_info("FATAL: No *.xcodeproj found in args")
+    exit(1)
+  output_folder = project_dir + OUTPUT_SIL_FOLDER
+
   with open(XCODEBUILD_LOG_FILE, "r") as f:
     lines = f.read()
     split_lines = re.split(r"\s*\*\*\* SIL module[^\n]*\n", lines)
     # remove the first element
     split_lines = split_lines[1:]
-    if os.path.exists(OUTPUT_SIL_FOLDER):
-      shutil.rmtree(OUTPUT_SIL_FOLDER)
-    os.makedirs(OUTPUT_SIL_FOLDER)
+    if os.path.exists(output_folder):
+      shutil.rmtree(output_folder)
+    os.makedirs(output_folder)
     for i in range(0, len(split_lines)):
-      with open(OUTPUT_SIL_FOLDER + str(i) + ".sil", "w") as sil:
+      with open(output_folder + str(i) + ".sil", "w") as sil:
         remove_non_sil = re.split(r"CompileSwift", split_lines[1])[0]
         sil.write(remove_non_sil+"\n")
-    info("SIL written to " + OUTPUT_SIL_FOLDER)
+    info("SIL written to " + output_folder)
 
 def run_xcodebuild_cmd():
   code_sign = "CODE_SIGN_IDENTITY=\"\" CODE_SIGNING_REQUIRED=NO CODE_SIGNING_ALLOWED=NO"

@@ -81,13 +81,41 @@ public class ParserTests {
         String testFilePath = "swift/ArrayAccess1.swift";
         File testFile = new File(getClass().getClassLoader()
                 .getResource(testFilePath).toURI());
-        String swanSwiftcPath = "symlink-utils/swan-swiftc";
         File swanSwiftcFile = new File(getClass().getClassLoader()
-                .getResource(swanSwiftcPath).toURI());
+                .getResource("symlink-utils/swan-swiftc").toURI());
         Process p = Runtime.getRuntime().exec("python " + swanSwiftcFile.getAbsolutePath() + " " + testFile.getAbsolutePath());
         p.waitFor();
         readFile("swift/ArrayAccess1.swift.sil");
         Assertions.assertTrue(true);
+    }
+
+    // This test uses swan-xcodebuild to generate SIL for all xcodeprojects.
+    // The format of the csv is
+    // <xcodeproj_path>, <scheme>, <optional_xcodebuild_args>
+    // The CSV can contain comments as long as they start with "#".
+    // TODO: Separate into slow test suite.
+    @ParameterizedTest
+    @CsvFileSource(resources = "xcodeproj/projects.csv")
+    void getSILForAllXcodeProjects(String xcodeproj, String scheme, String optionalArgs) throws URISyntaxException, IOException {
+        String projectPath = "xcodeproj/" + xcodeproj;
+        File testProjectFile = new File(getClass().getClassLoader()
+                .getResource(projectPath).toURI());
+        File swanXcodebuildFile = new File(getClass().getClassLoader()
+                .getResource("symlink-utils/swan-xcodebuild").toURI());
+        ProcessBuilder pb = new ProcessBuilder("python",
+                swanXcodebuildFile.getAbsolutePath(),
+                "-project", testProjectFile.getAbsolutePath(), "-scheme", scheme,
+                optionalArgs != null ? optionalArgs : "");
+        pb.inheritIO();
+        Process p = null;
+        try {
+            p = pb.start();
+            p.waitFor();
+        } catch (InterruptedException e) {
+            p.destroy();
+        }
+        // Check exit code for now
+        Assertions.assertEquals(p.exitValue(), 0);
     }
 
     // Account for any known transformations that the parser does,
@@ -122,5 +150,4 @@ public class ParserTests {
         }
         return result.toString();
     }
-
 }
