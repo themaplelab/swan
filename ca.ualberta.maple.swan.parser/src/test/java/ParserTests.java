@@ -17,9 +17,6 @@ import org.junit.jupiter.params.provider.CsvFileSource;
 
 import java.io.*;
 import java.net.URISyntaxException;
-import java.nio.file.Files;
-import java.util.Objects;
-import java.util.stream.Collectors;
 
 public class ParserTests {
 
@@ -31,7 +28,7 @@ public class ParserTests {
     @ParameterizedTest
     // Use '~' because it's never used in SIL (I think).
     // Although, it might be used in a string (e.g. string_literal).
-    @CsvFileSource(resources = "instructions.csv", delimiter = '~')
+    @CsvFileSource(resources = "sil/instructions.csv", delimiter = '~')
     void testSingleInstruction(String inst, String compareTo) throws Error {
         SILParser parser = new SILParser(inst);
         SILInstructionDef i = parser.parseInstructionDef();
@@ -59,7 +56,7 @@ public class ParserTests {
     @Test
     void testFunctionParsing() throws Error, NullPointerException, URISyntaxException {
         File testFile = new File(getClass().getClassLoader()
-                .getResource("programs/function1.sil").toURI());
+                .getResource("sil/function1.sil").toURI());
         SILParser parser = new SILParser(testFile.toPath());
         SILFunction function = parser.parseFunction();
         Assertions.assertTrue(true); // Just check we don't blow up for now
@@ -68,7 +65,7 @@ public class ParserTests {
     // Test parsing witness table
     @Test
     void testWitnessTableParsing() throws Error, NullPointerException, URISyntaxException, IOException {
-        String testFilePath = "programs/witness-table1.sil";
+        String testFilePath = "sil/witness-table1.sil";
         File testFile = new File(getClass().getClassLoader()
                 .getResource(testFilePath).toURI());
         SILParser parser = new SILParser(testFile.toPath());
@@ -76,6 +73,21 @@ public class ParserTests {
         String parsedTable = PrintExtensions$.MODULE$.WitnessTablePrinter(table).description();
         String expected = readFile(testFilePath);
         Assertions.assertEquals(expected, parsedTable);
+    }
+
+    // Test that the sym-linked swan-swiftc tool doesn't blow up.
+    @Test
+    void getSILUsingSwanSwiftc() throws IOException, URISyntaxException, InterruptedException {
+        String testFilePath = "swift/ArrayAccess1.swift";
+        File testFile = new File(getClass().getClassLoader()
+                .getResource(testFilePath).toURI());
+        String swanSwiftcPath = "symlink-utils/swan-swiftc";
+        File swanSwiftcFile = new File(getClass().getClassLoader()
+                .getResource(swanSwiftcPath).toURI());
+        Process p = Runtime.getRuntime().exec("python " + swanSwiftcFile.getAbsolutePath() + " " + testFile.getAbsolutePath());
+        p.waitFor();
+        readFile("swift/ArrayAccess1.swift.sil");
+        Assertions.assertTrue(true);
     }
 
     // Account for any known transformations that the parser does,
@@ -96,6 +108,11 @@ public class ParserTests {
         StringBuilder result = new StringBuilder();
         String line;
         while((line = reader.readLine()) != null) {
+            // Empty line, preserve empty lines
+            if (line.trim().isEmpty()) {
+                result.append(System.lineSeparator());
+                continue;
+            }
             line = doReplacements(line);
             // For commented out lines
             if (line.trim().length() > 0) {
