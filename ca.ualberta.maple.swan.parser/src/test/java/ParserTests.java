@@ -71,7 +71,7 @@ public class ParserTests {
         SILParser parser = new SILParser(testFile.toPath());
         SILWitnessTable table = parser.parseWitnessTable();
         String parsedTable = PrintExtensions$.MODULE$.WitnessTablePrinter(table).description();
-        String expected = readFile(testFilePath);
+        String expected = readFile(testFile);
         Assertions.assertEquals(expected, parsedTable);
     }
 
@@ -85,8 +85,9 @@ public class ParserTests {
                 .getResource("symlink-utils/swan-swiftc").toURI());
         Process p = Runtime.getRuntime().exec("python " + swanSwiftcFile.getAbsolutePath() + " " + testFile.getAbsolutePath());
         p.waitFor();
-        readFile("swift/ArrayAccess1.swift.sil");
-        Assertions.assertTrue(true);
+        // Check exit code for now
+        Assertions.assertEquals(p.exitValue(), 0);
+        readFile(testFile);
     }
 
     // This test uses swan-xcodebuild to generate SIL for all xcodeprojects.
@@ -116,6 +117,15 @@ public class ParserTests {
         }
         // Check exit code for now
         Assertions.assertEquals(p.exitValue(), 0);
+
+        // Iterate through SIL files
+        File silDir = new File(testProjectFile.getParentFile().getAbsoluteFile() + "/sil/");
+        Assertions.assertTrue(silDir.exists());
+        File[] silFiles = silDir.listFiles();
+        Assertions.assertNotEquals(null, silFiles);
+        for (File sil : silFiles) {
+            readFile(sil);
+        }
     }
 
     // Account for any known transformations that the parser does,
@@ -129,8 +139,8 @@ public class ParserTests {
         return inst;
     }
 
-    String readFile(String filename) throws IOException {
-        InputStream in = getClass().getClassLoader().getResourceAsStream(filename);
+    String readFile(File file) throws IOException {
+        InputStream in = new FileInputStream(file);
         assert in != null;
         BufferedReader reader = new BufferedReader(new InputStreamReader(in));
         StringBuilder result = new StringBuilder();
