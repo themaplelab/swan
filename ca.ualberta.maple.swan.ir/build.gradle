@@ -20,7 +20,6 @@ sourceSets {
 
 dependencies {
     implementation project(":ca.ualberta.maple.swan.parser")
-    implementation project(":ca.ualberta.maple.swan.utils")
 
     implementation 'org.scala-lang:scala-library:2.13.3'
 

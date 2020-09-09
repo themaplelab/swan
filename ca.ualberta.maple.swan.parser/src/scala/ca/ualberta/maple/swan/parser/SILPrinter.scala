@@ -10,12 +10,10 @@
 
 package ca.ualberta.maple.swan.parser
 
-import ca.ualberta.maple.swan.utils.ExceptionReporter
-import ca.ualberta.maple.swan.parser.Error
-
+// Many printX will return the description for convenience.
 class SILPrinter extends Printer {
 
-  def print(module: SILModule): Unit = {
+  def print(module: SILModule): String = {
     print("sil_stage canonical")
     print("\n\n")
     module.imports.foreach(imprt => {
@@ -31,9 +29,10 @@ class SILPrinter extends Printer {
       print(f)
       print("\n\n")
     })
+    description
   }
 
-  def print(function: SILFunction): Unit = {
+  def print(function: SILFunction): String = {
     print("sil ")
     print(function.linkage)
     print(whenEmpty = false, "", function.attributes, " ", " ", (attribute: SILFunctionAttribute) => print(attribute))
@@ -41,9 +40,10 @@ class SILPrinter extends Printer {
     print(" : ")
     print(function.tpe)
     print(whenEmpty = false, " {\n", function.blocks, "\n", "}", (block: SILBlock) => print(block))
+    description + "\n" // newline for testing comparison
   }
 
-  def print(block: SILBlock): Unit = {
+  def print(block: SILBlock): String = {
     print(block.identifier)
     print(whenEmpty = false, "(", block.arguments, ", ", ")", (arg: SILArgument) => print(arg))
     print(":")
@@ -56,19 +56,30 @@ class SILPrinter extends Printer {
     print(block.terminatorDef)
     print("\n")
     unindent()
+    description
   }
 
-  def print(operatorDef: SILOperatorDef): Unit = {
+  def print(instructionDef: SILInstructionDef): String = {
+    instructionDef match {
+      case SILInstructionDef.operator(operatorDef) => print(operatorDef)
+      case SILInstructionDef.terminator(terminatorDef) => print(terminatorDef)
+    }
+    description
+  }
+
+  def print(operatorDef: SILOperatorDef): String = {
     print(operatorDef.result, " = ", (r: SILResult) => {
       print(r)
     })
     print(operatorDef.operator)
     print(operatorDef.sourceInfo, (si: SILSourceInfo) => print(si))
+    description
   }
 
-  def print(terminatorDef: SILTerminatorDef): Unit = {
+  def print(terminatorDef: SILTerminatorDef): String = {
     print(terminatorDef.terminator)
     print(terminatorDef.sourceInfo, (si: SILSourceInfo) => print(si))
+    description
   }
 
   def print(op: SILOperator): Unit = {
@@ -896,7 +907,7 @@ class SILPrinter extends Printer {
     }
   }
 
-  def print(globalVariable: SILGlobalVariable): Unit = {
+  def print(globalVariable: SILGlobalVariable): String = {
     print("sil_global ")
     print(globalVariable.linkage)
     print(globalVariable.globalName)
@@ -913,9 +924,10 @@ class SILPrinter extends Printer {
       print("}")
     }
     print("\n\n")
+    description
   }
 
-  def print(witnessTable: SILWitnessTable): Unit = {
+  def print(witnessTable: SILWitnessTable): String = {
     print("sil_witness_table ")
     print(witnessTable.linkage)
     if(witnessTable.attribute.nonEmpty) {
@@ -931,6 +943,7 @@ class SILPrinter extends Printer {
     })
     unindent()
     print("}\n")
+    description
   }
 
   def print(witnessEntry: SILWitnessEntry): Unit = {
@@ -1309,8 +1322,7 @@ class SILPrinter extends Printer {
         print(whenEmpty = true, "(", params, ", ", ")", (t: SILType) => naked(t))
       }
       case SILType.withOwnership(_, _) => {
-        // Note: "fatalError" in Swift, but I think exception is okay here.
-        ExceptionReporter.report(new Exception("Types with ownership should be printed before naked type print!"))
+        throw new Error("<printing>", "Types with ownership should be printed before naked type print!")
       }
     }
   }

@@ -14,15 +14,13 @@ import java.nio.charset.StandardCharsets
 import java.nio.file.{Files, Path}
 import java.util
 
-import ca.ualberta.maple.swan.utils.ExceptionReporter
-
 import scala.collection.mutable.ArrayBuffer
 import scala.reflect.ClassTag
 import scala.util.control.Breaks
 
 // TODO: Parse v tables
 // Canonical SIL Parser. Does not parse sil_scope.
-class SILParser {
+class SILParser extends SILPrinter {
 
   // Default constructor should not be called.
   // I can't think of an elegant way to address the exclusive or
@@ -39,7 +37,7 @@ class SILParser {
     val data : Array[Byte] = if (Files.exists(path)) {
       Files.readAllBytes(path: Path)
     } else {
-      ExceptionReporter.report(new Error(this.path, "file not found"))
+      throw parseError("file not found: " + this.path)
       null
     }: Array[Byte]
     val text = new String(data, StandardCharsets.UTF_8)
@@ -66,7 +64,7 @@ class SILParser {
   @throws[Error]
   protected def take(query: String, skip: Boolean = true): Unit = {
     if (!peek(query)) {
-      ExceptionReporter.report(new Error(path, query + " expected"))
+      throw parseError(query + " expected")
     }
     cursor += query.length
     if (skip) {
@@ -188,9 +186,14 @@ class SILParser {
 
   protected def parseError(message: String, at: Option[Int] = None): Error = {
     val position = if (at.isDefined) at.get else cursor
-    val newlines = chars.take(position).filter(_ == '\n')
+    var newlines: Array[Int] = new Array(0)
+    chars.take(position).zipWithIndex.foreach(charIdx => {
+      if (charIdx._1 == '\n') {
+        newlines = newlines :+ charIdx._2
+      }
+    })
     val line = newlines.length + 1
-    val column = position - (if (chars.lastIndexOf('\n') == - 1) 0 else chars.lastIndexOf('\n')) + 1
+    val column = position - (if (newlines.isEmpty) 0 else newlines.last)
     new Error(path, line, column, message)
   }
 
@@ -2029,8 +2032,8 @@ class Error(path : String, message : String) extends Exception {
       return path + ": " + message
     }
     if (column.isEmpty) {
-      return path + ":" + line + ": " + message
+      return path + ":" + line.get + ": " + message
     }
-    path + ":" + line + ":" + column + ": " + message
+    path + ":" + line.get + ":" + column.get + ": " + message
   }
 }
