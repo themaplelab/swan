@@ -522,6 +522,18 @@ class SILPrinter extends Printer {
         print(", ")
         print(declRef)
       }
+      case SILOperator.objct(tpe, operands, tailElems) => {
+        print("object ")
+        print(tpe)
+        print(whenEmpty = true, " (", operands, ", ", "", (o: SILOperand) => print(o))
+        if (tailElems.length > 0) {
+          if (operands.length > 0) {
+            print(", ")
+          }
+          print("[tail_elems] ")
+        }
+        print(whenEmpty = true, "", tailElems, ", ", ")", (o: SILOperand) => print(o))
+      }
       case SILOperator.refElementAddr(immutable, operand, declRef) => {
         print("ref_element_addr ")
         if (immutable) print("[immutable] ")
@@ -733,6 +745,10 @@ class SILPrinter extends Printer {
         print(" to ")
         print(tpe)
       }
+      case SILOperator.valueToBridgeObject(operand) => {
+        print("value_to_bridge_object ")
+        print(operand)
+      }
       case SILOperator.thinToThickFunction(operand, tpe) => {
         print("thin_to_thick_function ")
         print(operand)
@@ -910,11 +926,13 @@ class SILPrinter extends Printer {
   def print(globalVariable: SILGlobalVariable): String = {
     print("sil_global ")
     print(globalVariable.linkage)
+    print("[serialized] ", when = globalVariable.serialized)
+    print("[let] ", when = globalVariable.let)
     print(globalVariable.globalName)
     print(" : ")
     print(globalVariable.tpe)
     if (globalVariable.instructions.nonEmpty) {
-      print(" {\n")
+      print(" = {\n")
       indent()
       globalVariable.instructions.get.foreach(instruction => {
         print(instruction)

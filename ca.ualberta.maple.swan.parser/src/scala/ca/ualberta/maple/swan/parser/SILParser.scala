@@ -209,10 +209,6 @@ class SILParser extends SILPrinter {
     var globalVariables = Array[SILGlobalVariable]()
     var done = false
     while(!done) {
-      // tensorflow: T0D0(#8): Parse sections of SIL printouts that don't start with "sil @".
-      // Meanwhile, skip those sections since we don't have a representation for them yet.
-      // Concretely: if the current line begins with "sil @", try to parse a Function.
-      // Otherwise, skip to the end of line and repeat.
       if(peek("sil ")) {
         val function = parseFunction()
         functions :+= function
@@ -324,13 +320,18 @@ class SILParser extends SILPrinter {
   def parseGlobalVariable(): SILGlobalVariable = {
     take("sil_global")
     val linkage = parseLinkage()
+    val serialized = skip("[serialized]")
+    val let = skip("[let]")
     val name = parseMangledName()
     take(":")
     val tpe = parseType()
-    val entries: Option[Array[SILOperatorDef]] = parseNilOrMany("{", "", "}", () => {
-      parseInstructionDef().asInstanceOf[SILInstructionDef.operator].operatorDef
-    })
-    new SILGlobalVariable(linkage, name, tpe, entries)
+    var entries: Option[Array[SILOperatorDef]] = None
+    if (skip("=")) {
+      entries = parseNilOrMany("{", "", "}", () => {
+        parseInstructionDef().asInstanceOf[SILInstructionDef.operator].operatorDef
+      })
+    }
+    new SILGlobalVariable(linkage, serialized, let, name, tpe, entries)
   }
 
   // https://github.com/apple/swift/blob/master/docs/SIL.rst#witness-tables
@@ -655,7 +656,7 @@ class SILParser extends SILPrinter {
       case "integer_literal" => {
         val tpe = parseType()
         take(",")
-        val value = parseInt()
+        val value = parseBigInt()
         SILInstruction.operator(SILOperator.integerLiteral(tpe, value))
       }
       case "float_literal" => {
@@ -877,7 +878,23 @@ class SILParser extends SILPrinter {
         throw parseError("unhandled instruction") // NSIP
       }
       case "object" => {
-        throw parseError("unhandled instruction") // NSIP
+        val tpe = parseType()
+        var operands: Array[SILOperand] = Array()
+        var tailElems: Array[SILOperand] = Array()
+        var tail = false
+        parseMany("(",",",")", () => {
+          if (skip("[tail_elems]")) {
+            tail = true
+          }
+          val op = parseOperand()
+          if (tail) {
+            tailElems :+= op
+          } else {
+            operands :+= op
+          }
+          ()
+        })
+        SILInstruction.operator(SILOperator.objct(tpe, operands, tailElems))
       }
       case "ref_element_addr" => {
         val immutable: Boolean = skip("[immutable]")
@@ -1144,7 +1161,8 @@ class SILParser extends SILPrinter {
         throw parseError("unhandled instruction") // NSIP
       }
       case "value_to_bridge_object" => {
-        throw parseError("unhandled instruction") // NSIP
+        val operand = parseOperand()
+        SILInstruction.operator(SILOperator.valueToBridgeObject(operand))
       }
       case "ref_to_bridge_object" => {
         throw parseError("unhandled instruction") // NSIP
@@ -1552,6 +1570,7 @@ class SILParser extends SILPrinter {
   }
 
   // Reverse-engineered from -emit-sil
+  // DT: I don't think this is complete based on SIL.rst.
   @throws[Error]
   def parseFunctionAttribute(): SILFunctionAttribute = {
     @throws[Error]
@@ -1594,7 +1613,7 @@ class SILParser extends SILPrinter {
         return new SILMangledName(name)
       }
     }
-    throw parseError("function name expected", Some(start))
+    throw parseError("function or global name expected", Some(start))
   }
 
   // https://github.com/apple/swift/blob/master/docs/SIL.rst#values-and-operands
@@ -1618,11 +1637,24 @@ class SILParser extends SILPrinter {
     // tensorflow: T0D0(#26): Make number parsing more thorough.
     val start = position()
     val radix = if(skip("0x")) 16 else 10
-    val s = take(x => x == '-' || x == '+' || Character.digit(x, 16) != -1)
+    val s = take(x => (x == '-') || (x == '+') || (Character.digit(x, 16) != -1))
     try {
-      return Integer.parseInt(s, radix)
+      Integer.parseInt(s, radix)
     } catch {
-      case _ : Throwable => throw parseError("integer literal expected", Some(start))
+      case _ : Throwable => throw parseError("integer literal expected: " + s, Some(start))
+    }
+  }
+
+  @throws[Error]
+  def parseBigInt(): BigInt = {
+    // tensorflow: T0D0(#26): Make number parsing more thorough.
+    val start = position()
+    val radix = if(skip("0x")) 16 else 10
+    val s = take(x => (x == '-') || (x == '+') || (Character.digit(x, 16) != -1))
+    try {
+      BigInt(s, radix)
+    } catch {
+      case _ : Throwable => throw parseError("integer literal expected: " + s, Some(start))
     }
   }
 

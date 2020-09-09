@@ -72,7 +72,7 @@ class SILToRawSWANIR extends ISILToRawSWANIR {
   }
 
   override protected def visitAllocGlobal(r: Option[SILResult], I: SILOperator.allocGlobal): Array[InstructionDef] = {
-    makeOperator(new Operator.newGlobal(I.name))
+    makeOperator(new Operator.newGlobal(I.name.demangled))
   }
 
   override protected def visitDeallocStack(r: Option[SILResult], I: SILOperator.deallocStack): Array[InstructionDef] = {
@@ -243,7 +243,7 @@ class SILToRawSWANIR extends ISILToRawSWANIR {
       assertSILResult(r, 1)
       new Symbol(r.get.valueNames(0), Utils.SILTypeToType(I.tpe))
     }
-    makeOperator(new Operator.assignGlobal(result, I.name))
+    makeOperator(new Operator.assignGlobal(result, I.name.demangled))
   }
 
   override protected def visitIntegerLiteral(r: Option[SILResult], I: SILOperator.integerLiteral): Array[InstructionDef] = {
@@ -419,6 +419,10 @@ class SILToRawSWANIR extends ISILToRawSWANIR {
     makeOperator(new Operator.fieldRead(result, false, I.operand.value, Utils.SILStructFieldDeclRefToString(I.declRef)))
   }
 
+  override protected def visitObject(r: Option[SILResult], I: SILOperator.objct): Array[InstructionDef] = {
+    null
+  }
+
   override protected def visitRefElementAddr(r: Option[SILResult], I: SILOperator.refElementAddr): Array[InstructionDef] = {
     null
   }
@@ -540,6 +544,10 @@ class SILToRawSWANIR extends ISILToRawSWANIR {
   }
 
   override protected def visitConvertEscapeToNoEscape(r: Option[SILResult], I: SILOperator.convertEscapeToNoescape): Array[InstructionDef] = {
+    null
+  }
+
+  override protected def visitValueToBridgeObject(r: Option[SILResult], I: SILOperator.valueToBridgeObject): Array[InstructionDef] = {
     null
   }
 

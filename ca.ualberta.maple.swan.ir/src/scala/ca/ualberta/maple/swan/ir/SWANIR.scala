@@ -89,7 +89,7 @@ object BinaryOperation {
 sealed trait Literal
 object Literal {
   case class string(val value: String) extends Literal
-  case class int(val value: Int) extends Literal
+  case class int(val value: BigInt) extends Literal
   case class float(val value: Float) extends Literal
 }
 

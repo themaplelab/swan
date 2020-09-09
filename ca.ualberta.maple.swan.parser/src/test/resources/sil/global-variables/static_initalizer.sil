@@ -1,0 +1,138 @@
+sil_stage canonical
+
+sil_global hidden @$s10access_wmo14internalGlobalSivp : $Int64 = {
+  %0 = integer_literal $Builtin.Int64, 0          // user: %1
+  %initval = struct $Int64 (%0 : $Builtin.Int64)
+}
+
+sil_global @$s10access_wmo12publicGlobalSivp : $Int64 = {
+  %0 = integer_literal $Builtin.Int64, 0          // user: %1
+  %initval = struct $Int64 (%0 : $Builtin.Int64)
+}
+
+sil_global [let] @initialized_let_global : $Int64 = {
+  %0 = integer_literal $Builtin.Int64, 27
+  %initval = struct $Int64 (%0 : $Builtin.Int64)
+}
+
+sil_global @initialized_var_global : $Int64 = {
+  %0 = integer_literal $Builtin.Int64, 27
+  %initval = struct $Int64 (%0 : $Builtin.Int64)
+}
+
+sil_global [let] @initialized_tuple_global : $IntTuple = {
+  %0 = integer_literal $Builtin.Int64, 27
+  %1 = integer_literal $Builtin.Int64, 28
+  %2 = struct $Int64 (%0 : $Builtin.Int64)
+  %3 = struct $Int64 (%1 : $Builtin.Int64)
+  %4 = tuple (%2 : $Int64, %3 : $Int64)
+  %initval = struct $IntTuple (%4 : $(Int64, Int64))
+}
+
+sil_global @$s2ch1xSiv : $Int32 = {
+  %1 = integer_literal $Builtin.Int32, 2
+  %initval = struct $Int32 (%1 : $Builtin.Int32)
+}
+
+sil_global @$s6nested1xAA2S2Vv : $S2 = {
+  %1 = integer_literal $Builtin.Int32, 2
+  %2 = struct $Int32 (%1 : $Builtin.Int32)
+  %3 = integer_literal $Builtin.Int32, 3
+  %4 = struct $Int32 (%3 : $Builtin.Int32)
+  %5 = integer_literal $Builtin.Int32, 4
+  %6 = struct $Int32 (%5 : $Builtin.Int32)
+  %7 = struct $S (%6 : $Int32)
+  %initval = struct $S2 (%2 : $Int32, %4 : $Int32, %7 : $S)
+}
+
+sil_global @static_array : $TestArrayStorage = {
+  %0 = integer_literal $Builtin.Int32, 2
+  %1 = integer_literal $Builtin.Int64, 10
+  %2 = integer_literal $Builtin.Int64, 20
+  %3 = struct $Int32 (%0 : $Builtin.Int32)
+  %4 = struct $Int64 (%1 : $Builtin.Int64)
+  %5 = struct $Int64 (%2 : $Builtin.Int64)
+  %initval = object $TestArrayStorage (%3 : $Int32, [tail_elems] %4 : $Int64, %5 : $Int64)
+}
+
+sil_global @static_aligned_array : $TestArrayStorage = {
+  %0 = integer_literal $Builtin.Int32, 2
+  %1 = float_literal $Builtin.FPIEEE80, 0x3FFE8000000000000000
+  %3 = struct $Int32 (%0 : $Builtin.Int32)
+  %4 = struct $Float80 (%1 : $Builtin.FPIEEE80)
+  %initval = object $TestArrayStorage (%3 : $Int32, [tail_elems] %4 : $Float80)
+}
+
+sil_global @static_class_with_empty_field : $ClassWithEmptyField = {
+  %0 = integer_literal $Builtin.Int32, 2
+  %3 = struct $Int32 (%0 : $Builtin.Int32)
+  %5 = tuple ()
+  %initval = object $ClassWithEmptyField (%3 : $Int32, %5 : $())
+}
+
+sil_global @static_array_with_empty_element : $TestArrayStorage = {
+  %0 = struct $Empty ()                           // users: %7, %7
+  %1 = integer_literal $Builtin.Int32, 2
+  %2 = struct $Int32 (%1 : $Builtin.Int32)
+  %initval = object $TestArrayStorage (%2 : $Int32, [tail_elems] %0 : $Empty, %0 : $Empty)
+}
+
+sil_global [let] @string_with_offset : $MyString = {
+  %0 = integer_literal $Builtin.Int64, -9223372036854775808
+  %1 = integer_literal $Builtin.Int1, 0
+  %2 = integer_literal $Builtin.Int64, 32
+  %3 = string_literal utf8 "abc123asd3sdj3basfasdf"
+  %4 = builtin "ptrtoint_Word"(%3 : $Builtin.RawPointer) : $Builtin.Word
+  %5 = builtin "zextOrBitCast_Word_Int64"(%4 : $Builtin.Word) : $Builtin.Int64
+  %6 = builtin "usub_with_overflow_Int64"(%5 : $Builtin.Int64, %2 : $Builtin.Int64, %1 : $Builtin.Int1) : $(Builtin.Int64, Builtin.Int1)
+  %7 = tuple_extract %6 : $(Builtin.Int64, Builtin.Int1), 0
+  %8 = builtin "stringObjectOr_Int64"(%7 : $Builtin.Int64, %0 : $Builtin.Int64) : $Builtin.Int64
+  %9 = value_to_bridge_object %8 : $Builtin.Int64
+  %initval = struct $MyString (%9 : $Builtin.BridgeObject)
+}
+
+sil_global hidden @global : $T = {
+  %2 = integer_literal $Builtin.Int1, 0
+  %3 = integer_literal $Builtin.Int32, 0
+  %initval = struct $T (%2 : $Builtin.Int1, %3 : $Builtin.Int32)
+}
+
+sil_global @$s25accessed_storage_analysis13static_globalSivp : $Int64 = {
+  %0 = integer_literal $Builtin.Int64, 0
+  %initval = struct $Int64 (%0 : $Builtin.Int64)
+}
+
+sil_global hidden @gvar : $Int64 = {
+  %0 = integer_literal $Builtin.Int64, 0
+  %initval = struct $Int (%0 : $Builtin.Int64)
+}
+
+sil_global @static_global_object : $GlobalObject = {
+  %initval = object $GlobalObject ()
+}
+
+sil_global [serialized] @initialized_global_object : $Int64 = {
+  %0 = integer_literal $Builtin.Int64, 27
+  %1 = integer_literal $Builtin.Int64, 28
+  %initval = object $GlobalObject (%0 : $Builtin.Int64, [tail_elems] %1 : $Builtin.Int64, %1 : $Builtin.Int64)
+}
+
+sil_global [serialized] @initialized_global_int : $Int64 = {
+  %0 = integer_literal $Builtin.Int64, 27
+  %initval = struct $Int64 (%0 : $Builtin.Int64)
+}
+
+sil_global @_Tv2ch1xSi : $Int32 = {
+  %0 = integer_literal $Builtin.Int32, 2
+  %initval = struct $Int32 (%0 : $Builtin.Int32)
+}
+
+sil_global @static_array : $TestArrayStorage = {
+  %0 = integer_literal $Builtin.Int32, 2
+  %1 = integer_literal $Builtin.Int64, 10
+  %2 = integer_literal $Builtin.Int64, 20
+  %3 = struct $Int32 (%0 : $Builtin.Int32)
+  %4 = struct $Int64 (%1 : $Builtin.Int64)
+  %5 = struct $Int64 (%2 : $Builtin.Int64)
+  %initval = object $TestArrayStorage (%3 : $Int32, [tail_elems] %4 : $Int64, %5 : $Int64)
+}

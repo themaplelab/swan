@@ -167,6 +167,7 @@ trait ISILToRawSWANIR {
           case inst: SILOperator.struct => visitStruct(result, inst)
           case inst: SILOperator.structExtract => visitStructExtract(result, inst)
           case inst: SILOperator.structElementAddr => visitStructElementAddr(result, inst)
+          case inst: SILOperator.objct => visitObject(result, inst)
           case inst: SILOperator.refElementAddr => visitRefElementAddr(result, inst)
           case inst: SILOperator.enm => visitEnum(result, inst)
           case inst: SILOperator.uncheckedEnumData => visitUncheckedEnumData(result, inst)
@@ -198,6 +199,7 @@ trait ISILToRawSWANIR {
           case inst: SILOperator.unmanagedToRef => visitUnmanagedToRef(result, inst)
           case inst: SILOperator.convertFunction => visitConvertFunction(result, inst)
           case inst: SILOperator.convertEscapeToNoescape => visitConvertEscapeToNoEscape(result, inst)
+          case inst: SILOperator.valueToBridgeObject => visitValueToBridgeObject(result, inst)
           case inst: SILOperator.thinToThickFunction => visitThinToThickFunction(result, inst)
           case inst: SILOperator.thickToObjcMetatype => visitThickToObjCMetatype(result, inst)
           case inst: SILOperator.objcToThickMetatype => visitObjCToThickMetatype(result, inst)
@@ -349,7 +351,7 @@ trait ISILToRawSWANIR {
   protected def visitStructExtract(r: Option[SILResult], I: SILOperator.structExtract): Array[InstructionDef]
   protected def visitStructElementAddr(r: Option[SILResult], I: SILOperator.structElementAddr): Array[InstructionDef]
   // protected def visitDestructureStruct(r: Option[SILResult], I: SILOperator.destructureStruct): Array[InstructionDef]
-  // protected def visitObject(r: Option[SILResult], I: SILOperator.obj): Array[InstructionDef]
+  protected def visitObject(r: Option[SILResult], I: SILOperator.objct): Array[InstructionDef]
   protected def visitRefElementAddr(r: Option[SILResult], I: SILOperator.refElementAddr): Array[InstructionDef]
   // protected def visitRefTailAddr(r: Option[SILResult], I: SILOperator.refTailAddr): Array[InstructionDef]
 
@@ -404,7 +406,7 @@ trait ISILToRawSWANIR {
   // protected def visitThinFunctionToPointer(r: Option[SILResult], I: SILOperator.thinFunctionToPointer): Array[InstructionDef]
   // protected def visitPointerToThinFunction(r: Option[SILResult], I: SILOperator.pointerToThinFunction): Array[InstructionDef]
   // protected def visitClassifyBridgeObject(r: Option[SILResult], I: SILOperator.classifyBridgeObject): Array[InstructionDef]
-  // protected def visitValueToBridgeObject(r: Option[SILResult], I: SILOperator.valueToBridgeObject): Array[InstructionDef]
+  protected def visitValueToBridgeObject(r: Option[SILResult], I: SILOperator.valueToBridgeObject): Array[InstructionDef]
   // protected def visitRefToBridgeObject(r: Option[SILResult], I: SILOperator.refToBridgeObject): Array[InstructionDef]
   // protected def visitBridgeObjectToRef(r: Option[SILResult], I: SILOperator.bridgeObjectToRef): Array[InstructionDef]
   // protected def visitBridgeObjectToWord(r: Option[SILResult], I: SILOperator.bridgeObjectToWord): Array[InstructionDef]

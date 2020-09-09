@@ -137,7 +137,7 @@ object SILOperator {
   case class prevDynamicFunctionRef(name: SILMangledName, tpe: SILType) extends SILOperator
   case class globalAddr(name: SILMangledName, tpe: SILType) extends SILOperator
   // NSIP: global_value
-  case class integerLiteral(tpe: SILType, value: Int) extends SILOperator
+  case class integerLiteral(tpe: SILType, value: BigInt) extends SILOperator
   case class floatLiteral(tpe: SILType, value: String) extends SILOperator
   case class stringLiteral(encoding: SILEncoding, value: String) extends SILOperator
   // Skip base_addr_for_offset for now (new instruction)
@@ -193,7 +193,7 @@ object SILOperator {
   case class structExtract(operand: SILOperand, declRef: SILDeclRef) extends SILOperator
   case class structElementAddr(operand: SILOperand, declRef: SILDeclRef) extends SILOperator
   // NSIP: destructure_struct
-  // NSIP: object
+  case class objct(tpe: SILType, operands: Array[SILOperand], tailElems: Array[SILOperand]) extends SILOperator
   case class refElementAddr(immutable: Boolean, operand: SILOperand, declRef: SILDeclRef) extends SILOperator
   // NSIP: ref_tail_addr
 
@@ -250,7 +250,7 @@ object SILOperator {
   // NSIP: thin_function_to_pointer
   // NSIP: pointer_to_thin_function
   // NSIP: classify_bridge_object
-  // NSIP: value_to_bridge_object
+  case class valueToBridgeObject(operand: SILOperand) extends SILOperator
   // NSIP: ref_to_bridge_object
   // NSIP: bridge_object_to_ref
   // NSIP: bridge_object_to_word
@@ -528,7 +528,8 @@ object SILStoreOwnership {
   case object trivial extends SILStoreOwnership
 }
 
-class SILGlobalVariable(val linkage: SILLinkage, val globalName: SILMangledName,
+class SILGlobalVariable(val linkage: SILLinkage, val serialized: Boolean,
+                        val let: Boolean, val globalName: SILMangledName,
                         val tpe: SILType, val instructions: Option[Array[SILOperatorDef]])
 
 class SILWitnessTable(val linkage: SILLinkage, val attribute: Option[SILFunctionAttribute],

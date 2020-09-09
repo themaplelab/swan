@@ -112,11 +112,15 @@ class Printer {
   }
 
   def literal(b: Boolean): Unit = {
-    print(b.toString) // TODO: Verify output format
+    print(b.toString)
   }
 
   def literal(f: Float): Unit = {
-    print(f.toString) // TODO: Verify output format
+    print(f.toString)
+  }
+
+  def literal(n: BigInt): Unit = {
+    print(n.toString)
   }
 
   def literal(n: Int): Unit = {
