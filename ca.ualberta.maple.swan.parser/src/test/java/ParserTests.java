@@ -11,6 +11,7 @@
 import ca.ualberta.maple.swan.parser.*;
 import ca.ualberta.maple.swan.parser.Error;
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvFileSource;
@@ -77,7 +78,7 @@ public class ParserTests {
 
     // Test that the sym-linked swan-swiftc tool doesn't blow up.
     @Test
-    void getSILUsingSwanSwiftc() throws IOException, URISyntaxException, InterruptedException {
+    void getSILUsingSwanSwiftc() throws IOException, URISyntaxException, InterruptedException, Error {
         String testFilePath = "swift/ArrayAccess1.swift";
         File testFile = new File(getClass().getClassLoader()
                 .getResource(testFilePath).toURI());
@@ -85,9 +86,17 @@ public class ParserTests {
                 .getResource("symlink-utils/swan-swiftc").toURI());
         Process p = Runtime.getRuntime().exec("python " + swanSwiftcFile.getAbsolutePath() + " " + testFile.getAbsolutePath());
         p.waitFor();
-        // Check exit code for now
         Assertions.assertEquals(p.exitValue(), 0);
-        readFile(testFile);
+        File silFile = new File(testFile.getAbsolutePath() + ".sil");
+        Assertions.assertTrue(silFile.exists());
+        SILParser parser = new SILParser(silFile.toPath());
+        SILModule module = parser.parseModule();
+        String parsedModule = PrintExtensions$.MODULE$.ModulePrinter(module).description();
+        String expected = readFile(silFile);
+        // Remove excess newlines
+        expected = expected.trim() + "\n";
+        parsedModule = parsedModule.trim() + "\n";
+        Assertions.assertEquals(expected, parsedModule);
     }
 
     // This test uses swan-xcodebuild to generate SIL for all xcodeprojects.
@@ -96,6 +105,7 @@ public class ParserTests {
     // The CSV can contain comments as long as they start with "#".
     // TODO: Separate into slow test suite.
     @ParameterizedTest
+    @Disabled // SLOW test
     @CsvFileSource(resources = "xcodeproj/projects.csv")
     void getSILForAllXcodeProjects(String xcodeproj, String scheme, String optionalArgs) throws URISyntaxException, IOException {
         String projectPath = "xcodeproj/" + xcodeproj;
@@ -107,6 +117,7 @@ public class ParserTests {
                 swanXcodebuildFile.getAbsolutePath(),
                 "-project", testProjectFile.getAbsolutePath(), "-scheme", scheme,
                 optionalArgs != null ? optionalArgs : "");
+        // TODO: I don't think this works.
         pb.inheritIO();
         Process p = null;
         try {
@@ -128,12 +139,24 @@ public class ParserTests {
         }
     }
 
+    /********* HELPERS *********/
+    // For now, do a bunch of janky string manipulations to make the output
+    // match the expected. Should probably (later) write a customer comparator
+    // function that doesn't report inequality due to things like extra
+    // newlines.
+
     // Account for any known transformations that the parser does,
     // such as superficial type conversions, here.
     String doReplacements(String inst) {
         inst = inst.replaceAll("\\[Int\\]", "Array<Int>");
         // Not sure why this .1 appears in practice after "enumelt". Doesn't seem
         // necessary.
+        if (inst.startsWith("func ")) {
+            return "";
+        }
+        if (inst.contains("{ get set }")) {
+            return "";
+        }
         inst = inst.split("//")[0];
         inst = inst.replaceAll("\\s+$", ""); // right trim
         return inst;
@@ -141,13 +164,12 @@ public class ParserTests {
 
     String readFile(File file) throws IOException {
         InputStream in = new FileInputStream(file);
-        assert in != null;
         BufferedReader reader = new BufferedReader(new InputStreamReader(in));
         StringBuilder result = new StringBuilder();
         String line;
         while((line = reader.readLine()) != null) {
             // Empty line, preserve empty lines
-            if (line.trim().isEmpty()) {
+            if (line.trim().isEmpty() && !result.toString().endsWith("\n\n")) {
                 result.append(System.lineSeparator());
                 continue;
             }

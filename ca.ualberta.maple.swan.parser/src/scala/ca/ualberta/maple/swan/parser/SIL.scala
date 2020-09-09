@@ -14,7 +14,8 @@ import java.nio.file.Path
 
 import sys.process._
 
-class SILModule(val functions: Array[SILFunction], val witnessTables: Array[SILWitnessTable]) {
+class SILModule(val functions: Array[SILFunction], val witnessTables: Array[SILWitnessTable],
+                val imports: Array[String], val globalVariables: Array[SILGlobalVariable]) {
 
   object Parse {
     @throws[Error]
@@ -32,7 +33,7 @@ class SILModule(val functions: Array[SILFunction], val witnessTables: Array[SILW
 }
 
 class SILFunction(val linkage: SILLinkage, val attributes: Array[SILFunctionAttribute],
-                  val name: SILFunctionName, val tpe: SILType, val blocks: Array[SILBlock])
+                  val name: SILMangledName, val tpe: SILType, val blocks: Array[SILBlock])
 
 class SILBlock(val identifier: String, val arguments: Array[SILArgument],
                val operatorDefs: Array[SILOperatorDef], val terminatorDef: SILTerminatorDef) {
@@ -49,9 +50,6 @@ class SILTerminatorDef(val terminator: SILTerminator, val sourceInfo: Option[SIL
 sealed trait SILInstructionDef {
   val instruction : SILInstruction
 }
-// TODO: I don't really like this operator/terminator duality. It doesn't make much sense
-//  and it isn't precise.
-//  We should divide the instructions into the same categories that are in SIL.rst.
 object SILInstructionDef {
   case class operator(val operatorDef: SILOperatorDef) extends SILInstructionDef {
     val instruction: SILInstruction = SILInstruction.operator(operatorDef.operator)
@@ -70,7 +68,7 @@ object SILOperator {
   case class allocRefDynamic(objc: Boolean, tailElems: Array[(SILType, SILOperand)], operand: SILOperand, tpe: SILType) extends SILOperator
   case class allocBox(tpe: SILType, attributes: Array[SILDebugAttribute]) extends SILOperator
   case class allocValueBuffer(tpe: SILType, operand: SILOperand) extends SILOperator
-  case class allocGlobal(name: String) extends SILOperator
+  case class allocGlobal(name: SILMangledName) extends SILOperator
   case class deallocStack(operand: SILOperand) extends SILOperator
   case class deallocBox(operand: SILOperand) extends SILOperator
   case class projectBox(operand: SILOperand) extends SILOperator
@@ -134,10 +132,10 @@ object SILOperator {
   // builtin "unsafeGuaranteedEnd" not sure what to do about this one
 
   /***** LITERALS *****/
-  case class functionRef(name: SILFunctionName, tpe: SILType) extends SILOperator
-  case class dynamicFunctionRef(name: SILFunctionName, tpe: SILType) extends SILOperator
-  case class prevDynamicFunctionRef(name: SILFunctionName, tpe: SILType) extends SILOperator
-  case class globalAddr(name: String, tpe: SILType) extends SILOperator
+  case class functionRef(name: SILMangledName, tpe: SILType) extends SILOperator
+  case class dynamicFunctionRef(name: SILMangledName, tpe: SILType) extends SILOperator
+  case class prevDynamicFunctionRef(name: SILMangledName, tpe: SILType) extends SILOperator
+  case class globalAddr(name: SILMangledName, tpe: SILType) extends SILOperator
   // NSIP: global_value
   case class integerLiteral(tpe: SILType, value: Int) extends SILOperator
   case class floatLiteral(tpe: SILType, value: String) extends SILOperator
@@ -388,7 +386,7 @@ object SILEnforcement {
   case object unsafe extends SILEnforcement
 }
 
-class SILFunctionName(val mangled: String) {
+class SILMangledName(val mangled: String) {
   val demangled: String = {
     // TODO: ship demangler with SWAN
     ("/Library/Developer/CommandLineTools/usr/bin/swift-demangle -compact \'" + mangled + '\'').!!.replaceAll(System.lineSeparator(), "")
@@ -530,13 +528,16 @@ object SILStoreOwnership {
   case object trivial extends SILStoreOwnership
 }
 
+class SILGlobalVariable(val linkage: SILLinkage, val globalName: SILMangledName,
+                        val tpe: SILType, val instructions: Option[Array[SILOperatorDef]])
+
 class SILWitnessTable(val linkage: SILLinkage, val attribute: Option[SILFunctionAttribute],
                       val normalProtocolConformance: SILNormalProtocolConformance, val entries: Array[SILWitnessEntry])
 
 sealed trait SILWitnessEntry
 object SILWitnessEntry {
   case class baseProtocol(identifier: String, pc: SILProtocolConformance) extends SILWitnessEntry
-  case class method(declRef: SILDeclRef, declType: SILType, functionName: SILFunctionName) extends SILWitnessEntry
+  case class method(declRef: SILDeclRef, declType: SILType, functionName: SILMangledName) extends SILWitnessEntry
   case class associatedType(identifier0: String, identifier1: String) extends SILWitnessEntry
   case class associatedTypeProtocol(identifier0: String, identifier1: String, pc: SILProtocolConformance) extends SILWitnessEntry
 }

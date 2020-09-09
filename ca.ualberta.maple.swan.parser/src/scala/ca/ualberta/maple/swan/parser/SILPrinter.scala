@@ -16,6 +16,17 @@ import ca.ualberta.maple.swan.parser.Error
 class SILPrinter extends Printer {
 
   def print(module: SILModule): Unit = {
+    print("sil_stage canonical")
+    print("\n\n")
+    module.imports.foreach(imprt => {
+      print("import ")
+      print(imprt)
+      print("\n")
+    })
+    print("\n")
+    module.globalVariables.foreach(gv => {
+      print(gv)
+    })
     module.functions.foreach(f => {
       print(f)
       print("\n\n")
@@ -26,8 +37,7 @@ class SILPrinter extends Printer {
     print("sil ")
     print(function.linkage)
     print(whenEmpty = false, "", function.attributes, " ", " ", (attribute: SILFunctionAttribute) => print(attribute))
-    print("@")
-    print(function.name.mangled)
+    print(function.name)
     print(" : ")
     print(function.tpe)
     print(whenEmpty = false, " {\n", function.blocks, "\n", "}", (block: SILBlock) => print(block))
@@ -38,9 +48,9 @@ class SILPrinter extends Printer {
     print(whenEmpty = false, "(", block.arguments, ", ", ")", (arg: SILArgument) => print(arg))
     print(":")
     indent()
-    block.operatorDefs.foreach(block => {
+    block.operatorDefs.foreach(op => {
       print("\n")
-      print(block)
+      print(op)
     })
     print("\n")
     print(block.terminatorDef)
@@ -54,13 +64,11 @@ class SILPrinter extends Printer {
     })
     print(operatorDef.operator)
     print(operatorDef.sourceInfo, (si: SILSourceInfo) => print(si))
-    System.out.println()
   }
 
   def print(terminatorDef: SILTerminatorDef): Unit = {
     print(terminatorDef.terminator)
     print(terminatorDef.sourceInfo, (si: SILSourceInfo) => print(si))
-    System.out.println()
   }
 
   def print(op: SILOperator): Unit = {
@@ -124,7 +132,6 @@ class SILPrinter extends Printer {
       }
       case SILOperator.allocGlobal(name) => {
         print("alloc_global ")
-        print("@")
         print(name)
       }
       case SILOperator.deallocStack(operand) => {
@@ -289,28 +296,24 @@ class SILPrinter extends Printer {
 
       case SILOperator.functionRef(name, tpe) => {
         print("function_ref ")
-        print("@")
-        print(name.mangled)
+        print(name)
         print(" : ")
         print(tpe)
       }
       case SILOperator.dynamicFunctionRef(name, tpe) => {
         print("dynamic_function_ref ")
-        print("@")
-        print(name.mangled)
+        print(name)
         print(" : ")
         print(tpe)
       }
       case SILOperator.prevDynamicFunctionRef(name, tpe) => {
         print("prev_dynamic_function_ref ")
-        print("@")
-        print(name.mangled)
+        print(name)
         print(" : ")
         print(tpe)
       }
       case SILOperator.globalAddr(name, tpe) => {
         print("global_addr ")
-        print("@")
         print(name)
         print(" : ")
         print(tpe)
@@ -893,6 +896,25 @@ class SILPrinter extends Printer {
     }
   }
 
+  def print(globalVariable: SILGlobalVariable): Unit = {
+    print("sil_global ")
+    print(globalVariable.linkage)
+    print(globalVariable.globalName)
+    print(" : ")
+    print(globalVariable.tpe)
+    if (globalVariable.instructions.nonEmpty) {
+      print(" {\n")
+      indent()
+      globalVariable.instructions.get.foreach(instruction => {
+        print(instruction)
+        print("\n")
+      })
+      unindent()
+      print("}")
+    }
+    print("\n\n")
+  }
+
   def print(witnessTable: SILWitnessTable): Unit = {
     print("sil_witness_table ")
     print(witnessTable.linkage)
@@ -925,8 +947,7 @@ class SILPrinter extends Printer {
         print(": ")
         print(declType)
         print(" : ")
-        print("@")
-        print(functionName.mangled)
+        print(functionName)
       }
       case SILWitnessEntry.associatedType(identifier0, identifier1) => {
         print("associated_type ")
@@ -1206,6 +1227,11 @@ class SILPrinter extends Printer {
         print(whenEmpty = true, "(", operands, ", ", ")", (o: SILOperand) => print(o))
       }
     }
+  }
+
+  def print(name: SILMangledName): Unit = {
+    print("@")
+    print(name.mangled)
   }
 
   def print(tpe: SILType): Unit = {

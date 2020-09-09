@@ -21,6 +21,7 @@ import scala.reflect.ClassTag
 import scala.util.control.Breaks
 
 // TODO: Parse v tables
+// Canonical SIL Parser. Does not parse sil_scope.
 class SILParser {
 
   // Default constructor should not be called.
@@ -63,12 +64,14 @@ class SILParser {
   }
 
   @throws[Error]
-  protected def take(query: String): Unit = {
+  protected def take(query: String, skip: Boolean = true): Unit = {
     if (!peek(query)) {
       ExceptionReporter.report(new Error(path, query + " expected"))
     }
     cursor += query.length
-    skipTrivia()
+    if (skip) {
+      skipTrivia()
+    }
   }
 
   protected def skip(query: String): Boolean = {
@@ -191,12 +194,16 @@ class SILParser {
     new Error(path, line, column, message)
   }
 
-  /********** THIS CODE IS ORIGINALLY PART OF "SILParser" *******************/
-
   // https://github.com/apple/swift/blob/master/docs/SIL.rst#syntax
   @throws[Error]
   def parseModule(): SILModule = {
+    if (!skip("sil_stage canonical")) {
+      throw parseError("This parser only supports canonical SIL")
+    }
     var functions = Array[SILFunction]()
+    var witnessTables = Array[SILWitnessTable]()
+    var imports = Array[String]()
+    var globalVariables = Array[SILGlobalVariable]()
     var done = false
     while(!done) {
       // tensorflow: T0D0(#8): Parse sections of SIL printouts that don't start with "sil @".
@@ -206,27 +213,28 @@ class SILParser {
       if(peek("sil ")) {
         val function = parseFunction()
         functions :+= function
+      } else if (peek("sil_witness_table ")) {
+        witnessTables :+= parseWitnessTable()
+      } else if (peek("sil_default_witness_table ")) {
+        // TODO
+      } else if (peek("sil_vtable ")) {
+        // TODO
+      } else if (peek("sil_global ")) {
+        globalVariables :+= parseGlobalVariable()
+      } else if (peek("import ")) {
+        take("import")
+        // Identifier should be OK here.
+        imports :+= parseIdentifier()
       } else {
         Breaks.breakable {
           if(skip(_ != '\n')) Breaks.break()
         }
-        done = true
-      }
-    }
-    var witnessTables = Array[SILWitnessTable]()
-    done = false
-    while(!done) {
-      if(peek("sil_witness_table ")) {
-        val table = parseWitnessTable()
-        witnessTables :+= table
-      } else {
-        Breaks.breakable {
-          if(skip(_ != '\n')) Breaks.break()
+        if (this.cursor == this.chars.length) {
+          done = true
         }
-        done = true
       }
     }
-    new SILModule(functions, witnessTables)
+    new SILModule(functions, witnessTables, imports, globalVariables)
   }
 
   // https://github.com/apple/swift/blob/master/docs/SIL.rst#functions
@@ -235,7 +243,7 @@ class SILParser {
     take("sil")
     val linkage = parseLinkage()
     val attributes = { parseNilOrMany("[", parseFunctionAttribute) }.getOrElse(Array.empty[SILFunctionAttribute])
-    val name = new SILFunctionName(parseGlobalName())
+    val name = parseMangledName()
     take(":")
     val tpe = parseType()
     val blocks = { parseNilOrMany("{", "", "}", parseBlock) }.getOrElse(Array.empty[SILBlock])
@@ -306,6 +314,20 @@ class SILParser {
       }
     }
      */
+  }
+
+  // https://github.com/apple/swift/blob/master/docs/SIL.rst#global-variables
+  @throws[Error]
+  def parseGlobalVariable(): SILGlobalVariable = {
+    take("sil_global")
+    val linkage = parseLinkage()
+    val name = parseMangledName()
+    take(":")
+    val tpe = parseType()
+    val entries: Option[Array[SILOperatorDef]] = parseNilOrMany("{", "", "}", () => {
+      parseInstructionDef().asInstanceOf[SILInstructionDef.operator].operatorDef
+    })
+    new SILGlobalVariable(linkage, name, tpe, entries)
   }
 
   // https://github.com/apple/swift/blob/master/docs/SIL.rst#witness-tables
@@ -387,7 +409,7 @@ class SILParser {
         SILInstruction.operator(SILOperator.allocValueBuffer(tpe, operand))
       }
       case "alloc_global" => {
-        val name = parseGlobalName()
+        val name = parseMangledName()
         SILInstruction.operator(SILOperator.allocGlobal(name))
       }
       case "dealloc_stack" => {
@@ -601,25 +623,25 @@ class SILParser {
         // *** LITERALS ***
 
       case "function_ref" => {
-        val name = new SILFunctionName(parseGlobalName())
+        val name = parseMangledName()
         take(":")
         val tpe = parseType()
         SILInstruction.operator(SILOperator.functionRef(name, tpe))
       }
       case "dynamic_function_ref" => {
-        val name = new SILFunctionName(parseGlobalName())
+        val name = parseMangledName()
         take(":")
         val tpe = parseType()
         SILInstruction.operator(SILOperator.dynamicFunctionRef(name, tpe))
       }
       case "prev_dynamic_function_ref" => {
-        val name = new SILFunctionName(parseGlobalName())
+        val name = parseMangledName()
         take(":")
         val tpe = parseType()
         SILInstruction.operator(SILOperator.prevDynamicFunctionRef(name, tpe))
       }
       case "global_addr" => {
-        val name = parseGlobalName()
+        val name = parseMangledName()
         take(":")
         val tpe = parseType()
         SILInstruction.operator(SILOperator.globalAddr(name, tpe))
@@ -1560,13 +1582,13 @@ class SILParser {
 
   // https://github.com/apple/swift/blob/master/docs/SIL.rst#functions
   @throws[Error]
-  def parseGlobalName(): String = {
+  def parseMangledName(): SILMangledName = {
     val start = position()
     if(skip("@")) {
       // tensorflow: T0D0(#14): Make name parsing more thorough.
       val name = take(x => x == '$' || x.isLetterOrDigit || x == '_' )
       if(!name.isEmpty) {
-        return name
+        return new SILMangledName(name)
       }
     }
     throw parseError("function name expected", Some(start))
@@ -1659,7 +1681,7 @@ class SILParser {
       take(":")
       val declType = parseNakedType()
       take(":")
-      val functionName = new SILFunctionName(parseGlobalName())
+      val functionName = parseMangledName()
       return SILWitnessEntry.method(declRef, declType, functionName)
     }
     // NOTE: Must come before associated_type
@@ -1843,7 +1865,7 @@ class SILParser {
   @throws[Error]
   def parseString(): String = {
     // tensorflow: T0D0(#24): Parse string literals with control characters.
-    take("\"")
+    take("\"", false)
     val s = take(_ != '\"')
     take("\"")
     s

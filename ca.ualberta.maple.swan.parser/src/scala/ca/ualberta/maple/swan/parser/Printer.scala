@@ -30,16 +30,15 @@ class Printer {
     if (!when) return
     val s = i.toString
 
-    // <DEBUG>
-    if (!indented) {
-      System.out.print(indentation)
-    }
-    System.out.print(s)
-    // </DEBUG>
-
-    // "\n"
-    if (s.equals("\n")) {
-      description += "\n"
+    // "\n*"
+    var allNewLines = s.nonEmpty
+    s.foreach(char => {
+      if (char != '\n') {
+        allNewLines = false
+      }
+    })
+    if (allNewLines) {
+      description += "\n" * s.length
       indented = false
       return
     }
