@@ -88,8 +88,9 @@ public class ParserTests {
     }
 
     // 4. v tables (.sil files in directory)
+    // Files are parsed as module so that multiple sil_global's can
+    // be tested.
     @Test
-    @Disabled // Not yet implemented
     void testVTableParsing() throws Error, URISyntaxException, IOException {
         System.out.println("Testing v tables");
         File fileDir = new File(getClass().getClassLoader()
@@ -99,8 +100,13 @@ public class ParserTests {
             System.out.println("    -> " + sil.getName());
             String expected = readFile(sil);
             SILParser parser = new SILParser(sil.toPath());
-            // String result = parser.print(parser.parseVTable());
-            // Assertions.assertEquals(expected, result);
+            String result = parser.print(parser.parseModule());
+            // Remove excess newlines
+            result = result.replaceAll("\n\n\n", "\n\n");
+            expected = expected.replaceAll("\n\n\n", "\n\n");
+            expected = expected.trim() + "\n";
+            result = result.trim() + "\n";
+            Assertions.assertEquals(expected, result);
         }
     }
 

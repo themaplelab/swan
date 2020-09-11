@@ -29,6 +29,14 @@ class SILPrinter extends Printer {
       print(f)
       print("\n\n")
     })
+    module.vTables.foreach(v => {
+      print(v)
+      print("\n")
+    })
+    module.witnessTables.foreach(w => {
+      print(w)
+      print("\n")
+    })
     description
   }
 
@@ -945,6 +953,44 @@ class SILPrinter extends Printer {
     description
   }
 
+  def print(vTable: SILVTable): String = {
+    print("sil_vtable ")
+    print("[serialized] ", when = vTable.serialized)
+    print(vTable.name)
+    print(" {")
+    if (vTable.entries.nonEmpty) {
+      print("\n")
+      indent()
+      vTable.entries.foreach(entry => {
+        print(entry)
+        print("\n")
+      })
+      unindent()
+    }
+    print("}")
+    print("\n")
+    description
+  }
+
+  def print(vEntry: SILVEntry): Unit = {
+    print(vEntry.declRef)
+    print(": ")
+    if (vEntry.tpe.nonEmpty) { naked(vEntry.tpe.get); print(" ") }
+    print(": ", vEntry.tpe.nonEmpty)
+    print(vEntry.functionName)
+    print(" ", vEntry.kind != SILVTableEntryKind.normal)
+    print(vEntry.kind)
+    print(" [nonoverridden]", when = vEntry.nonoverridden)
+  }
+
+  def print(vTableEntryKind: SILVTableEntryKind): Unit = {
+    vTableEntryKind match {
+      case SILVTableEntryKind.overide => print("[override]")
+      case SILVTableEntryKind.inherited => print("[inherited]")
+      case _ =>
+    }
+  }
+
   def print(witnessTable: SILWitnessTable): String = {
     print("sil_witness_table ")
     print(witnessTable.linkage)
@@ -1134,34 +1180,70 @@ class SILPrinter extends Printer {
 
   def print(declKind: SILDeclKind): Unit = {
     declKind match {
-      case SILDeclKind.allocator => print("allocator")
-      case SILDeclKind.deallocator => print("deallocator")
-      case SILDeclKind.destroyer => print("destroyer")
-      case SILDeclKind.enumElement => print("enumelt")
-      case SILDeclKind.getter => print("getter")
-      case SILDeclKind.globalAccessor => print("globalaccessor")
-      case SILDeclKind.initializer => print("initializer")
-      case SILDeclKind.ivarDestroyer => print("ivardestroyer")
-      case SILDeclKind.ivarInitializer => print("ivarinitializer")
-      case SILDeclKind.setter => print("setter")
+      case SILDeclKind.func =>
+      case SILDeclKind.allocator => print("!allocator")
+      case SILDeclKind.initializer => print("!initializer")
+      case SILDeclKind.enumElement => print("!enumelt")
+      case SILDeclKind.destroyer => print("!destroyer")
+      case SILDeclKind.deallocator => print("!deallocator")
+      case SILDeclKind.globalAccessor => print("!globalaccessor")
+      case SILDeclKind.defaultArgGenerator(index) => print("!defaultarg" + "." + index)
+      case SILDeclKind.storedPropertyInitalizer => print("!propertyinit")
+      case SILDeclKind.ivarInitializer => print("!ivarinitializer")
+      case SILDeclKind.ivarDestroyer => print("!ivardestroyer")
+      case SILDeclKind.propertyWrappingBackingInitializer => print("!backinginit")
+    }
+  }
+
+  def print(accessorKind: SILAccessorKind): Unit = {
+    accessorKind match {
+      case SILAccessorKind.get => print("!getter")
+      case SILAccessorKind.set => print("!setter")
+      case SILAccessorKind.willSet => print("!willSet")
+      case SILAccessorKind.didSet => print("!didSet")
+      case SILAccessorKind.address => print("!addressor")
+      case SILAccessorKind.mutableAddress => print("!mutableAddressor")
+      case SILAccessorKind.read => print("!read")
+      case SILAccessorKind.modify => print("!modify")
+    }
+  }
+
+  def print(autoDiff: SILAutoDiff): Unit = {
+    autoDiff match {
+      case SILAutoDiff.jvp(_) => print("jvp.")
+      case SILAutoDiff.vjp(_) => print("vjp.")
+    }
+    print(autoDiff.paramIndices)
+  }
+
+  def print(declSubRef: SILDeclSubRef): Unit = {
+    declSubRef match {
+      case SILDeclSubRef.part(accessorKind, declKind, level, foreign, autoDiff) => {
+        if (accessorKind.nonEmpty) print(accessorKind.get)
+        print(declKind)
+        if (level.nonEmpty) {
+          print(".")
+          literal(level.get)
+        }
+        if (foreign) {
+          print(".")
+          print("foreign")
+        }
+        if (autoDiff.nonEmpty) {
+          print(".")
+          print(autoDiff.get)
+        }
+      }
+      case SILDeclSubRef.lang => print("!foreign")
+      case SILDeclSubRef.autoDiff(autoDiff) => { print("!"); print(autoDiff) }
+      case SILDeclSubRef.level(level, foreign) => { print("!"); literal(level); print(".foreign", when = foreign) }
     }
   }
 
   def print(declRef: SILDeclRef): Unit = {
     print("#")
     print(declRef.name.mkString("."))
-    if (declRef.kind.nonEmpty) {
-      print("!")
-      print(declRef.kind.get)
-    }
-    if (declRef.level.nonEmpty) {
-      print(if (declRef.kind.isEmpty) "!" else ".")
-      literal(declRef.level.get)
-    }
-    if (declRef.foreign) {
-      print(if (declRef.kind.isEmpty && declRef.level.isEmpty) "!" else ".")
-      print("foreign")
-    }
+    if (declRef.subRef.nonEmpty) print(declRef.subRef.get)
   }
 
   def print(encoding: SILEncoding): Unit = {
@@ -1340,7 +1422,7 @@ class SILPrinter extends Printer {
         print(whenEmpty = true, "(", params, ", ", ")", (t: SILType) => naked(t))
       }
       case SILType.withOwnership(_, _) => {
-        throw new Error("<printing>", "Types with ownership should be printed before naked type print!")
+        throw new Error("<printing>", "Types with ownership should be printed before naked type print!", null)
       }
     }
   }

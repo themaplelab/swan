@@ -15,7 +15,8 @@ import java.nio.file.Path
 import sys.process._
 
 class SILModule(val functions: Array[SILFunction], val witnessTables: Array[SILWitnessTable],
-                val imports: Array[String], val globalVariables: Array[SILGlobalVariable]) {
+                val vTables: Array[SILVTable], val imports: Array[String],
+                val globalVariables: Array[SILGlobalVariable]) {
 
   object Parse {
     @throws[Error]
@@ -355,21 +356,53 @@ object SILDebugAttribute {
   case object variable extends SILDebugAttribute
 }
 
-sealed trait SILDeclKind
-object SILDeclKind {
-  case object allocator extends SILDeclKind
-  case object deallocator extends SILDeclKind
-  case object destroyer extends SILDeclKind
-  case object enumElement extends SILDeclKind
-  case object getter extends SILDeclKind
-  case object globalAccessor extends SILDeclKind
-  case object initializer extends SILDeclKind
-  case object ivarDestroyer extends SILDeclKind
-  case object ivarInitializer extends SILDeclKind
-  case object setter extends SILDeclKind
+sealed trait SILAccessorKind
+object SILAccessorKind {
+  case object get extends SILAccessorKind
+  case object set extends SILAccessorKind
+  case object willSet extends SILAccessorKind
+  case object didSet extends SILAccessorKind
+  case object address extends SILAccessorKind
+  case object mutableAddress extends SILAccessorKind
+  case object read extends SILAccessorKind
+  case object modify extends SILAccessorKind
 }
 
-class SILDeclRef(val name: Array[String], val kind: Option[SILDeclKind], val level: Option[Int], val foreign: Boolean = false)
+// I think that a type can come after, too. Leave for now.
+// e.g. #Super.genericMethod!jvp.SUU.<T where T : Differentiable>: <T> (Super) -> (T, T) -> T : @[...]
+class SILAutoDiff(val paramIndices: String)
+object SILAutoDiff {
+  case class jvp(pi: String) extends SILAutoDiff(pi)
+  case class vjp(pi: String) extends SILAutoDiff(pi)
+}
+
+sealed trait SILDeclKind
+object SILDeclKind {
+  case object func extends SILDeclKind
+  case object allocator extends SILDeclKind
+  case object initializer extends SILDeclKind
+  case object enumElement extends SILDeclKind
+  case object destroyer extends SILDeclKind
+  case object deallocator extends SILDeclKind
+  case object globalAccessor extends SILDeclKind
+  case class defaultArgGenerator(val index: String) extends SILDeclKind
+  case object storedPropertyInitalizer extends SILDeclKind
+  case object ivarInitializer extends SILDeclKind
+  case object ivarDestroyer extends SILDeclKind
+  case object propertyWrappingBackingInitializer extends SILDeclKind
+}
+
+// not sure why "level" exists, but it comes up in practice
+sealed trait SILDeclSubRef
+object SILDeclSubRef {
+  case class part(val accessorKind: Option[SILAccessorKind], val declKind: SILDeclKind, val level: Option[Int],
+                  val foreign: Boolean, val autoDiff: Option[SILAutoDiff]) extends SILDeclSubRef
+  case object lang extends SILDeclSubRef
+  case class autoDiff(val autoDiff: SILAutoDiff) extends SILDeclSubRef
+  case class level(val level: Int, val foreign: Boolean) extends SILDeclSubRef
+}
+
+class SILDeclRef(val name: Array[String], val subRef: Option[SILDeclSubRef])
 
 sealed trait SILEncoding
 object SILEncoding {
@@ -534,6 +567,18 @@ class SILGlobalVariable(val linkage: SILLinkage, val serialized: Boolean,
 
 class SILWitnessTable(val linkage: SILLinkage, val attribute: Option[SILFunctionAttribute],
                       val normalProtocolConformance: SILNormalProtocolConformance, val entries: Array[SILWitnessEntry])
+
+class SILVTable(val name: String, val serialized: Boolean, val entries: Array[SILVEntry])
+
+sealed trait SILVTableEntryKind
+object SILVTableEntryKind {
+  case object normal extends SILVTableEntryKind
+  case object inherited extends SILVTableEntryKind
+  case object overide extends SILVTableEntryKind
+}
+
+class SILVEntry(val declRef: SILDeclRef, val tpe: Option[SILType], val kind: SILVTableEntryKind,
+                val nonoverridden: Boolean, val functionName: SILMangledName)
 
 sealed trait SILWitnessEntry
 object SILWitnessEntry {

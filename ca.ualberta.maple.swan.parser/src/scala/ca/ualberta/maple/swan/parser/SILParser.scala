@@ -194,7 +194,7 @@ class SILParser extends SILPrinter {
     })
     val line = newlines.length + 1
     val column = position - (if (newlines.isEmpty) 0 else newlines.last)
-    new Error(path, line, column, message)
+    new Error(path, line, column, message, if (path == "<memory>") chars else null)
   }
 
   // https://github.com/apple/swift/blob/master/docs/SIL.rst#syntax
@@ -205,6 +205,7 @@ class SILParser extends SILPrinter {
     }
     var functions = Array[SILFunction]()
     var witnessTables = Array[SILWitnessTable]()
+    var vTables = Array[SILVTable]()
     var imports = Array[String]()
     var globalVariables = Array[SILGlobalVariable]()
     var done = false
@@ -217,7 +218,7 @@ class SILParser extends SILPrinter {
       } else if (peek("sil_default_witness_table ")) {
         // TODO
       } else if (peek("sil_vtable ")) {
-        // TODO
+        vTables :+= parseVTable()
       } else if (peek("sil_global ")) {
         globalVariables :+= parseGlobalVariable()
       } else if (peek("import ")) {
@@ -233,7 +234,7 @@ class SILParser extends SILPrinter {
         }
       }
     }
-    new SILModule(functions, witnessTables, imports, globalVariables)
+    new SILModule(functions, witnessTables, vTables, imports, globalVariables)
   }
 
   // https://github.com/apple/swift/blob/master/docs/SIL.rst#functions
@@ -332,6 +333,16 @@ class SILParser extends SILPrinter {
       })
     }
     new SILGlobalVariable(linkage, serialized, let, name, tpe, entries)
+  }
+
+  // https://github.com/apple/swift/blob/master/docs/SIL.rst#vtables
+  @throws[Error]
+  def parseVTable(): SILVTable = {
+    take("sil_vtable")
+    val serialized = skip("[serialized]")
+    val name = parseIdentifier()
+    val entries = { parseNilOrMany("{", "", "}", parseVEntry) }.getOrElse(Array.empty[SILVEntry])
+    new SILVTable(name, serialized, entries)
   }
 
   // https://github.com/apple/swift/blob/master/docs/SIL.rst#witness-tables
@@ -1499,25 +1510,111 @@ class SILParser extends SILPrinter {
   }
 
   @throws[Error]
-  def parseDeclKind(): Option[SILDeclKind] = {
-    if(skip("allocator")) return Some(SILDeclKind.allocator)
-    if(skip("deallocator")) return Some(SILDeclKind.deallocator)
-    if(skip("destroyer")) return Some(SILDeclKind.destroyer)
-    if(skip("enumelt")) return Some(SILDeclKind.enumElement)
-    if(skip("getter")) return Some(SILDeclKind.getter)
-    if(skip("globalaccessor")) return Some(SILDeclKind.globalAccessor)
-    if(skip("initializer")) return Some(SILDeclKind.initializer)
-    if(skip("ivardestroyer")) return Some(SILDeclKind.ivarDestroyer)
-    if(skip("ivarinitializer")) return Some(SILDeclKind.ivarInitializer)
-    if(skip("setter")) return Some(SILDeclKind.setter)
+  def parseDeclKind(): SILDeclKind = {
+    if(skip("allocator")) return SILDeclKind.allocator
+    if(skip("initializer")) return SILDeclKind.initializer
+    if(skip("enumelt")) return SILDeclKind.enumElement
+    if(skip("destroyer")) return SILDeclKind.destroyer
+    if(skip("deallocator")) return SILDeclKind.deallocator
+    if(skip("globalaccessor")) return SILDeclKind.globalAccessor
+    if(skip("defaultarg")) {
+      take(".")
+      val index = parseIdentifier()
+      return SILDeclKind.defaultArgGenerator(index)
+    }
+    if(skip("propertyinit")) return SILDeclKind.storedPropertyInitalizer
+    if(skip("ivarinitializer")) return SILDeclKind.ivarInitializer
+    if(skip("ivardestroyer")) return SILDeclKind.ivarDestroyer
+    if(skip("backinginit")) return SILDeclKind.propertyWrappingBackingInitializer
+    SILDeclKind.func
+  }
+
+  @throws[Error]
+  def parseAccessorKind(): Option[SILAccessorKind] = {
+    if(skip("getter")) return Some(SILAccessorKind.get)
+    if(skip("setter")) return Some(SILAccessorKind.set)
+    if(skip("willSet")) return Some(SILAccessorKind.willSet)
+    if(skip("didSet")) return Some(SILAccessorKind.didSet)
+    if(skip("addressor")) return Some(SILAccessorKind.address)
+    if(skip("mutableAddressor")) return Some(SILAccessorKind.mutableAddress)
+    if(skip("read")) return Some(SILAccessorKind.read)
+    if(skip("modify")) return Some(SILAccessorKind.modify)
+    None
+  }
+
+  @throws[Error]
+  def parseAutoDiff(): Option[SILAutoDiff] = {
+    if (peek("jvp") || peek("vjp")) {
+      val jvp = skip("jvp")
+      if (!jvp) skip("vjp")
+      take(".")
+      // [SU]+ but identifier is fine
+      val indices = parseIdentifier()
+      return (if (jvp) Some(SILAutoDiff.jvp(indices))
+        else Some(SILAutoDiff.vjp(indices)))
+    }
+    None
+  }
+
+  @throws[Error]
+  def parseDeclSubRef(): Option[SILDeclSubRef] = {
+    // sil-decl-subref?
+    // sil-decl-subref always starts with '!'
+    if (skip("!")) {
+      // 4 choices: level (int), sil-decl-lang ("foreign"), sil-decl-autodiff, or sil-decl-subref-part
+      val level = maybeParse(() => {
+        try {
+          Some(parseInt())
+        } catch { case _: Error => None}
+      })
+      if (level.nonEmpty) {
+        return Some(SILDeclSubRef.level(level.get, skip(".foreign")))
+      }
+      // sil-decl-lang ("foreign")
+      if (skip("foreign")) {
+        return Some(SILDeclSubRef.lang)
+      } else { // sil-decl-subref-part or sil-decl-autodiff
+        // sil-decl-autodiff
+        val autoDiff = parseAutoDiff()
+        // sil-decl-subref-part
+        if (autoDiff.isEmpty) {
+          val accessorKind = parseAccessorKind()
+          var declKind: SILDeclKind = SILDeclKind.func
+          var level: Option[Int] = None
+          if (accessorKind.isEmpty) {
+            declKind = parseDeclKind()
+          }
+          var foreign = false
+          var ad: Option[SILAutoDiff] = None
+          if (skip(".")) {
+            level = maybeParse(() => {
+              try {
+               Some(parseInt())
+              } catch { case _: Error => None}
+            })
+            if (level.nonEmpty) {
+              skip(".")
+            }
+            foreign = skip("foreign")
+            if (foreign && skip(".")) {
+              ad = parseAutoDiff()
+            }
+          }
+          return Some(SILDeclSubRef.part(accessorKind, declKind, level, foreign, ad))
+        } else {
+          return Some(SILDeclSubRef.autoDiff(autoDiff.get))
+        }
+      }
+    }
     None
   }
 
   // https://github.com/apple/swift/blob/master/docs/SIL.rst#declaration-references
   @throws[Error]
   def parseDeclRef(): SILDeclRef = {
-    take("#")
+    // sil-identifier ('.' sil-identifier)*
     val name = new ArrayBuffer[String]
+    take("#")
     var break = false
     while (!break) {
       val identifier = parseIdentifier()
@@ -1526,28 +1623,8 @@ class SILParser extends SILPrinter {
         break = true
       }
     }
-    if (!skip("!")) {
-      return new SILDeclRef(name.toArray, None, None)
-    }
-    val kind = parseDeclKind()
-    if (kind.nonEmpty && !skip(".")) {
-      return new SILDeclRef(name.toArray, kind, None)
-    }
-    try {
-      return maybeParse(() => {
-        val level = parseInt()
-        if (skip(".")) {
-          return new SILDeclRef(name.toArray, kind, Some(level), skip("foreign"))
-        }
-        return new SILDeclRef(name.toArray, kind, Some(level))
-      }).get
-    } catch {
-      case _: Error =>
-    }
-    if (skip("foreign")) {
-      return new SILDeclRef(name.toArray, kind, None, true)
-    }
-    new SILDeclRef(name.toArray, kind, None)
+    val subref = parseDeclSubRef()
+    new SILDeclRef(name.toArray, subref)
   }
 
   // https://github.com/apple/swift/blob/master/docs/SIL.rst#string-literal
@@ -1626,7 +1703,7 @@ class SILParser extends SILPrinter {
     } else {
       val start = position()
       // tensorflow: T0D0(#14): Make name parsing more thorough.
-      val identifier = take(x => x.isLetterOrDigit || x == '_')
+      val identifier = take(x => x.isLetterOrDigit || x == '_' || x == '`')
       if (!identifier.isEmpty) return identifier
       throw parseError("identifier expected", Some(start))
     }
@@ -1704,6 +1781,7 @@ class SILParser extends SILPrinter {
     SILProtocolConformance.normal(parseNormalProtocolConformance())
   }
 
+  @throws[Error]
   def parseWitnessEntry(): SILWitnessEntry = {
     if(skip("base_protocol")) {
       val identifier = parseIdentifier()
@@ -1738,6 +1816,32 @@ class SILParser extends SILPrinter {
     }
     throw parseError("Unknown witness entry")
   }
+
+  @throws[Error]
+  def parseVEntry(): SILVEntry = {
+    val declRef = parseDeclRef()
+    take(":")
+    var tpe: Option[SILType] = None
+    if (!peek("@")) {
+      tpe = maybeParse(() => try {
+        Some(parseNakedType())
+      } catch { case _ : Error => None })
+      if (tpe.nonEmpty) {
+        take(":")
+      }
+    }
+    val functionName = parseMangledName()
+    val kind = parseVTableEntryKind()
+    val nonoverridden = skip("[nonoverridden]")
+    new SILVEntry(declRef, tpe, kind, nonoverridden, functionName)
+  }
+
+  def parseVTableEntryKind(): SILVTableEntryKind = {
+    if(skip("[inherited]")) return SILVTableEntryKind.inherited
+    if(skip("[override]")) return SILVTableEntryKind.overide
+    SILVTableEntryKind.normal
+  }
+
 
   // https://github.com/apple/swift/blob/master/docs/SIL.rst#debug-information
   @throws[Error]
@@ -2049,12 +2153,12 @@ class SILParser extends SILPrinter {
   }
 }
 
-class Error(path : String, message : String) extends Exception {
+class Error(path : String, message : String, val chars: Array[Char]) extends Exception {
   private[parser] var line : Option[Int] = None
   private[parser] var column : Option[Int] = None
 
-  def this(path : String, line: Int, column : Int, message : String) = {
-    this(path, message)
+  def this(path : String, line: Int, column : Int, message : String, chars: Array[Char]) = {
+    this(path, message, chars)
     this.line = Some(line)
     this.column = Some(column)
   }
@@ -2066,6 +2170,11 @@ class Error(path : String, message : String) extends Exception {
     if (column.isEmpty) {
       return path + ":" + line.get + ": " + message
     }
-    path + ":" + line.get + ":" + column.get + ": " + message
+    if (chars != null) {
+      chars.mkString("") + ":" + column.get + ": " + message + System.lineSeparator() + (" " * column.get) + "^"
+    } else {
+      path + ":" + line.get + ":" + column.get + ": " + message
+    }
+
   }
 }

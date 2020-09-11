@@ -1,0 +1,1325 @@
+sil_stage canonical
+
+sil_vtable ClassUsingThrowingP {
+  #ClassUsingThrowingP.init!allocator: (ClassUsingThrowingP.Type) -> () -> ClassUsingThrowingP : @$s34eager_specialize_throwing_function19ClassUsingThrowingPCACycfC	// ClassUsingThrowingP.__allocating_init()
+  #ClassUsingThrowingP.init!initializer: (ClassUsingThrowingP.Type) -> () -> ClassUsingThrowingP : @$s34eager_specialize_throwing_function19ClassUsingThrowingPCACycfc	// ClassUsingThrowingP.init()
+  #ClassUsingThrowingP.deinit!deallocator: @$s34eager_specialize_throwing_function19ClassUsingThrowingPCfD	// ClassUsingThrowingP.__deallocating_deinit
+}
+
+sil_vtable Bar {
+  #Bar.boo: @_TFC4main3Bar3boofS0_FT_T_
+  #Bar.foo: @_TFC4main3Bar3foofS0_FT_T_
+  #Bar.foo_objc: @_TFC4main3Bar3foofS0_FT_T_
+}
+
+sil_vtable MyObject {}
+
+sil_vtable MyNumber {}
+
+sil_vtable C {
+  #C.foo: @$s14optimize_never1CC3foos5Int32VyF
+  #C.init!initializer: @$s14optimize_never1CCACycfc
+  #C.deinit!deallocator: @$s14optimize_never1CCfD
+}
+
+sil_vtable D {
+  #C.foo: @$s14optimize_never1DC3foos5Int32VyF [override]
+  #C.init!initializer: @$s14optimize_never1DCACycfc [override]
+  #D.deinit!deallocator: @$s14optimize_never1DCfD
+}
+
+sil_vtable Base {
+  #Base.foo: @$s14optimize_never4BaseC3foos5Int32VyF
+  #Base.boo: @$s14optimize_never4BaseC3boos5Int32VyF
+}
+
+sil_vtable Derived1 {
+  #Base.foo: @$s14optimize_never8Derived1C3foos5Int32VyF [override]
+  #Base.boo: @$s14optimize_never8Derived1C3boos5Int32VyF [override]
+}
+
+sil_vtable Derived2 {
+  #Base.foo: @$s14optimize_never8Derived2C3foos5Int32VyF [override]
+  #Base.boo: @$s14optimize_never8Derived2C3boos5Int32VyF [override]
+}
+
+sil_vtable ClassUsingThrowingP {
+  #ClassUsingThrowingP.init!allocator: (ClassUsingThrowingP.Type) -> () -> ClassUsingThrowingP : @$s34eager_specialize_throwing_function19ClassUsingThrowingPCACycfC	// ClassUsingThrowingP.__allocating_init()
+  #ClassUsingThrowingP.init!initializer: (ClassUsingThrowingP.Type) -> () -> ClassUsingThrowingP : @$s34eager_specialize_throwing_function19ClassUsingThrowingPCACycfc	// ClassUsingThrowingP.init()
+  #ClassUsingThrowingP.deinit!deallocator: @$s34eager_specialize_throwing_function19ClassUsingThrowingPCfD	// ClassUsingThrowingP.__deallocating_deinit
+}
+
+sil_vtable Klass {}
+
+sil_vtable EltTrivialKlass {}
+
+sil_vtable ContainerKlass {}
+
+sil_vtable SubscriptionViewControllerBuilder {}
+
+sil_vtable SubscriptionViewController {}
+
+sil_vtable ViewController {}
+
+sil_vtable CCCC {}
+
+sil_vtable CC {}
+
+sil_vtable C {}
+
+sil_vtable C_PQ {}
+
+sil_vtable CDefaultStatic {}
+
+sil_vtable MyObject {}
+
+sil_vtable private_base {
+  #private_base.foo: @private_base_foo
+}
+
+sil_vtable private_derived {
+  #private_base.foo: @private_derived_foo [override]
+}
+
+sil_vtable internal_base {
+  #internal_base.foo: @internal_base_foo
+  #internal_base.bar: @internal_base_bar
+}
+
+sil_vtable internal_derived {
+  #internal_base.foo: @internal_derived_foo [override]
+  #internal_base.bar: @internal_derived_bar [override]
+}
+
+sil_vtable public_base {
+  #public_base.foo: @public_base_foo
+  #public_base.bar: @public_base_bar
+  #public_base.baz: @public_base_baz
+}
+
+sil_vtable public_derived {
+  #public_base.foo: @public_derived_foo [override]
+  #public_base.bar: @public_derived_bar [override]
+  #public_base.baz: @public_derived_baz [override]
+}
+
+sil_vtable private_proto_private_class {
+  #private_proto_private_class.theMethod: @private_proto_private_class_theMethod
+}
+
+sil_vtable private_proto_internal_class {
+  #private_proto_internal_class.theMethod: @private_proto_internal_class_theMethod
+}
+
+sil_vtable private_proto_public_class {
+  #private_proto_public_class.theMethod: @private_proto_public_class_theMethod
+}
+
+sil_vtable private_proto_public_class_private_method {
+  #private_proto_public_class_private_method.theMethod: @private_proto_public_class_private_method_theMethod
+}
+
+sil_vtable NSObjectSubclass {}
+
+sil_vtable A {
+  #A.foo: @_TFC4test1A3foofS0_FT_Vs5Int32
+}
+
+sil_vtable X {
+  #X.deinit!deallocator: @$s4main1XCfD
+}
+
+sil_vtable Z {
+  #Z.deinit!deallocator: @$s4main1ZCfD
+}
+
+sil_vtable ArrayClassReaderWriter {
+  #ArrayClassReaderWriter.init!initializer: @_TFC28existential_type_propagation22ArrayClassReaderWritercfMS0_FT_S0_
+}
+
+sil_vtable Base {}
+
+sil_vtable Hash {
+  #Hash.update: @_TFC9hash2_new4Hash6updatefS0_FT3MsgVs5UInt83CntSi_T_
+  #Hash.hash: @_TFC4test4Hash4hashfS0_FT3MsgVs5UInt8_T_
+  #Hash.init!initializer: @_TFC4test4HashcfMS0_FT_S0_
+}
+
+sil_vtable MD5 {
+  // vtable should be keyed with the least-derived method, otherwise
+  // devirtualizer will choose the wrong function ref.
+  #Hash.hash: @_TFC4test3MD54hashfS0_FT3MsgVs5UInt8_T_ [override]
+  #Hash.init!initializer: @_TFC4test3MD5cfMS0_FT_S0_ [override]
+  #Hash.update: @_TFC9hash2_new4Hash6updatefS0_FT3MsgVs5UInt83CntSi_T_ [override]
+}
+
+sil_vtable C {
+  #C.doIt: @_TFC1b1C4doItfS0_FT_T_
+}
+
+sil_vtable D {
+  #C.doIt: @_TFC1b1D4doItfS0_FT_T_ [override]
+}
+
+sil_vtable E {
+  #C.doIt: @_TFC1b1E4doItfS0_FT_T_ [override]
+}
+
+sil_vtable Foo {
+  #Foo.get: @_TFC4main3Foo3getfS0_FT_Si
+}
+
+sil_vtable SomeClass {
+  #SomeClass.foo: (SomeClass) -> () -> Int : @foo
+}
+
+sil_vtable C {
+  #C.foo: @class_target
+}
+
+sil_vtable FooClass {
+  #FooClass.foo: @_TFC18devirt_jump_thread8FooClass3foofS0_FSiSi	// devirt_jump_thread.FooClass.foo (devirt_jump_thread.FooClass)(Swift.Int32) -> Swift.Int32
+  #FooClass.value!getter: @_TFC18devirt_jump_thread8FooClassg5valueSi	// devirt_jump_thread.FooClass.value.getter : Swift.Int32
+  #FooClass.value!setter: @_TFC18devirt_jump_thread8FooClasss5valueSi	// devirt_jump_thread.FooClass.value.setter : Swift.Int32
+}
+
+sil_vtable Foo {
+  #Foo.init!initializer: @_TFC4main3FoocfMS0_FT_S0_	// main.Foo.init (main.Foo.Type)() -> main.Foo
+}
+
+sil_vtable NSObjectSubclass {}
+
+sil_vtable RC {
+  #RC.getThres: (RC) -> () -> Int32 : @$s6test0_2RCC8getThress5Int32VyF
+}
+
+sil_vtable Klass {
+  #Klass.init!allocator: (Klass.Type) -> () -> Klass : @klass_alloc_init
+  #Klass.deinit!deallocator: @klass_dealloc_deinit
+}
+
+sil_vtable C {
+  #C.field!modify: (C) -> () -> () : @CFieldModify
+}
+
+sil_vtable X {
+  #X.ping: @_TFC14devirt_access21X4pingfS0_FT_Si	// devirt_access2.X.ping (devirt_access2.X)() -> Swift.Int
+  #X.init!initializer: @_TFC14devirt_access21XcfMS0_FT_S0_	// devirt_access2.X.init (devirt_access2.X.Type)() -> devirt_access2.X
+}
+
+sil_vtable Y {
+  #X.ping: @_TFC14devirt_access21X4pingfS0_FT_Si [inherited]
+  #X.init!initializer: @_TFC14devirt_access21YcfMS0_FT_S0_ [override]
+}
+
+sil_vtable X {
+  #X.ping: @_TFC4main1X4pingfS0_FT_T_	// main.X.ping (main.X)() -> ()
+  #X.init!initializer: @_TFC4main1XcfMS0_FT_S0_	// main.X.init (main.X.Type)() -> main.X
+}
+
+sil_vtable Foo {
+  #Foo.ping: @_TFC8testcase3Foo4pingfS0_FT_T_	// testcase.Foo.ping (testcase.Foo)() -> ()
+  #Foo.init!initializer: @_TFC8testcase3FoocfMS0_FT_S0_	// testcase.Foo.init (testcase.Foo.Type)() -> testcase.Foo
+}
+
+sil_vtable Bar {
+  #Foo.ping: @_TFC8testcase3Foo4pingfS0_FT_T_ [inherited]
+  #Foo.init!initializer: @_TFC8testcase3FoocfMS0_FT_S0_ [inherited]
+}
+
+sil_vtable REC {
+  #REC.recursive: @REC_recursive	// test.REC.recursive (test.REC)(Swift.Int) -> ()
+  #REC.init!initializer: @_TFC4test3RECcfMS0_FT_S0_	// test.REC.init (test.REC.Type)() -> test.REC
+}
+
+sil_vtable A {
+  #A.ping: @_TFC25polymorphic_inline_caches1A4pingfS0_FBi32_Bi32_
+}
+
+sil_vtable B {
+  #A.ping: @_TFC25polymorphic_inline_caches1B4pingfS0_FBi32_Bi32_ [override]
+}
+
+sil_vtable C {
+  #A.ping: @_TFC25polymorphic_inline_caches1C4pingfS0_FBi32_Bi32_ [override]
+}
+
+sil_vtable D {
+  #A.ping: @_TFC25polymorphic_inline_caches1D4pingfS0_FBi32_Bi32_ [override]
+}
+
+sil_vtable E {
+  #E.foo: @_TFC5casts1E3foofS0_FT_T_
+}
+
+sil_vtable F {
+  #E.foo: @_TFC5casts1F3foofS0_FT_T_ [override]
+}
+
+sil_vtable G {
+  #E.foo: @_TFC5casts1G3foofS0_FT_T_ [override]
+}
+
+sil_vtable Base {
+  #Base.foo: @_TBaseFooFun
+  #Base.exit: @Base_exit
+}
+
+sil_vtable Sub {
+  #Base.foo: @_TSubFooFun [override]
+  #Base.exit: @Sub_exit [override]
+}
+
+sil_vtable Base2 {
+  #Base2.foo: @_TBase2FooFun
+}
+
+sil_vtable Sub2 {
+  #Base2.foo: @_TSub2FooFun [override]
+}
+
+sil_vtable Foo {
+  #Foo.speak: @_TFC4mainP33_9ACC0692747077F216D14C36CD9276713Foo5speakfS0_FT_T_	// main.(Foo in _9ACC0692747077F216D14C36CD927671).speak (main.(Foo in _9ACC0692747077F216D14C36CD927671))() -> ()
+  #Foo.deinit!deallocator: @_TFC4mainP33_9ACC0692747077F216D14C36CD9276713FooD	// main.(Foo in _9ACC0692747077F216D14C36CD927671).__deallocating_deinit
+  #Foo.init!initializer: @_TFC4mainP33_9ACC0692747077F216D14C36CD9276713FoocfMS0_FT_S0_	// main.(Foo in _9ACC0692747077F216D14C36CD927671).init (main.(Foo in _9ACC0692747077F216D14C36CD927671).Type)() -> main.(Foo in _9ACC0692747077F216D14C36CD927671)
+}
+
+sil_vtable Foo2 {
+  #Foo.speak: @_TFC4mainP33_9ACC0692747077F216D14C36CD9276714Foo25speakfS0_FT_T_	// main.(Foo2 in _9ACC0692747077F216D14C36CD927671).speak (main.(Foo2 in _9ACC0692747077F216D14C36CD927671))() -> ()
+  #Foo.init!initializer: @_TFC4mainP33_9ACC0692747077F216D14C36CD9276714Foo2cfMS0_FT_S0_	// main.(Foo2 in _9ACC0692747077F216D14C36CD927671).init (main.(Foo2 in _9ACC0692747077F216D14C36CD927671).Type)() -> main.(Foo2 in _9ACC0692747077F216D14C36CD927671)
+  #Foo2.deinit!deallocator: @_TFC4mainP33_9ACC0692747077F216D14C36CD9276714Foo2D	// main.(Foo2 in _9ACC0692747077F216D14C36CD927671).__deallocating_deinit
+}
+
+sil_vtable C {}
+
+sil_vtable SubC {}
+
+sil_vtable K {
+  #K.ping: @_TFC4test1K4pingfS0_FT_Si	// test.K.ping (test.K)() -> Swift.Int
+  #K.pong: @_TFC4test1K4pongfS0_FT_Si	// test.K.pong (test.K)() -> Swift.Int
+  #K.init!initializer: @_TFC4test1KcfMS0_FT_S0_	// test.K.init (test.K.Type)() -> test.K
+}
+
+sil_vtable X {
+  #X.ping: @_TFC14devirt_access21X4pingfS0_FT_Si	// devirt_access2.X.ping (devirt_access2.X)() -> Swift.Int
+  #X.init!initializer: @_TFC14devirt_access21XcfMS0_FT_S0_	// devirt_access2.X.init (devirt_access2.X.Type)() -> devirt_access2.X
+}
+
+sil_vtable Y {
+  #X.ping: @_TFC14devirt_access21X4pingfS0_FT_Si [inherited]
+  #X.init!initializer: @_TFC14devirt_access21YcfMS0_FT_S0_ [override]
+}
+
+sil_vtable A {
+  #A.ping: @_TFC14devirt_access21A4pingfS0_FT_Si	// devirt_access2.A.ping (devirt_access2.A)() -> Swift.Int
+  #A.init!initializer: @_TFC14devirt_access21AcfMS0_FT_S0_	// devirt_access2.A.init (devirt_access2.A.Type)() -> devirt_access2.A
+}
+
+sil_vtable B {
+  #A.ping: @_TFC14devirt_access21B4pingfS0_FT_Si [override]
+  #A.init!initializer: @_TFC14devirt_access21BcfMS0_FT_S0_ [override]
+}
+
+sil_vtable Ping {
+  #Ping.ping: @_TFC4main4Ping4pingfS0_FT_S0_	// main.Ping.ping (main.Ping)() -> main.Ping
+  #Ping.deinit!deallocator: @_TFC4main4PingD	// main.Ping.__deallocating_deinit
+  #Ping.init!initializer: @_TFC4main4PingcfMS0_FT_S0_	// main.Ping.init (main.Ping.Type)() -> main.Ping
+}
+
+sil_vtable T {
+  #T.reach: @_TFC1p1T5reachfS0_FT_T_	// p.T.reach (p.T)() -> ()
+  #T.deinit!deallocator: @_TFC1p1TD	// p.T.__deallocating_deinit
+  #T.init!initializer: @_TFC1p1TcfMS0_FT_S0_	// p.T.init (p.T.Type)() -> p.T
+}
+
+sil_vtable A {}
+
+sil_vtable D1 {
+  #D1.f1: @_TFC16devirt_try_apply2D12f1fzT_GSqCS_1A_
+}
+
+sil_vtable D3 {
+  #D1.f1: @_TFC16devirt_try_apply2D32f1fzT_CS_1A [override]
+}
+
+sil_vtable Base {
+  #Base.foo: @_TFC16devirt_try_apply4Base3foofS0_FzT_GSqVs5Int32_
+  #Base.boo1: @_TFC16devirt_try_apply4Base4boo1fS0_FzT_S0_
+  #Base.boo2: @_TFC16devirt_try_apply4Base4boo2fS0_FzT_GSqS0__
+  #Base.init!initializer: @_TFC16devirt_try_apply4BasecfMS0_FT_S0_
+  #Base.deinit!deallocator: @_TFC16devirt_try_apply4BaseD
+}
+
+sil_vtable Derived1 {
+  #Base.foo: @_TFC16devirt_try_apply8Derived13foofS0_FzT_GSqVs5Int32_ [override]
+  #Base.boo1: @_TFC16devirt_try_apply8Derived14boo1fS0_FzT_S0_ [override]
+  #Base.boo2: @_TFC16devirt_try_apply8Derived14boo2fS0_FzT_GSqS0__ [override]
+  #Base.init!initializer: @_TFC16devirt_try_apply8Derived1cfMS0_FT_S0_ [override]
+  #Derived1.deinit!deallocator: @_TFC16devirt_try_apply8Derived1D
+}
+
+sil_vtable Derived2 {
+  #Base.foo: @_TTVFC16devirt_try_apply8Derived23foofS0_FzT_Vs5Int32 [override]
+  #Base.boo1: @_TFC16devirt_try_apply8Derived24boo1fS0_FzT_S0_ [override]
+  #Base.boo2: @_TFC16devirt_try_apply8Derived24boo2fS0_FzT_S0_ [override]
+  #Base.init!initializer: @_TFC16devirt_try_apply8Derived2cfMS0_FT_S0_ [override]
+  #Derived2.deinit!deallocator: @_TFC16devirt_try_apply8Derived2D
+}
+
+sil_vtable CP1 {
+  #CP1.foo: @_TFC16devirt_try_apply3CP13foofS0_FzT_Vs5Int32
+  #CP1.init!initializer: @_TFC16devirt_try_apply3CP1cfMS0_FT_S0_
+  #CP1.deinit!deallocator: @_TFC16devirt_try_apply3CP1D
+}
+
+sil_vtable CP2 {
+  #CP1.foo: @_TFC16devirt_try_apply3CP23foofS0_FzT_Vs5Int32 [override]
+  #CP1.init!initializer: @_TFC16devirt_try_apply3CP2cfMS0_FT_S0_ [override]
+  #CP2.deinit!deallocator: @_TFC16devirt_try_apply3CP2D
+}
+
+sil_vtable Bar {
+  #Bar.ping: @_TFC4main3Bar4pingfS0_FT_T_
+}
+
+sil_vtable Foo {
+  #Bar.ping: @_TFC4main3Foo4pingfS0_FT_T_ [override]
+}
+
+sil_vtable SomeClass {
+  #SomeClass.foo: (SomeClass) -> () -> Int32 : @$s21existential_transform9SomeClassC3foos5Int32VyF	// SomeClass.foo()
+}
+
+sil_vtable SomeNoClass {
+  #SomeNoClass.foo: (SomeNoClass) -> () -> Int32 : @$s21existential_transform11SomeNoClassC3foos5Int32VyF	// SomeNoClass.foo()
+}
+
+sil_vtable SomeClassComp {
+  #SomeClassComp.foo: (SomeClassComp) -> () -> Int32 : @$s21existential_transform13SomeClassCompC3foos5Int32VyF	// SomeClassComp.foo()
+  #SomeClassComp.bar: (SomeClassComp) -> () -> Int32 : @$s21existential_transform13SomeClassCompC3bars5Int32VyF	// SomeClassComp.bar()
+}
+
+sil_vtable SomeNoClassComp {
+  #SomeNoClassComp.foo: (SomeNoClassComp) -> () -> Int32 : @$s21existential_transform15SomeNoClassCompC3foos5Int32VyF	// SomeNoClassComp.foo()
+  #SomeNoClassComp.bar: (SomeNoClassComp) -> () -> Int32 : @$s21existential_transform15SomeNoClassCompC3bars5Int32VyF	// SomeNoClassComp.bar()
+}
+
+sil_vtable K {
+  #K.foo: (K) -> () -> Int32 : @$s21existential_transform1KC3foos5Int32VyF	// K.foo()
+}
+
+sil_vtable KK {
+  #KK.foo: (KK) -> () -> Int32 : @$s21existential_transform2KKC3foos5Int32VyF	// KK.foo()
+}
+
+sil_vtable KKK {
+  #KKK.foo: (KKK) -> () -> Int32 : @$s21existential_transform3KKKC3foos5Int32VyF	// KKK.foo()
+}
+
+sil_vtable C {}
+
+sil_vtable Bar {
+  #Bar.foo: @_TFC4main3Bar3foofS0_FT_T_
+}
+
+sil_vtable Node {
+  #Node.index!getter: @transparent_target
+}
+
+sil_vtable B {
+  #B.foo: @_TZFC4metaP33_7026FC13D35FB9700BACF693F51A99011B3foofMS0_FT_Si
+}
+
+sil_vtable C {
+  #B.foo: @_TZFC4metaP33_7026FC13D35FB9700BACF693F51A99011B3foofMS0_FT_Si [inherited]
+}
+
+sil_vtable Hash {
+  #Hash.update: @_TFC9hash2_new4Hash6updatefS0_FT3MsgVs5UInt83CntSi_T_
+  #Hash.hash: @_TFC4test4Hash4hashfS0_FT3MsgVs5UInt8_T_
+}
+
+sil_vtable MD5 {
+  // vtable should be keyed with the least-derived method, otherwise
+  // devirtualizer will choose the wrong function ref.
+  #Hash.hash: @_TFC4test3MD54hashfS0_FT3MsgVs5UInt8_T_ [override]
+  #MD5.init!initializer: @_TFC4test3MD5cfMS0_FT_S0_
+  #Hash.update: @_TFC9hash2_new4Hash6updatefS0_FT3MsgVs5UInt83CntSi_T_ [override]
+}
+
+sil_vtable C {
+  #C.doIt: @_TFC1b1C4doItfS0_FT_T_
+}
+
+sil_vtable D {
+  #C.doIt: @_TFC1b1D4doItfS0_FT_T_ [override]
+}
+
+sil_vtable E {
+  #C.doIt: @_TFC1b1E4doItfS0_FT_T_ [override]
+}
+
+sil_vtable Bar {
+  #Bar.foo: @_TFC4main3Bar3foofS0_FT_T_
+}
+
+sil_vtable Node {
+  #Node.index!getter: @transparent_target
+}
+
+sil_vtable B {
+  #B.foo: @_TZFC4metaP33_7026FC13D35FB9700BACF693F51A99011B3foofMS0_FT_Si
+}
+
+sil_vtable C {
+  #B.foo: @_TZFC4metaP33_7026FC13D35FB9700BACF693F51A99011B3foofMS0_FT_Si [inherited]
+}
+
+sil_vtable Test {
+  #Test.testing: @virtual_callee
+}
+
+sil_vtable C {}
+
+sil_vtable Bar {
+  #Bar.init!initializer: @_TFC4test3BarcfMS0_FT_S0_	// test.Bar.init (test.Bar.Type)() -> test.Bar
+  #Bar.walk: @_TFC4test3Bar4walkfS0_FT_T_	// test.Bar.walk (test.Bar)() -> ()
+  #Bar.deinit!deallocator: @_TFC4test3BarD	// test.Bar.__deallocating_deinit
+}
+
+sil_vtable X {}
+
+sil_vtable X {}
+
+sil_vtable Y {}
+
+sil_vtable K {
+  #K.ping: @_TFC4test1K4pingfS0_FT_Si	// test.K.ping (test.K)() -> Swift.Int
+  #K.pong: @_TFC4test1K4pongfS0_FT_Si	// test.K.pong (test.K)() -> Swift.Int
+  #K.init!initializer: @_TFC4test1KcfMS0_FT_S0_	// test.K.init (test.K.Type)() -> test.K
+}
+
+sil_vtable X {
+  #X.ping: @_TFC14devirt_access21X4pingfS0_FT_Si	// devirt_access2.X.ping (devirt_access2.X)() -> Swift.Int
+  #X.init!initializer: @_TFC14devirt_access21XcfMS0_FT_S0_	// devirt_access2.X.init (devirt_access2.X.Type)() -> devirt_access2.X
+}
+
+sil_vtable Y {
+  #X.ping: @_TFC14devirt_access21X4pingfS0_FT_Si [inherited]
+  #X.init!initializer: @_TFC14devirt_access21YcfMS0_FT_S0_ [override]
+}
+
+sil_vtable A {
+  #A.ping: @_TFC14devirt_access21A4pingfS0_FT_Si	// devirt_access2.A.ping (devirt_access2.A)() -> Swift.Int
+  #A.init!initializer: @_TFC14devirt_access21AcfMS0_FT_S0_	// devirt_access2.A.init (devirt_access2.A.Type)() -> devirt_access2.A
+}
+
+sil_vtable B {
+  #A.ping: @_TFC14devirt_access21B4pingfS0_FT_Si [override]
+  #A.init!initializer: @_TFC14devirt_access21BcfMS0_FT_S0_ [override]
+}
+
+sil_vtable PrivateA {
+  #PrivateA.noOverrides: @PrivateA_noOverrides
+  #PrivateA.yesOverrides: @PrivateA_yesOverrides
+  #PrivateA.isFinal: @PrivateA_isFinal
+}
+
+sil_vtable PrivateB {
+  #PrivateA.noOverrides: @PrivateA_noOverrides [inherited]
+  #PrivateA.yesOverrides: @PrivateB_yesOverrides [override]
+  #PrivateA.isFinal: @PrivateA_isFinal [inherited]
+}
+
+sil_vtable InternalA {
+  #InternalA.noOverrides: @InternalA_noOverrides
+  #InternalA.yesOverrides: @InternalA_yesOverrides
+  #InternalA.isFinal: @InternalA_isFinal
+}
+
+sil_vtable InternalB {
+  #InternalA.noOverrides: @InternalA_noOverrides [inherited]
+  #InternalA.yesOverrides: @InternalB_yesOverrides [override]
+  #InternalA.isFinal: @InternalA_isFinal [inherited]
+}
+
+sil_vtable PublicA {
+  #PublicA.noOverrides: @PublicA_noOverrides
+  #PublicA.yesOverrides: @PublicA_yesOverrides
+  #PublicA.isFinal: @PublicA_isFinal
+}
+
+sil_vtable PublicB {
+  #PublicA.noOverrides: @PublicA_noOverrides [inherited]
+  #PublicA.yesOverrides: @PublicB_yesOverrides [override]
+  #PublicA.isFinal: @PublicA_isFinal [inherited]
+}
+
+sil_vtable OpenA {
+  #OpenA.noOverrides: @OpenA_noOverrides
+  #OpenA.yesOverrides: @OpenA_yesOverrides
+  #OpenA.isFinal: @OpenA_isFinal
+}
+
+sil_vtable OpenB {
+  #OpenA.noOverrides: @PublicA_noOverrides [inherited]
+  #OpenA.yesOverrides: @OpenB_yesOverrides [override]
+  #OpenA.isFinal: @PublicA_isFinal [inherited]
+}
+
+sil_vtable X {
+  #X.ping: @_TFC14devirt_access21X4pingfS0_FT_Si	// devirt_access2.X.ping (devirt_access2.X)() -> Swift.Int
+  #X.init!initializer: @_TFC14devirt_access21XcfMS0_FT_S0_	// devirt_access2.X.init (devirt_access2.X.Type)() -> devirt_access2.X
+}
+
+sil_vtable Y {
+  #X.ping: @_TFC14devirt_access21X4pingfS0_FT_Si [inherited]
+  #X.init!initializer: @_TFC14devirt_access21YcfMS0_FT_S0_ [inherited]
+}
+
+sil_vtable C {}
+
+sil_vtable C {}
+
+sil_vtable D {}
+
+sil_vtable G {}
+
+sil_vtable E {}
+
+sil_vtable C {}
+
+sil_vtable C {
+  #C.callThrowing: @callThrowing
+}
+
+sil_vtable C {}
+
+sil_vtable D {}
+
+sil_vtable B {
+  #B.deinit!deallocator: @$s4test1BCfD	// test.B.__deallocating_deinit
+  #B.init!initializer: @$s4test1BCACycfc	// test.B.init () -> test.B
+}
+
+sil_vtable A {}
+
+sil_vtable D1 {
+  #D1.f1: @_TFC16devirt_try_apply2D12f1fzT_GSqCS_1A_// devirt_try_apply.D1.f1 () throws -> Swift.Optional<devirt_try_apply.A>
+}
+
+sil_vtable D3 {
+  #D1.f1: @_TFC16devirt_try_apply2D32f1fzT_CS_1A [override] // devirt_try_apply.D3.f1 () throws -> devirt_try_apply.A
+}
+
+sil_vtable Base {
+  #Base.foo: @_TFC16devirt_try_apply4Base3foofS0_FzT_GSqVs5Int32_
+  #Base.boo1: @_TFC16devirt_try_apply4Base4boo1fS0_FzT_S0_
+  #Base.boo2: @_TFC16devirt_try_apply4Base4boo2fS0_FzT_GSqS0__
+  #Base.init!initializer: @_TFC16devirt_try_apply4BasecfMS0_FT_S0_
+  #Base.deinit!deallocator: @_TFC16devirt_try_apply4BaseD
+}
+
+sil_vtable Derived1 {
+  #Base.foo: @_TFC16devirt_try_apply8Derived13foofS0_FzT_GSqVs5Int32_ [override]
+  #Base.boo1: @_TFC16devirt_try_apply8Derived14boo1fS0_FzT_S0_ [override]
+  #Base.boo2: @_TFC16devirt_try_apply8Derived14boo2fS0_FzT_GSqS0__ [override]
+  #Base.init!initializer: @_TFC16devirt_try_apply8Derived1cfMS0_FT_S0_ [override]
+  #Derived1.deinit!deallocator: @_TFC16devirt_try_apply8Derived1D
+}
+
+sil_vtable Derived2 {
+  #Base.foo: @_TTVFC16devirt_try_apply8Derived23foofS0_FzT_Vs5Int32 [override]
+  #Base.boo1: @_TFC16devirt_try_apply8Derived24boo1fS0_FzT_S0_ [override]
+  #Base.boo2: @_TFC16devirt_try_apply8Derived24boo2fS0_FzT_S0_ [override]
+  #Base.init!initializer: @_TFC16devirt_try_apply8Derived2cfMS0_FT_S0_ [override]
+  #Derived2.deinit!deallocator: @_TFC16devirt_try_apply8Derived2D
+}
+
+sil_vtable CP1 {
+  #CP1.foo: @_TFC16devirt_try_apply3CP13foofS0_FzT_Vs5Int32
+  #CP1.init!initializer: @_TFC16devirt_try_apply3CP1cfMS0_FT_S0_
+  #CP1.deinit!deallocator: @_TFC16devirt_try_apply3CP1D
+}
+
+sil_vtable CP2 {
+  #CP1.foo: @_TFC16devirt_try_apply3CP23foofS0_FzT_Vs5Int32 [override]
+  #CP1.init!initializer: @_TFC16devirt_try_apply3CP2cfMS0_FT_S0_ [override]
+  #CP2.deinit!deallocator: @_TFC16devirt_try_apply3CP2D
+}
+
+sil_vtable REC {
+  #REC.recursive: @_TFC6single3REC9recursivefS0_FSiT_	// single.REC.recursive (single.REC)(Swift.Int) -> ()
+  #REC.init!initializer: @_TFC6single3RECcfMS0_FT_S0_	// single.REC.init (single.REC.Type)() -> single.REC
+}
+
+sil_vtable C {}
+
+sil_vtable C {}
+
+sil_vtable SomeClass {}
+
+sil_vtable SomeSubclass {}
+
+sil_vtable ClassWithResilientField {}
+
+sil_vtable SubclassOfClassWithResilientField {}
+
+sil_vtable ClassWithResilientEnum {}
+
+sil_vtable ClassWithResilientRef {}
+
+sil_vtable C {}
+
+sil_vtable C {}
+
+sil_vtable D {}
+
+sil_vtable C {}
+
+sil_vtable ABC {
+  #ABC.member: @_TFC4main3ABC6memberfS0_FT_T_  // main.ABC.member (main.ABC)() -> ()
+  #ABC.member2: @_TFC4main3ABC7member2fS0_FT_T_  // main.ABC.member2 (main.ABC)() -> ()
+}
+
+sil_vtable XXX {
+  #XXX.deinit!deallocator: @XXX_dtor
+  #XXX.init!initializer: @XXX_ctor
+}
+
+sil_vtable C {}
+
+sil_vtable SwiftGizmo {}
+
+sil_vtable GenericInheritsObjC {}
+
+sil_vtable GenericInheritsObjC2 {}
+
+sil_vtable Generic3WithReqs {}
+
+sil_vtable SomeClass {}
+
+sil_vtable C {}
+
+sil_vtable Base {
+  #Base.init!allocator: @BaseInit
+}
+
+sil_vtable Derived {
+  #Base.init!allocator: @DerivedInit [override]
+}
+
+sil_vtable Test {
+  #Test.testing: @virtual_callee
+}
+
+sil_vtable OC {}
+
+sil_vtable SomeClass {}
+
+sil_vtable SomeSubclass {}
+
+sil_vtable C {}
+
+sil_vtable C1 {}
+
+sil_vtable C2 {}
+
+sil_vtable C {}
+
+sil_vtable C {}
+
+sil_vtable D {}
+
+sil_vtable C {
+  #C.deinit!deallocator: @_TFC28nonatomic_reference_counting1CD  // C.__deallocating_deinit
+}
+
+sil_vtable C {
+  #C.init!allocator: @$s12dynamic_init1CCACycACmcfC // dynamic_init.C.__allocating_init (dynamic_init.C.Type)() -> dynamic_init.C
+}
+
+sil_vtable C {}
+
+sil_vtable C {}
+
+sil_vtable C {
+  #C.init!allocator: @$s6vtable1CCACycACmcfC
+}
+
+sil_vtable C {}
+
+sil_vtable Base {}
+
+sil_vtable [serialized] B {
+  #B.foo: (B) -> () -> Int64 : @foo  // B.foo()
+}
+
+sil_vtable [serialized] C {
+  #C.foo: (C) -> () -> Int64 : @bar
+}
+
+sil_vtable Hash {
+  #Hash.init!initializer: @_TFC4main4HashcfMS0_FT_S0_	// main.Hash.init (main.Hash.Type)() -> main.Hash
+  #Hash.update: @_TFC4main4Hash6updatefS0_FT_T_	// main.Hash.update (main.Hash)() -> ()
+  #Hash.hash: @_TFC4main4Hash4hashfS0_FT_T_	// main.Hash.hash (main.Hash)() -> ()
+}
+
+sil_vtable MD5 {
+  #Hash.init!initializer: @_TFC4main3MD5cfMS0_FT_S0_ [override]	// main.MD5.init (main.MD5.Type)() -> main.MD5
+  #Hash.update: @_TFC4main4Hash6updatefS0_FT_T_ [inherited]	// main.Hash.update (main.Hash)() -> ()
+  #Hash.hash: @_TFC4main4Hash4hashfS0_FT_T_ [inherited]	// main.Hash.hash (main.Hash)() -> ()
+}
+
+sil_vtable Node {
+  #Node.init!initializer: @_TFC9pic_crash4NodecfMS0_FT5indexSi_S0_	// pic_crash.Node.init (pic_crash.Node.Type)(index : Swift.Int) -> pic_crash.Node
+  #Node.check: @_test_exact_checked_cast_branch	// pic_crash.Node.check (pic_crash.Node)() -> Swift.Int
+  #Node.index!getter: @_TFC9pic_crash4Nodeg5indexSi	// pic_crash.Node.index.getter : Swift.Int
+  #Node.index!setter: @_TFC9pic_crash4Nodes5indexSi	// pic_crash.Node.index.setter : Swift.Int
+}
+
+sil_vtable ParentNode {
+  #Node.init!initializer: @_TFC9pic_crash10ParentNodecfMS0_FT5indexSi_S0_ [override]	// pic_crash.ParentNode.init (pic_crash.ParentNode.Type)(index : Swift.Int) -> pic_crash.ParentNode
+  #Node.check: @_test_exact_checked_cast_branch [override]	// pic_crash.Node.check (pic_crash.Node)() -> Swift.Int
+  #Node.index!getter: @_TFC9pic_crash4Nodeg5indexSi [override]	// pic_crash.Node.index.getter : Swift.Int
+  #Node.index!setter: @_TFC9pic_crash4Nodes5indexSi [override]	// pic_crash.Node.index.setter : Swift.Int
+  #ParentNode.init!initializer: @_TFC9pic_crash10ParentNodecfMS0_FT4leftCS_4Node5rightS1_5indexSi_S0_ 	// pic_crash.ParentNode.init (pic_crash.ParentNode.Type)(left : pic_crash.Node, right : pic_crash.Node, index : Swift.Int) -> pic_crash.ParentNode
+}
+
+sil_vtable BaseBase {
+  #BaseBase.foo: (BaseBase) -> () -> () : @$s5test104BaseB0C3fooyyF
+  #BaseBase.deinit!deallocator: @$s5test104BaseB0CfD
+}
+
+sil_vtable Base {
+  #BaseBase.foo: (BaseBase) -> () -> () : @$s5test104BaseB0C3fooyyF [inherited]
+  #Base.deinit!deallocator: @$s5test14BaseCfD
+}
+
+sil_vtable DerivedInt {
+  #BaseBase.foo: (BaseBase) -> () -> () : @$s5test110DerivedIntC3fooyyF [override]
+  #DerivedInt.deinit!deallocator: @$s5test110DerivedIntCfD
+}
+
+sil_vtable WeakBox {}
+
+sil_vtable C {}
+
+sil_vtable D {}
+
+sil_vtable E {}
+
+sil_vtable Empty {}
+
+sil_vtable C {}
+
+sil_vtable Concrete {}
+
+sil_vtable SubConcrete {}
+
+sil_vtable Derived {}
+
+sil_vtable SubDerived {}
+
+sil_vtable MoreDerived {}
+
+sil_vtable X {}
+
+sil_vtable X {
+  #X.ping: @_TFC14devirt_access21X4pingfS0_FT_Si	// devirt_access2.X.ping (devirt_access2.X)() -> Swift.Int
+  #X.init!initializer: @_TFC14devirt_access21XcfMS0_FT_S0_	// devirt_access2.X.init (devirt_access2.X.Type)() -> devirt_access2.X
+}
+
+sil_vtable Y {
+  #X.ping: @_TFC14devirt_access21X4pingfS0_FT_Si [inherited]
+  #X.init!initializer: @_TFC14devirt_access21YcfMS0_FT_S0_ [override]
+}
+
+sil_vtable Foo {
+  #Foo.ping: @_TFC8testcase3Foo4pingfS0_FT_T_	// testcase.Foo.ping (testcase.Foo)() -> ()
+  #Foo.init!initializer: @_TFC8testcase3FoocfMS0_FT_S0_	// testcase.Foo.init (testcase.Foo.Type)() -> testcase.Foo
+}
+
+sil_vtable C {
+  #C.foo: @_TZFC4spec1C3foofMS0_FT_T_
+  #C.bar: @_TZFC4spec1C3barfMS0_FT_T_
+}
+
+sil_vtable SuperBase {}
+
+sil_vtable SuperSub {}
+
+sil_vtable X {}
+
+sil_vtable A {}
+
+sil_vtable B {}
+
+sil_vtable C {}
+
+sil_vtable C {}
+
+sil_vtable A {
+  #A.foo: @_TFC4test1A3foofS0_FT_Vs5Int32
+}
+
+sil_vtable C2 {
+  #C2.i!modify: (C2) -> () -> () : @devirt_callee
+}
+
+sil_vtable TestArrayStorage {}
+
+sil_vtable ClassWithEmptyField {}
+
+sil_vtable C {}
+
+sil_vtable Foo {}
+
+sil_vtable A {
+  #A.deinit!deallocator: (A) -> () -> () : @$s4test1ACfD
+  #A.foo: (A) -> () -> () : @A_foo
+}
+
+sil_vtable B {
+  #B.deinit!deallocator: (B) -> () -> () : @$s4test1BCfD
+  #A.foo: (A) -> () -> () : @B_foo [override]
+}
+
+sil_vtable G {
+  #G.bar: @G_bar
+}
+
+sil_vtable Bar {
+  #Bar.ping: @_TFC4main3Bar4pingfS0_FT_T_
+}
+
+sil_vtable Foo {
+  #Bar.ping: @_TFC4main3Foo4pingfS0_FT_T_ [override]
+}
+
+sil_vtable Foo2 {
+  #Foo.doSomething: @_TFC4test4Foo211doSomethingfS0_FT_CS_3Foo	// test.Foo2.doSomething (test.Foo2)() -> test.Foo
+  #Foo.init!initializer: @_TFC4test4Foo2cfMS0_FT_S0_	// test.Foo2.init (test.Foo2.Type)() -> test.Foo2
+  #Foo2.deinit!deallocator: @_TFC4test4Foo2D	// test.Foo2.__deallocating_deinit
+}
+
+sil_vtable Concrete {}
+
+sil_vtable SubConcrete {}
+
+sil_vtable Derived {}
+
+sil_vtable SubDerived {}
+
+sil_vtable MoreDerived {}
+
+sil_vtable SomeClass {}
+
+sil_vtable SomeSubclass {}
+
+sil_vtable SomeClass {}
+
+sil_vtable OtherClass {}
+
+sil_vtable TestClass {}
+
+sil_vtable EmptyClass {}
+
+sil_vtable Bar {}
+
+sil_vtable Purebred {}
+
+sil_vtable Mongrel {}
+
+sil_vtable private_base {
+  #private_base.foo: @private_base_foo
+}
+
+sil_vtable private_derived {
+  #private_base.foo: @private_derived_foo [override]
+}
+
+sil_vtable internal_base {
+  #internal_base.foo: @internal_base_foo
+  #internal_base.bar: @internal_base_bar
+}
+
+sil_vtable internal_derived {
+  #internal_base.foo: @internal_derived_foo [override]
+  #internal_base.bar: @internal_derived_bar [override]
+}
+
+sil_vtable public_base {
+  #public_base.foo: @public_base_foo
+  #public_base.bar: @public_base_bar
+  #public_base.baz: @public_base_baz
+}
+
+sil_vtable public_derived {
+  #public_base.foo: @public_derived_foo [override]
+  #public_base.bar: @public_derived_bar [override]
+  #public_base.baz: @public_derived_baz [override]
+}
+
+sil_vtable private_proto_private_class {
+  #private_proto_private_class.theMethod: @private_proto_private_class_theMethod
+}
+
+sil_vtable private_proto_internal_class {
+  #private_proto_internal_class.theMethod: @private_proto_internal_class_theMethod
+}
+
+sil_vtable private_proto_public_class {
+  #private_proto_public_class.theMethod: @private_proto_public_class_theMethod
+}
+
+sil_vtable private_proto_public_class_private_method {
+  #private_proto_public_class_private_method.theMethod: @private_proto_public_class_private_method_theMethod
+}
+
+sil_vtable SomeItem {
+  #SomeItem.init!allocator: @SomeItem_allocator
+  #SomeItem.init!initializer: @SomeItem_initializer
+  #SomeItem.deinit!deallocator: @SomeItem_destructor
+}
+
+sil_vtable SomeChildItem {
+  #SomeItem.init!allocator: @SomeChildItem_allocator [override]
+  #SomeItem.init!initializer: @SomeChildItem_initializer [override]
+  #SomeChildItem.deinit!deallocator: @SomeChildItem_destructor
+}
+
+sil_vtable X {}
+
+sil_vtable SwiftGizmo {}
+
+sil_vtable A {}
+
+sil_vtable A {}
+
+sil_vtable Foo {
+  #Foo.ping: @_TFC4main3Foo4pingfS0_FT_Si  // main.Foo.ping (main.Foo)() -> Swift.Int
+  #Foo.init!initializer: @_TFC4main3FoocfMS0_FT_S0_  // main.Foo.init (main.Foo.Type)() -> main.Foo
+}
+
+sil_vtable SubButtHolder {}
+
+sil_vtable SubSubButtHolder {}
+
+sil_vtable ABC {
+  #ABC.member: @_TFC4main3ABC6memberfS0_FT_T_  // main.ABC.member (main.ABC)() -> ()
+  #ABC.member2: @_TFC4main3ABC7member2fS0_FT_T_  // main.ABC.member2 (main.ABC)() -> ()
+}
+
+sil_vtable C {}
+
+sil_vtable D {}
+
+sil_vtable [serialized] C {
+  #C.deinit!deallocator: @c_deinit
+}
+
+sil_vtable SwiftClass {}
+
+sil_vtable Purebred {}
+
+sil_vtable Mongrel {}
+
+sil_vtable C {}
+
+sil_vtable NonRequiredBase {
+  #NonRequiredBase.init!initializer: @init_NonRequiredBase
+}
+
+sil_vtable RequiredBase {
+  #NonRequiredBase.init!initializer: @init_RequiredBase [override]
+  #RequiredBase.init!allocator: @alloc_RequiredBase
+}
+
+sil_vtable ClassConstraintConformance {}
+
+sil_vtable ClassConstrainedGenericField {}
+
+sil_vtable ClassWithResilientField {}
+
+sil_vtable SubclassOfClassWithResilientField {}
+
+sil_vtable ClassWithResilientEnum {}
+
+sil_vtable ClassWithResilientRef {}
+
+sil_vtable C {}
+
+sil_vtable C {
+  #C.deinit!deallocator: @_TFC28nonatomic_reference_counting1CD  // C.__deallocating_deinit
+}
+
+sil_vtable SwiftClass {}
+
+sil_vtable Base {}
+
+sil_vtable Sub {}
+
+sil_vtable A3 {}
+
+sil_vtable X {}
+
+sil_vtable SwiftGizmo {}
+
+sil_vtable TPSReport {}
+
+sil_vtable A {}
+
+sil_vtable RootGeneric {
+  #RootGeneric.foo: @_TFC15generic_classes11RootGeneric3fooU__fGS0_Q__FT_T_
+  #RootGeneric.bar: @_TFC15generic_classes11RootGeneric3barU__fGS0_Q__FT_T_
+  #RootGeneric.bas: @_TFC15generic_classes11RootGeneric3basU__fGS0_Q__FT_T_
+}
+
+sil_vtable RootGenericFixedLayout {}
+
+sil_vtable RootNonGeneric {}
+
+sil_vtable GenericInheritsGeneric {
+  #RootGeneric.foo: @_TFC15generic_classes11RootGeneric3fooU__fGS0_Q__FT_T_ [inherited]
+  #RootGeneric.bar: @_TFC15generic_classes11RootGeneric3barU__fGS0_Q__FT_T_ [inherited]
+  #RootGeneric.bas: @_TFC15generic_classes11RootGeneric3basU__fGS0_Q__FT_T_ [inherited]
+  #GenericInheritsGeneric.zippity: @_TFC15generic_classes22GenericInheritsGeneric7zippityU___fGS0_Q_Q0__FT_T_
+  #GenericInheritsGeneric.doo: @_TFC15generic_classes22GenericInheritsGeneric3dooU___fGS0_Q_Q0__FT_T_
+  #GenericInheritsGeneric.dah: @_TFC15generic_classes22GenericInheritsGeneric3dahU___fGS0_Q_Q0__FT_T_
+}
+
+sil_vtable GenericInheritsNonGeneric {}
+
+sil_vtable RecursiveGenericInheritsGeneric {}
+
+sil_vtable Pachyderm {}
+
+sil_vtable TrivialBase {
+  #TrivialBase.init!allocator: @alloc_TrivialBase
+}
+
+sil_vtable NonTrivialDerived {
+  #TrivialBase.init!allocator: @alloc_NonTrivialDerived [override]
+  #NonTrivialDerived!ivardestroyer: @$s14ivar_destroyer17NonTrivialDerivedCfE
+}
+
+sil_vtable F {}
+
+sil_vtable A {}
+
+sil_vtable A {}
+
+sil_vtable B {}
+
+sil_vtable OA {}
+
+sil_vtable OB {}
+
+sil_vtable C {}
+
+sil_vtable C {}
+
+sil_vtable GenericClass {}
+
+sil_vtable A {}
+
+sil_vtable B {}
+
+sil_vtable Subclass {}
+
+sil_vtable D {}
+
+sil_vtable Outer {}
+
+sil_vtable C {}
+
+sil_vtable D {}
+
+sil_vtable AClass {}
+
+sil_vtable ObjCClass {}
+
+sil_vtable A {}
+
+sil_vtable B {}
+
+sil_vtable C {}
+
+sil_vtable TestClass {}
+
+sil_vtable BigClass {}
+
+sil_vtable NativeClass {}
+
+sil_vtable C {}
+
+sil_vtable TestC {}
+
+sil_vtable NSObject {}
+
+sil_vtable Foo {}
+
+sil_vtable C {}
+
+sil_vtable InternalA {
+  #InternalA.deinit!deallocator: @InternalA_dealloc
+  #InternalA.init!allocator: @InternalA_init
+  #InternalA.foo: @InternalA_foo [nonoverridden]
+  #InternalA.bar: @InternalA_bar
+  #InternalA.bas: @InternalA_bas [nonoverridden]
+}
+
+sil_vtable InternalB {
+  #InternalB.deinit!deallocator: @InternalB_dealloc
+  #InternalA.init!allocator: @InternalB_init [override]
+  #InternalA.foo: @InternalA_foo [inherited] [nonoverridden]
+  #InternalA.bar: @InternalB_bar [override]
+  #InternalA.bas: @InternalA_bas [inherited] [nonoverridden]
+}
+
+sil_vtable PublicFragileA {
+  #PublicFragileA.deinit!deallocator: @PublicFragileA_dealloc
+  #PublicFragileA.init!allocator: @PublicFragileA_init
+  #PublicFragileA.foo: @PublicFragileA_foo [nonoverridden]
+  #PublicFragileA.bar: @PublicFragileA_bar
+  #PublicFragileA.bas: @PublicFragileA_bas [nonoverridden]
+}
+
+sil_vtable PublicFragileB {
+  #PublicFragileB.deinit!deallocator: @PublicFragileB_dealloc
+  #PublicFragileA.init!allocator: @PublicFragileB_init [override]
+  #PublicFragileA.foo: @PublicFragileA_foo [inherited] [nonoverridden]
+  #PublicFragileA.bar: @PublicFragileB_bar [override]
+  #PublicFragileA.bas: @PublicFragileA_bas [inherited] [nonoverridden]
+}
+
+sil_vtable PublicResilientSubclassOfFragile {
+  #PublicResilientSubclassOfFragile.deinit!deallocator: @PublicResilientSubclassOfFragile_dealloc
+  #PublicFragileA.init!allocator: @PublicResilientSubclassOfFragile_init [override]
+  #PublicFragileA.foo: @PublicFragileA_foo [inherited] [nonoverridden]
+  #PublicFragileA.bar: @PublicResilientSubclassOfFragile_bar [override]
+  #PublicFragileA.bas: @PublicFragileA_bas [inherited] [nonoverridden]
+}
+
+sil_vtable PublicA {
+  #PublicA.deinit!deallocator: @PublicA_dealloc
+  #PublicA.init!allocator: @PublicA_init
+  #PublicA.foo: @PublicA_foo [nonoverridden]
+  #PublicA.bar: @PublicA_bar
+  #PublicA.bas: @PublicA_bas [nonoverridden]
+}
+
+sil_vtable PublicB {
+  #PublicB.deinit!deallocator: @PublicB_dealloc
+  #PublicA.init!allocator: @PublicB_init [override]
+  #PublicA.foo: @PublicA_foo [inherited] [nonoverridden]
+  #PublicA.bar: @PublicB_bar [override]
+  #PublicA.bas: @PublicA_bas [inherited] [nonoverridden]
+}
+
+sil_vtable PublicOnlyNonoverridden {
+  #PublicOnlyNonoverridden.deinit!deallocator: @PublicOnlyNonoverridden_dealloc
+  #PublicOnlyNonoverridden.init!allocator: @PublicOnlyNonoverridden_init [nonoverridden]
+  #PublicOnlyNonoverridden.foo: @PublicOnlyNonoverridden_foo [nonoverridden]
+}
+
+sil_vtable A {}
+
+sil_vtable ChildToResilientParent {
+  #ResilientOutsideParent.method: @$s5super22ChildToResilientParentC6methodyyF [override]	// super.ChildToResilientParent.method () -> ()
+  #ResilientOutsideParent.classMethod: @$s5super22ChildToResilientParentC11classMethodyyFZ [override]	// static super.ChildToResilientParent.classMethod () -> ()
+}
+
+sil_vtable ChildToFixedParent {
+  #OutsideParent.method: @$s5super18ChildToFixedParentC6methodyyF [override]	// super.ChildToFixedParent.method () -> ()
+  #OutsideParent.classMethod: @$s5super18ChildToFixedParentC11classMethodyyFZ [override]	// static super.ChildToFixedParent.classMethod () -> ()
+}
+
+sil_vtable Base {}
+
+sil_vtable Derived {}
+
+sil_vtable X {}
+
+sil_vtable SomeClass {}
+
+sil_vtable SomeSubclass {}
+
+sil_vtable C {}
+
+sil_vtable C {}
+
+sil_vtable D {}
+
+sil_vtable C {}
+
+sil_vtable D {}
+
+sil_vtable [serialized] Foo {
+  #Foo.subscript!getter: @$s3tmp3FooC9subscriptSiSi1x_Si1ytcfg
+  #Foo.subscript!setter: @$s3tmp3FooC9subscriptSiSi1x_Si1ytcfs
+}
+
+sil_vtable MyClass {
+  #MyClass.init!initializer: @_TFC7TestMod7MyClasscfMS0_FT_S0_	// TestMod.MyClass.init (TestMod.MyClass.Type)() -> TestMod.MyClass
+  #MyClass.mymethod: @_TFC7TestMod7MyClass8mymethodurfS0_Fq_q_	// TestMod.MyClass.mymethod <A> (TestMod.MyClass)(A) -> A
+  #MyClass.deinit!deallocator: @_TFC7TestMod7MyClassD	// TestMod.MyClass.__deallocating_deinit
+}
+
+sil_vtable Base {
+  #Base.m1: (Base) -> () -> () : @$s1x4BaseC2m1yyF
+  #Base.m2: (Base) -> () -> () : @$s1x4BaseC2m2yyF
+  #Base.init!initializer: (Base.Type) -> () -> Base : @$s1x4BaseCACycfc
+  #Base.deinit!deallocator: @$s1x4BaseCfD
+}
+
+sil_vtable Derived {
+  #Base.m1: (Base) -> () -> () : @$s1x4BaseC2m1yyF [inherited]
+  #Base.m2: (Base) -> () -> () : @$s1x7DerivedC2m2yyF [override]
+  #Base.init!initializer: (Base.Type) -> () -> Base : @$s1x7DerivedCACycfc [override]
+  #Derived.m3: (Derived) -> () -> () : @$s1x7DerivedC2m3yyF
+  #Derived.deinit!deallocator: @$s1x7DerivedCfD
+}
+
+sil_vtable SubscriptAsFunction {
+  // CHECK: #SubscriptAsFunction.`subscript`: (SubscriptAsFunction) -> () -> () : @$s4test19SubscriptAsFunctionC9subscriptyyF
+  #SubscriptAsFunction.`subscript`: (SubscriptAsFunction) -> () -> () : @$s4test19SubscriptAsFunctionC9subscriptyyF
+}
+
+sil_vtable Rect {
+  // CHECK: #Rect.orgx!getter
+  #Rect.orgx!getter: @_TFC4rect4Rectg4orgxSd
+}
+
+sil_vtable Foo {
+  #Foo.subscript!getter: @Foo_subscript_getter [nonoverridden]
+  #Foo.subscript!setter: @Foo_subscript_setter
+}
+
+sil_vtable Foo2 {
+  #Foo.subscript!getter: @Foo_subscript_getter [inherited] [nonoverridden]
+  #Foo.subscript!setter: @Foo_subscript_setter [override]
+}
+
+sil_vtable SelfTest {}
+
+sil_vtable C {
+  #C.deinit!deallocator: @_TFC28nonatomic_reference_counting1CD  // C.__deallocating_deinit
+}
+
+sil_vtable Derived1 {
+  #Base.foo: (Base) -> () -> Int32 : @_TFC10SILDeclRef8Derived13foofT_Vs5Int32	// Derived1.foo() -> Int32
+  #Base.foo: (Base) -> (Int32) -> () : @_TFC10SILDeclRef8Derived13foofT1nVs5Int32_T_	// Derived1.foo(n : Int32) -> ()
+  #Base.foo: (Base) -> (Float) -> Int32 : @_TFC10SILDeclRef8Derived13foofT1fSf_Vs5Int32	// Derived1.foo(f : Float) -> Int32
+  #Base.init!initializer: (Base.Type) -> () -> Base : @_TFC10SILDeclRef8Derived1cfT_S0_	// Derived1.init() -> Derived1
+  #Derived1.deinit!deallocator: (Derived1) -> () -> () : @_TFC10SILDeclRef8Derived1D	// Derived1.__deallocating_deinit
+}
+
+sil_vtable Derived2 {
+  #Base.foo: (Base) -> () -> Int32 : @_TFC10SILDeclRef8Derived23foofT_Vs5Int32	// Derived2.foo() -> Int32
+  #Base.foo: (Base) -> (Int32) -> () : @_TFC10SILDeclRef8Derived23foofT1nVs5Int32_T_	// Derived2.foo(n : Int32) -> ()
+  #Base.foo: (Base) -> (Float) -> Int32 : @_TFC10SILDeclRef8Derived23foofT1fSf_Vs5Int32	// Derived2.foo(f : Float) -> Int32
+  #Base.init!initializer: (Base.Type) -> () -> Base : @_TFC10SILDeclRef8Derived2cfT_S0_	// Derived2.init() -> Derived2
+  #Derived2.deinit!deallocator: (Derived2) -> () -> () : @_TFC10SILDeclRef8Derived2D	// Derived2.__deallocating_deinit
+}
