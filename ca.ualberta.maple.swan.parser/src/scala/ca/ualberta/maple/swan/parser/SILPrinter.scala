@@ -22,6 +22,11 @@ class SILPrinter extends Printer {
       print("\n")
     })
     print("\n")
+    // These are not actually all printed at once, but this is fine
+    module.scopes.foreach(scope => {
+      print(scope)
+      print("\n")
+    })
     module.globalVariables.foreach(gv => {
       print(gv)
     })
@@ -1300,15 +1305,6 @@ class SILPrinter extends Printer {
     }
   }
 
-  def print(loc: SILLoc): Unit = {
-    print("loc ")
-    literal(loc.path)
-    print(":")
-    literal(loc.line)
-    print(":")
-    literal(loc.column)
-  }
-
   def print(operand: SILOperand): Unit = {
     print(operand.value)
     print(" : ")
@@ -1327,7 +1323,48 @@ class SILPrinter extends Printer {
     // The SIL docs say that scope refs precede locations, but this is
     // not true once you look at the compiler outputs or its source code.
     print(", ", sourceInfo.loc, (l: SILLoc) => print(l))
-    print(", scope ", sourceInfo.scopeRef, (ref: Int) => literal(ref))
+    print(", ")
+    if (sourceInfo.scopeRef.nonEmpty) print(sourceInfo.scopeRef.get)
+  }
+
+  def print(scope: SILScope): Unit = {
+    print("sil_scope ")
+    literal(scope.num)
+    print(" { ")
+    print(scope.loc)
+    print(" parent ")
+    print(scope.parent)
+    if (scope.inlinedAt.nonEmpty) {
+      print(" inlined_at ")
+      print(scope.inlinedAt.get)
+    }
+    print(" }")
+    print("\n")
+  }
+
+  def print(loc: SILLoc): Unit = {
+    print("loc ")
+    literal(loc.path)
+    print(":")
+    literal(loc.line)
+    print(":")
+    literal(loc.column)
+  }
+
+  def print(parent: SILScopeParent): Unit = {
+    parent match {
+      case SILScopeParent.func(name, tpe) => {
+        print(name)
+        print(" : ")
+        print(tpe)
+      }
+      case SILScopeParent.ref(ref) => print(ref)
+    }
+  }
+
+  def print(ref: SILScopeRef): Unit = {
+    print("scope ")
+    literal(ref.num)
   }
 
   def print(elements: SILTupleElements): Unit = {

@@ -18,8 +18,9 @@ import scala.collection.mutable.ArrayBuffer
 import scala.reflect.ClassTag
 import scala.util.control.Breaks
 
-// TODO: Parse v tables
-// Canonical SIL Parser. Does not parse sil_scope.
+// Canonical SIL Parser. Most of it is reverse engineered. It does not
+// necessarily follow the naming or store properties in the same
+// way that the Swift compiler does. e.g. SILDeclRef and SILType.
 class SILParser extends SILPrinter {
 
   // Default constructor should not be called.
@@ -208,6 +209,7 @@ class SILParser extends SILPrinter {
     var vTables = Array[SILVTable]()
     var imports = Array[String]()
     var globalVariables = Array[SILGlobalVariable]()
+    var scopes = Array[SILScope]()
     var done = false
     while(!done) {
       if(peek("sil ")) {
@@ -225,6 +227,8 @@ class SILParser extends SILPrinter {
         take("import")
         // Identifier should be OK here.
         imports :+= parseIdentifier()
+      } else if (peek("sil_scope")) {
+        scopes :+= parseScope()
       } else {
         Breaks.breakable {
           if(skip(_ != '\n')) Breaks.break()
@@ -234,7 +238,7 @@ class SILParser extends SILPrinter {
         }
       }
     }
-    new SILModule(functions, witnessTables, vTables, imports, globalVariables)
+    new SILModule(functions, witnessTables, vTables, imports, globalVariables, scopes)
   }
 
   // https://github.com/apple/swift/blob/master/docs/SIL.rst#functions
@@ -1981,9 +1985,9 @@ class SILParser extends SILPrinter {
 
   // https://github.com/apple/swift/blob/master/docs/SIL.rst#debug-information
   @throws[Error]
-  def parseScopeRef(): Option[Int] = {
+  def parseScopeRef(): Option[SILScopeRef] = {
     if(!skip("scope")) return None
-    Some(parseInt())
+    Some(new SILScopeRef(parseInt()))
   }
 
   // https://github.com/apple/swift/blob/master/docs/SIL.rst#basic-blocks
@@ -1999,6 +2003,33 @@ class SILParser extends SILPrinter {
     // components is an error.
     if(scopeRef.isEmpty && loc.isEmpty) throw parseError("Failed to parse source info")
     Some(new SILSourceInfo(scopeRef, loc))
+  }
+
+  @throws[Error]
+  def parseScope(): SILScope = {
+    take("sil_scope")
+    val num = parseInt()
+    take("{")
+    val loc = parseLoc()
+    if (loc.isEmpty) throw parseError("Expected sil-loc")
+    take("parent")
+    val parent = parseScopeParent()
+    var inlinedAt: Option[SILScopeRef] = None
+    if (skip("inlined_at")) {
+      inlinedAt = parseScopeRef()
+    }
+    take("}")
+    new SILScope(num, loc.get, parent, inlinedAt)
+  }
+
+  @throws[Error]
+  def parseScopeParent(): SILScopeParent = {
+    val ref = parseScopeRef()
+    if (ref.nonEmpty) return SILScopeParent.ref(ref.get)
+    val name = parseMangledName()
+    take(":")
+    val tpe = parseType()
+    SILScopeParent.func(name, tpe)
   }
 
   @throws[Error]

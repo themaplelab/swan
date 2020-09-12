@@ -16,7 +16,7 @@ import sys.process._
 
 class SILModule(val functions: Array[SILFunction], val witnessTables: Array[SILWitnessTable],
                 val vTables: Array[SILVTable], val imports: Array[String],
-                val globalVariables: Array[SILGlobalVariable]) {
+                val globalVariables: Array[SILGlobalVariable], val scopes: Array[SILScope]) {
 
   object Parse {
     @throws[Error]
@@ -458,13 +458,23 @@ object SILLinkage {
   case object sharedExternal extends SILLinkage
 }
 
+class SILScope(val num: Int, val loc: SILLoc, val parent: SILScopeParent, val inlinedAt: Option[SILScopeRef])
+
 class SILLoc(val path: String, val line: Int, val column: Int)
+
+class SILSourceInfo(val scopeRef: Option[SILScopeRef], val loc: Option[SILLoc])
+
+sealed trait SILScopeParent
+object SILScopeParent {
+  case class func(val name: SILMangledName, val tpe: SILType) extends SILScopeParent
+  case class ref(val ref: SILScopeRef) extends SILScopeParent
+}
+
+class SILScopeRef(val num: Int)
 
 class SILOperand(val value: String, val tpe: SILType)
 
 class SILResult(val valueNames: Array[String])
-
-class SILSourceInfo(val scopeRef: Option[Int], val loc: Option[SILLoc])
 
 sealed trait SILTupleElements
 object SILTupleElements {
