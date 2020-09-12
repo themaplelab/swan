@@ -225,7 +225,7 @@ object SILOperator {
   case class deallocExistentialBox(operand: SILOperand, tpe: SILType) extends SILOperator
 
   /***** BLOCKS *****/
-  case class projectBlockStorage(operand: SILOperand, tpe: SILType) extends SILOperator
+  case class projectBlockStorage(operand: SILOperand) extends SILOperator
   // TODO: init_block_storage_header
 
   /***** UNCHECKED CONVERSIONS *****/
@@ -429,15 +429,17 @@ class SILMangledName(val mangled: String) {
 sealed trait SILFunctionAttribute
 object SILFunctionAttribute {
   case object alwaysInline extends SILFunctionAttribute
-  case class differentiable(spec: String) extends SILFunctionAttribute
+  case class differentiable(val spec: String) extends SILFunctionAttribute
   case object dynamicallyReplacable extends SILFunctionAttribute
   case object noInline extends SILFunctionAttribute
   case object readonly extends SILFunctionAttribute
   case class semantics(value: String) extends SILFunctionAttribute
   case object serialized extends SILFunctionAttribute
+  case object serializable extends SILFunctionAttribute
   case object thunk extends SILFunctionAttribute
   case object transparent extends SILFunctionAttribute
-  case class noncanonical(attr: SILNoncanonicalFunctionAttribute) extends SILFunctionAttribute
+  case class noncanonical(val attr: SILNoncanonicalFunctionAttribute) extends SILFunctionAttribute
+  case class available(val ver0: Int, val ver1: Int) extends SILFunctionAttribute
 }
 
 sealed trait SILNoncanonicalFunctionAttribute
@@ -458,7 +460,7 @@ object SILLinkage {
   case object sharedExternal extends SILLinkage
 }
 
-class SILScope(val num: Int, val loc: SILLoc, val parent: SILScopeParent, val inlinedAt: Option[SILScopeRef])
+class SILScope(val num: Int, val loc: Option[SILLoc], val parent: SILScopeParent, val inlinedAt: Option[SILScopeRef])
 
 class SILLoc(val path: String, val line: Int, val column: Int)
 
@@ -467,7 +469,7 @@ class SILSourceInfo(val scopeRef: Option[SILScopeRef], val loc: Option[SILLoc])
 sealed trait SILScopeParent
 object SILScopeParent {
   case class func(val name: SILMangledName, val tpe: SILType) extends SILScopeParent
-  case class ref(val ref: SILScopeRef) extends SILScopeParent
+  case class ref(val ref: Int) extends SILScopeParent
 }
 
 class SILScopeRef(val num: Int)
@@ -493,7 +495,7 @@ object SILType {
   case class selectType(tpe: SILType, name: String) extends SILType
   // This isn't in SIL.rst. e.g. "[..] -> (inserted: Bool, memberAfterInsert: Self.Element) [...]"
   // named is SILType because of how parseNakedType works. Should just be namedType always, though.
-  // case class namedArgType(name: String, tpe: SILType) extends SILType
+  case class namedArgType(name: String, tpe: SILType) extends SILType
   case object selfType extends SILType
   case object selfTypeOptional extends SILType
   case class specializedType(tpe: SILType, arguments: Array[SILType]) extends SILType
@@ -527,6 +529,11 @@ object SILTypeAttribute {
   case object objcMetatype extends SILTypeAttribute
   case object silWeak extends SILTypeAttribute
   case object dynamicSelf extends SILTypeAttribute
+  case object silUnowned extends SILTypeAttribute
+  case object silUnmanaged extends SILTypeAttribute
+  case object autoreleased extends SILTypeAttribute
+  case object blockStorage extends SILTypeAttribute
+  case class opened(val value: String) extends SILTypeAttribute
   // type-specifier -> 'inout' | '__owned' | '__unowned'
   // Not in SIL.rst but used in naked types. e.g. "[...] -> (__owned Self) [..]"
   case object typeSpecifierInOut extends SILTypeAttribute

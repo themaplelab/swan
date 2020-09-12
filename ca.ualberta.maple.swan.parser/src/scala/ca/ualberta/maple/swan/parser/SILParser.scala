@@ -56,7 +56,7 @@ class SILParser extends SILPrinter {
   // ***** Token level *****
 
   protected def peek(query: String): Boolean = {
-    assert(!query.isEmpty)
+    if (query.isEmpty) throw parseError("query is empty")
     util.Arrays.equals(
       util.Arrays.copyOfRange(chars, cursor, cursor + query.length),
       query.toCharArray)
@@ -690,7 +690,6 @@ class SILParser extends SILPrinter {
         // *** DYNAMIC DISPATCH ***
 
       case "class_method" => {
-        // TODO: not working
         val operand = parseOperand()
         take(",")
         val declRef = parseDeclRef()
@@ -701,7 +700,6 @@ class SILParser extends SILPrinter {
         SILInstruction.operator(SILOperator.classMethod(operand, declRef, declType, tpe))
       }
       case "objc_method" => {
-        // TODO: not working
         val operand = parseOperand()
         take(",")
         val declRef = parseDeclRef()
@@ -1071,9 +1069,7 @@ class SILParser extends SILPrinter {
 
       case "project_block_storage" => {
         val operand = parseOperand()
-        take(":")
-        val tpe = parseType()
-        SILInstruction.operator(SILOperator.projectBlockStorage(operand, tpe))
+        SILInstruction.operator(SILOperator.projectBlockStorage(operand))
       }
       case "init_block_storage_header" => {
         null // TODO: NPOTP, No SIL.rst documentation.
@@ -1644,9 +1640,9 @@ class SILParser extends SILPrinter {
   @throws[Error]
   def parseEnforcement(): SILEnforcement = {
     if(skip("dynamic")) return SILEnforcement.dynamic
-    if(skip("")) return SILEnforcement.static
-    if(skip("")) return SILEnforcement.unknown
-    if(skip("")) return SILEnforcement.unsafe
+    if(skip("static")) return SILEnforcement.static
+    if(skip("dynamic")) return SILEnforcement.unknown
+    if(skip("unsafe")) return SILEnforcement.unsafe
     throw parseError("unknown enforcement")
   }
 
@@ -1678,8 +1674,16 @@ class SILParser extends SILPrinter {
     if(skip("[readonly]")) return SILFunctionAttribute.readonly
     if(peek("[_semantics")) return parseSemantics()
     if(skip("[serialized]")) return SILFunctionAttribute.serialized
+    if(skip("[serializable]")) return SILFunctionAttribute.serializable
     if(skip("[thunk]")) return SILFunctionAttribute.thunk
     if(skip("[transparent]")) return SILFunctionAttribute.transparent
+    if(skip("[available")) {
+      val ver0 = parseInt()
+      take(".")
+      val ver1 = parseInt()
+      take("]")
+      return SILFunctionAttribute.available(ver0, ver1)
+    }
     throw parseError("unknown function attribute")
   }
 
@@ -1865,16 +1869,13 @@ class SILParser extends SILPrinter {
   // Type format has been reverse-engineered since it doesn't seem to be mentioned in the spec.
   // TODO: Handle types used in [at least] alloc_box.
   //  e.g. ${ var @sil_weak Optional<CardCell> }
-  // TODO: Handle types with ":"
-  //  tuple type e.g. $*(lower: Bound, upper: Bound)
-  // TODO: Handle @opened types
-  //  e.g. $*@opened("3B29F16E-A446-11EA-A04F-38F9D356CDAF")
-  // TODO: Handle @block_storage (project_block_storage, init_block_storage_header)
-  //  e.g. $*@block_storage
-  // TODO: Handle @sil_unowned
-  //  e.g. %5 = ref_to_unowned %4 : $SomeClass to $@sil_unowned SomeClass
-  // TODO: Handle @sil_unmanaged
-  //  e.g. %10 = ref_to_unmanaged %8 : $Optional<NSError> to $@sil_unmanaged Optional<NSError>
+  // TODO: Handle "?" after types
+  //  e.g. %35 = objc_method %33 : $UIViewController, #UIViewController.present!1.foreign : (UIViewController) -> (UIViewController, Bool, (() -> ())?) -> (), $@convention(objc_method) (UIViewController, Bool, Optional<@convention(block) () -> ()>, UIViewController) -> ()
+  // This is a context flag signifying wether the type parsing is inside of
+  // params. Needed for named arg parsing. Ideally we would add a param to
+  // parseNakedType, but that is not possible due to generics. The recursion
+  // is linear anyway so it doesn't matter.
+  var inParams = false
   @throws[Error]
   def parseNakedType(): SILType = {
     if (skip("<")) {
@@ -1922,7 +1923,9 @@ class SILParser extends SILPrinter {
       take("]")
       SILType.specializedType(SILType.namedType("Array"), Array[SILType]{subtype})
     } else if (peek("(")) {
+      inParams = true
       val types: Array[SILType] = parseMany("(",",",")", parseNakedType)
+      inParams = false
       if (skip("->")) {
         val result = parseNakedType()
         SILType.functionType(types, result)
@@ -1947,6 +1950,17 @@ class SILParser extends SILPrinter {
         }
       }
       val name = parseTypeName()
+      val arg: Option[SILType] = maybeParse(() => {
+        try {
+          if (inParams) {
+            take(":")
+            Some(parseNakedType())
+          } else {
+            None
+          }
+        } catch { case _: Error => None }
+      })
+      if (arg.nonEmpty) return SILType.namedArgType(name, arg.get)
       val base: SILType = {
         name match {
           case "Self?" => SILType.selfTypeOptional
@@ -2011,7 +2025,6 @@ class SILParser extends SILPrinter {
     val num = parseInt()
     take("{")
     val loc = parseLoc()
-    if (loc.isEmpty) throw parseError("Expected sil-loc")
     take("parent")
     val parent = parseScopeParent()
     var inlinedAt: Option[SILScopeRef] = None
@@ -2019,12 +2032,16 @@ class SILParser extends SILPrinter {
       inlinedAt = parseScopeRef()
     }
     take("}")
-    new SILScope(num, loc.get, parent, inlinedAt)
+    new SILScope(num, loc, parent, inlinedAt)
   }
 
   @throws[Error]
   def parseScopeParent(): SILScopeParent = {
-    val ref = parseScopeRef()
+    val ref = maybeParse(() => {
+      try {
+        Some(parseInt())
+      } catch { case _: Error => None }
+    })
     if (ref.nonEmpty) return SILScopeParent.ref(ref.get)
     val name = parseMangledName()
     take(":")
@@ -2118,7 +2135,17 @@ class SILParser extends SILPrinter {
     if(skip("@error")) return SILTypeAttribute.error
     if(skip("@objc_metatype")) return SILTypeAttribute.objcMetatype
     if(skip("@sil_weak")) return SILTypeAttribute.silWeak
+    if(skip("@sil_unowned")) return SILTypeAttribute.silUnowned
+    if(skip("@sil_unmanaged")) return SILTypeAttribute.silUnmanaged
+    if(skip("@autoreleased")) return SILTypeAttribute.autoreleased
     if(skip("@dynamic_self")) return SILTypeAttribute.dynamicSelf
+    if(skip("@block_storage")) return SILTypeAttribute.blockStorage
+    if(skip("@opened")) {
+      take("(")
+      val value = parseString()
+      take(")")
+      return SILTypeAttribute.opened(value)
+    }
     throw parseError("unknown attribute")
   }
 

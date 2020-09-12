@@ -679,11 +679,9 @@ class SILPrinter extends Printer {
 
         // *** BLOCKS ***
 
-      case SILOperator.projectBlockStorage(operand, tpe) => {
+      case SILOperator.projectBlockStorage(operand) => {
         print("project_block_storage ")
         print(operand)
-        print(" : ")
-        print(tpe)
       }
 
         // *** UNCHECKED CONVERSIONS ***
@@ -1286,8 +1284,16 @@ class SILPrinter extends Printer {
         print("]")
       }
       case SILFunctionAttribute.serialized => print("[serialized]")
+      case SILFunctionAttribute.serializable => print("[serializable]")
       case SILFunctionAttribute.thunk => print("[thunk]")
       case SILFunctionAttribute.transparent => print("[transparent]")
+      case SILFunctionAttribute.available(ver0, ver1) => {
+        print("[available ")
+        literal(ver0)
+        print(".")
+        literal(ver1)
+        print("]")
+      }
     }
   }
 
@@ -1331,7 +1337,7 @@ class SILPrinter extends Printer {
     print("sil_scope ")
     literal(scope.num)
     print(" { ")
-    print(scope.loc)
+    if (scope.loc.nonEmpty) print(scope.loc)
     print(" parent ")
     print(scope.parent)
     if (scope.inlinedAt.nonEmpty) {
@@ -1358,7 +1364,7 @@ class SILPrinter extends Printer {
         print(" : ")
         print(tpe)
       }
-      case SILScopeParent.ref(ref) => print(ref)
+      case SILScopeParent.ref(ref) => literal(ref)
     }
   }
 
@@ -1445,6 +1451,11 @@ class SILPrinter extends Printer {
         print(".")
         print(name)
       }
+      case SILType.namedArgType(name, tpe) => {
+        print(name)
+        print(": ")
+        naked(tpe)
+      }
       case SILType.selfType => {
         print("Self")
       }
@@ -1486,6 +1497,16 @@ class SILPrinter extends Printer {
       case SILTypeAttribute.error => print("@error")
       case SILTypeAttribute.objcMetatype => print("@objc_metatype")
       case SILTypeAttribute.silWeak => print("@sil_weak")
+      case SILTypeAttribute.silUnowned => print("@sil_unowned")
+      case SILTypeAttribute.silUnmanaged => print("@sil_unmanaged")
+      case SILTypeAttribute.autoreleased => print("@autoreleased")
+      case SILTypeAttribute.blockStorage => print("@block_storage")
+      case SILTypeAttribute.opened(value) => {
+        print("@opened")
+        print("(")
+        literal(value)
+        print(")")
+      }
       case SILTypeAttribute.dynamicSelf => print("@dynamic_self")
       case SILTypeAttribute.typeSpecifierInOut => print("inout")
       case SILTypeAttribute.typeSpecifierOwned => print("__owned")
