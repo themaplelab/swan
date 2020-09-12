@@ -71,8 +71,8 @@ object SILOperator {
   case class allocValueBuffer(tpe: SILType, operand: SILOperand) extends SILOperator
   case class allocGlobal(name: SILMangledName) extends SILOperator
   case class deallocStack(operand: SILOperand) extends SILOperator
-  case class deallocBox(operand: SILOperand) extends SILOperator
-  case class projectBox(operand: SILOperand) extends SILOperator
+  case class deallocBox(operand: SILOperand, tpe: SILType) extends SILOperator
+  case class projectBox(operand: SILOperand, fieldIndex: Int) extends SILOperator
   case class deallocRef(stack: Boolean, operand: SILOperand) extends SILOperator
   // NSIP: dealloc_partial_ref
   // NSIP: dealloc_value_buffer
@@ -494,6 +494,7 @@ object SILType {
   case class arrayType(arguments: Array[SILType], nakedStyle: Boolean) extends SILType
   case class tupleType(parameters: Array[SILType], optional: Boolean) extends SILType
   case class withOwnership(attribute: SILTypeAttribute, tpe: SILType) extends SILType
+  case class varType(tpe:SILType) extends SILType
 
   @throws[Error]
   def parse(silString: String): SILType = {

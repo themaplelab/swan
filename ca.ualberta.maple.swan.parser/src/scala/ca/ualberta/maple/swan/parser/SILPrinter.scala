@@ -162,15 +162,21 @@ class SILPrinter extends Printer {
         print("dealloc_stack ")
         print(operand)
       }
-      case SILOperator.deallocBox(operand) => {
+      case SILOperator.deallocBox(operand, tpe) => {
         print("dealloc_box ")
-        // NOTE: Not sure if this is correct
-        // dealloc_box %0 : $@box T
-        print(operand)
+        print(operand.value)
+        print(" : ")
+        print("$") // unusual case where generic type needs "$"
+        print(operand.tpe)
+        print(" <")
+        naked(tpe)
+        print(">")
       }
-      case SILOperator.projectBox(operand) => {
+      case SILOperator.projectBox(operand, fieldIndex) => {
         print("project_box ")
         print(operand)
+        print(", ")
+        literal(fieldIndex)
       }
       case SILOperator.deallocRef(stack, operand) => {
         print("dealloc_ref ")
@@ -1482,6 +1488,11 @@ class SILPrinter extends Printer {
       }
       case SILType.withOwnership(_, _) => {
         throw new Error("<printing>", "Types with ownership should be printed before naked type print!", null)
+      }
+      case SILType.varType(tpe) => {
+        print("{ var ")
+        naked(tpe)
+        print(" }")
       }
     }
   }

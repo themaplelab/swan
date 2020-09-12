@@ -7,8 +7,7 @@
 %5 = alloc_ref_dynamic [objc] %4 : $@objc_metatype Gizmo.Type, $Gizmo
 %2 = alloc_ref_dynamic %1 : $@thick A.Type, $A
 
-// types ${...} are not yet handled
-// %182 = alloc_box ${ var @sil_weak Optional<CardCell> }, loc \"/Users/abdulalib/Documents/swan-spds/benchmark/mobile-ios-vipergame/Memory/Modules/Game/User Interface/View/CardCell.swift\":65:76, scope 1144 // users: %204, %199, %191, %186, %183
+%182 = alloc_box ${ var @sil_weak Optional<CardCell> }, loc "/Users/abdulalib/Documents/swan-spds/benchmark/mobile-ios-vipergame/Memory/Modules/Game/User Interface/View/CardCell.swift":65:76, scope 1144 // users: %204, %199, %191, %186, %183
 
 %0 = alloc_value_buffer $Int in %b : $*Builtin.UnsafeValueBuffer
 
@@ -16,11 +15,9 @@ alloc_global @$s6Memory10imageCache33_09824A4F0B3ADFC1D63FE8FD1BE2AC3BLLSo7NSCac
 
 dealloc_stack %33 : $*URL, scope 1766           // id: %59
 
-// types ${...} are not yet handled
-// dealloc_box %b : $<τ_0_0> { var τ_0_0 } <Int>
+dealloc_box %b : $<τ_0_0> { var τ_0_0 } <Int>
 
-// types ${...} are not yet handled
-// %53 = project_box %52 : ${ var @sil_weak Optional<UIViewController> }, 0, loc "/Users/abdulalib/Documents/swan-spds/benchmark/mobile-ios-vipergame/Memory/Utilities/ErrorAlert.swift":35:42, scope 843 // user: %55
+%53 = project_box %52 : ${ var @sil_weak Optional<UIViewController> }, 0, loc "/Users/abdulalib/Documents/swan-spds/benchmark/mobile-ios-vipergame/Memory/Utilities/ErrorAlert.swift":35:42, scope 843 // user: %55
 
 dealloc_ref [stack] %81 : $_ContiguousArrayStorage<Card>, scope 715 // id: %132
 
@@ -100,8 +97,7 @@ abort_apply %6, scope 1                         // id: %8
 
 end_apply %22, scope 102                        // id: %24
 
-// types ${...} are not yet handled
-// %57 = partial_apply [callee_guaranteed] %56(%52, %27, %3, %4) : $@convention(thin) (@guaranteed { var @sil_weak Optional<UIViewController> }, @guaranteed UIAlertController, Bool, @guaranteed Optional<@callee_guaranteed () -> ()>) -> (), loc "/Users/abdulalib/Documents/swan-spds/benchmark/mobile-ios-vipergame/Memory/Utilities/ErrorAlert.swift":35:34, scope 843 // user: %60
+%57 = partial_apply [callee_guaranteed] %56(%52, %27, %3, %4) : $@convention(thin) (@guaranteed { var @sil_weak Optional<UIViewController> }, @guaranteed UIAlertController, Bool, @guaranteed Optional<@callee_guaranteed () -> ()>) -> (), loc "/Users/abdulalib/Documents/swan-spds/benchmark/mobile-ios-vipergame/Memory/Utilities/ErrorAlert.swift":35:34, scope 843 // user: %60
 %5 = partial_apply [callee_guaranteed] [on_stack] %4<Element, R>(%1) : $@convention(thin) <τ_0_0><τ_1_0> (UnsafeBufferPointer<τ_0_0>, @noescape @callee_guaranteed (UnsafeBufferPointer<τ_0_0>) -> (@out τ_1_0, @error Error)) -> (@out τ_1_0, @error Error), scope 51 // users: %12, %9, %7
 
 %24 = builtin "assumeNonNegative_Int64"(%23 : $Builtin.Int64) : $Builtin.Int64, scope 750 // user: %29

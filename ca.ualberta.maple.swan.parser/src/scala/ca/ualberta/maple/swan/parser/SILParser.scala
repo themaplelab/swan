@@ -437,11 +437,16 @@ class SILParser extends SILPrinter {
       }
       case "dealloc_box" => {
         val operand = parseOperand()
-        SILInstruction.operator(SILOperator.deallocBox(operand))
+        take("<")
+        val tpe = parseNakedType()
+        take(">")
+        SILInstruction.operator(SILOperator.deallocBox(operand, tpe))
       }
       case "project_box" => {
         val operand = parseOperand()
-        SILInstruction.operator(SILOperator.projectBox(operand))
+        take(",")
+        val fieldIndex = parseInt()
+        SILInstruction.operator(SILOperator.projectBox(operand, fieldIndex))
       }
       case "dealloc_ref" => {
         val stack: Boolean = skip("[stack]")
@@ -1866,10 +1871,8 @@ class SILParser extends SILPrinter {
   // Parses verbatim string representation of a type.
   // This is different from `parseType` because most usages of types in SIL are prefixed with
   // `$` (so it made sense to have a shorter name for that common case).
-  // Type format has been reverse-engineered since it doesn't seem to be mentioned in the spec.
-  // TODO: Handle types used in [at least] alloc_box.
-  //  e.g. ${ var @sil_weak Optional<CardCell> }
-  // This is a context flag signifying wether the type parsing is inside of
+  //
+  // This is a context flag signifying whether the type parsing is inside of
   // params. Needed for named arg parsing. Ideally we would add a param to
   // parseNakedType, but that is not possible due to generics. The recursion
   // is linear anyway so it doesn't matter.
@@ -1922,7 +1925,7 @@ class SILParser extends SILPrinter {
       SILType.arrayType(Array[SILType]{subtype}, true)
     } else if (peek("(")) {
       inParams = true
-      val types: Array[SILType] = parseMany("(",",",")", parseNakedType)
+      val types: Array[SILType] = parseMany("(", ",", ")", parseNakedType)
       val optional = skip("?")
       val throws = skip("throws")
       inParams = false
@@ -1932,6 +1935,12 @@ class SILParser extends SILPrinter {
       } else {
         SILType.tupleType(types, optional)
       }
+    } else if (peek("{")) {
+      take("{")
+      take("var")
+      val tpe = SILType.varType(parseNakedType())
+      take("}")
+      tpe
     } else {
       @throws[Error]
       def grow(tpe: SILType): SILType = {
