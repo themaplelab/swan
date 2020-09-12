@@ -1869,8 +1869,6 @@ class SILParser extends SILPrinter {
   // Type format has been reverse-engineered since it doesn't seem to be mentioned in the spec.
   // TODO: Handle types used in [at least] alloc_box.
   //  e.g. ${ var @sil_weak Optional<CardCell> }
-  // TODO: Handle "?" after types
-  //  e.g. %35 = objc_method %33 : $UIViewController, #UIViewController.present!1.foreign : (UIViewController) -> (UIViewController, Bool, (() -> ())?) -> (), $@convention(objc_method) (UIViewController, Bool, Optional<@convention(block) () -> ()>, UIViewController) -> ()
   // This is a context flag signifying wether the type parsing is inside of
   // params. Needed for named arg parsing. Ideally we would add a param to
   // parseNakedType, but that is not possible due to generics. The recursion
@@ -1921,27 +1919,33 @@ class SILParser extends SILPrinter {
     } else if (skip("[")) {
       val subtype = parseNakedType()
       take("]")
-      SILType.specializedType(SILType.namedType("Array"), Array[SILType]{subtype})
+      SILType.arrayType(Array[SILType]{subtype}, true)
     } else if (peek("(")) {
       inParams = true
       val types: Array[SILType] = parseMany("(",",",")", parseNakedType)
+      val optional = skip("?")
+      val throws = skip("throws")
       inParams = false
       if (skip("->")) {
         val result = parseNakedType()
-        SILType.functionType(types, result)
+        SILType.functionType(types, optional, throws, result)
       } else {
-        if (types.length == 1) {
-          types(0)
-        } else {
-          SILType.tupleType(types)
-        }
+        SILType.tupleType(types, optional)
       }
     } else {
       @throws[Error]
       def grow(tpe: SILType): SILType = {
         if (peek("<")) {
           val types = parseMany("<",",",">", parseNakedType)
-          grow(SILType.specializedType(tpe, types))
+          val growType = {
+            tpe match {
+              case namedType: SILType.namedType if namedType.name == "Array" =>
+                SILType.arrayType(types, false)
+              case _ =>
+                SILType.specializedType(tpe, types)
+            }
+          }
+          grow(growType)
         } else if (skip(".")) {
           val name = parseTypeName()
           grow(SILType.selectType(tpe, name))

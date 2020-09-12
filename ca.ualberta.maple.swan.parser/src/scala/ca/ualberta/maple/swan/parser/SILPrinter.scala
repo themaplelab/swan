@@ -1421,8 +1421,10 @@ class SILPrinter extends Printer {
       case SILType.coroutineTokenType => {
         print("!CoroutineTokenType!")
       }
-      case SILType.functionType(params, result) => {
+      case SILType.functionType(params, optional, throws, result) => {
         print(whenEmpty = true, "(", params, ", ", ")", (t: SILType) => naked(t))
+        print("?", when = optional)
+        print(" throws", when = throws)
         print(" -> ")
         // It seems that "@error Error" needs to be wrapped in parenthesis. There may be other cases.
         val parenthesis: Boolean = result.isInstanceOf[SILType.attributedType] &&
@@ -1466,8 +1468,17 @@ class SILPrinter extends Printer {
         naked(tpe)
         print(whenEmpty = true, "<", args, ", ", ">", (t: SILType) => naked(t))
       }
-      case SILType.tupleType(params) => {
+      case SILType.arrayType(arguments, nakedStyle) => {
+        if (nakedStyle) {
+          print(whenEmpty = true, "[", arguments, ", ", "]", (t: SILType) => naked(t))
+        } else {
+          print("Array")
+          print(whenEmpty = true, "<", arguments, ", ", ">", (t: SILType) => naked(t))
+        }
+      }
+      case SILType.tupleType(params, optional) => {
         print(whenEmpty = true, "(", params, ", ", ")", (t: SILType) => naked(t))
+        print("?", when = optional)
       }
       case SILType.withOwnership(_, _) => {
         throw new Error("<printing>", "Types with ownership should be printed before naked type print!", null)

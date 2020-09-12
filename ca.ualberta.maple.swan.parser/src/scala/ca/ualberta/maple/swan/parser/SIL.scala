@@ -52,10 +52,10 @@ sealed trait SILInstructionDef {
   val instruction : SILInstruction
 }
 object SILInstructionDef {
-  case class operator(val operatorDef: SILOperatorDef) extends SILInstructionDef {
+  case class operator(operatorDef: SILOperatorDef) extends SILInstructionDef {
     val instruction: SILInstruction = SILInstruction.operator(operatorDef.operator)
   }
-  case class terminator(val terminatorDef: SILTerminatorDef) extends SILInstructionDef {
+  case class terminator(terminatorDef: SILTerminatorDef) extends SILInstructionDef {
     val instruction: SILInstruction = SILInstruction.terminator(terminatorDef.terminator)
   }
 }
@@ -102,10 +102,8 @@ object SILOperator {
   // NSIP: tail_addr
   // NSIP: index_raw_pointer
   // NSIP: bind_memory
-  case class beginAccess(
-                          access: SILAccess, enforcement: SILEnforcement, noNestedConflict: Boolean, builtin: Boolean,
-                          operand: SILOperand
-                        ) extends SILOperator
+  case class beginAccess(access: SILAccess, enforcement: SILEnforcement, noNestedConflict: Boolean,
+                         builtin: Boolean, operand: SILOperand) extends SILOperator
   case class endAccess(abort: Boolean, operand: SILOperand) extends SILOperator
   // NSIP: begin_unpaired_access
   // NSIP: end_unpaired_access
@@ -153,14 +151,10 @@ object SILOperator {
   case class witnessMethod(archetype: SILType, declRef: SILDeclRef, declType: SILType, tpe: SILType) extends SILOperator
 
   /***** FUNCTION APPLICATION *****/
-  case class apply(
-                    nothrow: Boolean, value: String,
-                    substitutions: Array[SILType], arguments: Array[String], tpe: SILType
-                  ) extends SILOperator
-  case class beginApply(
-                         nothrow: Boolean, value: String,
-                         substitutions: Array[SILType], arguments: Array[String], tpe: SILType
-                       ) extends SILOperator
+  case class apply(nothrow: Boolean, value: String, substitutions: Array[SILType],
+                   arguments: Array[String], tpe: SILType) extends SILOperator
+  case class beginApply(nothrow: Boolean, value: String, substitutions: Array[SILType],
+                        arguments: Array[String], tpe: SILType) extends SILOperator
   case class abortApply(value: String) extends SILOperator
   case class endApply(value: String) extends SILOperator
   case class partialApply(
@@ -395,11 +389,11 @@ object SILDeclKind {
 // not sure why "level" exists, but it comes up in practice
 sealed trait SILDeclSubRef
 object SILDeclSubRef {
-  case class part(val accessorKind: Option[SILAccessorKind], val declKind: SILDeclKind, val level: Option[Int],
-                  val foreign: Boolean, val autoDiff: Option[SILAutoDiff]) extends SILDeclSubRef
+  case class part(accessorKind: Option[SILAccessorKind], declKind: SILDeclKind, level: Option[Int],
+                  foreign: Boolean, autoDiff: Option[SILAutoDiff]) extends SILDeclSubRef
   case object lang extends SILDeclSubRef
-  case class autoDiff(val autoDiff: SILAutoDiff) extends SILDeclSubRef
-  case class level(val level: Int, val foreign: Boolean) extends SILDeclSubRef
+  case class autoDiff(autoDiff: SILAutoDiff) extends SILDeclSubRef
+  case class level(level: Int, foreign: Boolean) extends SILDeclSubRef
 }
 
 class SILDeclRef(val name: Array[String], val subRef: Option[SILDeclSubRef])
@@ -438,8 +432,8 @@ object SILFunctionAttribute {
   case object serializable extends SILFunctionAttribute
   case object thunk extends SILFunctionAttribute
   case object transparent extends SILFunctionAttribute
-  case class noncanonical(val attr: SILNoncanonicalFunctionAttribute) extends SILFunctionAttribute
-  case class available(val ver0: Int, val ver1: Int) extends SILFunctionAttribute
+  case class noncanonical(attr: SILNoncanonicalFunctionAttribute) extends SILFunctionAttribute
+  case class available(ver0: Int, ver1: Int) extends SILFunctionAttribute
 }
 
 sealed trait SILNoncanonicalFunctionAttribute
@@ -468,8 +462,8 @@ class SILSourceInfo(val scopeRef: Option[SILScopeRef], val loc: Option[SILLoc])
 
 sealed trait SILScopeParent
 object SILScopeParent {
-  case class func(val name: SILMangledName, val tpe: SILType) extends SILScopeParent
-  case class ref(val ref: Int) extends SILScopeParent
+  case class func(name: SILMangledName, val tpe: SILType) extends SILScopeParent
+  case class ref(ref: Int) extends SILScopeParent
 }
 
 class SILScopeRef(val num: Int)
@@ -489,17 +483,16 @@ object SILType {
   case class addressType(tpe: SILType) extends SILType
   case class attributedType(attributes: Array[SILTypeAttribute], tpe: SILType) extends SILType
   case object coroutineTokenType extends SILType
-  case class functionType(parameters: Array[SILType], result: SILType) extends SILType
+  case class functionType(parameters: Array[SILType], optional: Boolean, throws: Boolean, result: SILType) extends SILType
   case class genericType(parameters: Array[String], requirements: Array[SILTypeRequirement], tpe: SILType) extends SILType
   case class namedType(name: String) extends SILType
   case class selectType(tpe: SILType, name: String) extends SILType
-  // This isn't in SIL.rst. e.g. "[..] -> (inserted: Bool, memberAfterInsert: Self.Element) [...]"
-  // named is SILType because of how parseNakedType works. Should just be namedType always, though.
   case class namedArgType(name: String, tpe: SILType) extends SILType
   case object selfType extends SILType
   case object selfTypeOptional extends SILType
   case class specializedType(tpe: SILType, arguments: Array[SILType]) extends SILType
-  case class tupleType(parameters: Array[SILType]) extends SILType
+  case class arrayType(arguments: Array[SILType], nakedStyle: Boolean) extends SILType
+  case class tupleType(parameters: Array[SILType], optional: Boolean) extends SILType
   case class withOwnership(attribute: SILTypeAttribute, tpe: SILType) extends SILType
 
   @throws[Error]
