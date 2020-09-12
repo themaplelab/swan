@@ -183,7 +183,7 @@ public class ParserTests {
     @ParameterizedTest
     @Disabled // SLOW test
     @CsvFileSource(resources = "xcodeproj/projects.csv")
-    void getSILForAllXcodeProjects(String xcodeproj, String scheme, String optionalArgs) throws URISyntaxException, IOException {
+    void getSILForAllXcodeProjects(String xcodeproj, String scheme, String optionalArgs) throws URISyntaxException, IOException, Error {
         String projectPath = "xcodeproj/" + xcodeproj;
         File testProjectFile = new File(getClass().getClassLoader()
                 .getResource(projectPath).toURI());
@@ -211,6 +211,8 @@ public class ParserTests {
         Assertions.assertNotEquals(null, silFiles);
         for (File sil : silFiles) {
             readFile(sil);
+            SILParser parser = new SILParser(sil.toPath());
+            SILModule module = parser.parseModule();
         }
     }
 
@@ -233,9 +235,7 @@ public class ParserTests {
     // Account for any known transformations that the parser does,
     // such as superficial type conversions, here.
     String doReplacements(String inst) {
-        inst = inst.replaceAll("\\[Int\\]", "Array<Int>");
-        // Not sure why this .1 appears in practice after "enumelt". Doesn't seem
-        // necessary.
+        //inst = inst.replaceAll("\\[([a-zA-Z0-9]+)\\]", "Array<$1>");
         if (inst.startsWith("func ")) {
             return "";
         }
