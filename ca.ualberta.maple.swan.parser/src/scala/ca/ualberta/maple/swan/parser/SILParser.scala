@@ -1651,43 +1651,75 @@ class SILParser extends SILPrinter {
     throw parseError("unknown enforcement")
   }
 
-  // Reverse-engineered from -emit-sil
-  // DT: I don't think this is complete based on SIL.rst.
   @throws[Error]
   def parseFunctionAttribute(): SILFunctionAttribute = {
-    @throws[Error]
-    def parseDifferentiable(): SILFunctionAttribute = {
-      take("[differentiable")
+    if(skip("[canonical]")) return SILFunctionAttribute.canonical
+    if(skip("[differentiable")) {
       val spec = take(_ != ']' )
       take("]")
-      SILFunctionAttribute.differentiable(spec)
+      return SILFunctionAttribute.differentiable(spec)
     }
-
-    @throws[Error]
-    def parseSemantics(): SILFunctionAttribute = {
-      take("[_semantics")
-      val value = parseString()
-      take("]")
-      SILFunctionAttribute.semantics(value)
-    }
-
-    if(skip("[always_inline]")) return SILFunctionAttribute.alwaysInline
-    if(peek("[differentiable")) return parseDifferentiable()
     if(skip("[dynamically_replacable]")) return SILFunctionAttribute.dynamicallyReplacable
+    if(skip("[always_inline]")) return SILFunctionAttribute.alwaysInline
     if(skip("[noinline]")) return SILFunctionAttribute.noInline
-    if(skip("[ossa]")) return SILFunctionAttribute.noncanonical(SILNoncanonicalFunctionAttribute.ownershipSSA)
-    if(skip("[readonly]")) return SILFunctionAttribute.readonly
-    if(peek("[_semantics")) return parseSemantics()
+    if(skip("[ossa]")) return SILFunctionAttribute.ossa
     if(skip("[serialized]")) return SILFunctionAttribute.serialized
     if(skip("[serializable]")) return SILFunctionAttribute.serializable
-    if(skip("[thunk]")) return SILFunctionAttribute.thunk
     if(skip("[transparent]")) return SILFunctionAttribute.transparent
-    if(skip("[available")) {
-      val ver0 = parseInt()
-      take(".")
-      val ver1 = parseInt()
+    if(skip("[thunk]")) return SILFunctionAttribute.Thunk.thunk
+    if(skip("[signature_optimized_thunk]")) return SILFunctionAttribute.Thunk.signatureOptimized
+    if(skip("[reabstraction_thunk]")) return SILFunctionAttribute.Thunk.reabstraction
+    if(skip("[dynamic_replacement_for")) {
+      val func = parseString()
       take("]")
-      return SILFunctionAttribute.available(ver0, ver1)
+      return SILFunctionAttribute.dynamicReplacement(func)
+    }
+    if(skip("[objc_replacement_for")) {
+      val func = parseString()
+      take("]")
+      return SILFunctionAttribute.objcReplacement(func)
+    }
+    if(skip("[exact_self_class]")) return SILFunctionAttribute.exactSelfClass
+    if(skip("[without_actually_escaping]")) return SILFunctionAttribute.withoutActuallyEscaping
+    if(skip("[global_init]")) return SILFunctionAttribute.FunctionPurpose.globalInit
+    if(skip("[lazy_getter]")) return SILFunctionAttribute.FunctionPurpose.lazyGetter
+    if(skip("[weak_imported]")) return SILFunctionAttribute.weakImported
+    if(skip("[available")) {
+      val version = new ArrayBuffer[String]
+      var break = false
+      while (!break) {
+        val identifier = parseStringInt()
+        version.append(identifier)
+        if (!skip(".")) {
+          break = true
+        }
+      }
+      take("]")
+      return SILFunctionAttribute.available(version.toArray)
+    }
+    if(skip("[never]")) return SILFunctionAttribute.FunctionInlining.never
+    if(skip("[always]")) return SILFunctionAttribute.FunctionInlining.always
+    if(skip("[Onone]")) return SILFunctionAttribute.FunctionOptimization.Onone
+    if(skip("[Ospeed]")) return SILFunctionAttribute.FunctionOptimization.Ospeed
+    if(skip("[Osize]")) return SILFunctionAttribute.FunctionOptimization.Osize
+    if(skip("[readonly]")) return SILFunctionAttribute.FunctionEffects.readonly
+    if(skip("[readnone]")) return SILFunctionAttribute.FunctionEffects.readnone
+    if(skip("[readwrite]")) return SILFunctionAttribute.FunctionEffects.readwrite
+    if(skip("[releasenone]")) return SILFunctionAttribute.FunctionEffects.releasenone
+    if(skip("[_semantics")) {
+      val value = parseString()
+      take("]")
+      return SILFunctionAttribute.semantics(value)
+    }
+    if(skip("[_specialize")) {
+      val value = parseString()
+      take("]")
+      return SILFunctionAttribute.specialize(value)
+    }
+    if(skip("[clang")) {
+      val value = parseIdentifier()
+      take("]")
+      return SILFunctionAttribute.clang(value)
     }
     throw parseError("unknown function attribute")
   }
@@ -1697,7 +1729,6 @@ class SILParser extends SILPrinter {
   def parseMangledName(): SILMangledName = {
     val start = position()
     if(skip("@")) {
-      // tensorflow: T0D0(#14): Make name parsing more thorough.
       val name = take(x => x == '$' || x.isLetterOrDigit || x == '_' )
       if(!name.isEmpty) {
         return new SILMangledName(name)
@@ -1715,7 +1746,6 @@ class SILParser extends SILPrinter {
       s""""${parseString()}""""
     } else {
       val start = position()
-      // tensorflow: T0D0(#14): Make name parsing more thorough.
       val identifier = take(x => x.isLetterOrDigit || x == '_' || x == '`')
       if (!identifier.isEmpty) return identifier
       throw parseError("identifier expected", Some(start))
@@ -1724,7 +1754,6 @@ class SILParser extends SILPrinter {
 
   @throws[Error]
   def parseInt(): Int = {
-    // tensorflow: T0D0(#26): Make number parsing more thorough.
     val start = position()
     val radix = if(skip("0x")) 16 else 10
     val s = take(x => (x == '-') || (x == '+') || (Character.digit(x, 16) != -1))
@@ -1736,8 +1765,12 @@ class SILParser extends SILPrinter {
   }
 
   @throws[Error]
+  def parseStringInt(): String = {
+    take(whileFn = (x: Char) => x.isDigit)
+  }
+
+  @throws[Error]
   def parseBigInt(): BigInt = {
-    // tensorflow: T0D0(#26): Make number parsing more thorough.
     val start = position()
     val radix = if(skip("0x")) 16 else 10
     val s = take(x => (x == '-') || (x == '+') || (Character.digit(x, 16) != -1))

@@ -12,7 +12,7 @@ package ca.ualberta.maple.swan.parser
 
 class Printer {
 
-  var description: String = ""
+  var description: StringBuilder = new StringBuilder()
   private var indentation: String = ""
   private var indented: Boolean = false
 
@@ -38,16 +38,16 @@ class Printer {
       }
     })
     if (allNewLines) {
-      description += "\n" * s.length
+      description ++= "\n" * s.length
       indented = false
       return
     }
     // "mystring\n"
     if (s.count(_ == '\n') == 1 && s.endsWith("\n")) {
       if (!indented) {
-        description += indentation
+        description ++= indentation
       }
-      description += s
+      description ++= s
       indented = false
       return
     }
@@ -57,13 +57,13 @@ class Printer {
     while(lines.hasNext) {
       val line = lines.next()
       if (!indented && !line.isEmpty) {
-        description += indentation
+        description ++= indentation
         indented = true
       }
-      description += line
+      description ++= line
 
       if (lineIdx < lines.length - 1) {
-        description += "\n"
+        description ++= "\n"
         indented = false
       }
       lineIdx += 1
@@ -131,14 +131,14 @@ class Printer {
     print("0x" + String.format("%X", n))
   }
 
-  def literal(s: String): Unit = {
-    print("\"")
+  def literal(s: String, naked: Boolean = false): Unit = {
+    print("\"", when = !naked)
     print(s)
-    print("\"")
+    print("\"", when = !naked)
   }
 
   override def toString: String = {
-    description
+    description.toString()
   }
 
 }

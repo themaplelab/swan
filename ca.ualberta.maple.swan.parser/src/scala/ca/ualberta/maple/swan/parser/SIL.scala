@@ -422,18 +422,54 @@ class SILMangledName(val mangled: String) {
 
 sealed trait SILFunctionAttribute
 object SILFunctionAttribute {
-  case object alwaysInline extends SILFunctionAttribute
+  case object canonical extends SILFunctionAttribute
   case class differentiable(val spec: String) extends SILFunctionAttribute
   case object dynamicallyReplacable extends SILFunctionAttribute
+  case object alwaysInline extends SILFunctionAttribute
   case object noInline extends SILFunctionAttribute
-  case object readonly extends SILFunctionAttribute
-  case class semantics(value: String) extends SILFunctionAttribute
+  case object ossa extends SILFunctionAttribute
   case object serialized extends SILFunctionAttribute
   case object serializable extends SILFunctionAttribute
-  case object thunk extends SILFunctionAttribute
   case object transparent extends SILFunctionAttribute
-  case class noncanonical(attr: SILNoncanonicalFunctionAttribute) extends SILFunctionAttribute
-  case class available(ver0: Int, ver1: Int) extends SILFunctionAttribute
+  sealed trait Thunk extends SILFunctionAttribute
+  object Thunk {
+    case object thunk extends Thunk
+    case object signatureOptimized extends Thunk
+    case object reabstraction extends Thunk
+  }
+  case class dynamicReplacement(func: String) extends SILFunctionAttribute
+  case class objcReplacement(func: String) extends SILFunctionAttribute
+  case object exactSelfClass extends SILFunctionAttribute
+  case object withoutActuallyEscaping extends SILFunctionAttribute
+  sealed trait FunctionPurpose extends SILFunctionAttribute
+  object FunctionPurpose {
+    case object globalInit extends FunctionPurpose
+    case object lazyGetter extends FunctionPurpose
+  }
+  case object weakImported extends SILFunctionAttribute
+  // String because version numbers can start with 0
+  case class available(version: Array[String]) extends SILFunctionAttribute
+  sealed trait FunctionInlining extends SILFunctionAttribute
+  object FunctionInlining {
+    case object never extends FunctionInlining
+    case object always extends FunctionInlining
+  }
+  sealed trait FunctionOptimization extends SILFunctionAttribute
+  object FunctionOptimization {
+    case object Onone extends FunctionOptimization
+    case object Ospeed extends FunctionOptimization
+    case object Osize extends FunctionOptimization
+  }
+  sealed trait FunctionEffects extends SILFunctionAttribute
+  object FunctionEffects {
+    case object readonly extends FunctionEffects
+    case object readnone extends FunctionEffects
+    case object readwrite extends FunctionEffects
+    case object releasenone extends FunctionEffects
+  }
+  case class semantics(value: String) extends SILFunctionAttribute
+  case class specialize(value: String) extends SILFunctionAttribute
+  case class clang(value: String) extends SILFunctionAttribute
 }
 
 sealed trait SILNoncanonicalFunctionAttribute

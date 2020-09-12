@@ -10,6 +10,8 @@
 
 package ca.ualberta.maple.swan.parser
 
+import ca.ualberta.maple.swan.parser.SILFunctionAttribute.{FunctionEffects, FunctionInlining, FunctionOptimization, FunctionPurpose, Thunk}
+
 // Many printX will return the description for convenience.
 class SILPrinter extends Printer {
 
@@ -42,7 +44,7 @@ class SILPrinter extends Printer {
       print(w)
       print("\n")
     })
-    description
+    this.toString
   }
 
   def print(function: SILFunction): String = {
@@ -53,7 +55,7 @@ class SILPrinter extends Printer {
     print(" : ")
     print(function.tpe)
     print(whenEmpty = false, " {\n", function.blocks, "\n", "}", (block: SILBlock) => print(block))
-    description + "\n" // newline for testing comparison
+    this.toString + "\n" // newline for testing comparison
   }
 
   def print(block: SILBlock): String = {
@@ -69,7 +71,7 @@ class SILPrinter extends Printer {
     print(block.terminatorDef)
     print("\n")
     unindent()
-    description
+    this.toString
   }
 
   def print(instructionDef: SILInstructionDef): String = {
@@ -77,7 +79,7 @@ class SILPrinter extends Printer {
       case SILInstructionDef.operator(operatorDef) => print(operatorDef)
       case SILInstructionDef.terminator(terminatorDef) => print(terminatorDef)
     }
-    description
+    this.toString
   }
 
   def print(operatorDef: SILOperatorDef): String = {
@@ -86,13 +88,13 @@ class SILPrinter extends Printer {
     })
     print(operatorDef.operator)
     print(operatorDef.sourceInfo, (si: SILSourceInfo) => print(si))
-    description
+    this.toString
   }
 
   def print(terminatorDef: SILTerminatorDef): String = {
     print(terminatorDef.terminator)
     print(terminatorDef.sourceInfo, (si: SILSourceInfo) => print(si))
-    description
+    this.toString
   }
 
   def print(op: SILOperator): Unit = {
@@ -959,7 +961,7 @@ class SILPrinter extends Printer {
       print("}")
     }
     print("\n\n")
-    description
+    this.toString
   }
 
   def print(vTable: SILVTable): String = {
@@ -978,7 +980,7 @@ class SILPrinter extends Printer {
     }
     print("}")
     print("\n")
-    description
+    this.toString
   }
 
   def print(vEntry: SILVEntry): Unit = {
@@ -1016,7 +1018,7 @@ class SILPrinter extends Printer {
     })
     unindent()
     print("}\n")
-    description
+    this.toString
   }
 
   def print(witnessEntry: SILWitnessEntry): Unit = {
@@ -1274,30 +1276,84 @@ class SILPrinter extends Printer {
 
   def print(attribute: SILFunctionAttribute): Unit = {
     attribute match {
-      case SILFunctionAttribute.alwaysInline => print("[always_inline]")
+      case SILFunctionAttribute.canonical => print("[cannonical]")
       case SILFunctionAttribute.differentiable(spec) => {
         print("[differentiable ")
         print(spec)
         print("]")
       }
       case SILFunctionAttribute.dynamicallyReplacable => print("[dynamically_replacable]")
+      case SILFunctionAttribute.alwaysInline => print("[always_inline]")
       case SILFunctionAttribute.noInline => print("[noinline]")
-      case SILFunctionAttribute.noncanonical(SILNoncanonicalFunctionAttribute.ownershipSSA) => print("[ossa]")
-      case SILFunctionAttribute.readonly => print("[readonly]")
+      case SILFunctionAttribute.ossa => print("[ossa]")
+      case SILFunctionAttribute.serialized => print("[serialized]")
+      case SILFunctionAttribute.serializable => print("[serializable]")
+      case SILFunctionAttribute.transparent => print("[transparent]")
+      case thunk: SILFunctionAttribute.Thunk => {
+        thunk match {
+          case Thunk.thunk => print("[thunk]")
+          case Thunk.signatureOptimized => print("[signature_optimized_thunk]")
+          case Thunk.reabstraction => print("[reabstraction_thunk]")
+        }
+      }
+      case SILFunctionAttribute.dynamicReplacement(func) => {
+        print("[dynamic_replacement_for ")
+        print(func)
+        print("]")
+      }
+      case SILFunctionAttribute.objcReplacement(func) => {
+        print("[objc_replacement_for ")
+        print(func)
+        print("]")
+      }
+      case SILFunctionAttribute.exactSelfClass => print("[exact_self_class]")
+      case SILFunctionAttribute.withoutActuallyEscaping => print("[without_actually_escaping]")
+      case purpose: SILFunctionAttribute.FunctionPurpose => {
+        purpose match {
+          case FunctionPurpose.globalInit => print("[global_init]")
+          case FunctionPurpose.lazyGetter => print("[lazy_getter]")
+        }
+      }
+      case SILFunctionAttribute.weakImported => print("[weak_imported]")
+      case SILFunctionAttribute.available(version) => {
+        print("[available ")
+        print(whenEmpty = false, ".", version, ".", "", (x: String) => literal(x, true))
+        print("]")
+      }
+      case inlining: SILFunctionAttribute.FunctionInlining => {
+        inlining match {
+          case FunctionInlining.never => print("[never]")
+          case FunctionInlining.always => print("[always]")
+        }
+      }
+      case optimization: SILFunctionAttribute.FunctionOptimization => {
+        optimization match {
+          case FunctionOptimization.Onone => print("[Onone]")
+          case FunctionOptimization.Ospeed => print("[Ospeed]")
+          case FunctionOptimization.Osize => print("[Osize]")
+        }
+      }
+      case effects: SILFunctionAttribute.FunctionEffects => {
+        effects match {
+          case FunctionEffects.readonly => print("[readonly]")
+          case FunctionEffects.readnone => print("[readnone]")
+          case FunctionEffects.readwrite => print("[readwrite]")
+          case FunctionEffects.releasenone => print("[releasenone]")
+        }
+      }
       case SILFunctionAttribute.semantics(value) => {
         print("[_semantics ")
         literal(value)
         print("]")
       }
-      case SILFunctionAttribute.serialized => print("[serialized]")
-      case SILFunctionAttribute.serializable => print("[serializable]")
-      case SILFunctionAttribute.thunk => print("[thunk]")
-      case SILFunctionAttribute.transparent => print("[transparent]")
-      case SILFunctionAttribute.available(ver0, ver1) => {
-        print("[available ")
-        literal(ver0)
-        print(".")
-        literal(ver1)
+      case SILFunctionAttribute.specialize(value) => {
+        print("[_specialize ")
+        literal(value)
+        print("]")
+      }
+      case SILFunctionAttribute.clang(value) => {
+        print("[clang ")
+        print(value)
         print("]")
       }
     }

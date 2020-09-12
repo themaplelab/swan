@@ -22,17 +22,39 @@ import java.net.URISyntaxException;
 public class ParserTests {
 
     // TESTS:
-    // 1. Function level (.sil files in directory)
-    // 2. Instruction level (.sil files in directory)
-    // 3. witness tables (.sil files in directory)
-    // 4. v tables (.sil files in directory)
-    // 5. global variables (.sil files in directory)
-    // 6. Swift files (use swan-swiftc) (.swift files in directory)
-    // 7. iOS xcodeproj (use swan-xcodebuild)
+    // 1. Module level (.sil files in directory)
+    // 2. Function level (.sil files in directory)
+    // 3. Instruction level (.sil files in directory)
+    // 4. witness tables (.sil files in directory)
+    // 5. v tables (.sil files in directory)
+    // 6. global variables (.sil files in directory)
+    // 7. Swift files (use swan-swiftc) (.swift files in directory)
+    // 8. iOS xcodeproj (use swan-xcodebuild)
     // (.xcodeproj files in directory, necessary build options in CSV file)
-    // 8. Demangler test (to make sure the demangler works at all)
+    // 9. Demangler test (to make sure the demangler works at all)
 
-    // 1. Function level (.sil files in directory)
+    // TODO: sil_scope is printed all to the top of a module, but in reality
+    //  it is throughout the module. This makes module string comparison fail.
+
+    // 1. Module level (.sil files in directory)
+    // Each .sil file must contain a module.
+    @Test
+    void testModuleParsing() throws Error, URISyntaxException, IOException {
+        System.out.println("Testing modules");
+        File fileDir = new File(getClass().getClassLoader()
+                .getResource("sil/modules/").toURI());
+        File[] silFiles = fileDir.listFiles();
+        for (File sil : silFiles) {
+            System.out.println("    -> " + sil.getName());
+            String expected = readFile(sil);
+            SILParser parser = new SILParser(sil.toPath());
+            String result = parser.print(parser.parseModule());
+            // TODO: assertEquals dumps XML to terminal. Not sure why.
+            Assertions.assertTrue(expected.equals(result));
+        }
+    }
+
+    // 2. Function level (.sil files in directory)
     // Each .sil file must contain a single function.
     @Test
     void testFunctionParsing() throws Error, URISyntaxException, IOException {
@@ -49,7 +71,7 @@ public class ParserTests {
         }
     }
 
-    // 2. Instruction level (.sil files in directory)
+    // 3. Instruction level (.sil files in directory)
     // Each line in the .sil files is considered individually as an
     // instruction. Empty commented/empty lines are ignored.
     @Test
@@ -70,7 +92,7 @@ public class ParserTests {
         }
     }
 
-    // 3. witness tables (.sil files in directory)
+    // 4. witness tables (.sil files in directory)
     // Each .sil file must contain a single witness table.
     @Test
     void testWitnessTableParsing() throws Error, URISyntaxException, IOException {
@@ -87,7 +109,7 @@ public class ParserTests {
         }
     }
 
-    // 4. v tables (.sil files in directory)
+    // 5. v tables (.sil files in directory)
     // Files are parsed as module so that multiple sil_global's can
     // be tested.
     @Test
@@ -110,7 +132,7 @@ public class ParserTests {
         }
     }
 
-    // 5. global variables (.sil files in directory)
+    // 6. global variables (.sil files in directory)
     // Files are parsed as module so that multiple sil_global's can
     // be tested.
     @Test
@@ -133,7 +155,7 @@ public class ParserTests {
         }
     }
 
-    // 6. Swift files (use swan-swiftc) (.swift files in directory)
+    // 7. Swift files (use swan-swiftc) (.swift files in directory)
     // NOTE: If these files import libraries, `-sdk` will probably be needed
     @Test
     void testSwiftSingleFileParsing() throws Error, URISyntaxException, IOException {
@@ -174,7 +196,7 @@ public class ParserTests {
         }
     }
 
-    // 7. iOS xcodeproj (use swan-xcodebuild)
+    // 8. iOS xcodeproj (use swan-xcodebuild)
     // This test uses swan-xcodebuild to generate SIL for all xcodeprojects.
     // The format of the csv is
     // <xcodeproj_path>, <scheme>, <optional_xcodebuild_args>
@@ -184,6 +206,7 @@ public class ParserTests {
     @Disabled // SLOW test
     @CsvFileSource(resources = "xcodeproj/projects.csv")
     void getSILForAllXcodeProjects(String xcodeproj, String scheme, String optionalArgs) throws URISyntaxException, IOException, Error {
+        System.out.println("Testing " + xcodeproj);
         String projectPath = "xcodeproj/" + xcodeproj;
         File testProjectFile = new File(getClass().getClassLoader()
                 .getResource(projectPath).toURI());
@@ -210,15 +233,19 @@ public class ParserTests {
         File[] silFiles = silDir.listFiles();
         Assertions.assertNotEquals(null, silFiles);
         for (File sil : silFiles) {
-            readFile(sil);
+            System.out.println("    -> " + sil.getName());
+            String expected = readFile(sil);
             SILParser parser = new SILParser(sil.toPath());
-            SILModule module = parser.parseModule();
+            String result = parser.print(parser.parseModule());
+            expected = expected.trim() + "\n";
+            result = result.trim() + "\n";
+            Assertions.assertTrue(expected.equals(result));
         }
     }
 
-    // 8. Demangler test
+    // 9. Demangler test
     @Test
-    void testFunctionDemangling() throws Error {
+    void testFunctionDemangling() {
         String mangledFunctionName = "$sSS10FoundationE19_bridgeToObjectiveCSo8NSStringCyF";
         String demangledFunctionName = "(extension in Foundation):Swift.String._bridgeToObjectiveC() -> __C.NSString";
         SILMangledName name = new SILMangledName(mangledFunctionName);
