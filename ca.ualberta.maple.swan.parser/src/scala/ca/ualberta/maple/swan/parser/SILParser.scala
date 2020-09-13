@@ -210,6 +210,7 @@ class SILParser extends SILPrinter {
     var imports = Array[String]()
     var globalVariables = Array[SILGlobalVariable]()
     var scopes = Array[SILScope]()
+    var properties = Array[SILProperty]()
     var done = false
     while(!done) {
       if(peek("sil ")) {
@@ -218,11 +219,13 @@ class SILParser extends SILPrinter {
       } else if (peek("sil_witness_table ")) {
         witnessTables :+= parseWitnessTable()
       } else if (peek("sil_default_witness_table ")) {
-        // TODO
+        // TODO: Has not appeared yet. Leave for now.
       } else if (peek("sil_vtable ")) {
         vTables :+= parseVTable()
       } else if (peek("sil_global ")) {
         globalVariables :+= parseGlobalVariable()
+      // } else if (peek("sil_property")) { TODO: Need to parse component
+        // properties :+= parseProperty()
       } else if (peek("import ")) {
         take("import")
         // Identifier should be OK here.
@@ -238,7 +241,7 @@ class SILParser extends SILPrinter {
         }
       }
     }
-    new SILModule(functions, witnessTables, vTables, imports, globalVariables, scopes)
+    new SILModule(functions, witnessTables, vTables, imports, globalVariables, scopes, properties)
   }
 
   // https://github.com/apple/swift/blob/master/docs/SIL.rst#functions
@@ -337,6 +340,17 @@ class SILParser extends SILPrinter {
       })
     }
     new SILGlobalVariable(linkage, serialized, let, name, tpe, entries)
+  }
+
+  @throws[Error]
+  def parseProperty(): SILProperty = {
+    take("sil_property")
+    val serialized = skip("[serialized]")
+    val declRef = parseDeclRef()
+    take("(")
+    val tpe = parseNakedType() // This is wrong.
+    take(")")
+    new SILProperty(serialized, declRef, tpe)
   }
 
   // https://github.com/apple/swift/blob/master/docs/SIL.rst#vtables
@@ -2286,6 +2300,5 @@ class Error(path : String, message : String, val chars: Array[Char]) extends Exc
     } else {
       path + ":" + line.get + ":" + column.get + ": " + message
     }
-
   }
 }

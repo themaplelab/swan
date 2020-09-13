@@ -18,6 +18,7 @@ import org.junit.jupiter.params.provider.CsvFileSource;
 
 import java.io.*;
 import java.net.URISyntaxException;
+import java.util.ArrayList;
 
 public class ParserTests {
 
@@ -33,12 +34,11 @@ public class ParserTests {
     // (.xcodeproj files in directory, necessary build options in CSV file)
     // 9. Demangler test (to make sure the demangler works at all)
 
-    // TODO: sil_scope is printed all to the top of a module, but in reality
-    //  it is throughout the module. This makes module string comparison fail.
 
     // 1. Module level (.sil files in directory)
     // Each .sil file must contain a module.
     @Test
+    // TODO: Separate into slow test suite.
     void testModuleParsing() throws Error, URISyntaxException, IOException {
         System.out.println("Testing modules");
         File fileDir = new File(getClass().getClassLoader()
@@ -203,7 +203,7 @@ public class ParserTests {
     // The CSV can contain comments as long as they start with "#".
     // TODO: Separate into slow test suite.
     @ParameterizedTest
-    @Disabled // SLOW test
+    // @Disabled // SLOW test
     @CsvFileSource(resources = "xcodeproj/projects.csv")
     void getSILForAllXcodeProjects(String xcodeproj, String scheme, String optionalArgs) throws URISyntaxException, IOException, Error {
         System.out.println("Testing " + xcodeproj);
@@ -269,6 +269,9 @@ public class ParserTests {
         if (inst.contains("{ get set }")) {
             return "";
         }
+        if (inst.startsWith("sil_property ")) { // Remove this because it's not supported yet
+            return "";
+        }
         inst = inst.split("//")[0];
         inst = inst.replaceAll("\\s+$", ""); // right trim
         return inst;
@@ -282,6 +285,7 @@ public class ParserTests {
         InputStream in = new FileInputStream(file);
         BufferedReader reader = new BufferedReader(new InputStreamReader(in));
         StringBuilder result = new StringBuilder();
+        ArrayList<String> scopes = new ArrayList<String>();
         String line;
         while((line = reader.readLine()) != null) {
             // Empty line, preserve empty lines
@@ -292,9 +296,19 @@ public class ParserTests {
             line = doReplacements(line);
             // For commented out lines
             if (line.trim().length() > 0) {
-                result.append(line);
-                result.append(System.lineSeparator());
+                if (line.trim().startsWith("sil_scope")) {
+                    scopes.add(line);
+                } else {
+                    result.append(line);
+                    result.append(System.lineSeparator());
+                }
             }
+        }
+        if (!scopes.isEmpty()) {
+            // Assume "sil_canonical\n" is the first line
+            result.insert(result.indexOf(System.lineSeparator()),
+                    System.lineSeparator() + System.lineSeparator()
+                            + String.join(System.lineSeparator() + System.lineSeparator(), scopes));
         }
         return result.toString();
     }

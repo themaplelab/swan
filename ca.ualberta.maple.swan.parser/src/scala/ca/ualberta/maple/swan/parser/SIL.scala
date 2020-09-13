@@ -16,7 +16,8 @@ import sys.process._
 
 class SILModule(val functions: Array[SILFunction], val witnessTables: Array[SILWitnessTable],
                 val vTables: Array[SILVTable], val imports: Array[String],
-                val globalVariables: Array[SILGlobalVariable], val scopes: Array[SILScope]) {
+                val globalVariables: Array[SILGlobalVariable],
+                val scopes: Array[SILScope], var properties: Array[SILProperty]) {
 
   object Parse {
     @throws[Error]
@@ -615,6 +616,8 @@ class SILGlobalVariable(val linkage: SILLinkage, val serialized: Boolean,
 
 class SILWitnessTable(val linkage: SILLinkage, val attribute: Option[SILFunctionAttribute],
                       val normalProtocolConformance: SILNormalProtocolConformance, val entries: Array[SILWitnessEntry])
+
+class SILProperty(val serialized: Boolean, val decl: SILDeclRef, val component: SILType)
 
 class SILVTable(val name: String, val serialized: Boolean, val entries: Array[SILVEntry])
 

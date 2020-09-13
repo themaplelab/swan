@@ -18,17 +18,18 @@ class SILPrinter extends Printer {
   def print(module: SILModule): String = {
     print("sil_stage canonical")
     print("\n\n")
+    // These are not actually all printed at once, but this is fine
+    // because we can modify the expected input to expect it here.
+    module.scopes.foreach(scope => {
+      print(scope)
+      print("\n")
+    })
     module.imports.foreach(imprt => {
       print("import ")
       print(imprt)
       print("\n")
     })
     print("\n")
-    // These are not actually all printed at once, but this is fine
-    module.scopes.foreach(scope => {
-      print(scope)
-      print("\n")
-    })
     module.globalVariables.foreach(gv => {
       print(gv)
     })
@@ -42,6 +43,10 @@ class SILPrinter extends Printer {
     })
     module.witnessTables.foreach(w => {
       print(w)
+      print("\n")
+    })
+    module.properties.foreach(p => {
+      print(p)
       print("\n")
     })
     this.toString
@@ -1064,6 +1069,13 @@ class SILPrinter extends Printer {
     }
   }
 
+  def print(property: SILProperty): Unit = {
+    print("sil_property ")
+    print("[serialized] ", when = property.serialized)
+    print(property.decl)
+    print(property.component)
+  }
+
   def print(normalProtocolConformance: SILNormalProtocolConformance): Unit = {
     naked(normalProtocolConformance.tpe)
     print(": ")
@@ -1325,7 +1337,7 @@ class SILPrinter extends Printer {
       case SILFunctionAttribute.weakImported => print("[weak_imported]")
       case SILFunctionAttribute.available(version) => {
         print("[available ")
-        print(whenEmpty = false, ".", version, ".", "", (x: String) => literal(x, true))
+        print(whenEmpty = false, "", version, ".", "", (x: String) => literal(x, true))
         print("]")
       }
       case inlining: SILFunctionAttribute.FunctionInlining => {
@@ -1407,7 +1419,7 @@ class SILPrinter extends Printer {
     print("sil_scope ")
     literal(scope.num)
     print(" { ")
-    if (scope.loc.nonEmpty) print(scope.loc)
+    if (scope.loc.nonEmpty) print(scope.loc.get)
     print(" parent ")
     print(scope.parent)
     if (scope.inlinedAt.nonEmpty) {
