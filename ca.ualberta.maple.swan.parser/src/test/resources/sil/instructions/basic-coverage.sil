@@ -178,8 +178,7 @@ dealloc_existential_box %1 : $Error, $SomeError
 
 %59 = project_block_storage %58 : $*@block_storage @callee_guaranteed () -> (), loc "/Users/abdulalib/Documents/swan-spds/benchmark/mobile-ios-vipergame/Memory/Utilities/ErrorAlert.swift":35:34, scope 836 // users: %96, %60
 
-// Not yet implemented
-// %62 = init_block_storage_header %58 : $*@block_storage @callee_guaranteed () -> (), invoke %61 : $@convention(c) (@inout_aliasable @block_storage @callee_guaranteed () -> ()) -> (), type $@convention(block) () -> (), loc "/Users/abdulalib/Documents/swan-spds/benchmark/mobile-ios-vipergame/Memory/Utilities/ErrorAlert.swift":35:34, scope 836 // user: %63
+%62 = init_block_storage_header %58 : $*@block_storage @callee_guaranteed () -> (), invoke %61 : $@convention(c) (@inout_aliasable @block_storage @callee_guaranteed () -> ()) -> (), type $@convention(block) () -> (), loc "/Users/abdulalib/Documents/swan-spds/benchmark/mobile-ios-vipergame/Memory/Utilities/ErrorAlert.swift":35:34, scope 836 // user: %63
 
 %69 = upcast %3 : $MD5 to $Hash
 

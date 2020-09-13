@@ -220,6 +220,7 @@ object SILOperator {
 
   /***** BLOCKS *****/
   case class projectBlockStorage(operand: SILOperand) extends SILOperator
+  case class initBlockStorageHeader(operand: SILOperand, invoke: SILOperand, tpe: SILType) extends SILOperator
   // TODO: init_block_storage_header
 
   /***** UNCHECKED CONVERSIONS *****/

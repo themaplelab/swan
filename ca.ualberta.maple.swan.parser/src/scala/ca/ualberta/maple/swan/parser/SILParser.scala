@@ -1077,7 +1077,14 @@ class SILParser extends SILPrinter {
         SILInstruction.operator(SILOperator.projectBlockStorage(operand))
       }
       case "init_block_storage_header" => {
-        null // TODO: NPOTP, No SIL.rst documentation.
+        val operand = parseOperand()
+        take(",")
+        take("invoke")
+        val invoke = parseOperand()
+        take(",")
+        take("type")
+        val tpe = parseType()
+        SILInstruction.operator(SILOperator.initBlockStorageHeader(operand, invoke, tpe))
       }
 
         // *** UNCHECKED CONVERSIONS ***
