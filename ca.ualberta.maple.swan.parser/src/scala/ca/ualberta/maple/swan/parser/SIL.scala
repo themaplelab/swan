@@ -16,8 +16,8 @@ import sys.process._
 
 class SILModule(val functions: Array[SILFunction], val witnessTables: Array[SILWitnessTable],
                 val vTables: Array[SILVTable], val imports: Array[String],
-                val globalVariables: Array[SILGlobalVariable],
-                val scopes: Array[SILScope], var properties: Array[SILProperty]) {
+                val globalVariables: Array[SILGlobalVariable], val scopes: Array[SILScope],
+                var properties: Array[SILProperty], val inits: Array[Init]) {
 
   object Parse {
     @throws[Error]
@@ -420,6 +420,15 @@ class SILMangledName(val mangled: String) {
     // TODO: ship demangler with SWAN
     ("/Library/Developer/CommandLineTools/usr/bin/swift-demangle -compact \'" + mangled + '\'').!!.replaceAll(System.lineSeparator(), "")
   }
+}
+
+class Init(val name: String, val args: Array[String], val tpe: InitType)
+
+sealed trait InitType
+object InitType {
+  case object normal extends InitType
+  case object objc extends InitType
+  case object nonobjc extends InitType
 }
 
 sealed trait SILFunctionAttribute

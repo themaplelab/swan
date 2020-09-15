@@ -32,6 +32,8 @@ class SILParser extends SILPrinter {
   private[parser] var cursor: Int = 0
   def position(): Int = { cursor }
 
+  private[parser] var inits: Array[Init] = Array()
+
   def this(path: Path) = {
     this()
     this.path = path.toString
@@ -98,9 +100,27 @@ class SILParser extends SILPrinter {
       cursor += 1
       skipTrivia()
     } else if (skip("//")) {
-      while (cursor < chars.length && chars(cursor) != '\n') { // Optimize?
-        cursor += 1
-      }
+      // See if it is a init function comment.
+      // These are needed to inform struct semantics for users of SIL.
+      try {
+        maybeParse(() => {
+          val tpe: InitType = {
+            if(skip("@objc")) InitType.objc
+            else if(skip("@nonobjc")) InitType.nonobjc
+            else InitType.normal
+          }
+          val name = parseIdentifier()
+          take(".init")
+          val args = parseMany("(", ":", ")", parseIdentifier)
+          take("\n")
+          this.inits :+= new Init(name, args, tpe)
+          Some(null)
+        })
+      } catch { case _: Error => {
+        while (cursor < chars.length && chars(cursor) != '\n') {
+          cursor += 1
+        }
+      }}
       skipTrivia()
     }
   }
@@ -144,6 +164,10 @@ class SILParser extends SILPrinter {
         } else {
           if (!sep.isEmpty) {
             take(sep)
+          }
+          // In case (element,)
+          if (peek(suf)) {
+            break = true
           }
         }
       }
@@ -241,7 +265,7 @@ class SILParser extends SILPrinter {
         }
       }
     }
-    new SILModule(functions, witnessTables, vTables, imports, globalVariables, scopes, properties)
+    new SILModule(functions, witnessTables, vTables, imports, globalVariables, scopes, properties, inits)
   }
 
   // https://github.com/apple/swift/blob/master/docs/SIL.rst#functions
