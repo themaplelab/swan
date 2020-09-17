@@ -36,10 +36,10 @@ sealed abstract trait InstructionDef {
   val instruction: Instruction
 }
 object InstructionDef {
-  case class operator(val operatorDef: OperatorDef) extends InstructionDef {
+  case class operator(operatorDef: OperatorDef) extends InstructionDef {
     override val instruction: Instruction = Instruction.operator(operatorDef.operator)
   }
-  case class terminator(val terminatorDef: TerminatorDef) extends InstructionDef {
+  case class terminator(terminatorDef: TerminatorDef) extends InstructionDef {
     override val instruction: Instruction = Instruction.terminator(terminatorDef.terminator)
   }
 }
@@ -57,23 +57,24 @@ object Instruction {
 sealed trait Operator
 object Operator { // WIP
   // *** SHARED ***
-  case class newGlobal(val name: String) extends Operator
-  case class neww(val result: Symbol) extends Operator
-  case class assignGlobal(val result: Symbol, val name: String) extends Operator
-  case class assign(val result: Symbol, val from: String) extends Operator
-  case class literal(val result: Symbol, val literal: Literal) extends Operator
-  case class functionRef(val result: Symbol, val name: String) extends Operator
-  case class print(val name: String) extends Operator
-  case class arrayRead(val result: Symbol, val alias: Boolean, val arr: String) extends Operator
-  case class arrayWrite(val value: String, val arr: String) extends Operator
-  case class fieldRead(val result: Symbol, val alias: Boolean, val obj: String, val field: String) extends Operator
-  case class fieldWrite(val value: String, obj: String, val field: String) extends Operator
-  case class unaryOp(val result: Symbol, operation: UnaryOperation, operand: String) extends Operator
-  case class binaryOp(val result: Symbol, operation: BinaryOperation, lhs: String, rhs: String) extends Operator
+  case class newGlobal(name: String) extends Operator
+  case class neww(result: Symbol) extends Operator
+  case class assignGlobal(result: Symbol, name: String) extends Operator
+  case class assign(result: Symbol, from: String) extends Operator
+  case class literal(result: Symbol, literal: Literal) extends Operator
+  case class builtinRef(result: Symbol, name: String) extends Operator
+  case class functionRef(result: Symbol, name: Array[String]) extends Operator
+  case class print(name: String) extends Operator
+  case class arrayRead(result: Symbol, alias: Boolean, arr: String) extends Operator
+  case class arrayWrite(value: String, arr: String) extends Operator
+  case class fieldRead(result: Symbol, alias: Boolean, obj: String, field: String) extends Operator
+  case class fieldWrite(value: String, obj: String, field: String) extends Operator
+  case class unaryOp(result: Symbol, operation: UnaryOperation, operand: String) extends Operator
+  case class binaryOp(result: Symbol, operation: BinaryOperation, lhs: String, rhs: String) extends Operator
   // *** RAW ONLY ***
-  case class pointerRead(val result: Symbol, val pointer: String) extends Operator
-  case class pointerWrite(val value: String, val pointer: String) extends Operator
-  case class symbolCopy(val from: String, to: String) extends Operator
+  case class pointerRead(result: Symbol, pointer: String) extends Operator
+  case class pointerWrite(value: String, pointer: String) extends Operator
+  case class symbolCopy(from: String, to: String) extends Operator
 }
 
 sealed trait UnaryOperation
@@ -88,9 +89,9 @@ object BinaryOperation {
 
 sealed trait Literal
 object Literal {
-  case class string(val value: String) extends Literal
-  case class int(val value: BigInt) extends Literal
-  case class float(val value: Float) extends Literal
+  case class string(value: String) extends Literal
+  case class int(value: BigInt) extends Literal
+  case class float(value: Float) extends Literal
 }
 
 sealed trait Terminator

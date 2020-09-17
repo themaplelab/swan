@@ -1271,10 +1271,11 @@ class SILPrinter extends Printer {
     }
   }
 
-  def print(declRef: SILDeclRef): Unit = {
+  def print(declRef: SILDeclRef): String = {
     print("#")
     print(declRef.name.mkString("."))
     if (declRef.subRef.nonEmpty) print(declRef.subRef.get)
+    this.toString
   }
 
   def print(encoding: SILEncoding): Unit = {

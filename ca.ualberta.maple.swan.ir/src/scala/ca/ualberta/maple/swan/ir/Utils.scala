@@ -16,6 +16,8 @@ object Utils {
 
   // ************* TYPE CONVERSION *************
 
+  // Type conversions should remove conventions.
+
   // SIL $T to SWANIR $T
   def SILTypeToType(tpe: SILType): Type = {
     new Type(tpe.toString) // TODO: Temp
@@ -28,11 +30,6 @@ object Utils {
 
   // SIL $*T to SWANIR $T
   def SILPointerTypeToType(tpe: SILType): Type = {
-    new Type(tpe.toString) // TODO: Temp
-  }
-
-  // SIL $*@sil_weak Optional<T> to $Optional<T>
-  def SILWeakOptionalToType(tpe: SILType): Type = {
     new Type(tpe.toString) // TODO: Temp
   }
 
