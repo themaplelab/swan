@@ -138,6 +138,8 @@ autorelease_value %4 : $Optional<Hive>
 
 %5 = struct_element_addr %1 : $*UIView.AnimationOptions, #UIView.AnimationOptions.rawValue, scope 2446 // user: %6
 
+%initval = object $GlobalObject (%0 : $Builtin.Int64, [tail_elems] %1 : $Builtin.Int64, %1 : $Builtin.Int64)
+
 %19 = ref_element_addr %18 : $__ContiguousArrayStorageBase, #__ContiguousArrayStorageBase.countAndCapacity, scope 750 // user: %2
 
 %15 = enum $Optional<GameInteractorInputProtocol>, #Optional.none!enumelt, scope 918 // user: %18

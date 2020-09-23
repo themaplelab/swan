@@ -1491,7 +1491,7 @@ class SILPrinter extends Printer {
     }
   }
 
-  def naked(nakedTpe: SILType): Unit = {
+  def naked(nakedTpe: SILType): String = {
     nakedTpe match {
       case SILType.addressType(tpe) => {
         print("*")
@@ -1572,6 +1572,7 @@ class SILPrinter extends Printer {
         print(" }")
       }
     }
+    this.toString
   }
 
   def print(attribute: SILTypeAttribute): Unit = {

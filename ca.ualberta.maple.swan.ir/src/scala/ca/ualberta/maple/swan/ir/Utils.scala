@@ -10,7 +10,7 @@
 
 package ca.ualberta.maple.swan.ir
 
-import ca.ualberta.maple.swan.parser.{SILArgument, SILDeclRef, SILOperand, SILResult, SILSourceInfo, SILTupleElements, SILType}
+import ca.ualberta.maple.swan.parser.{SILArgument, SILDeclRef, SILOperand, SILPrinter, SILResult, SILSourceInfo, SILTupleElements, SILType}
 
 object Utils {
 
@@ -18,19 +18,24 @@ object Utils {
 
   // Type conversions should remove conventions.
 
+  def printer: SILPrinter = {
+    new SILPrinter()
+  }
+
   // SIL $T to SWANIR $T
-  def SILTypeToType(tpe: SILType): Type = {
-    new Type(tpe.toString) // TODO: Temp
+  def SILTypeToType(rootTpe: SILType): Type = {
+    new Type(printer.naked(rootTpe))
   }
 
   // SIL $T to SWANIR $*T
-  def SILTypeToPointerType(tpe: SILType): Type = {
-    new Type(tpe.toString) // TODO: Temp
+  def SILTypeToPointerType(rootTpe: SILType): Type = {
+    new Type(printer.naked(SILType.addressType(rootTpe)))
   }
 
   // SIL $*T to SWANIR $T
   def SILPointerTypeToType(tpe: SILType): Type = {
-    new Type(tpe.toString) // TODO: Temp
+    assert(tpe.isInstanceOf[SILType.addressType])
+    new Type(printer.naked(tpe.asInstanceOf[SILType.addressType].tpe))
   }
 
   // SIL "0x3F800000" to float
@@ -40,12 +45,37 @@ object Utils {
 
   // SIL $(T...), 123 to SWANIR type of the selected element using "123"
   // pointer specifies whether the type is a pointer (tuple_element_addr case)
-  def SILTupleTypeToType(tupleType: SILType, index: Int, pointer: Boolean): Type = {
-    new Type(tupleType.toString) // TODO: Temp
+  def SILTupleTypeToType(tpe: SILType, index: Int, pointer: Boolean): Type = {
+    def getTypeAtIndex(parameters: Array[SILType]): Type = {
+      assert(parameters.length - 1 >= index)
+      val param = parameters(index)
+      def makeType(tpe: SILType, pointer: Boolean): Type = {
+        if (pointer) {
+          new Type(printer.naked(SILType.addressType(tpe)))
+        } else {
+          new Type(printer.naked(parameters(index)))
+        }
+      }
+      param match {
+        case SILType.namedArgType(_, tpe) => return makeType(tpe, pointer)
+        case _ => return makeType(param, pointer)
+      }
+    }
+    tpe match {
+      case SILType.addressType(tpe) => {
+        tpe match {
+          case SILType.tupleType(parameters, _) => return getTypeAtIndex(parameters)
+          case _ => assert(false, "Underlying type should be tuple type"); null
+        }
+      }
+      case SILType.tupleType(parameters, _) => return getTypeAtIndex(parameters)
+      case _ => assert(false, "Address type or tuple type expected"); null
+    }
   }
 
   def SILStructFieldDeclRefToString(declRef: SILDeclRef): String = {
-    "" // TODO: Temp
+    assert(declRef.name.length >= 2)
+    declRef.name.last // Assume last is fine for now
   }
 
   def SILTupleElementsToType(elements: SILTupleElements): Type = {
@@ -54,7 +84,19 @@ object Utils {
         SILTypeToType(tpe)
       }
       case SILTupleElements.unlabeled(operands: Array[SILOperand]) => {
-        new Type("") // TODO: Temp
+        if (operands.isEmpty) {
+          return new Type("()")
+        }
+        val stringBuilder = new StringBuilder()
+        stringBuilder.append("(")
+        operands.foreach(operand => {
+          stringBuilder.append(printer.naked(operand.tpe))
+          if (operand != operands.last) {
+            stringBuilder.append(", ")
+          }
+        })
+        stringBuilder.append(")")
+        new Type(stringBuilder.toString())
       }
     }
   }
@@ -70,6 +112,10 @@ object Utils {
     if (src.loc.isEmpty) return None
     val loc = src.loc.get
     Some(new Position(loc.path, loc.line, loc.column))
+  }
+
+  def print(tpe: SILType): String = {
+    printer.naked(tpe);
   }
 
 }

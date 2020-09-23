@@ -22,31 +22,26 @@ import scala.util.control.Breaks.{break, breakable}
 trait ISILToRawSWANIR {
 
   val NOP: Null = null // explicit NOP marker
-  
-  // This isn't true dynamic context. It's just a container to hold
-  // the module/function/block when translating instructions.
-  class Context(val silModule: SILModule, val silFunction: SILFunction, val silBlock: SILBlock)
 
-  def compileSILModule(silModule: SILModule): Module = {
+  def translateSILModule(silModule: SILModule): Module = {
     val functions = new Array[Function](0)
     silModule.functions.foreach( (silFunction: SILFunction) => {
-      functions :+ compileSILFunction(silModule, silFunction)
+      functions :+ translateSILFunction(silModule, silFunction)
     })
     new Module(functions)
   }
 
-  private def compileSILFunction(silModule: SILModule, silFunction: SILFunction): Function = {
+  private def translateSILFunction(silModule: SILModule, silFunction: SILFunction): Function = {
     intermediateSymbols.clear()
     val blocks = new Array[Block](0)
     silFunction.blocks.foreach( (silBlock: SILBlock) => {
-      blocks :+ compileSILBlock(silModule, silFunction, silBlock)
+      blocks :+ translateSILBlock(silModule, silFunction, silBlock)
     })
     val coroutine = if(isCoroutine(silFunction)) Some(FunctionAttribute.coroutine) else None
     new Function(coroutine, silFunction.name.demangled, Utils.SILTypeToType(silFunction.tpe), blocks)
   }
 
-  private def compileSILBlock(silModule: SILModule, silFunction: SILFunction, silBlock: SILBlock): Block = {
-    val ctx = new Context(silModule, silFunction, silBlock)
+  private def translateSILBlock(silModule: SILModule, silFunction: SILFunction, silBlock: SILBlock): Block = {
     val arguments: Array[Argument] = new Array(0)
     silBlock.arguments.foreach( (a: SILArgument) => {
       arguments :+ Utils.SILArgumentToArgument(a)
@@ -55,7 +50,8 @@ trait ISILToRawSWANIR {
     silBlock.operatorDefs.foreach( (silOperatorDef: SILOperatorDef) => {
       breakable {
         val position: Option[Position] = Utils.SILSourceInfoToPosition(silOperatorDef.sourceInfo)
-        val instructions: Array[InstructionDef] = compileSILInstruction(SILInstructionDef.operator(silOperatorDef), ctx)
+        val ctx = new Context(silModule, silFunction, silBlock, position)
+        val instructions: Array[InstructionDef] = translateSILInstruction(SILInstructionDef.operator(silOperatorDef), ctx)
         if (instructions == NOP) {
           break()
         }
@@ -68,7 +64,8 @@ trait ISILToRawSWANIR {
     })
     val terminator: TerminatorDef = {
       val position: Option[Position] = Utils.SILSourceInfoToPosition(silBlock.terminatorDef.sourceInfo)
-      val instructions = compileSILInstruction(
+      val ctx = new Context(silModule, silFunction, silBlock, position)
+      val instructions = translateSILInstruction(
         SILInstructionDef.terminator(silBlock.terminatorDef), ctx)
       assert(instructions.length == 1)
       val instruction: InstructionDef = instructions(0)
@@ -96,16 +93,16 @@ trait ISILToRawSWANIR {
     if (!intermediateSymbols.contains(value)) {
       intermediateSymbols.put(value, 0)
     }
-    val ret = "i_" + intermediateSymbols.get(value).toString + "_" + value
+    val ret = value + "_i_" + intermediateSymbols(value).toString
     intermediateSymbols(value) = intermediateSymbols(value) + 1
     ret
   }
 
-  private def compileSILInstruction(silInstructionDef: SILInstructionDef, ctx: Context): Array[InstructionDef] = {
-    silInstructionDef.instruction match {
-      case operatorDef: SILOperatorDef => {
-        val result = operatorDef.result
-        val instruction = operatorDef.operator
+  def translateSILInstruction(silInstructionDef: SILInstructionDef, ctx: Context): Array[InstructionDef] = {
+    silInstructionDef match {
+      case SILInstructionDef.operator(operator) => {
+        val result = operator.result
+        val instruction = operator.operator
         instruction match {
           case inst: SILOperator.allocStack => visitAllocStack(result, inst, ctx)
           case inst: SILOperator.allocRef => visitAllocRef(result, inst, ctx)
@@ -193,6 +190,7 @@ trait ISILToRawSWANIR {
           case inst: SILOperator.openExistentialBox => visitOpenExistentialBox(result, inst, ctx)
           case inst: SILOperator.deallocExistentialBox => visitDeallocExistentialBox(result, inst, ctx)
           case inst: SILOperator.projectBlockStorage => visitProjectBlockStorage(result, inst, ctx)
+          case inst: SILOperator.initBlockStorageHeader => visitInitBlockStorageHeader(result, inst, ctx)
           case inst: SILOperator.upcast => visitUpcast(result, inst, ctx)
           case inst: SILOperator.addressToPointer => visitAddressToPointer(result, inst, ctx)
           case inst: SILOperator.pointerToAddress => visitPointerToAddress(result, inst, ctx)
@@ -215,8 +213,7 @@ trait ISILToRawSWANIR {
           case inst: SILOperator.condFail => visitCondFail(result, inst, ctx)
         }
       }
-      case _ => // Terminator
-        val terminatorDef = silInstructionDef.instruction.asInstanceOf[SILTerminatorDef]
+      case SILInstructionDef.terminator(terminatorDef) => {
         val instruction = terminatorDef.terminator
         instruction match {
           case SILTerminator.unreachable => visitUnreachable()
@@ -234,8 +231,8 @@ trait ISILToRawSWANIR {
           case inst: SILTerminator.checkedCastAddrBr => visitCheckedCastAddrBr(inst, ctx)
           case inst: SILTerminator.tryApply => visitTryApply(inst, ctx)
         }
+      }
     }
-
   }
 
   /* ALLOCATION AND DEALLOCATION */
@@ -389,7 +386,7 @@ trait ISILToRawSWANIR {
 
   /* BLOCKS */
   protected def visitProjectBlockStorage(r: Option[SILResult], I: SILOperator.projectBlockStorage, ctx: Context): Array[InstructionDef]
-  // protected def visitInitBlockStorageHeader(r: Option[SILResult], I: SILOperator.initBlockStorageHeader, ctx: Context): Array[InstructionDef]
+  protected def visitInitBlockStorageHeader(r: Option[SILResult], I: SILOperator.initBlockStorageHeader, ctx: Context): Array[InstructionDef]
 
   /* UNCHECKED CONVERSIONS */
   protected def visitUpcast(r: Option[SILResult], I: SILOperator.upcast, ctx: Context): Array[InstructionDef]

@@ -8,7 +8,15 @@
  *
  */
 
+/* NOTES
+ *  - Results are not in OperatorDef because some operators do not
+ *    have a result. Also, it should be explicit whether an instruction
+ *    has a result.
+ */
+
 package ca.ualberta.maple.swan.ir
+
+import ca.ualberta.maple.swan.parser.{SILBlock, SILFunction, SILModule}
 
 class Module(val functions: Array[Function])
 
@@ -25,12 +33,12 @@ object FunctionAttribute {
   case object model extends FunctionAttribute
 }
 
-class Type(name: String = "$Any") // Only String for now
+// Only String for now
+class Type(val name: String = "Any")
 
-class Position(path: String, line: Int, col: Int)
+class Position(val path: String, val line: Int, val col: Int)
 
 class Argument(val name: String, val tpe: Type)
-
 
 sealed abstract trait InstructionDef {
   val instruction: Instruction
@@ -44,9 +52,9 @@ object InstructionDef {
   }
 }
 
-class OperatorDef(val operator: Operator)
+class OperatorDef(val operator: Operator, val position: Option[Position])
 
-class TerminatorDef(val terminator: Terminator)
+class TerminatorDef(val terminator: Terminator, val position: Option[Position])
 
 sealed trait Instruction
 object Instruction {
@@ -63,8 +71,10 @@ object Operator { // WIP
   case class assign(result: Symbol, from: String) extends Operator
   case class literal(result: Symbol, literal: Literal) extends Operator
   case class builtinRef(result: Symbol, name: String) extends Operator
-  case class functionRef(result: Symbol, name: Array[String]) extends Operator
-  case class print(name: String) extends Operator
+  case class functionRef(result: Symbol, names: Array[String]) extends Operator
+  // coroutine is only valid for Raw SWANIR
+  case class apply(result: Symbol, functionRef: String, arguments: Array[String]) extends Operator
+  case class applyCoroutine(functionRef: String, arguments: Array[String]) extends Operator
   case class arrayRead(result: Symbol, alias: Boolean, arr: String) extends Operator
   case class arrayWrite(value: String, arr: String) extends Operator
   case class fieldRead(result: Symbol, alias: Boolean, obj: String, field: String) extends Operator
@@ -75,6 +85,8 @@ object Operator { // WIP
   case class pointerRead(result: Symbol, pointer: String) extends Operator
   case class pointerWrite(value: String, pointer: String) extends Operator
   case class symbolCopy(from: String, to: String) extends Operator
+  case class abortCoroutine(value: String) extends Operator
+  case class endCoroutine(value: String) extends Operator
 }
 
 sealed trait UnaryOperation
@@ -100,3 +112,8 @@ object Terminator { // WIP
 }
 
 class Symbol(val name: String, val tpe: Type)
+
+// This isn't true dynamic context. It's just a container to hold
+// the module/function/block when translating instructions.
+class Context(val silModule: SILModule, val silFunction: SILFunction,
+              val silBlock: SILBlock, val pos: Option[Position])

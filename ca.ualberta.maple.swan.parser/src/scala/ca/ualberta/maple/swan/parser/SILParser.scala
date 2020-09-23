@@ -234,7 +234,7 @@ class SILParser extends SILPrinter {
     var imports = Array[String]()
     var globalVariables = Array[SILGlobalVariable]()
     var scopes = Array[SILScope]()
-    var properties = Array[SILProperty]()
+    val properties = Array[SILProperty]()
     var done = false
     while(!done) {
       if(peek("sil ")) {
