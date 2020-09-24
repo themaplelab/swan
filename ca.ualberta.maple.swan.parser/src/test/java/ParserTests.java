@@ -46,9 +46,10 @@ public class ParserTests {
         File[] silFiles = fileDir.listFiles();
         for (File sil : silFiles) {
             System.out.println("    -> " + sil.getName());
-            String expected = readFile(sil);
+            String expected = TestUtils.readFile(sil);
             SILParser parser = new SILParser(sil.toPath());
-            String result = parser.print(parser.parseModule());
+            SILModule module = parser.parseModule();
+            String result = parser.print(module);
             // TODO: assertEquals dumps XML to terminal. Not sure why.
             Assertions.assertTrue(expected.equals(result));
         }
@@ -64,7 +65,7 @@ public class ParserTests {
         File[] silFiles = fileDir.listFiles();
         for (File sil : silFiles) {
             System.out.println("    -> " + sil.getName());
-            String expected = readFile(sil);
+            String expected = TestUtils.readFile(sil);
             SILParser parser = new SILParser(sil.toPath());
             String result = parser.print(parser.parseFunction());
             Assertions.assertEquals(expected, result);
@@ -82,12 +83,12 @@ public class ParserTests {
         File[] silFiles = fileDir.listFiles();
         for (File sil : silFiles) {
             System.out.println("    -> " + sil.getName());
-            String instructionsFileBody = readFile(sil, false);
+            String instructionsFileBody = TestUtils.readFile(sil, false);
             String[] instructions = instructionsFileBody.split("\n");
             for (String instruction : instructions) {
                 SILParser parser = new SILParser(instruction);
                 String result = parser.print(parser.parseInstructionDef());
-                Assertions.assertEquals(doReplacements(instruction), result);
+                Assertions.assertEquals(TestUtils.doReplacements(instruction), result);
             }
         }
     }
@@ -102,7 +103,7 @@ public class ParserTests {
         File[] silFiles = fileDir.listFiles();
         for (File sil : silFiles) {
             System.out.println("    -> " + sil.getName());
-            String expected = readFile(sil);
+            String expected = TestUtils.readFile(sil);
             SILParser parser = new SILParser(sil.toPath());
             String result = parser.print(parser.parseWitnessTable());
             Assertions.assertEquals(expected, result);
@@ -120,7 +121,7 @@ public class ParserTests {
         File[] silFiles = fileDir.listFiles();
         for (File sil : silFiles) {
             System.out.println("    -> " + sil.getName());
-            String expected = readFile(sil);
+            String expected = TestUtils.readFile(sil);
             SILParser parser = new SILParser(sil.toPath());
             String result = parser.print(parser.parseModule());
             // Remove excess newlines
@@ -143,7 +144,7 @@ public class ParserTests {
         File[] silFiles = fileDir.listFiles();
         for (File sil : silFiles) {
             System.out.println("    -> " + sil.getName());
-            String expected = readFile(sil);
+            String expected = TestUtils.readFile(sil);
             SILParser parser = new SILParser(sil.toPath());
             String result = parser.print(parser.parseModule());
             // Remove excess newlines
@@ -186,7 +187,7 @@ public class ParserTests {
             Assertions.assertEquals(p.exitValue(), 0);
             File sil = new File(swift.getAbsolutePath() + ".sil");
             Assertions.assertTrue(sil.exists());
-            String expected = readFile(sil);
+            String expected = TestUtils.readFile(sil);
             SILParser parser = new SILParser(sil.toPath());
             String result = parser.print(parser.parseModule());
             // Remove excess newlines
@@ -203,7 +204,7 @@ public class ParserTests {
     // The CSV can contain comments as long as they start with "#".
     // TODO: Separate into slow test suite.
     @ParameterizedTest
-    // @Disabled // SLOW test
+    @Disabled // SLOW test
     @CsvFileSource(resources = "xcodeproj/projects.csv")
     void getSILForAllXcodeProjects(String xcodeproj, String scheme, String optionalArgs) throws URISyntaxException, IOException, Error {
         System.out.println("Testing " + xcodeproj);
@@ -234,7 +235,7 @@ public class ParserTests {
         Assertions.assertNotEquals(null, silFiles);
         for (File sil : silFiles) {
             System.out.println("    -> " + sil.getName());
-            String expected = readFile(sil);
+            String expected = TestUtils.readFile(sil);
             SILParser parser = new SILParser(sil.toPath());
             String result = parser.print(parser.parseModule());
             expected = expected.trim() + "\n";
@@ -250,66 +251,5 @@ public class ParserTests {
         String demangledFunctionName = "(extension in Foundation):Swift.String._bridgeToObjectiveC() -> __C.NSString";
         SILMangledName name = new SILMangledName(mangledFunctionName);
         Assertions.assertEquals(demangledFunctionName, name.demangled());
-    }
-
-    // HELPERS
-    //
-    // For now, do a bunch of janky string manipulations to make the output
-    // match the expected. Should probably (later) write a customer comparator
-    // function that doesn't report inequality due to things like extra
-    // newlines.
-
-    // Account for any known transformations that the parser does,
-    // such as superficial type conversions, here.
-    String doReplacements(String inst) {
-        //inst = inst.replaceAll("\\[([a-zA-Z0-9]+)\\]", "Array<$1>");
-        if (inst.startsWith("func ")) {
-            return "";
-        }
-        if (inst.contains("{ get set }")) {
-            return "";
-        }
-        if (inst.startsWith("sil_property ")) { // Remove this because it's not supported yet
-            return "";
-        }
-        inst = inst.split("//")[0];
-        inst = inst.replaceAll("\\s+$", ""); // right trim
-        return inst;
-    }
-
-    String readFile(File file) throws IOException {
-        return readFile(file, true);
-    }
-
-    String readFile(File file, Boolean emptyLines) throws IOException {
-        InputStream in = new FileInputStream(file);
-        BufferedReader reader = new BufferedReader(new InputStreamReader(in));
-        StringBuilder result = new StringBuilder();
-        ArrayList<String> scopes = new ArrayList<String>();
-        String line;
-        while((line = reader.readLine()) != null) {
-            // Empty line, preserve empty lines
-            if (line.trim().isEmpty() && !result.toString().endsWith("\n\n") && emptyLines) {
-                result.append(System.lineSeparator());
-                continue;
-            }
-            line = doReplacements(line);
-            // For commented out lines
-            if (line.trim().length() > 0) {
-                if (line.trim().startsWith("sil_scope")) {
-                    scopes.add(line);
-                } else {
-                    result.append(line);
-                    result.append(System.lineSeparator());
-                }
-            }
-        }
-        if (!scopes.isEmpty()) {
-            // Assume "sil_canonical\n" is the first line
-            result.insert(result.indexOf(System.lineSeparator()),
-                    System.lineSeparator() + System.lineSeparator()
-                            + String.join(System.lineSeparator() + System.lineSeparator(), scopes));
-        }
-        return result.toString();
     }
 }
