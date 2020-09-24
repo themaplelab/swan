@@ -13,6 +13,7 @@ package ca.ualberta.maple.swan.ir
 import ca.ualberta.maple.swan.parser.{SILArgument, SILBlock, SILFunction, SILInstructionDef, SILModule, SILOperator, SILOperatorDef, SILResult, SILTerminator, SILTerminatorDef}
 
 import scala.collection.mutable
+import scala.collection.mutable.ArrayBuffer
 import scala.util.control.Breaks.{break, breakable}
 
 /*
@@ -24,29 +25,29 @@ trait ISILToRawSWANIR {
   val NOP: Null = null // explicit NOP marker
 
   def translateSILModule(silModule: SILModule): Module = {
-    val functions = new Array[Function](0)
+    intermediateSymbols.clear()
+    val functions = new ArrayBuffer[Function](0)
     silModule.functions.foreach( (silFunction: SILFunction) => {
-      functions :+ translateSILFunction(silModule, silFunction)
+      functions.append(translateSILFunction(silModule, silFunction))
     })
-    new Module(functions)
+    new Module(functions.toArray, silModule.imports)
   }
 
   private def translateSILFunction(silModule: SILModule, silFunction: SILFunction): Function = {
-    intermediateSymbols.clear()
-    val blocks = new Array[Block](0)
+    val blocks = new ArrayBuffer[Block](0)
     silFunction.blocks.foreach( (silBlock: SILBlock) => {
-      blocks :+ translateSILBlock(silModule, silFunction, silBlock)
+      blocks.append(translateSILBlock(silModule, silFunction, silBlock))
     })
     val coroutine = if(isCoroutine(silFunction)) Some(FunctionAttribute.coroutine) else None
-    new Function(coroutine, silFunction.name.demangled, Utils.SILTypeToType(silFunction.tpe), blocks)
+    new Function(coroutine, silFunction.name.demangled, Utils.SILTypeToType(silFunction.tpe), blocks.toArray)
   }
 
   private def translateSILBlock(silModule: SILModule, silFunction: SILFunction, silBlock: SILBlock): Block = {
-    val arguments: Array[Argument] = new Array(0)
+    val arguments = new ArrayBuffer[Argument]()
     silBlock.arguments.foreach( (a: SILArgument) => {
-      arguments :+ Utils.SILArgumentToArgument(a)
+      arguments.append(Utils.SILArgumentToArgument(a))
     })
-    val operators = new Array[OperatorDef](0)
+    val operators = new ArrayBuffer[OperatorDef](0)
     silBlock.operatorDefs.foreach( (silOperatorDef: SILOperatorDef) => {
       breakable {
         val position: Option[Position] = Utils.SILSourceInfoToPosition(silOperatorDef.sourceInfo)
@@ -57,11 +58,13 @@ trait ISILToRawSWANIR {
         }
         instructions.foreach( (inst: InstructionDef) => {
           assert(inst.isInstanceOf[InstructionDef.operator])
-          val operator: OperatorDef = Instruction.operator.asInstanceOf[InstructionDef.operator].operatorDef
-          operators :+ operator
+          val operator: OperatorDef = inst.asInstanceOf[InstructionDef.operator].operatorDef
+          operators.append(operator)
         })
       }
     })
+    val terminator: TerminatorDef = null
+    /*
     val terminator: TerminatorDef = {
       val position: Option[Position] = Utils.SILSourceInfoToPosition(silBlock.terminatorDef.sourceInfo)
       val ctx = new Context(silModule, silFunction, silBlock, position)
@@ -72,7 +75,8 @@ trait ISILToRawSWANIR {
       assert(instruction.isInstanceOf[InstructionDef.terminator])
       Instruction.terminator.asInstanceOf[InstructionDef.terminator].terminatorDef
     }
-    new Block(silBlock.identifier, arguments, operators, terminator)
+     */
+    new Block(silBlock.identifier, arguments.toArray, operators.toArray, terminator)
   }
 
   private def isCoroutine(silFunction: SILFunction): Boolean = {

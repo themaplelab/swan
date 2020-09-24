@@ -35,7 +35,7 @@ class SILPrinter extends Printer {
     })
     module.functions.foreach(f => {
       print(f)
-      print("\n\n")
+      print("\n")
     })
     module.vTables.foreach(v => {
       print(v)
@@ -60,7 +60,8 @@ class SILPrinter extends Printer {
     print(" : ")
     print(function.tpe)
     print(whenEmpty = false, " {\n", function.blocks, "\n", "}", (block: SILBlock) => print(block))
-    this.toString + "\n" // newline for testing comparison
+    print("\n")
+    this.toString
   }
 
   def print(block: SILBlock): String = {

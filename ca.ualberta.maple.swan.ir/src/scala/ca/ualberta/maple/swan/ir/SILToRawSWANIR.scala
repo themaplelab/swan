@@ -250,13 +250,13 @@ class SILToRawSWANIR extends ISILToRawSWANIR {
   override protected def visitObjCMethod(r: Option[SILResult], I: SILOperator.objcMethod, ctx: Context): Array[InstructionDef] = {
     val result = getSingleResult(r, Utils.SILTypeToType(I.tpe))
     val name = new SILPrinter().print(I.declRef)
-    makeOperator(ctx, Operator.builtinRef(result, name))
+    makeOperator(ctx, Operator.builtinRef(result, decl = true, name))
   }
 
   override protected def visitObjCSuperMethod(r: Option[SILResult], I: SILOperator.objcSuperMethod, ctx: Context): Array[InstructionDef] = {
     val result = getSingleResult(r, Utils.SILTypeToType(I.tpe))
     assert(I.declRef.name.length >= 2)
-    makeOperator(ctx, Operator.builtinRef(result, I.declRef.name.slice(0,2).mkString(".")))
+    makeOperator(ctx, Operator.builtinRef(result, decl = true, I.declRef.name.slice(0,2).mkString(".")))
   }
 
   override protected def visitWitnessMethod(r: Option[SILResult], I: SILOperator.witnessMethod, ctx: Context): Array[InstructionDef] = {
@@ -315,7 +315,7 @@ class SILToRawSWANIR extends ISILToRawSWANIR {
     })
     makeOperator(
       ctx,
-      Operator.functionRef(functionRef, Array(I.name)),
+      Operator.builtinRef(functionRef, decl = false, I.name),
       Operator.apply(result, functionRef.name, arguments.toArray)
     )
   }

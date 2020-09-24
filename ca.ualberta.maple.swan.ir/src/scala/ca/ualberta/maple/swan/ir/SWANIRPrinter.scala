@@ -12,6 +12,54 @@ package ca.ualberta.maple.swan.ir
 
 class SWANIRPrinter extends Printer {
 
+  def print(module: Module): String = {
+    print("swanir_stage raw")
+    print("\n\n")
+    module.imports.foreach(imprt => {
+      print("import ")
+      print(imprt)
+      print("\n")
+    })
+    print("\n")
+    module.functions.foreach(function => {
+      print(function)
+      print("\n")
+    })
+    this.toString
+  }
+
+  def print(function: Function): String = {
+    print("func ")
+    if (function.attribute.nonEmpty) print(function.attribute.get)
+    print("@`")
+    print(function.name)
+    print("`")
+    print(whenEmpty = false, " {\n", function.blocks, "\n", "}", (block: Block) => print(block))
+    print("\n")
+    this.toString
+  }
+
+  def print(block: Block): Unit = {
+    print(block.label)
+    print(whenEmpty = false, "(", block.arguments, ", ", ")", (arg: Argument) => print(arg))
+    print(":")
+    indent()
+    block.operators.foreach(op => {
+      print("\n")
+      print(op)
+    })
+    print("\n")
+    // print(block.terminator)
+    // print("\n")
+    unindent()
+  }
+
+  def print(argument: Argument): Unit = {
+    print(argument.name)
+    print(" : ")
+    print(argument.tpe)
+  }
+
   def print(inst: InstructionDef): String = {
     inst match {
       case InstructionDef.operator(operatorDef) => print(operatorDef)
@@ -68,9 +116,10 @@ class SWANIRPrinter extends Printer {
         print(", ")
         print(result.tpe)
       }
-      case Operator.builtinRef(result, name) => {
+      case Operator.builtinRef(result, declRef, name) => {
         printResult(result)
         print("builtin_ref ")
+        print("[decl] ", when = declRef)
         literal(name)
         print(", ")
         print(result.tpe)
@@ -183,6 +232,15 @@ class SWANIRPrinter extends Printer {
 
   def print(terminator: Terminator): Unit = {
 
+  }
+
+  def print(functionAttribute: FunctionAttribute): Unit = {
+    functionAttribute match {
+      case FunctionAttribute.global_init => print("[global_init] ")
+      case FunctionAttribute.coroutine => print("[coroutine] ")
+      case FunctionAttribute.stub => print("[stub] ")
+      case FunctionAttribute.model => print("[model] ")
+    }
   }
 
   def print(binaryOperation: BinaryOperation): Unit = {

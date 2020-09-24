@@ -18,7 +18,7 @@ package ca.ualberta.maple.swan.ir
 
 import ca.ualberta.maple.swan.parser.{SILBlock, SILFunction, SILModule}
 
-class Module(val functions: Array[Function])
+class Module(val functions: Array[Function], val imports: Array[String])
 
 class Function(val attribute: Option[FunctionAttribute], val name: String, val tpe: Type,
                val blocks: Array[Block])
@@ -28,6 +28,7 @@ class Block(val label: String, val arguments: Array[Argument],
 
 sealed trait FunctionAttribute
 object FunctionAttribute {
+  case object global_init extends FunctionAttribute
   case object coroutine extends FunctionAttribute
   case object stub extends FunctionAttribute
   case object model extends FunctionAttribute
@@ -70,7 +71,7 @@ object Operator { // WIP
   case class assignGlobal(result: Symbol, name: String) extends Operator
   case class assign(result: Symbol, from: String) extends Operator
   case class literal(result: Symbol, literal: Literal) extends Operator
-  case class builtinRef(result: Symbol, name: String) extends Operator
+  case class builtinRef(result: Symbol, decl: Boolean, name: String) extends Operator
   case class functionRef(result: Symbol, names: Array[String]) extends Operator
   // coroutine is only valid for Raw SWANIR
   case class apply(result: Symbol, functionRef: String, arguments: Array[String]) extends Operator
