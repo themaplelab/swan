@@ -32,7 +32,6 @@ public class TranslationTests {
      * Format: sil-instruction '~' swanir-instruction ( ":::" swanir-instruction )*
      */
     @ParameterizedTest
-    @Disabled
     @CsvFileSource(resources = "instructions.csv", delimiter = '~')
     void testInstructions(String silInst, String swanirInstructions) throws Error {
         assumeTrue(swanirInstructions != null && !swanirInstructions.isEmpty());
@@ -58,7 +57,7 @@ public class TranslationTests {
             for (int i = 0; i < swanir.length; ++i) {
                 String actual = new SWANIRPrinter().print(swanir[i]);
                 if (DEBUG) System.out.println("  -> " + actual); // DEBUG
-                Assertions.assertEquals(actual.trim(), compareTo[i].trim());
+                Assertions.assertEquals(compareTo[i].trim(), actual.trim());
             }
         } catch (Exception e) {
             System.out.println(e);

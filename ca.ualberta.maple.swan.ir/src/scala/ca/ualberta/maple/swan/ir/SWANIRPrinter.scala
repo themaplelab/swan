@@ -10,7 +10,16 @@
 
 package ca.ualberta.maple.swan.ir
 
+import scala.collection.mutable.ArrayBuffer
+
 class SWANIRPrinter extends Printer {
+
+  // Options easier on the eyes for debugging
+  // Tests are not guaranteed to pass with these options on!
+  val DONT_PRINT_POSITION = false
+  val ARBITRARY_TYPE_NAMES = false
+  var ARBITRARY_TYPE_NAME_COUNTER = new ArrayBuffer[String]()
+  // Maybe add option here for function names (they can be quite long).
 
   def print(module: Module): String = {
     print("swanir_stage raw")
@@ -49,8 +58,9 @@ class SWANIRPrinter extends Printer {
       print(op)
     })
     print("\n")
-    // print(block.terminator)
-    // print("\n")
+    // if statements only while terminators are still WIP
+    if (block.terminator != null) print(block.terminator)
+    if (block.terminator != null) print("\n")
     unindent()
   }
 
@@ -182,7 +192,7 @@ class SWANIRPrinter extends Printer {
         print(field)
       case Operator.unaryOp(result, operation, operand) =>
         printResult(result)
-        print("binary_op ")
+        print("unary_op ")
         print(operation)
         print(" ")
         print(operand)
@@ -198,7 +208,19 @@ class SWANIRPrinter extends Printer {
         print(rhs)
         print(", ")
         print(result.tpe)
-
+      }
+      case Operator.condFail(value) => {
+        print("cond_fail ")
+        print(value)
+      }
+      case Operator.switchEnumAssign(result, switchOn, cases, default) => {
+        printResult(result)
+        print("switch_enum_assign ")
+        print(switchOn)
+        print(whenEmpty = false, ", ", cases, ", ", "", (c : EnumAssignCase) => print(c))
+        if (default.nonEmpty) { print(", default "); print(default.get) }
+        print(", ")
+        print(result.tpe)
       }
       case Operator.pointerRead(result, pointer) => {
         printResult(result)
@@ -231,7 +253,76 @@ class SWANIRPrinter extends Printer {
   }
 
   def print(terminator: Terminator): Unit = {
+    terminator match {
+      case Terminator.br(label, args) => {
+        print("br ")
+        print(label)
+        if (args.length > 0) {
+          print(whenEmpty = false, "(", args, ", ", ")", (s: String) => print(s))
+        }
+      }
+      case Terminator.condBr(cond, trueLabel, trueArgs, falseLabel, falseArgs) => {
+        print("cond_br ")
+        print(cond)
+        print(", true ")
+        print(trueLabel)
+        print(whenEmpty = false, "(", trueArgs, ", ", ")", (s: String) => print(s))
+        print(", false ")
+        print(falseLabel)
+        print(whenEmpty = false, "(", falseArgs, ", ", ")", (s: String) => print(s))
+      }
+      case Terminator.switch(switchOn, cases, default) => {
+        print("switch ")
+        print(switchOn)
+        print(whenEmpty = false, ", ", cases, ", ", "", (c: SwitchCase) => print(c))
+        if (default.nonEmpty) { print(", default "); print(default.get); }
+      }
+      case Terminator.switchEnum(switchOn, cases, default) => {
+        print("switch_enum ")
+        print(switchOn)
+        print(whenEmpty = false, ", ", cases, ", ", "", (c: SwitchEnumCase) => print(c))
+        if (default.nonEmpty) { print(", default "); print(default.get); }
+      }
+      case Terminator.ret(value) => {
+        print("return ")
+        print(value)
+      }
+      case Terminator.thro(value) => {
+        print("throw ")
+        print(value)
+      }
+      case Terminator.unreachable => print("unreachable")
+      case Terminator.yld(yields, resumeLabel, unwindLabel) => {
+        print("yield ")
+        print(whenEmpty = true, "(", yields, ", ", ")", (s: String) => print(s))
+        print(", resume ")
+        print(resumeLabel)
+        print(", unwind ")
+        print(unwindLabel)
+      }
+      case Terminator.unwind => print("unwind")
+    }
+  }
 
+  def print(cse: EnumAssignCase): Unit = {
+    print("case \"")
+    print(cse.decl)
+    print("\" : ")
+    print(cse.value)
+  }
+
+  def print(cse: SwitchCase): Unit = {
+    print("case ")
+    print(cse.value)
+    print(" : ")
+    print(cse.destination)
+  }
+
+  def print(cse: SwitchEnumCase): Unit = {
+    print("case ")
+    print(cse.decl)
+    print(" : ")
+    print(cse.destination)
   }
 
   def print(functionAttribute: FunctionAttribute): Unit = {
@@ -240,6 +331,12 @@ class SWANIRPrinter extends Printer {
       case FunctionAttribute.coroutine => print("[coroutine] ")
       case FunctionAttribute.stub => print("[stub] ")
       case FunctionAttribute.model => print("[model] ")
+    }
+  }
+
+  def print(unaryOperation: UnaryOperation): Unit = {
+    unaryOperation match {
+      case UnaryOperation.arbitrary => print("[arb]")
     }
   }
 
@@ -262,11 +359,24 @@ class SWANIRPrinter extends Printer {
   def print(tpe: Type): Unit = {
     print("$")
     print('`')
-    print(tpe.name)
+    if (ARBITRARY_TYPE_NAMES) {
+      val num = {
+        if (!ARBITRARY_TYPE_NAME_COUNTER.contains(tpe.name)) {
+          ARBITRARY_TYPE_NAME_COUNTER.append(tpe.name)
+        }
+        ARBITRARY_TYPE_NAME_COUNTER.indexOf(tpe.name)
+      }
+      print("T" + num)
+    } else {
+      print(tpe.name)
+    }
     print('`')
   }
 
   def print(pos: Position): Unit = {
+    if (DONT_PRINT_POSITION) {
+      return
+    }
     print(", loc ")
     print(pos.path)
     print(":")

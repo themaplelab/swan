@@ -10,7 +10,7 @@
 
 package ca.ualberta.maple.swan.ir
 
-import ca.ualberta.maple.swan.parser.{Init, SILOperator, SILPrinter, SILResult, SILTerminator, SILTupleElements, SILType, SILWitnessEntry}
+import ca.ualberta.maple.swan.parser.{Init, SILOperator, SILPrinter, SILResult, SILSwitchEnumCase, SILSwitchValueCase, SILTerminator, SILTupleElements, SILType, SILWitnessEntry}
 
 import scala.collection.mutable.ArrayBuffer
 
@@ -29,12 +29,8 @@ class SILToRawSWANIR extends ISILToRawSWANIR {
     arr
   }
 
-  private def makeTerminator(ctx: Context, terminator: Terminator*): Array[InstructionDef] = {
-    val arr: Array[InstructionDef] = new Array[InstructionDef](terminator.length)
-    terminator.zipWithIndex.foreach( (ter: (Terminator, Int))  => {
-      arr(ter._2) = InstructionDef.terminator(new TerminatorDef(ter._1, ctx.pos))
-    })
-    arr
+  private def makeTerminator(ctx: Context, terminator: Terminator): Array[InstructionDef] = {
+    Array[InstructionDef](InstructionDef.terminator(new TerminatorDef(terminator, ctx.pos)))
   }
 
   private def assertSILResult(r: Option[SILResult], i: Int): Unit = {
@@ -119,7 +115,7 @@ class SILToRawSWANIR extends ISILToRawSWANIR {
   }
 
   override protected def visitCopyAddr(r: Option[SILResult], I: SILOperator.copyAddr, ctx: Context): Array[InstructionDef] = {
-    val pointerReadResult = new Symbol(generateSymbol(I.value), Utils.SILPointerTypeToType(I.operand.tpe))
+    val pointerReadResult = new Symbol(generateSymbolName(I.value), Utils.SILPointerTypeToType(I.operand.tpe))
     makeOperator(
       ctx,
       Operator.pointerRead(pointerReadResult, I.value),
@@ -289,8 +285,7 @@ class SILToRawSWANIR extends ISILToRawSWANIR {
   }
 
   override protected def visitBeginApply(r: Option[SILResult], I: SILOperator.beginApply, ctx: Context): Array[InstructionDef] = {
-    // TODO
-    null
+    null // TODO
   }
 
   override protected def visitAbortApply(r: Option[SILResult], I: SILOperator.abortApply, ctx: Context): Array[InstructionDef] = {
@@ -302,13 +297,13 @@ class SILToRawSWANIR extends ISILToRawSWANIR {
   }
 
   override protected def visitPartialApply(r: Option[SILResult], I: SILOperator.partialApply, ctx: Context): Array[InstructionDef] = {
-    null // Need to first understand partial apply dataflow semantics.
+    null // TODO: Need to first understand partial apply dataflow semantics.
   }
 
   override protected def visitBuiltin(r: Option[SILResult], I: SILOperator.builtin, ctx: Context): Array[InstructionDef] = {
     val result = getSingleResult(r, Utils.SILTypeToType(I.tpe))
     // Use Any type because we don't know the type of the function ref value.
-    val functionRef = new Symbol(generateSymbol(r.get.valueNames(0)), new Type())
+    val functionRef = new Symbol(generateSymbolName(r.get.valueNames(0)), new Type())
     val arguments = ArrayBuffer[String]()
     I.operands.foreach(op => {
       arguments.append(op.value)
@@ -436,7 +431,7 @@ class SILToRawSWANIR extends ISILToRawSWANIR {
   override protected def visitStructElementAddr(r: Option[SILResult], I: SILOperator.structElementAddr, ctx: Context): Array[InstructionDef] = {
     // Type is statically unknown, at least for now
     val result = getSingleResult(r, new Type("*Any"))
-    makeOperator(ctx, Operator.fieldRead(result, alias = false, I.operand.value, Utils.SILStructFieldDeclRefToString(I.declRef)))
+    makeOperator(ctx, Operator.fieldRead(result, alias = true, I.operand.value, Utils.SILStructFieldDeclRefToString(I.declRef)))
   }
 
   override protected def visitObject(r: Option[SILResult], I: SILOperator.objct, ctx: Context): Array[InstructionDef] = {
@@ -452,31 +447,80 @@ class SILToRawSWANIR extends ISILToRawSWANIR {
   }
 
   override protected def visitEnum(r: Option[SILResult], I: SILOperator.enm, ctx: Context): Array[InstructionDef] = {
-    null
+    val result = getSingleResult(r, Utils.SILTypeToType(I.tpe))
+    val typeString = new Symbol(generateSymbolName(result.name), new Type("Builtin.RawPointer"))
+    var instructions = makeOperator(ctx,
+      Operator.neww(result),
+      Operator.literal(typeString, Literal.string(Utils.print(I.declRef))),
+      Operator.fieldWrite(typeString.name, result.name, "type"))
+    if (I.operand.nonEmpty) {
+      instructions :+= makeOperator(ctx, Operator.fieldWrite(I.operand.get.value, result.name, "data"))(0)
+    }
+    instructions
   }
 
   override protected def visitUncheckedEnumData(r: Option[SILResult], I: SILOperator.uncheckedEnumData, ctx: Context): Array[InstructionDef] = {
-    null
+    val result = getSingleResult(r, new Type("Any"))
+    // No alias for now, but this might change.
+    makeOperator(ctx, Operator.fieldRead(result, alias = false, I.operand.value, "data"))
   }
 
   override protected def visitInitEnumDataAddr(r: Option[SILResult], I: SILOperator.initEnumDataAddr, ctx: Context): Array[InstructionDef] = {
-    null
+    // Type is statically unknown, at least for now.
+    val result = getSingleResult(r, new Type("*Any"))
+    makeOperator(ctx, Operator.fieldRead(result, alias = true, I.operand.value, "data"))
   }
 
   override protected def visitInjectEnumAddr(r: Option[SILResult], I: SILOperator.injectEnumAddr, ctx: Context): Array[InstructionDef] = {
-    null
+    val typeString = new Symbol(generateSymbolName(I.operand.value),  new Type("Builtin.RawPointer"))
+    makeOperator(ctx,
+      Operator.literal(typeString, Literal.string(Utils.print(I.declRef))),
+      Operator.fieldWrite(typeString.name, I.operand.value, "type"))
   }
 
   override protected def visitUncheckedTakeEnumDataAddr(r: Option[SILResult], I: SILOperator.uncheckedTakeEnumDataAddr, ctx: Context): Array[InstructionDef] = {
-    null
+    // Type is statically unknown, at least for now.
+    val result = getSingleResult(r, new Type("*Any"))
+    makeOperator(ctx, Operator.fieldRead(result, alias = true, I.operand.value, "data"))
   }
 
   override protected def visitSelectEnum(r: Option[SILResult], I: SILOperator.selectEnum, ctx: Context): Array[InstructionDef] = {
-    null
+    val result = getSingleResult(r, Utils.SILTypeToType(I.tpe))
+    var default: Option[String] = None
+    val cases = {
+      val arr = new ArrayBuffer[EnumAssignCase]()
+      I.cases.foreach {
+        case SILSwitchEnumCase.cs(declRef, result) => {
+          arr.append(new EnumAssignCase(Utils.print(declRef), result))
+        }
+        case SILSwitchEnumCase.default(result) => {
+          default = Some(result)
+        }
+      }
+      arr.toArray
+    }
+    makeOperator(ctx, Operator.switchEnumAssign(result, I.operand.value, cases, default))
   }
 
   override protected def visitSelectEnumAddr(r: Option[SILResult], I: SILOperator.selectEnumAddr, ctx: Context): Array[InstructionDef] = {
-    null
+    val result = getSingleResult(r, Utils.SILTypeToType(I.tpe))
+    var default: Option[String] = None
+    val cases = {
+      val arr = new ArrayBuffer[EnumAssignCase]()
+      I.cases.foreach {
+        case SILSwitchEnumCase.cs(declRef, result) => {
+          arr.append(new EnumAssignCase(Utils.print(declRef), result))
+        }
+        case SILSwitchEnumCase.default(result) => {
+          default = Some(result)
+        }
+      }
+      arr.toArray
+    }
+    val intermediateResult = new Symbol(generateSymbolName(I.operand.value), Utils.SILPointerTypeToType(I.operand.tpe))
+    makeOperator(ctx,
+      Operator.pointerRead(intermediateResult, I.operand.value),
+      Operator.switchEnumAssign(result, intermediateResult.name, cases, default))
   }
 
   override protected def visitInitExistentialAddr(r: Option[SILResult], I: SILOperator.initExistentialAddr, ctx: Context): Array[InstructionDef] = {
@@ -538,7 +582,7 @@ class SILToRawSWANIR extends ISILToRawSWANIR {
   }
 
   override protected def visitInitBlockStorageHeader(r: Option[SILResult], I: SILOperator.initBlockStorageHeader, ctx: Context): Array[InstructionDef] = {
-    null
+    null // TODO
   }
 
   override protected def visitUpcast(r: Option[SILResult], I: SILOperator.upcast, ctx: Context): Array[InstructionDef] = {
@@ -636,63 +680,150 @@ class SILToRawSWANIR extends ISILToRawSWANIR {
   }
 
   override protected def visitCondFail(r: Option[SILResult], I: SILOperator.condFail, ctx: Context): Array[InstructionDef] = {
-    null
+    makeOperator(ctx, Operator.condFail(I.operand.value))
   }
 
-  override protected def visitUnreachable(): Array[InstructionDef] = {
-    null
+  override protected def visitUnreachable(ctx: Context): Array[InstructionDef] = {
+    makeTerminator(ctx, Terminator.unreachable)
   }
 
   override protected def visitReturn(I: SILTerminator.ret, ctx: Context): Array[InstructionDef] = {
-    null
+    makeTerminator(ctx, Terminator.ret(I.operand.value))
   }
 
   override protected def visitThrow(I: SILTerminator.thro, ctx: Context): Array[InstructionDef] = {
-    null
+    makeTerminator(ctx, Terminator.thro(I.operand.value))
   }
 
   override protected def visitYield(I: SILTerminator.yld, ctx: Context): Array[InstructionDef] = {
-    null
+    val yields: Array[String] = {
+      val arr = new ArrayBuffer[String]()
+      I.operands.foreach(o => {
+        arr.append(o.value)
+      })
+      arr.toArray
+    }
+    makeTerminator(ctx, Terminator.yld(yields, I.resumeLabel, I.unwindLabel))
   }
 
-  override protected def visitUnwind(): Array[InstructionDef] = {
-    null
+  override protected def visitUnwind(ctx: Context): Array[InstructionDef] = {
+    makeTerminator(ctx, Terminator.unwind)
   }
 
   override protected def visitBr(I: SILTerminator.br, ctx: Context): Array[InstructionDef] = {
-    null
+    val args: Array[String] = {
+      val arr = new ArrayBuffer[String]()
+      I.operands.foreach(o => {
+        arr.append(o.value)
+      })
+      arr.toArray
+    }
+    makeTerminator(ctx, Terminator.br(I.label, args))
   }
 
   override protected def visitCondBr(I: SILTerminator.condBr, ctx: Context): Array[InstructionDef] = {
-    null
+    val trueArgs: Array[String] = {
+      val arr = new ArrayBuffer[String]()
+      I.trueOperands.foreach(o => {
+        arr.append(o.value)
+      })
+      arr.toArray
+    }
+    val falseArgs: Array[String] = {
+      val arr = new ArrayBuffer[String]()
+      I.falseOperands.foreach(o => {
+        arr.append(o.value)
+      })
+      arr.toArray
+    }
+    makeTerminator(ctx, Terminator.condBr(I.cond, I.trueLabel, trueArgs, I.falseLabel, falseArgs))
   }
 
   override protected def visitSwitchValue(I: SILTerminator.switchValue, ctx: Context): Array[InstructionDef] = {
-    null
+    var default: Option[String] = None
+    val cases = {
+      val arr = new ArrayBuffer[SwitchCase]()
+      I.cases.foreach {
+        case SILSwitchValueCase.cs(value, label) => {
+          arr.append(new SwitchCase(value, label))
+        }
+        case SILSwitchValueCase.default(label) => {
+          default = Some(label)
+        }
+      }
+      arr.toArray
+    }
+    makeTerminator(ctx, Terminator.switch(I.operand.value, cases, default))
   }
 
   override protected def visitSwitchEnum(I: SILTerminator.switchEnum, ctx: Context): Array[InstructionDef] = {
-    null
+    var default: Option[String] = None
+    val cases = {
+      val arr = new ArrayBuffer[SwitchEnumCase]()
+      I.cases.foreach {
+        case SILSwitchEnumCase.cs(declRef, label) => {
+          arr.append(new SwitchEnumCase(Utils.print(declRef), label))
+        }
+        case SILSwitchEnumCase.default(result) => {
+          default = Some(result)
+        }
+      }
+      arr.toArray
+    }
+    makeTerminator(ctx, Terminator.switchEnum(I.operand.value, cases, default))
   }
 
   override protected def visitSwitchEnumAddr(I: SILTerminator.switchEnumAddr, ctx: Context): Array[InstructionDef] = {
-    null
+    val readResult = new Symbol(generateSymbolName(I.operand.value), Utils.SILPointerTypeToType(I.operand.tpe))
+    var default: Option[String] = None
+    val cases = {
+      val arr = new ArrayBuffer[SwitchEnumCase]()
+      I.cases.foreach {
+        case SILSwitchEnumCase.cs(declRef, label) => {
+          arr.append(new SwitchEnumCase(Utils.print(declRef), label))
+        }
+        case SILSwitchEnumCase.default(result) => {
+          default = Some(result)
+        }
+      }
+      arr.toArray
+    }
+    val instructions = new ArrayBuffer[InstructionDef]()
+    instructions.appendAll(makeOperator(ctx, Operator.pointerRead(readResult, I.operand.value)))
+    instructions.appendAll(makeTerminator(ctx, Terminator.switchEnum(readResult.name, cases, default)))
+    instructions.toArray
   }
 
   override protected def visitDynamicMethodBr(I: SILTerminator.dynamicMethodBr, ctx: Context): Array[InstructionDef] = {
-    null
+    val result = new Symbol(generateSymbolName(I.operand.value), new Type("Builtin.Int1"))
+    val instructions = new ArrayBuffer[InstructionDef]()
+    instructions.appendAll(makeOperator(ctx, Operator.unaryOp(result, UnaryOperation.arbitrary, I.operand.value)))
+    instructions.appendAll(makeTerminator(ctx,
+      Terminator.condBr(result.name, I.namedLabel, Array(), I.notNamedLabel, Array())))
+    instructions.toArray
   }
 
   override protected def visitCheckedCastBr(I: SILTerminator.checkedCastBr, ctx: Context): Array[InstructionDef] = {
-    null
+    val result = new Symbol(generateSymbolName(I.operand.value), new Type("Builtin.Int1"))
+    val instructions = new ArrayBuffer[InstructionDef]()
+    instructions.appendAll(makeOperator(ctx, Operator.unaryOp(result, UnaryOperation.arbitrary, I.operand.value)))
+    instructions.appendAll(makeTerminator(ctx,
+      Terminator.condBr(result.name, I.succeedLabel, Array(), I.failureLabel, Array())))
+    instructions.toArray
   }
 
   override protected def visitCheckedCastAddrBr(I: SILTerminator.checkedCastAddrBr, ctx: Context): Array[InstructionDef] = {
-    null
+    val result = new Symbol(generateSymbolName(I.fromOperand.value), new Type("Builtin.Int1"))
+    val instructions = new ArrayBuffer[InstructionDef]()
+    instructions.appendAll(makeOperator(ctx,
+      Operator.binaryOp(result, BinaryOperation.arbitrary, I.fromOperand.value, I.toOperand.value)))
+    instructions.appendAll(makeTerminator(ctx,
+      Terminator.condBr(result.name, I.succeedLabel, Array(), I.failureLabel, Array())))
+    instructions.toArray
   }
 
   override protected def visitTryApply(I: SILTerminator.tryApply, ctx: Context): Array[InstructionDef] = {
-    null
+    null // TODO
   }
 
   def getSingleResult(r: Option[SILResult], tpe: Type): Symbol = {

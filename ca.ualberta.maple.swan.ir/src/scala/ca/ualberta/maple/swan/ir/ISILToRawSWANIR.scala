@@ -63,19 +63,29 @@ trait ISILToRawSWANIR {
         })
       }
     })
-    val terminator: TerminatorDef = null
-    /*
     val terminator: TerminatorDef = {
       val position: Option[Position] = Utils.SILSourceInfoToPosition(silBlock.terminatorDef.sourceInfo)
       val ctx = new Context(silModule, silFunction, silBlock, position)
       val instructions = translateSILInstruction(
         SILInstructionDef.terminator(silBlock.terminatorDef), ctx)
-      assert(instructions.length == 1)
-      val instruction: InstructionDef = instructions(0)
-      assert(instruction.isInstanceOf[InstructionDef.terminator])
-      Instruction.terminator.asInstanceOf[InstructionDef.terminator].terminatorDef
+      if (instructions == null) {
+        null // Only for while terminators are WIP
+      } else {
+        var terminator: TerminatorDef = null
+        instructions.zipWithIndex.foreach( term => {
+          val instruction = term._1
+          if (term._2 != instructions.length - 1) {
+            assert(instruction.isInstanceOf[InstructionDef.operator])
+            operators.append(instruction.asInstanceOf[InstructionDef.operator].operatorDef)
+          } else {
+            assert(instruction.isInstanceOf[InstructionDef.terminator])
+            terminator = instruction.asInstanceOf[InstructionDef.terminator].terminatorDef
+          }
+        })
+        assert(terminator != null)
+        terminator
+      }
     }
-     */
     new Block(silBlock.identifier, arguments.toArray, operators.toArray, terminator)
   }
 
@@ -93,7 +103,7 @@ trait ISILToRawSWANIR {
   // We make it explicit that the value generated is an intermediate value
   // for the given value.
   // We keep track of these values so we do not generate duplicates.
-  protected def generateSymbol(value: String): String = {
+  protected def generateSymbolName(value: String): String = {
     if (!intermediateSymbols.contains(value)) {
       intermediateSymbols.put(value, 0)
     }
@@ -217,14 +227,16 @@ trait ISILToRawSWANIR {
           case inst: SILOperator.condFail => visitCondFail(result, inst, ctx)
         }
       }
+        // These methods should return an array with exactly one terminator.
+        // The terminator can be preceded by operators.
       case SILInstructionDef.terminator(terminatorDef) => {
         val instruction = terminatorDef.terminator
         instruction match {
-          case SILTerminator.unreachable => visitUnreachable()
+          case SILTerminator.unreachable => visitUnreachable(ctx)
           case inst: SILTerminator.ret => visitReturn(inst, ctx)
           case inst: SILTerminator.thro => visitThrow(inst, ctx)
           case inst: SILTerminator.yld => visitYield(inst, ctx)
-          case SILTerminator.unwind => visitUnwind()
+          case SILTerminator.unwind => visitUnwind(ctx)
           case inst: SILTerminator.br => visitBr(inst, ctx)
           case inst: SILTerminator.condBr => visitCondBr(inst, ctx)
           case inst: SILTerminator.switchValue => visitSwitchValue(inst, ctx)
@@ -432,16 +444,15 @@ trait ISILToRawSWANIR {
   protected def visitCondFail(r: Option[SILResult], I: SILOperator.condFail, ctx: Context): Array[InstructionDef]
 
   /* TERMINATORS */
-  protected def visitUnreachable() : Array[InstructionDef]
+  protected def visitUnreachable(ctx: Context) : Array[InstructionDef]
   protected def visitReturn(I: SILTerminator.ret, ctx: Context): Array[InstructionDef]
   protected def visitThrow(I: SILTerminator.thro, ctx: Context): Array[InstructionDef]
   protected def visitYield(I: SILTerminator.yld, ctx: Context): Array[InstructionDef]
-  protected def visitUnwind(): Array[InstructionDef]
+  protected def visitUnwind(ctx: Context): Array[InstructionDef]
   protected def visitBr(I: SILTerminator.br, ctx: Context): Array[InstructionDef]
   protected def visitCondBr(I: SILTerminator.condBr, ctx: Context): Array[InstructionDef]
 
   protected def visitSwitchValue(I: SILTerminator.switchValue, ctx: Context): Array[InstructionDef]
-  // protected def visitSelectValue(I: SILTerminator.selectValue, ctx: Context): Array[InstructionDef]
   protected def visitSwitchEnum(I: SILTerminator.switchEnum, ctx: Context): Array[InstructionDef]
   protected def visitSwitchEnumAddr(I: SILTerminator.switchEnumAddr, ctx: Context): Array[InstructionDef]
   protected def visitDynamicMethodBr(I: SILTerminator.dynamicMethodBr, ctx: Context): Array[InstructionDef]

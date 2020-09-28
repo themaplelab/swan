@@ -118,4 +118,8 @@ object Utils {
     printer.naked(tpe);
   }
 
+  def print(declRef: SILDeclRef): String = {
+    printer.print(declRef)
+  }
+
 }

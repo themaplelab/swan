@@ -82,6 +82,9 @@ object Operator { // WIP
   case class fieldWrite(value: String, obj: String, field: String) extends Operator
   case class unaryOp(result: Symbol, operation: UnaryOperation, operand: String) extends Operator
   case class binaryOp(result: Symbol, operation: BinaryOperation, lhs: String, rhs: String) extends Operator
+  case class condFail(value: String) extends Operator
+  case class switchEnumAssign(result: Symbol, switchOn: String,
+                              cases: Array[EnumAssignCase], default: Option[String]) extends Operator
   // *** RAW ONLY ***
   case class pointerRead(result: Symbol, pointer: String) extends Operator
   case class pointerWrite(value: String, pointer: String) extends Operator
@@ -89,6 +92,30 @@ object Operator { // WIP
   case class abortCoroutine(value: String) extends Operator
   case class endCoroutine(value: String) extends Operator
 }
+
+sealed trait Terminator
+object Terminator {
+  case class br(label: String, args: Array[String]) extends Terminator
+  case class condBr(cond: String, trueLabel: String, trueArgs: Array[String],
+                    falseLabel: String, falseArgs: Array[String]) extends Terminator
+  case class switch(switchOn: String, cases: Array[SwitchCase], default: Option[String]) extends Terminator
+  case class switchEnum(switchOn: String, cases: Array[SwitchEnumCase], default: Option[String]) extends Terminator
+  case class ret(value: String) extends Terminator
+  case class thro(value: String) extends Terminator
+  // *** RAW ONLY ***
+  case object unreachable extends Terminator
+  case class yld(yields: Array[String], resumeLabel: String, unwindLabel: String) extends Terminator
+  case object unwind extends Terminator
+}
+
+// swanir-enum-assign-case ::= 'case' sil-decl-ref ':' swanir-value-name
+class EnumAssignCase(val decl: String, val value: String)
+
+// swanir-switch-case ::= 'case' swanir-value-name ':' swanir-identifier
+class SwitchCase(val value: String, val destination: String)
+
+// swanir-switch-enum-case ::= 'case' sil-decl-ref ':' swanir-value-name
+class SwitchEnumCase(val decl: String, val destination: String)
 
 sealed trait UnaryOperation
 object UnaryOperation {
@@ -105,11 +132,6 @@ object Literal {
   case class string(value: String) extends Literal
   case class int(value: BigInt) extends Literal
   case class float(value: Float) extends Literal
-}
-
-sealed trait Terminator
-object Terminator { // WIP
-
 }
 
 class Symbol(val name: String, val tpe: Type)

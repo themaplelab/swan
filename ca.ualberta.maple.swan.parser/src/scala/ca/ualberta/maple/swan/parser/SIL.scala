@@ -279,7 +279,6 @@ object SILTerminator {
                     trueLabel: String, trueOperands: Array[SILOperand],
                     falseLabel: String, falseOperands: Array[SILOperand]) extends SILTerminator
   case class switchValue(operand: SILOperand, cases: Array[SILSwitchValueCase]) extends SILTerminator
-  // NSIP: select_value
   case class switchEnum(operand: SILOperand, cases: Array[SILSwitchEnumCase]) extends SILTerminator
   case class switchEnumAddr(operand: SILOperand, cases: Array[SILSwitchEnumCase]) extends SILTerminator
   case class dynamicMethodBr(operand: SILOperand, declRef: SILDeclRef,
