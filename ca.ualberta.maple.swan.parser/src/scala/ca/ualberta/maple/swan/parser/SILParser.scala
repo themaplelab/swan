@@ -1729,7 +1729,7 @@ class SILParser extends SILPrinter {
     if(skip("[global_init]")) return SILFunctionAttribute.FunctionPurpose.globalInit
     if(skip("[lazy_getter]")) return SILFunctionAttribute.FunctionPurpose.lazyGetter
     if(skip("[weak_imported]")) return SILFunctionAttribute.weakImported
-    if(skip("[available")) {
+    if(skip("[available ")) {
       val version = new ArrayBuffer[String]
       var break = false
       while (!break) {

@@ -1281,7 +1281,7 @@ class SILPrinter extends Printer {
 
   def print(encoding: SILEncoding): Unit = {
     encoding match {
-      case SILEncoding.objcSelector => print("objcSelector")
+      case SILEncoding.objcSelector => print("objc_selector")
       case SILEncoding.utf8 => print("utf8")
       case SILEncoding.utf16 => print("utf16")
     }
