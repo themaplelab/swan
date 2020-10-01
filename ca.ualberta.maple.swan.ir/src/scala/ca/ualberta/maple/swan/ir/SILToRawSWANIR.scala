@@ -823,7 +823,7 @@ class SILToRawSWANIR extends ISILToRawSWANIR {
   }
 
   override protected def visitTryApply(I: SILTerminator.tryApply, ctx: Context): Array[InstructionDef] = {
-    null // TODO
+    makeTerminator(ctx, Terminator.tryApply(I.value, I.arguments, I.normalLabel, I.errorLabel))
   }
 
   def getSingleResult(r: Option[SILResult], tpe: Type): Symbol = {

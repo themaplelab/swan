@@ -249,4 +249,4 @@ checked_cast_br %33 : $AnyObject to $NSDictionary, bb6, bb7 ~ %33_i_0 = unary_op
 
 checked_cast_addr_br take_always Any in %97 : $*Any to NSDictionary in %99 : $*NSDictionary, bb6, bb7 ~ %97_i_0 = binary_op %97 [arb] %99, $`Builtin.Int1` ::: cond_br %97_i_0, true bb6, false bb7
 
-try_apply %6<Element, R>(%3, %5, %2) : $@convention(method) <τ_0_0><τ_1_0> (@noescape @callee_guaranteed (UnsafeBufferPointer<τ_0_0>) -> (@out τ_1_0, @error Error), @guaranteed Array<τ_0_0>) -> (@out τ_1_0, @error Error), normal bb2, error bb1 ~
+try_apply %6<Element, R>(%3, %5, %2) : $@convention(method) <τ_0_0><τ_1_0> (@noescape @callee_guaranteed (UnsafeBufferPointer<τ_0_0>) -> (@out τ_1_0, @error Error), @guaranteed Array<τ_0_0>) -> (@out τ_1_0, @error Error), normal bb2, error bb1 ~ try_apply %6(%3, %5, %2), normal bb2, error bb1

@@ -102,6 +102,8 @@ object Terminator {
   case class switchEnum(switchOn: String, cases: Array[SwitchEnumCase], default: Option[String]) extends Terminator
   case class ret(value: String) extends Terminator
   case class thro(value: String) extends Terminator
+  case class tryApply(functionRef: String, arguments: Array[String],
+                      normalLabel: String, errorLabel: String) extends Terminator
   // *** RAW ONLY ***
   case object unreachable extends Terminator
   case class yld(yields: Array[String], resumeLabel: String, unwindLabel: String) extends Terminator

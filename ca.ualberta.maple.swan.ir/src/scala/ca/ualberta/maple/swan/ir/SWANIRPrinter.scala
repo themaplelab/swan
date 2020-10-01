@@ -291,6 +291,15 @@ class SWANIRPrinter extends Printer {
         print("throw ")
         print(value)
       }
+      case Terminator.tryApply(functionRef, arguments, normalLabel, errorLabel) => {
+        print("try_apply ")
+        print(functionRef)
+        print(whenEmpty = true, "(", arguments, ", ", ")", (arg: String) => print(arg))
+        print(", normal ")
+        print(normalLabel)
+        print(", error ")
+        print(errorLabel)
+      }
       case Terminator.unreachable => print("unreachable")
       case Terminator.yld(yields, resumeLabel, unwindLabel) => {
         print("yield ")
