@@ -8,9 +8,11 @@
  *
  */
 
-package ca.ualberta.maple.swan.ir
+package ca.ualberta.maple.swan.ir.raw
 
-import ca.ualberta.maple.swan.parser.{SILArgument, SILDeclRef, SILOperand, SILPrinter, SILResult, SILSourceInfo, SILTupleElements, SILType}
+import ca.ualberta.maple.swan.ir.Exceptions.{ExperimentalException, UnexpectedSILFormatException, UnexpectedSILTypeBehaviourException}
+import ca.ualberta.maple.swan.ir.{Argument, Position, Type}
+import ca.ualberta.maple.swan.parser._
 
 object Utils {
 
@@ -33,21 +35,29 @@ object Utils {
   }
 
   // SIL $*T to SWANIR $T
+  @throws[UnexpectedSILTypeBehaviourException]
   def SILPointerTypeToType(tpe: SILType): Type = {
-    assert(tpe.isInstanceOf[SILType.addressType])
+    if (!tpe.isInstanceOf[SILType.addressType]) {
+      throw new UnexpectedSILTypeBehaviourException("Expected pointer type: " + print(tpe))
+    }
     new Type(printer.naked(tpe.asInstanceOf[SILType.addressType].tpe))
   }
 
   // SIL "0x3F800000" to float
   def SILFloatStringToFloat(float: String): Float = {
-    return 0 // TODO: Temp
+    0 // TODO: Temp
   }
 
   // SIL $(T...), 123 to SWANIR type of the selected element using "123"
   // pointer specifies whether the type is a pointer (tuple_element_addr case)
+  @throws[UnexpectedSILTypeBehaviourException]
+  @throws[UnexpectedSILFormatException]
   def SILTupleTypeToType(tpe: SILType, index: Int, pointer: Boolean): Type = {
     def getTypeAtIndex(parameters: Array[SILType]): Type = {
-      assert(parameters.length - 1 >= index)
+      if (parameters.length - 1 < index) {
+        throw new UnexpectedSILFormatException("SIL tuple type " + print(tpe) +
+          " should have enough parameter types for the index (" + index.toString + ")")
+      }
       val param = parameters(index)
       def makeType(tpe: SILType, pointer: Boolean): Type = {
         if (pointer) {
@@ -56,25 +66,30 @@ object Utils {
           new Type(printer.naked(parameters(index)))
         }
       }
+
       param match {
-        case SILType.namedArgType(_, tpe) => return makeType(tpe, pointer)
-        case _ => return makeType(param, pointer)
+        case SILType.namedArgType(_, tpe) => makeType(tpe, pointer)
+        case _ => makeType(param, pointer)
       }
     }
+
     tpe match {
       case SILType.addressType(tpe) => {
         tpe match {
-          case SILType.tupleType(parameters, _) => return getTypeAtIndex(parameters)
-          case _ => assert(false, "Underlying type should be tuple type"); null
+          case SILType.tupleType(parameters, _) => getTypeAtIndex(parameters)
+          case _ => throw new UnexpectedSILTypeBehaviourException("Underlying type should be tuple type")
         }
       }
-      case SILType.tupleType(parameters, _) => return getTypeAtIndex(parameters)
-      case _ => assert(false, "Address type or tuple type expected"); null
+      case SILType.tupleType(parameters, _) => getTypeAtIndex(parameters)
+      case _ => throw new UnexpectedSILTypeBehaviourException("Address type or tuple type expected")
     }
   }
 
+  @throws[UnexpectedSILFormatException]
   def SILStructFieldDeclRefToString(declRef: SILDeclRef): String = {
-    assert(declRef.name.length >= 2)
+    if (declRef.name.length < 2) { // #T.field[...]
+      throw new UnexpectedSILFormatException("Expected struct field decl ref to have at least two components: " + print(declRef))
+    }
     declRef.name.last // Assume last is fine for now
   }
 

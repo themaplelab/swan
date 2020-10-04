@@ -43,13 +43,15 @@ class SWANIRPrinter extends Printer {
     print("@`")
     print(function.name)
     print("`")
-    print(whenEmpty = false, " {\n", function.blocks, "\n", "}", (block: Block) => print(block))
+    print(" : ")
+    print(function.tpe)
+    print(whenEmpty = false, " {\n", function.blocks.toArray, "\n", "}", (block: Block) => print(block))
     print("\n")
     this.toString
   }
 
   def print(block: Block): Unit = {
-    print(block.label)
+    print(block.blockRef)
     print(whenEmpty = false, "(", block.arguments, ", ", ")", (arg: Argument) => print(arg))
     print(":")
     indent()
@@ -92,50 +94,42 @@ class SWANIRPrinter extends Printer {
 
   def print(operator: Operator): Unit = {
     operator match {
+      case result: WithResult =>
+        printResult(result.value)
+      case _ =>
+    }
+    operator match {
       case Operator.newGlobal(name) => {
         print("new_global ")
         printGlobal(name)
       }
       case Operator.neww(result) => {
-        printResult(result)
         print("new ")
         print(result.tpe)
+        return // don't print , $T
       }
-      case Operator.assignGlobal(result, name) => {
-        printResult(result)
+      case Operator.assignGlobal(_, name) => {
         print("assign_global ")
         printGlobal(name)
-        print(", ")
-        print(result.tpe)
       }
-      case Operator.assign(result, from) => {
-        printResult(result)
+      case Operator.assign(_, from) => {
         print("assign ")
         print(from)
-        print(", ")
-        print(result.tpe)
       }
-      case Operator.literal(result, lit) => {
-        printResult(result)
+      case Operator.literal(_, lit) => {
         print("literal ")
         lit match {
           case Literal.string(value) => print("[string] #"); literal(value)
           case Literal.int(value) => print("[int] #"); literal(value)
           case Literal.float(value) => print("[float] #"); literal(value)
         }
-        print(", ")
-        print(result.tpe)
       }
-      case Operator.builtinRef(result, declRef, name) => {
-        printResult(result)
+      case Operator.builtinRef(_, declRef, name) => {
         print("builtin_ref ")
         print("[decl] ", when = declRef)
         literal(name)
-        print(", ")
-        print(result.tpe)
       }
-      case Operator.functionRef(result, names) => {
-        printResult(result)
+      case Operator.functionRef(_, names) => {
         print("function_ref ")
         print("@")
         names.foreach(name => {
@@ -146,27 +140,19 @@ class SWANIRPrinter extends Printer {
             print(" or ")
           }
         })
-        print(", ")
-        print(result.tpe)
       }
-      case Operator.apply(result, functionRef, arguments) => {
-        printResult(result)
+      case Operator.apply(_, functionRef, arguments) => {
         print("apply ")
         print(functionRef)
-        print(whenEmpty = true, "(", arguments, ", ", ")", (arg: String) => print(arg))
-        print(", ")
-        print(result.tpe)
+        print(whenEmpty = true, "(", arguments, ", ", ")", (arg: SymbolRef) => print(arg))
       }
       case Operator.applyCoroutine(functionRef, arguments) => {
         // TODO
       }
-      case Operator.arrayRead(result, alias, arr) => {
-        printResult(result)
+      case Operator.arrayRead(_, alias, arr) => {
         print("array_read ")
         print("[alias] ", when = alias)
         print(arr)
-        print(", ")
-        print(result.tpe)
       }
       case Operator.arrayWrite(value, arr) => {
         print("array_write ")
@@ -174,15 +160,12 @@ class SWANIRPrinter extends Printer {
         print(" to ")
         print(arr)
       }
-      case Operator.fieldRead(result, alias, obj, field) =>
-        printResult(result)
+      case Operator.fieldRead(_, alias, obj, field) =>
         print("field_read ")
         print("[alias] ", when = alias)
         print(obj)
         print(", ")
         print(field)
-        print(", ")
-        print(result.tpe)
       case Operator.fieldWrite(value, obj, field) =>
         print("field_write ")
         print(value)
@@ -190,56 +173,38 @@ class SWANIRPrinter extends Printer {
         print(obj)
         print(", ")
         print(field)
-      case Operator.unaryOp(result, operation, operand) =>
-        printResult(result)
+      case Operator.unaryOp(_, operation, operand) =>
         print("unary_op ")
         print(operation)
         print(" ")
         print(operand)
-        print(", ")
-        print(result.tpe)
       case Operator.binaryOp(result, operation, lhs, rhs) => {
-        printResult(result)
         print("binary_op ")
         print(lhs)
         print(" ")
         print(operation)
         print(" ")
         print(rhs)
-        print(", ")
-        print(result.tpe)
       }
       case Operator.condFail(value) => {
         print("cond_fail ")
         print(value)
       }
       case Operator.switchEnumAssign(result, switchOn, cases, default) => {
-        printResult(result)
         print("switch_enum_assign ")
         print(switchOn)
         print(whenEmpty = false, ", ", cases, ", ", "", (c : EnumAssignCase) => print(c))
         if (default.nonEmpty) { print(", default "); print(default.get) }
-        print(", ")
-        print(result.tpe)
       }
       case Operator.pointerRead(result, pointer) => {
-        printResult(result)
         print("pointer_read ")
         print(pointer)
-        print(", ")
-        print(result.tpe)
       }
       case Operator.pointerWrite(value, pointer) => {
         print("pointer_write ")
         print(value)
         print(" to ")
         print(pointer)
-      }
-      case Operator.symbolCopy(from, to) => {
-        print("symbol_copy ")
-        print(from)
-        print(" to ")
-        print(to)
       }
       case Operator.abortCoroutine(value) => {
         print("abort_coroutine ")
@@ -249,27 +214,41 @@ class SWANIRPrinter extends Printer {
         print("end_coroutine ")
         print(value)
       }
+      case Operator.unhandledApply(_, name, arguments) => {
+        print("unhandled_apply @`")
+        print(name)
+        print("`")
+        print(whenEmpty = true, "(", arguments, ", ", ")", (arg: SymbolRef) => print(arg))
+      }
+      case _: WithResult =>
+    }
+    operator match {
+      case result: WithResult => {
+        print(", ")
+        print(result.value.tpe)
+      }
+      case _ =>
     }
   }
 
   def print(terminator: Terminator): Unit = {
     terminator match {
-      case Terminator.br(label, args) => {
+      case Terminator.br(to, args) => {
         print("br ")
-        print(label)
+        print(to)
         if (args.length > 0) {
-          print(whenEmpty = false, "(", args, ", ", ")", (s: String) => print(s))
+          print(whenEmpty = false, "(", args, ", ", ")", (s: SymbolRef) => print(s))
         }
       }
-      case Terminator.condBr(cond, trueLabel, trueArgs, falseLabel, falseArgs) => {
+      case Terminator.condBr(cond, trueBlock, trueArgs, falseBlock, falseArgs) => {
         print("cond_br ")
         print(cond)
         print(", true ")
-        print(trueLabel)
-        print(whenEmpty = false, "(", trueArgs, ", ", ")", (s: String) => print(s))
+        print(trueBlock)
+        print(whenEmpty = false, "(", trueArgs, ", ", ")", (s: SymbolRef) => print(s))
         print(", false ")
-        print(falseLabel)
-        print(whenEmpty = false, "(", falseArgs, ", ", ")", (s: String) => print(s))
+        print(falseBlock)
+        print(whenEmpty = false, "(", falseArgs, ", ", ")", (s: SymbolRef) => print(s))
       }
       case Terminator.switch(switchOn, cases, default) => {
         print("switch ")
@@ -291,23 +270,23 @@ class SWANIRPrinter extends Printer {
         print("throw ")
         print(value)
       }
-      case Terminator.tryApply(functionRef, arguments, normalLabel, errorLabel) => {
+      case Terminator.tryApply(functionRef, arguments, normal, error) => {
         print("try_apply ")
         print(functionRef)
-        print(whenEmpty = true, "(", arguments, ", ", ")", (arg: String) => print(arg))
+        print(whenEmpty = true, "(", arguments, ", ", ")", (arg: SymbolRef) => print(arg))
         print(", normal ")
-        print(normalLabel)
+        print(normal)
         print(", error ")
-        print(errorLabel)
+        print(error)
       }
       case Terminator.unreachable => print("unreachable")
-      case Terminator.yld(yields, resumeLabel, unwindLabel) => {
+      case Terminator.yld(yields, resume, unwind) => {
         print("yield ")
-        print(whenEmpty = true, "(", yields, ", ", ")", (s: String) => print(s))
+        print(whenEmpty = true, "(", yields, ", ", ")", (s: SymbolRef) => print(s))
         print(", resume ")
-        print(resumeLabel)
+        print(resume)
         print(", unwind ")
-        print(unwindLabel)
+        print(unwind)
       }
       case Terminator.unwind => print("unwind")
     }
@@ -355,8 +334,16 @@ class SWANIRPrinter extends Printer {
     }
   }
 
+  def print(symbolRef: SymbolRef): Unit = {
+    print(symbolRef.name)
+  }
+
+  def print(blockRef: BlockRef): Unit = {
+    print(blockRef.label)
+  }
+
   def printResult(symbol: Symbol): Unit = {
-    print(symbol.name)
+    print(symbol.ref)
     print(" = ")
   }
 
