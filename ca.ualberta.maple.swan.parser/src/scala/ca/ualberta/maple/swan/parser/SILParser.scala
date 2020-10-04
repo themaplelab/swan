@@ -1965,11 +1965,19 @@ class SILParser extends SILPrinter {
   // This is different from `parseType` because most usages of types in SIL are prefixed with
   // `$` (so it made sense to have a shorter name for that common case).
   //
+  // SIL types are extremely complicated because they are a combination of
+  // SIL, Swift, and ObjC types. The documentation in SIL.rst and in the code
+  // (Swift's parser and printer, for instance) is inconsistent/outdated and
+  // it makes parsing types "correctly" difficult. Verbatim is good enough
+  // as long as we can consistently print what we parse. These types get
+  // converted to String form anyway in SWANIR.
+  //
   // This is a context flag signifying whether the type parsing is inside of
   // params. Needed for named arg parsing. Ideally we would add a param to
   // parseNakedType, but that is not possible due to generics. The recursion
   // is linear anyway so it doesn't matter.
   var inParams = false
+  var inSquareBrackets = false
   @throws[Error]
   def parseNakedType(): SILType = {
     if (skip("<")) {
@@ -2013,8 +2021,10 @@ class SILParser extends SILPrinter {
       val tpe = parseNakedType()
       SILType.addressType(tpe)
     } else if (skip("[")) {
+      inSquareBrackets = true
       val subtype = parseNakedType()
       take("]")
+      inSquareBrackets = false
       SILType.arrayType(Array[SILType]{subtype}, nakedStyle = true, optional = skip("?"))
     } else if (peek("(")) {
       inParams = true
@@ -2057,13 +2067,13 @@ class SILParser extends SILPrinter {
       }
       val name = parseTypeName()
       val arg: Option[SILType] = {
-        if (inParams && skip(":")) {
+        if ((inSquareBrackets || inParams) && skip(":")) {
           Some(parseNakedType())
         } else {
           None
         }
       }
-      if (arg.nonEmpty) return SILType.namedArgType(name, arg.get)
+      if (arg.nonEmpty) return SILType.namedArgType(name, arg.get, inSquareBrackets)
       val base: SILType = {
         name match {
           case "Self?" => SILType.selfTypeOptional

@@ -422,7 +422,7 @@ class SILPrinter extends Printer {
         print(declType)
         if (value.nonEmpty) {
           print(", ")
-          print(value)
+          print(value.get)
         }
         print(" : ")
         print(tpe)
@@ -471,7 +471,7 @@ class SILPrinter extends Printer {
         literal(name)
         if (templateTpe.nonEmpty) {
           print("<")
-          print(templateTpe)
+          naked(templateTpe.get)
           print(">")
         }
         print(whenEmpty = true, "(", operands, ", ", ")", (o: SILOperand) => print(o))
@@ -1544,12 +1544,7 @@ class SILPrinter extends Printer {
         print("?", when = optional)
         print(" throws", when = throws)
         print(" -> ")
-        // It seems that "@error Error" needs to be wrapped in parenthesis. There may be other cases.
-        val parenthesis: Boolean = result.isInstanceOf[SILType.attributedType] &&
-          result.asInstanceOf[SILType.attributedType].attributes.contains(SILTypeAttribute.error)
-        print("(", parenthesis)
         naked(result)
-        print(")", parenthesis)
       }
       case SILType.genericType(params, reqs, tpe) => {
         print(whenEmpty = true, "<", params, ", ", "", (p: String) => print(p))
@@ -1571,8 +1566,9 @@ class SILPrinter extends Printer {
         print(".")
         print(name)
       }
-      case SILType.namedArgType(name, tpe) => {
+      case SILType.namedArgType(name, tpe, squareBrackets) => {
         print(name)
+        print(" ", when = squareBrackets)
         print(": ")
         naked(tpe)
       }

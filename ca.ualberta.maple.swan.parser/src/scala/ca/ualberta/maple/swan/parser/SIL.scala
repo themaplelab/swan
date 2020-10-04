@@ -546,7 +546,8 @@ object SILType {
   case class genericType(parameters: Array[String], requirements: Array[SILTypeRequirement], tpe: SILType) extends SILType
   case class namedType(name: String) extends SILType
   case class selectType(tpe: SILType, name: String) extends SILType
-  case class namedArgType(name: String, tpe: SILType) extends SILType
+  // squareBrackets is a needed space needed to make our test comparisons happy.
+  case class namedArgType(name: String, tpe: SILType, squareBrackets: Boolean) extends SILType
   case object selfType extends SILType
   case object selfTypeOptional extends SILType
   case class specializedType(tpe: SILType, arguments: Array[SILType]) extends SILType

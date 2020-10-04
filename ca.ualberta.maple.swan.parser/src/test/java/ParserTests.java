@@ -18,7 +18,6 @@ import org.junit.jupiter.params.provider.CsvFileSource;
 
 import java.io.*;
 import java.net.URISyntaxException;
-import java.util.ArrayList;
 
 public class ParserTests {
 
@@ -43,7 +42,7 @@ public class ParserTests {
         System.out.println("Testing modules");
         File fileDir = new File(getClass().getClassLoader()
                 .getResource("sil/modules/").toURI());
-        File[] silFiles = fileDir.listFiles();
+        File[] silFiles = fileDir.listFiles((dir, name) -> name.endsWith(".sil"));
         for (File sil : silFiles) {
             System.out.println("    -> " + sil.getName());
             String expected = TestUtils.readFile(sil);

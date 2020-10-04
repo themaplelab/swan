@@ -33,6 +33,7 @@ public class TestUtils {
         if (inst.startsWith("sil_property ")) { // Remove this because it's not supported yet
             return "";
         }
+        inst = inst.replace(" -> (@error Error)", " -> @error Error");
         inst = inst.split("//")[0];
         inst = inst.replaceAll("\\s+$", ""); // right trim
         return inst;
