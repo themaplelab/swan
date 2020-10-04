@@ -11,13 +11,14 @@
 import ca.ualberta.maple.swan.parser.*;
 import ca.ualberta.maple.swan.parser.Error;
 import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvFileSource;
 
 import java.io.*;
 import java.net.URISyntaxException;
+
+import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 public class ParserTests {
 
@@ -37,7 +38,6 @@ public class ParserTests {
     // 1. Module level (.sil files in directory)
     // Each .sil file must contain a module.
     @Test
-    // TODO: Separate into slow test suite.
     void testModuleParsing() throws Error, URISyntaxException, IOException {
         System.out.println("Testing modules");
         File fileDir = new File(getClass().getClassLoader()
@@ -201,9 +201,7 @@ public class ParserTests {
     // The format of the csv is
     // <xcodeproj_path>, <scheme>, <optional_xcodebuild_args>
     // The CSV can contain comments as long as they start with "#".
-    // TODO: Separate into slow test suite.
     @ParameterizedTest
-    @Disabled // SLOW test
     @CsvFileSource(resources = "xcodeproj/projects.csv")
     void getSILForAllXcodeProjects(String xcodeproj, String scheme, String optionalArgs) throws URISyntaxException, IOException, Error {
         System.out.println("Testing " + xcodeproj);
