@@ -12,12 +12,13 @@ package ca.ualberta.maple.swan.parser
 
 import java.nio.file.Path
 
+import scala.collection.mutable.ArrayBuffer
 import sys.process._
 
 class SILModule(val functions: Array[SILFunction], val witnessTables: Array[SILWitnessTable],
                 val vTables: Array[SILVTable], val imports: Array[String],
                 val globalVariables: Array[SILGlobalVariable], val scopes: Array[SILScope],
-                var properties: Array[SILProperty], val inits: Array[Init]) {
+                var properties: Array[SILProperty], val inits: Array[StructInit]) {
 
   object Parse {
     @throws[Error]
@@ -75,7 +76,7 @@ object SILOperator {
   case class deallocBox(operand: SILOperand, tpe: SILType) extends SILOperator
   case class projectBox(operand: SILOperand, fieldIndex: Int) extends SILOperator
   case class deallocRef(stack: Boolean, operand: SILOperand) extends SILOperator
-  // NSIP: dealloc_partial_ref
+  case class deallocPartialRef(operand1: SILOperand, operand2: SILOperand) extends SILOperator
   // NSIP: dealloc_value_buffer
   // NSIP: project_value_buffer
 
@@ -108,7 +109,7 @@ object SILOperator {
   case class endAccess(abort: Boolean, operand: SILOperand) extends SILOperator
   // NSIP: begin_unpaired_access
   // NSIP: end_unpaired_access
-  
+
   /***** REFERENCE COUNTING *****/
   case class strongRetain(operand: SILOperand) extends SILOperator
   case class strongRelease(operand: SILOperand) extends SILOperator
@@ -149,7 +150,8 @@ object SILOperator {
   case class objcMethod(operand: SILOperand, declRef: SILDeclRef, declType: SILType, tpe: SILType) extends SILOperator
   // NSIP: super_method
   case class objcSuperMethod(operand: SILOperand, declRef: SILDeclRef, declType: SILType, tpe: SILType) extends SILOperator
-  case class witnessMethod(archetype: SILType, declRef: SILDeclRef, declType: SILType, tpe: SILType) extends SILOperator
+  case class witnessMethod(archetype: SILType, declRef: SILDeclRef,
+                           declType: SILType, value: Option[SILOperand], tpe: SILType) extends SILOperator
 
   /***** FUNCTION APPLICATION *****/
   case class apply(nothrow: Boolean, value: String, substitutions: Array[SILType],
@@ -162,7 +164,7 @@ object SILOperator {
                            calleeGuaranteed: Boolean, onStack: Boolean, value: String,
                            substitutions: Array[SILType], arguments: Array[String], tpe: SILType
                          ) extends SILOperator
-  case class builtin(name: String, operands: Array[SILOperand], tpe: SILType) extends SILOperator
+  case class builtin(name: String, templateTpe: Option[SILType], operands: Array[SILOperand], tpe: SILType) extends SILOperator
 
   /***** METATYPES *****/
   case class metatype(tpe: SILType) extends SILOperator
@@ -191,7 +193,7 @@ object SILOperator {
   // NSIP: destructure_struct
   case class objct(tpe: SILType, operands: Array[SILOperand], tailElems: Array[SILOperand]) extends SILOperator
   case class refElementAddr(immutable: Boolean, operand: SILOperand, declRef: SILDeclRef) extends SILOperator
-  // NSIP: ref_tail_addr
+  case class refTailAddr(immutable: Boolean, operand: SILOperand, tpe: SILType) extends SILOperator
 
   /***** ENUMS *****/
   case class enm(tpe: SILType, declRef: SILDeclRef, operand: Option[SILOperand]) extends SILOperator
@@ -222,7 +224,6 @@ object SILOperator {
   /***** BLOCKS *****/
   case class projectBlockStorage(operand: SILOperand) extends SILOperator
   case class initBlockStorageHeader(operand: SILOperand, invoke: SILOperand, tpe: SILType) extends SILOperator
-  // TODO: init_block_storage_header
 
   /***** UNCHECKED CONVERSIONS *****/
   case class upcast(operand: SILOperand, tpe: SILType) extends SILOperator
@@ -234,7 +235,7 @@ object SILOperator {
   case class uncheckedTrivialBitCast(operand: SILOperand, tpe: SILType) extends SILOperator
   // NSIP: unchecked_bitwise_cast
   // NSIP: ref_to_raw_pointer
-  // NSIP: raw_pointer_to_ref
+  case class rawPointerToRef(operand: SILOperand, tpe: SILType) extends SILOperator
   // SIL.rst: sil-instruction ::= 'ref_to_unowned' sil-operand
   // reality: sil-instruction ::= 'ref_to_unowned' sil-operand 'to' sil-type
   case class refToUnowned(operand: SILOperand, tpe: SILType) extends SILOperator
@@ -249,7 +250,7 @@ object SILOperator {
   // NSIP: classify_bridge_object
   case class valueToBridgeObject(operand: SILOperand) extends SILOperator
   // NSIP: ref_to_bridge_object
-  // NSIP: bridge_object_to_ref
+  case class bridgeObjectToRef(operand: SILOperand, tpe: SILType) extends SILOperator
   // NSIP: bridge_object_to_word
   case class thinToThickFunction(operand: SILOperand, tpe: SILType) extends SILOperator
   case class thickToObjcMetatype(operand: SILOperand, tpe: SILType) extends SILOperator
@@ -421,7 +422,19 @@ class SILMangledName(val mangled: String) {
   }
 }
 
-class Init(val name: String, val args: Array[String], val tpe: InitType)
+class StructInit(val name: String, val args: Array[String], val tpe: InitType)
+object StructInit {
+  // Add non-user struct init definitions here
+  def populateInits(): Array[StructInit] = {
+    val arr = new ArrayBuffer[StructInit]()
+    val basicTypes = Array(
+      "Double", "Int", "Int8", "Int32", "Int64", "UInt", "UInt8", "UInt32", "UInt64")
+    basicTypes.foreach(t => {
+      arr.append(new StructInit(t, Array("_value"), InitType.normal))
+    })
+    arr.toArray
+  }
+}
 
 sealed trait InitType
 object InitType {
@@ -537,10 +550,10 @@ object SILType {
   case object selfType extends SILType
   case object selfTypeOptional extends SILType
   case class specializedType(tpe: SILType, arguments: Array[SILType]) extends SILType
-  case class arrayType(arguments: Array[SILType], nakedStyle: Boolean) extends SILType
+  case class arrayType(arguments: Array[SILType], nakedStyle: Boolean, optional: Boolean) extends SILType
   case class tupleType(parameters: Array[SILType], optional: Boolean) extends SILType
   case class withOwnership(attribute: SILTypeAttribute, tpe: SILType) extends SILType
-  case class varType(tpe:SILType) extends SILType
+  case class varType(tpe: SILType) extends SILType
 
   @throws[Error]
   def parse(silString: String): SILType = {
@@ -573,6 +586,7 @@ object SILTypeAttribute {
   case object silUnmanaged extends SILTypeAttribute
   case object autoreleased extends SILTypeAttribute
   case object blockStorage extends SILTypeAttribute
+  case object escaping extends SILTypeAttribute
   case class opened(val value: String) extends SILTypeAttribute
   // type-specifier -> 'inout' | '__owned' | '__unowned'
   // Not in SIL.rst but used in naked types. e.g. "[...] -> (__owned Self) [..]"

@@ -128,6 +128,7 @@ autorelease_value %4 : $Optional<Hive> ~ NOP
 
 %36 = struct $Array<DispatchWorkItemFlags> (%35 : $_ArrayBuffer<DispatchWorkItemFlags>) ~ NOP
 %47 = struct $_BridgeStorage<__ContiguousArrayStorageBase> (%46 : $Builtin.BridgeObject) ~ NOP
+%3 = struct $Double (%2 : $Builtin.FPIEEE64) ~ %3 = new $`Double` ::: field_write %2 to %3, _value
 
 %55 = struct_extract %47 : $_ContiguousArrayBuffer<Card>, #_ContiguousArrayBuffer._storage ~ %55 = field_read %47, _storage, $`Any`
 

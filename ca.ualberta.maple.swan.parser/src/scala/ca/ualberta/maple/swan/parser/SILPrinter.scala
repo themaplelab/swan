@@ -194,6 +194,12 @@ class SILPrinter extends Printer {
         }
         print(operand)
       }
+      case SILOperator.deallocPartialRef(operand1, operand2) => {
+        print("dealloc_partial_ref ")
+        print(operand1)
+        print(", ")
+        print(operand2)
+      }
 
         // *** DEBUG INFORMATION ***
 
@@ -407,13 +413,17 @@ class SILPrinter extends Printer {
         print(", ")
         print(tpe)
       }
-      case SILOperator.witnessMethod(archetype, declRef, declType, tpe) => {
+      case SILOperator.witnessMethod(archetype, declRef, declType, value, tpe) => {
         print("witness_method ")
         print(archetype)
         print(", ")
         print(declRef)
         print(" : ")
         print(declType)
+        if (value.nonEmpty) {
+          print(", ")
+          print(value)
+        }
         print(" : ")
         print(tpe)
       }
@@ -456,9 +466,14 @@ class SILPrinter extends Printer {
         print(" : ")
         print(tpe)
       }
-      case SILOperator.builtin(name, operands, tpe) => {
+      case SILOperator.builtin(name, templateTpe, operands, tpe) => {
         print("builtin ")
         literal(name)
+        if (templateTpe.nonEmpty) {
+          print("<")
+          print(templateTpe)
+          print(">")
+        }
         print(whenEmpty = true, "(", operands, ", ", ")", (o: SILOperand) => print(o))
         print(" : ")
         print(tpe)
@@ -567,6 +582,13 @@ class SILPrinter extends Printer {
         print(operand)
         print(", ")
         print(declRef)
+      }
+      case SILOperator.refTailAddr(immutable, operand, tpe) => {
+        print("ref_tail_addr ")
+        if (immutable) print("[immutable] ")
+        print(operand)
+        print(", ")
+        print(tpe)
       }
 
         // *** ENUMS ***
@@ -745,6 +767,12 @@ class SILPrinter extends Printer {
         print(" to ")
         print(tpe)
       }
+      case SILOperator.rawPointerToRef(operand, tpe) => {
+        print("raw_pointer_to_ref ")
+        print(operand)
+        print(" to ")
+        print(tpe)
+      }
       case SILOperator.refToUnowned(operand, tpe) => {
         print("ref_to_unowned ")
         print(operand)
@@ -781,6 +809,12 @@ class SILPrinter extends Printer {
       case SILOperator.valueToBridgeObject(operand) => {
         print("value_to_bridge_object ")
         print(operand)
+      }
+      case SILOperator.bridgeObjectToRef(operand, tpe) => {
+        print("bridge_object_to_ref ")
+        print(operand)
+        print(" to ")
+        print(tpe)
       }
       case SILOperator.thinToThickFunction(operand, tpe) => {
         print("thin_to_thick_function ")
@@ -1552,9 +1586,10 @@ class SILPrinter extends Printer {
         naked(tpe)
         print(whenEmpty = true, "<", args, ", ", ">", (t: SILType) => naked(t))
       }
-      case SILType.arrayType(arguments, nakedStyle) => {
+      case SILType.arrayType(arguments, nakedStyle, optional) => {
         if (nakedStyle) {
           print(whenEmpty = true, "[", arguments, ", ", "]", (t: SILType) => naked(t))
+          print("?", when = optional)
         } else {
           print("Array")
           print(whenEmpty = true, "<", arguments, ", ", ">", (t: SILType) => naked(t))
@@ -1602,6 +1637,7 @@ class SILPrinter extends Printer {
       case SILTypeAttribute.silUnmanaged => print("@sil_unmanaged")
       case SILTypeAttribute.autoreleased => print("@autoreleased")
       case SILTypeAttribute.blockStorage => print("@block_storage")
+      case SILTypeAttribute.escaping => print("@escaping")
       case SILTypeAttribute.opened(value) => {
         print("@opened")
         print("(")

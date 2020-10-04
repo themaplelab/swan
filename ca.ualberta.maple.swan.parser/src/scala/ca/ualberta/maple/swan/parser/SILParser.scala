@@ -13,6 +13,9 @@ package ca.ualberta.maple.swan.parser
 import java.nio.charset.StandardCharsets
 import java.nio.file.{Files, Path}
 import java.util
+import java.util.logging.Logger
+
+import ca.ualberta.maple.swan.parser.Logging.ProgressBar
 
 import scala.collection.mutable.ArrayBuffer
 import scala.reflect.ClassTag
@@ -32,7 +35,7 @@ class SILParser extends SILPrinter {
   private[parser] var cursor: Int = 0
   def position(): Int = { cursor }
 
-  private[parser] var inits: Array[Init] = Array()
+  private[parser] var inits: Array[StructInit] = StructInit.populateInits()
 
   def this(path: Path) = {
     this()
@@ -102,25 +105,26 @@ class SILParser extends SILPrinter {
     } else if (skip("//")) {
       // See if it is a init function comment.
       // These are needed to inform struct semantics for users of SIL.
-      try {
+      if (chars(cursor - 3) == '\n') {
+        // TODO: This call is expensive
         maybeParse(() => {
           val tpe: InitType = {
             if(skip("@objc")) InitType.objc
             else if(skip("@nonobjc")) InitType.nonobjc
             else InitType.normal
           }
+          skipTrivia()
           val name = parseIdentifier()
           take(".init")
           val args = parseMany("(", ":", ")", parseIdentifier)
-          take("\n")
-          this.inits :+= new Init(name, args, tpe)
+          // take("\n")
+          this.inits = this.inits :+ new StructInit(name, args, tpe)
           Some(null)
         })
-      } catch { case _: Error => {
-        while (cursor < chars.length && chars(cursor) != '\n') {
-          cursor += 1
-        }
-      }}
+      }
+      while (cursor < chars.length && chars(cursor) != '\n') {
+        cursor += 1
+      }
       skipTrivia()
     }
   }
@@ -128,6 +132,7 @@ class SILParser extends SILPrinter {
   // ***** Tree level *****
 
   @throws[Error]
+  // Really expensive call.
   protected def maybeParse[T](f: () => Option[T]) : Option[T] = {
     val savedCursor = cursor
     try {
@@ -139,7 +144,7 @@ class SILParser extends SILPrinter {
     } catch {
       case e : Error => {
         cursor = savedCursor
-        throw e
+        None
       }
     }
   }
@@ -225,6 +230,7 @@ class SILParser extends SILPrinter {
   // https://github.com/apple/swift/blob/master/docs/SIL.rst#syntax
   @throws[Error]
   def parseModule(): SILModule = {
+    Logger.getGlobal().info("Parsing SIL Module from " + this.path)
     if (!skip("sil_stage canonical")) {
       throw parseError("This parser only supports canonical SIL")
     }
@@ -236,7 +242,9 @@ class SILParser extends SILPrinter {
     var scopes = Array[SILScope]()
     val properties = Array[SILProperty]()
     var done = false
+    val progressBar = new ProgressBar("Parsing", this.chars.length, false)
     while(!done) {
+      progressBar.update(this.cursor)
       if(peek("sil ")) {
         val function = parseFunction()
         functions :+= function
@@ -265,6 +273,8 @@ class SILParser extends SILPrinter {
         }
       }
     }
+    progressBar.done()
+    Logger.getGlobal().info("Done parsing SIL Module")
     new SILModule(functions, witnessTables, vTables, imports, globalVariables, scopes, properties, inits)
   }
 
@@ -327,24 +337,7 @@ class SILParser extends SILPrinter {
   @throws[Error]
   def parseInstruction(): SILInstruction = {
     val instructionName = take(x => x.isLetter || x == '_')
-    // In the original parser this method would return
-    // Instruction.operator(Operator.unknown(instructionName)) if
-    // parseInstructionBody failed. I think we should just blow up
-    // for now and maybe have some error recovery options for
-    // production later.
-    // try {
-      parseInstructionBody(instructionName)
-    /*
-    } catch {
-      // Try to recover to a point where resuming the parsing is sensible
-      // by skipping until the end of this line. This is only a heuristic:
-      // I don't think that the SIL specification guarantees that.
-      case _ : Throwable => {
-        skip(_ != '\n' )
-        Instruction.operator(Operator.unknown(instructionName))
-      }
-    }
-     */
+    parseInstructionBody(instructionName)
   }
 
   // https://github.com/apple/swift/blob/master/docs/SIL.rst#global-variables
@@ -392,7 +385,7 @@ class SILParser extends SILPrinter {
   def parseWitnessTable(): SILWitnessTable = {
     take("sil_witness_table")
     val linkage = parseLinkage()
-    val functionAttribute = try { Some(parseFunctionAttribute()) } catch { case _: Error => None }
+    val functionAttribute = if (peek("[")) Some(parseFunctionAttribute()) else None
     val normalProtocolConformance = parseNormalProtocolConformance()
     val entries = { parseNilOrMany("{", "", "}", parseWitnessEntry) }.getOrElse(Array.empty[SILWitnessEntry])
     new SILWitnessTable(linkage, functionAttribute, normalProtocolConformance, entries)
@@ -492,7 +485,10 @@ class SILParser extends SILPrinter {
         SILInstruction.operator(SILOperator.deallocRef(stack, operand))
       }
       case "dealloc_partial_ref" => {
-        throw parseError("unhandled instruction") // NSIP
+        val operand1 = parseOperand()
+        take(",")
+        val operand2 = parseOperand()
+        SILInstruction.operator(SILOperator.deallocPartialRef(operand1, operand2))
       }
       case "dealloc_value_buffer" => {
         throw parseError("unhandled instruction") // NSIP
@@ -773,9 +769,16 @@ class SILParser extends SILPrinter {
         val declRef = parseDeclRef()
         take(":")
         val declType = parseNakedType()
+        val value = {
+          if (skip(",")) {
+            Some(parseOperand())
+          } else {
+            None
+          }
+        }
         take(":")
         val tpe = parseType()
-        SILInstruction.operator(SILOperator.witnessMethod(archeType, declRef, declType, tpe))
+        SILInstruction.operator(SILOperator.witnessMethod(archeType, declRef, declType, value, tpe))
       }
 
         // *** FUNCTION APPLICATION ***
@@ -828,10 +831,19 @@ class SILParser extends SILPrinter {
       }
       case "builtin" => {
         val name = parseString()
+        val templateTpe = {
+          if (skip("<")) {
+            val tpe = parseNakedType()
+            skip(">")
+            Some(tpe)
+          } else {
+            None
+          }
+        }
         val operands = parseMany("(", ",", ")", parseOperand)
         take(":")
         val tpe = parseType()
-        SILInstruction.operator(SILOperator.builtin(name, operands, tpe))
+        SILInstruction.operator(SILOperator.builtin(name, templateTpe, operands, tpe))
       }
 
         // *** METATYPES ***
@@ -960,7 +972,11 @@ class SILParser extends SILPrinter {
         SILInstruction.operator(SILOperator.refElementAddr(immutable, operand, declRef))
       }
       case "ref_tail_addr" => {
-        throw parseError("unhandled instruction") // NSIP
+        val immutable: Boolean = skip("[immutable]")
+        val operand: SILOperand = parseOperand()
+        take(",")
+        val tpe = parseType()
+        SILInstruction.operator(SILOperator.refTailAddr(immutable, operand, tpe))
       }
 
         // *** ENUMS ***
@@ -972,18 +988,13 @@ class SILParser extends SILPrinter {
         // Just because we see "," doesn't mean there will be an operand.
         // It could be `[...], scope [...]`
         val operand = {
-          try {
-            maybeParse(() => {
-              if (skip(",")) {
-                Some(parseOperand())
-              } else {
-                None
-              }
-            }: Option[SILOperand])
-          } catch {
-            case _ : Error => None
+          val c = this.cursor
+          if (skip(",") && peek ("%")) {
+            Some(parseOperand())
+          } else {
+            this.cursor = c
+            None
           }
-
         }
         SILInstruction.operator(SILOperator.enm(tpe, declRef, operand))
       }
@@ -1174,7 +1185,10 @@ class SILParser extends SILPrinter {
         throw parseError("unhandled instruction") // NSIP
       }
       case "raw_pointer_to_ref" => {
-        throw parseError("unhandled instruction") // NSIP
+        val operand = parseOperand()
+        take("to")
+        val tpe = parseType()
+        SILInstruction.operator(SILOperator.rawPointerToRef(operand, tpe))
       }
       case "ref_to_unowned" => {
         val operand = parseOperand()
@@ -1229,7 +1243,10 @@ class SILParser extends SILPrinter {
         throw parseError("unhandled instruction") // NSIP
       }
       case "bridge_object_to_ref" => {
-        throw parseError("unhandled instruction") // NSIP
+        val operand = parseOperand()
+        take("to")
+        val tpe = parseType()
+        SILInstruction.operator(SILOperator.bridgeObjectToRef(operand, tpe))
       }
       case "bridge_object_to_word" => {
         throw parseError("unhandled instruction") // NSIP
@@ -1296,13 +1313,11 @@ class SILParser extends SILPrinter {
         // According to the spec, the message is non-optional but
         // that doesn't seem to be the case in practice.
         val message = {
-          try {
-            maybeParse(() => {
-              take(",")
-              Some(parseString())
-            } : Option[String] )
-          } catch {
-            case _: Error => None
+          if (peek(", \"")) {
+            take(",")
+            Some(parseString())
+          } else {
+            None
           }
         }
         SILInstruction.operator(SILOperator.condFail(operand, message))
@@ -1486,39 +1501,39 @@ class SILParser extends SILPrinter {
   // https://github.com/apple/swift/blob/master/docs/SIL.rst#switch-enum
   @throws[Error]
   def parseSwitchEnumCase(parseElement: () => String): Option[SILSwitchEnumCase] = {
-    maybeParse(() => {
-      if(!skip(",")) return None
-      if (skip("case")) {
-        val declRef = parseDeclRef()
-        take(":")
-        val identifier = parseElement()
-        Some(SILSwitchEnumCase.cs(declRef, identifier))
-      } else if (skip("default")) {
-        val identifier = parseElement()
-        Some(SILSwitchEnumCase.default(identifier))
-      } else {
-        None
-      }
-    })
+    val c = this.cursor
+    if(!skip(",")) return None
+    if (skip("case")) {
+      val declRef = parseDeclRef()
+      take(":")
+      val identifier = parseElement()
+      Some(SILSwitchEnumCase.cs(declRef, identifier))
+    } else if (skip("default")) {
+      val identifier = parseElement()
+      Some(SILSwitchEnumCase.default(identifier))
+    } else {
+      this.cursor = c
+      None
+    }
   }
 
   // https://github.com/apple/swift/blob/master/docs/SIL.rst#switch-value
   @throws[Error]
   def parseSwitchValueCase(parseElement: () => String): Option[SILSwitchValueCase] = {
-    maybeParse(() => {
-      if(!skip(",")) return None
-      if (skip("case")) {
-        val value = parseValue()
-        take(":")
-        val label = parseIdentifier()
-        Some(SILSwitchValueCase.cs(value, label))
-      } else if (skip("default")) {
-        val label = parseIdentifier()
-        Some(SILSwitchValueCase.default(label))
-      } else {
-        None
-      }
-    })
+    val c = this.cursor
+    if(!skip(",")) return None
+    if (skip("case")) {
+      val value = parseValue()
+      take(":")
+      val label = parseElement()
+      Some(SILSwitchValueCase.cs(value, label))
+    } else if (skip("default")) {
+      val label = parseElement()
+      Some(SILSwitchValueCase.default(label))
+    } else {
+      this.cursor = c
+      None
+    }
   }
 
   @throws[Error]
@@ -1549,14 +1564,14 @@ class SILParser extends SILPrinter {
   // https://github.com/apple/swift/blob/master/docs/SIL.rst#debug-value
   @throws[Error]
   def parseDebugAttribute(): Option[SILDebugAttribute] = {
-    maybeParse(() => {
-      if(!skip(",")) return None
-      if(skip("argno")) return Some(SILDebugAttribute.argno(parseInt()))
-      if(skip("name")) return Some(SILDebugAttribute.name(parseString()))
-      if(skip("let")) return Some(SILDebugAttribute.let)
-      if(skip("var")) return Some(SILDebugAttribute.variable)
-      None
-    })
+    val c = this.cursor
+    if(!skip(",")) return None
+    if(skip("argno")) return Some(SILDebugAttribute.argno(parseInt()))
+    if(skip("name")) return Some(SILDebugAttribute.name(parseString()))
+    if(skip("let")) return Some(SILDebugAttribute.let)
+    if(skip("var")) return Some(SILDebugAttribute.variable)
+    this.cursor = c
+    None
   }
 
   @throws[Error]
@@ -1612,11 +1627,13 @@ class SILParser extends SILPrinter {
     // sil-decl-subref always starts with '!'
     if (skip("!")) {
       // 4 choices: level (int), sil-decl-lang ("foreign"), sil-decl-autodiff, or sil-decl-subref-part
-      val level = maybeParse(() => {
-        try {
+      val level = {
+        if (Character.isDigit(chars(cursor))) {
           Some(parseInt())
-        } catch { case _: Error => None}
-      })
+        } else {
+          None
+        }
+      }
       if (level.nonEmpty) {
         return Some(SILDeclSubRef.level(level.get, skip(".foreign")))
       }
@@ -1637,11 +1654,13 @@ class SILParser extends SILPrinter {
           var foreign = false
           var ad: Option[SILAutoDiff] = None
           if (skip(".")) {
-            level = maybeParse(() => {
-              try {
-               Some(parseInt())
-              } catch { case _: Error => None}
-            })
+            level = {
+              if (Character.isDigit(chars(cursor))) {
+                Some(parseInt())
+              } else {
+                None
+              }
+            }
             if (level.nonEmpty) {
               skip(".")
             }
@@ -1902,7 +1921,7 @@ class SILParser extends SILPrinter {
     if(skip("associated_type")) {
       val identifier0 = parseIdentifier()
       take(":")
-      val identifier1 = parseIdentifier()
+      val identifier1 = parseTypeName()
       return SILWitnessEntry.associatedType(identifier0, identifier1)
     }
     throw parseError("Unknown witness entry")
@@ -1914,12 +1933,8 @@ class SILParser extends SILPrinter {
     take(":")
     var tpe: Option[SILType] = None
     if (!peek("@")) {
-      tpe = maybeParse(() => try {
-        Some(parseNakedType())
-      } catch { case _ : Error => None })
-      if (tpe.nonEmpty) {
-        take(":")
-      }
+      tpe = Some(parseNakedType())
+      take(":")
     }
     val functionName = parseMangledName()
     val kind = parseVTableEntryKind()
@@ -2000,7 +2015,7 @@ class SILParser extends SILPrinter {
     } else if (skip("[")) {
       val subtype = parseNakedType()
       take("]")
-      SILType.arrayType(Array[SILType]{subtype}, true)
+      SILType.arrayType(Array[SILType]{subtype}, nakedStyle = true, optional = skip("?"))
     } else if (peek("(")) {
       inParams = true
       val types: Array[SILType] = parseMany("(", ",", ")", parseNakedType)
@@ -2027,7 +2042,7 @@ class SILParser extends SILPrinter {
           val growType = {
             tpe match {
               case namedType: SILType.namedType if namedType.name == "Array" =>
-                SILType.arrayType(types, false)
+                SILType.arrayType(types, nakedStyle = false, optional = false)
               case _ =>
                 SILType.specializedType(tpe, types)
             }
@@ -2041,16 +2056,13 @@ class SILParser extends SILPrinter {
         }
       }
       val name = parseTypeName()
-      val arg: Option[SILType] = maybeParse(() => {
-        try {
-          if (inParams) {
-            take(":")
-            Some(parseNakedType())
-          } else {
-            None
-          }
-        } catch { case _: Error => None }
-      })
+      val arg: Option[SILType] = {
+        if (inParams && skip(":")) {
+          Some(parseNakedType())
+        } else {
+          None
+        }
+      }
       if (arg.nonEmpty) return SILType.namedArgType(name, arg.get)
       val base: SILType = {
         name match {
@@ -2128,11 +2140,13 @@ class SILParser extends SILPrinter {
 
   @throws[Error]
   def parseScopeParent(): SILScopeParent = {
-    val ref = maybeParse(() => {
-      try {
+    val ref = {
+      if (Character.isDigit(chars(cursor))) {
         Some(parseInt())
-      } catch { case _: Error => None }
-    })
+      } else {
+        None
+      }
+    }
     if (ref.nonEmpty) return SILScopeParent.ref(ref.get)
     val name = parseMangledName()
     take(":")
@@ -2174,15 +2188,14 @@ class SILParser extends SILPrinter {
     // NB: Ownership SSA has a surprising convention of printing the
     //     ownership type before the actual type, so we first try to
     //     parse the type attribute.
-    try {
-      if (naked) skip("$") else take("$")
-    } catch {
-      case _: Error => {
+    if (naked) {
+      skip("$")
+    } else if (!skip("$")) {
         val attr : Option[SILTypeAttribute] = {
-          try {
+          if (peek("@")) {
             Some(parseTypeAttribute())
-          } catch {
-            case _: Error => None
+          } else {
+            None
           }
         }
         // Take the $ for real even if the attribute was not there, because
@@ -2191,6 +2204,7 @@ class SILParser extends SILPrinter {
         // We want to throw our own exception type here so we rethrow
         // if attr.get fails (it's needed just below the try/catch).
         try {
+          //noinspection ScalaUnusedExpression
           attr.get
         } catch {
           case e : Throwable => {
@@ -2199,7 +2213,6 @@ class SILParser extends SILPrinter {
         }
         SILType.withOwnership(attr.get, parseNakedType())
       }
-    }
     parseNakedType()
   }
 
@@ -2231,6 +2244,7 @@ class SILParser extends SILPrinter {
     if(skip("@autoreleased")) return SILTypeAttribute.autoreleased
     if(skip("@dynamic_self")) return SILTypeAttribute.dynamicSelf
     if(skip("@block_storage")) return SILTypeAttribute.blockStorage
+    if(skip("@escaping")) return SILTypeAttribute.escaping
     if(skip("@opened")) {
       take("(")
       val value = parseString()
@@ -2256,7 +2270,7 @@ class SILParser extends SILPrinter {
   @throws[Error]
   def parseTypeName(): String = {
     val start = position()
-    var name: String = take(x => x.isLetter || Character.isDigit(x) || x == '_' || x == '?')
+    var name: String = take(x => x.isLetter || Character.isDigit(x) || x == '_' || x == '?' || x == '.')
     if(skip("...")) {
       name += "..."
     }
