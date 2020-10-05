@@ -349,7 +349,9 @@ class SWANIRPrinter extends Printer {
 
   def printGlobal(name: String): Unit = {
     print("@")
+    print('`')
     print(name)
+    print('`')
   }
 
   def print(tpe: Type): Unit = {

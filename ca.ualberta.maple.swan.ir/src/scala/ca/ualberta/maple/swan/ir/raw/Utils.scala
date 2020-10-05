@@ -68,7 +68,7 @@ object Utils {
       }
 
       param match {
-        case SILType.namedArgType(_, tpe) => makeType(tpe, pointer)
+        case SILType.namedArgType(_, tpe, _) => makeType(tpe, pointer)
         case _ => makeType(param, pointer)
       }
     }
@@ -114,10 +114,6 @@ object Utils {
         new Type(stringBuilder.toString())
       }
     }
-  }
-
-  def SILArgumentToArgument(arg: SILArgument): Argument = {
-    new Argument(arg.valueName, SILTypeToType(arg.tpe))
   }
 
   // Note: Source position is lackluster right now (e.g. columns).

@@ -45,7 +45,7 @@ class Type(val name: String = "Any")
 
 class Position(val path: String, val line: Int, val col: Int)
 
-class Argument(val name: String, val tpe: Type)
+class Argument(val name: SymbolRef, val tpe: Type)
 
 sealed abstract trait InstructionDef {
   val instruction: Instruction

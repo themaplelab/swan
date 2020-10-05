@@ -63,7 +63,9 @@ trait ISILToRawSWANIR {
                                 silBlock: SILBlock, refTable: RefTable): Block = {
     val arguments = new ArrayBuffer[Argument]()
     silBlock.arguments.foreach((a: SILArgument) => {
-      arguments.append(Utils.SILArgumentToArgument(a))
+      arguments.append(new Argument(makeSymbolRef(a.valueName,
+        new Context(silModule, silFunction, silBlock, null, refTable)),
+        Utils.SILTypeToType(a.tpe)))
     })
     val operators = new ArrayBuffer[OperatorDef](0)
     silBlock.operatorDefs.foreach((silOperatorDef: SILOperatorDef) => {

@@ -114,11 +114,31 @@ class SILToRawSWANIR extends ISILToRawSWANIR {
   }
 
   override protected def visitDebugValue(r: Option[SILResult], I: SILOperator.debugValue, ctx: Context): Array[InstructionDef] = {
-    NOP
+    I.attributes.foreach(a => {
+      a match {
+        case SILDebugAttribute.argno(index) =>
+        case SILDebugAttribute.name(name) => {
+          makeSymbolRef(I.operand.value, ctx).name = name
+        }
+        case SILDebugAttribute.let =>
+        case SILDebugAttribute.variable =>
+      }
+    })
+    COPY
   }
 
   override protected def visitDebugValueAddr(r: Option[SILResult], I: SILOperator.debugValueAddr, ctx: Context): Array[InstructionDef] = {
-    NOP
+    I.attributes.foreach(a => {
+      a match {
+        case SILDebugAttribute.argno(index) =>
+        case SILDebugAttribute.name(name) => {
+          makeSymbolRef(I.operand.value, ctx).name = name
+        }
+        case SILDebugAttribute.let =>
+        case SILDebugAttribute.variable =>
+      }
+    })
+    COPY
   }
 
   @throws[UnexpectedSILFormatException]
