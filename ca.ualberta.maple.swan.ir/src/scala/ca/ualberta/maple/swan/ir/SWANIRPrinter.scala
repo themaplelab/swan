@@ -119,9 +119,9 @@ class SWANIRPrinter extends Printer {
       case Operator.literal(_, lit) => {
         print("literal ")
         lit match {
-          case Literal.string(value) => print("[string] #"); literal(value)
-          case Literal.int(value) => print("[int] #"); literal(value)
-          case Literal.float(value) => print("[float] #"); literal(value)
+          case Literal.string(value) => print("[string] "); literal(value)
+          case Literal.int(value) => print("[int] "); literal(value)
+          case Literal.float(value) => print("[float] "); literal(value)
         }
       }
       case Operator.builtinRef(_, declRef, name) => {

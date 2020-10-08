@@ -122,7 +122,11 @@ object Utils {
     val src = info.get
     if (src.loc.isEmpty) return None
     val loc = src.loc.get
-    Some(new Position(loc.path, loc.line, loc.column))
+    if (loc.path == "<compiler-generated>") {
+      None
+    } else {
+      Some(new Position(loc.path, loc.line, loc.column))
+    }
   }
 
   def print(tpe: SILType): String = {

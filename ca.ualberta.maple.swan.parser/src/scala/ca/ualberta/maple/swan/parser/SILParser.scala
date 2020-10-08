@@ -106,7 +106,6 @@ class SILParser extends SILPrinter {
       // See if it is a init function comment.
       // These are needed to inform struct semantics for users of SIL.
       if (chars(cursor - 3) == '\n') {
-        // TODO: This call is expensive
         maybeParse(() => {
           val tpe: InitType = {
             if(skip("@objc")) InitType.objc
@@ -119,7 +118,7 @@ class SILParser extends SILPrinter {
           val args = parseMany("(", ":", ")", parseIdentifier)
           // take("\n")
           this.inits = this.inits :+ new StructInit(name, args, tpe)
-          Some(null)
+          None
         })
       }
       while (cursor < chars.length && chars(cursor) != '\n') {
