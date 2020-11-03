@@ -63,4 +63,8 @@ object Logging {
       System.out.println(label + " took " + timeTaken)
     }
   }
+
+  def printParsingInfo(msg: String): Unit = {
+    System.out.println(msg);
+  }
 }

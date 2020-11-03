@@ -13,7 +13,6 @@ package ca.ualberta.maple.swan.parser
 import java.nio.charset.StandardCharsets
 import java.nio.file.{Files, Path}
 import java.util
-import java.util.logging.Logger
 
 import ca.ualberta.maple.swan.parser.Logging.ProgressBar
 
@@ -86,7 +85,7 @@ class SILParser extends SILPrinter {
   }
 
   protected def take(whileFn: Char => Boolean): String = {
-    val result : Array[Char] = chars.takeRight(chars.length - cursor).takeWhile(whileFn)
+    val result = chars.view.takeRight(chars.length - cursor).view.takeWhile(whileFn).toArray
     cursor += result.length
     skipTrivia()
     new String(result)
@@ -216,7 +215,7 @@ class SILParser extends SILPrinter {
   protected def parseError(message: String, at: Option[Int] = None): Error = {
     val position = if (at.isDefined) at.get else cursor
     var newlines: Array[Int] = new Array(0)
-    chars.take(position).zipWithIndex.foreach(charIdx => {
+    chars.view.take(position).zipWithIndex.foreach(charIdx => {
       if (charIdx._1 == '\n') {
         newlines = newlines :+ charIdx._2
       }
@@ -229,7 +228,7 @@ class SILParser extends SILPrinter {
   // https://github.com/apple/swift/blob/master/docs/SIL.rst#syntax
   @throws[Error]
   def parseModule(): SILModule = {
-    Logger.getGlobal().info("Parsing SIL Module from " + this.path)
+    Logging.printParsingInfo("Parsing SIL Module from " + this.path)
     if (!skip("sil_stage canonical")) {
       throw parseError("This parser only supports canonical SIL")
     }
@@ -273,7 +272,7 @@ class SILParser extends SILPrinter {
       }
     }
     progressBar.done()
-    Logger.getGlobal().info("Done parsing SIL Module")
+    Logging.printParsingInfo("Done parsing SIL Module\n")
     new SILModule(functions, witnessTables, vTables, imports, globalVariables, scopes, properties, inits)
   }
 
@@ -320,6 +319,7 @@ class SILParser extends SILPrinter {
   // https://github.com/apple/swift/blob/master/docs/SIL.rst#basic-blocks
   @throws[Error]
   def parseInstructionDef(): SILInstructionDef = {
+    nakedStack.clear
     val result = parseResult()
     val body = parseInstruction()
     val sourceInfo = parseSourceInfo()
@@ -466,6 +466,7 @@ class SILParser extends SILPrinter {
         SILInstruction.operator(SILOperator.deallocStack(operand))
       }
       case "dealloc_box" => {
+        varGrowOverride = true
         val operand = parseOperand()
         take("<")
         val tpe = parseNakedType()
@@ -613,6 +614,10 @@ class SILParser extends SILPrinter {
       case "set_deallocating" => {
         throw parseError("unhandled instruction") // NSIP
       }
+      case "copy_unowned_value" => {
+        val operand = parseOperand()
+        SILInstruction.operator(SILOperator.copyUnownedValue(operand))
+      }
       case "strong_copy_unowned_value" => {
         throw parseError("unhandled instruction") // NSIP
       }
@@ -620,7 +625,8 @@ class SILParser extends SILPrinter {
         throw parseError("unhandled instruction") // NSIP
       }
       case "unowned_retain" => {
-        throw parseError("unhandled instruction") // NSIP
+        val operand = parseOperand()
+        SILInstruction.operator(SILOperator.unownedRetain(operand))
       }
       case "unowned_release" => {
         throw parseError("unhandled instruction") // NSIP
@@ -1775,9 +1781,28 @@ class SILParser extends SILPrinter {
       return SILFunctionAttribute.semantics(value)
     }
     if(skip("[_specialize")) {
-      val value = parseString()
-      take("]")
-      return SILFunctionAttribute.specialize(value)
+      var exported: Option[Boolean] = None
+      if (skip("exported:")) {
+        if (skip("true")) {
+          exported = Some(true)
+        } else {
+          take("false")
+          exported = Some(false)
+        }
+        take(",")
+      }
+      var kind: Option[SILFunctionAttribute.specialize.Kind] = None
+      if (skip("kind:")) {
+        if (skip("partial")) {
+          kind = Some(SILFunctionAttribute.specialize.Kind.partial)
+        } else {
+          take("full")
+          kind = Some(SILFunctionAttribute.specialize.Kind.full)
+        }
+        take(",")
+      }
+      val reqs = parseMany("where", ",", "]", parseTypeRequirement)
+      return SILFunctionAttribute.specialize(exported, kind, reqs)
     }
     if(skip("[clang")) {
       val value = parseIdentifier()
@@ -1861,9 +1886,16 @@ class SILParser extends SILPrinter {
   }
 
   // https://github.com/apple/swift/blob/master/docs/SIL.rst#witness-tables
-  def parseNormalProtocolConformance(): SILNormalProtocolConformance = {
-    val tpe = parseType(true)
-    take(":")
+  def parseNormalProtocolConformance(existingTpe: Option[SILType] = None): SILNormalProtocolConformance = {
+    val tpe = {
+      if (existingTpe.nonEmpty) {
+        existingTpe.get
+      } else {
+        val t = parseType(true)
+        take(":")
+        t
+      }
+    }
     val protocol = parseIdentifier()
     take("module")
     val module = parseIdentifier()
@@ -1871,23 +1903,26 @@ class SILParser extends SILPrinter {
   }
 
   def parseProtocolConformance(): SILProtocolConformance = {
+    val tpe = parseType(true)
+    take(":")
     if(skip("inherit")) {
       take("(")
       val protocolConformance = parseProtocolConformance()
       take(")")
-      SILProtocolConformance.inherit(protocolConformance)
-    }
-    if(skip("specialize")) {
+      SILProtocolConformance.inherit(tpe, protocolConformance)
+    } else if(skip("specialize")) { // Not yet tested
       val s = parseNilOrMany("<",",",">", parseNakedType)
       val substitutions = if (s.nonEmpty) s.get else new Array[SILType](0)
       take("(")
       val protocolConformance = parseProtocolConformance()
       take(")")
       SILProtocolConformance.specialize(substitutions, protocolConformance)
+    } else if(skip("dependent")) { // Not yet tested
+      SILProtocolConformance.dependent
+    } else {
+      // Otherwise assume normal-protocol-conformance
+      SILProtocolConformance.normal(parseNormalProtocolConformance(Some(tpe)))
     }
-    if(skip("dependent")) return SILProtocolConformance.dependent
-    // Otherwise assume normal-protocol-conformance
-    SILProtocolConformance.normal(parseNormalProtocolConformance())
   }
 
   @throws[Error]
@@ -1920,7 +1955,7 @@ class SILParser extends SILPrinter {
     if(skip("associated_type")) {
       val identifier0 = parseIdentifier()
       take(":")
-      val identifier1 = parseTypeName()
+      val identifier1 = parseTypeName(allowArrows = true)
       return SILWitnessEntry.associatedType(identifier0, identifier1)
     }
     throw parseError("Unknown witness entry")
@@ -1935,10 +1970,17 @@ class SILParser extends SILPrinter {
       tpe = Some(parseNakedType())
       take(":")
     }
+    val linkage = {
+      if (peek("@")) {
+        None
+      } else {
+        Some(parseLinkage())
+      }
+    }
     val functionName = parseMangledName()
     val kind = parseVTableEntryKind()
     val nonoverridden = skip("[nonoverridden]")
-    new SILVEntry(declRef, tpe, kind, nonoverridden, functionName)
+    new SILVEntry(declRef, tpe, kind, nonoverridden, linkage, functionName)
   }
 
   def parseVTableEntryKind(): SILVTableEntryKind = {
@@ -1975,11 +2017,116 @@ class SILParser extends SILPrinter {
   // params. Needed for named arg parsing. Ideally we would add a param to
   // parseNakedType, but that is not possible due to generics. The recursion
   // is linear anyway so it doesn't matter.
-  var inParams = false
-  var inSquareBrackets = false
+
+  class NakedStack {
+    private val stack: util.Stack[Char] = new util.Stack[Char]()
+    sealed trait Type
+    object Type {
+      case object Paren extends Type
+      case object Square extends Type
+      case object Arrows extends Type
+    }
+    def clear: Unit = {
+      this.stack.clear()
+    }
+    def openParen: Unit = {
+      stack.push('(')
+    }
+    def closeParen: Unit = {
+      stack.push(')')
+    }
+    def openSquare: Unit = {
+      stack.push('[')
+    }
+    def closeSquare: Unit = {
+      stack.push(']')
+    }
+    def openArrows: Unit = {
+      stack.push('<')
+    }
+    def closeArrows: Unit = {
+      stack.push('>')
+    }
+    def getCurrentType: Option[Type] = {
+      var tpe: Option[Type] = None
+      if (this.stack.size() > 0) {
+        this.stack.peek() match {
+          case ')' =>
+          case ']' =>
+          case '>' =>
+          case '(' => tpe = Some(Type.Paren)
+          case '[' => tpe = Some(Type.Square)
+          case '<' => tpe = Some(Type.Arrows)
+          case _ =>
+        }
+      }
+      tpe
+    }
+    def inParen: Boolean = {
+      val cur = this.getCurrentType
+      if (cur.nonEmpty) {
+        cur.get match {
+          case Type.Paren => true
+          case Type.Square => false
+          case Type.Arrows => false
+        }
+      } else {
+        false
+      }
+    }
+    def inSquare: Boolean = {
+      val cur = this.getCurrentType
+      if (cur.nonEmpty) {
+        cur.get match {
+          case Type.Paren => false
+          case Type.Square => true
+          case Type.Arrows => false
+        }
+      } else {
+        false
+      }
+    }
+    def inArrows: Boolean = {
+      val cur = this.getCurrentType
+      if (cur.nonEmpty) {
+        cur.get match {
+          case Type.Paren => false
+          case Type.Square => false
+          case Type.Arrows => true
+        }
+      } else {
+        false
+      }
+    }
+  }
+
+  var varGrowOverride = false
+  val nakedStack = new NakedStack()
+
   @throws[Error]
   def parseNakedType(): SILType = {
+    @throws[Error]
+    def grow(tpe: SILType): SILType = {
+      if (peek("<")) {
+        val types = parseMany("<",",",">", parseNakedType)
+        val growType = {
+          tpe match {
+            case namedType: SILType.namedType if namedType.name == "Array" =>
+              SILType.arrayType(types, nakedStyle = false, optional = false)
+            case _ =>
+              SILType.specializedType(tpe, types, optional = skip("?"))
+          }
+        }
+        grow(growType)
+      } else if (skip(".")) {
+        val name = parseTypeName()
+        grow(SILType.selectType(tpe, name))
+      } else {
+        tpe
+      }
+    }
     if (skip("<")) {
+      nakedStack.openArrows
       val params = new ArrayBuffer[String]
       var break = false
       while (!break) {
@@ -1998,6 +2145,7 @@ class SILParser extends SILPrinter {
         reqs.clear()
         take(">")
       }
+      nakedStack.closeArrows
       val tpe = parseNakedType()
       SILType.genericType(params.toArray, reqs.toArray, tpe)
     } else if (peek("@")) {
@@ -2020,17 +2168,17 @@ class SILParser extends SILPrinter {
       val tpe = parseNakedType()
       SILType.addressType(tpe)
     } else if (skip("[")) {
-      inSquareBrackets = true
+      nakedStack.openSquare
       val subtype = parseNakedType()
       take("]")
-      inSquareBrackets = false
+      nakedStack.closeSquare
       SILType.arrayType(Array[SILType]{subtype}, nakedStyle = true, optional = skip("?"))
     } else if (peek("(")) {
-      inParams = true
+      nakedStack.openParen
       val types: Array[SILType] = parseMany("(", ",", ")", parseNakedType)
+      nakedStack.closeParen
       val optional = skip("?")
       val throws = skip("throws")
-      inParams = false
       if (skip("->")) {
         val result = parseNakedType()
         SILType.functionType(types, optional, throws, result)
@@ -2042,37 +2190,22 @@ class SILParser extends SILPrinter {
       take("var")
       val tpe = SILType.varType(parseNakedType())
       take("}")
-      tpe
-    } else {
-      @throws[Error]
-      def grow(tpe: SILType): SILType = {
-        if (peek("<")) {
-          val types = parseMany("<",",",">", parseNakedType)
-          val growType = {
-            tpe match {
-              case namedType: SILType.namedType if namedType.name == "Array" =>
-                SILType.arrayType(types, nakedStyle = false, optional = false)
-              case _ =>
-                SILType.specializedType(tpe, types)
-            }
-          }
-          grow(growType)
-        } else if (skip(".")) {
-          val name = parseTypeName()
-          grow(SILType.selectType(tpe, name))
-        } else {
-          tpe
-        }
+      if (varGrowOverride) {
+        varGrowOverride = false
+        tpe
+      } else {
+        grow(tpe)
       }
+    } else {
       val name = parseTypeName()
       val arg: Option[SILType] = {
-        if ((inSquareBrackets || inParams) && skip(":")) {
+        if ((nakedStack.inSquare || nakedStack.inParen) && !nakedStack.inArrows && skip(":")) {
           Some(parseNakedType())
         } else {
           None
         }
       }
-      if (arg.nonEmpty) return SILType.namedArgType(name, arg.get, inSquareBrackets)
+      if (arg.nonEmpty) return SILType.namedArgType(name, arg.get, nakedStack.inSquare)
       val base: SILType = {
         name match {
           case "Self?" => SILType.selfTypeOptional
@@ -2100,7 +2233,7 @@ class SILParser extends SILPrinter {
       val valueName = parseValueName()
       take("=")
       Some(new SILResult(Array(valueName)))
-    } else if(peek("(")) {
+    } else if (peek("(")) {
       val valueNames = parseMany("(", ",", ")", parseValueName)
       take("=")
       Some(new SILResult(valueNames))
@@ -2277,9 +2410,10 @@ class SILParser extends SILPrinter {
   }
 
   @throws[Error]
-  def parseTypeName(): String = {
+  def parseTypeName(allowArrows: Boolean = false): String = {
     val start = position()
-    var name: String = take(x => x.isLetter || Character.isDigit(x) || x == '_' || x == '?' || x == '.')
+    var name: String = take(x => x.isLetter || Character.isDigit(x)
+      || x == '_' || x == '?' || x == '.' || (allowArrows && (x == '<' || x == '>')))
     if(skip("...")) {
       name += "..."
     }

@@ -1,0 +1,609 @@
+sil_stage canonical
+
+import Builtin
+import Swift
+import SwiftShims
+
+protocol Base {
+  func foo()
+}
+
+protocol AnotherBase : Base {
+  func bar()
+}
+
+class A : Base, AnotherBase {
+  func foo()
+  func bar()
+  init()
+  @objc deinit
+}
+
+class B : Base {
+  func foo()
+  func baz()
+  init()
+  @objc deinit
+}
+
+class C : B {
+  override init()
+  @objc deinit
+}
+
+class C2 : B {
+  override init()
+  @objc deinit
+}
+
+class D : AnotherBase {
+  func foo()
+  func bar()
+  init()
+  @objc deinit
+}
+
+func getBase(x: Int) -> Base
+
+func getC(x: Int) -> B
+
+@_hasStorage @_hasInitialValue let ab: Base { get }
+
+@_hasStorage @_hasInitialValue let cc2: B { get }
+
+// ab
+sil_global hidden [let] @$s14TypeHierarchy12abAA4Base_pvp : $Base
+
+// cc2
+sil_global hidden [let] @$s14TypeHierarchy13cc2AA1BCvp : $B
+
+// main
+sil @main : $@convention(c) (Int32, UnsafeMutablePointer<Optional<UnsafeMutablePointer<Int8>>>) -> Int32 {
+bb0(%0 : $Int32, %1 : $UnsafeMutablePointer<Optional<UnsafeMutablePointer<Int8>>>):
+  alloc_global @$s14TypeHierarchy12abAA4Base_pvp  // id: %2
+  %3 = global_addr @$s14TypeHierarchy12abAA4Base_pvp : $*Base // users: %15, %7
+  %4 = integer_literal $Builtin.Int64, 5          // user: %5
+  %5 = struct $Int (%4 : $Builtin.Int64)          // user: %7
+  // function_ref getBase(x:)
+  %6 = function_ref @$s14TypeHierarchy17getBase1xAA0D0_pSi_tF : $@convention(thin) (Int) -> @out Base // user: %7
+  %7 = apply %6(%3, %5) : $@convention(thin) (Int) -> @out Base
+  alloc_global @$s14TypeHierarchy13cc2AA1BCvp     // id: %8
+  %9 = global_addr @$s14TypeHierarchy13cc2AA1BCvp : $*B // users: %18, %14
+  %10 = integer_literal $Builtin.Int64, 5         // user: %11
+  %11 = struct $Int (%10 : $Builtin.Int64)        // user: %13
+  // function_ref getC(x:)
+  %12 = function_ref @$s14TypeHierarchy14getC1xAA1BCSi_tF : $@convention(thin) (Int) -> @owned B // user: %13
+  %13 = apply %12(%11) : $@convention(thin) (Int) -> @owned B // user: %14
+  store %13 to %9 : $*B                           // id: %14
+  %15 = open_existential_addr immutable_access %3 : $*Base to $*@opened("D858A340-13A9-11EB-9DE7-ACDE48001122") Base // users: %17, %17, %16
+  %16 = witness_method $@opened("D858A340-13A9-11EB-9DE7-ACDE48001122") Base, #Base.foo!1 : <Self where Self : Base> (Self) -> () -> (), %15 : $*@opened("D858A340-13A9-11EB-9DE7-ACDE48001122") Base : $@convention(witness_method: Base) <τ_0_0 where τ_0_0 : Base> (@in_guaranteed τ_0_0) -> () // type-defs: %15; user: %17
+  %17 = apply %16<@opened("D858A340-13A9-11EB-9DE7-ACDE48001122") Base>(%15) : $@convention(witness_method: Base) <τ_0_0 where τ_0_0 : Base> (@in_guaranteed τ_0_0) -> () // type-defs: %15
+  %18 = load %9 : $*B                             // users: %19, %20
+  %19 = class_method %18 : $B, #B.baz!1 : (B) -> () -> (), $@convention(method) (@guaranteed B) -> () // user: %20
+  %20 = apply %19(%18) : $@convention(method) (@guaranteed B) -> ()
+  %21 = integer_literal $Builtin.Int32, 0         // user: %22
+  %22 = struct $Int32 (%21 : $Builtin.Int32)      // user: %23
+  return %22 : $Int32                             // id: %23
+} // end sil function 'main'
+
+// A.foo()
+sil hidden @$s14TypeHierarchy11AC3fooyyF : $@convention(method) (@guaranteed A) -> () {
+// %0                                             // user: %1
+bb0(%0 : $A):
+  debug_value %0 : $A, let, name "self", argno 1  // id: %1
+  %2 = tuple ()                                   // user: %3
+  return %2 : $()                                 // id: %3
+} // end sil function '$s14TypeHierarchy11AC3fooyyF'
+
+// A.bar()
+sil hidden @$s14TypeHierarchy11AC3baryyF : $@convention(method) (@guaranteed A) -> () {
+// %0                                             // user: %1
+bb0(%0 : $A):
+  debug_value %0 : $A, let, name "self", argno 1  // id: %1
+  %2 = tuple ()                                   // user: %3
+  return %2 : $()                                 // id: %3
+} // end sil function '$s14TypeHierarchy11AC3baryyF'
+
+// A.__allocating_init()
+sil hidden @$s14TypeHierarchy11ACACycfC : $@convention(method) (@thick A.Type) -> @owned A {
+bb0(%0 : $@thick A.Type):
+  %1 = alloc_ref $A                               // user: %3
+  // function_ref A.init()
+  %2 = function_ref @$s14TypeHierarchy11ACACycfc : $@convention(method) (@owned A) -> @owned A // user: %3
+  %3 = apply %2(%1) : $@convention(method) (@owned A) -> @owned A // user: %4
+  return %3 : $A                                  // id: %4
+} // end sil function '$s14TypeHierarchy11ACACycfC'
+
+// A.init()
+sil hidden @$s14TypeHierarchy11ACACycfc : $@convention(method) (@owned A) -> @owned A {
+// %0                                             // users: %2, %1
+bb0(%0 : $A):
+  debug_value %0 : $A, let, name "self", argno 1  // id: %1
+  return %0 : $A                                  // id: %2
+} // end sil function '$s14TypeHierarchy11ACACycfc'
+
+// A.deinit
+sil hidden @$s14TypeHierarchy11ACfd : $@convention(method) (@guaranteed A) -> @owned Builtin.NativeObject {
+// %0                                             // users: %2, %1
+bb0(%0 : $A):
+  debug_value %0 : $A, let, name "self", argno 1  // id: %1
+  %2 = unchecked_ref_cast %0 : $A to $Builtin.NativeObject // user: %3
+  return %2 : $Builtin.NativeObject               // id: %3
+} // end sil function '$s14TypeHierarchy11ACfd'
+
+// A.__deallocating_deinit
+sil hidden @$s14TypeHierarchy11ACfD : $@convention(method) (@owned A) -> () {
+// %0                                             // users: %3, %1
+bb0(%0 : $A):
+  debug_value %0 : $A, let, name "self", argno 1  // id: %1
+  // function_ref A.deinit
+  %2 = function_ref @$s14TypeHierarchy11ACfd : $@convention(method) (@guaranteed A) -> @owned Builtin.NativeObject // user: %3
+  %3 = apply %2(%0) : $@convention(method) (@guaranteed A) -> @owned Builtin.NativeObject // user: %4
+  %4 = unchecked_ref_cast %3 : $Builtin.NativeObject to $A // user: %5
+  dealloc_ref %4 : $A                             // id: %5
+  %6 = tuple ()                                   // user: %7
+  return %6 : $()                                 // id: %7
+} // end sil function '$s14TypeHierarchy11ACfD'
+
+// protocol witness for Base.foo() in conformance A
+sil private [transparent] [thunk] @$s14TypeHierarchy11ACAA4BaseA2aDP3fooyyFTW : $@convention(witness_method: Base) (@in_guaranteed A) -> () {
+// %0                                             // user: %1
+bb0(%0 : $*A):
+  %1 = load %0 : $*A                              // users: %2, %3
+  %2 = class_method %1 : $A, #A.foo!1 : (A) -> () -> (), $@convention(method) (@guaranteed A) -> () // user: %3
+  %3 = apply %2(%1) : $@convention(method) (@guaranteed A) -> ()
+  %4 = tuple ()                                   // user: %5
+  return %4 : $()                                 // id: %5
+} // end sil function '$s14TypeHierarchy11ACAA4BaseA2aDP3fooyyFTW'
+
+// protocol witness for AnotherBase.bar() in conformance A
+sil private [transparent] [thunk] @$s14TypeHierarchy11ACAA11AnotherBaseA2aDP3baryyFTW : $@convention(witness_method: AnotherBase) (@in_guaranteed A) -> () {
+// %0                                             // user: %1
+bb0(%0 : $*A):
+  %1 = load %0 : $*A                              // users: %2, %3
+  %2 = class_method %1 : $A, #A.bar!1 : (A) -> () -> (), $@convention(method) (@guaranteed A) -> () // user: %3
+  %3 = apply %2(%1) : $@convention(method) (@guaranteed A) -> ()
+  %4 = tuple ()                                   // user: %5
+  return %4 : $()                                 // id: %5
+} // end sil function '$s14TypeHierarchy11ACAA11AnotherBaseA2aDP3baryyFTW'
+
+// B.foo()
+sil hidden @$s14TypeHierarchy11BC3fooyyF : $@convention(method) (@guaranteed B) -> () {
+// %0                                             // user: %1
+bb0(%0 : $B):
+  debug_value %0 : $B, let, name "self", argno 1  // id: %1
+  %2 = tuple ()                                   // user: %3
+  return %2 : $()                                 // id: %3
+} // end sil function '$s14TypeHierarchy11BC3fooyyF'
+
+// B.baz()
+sil hidden @$s14TypeHierarchy11BC3bazyyF : $@convention(method) (@guaranteed B) -> () {
+// %0                                             // user: %1
+bb0(%0 : $B):
+  debug_value %0 : $B, let, name "self", argno 1  // id: %1
+  %2 = tuple ()                                   // user: %3
+  return %2 : $()                                 // id: %3
+} // end sil function '$s14TypeHierarchy11BC3bazyyF'
+
+// B.__allocating_init()
+sil hidden @$s14TypeHierarchy11BCACycfC : $@convention(method) (@thick B.Type) -> @owned B {
+bb0(%0 : $@thick B.Type):
+  %1 = alloc_ref $B                               // user: %3
+  // function_ref B.init()
+  %2 = function_ref @$s14TypeHierarchy11BCACycfc : $@convention(method) (@owned B) -> @owned B // user: %3
+  %3 = apply %2(%1) : $@convention(method) (@owned B) -> @owned B // user: %4
+  return %3 : $B                                  // id: %4
+} // end sil function '$s14TypeHierarchy11BCACycfC'
+
+// B.init()
+sil hidden @$s14TypeHierarchy11BCACycfc : $@convention(method) (@owned B) -> @owned B {
+// %0                                             // users: %2, %1
+bb0(%0 : $B):
+  debug_value %0 : $B, let, name "self", argno 1  // id: %1
+  return %0 : $B                                  // id: %2
+} // end sil function '$s14TypeHierarchy11BCACycfc'
+
+// B.deinit
+sil hidden @$s14TypeHierarchy11BCfd : $@convention(method) (@guaranteed B) -> @owned Builtin.NativeObject {
+// %0                                             // users: %2, %1
+bb0(%0 : $B):
+  debug_value %0 : $B, let, name "self", argno 1  // id: %1
+  %2 = unchecked_ref_cast %0 : $B to $Builtin.NativeObject // user: %3
+  return %2 : $Builtin.NativeObject               // id: %3
+} // end sil function '$s14TypeHierarchy11BCfd'
+
+// B.__deallocating_deinit
+sil hidden @$s14TypeHierarchy11BCfD : $@convention(method) (@owned B) -> () {
+// %0                                             // users: %3, %1
+bb0(%0 : $B):
+  debug_value %0 : $B, let, name "self", argno 1  // id: %1
+  // function_ref B.deinit
+  %2 = function_ref @$s14TypeHierarchy11BCfd : $@convention(method) (@guaranteed B) -> @owned Builtin.NativeObject // user: %3
+  %3 = apply %2(%0) : $@convention(method) (@guaranteed B) -> @owned Builtin.NativeObject // user: %4
+  %4 = unchecked_ref_cast %3 : $Builtin.NativeObject to $B // user: %5
+  dealloc_ref %4 : $B                             // id: %5
+  %6 = tuple ()                                   // user: %7
+  return %6 : $()                                 // id: %7
+} // end sil function '$s14TypeHierarchy11BCfD'
+
+// protocol witness for Base.foo() in conformance B
+sil private [transparent] [thunk] @$s14TypeHierarchy11BCAA4BaseA2aDP3fooyyFTW : $@convention(witness_method: Base) (@in_guaranteed B) -> () {
+// %0                                             // user: %1
+bb0(%0 : $*B):
+  %1 = load %0 : $*B                              // users: %2, %3
+  %2 = class_method %1 : $B, #B.foo!1 : (B) -> () -> (), $@convention(method) (@guaranteed B) -> () // user: %3
+  %3 = apply %2(%1) : $@convention(method) (@guaranteed B) -> ()
+  %4 = tuple ()                                   // user: %5
+  return %4 : $()                                 // id: %5
+} // end sil function '$s14TypeHierarchy11BCAA4BaseA2aDP3fooyyFTW'
+
+// C.__allocating_init()
+sil hidden @$s14TypeHierarchy11CCACycfC : $@convention(method) (@thick C.Type) -> @owned C {
+bb0(%0 : $@thick C.Type):
+  %1 = alloc_ref $C                               // user: %3
+  // function_ref C.init()
+  %2 = function_ref @$s14TypeHierarchy11CCACycfc : $@convention(method) (@owned C) -> @owned C // user: %3
+  %3 = apply %2(%1) : $@convention(method) (@owned C) -> @owned C // user: %4
+  return %3 : $C                                  // id: %4
+} // end sil function '$s14TypeHierarchy11CCACycfC'
+
+// C.init()
+sil hidden @$s14TypeHierarchy11CCACycfc : $@convention(method) (@owned C) -> @owned C {
+// %0                                             // users: %3, %2
+bb0(%0 : $C):
+  %1 = alloc_stack $C, let, name "self"           // users: %7, %2, %9, %10
+  store %0 to %1 : $*C                            // id: %2
+  %3 = upcast %0 : $C to $B                       // user: %5
+  // function_ref B.init()
+  %4 = function_ref @$s14TypeHierarchy11BCACycfc : $@convention(method) (@owned B) -> @owned B // user: %5
+  %5 = apply %4(%3) : $@convention(method) (@owned B) -> @owned B // user: %6
+  %6 = unchecked_ref_cast %5 : $B to $C           // users: %8, %11, %7
+  store %6 to %1 : $*C                            // id: %7
+  strong_retain %6 : $C                           // id: %8
+  destroy_addr %1 : $*C                           // id: %9
+  dealloc_stack %1 : $*C                          // id: %10
+  return %6 : $C                                  // id: %11
+} // end sil function '$s14TypeHierarchy11CCACycfc'
+
+// C.deinit
+sil hidden @$s14TypeHierarchy11CCfd : $@convention(method) (@guaranteed C) -> @owned Builtin.NativeObject {
+// %0                                             // users: %2, %1
+bb0(%0 : $C):
+  debug_value %0 : $C, let, name "self", argno 1  // id: %1
+  %2 = upcast %0 : $C to $B                       // user: %4
+  // function_ref B.deinit
+  %3 = function_ref @$s14TypeHierarchy11BCfd : $@convention(method) (@guaranteed B) -> @owned Builtin.NativeObject // user: %4
+  %4 = apply %3(%2) : $@convention(method) (@guaranteed B) -> @owned Builtin.NativeObject // users: %5, %6
+  %5 = unchecked_ref_cast %4 : $Builtin.NativeObject to $C
+  return %4 : $Builtin.NativeObject               // id: %6
+} // end sil function '$s14TypeHierarchy11CCfd'
+
+// C.__deallocating_deinit
+sil hidden @$s14TypeHierarchy11CCfD : $@convention(method) (@owned C) -> () {
+// %0                                             // users: %3, %1
+bb0(%0 : $C):
+  debug_value %0 : $C, let, name "self", argno 1  // id: %1
+  // function_ref C.deinit
+  %2 = function_ref @$s14TypeHierarchy11CCfd : $@convention(method) (@guaranteed C) -> @owned Builtin.NativeObject // user: %3
+  %3 = apply %2(%0) : $@convention(method) (@guaranteed C) -> @owned Builtin.NativeObject // user: %4
+  %4 = unchecked_ref_cast %3 : $Builtin.NativeObject to $C // user: %5
+  dealloc_ref %4 : $C                             // id: %5
+  %6 = tuple ()                                   // user: %7
+  return %6 : $()                                 // id: %7
+} // end sil function '$s14TypeHierarchy11CCfD'
+
+// C2.__allocating_init()
+sil hidden @$s14TypeHierarchy12C2CACycfC : $@convention(method) (@thick C2.Type) -> @owned C2 {
+bb0(%0 : $@thick C2.Type):
+  %1 = alloc_ref $C2                              // user: %3
+  // function_ref C2.init()
+  %2 = function_ref @$s14TypeHierarchy12C2CACycfc : $@convention(method) (@owned C2) -> @owned C2 // user: %3
+  %3 = apply %2(%1) : $@convention(method) (@owned C2) -> @owned C2 // user: %4
+  return %3 : $C2                                 // id: %4
+} // end sil function '$s14TypeHierarchy12C2CACycfC'
+
+// C2.init()
+sil hidden @$s14TypeHierarchy12C2CACycfc : $@convention(method) (@owned C2) -> @owned C2 {
+// %0                                             // users: %3, %2
+bb0(%0 : $C2):
+  %1 = alloc_stack $C2, let, name "self"          // users: %7, %2, %9, %10
+  store %0 to %1 : $*C2                           // id: %2
+  %3 = upcast %0 : $C2 to $B                      // user: %5
+  // function_ref B.init()
+  %4 = function_ref @$s14TypeHierarchy11BCACycfc : $@convention(method) (@owned B) -> @owned B // user: %5
+  %5 = apply %4(%3) : $@convention(method) (@owned B) -> @owned B // user: %6
+  %6 = unchecked_ref_cast %5 : $B to $C2          // users: %8, %11, %7
+  store %6 to %1 : $*C2                           // id: %7
+  strong_retain %6 : $C2                          // id: %8
+  destroy_addr %1 : $*C2                          // id: %9
+  dealloc_stack %1 : $*C2                         // id: %10
+  return %6 : $C2                                 // id: %11
+} // end sil function '$s14TypeHierarchy12C2CACycfc'
+
+// C2.deinit
+sil hidden @$s14TypeHierarchy12C2Cfd : $@convention(method) (@guaranteed C2) -> @owned Builtin.NativeObject {
+// %0                                             // users: %2, %1
+bb0(%0 : $C2):
+  debug_value %0 : $C2, let, name "self", argno 1 // id: %1
+  %2 = upcast %0 : $C2 to $B                      // user: %4
+  // function_ref B.deinit
+  %3 = function_ref @$s14TypeHierarchy11BCfd : $@convention(method) (@guaranteed B) -> @owned Builtin.NativeObject // user: %4
+  %4 = apply %3(%2) : $@convention(method) (@guaranteed B) -> @owned Builtin.NativeObject // users: %5, %6
+  %5 = unchecked_ref_cast %4 : $Builtin.NativeObject to $C2
+  return %4 : $Builtin.NativeObject               // id: %6
+} // end sil function '$s14TypeHierarchy12C2Cfd'
+
+// C2.__deallocating_deinit
+sil hidden @$s14TypeHierarchy12C2CfD : $@convention(method) (@owned C2) -> () {
+// %0                                             // users: %3, %1
+bb0(%0 : $C2):
+  debug_value %0 : $C2, let, name "self", argno 1 // id: %1
+  // function_ref C2.deinit
+  %2 = function_ref @$s14TypeHierarchy12C2Cfd : $@convention(method) (@guaranteed C2) -> @owned Builtin.NativeObject // user: %3
+  %3 = apply %2(%0) : $@convention(method) (@guaranteed C2) -> @owned Builtin.NativeObject // user: %4
+  %4 = unchecked_ref_cast %3 : $Builtin.NativeObject to $C2 // user: %5
+  dealloc_ref %4 : $C2                            // id: %5
+  %6 = tuple ()                                   // user: %7
+  return %6 : $()                                 // id: %7
+} // end sil function '$s14TypeHierarchy12C2CfD'
+
+// D.foo()
+sil hidden @$s14TypeHierarchy11DC3fooyyF : $@convention(method) (@guaranteed D) -> () {
+// %0                                             // user: %1
+bb0(%0 : $D):
+  debug_value %0 : $D, let, name "self", argno 1  // id: %1
+  %2 = tuple ()                                   // user: %3
+  return %2 : $()                                 // id: %3
+} // end sil function '$s14TypeHierarchy11DC3fooyyF'
+
+// D.bar()
+sil hidden @$s14TypeHierarchy11DC3baryyF : $@convention(method) (@guaranteed D) -> () {
+// %0                                             // user: %1
+bb0(%0 : $D):
+  debug_value %0 : $D, let, name "self", argno 1  // id: %1
+  %2 = tuple ()                                   // user: %3
+  return %2 : $()                                 // id: %3
+} // end sil function '$s14TypeHierarchy11DC3baryyF'
+
+// D.__allocating_init()
+sil hidden @$s14TypeHierarchy11DCACycfC : $@convention(method) (@thick D.Type) -> @owned D {
+bb0(%0 : $@thick D.Type):
+  %1 = alloc_ref $D                               // user: %3
+  // function_ref D.init()
+  %2 = function_ref @$s14TypeHierarchy11DCACycfc : $@convention(method) (@owned D) -> @owned D // user: %3
+  %3 = apply %2(%1) : $@convention(method) (@owned D) -> @owned D // user: %4
+  return %3 : $D                                  // id: %4
+} // end sil function '$s14TypeHierarchy11DCACycfC'
+
+// D.init()
+sil hidden @$s14TypeHierarchy11DCACycfc : $@convention(method) (@owned D) -> @owned D {
+// %0                                             // users: %2, %1
+bb0(%0 : $D):
+  debug_value %0 : $D, let, name "self", argno 1  // id: %1
+  return %0 : $D                                  // id: %2
+} // end sil function '$s14TypeHierarchy11DCACycfc'
+
+// D.deinit
+sil hidden @$s14TypeHierarchy11DCfd : $@convention(method) (@guaranteed D) -> @owned Builtin.NativeObject {
+// %0                                             // users: %2, %1
+bb0(%0 : $D):
+  debug_value %0 : $D, let, name "self", argno 1  // id: %1
+  %2 = unchecked_ref_cast %0 : $D to $Builtin.NativeObject // user: %3
+  return %2 : $Builtin.NativeObject               // id: %3
+} // end sil function '$s14TypeHierarchy11DCfd'
+
+// D.__deallocating_deinit
+sil hidden @$s14TypeHierarchy11DCfD : $@convention(method) (@owned D) -> () {
+// %0                                             // users: %3, %1
+bb0(%0 : $D):
+  debug_value %0 : $D, let, name "self", argno 1  // id: %1
+  // function_ref D.deinit
+  %2 = function_ref @$s14TypeHierarchy11DCfd : $@convention(method) (@guaranteed D) -> @owned Builtin.NativeObject // user: %3
+  %3 = apply %2(%0) : $@convention(method) (@guaranteed D) -> @owned Builtin.NativeObject // user: %4
+  %4 = unchecked_ref_cast %3 : $Builtin.NativeObject to $D // user: %5
+  dealloc_ref %4 : $D                             // id: %5
+  %6 = tuple ()                                   // user: %7
+  return %6 : $()                                 // id: %7
+} // end sil function '$s14TypeHierarchy11DCfD'
+
+// protocol witness for AnotherBase.bar() in conformance D
+sil private [transparent] [thunk] @$s14TypeHierarchy11DCAA11AnotherBaseA2aDP3baryyFTW : $@convention(witness_method: AnotherBase) (@in_guaranteed D) -> () {
+// %0                                             // user: %1
+bb0(%0 : $*D):
+  %1 = load %0 : $*D                              // users: %2, %3
+  %2 = class_method %1 : $D, #D.bar!1 : (D) -> () -> (), $@convention(method) (@guaranteed D) -> () // user: %3
+  %3 = apply %2(%1) : $@convention(method) (@guaranteed D) -> ()
+  %4 = tuple ()                                   // user: %5
+  return %4 : $()                                 // id: %5
+} // end sil function '$s14TypeHierarchy11DCAA11AnotherBaseA2aDP3baryyFTW'
+
+// protocol witness for Base.foo() in conformance D
+sil private [transparent] [thunk] @$s14TypeHierarchy11DCAA4BaseA2aDP3fooyyFTW : $@convention(witness_method: Base) (@in_guaranteed D) -> () {
+// %0                                             // user: %1
+bb0(%0 : $*D):
+  %1 = load %0 : $*D                              // users: %2, %3
+  %2 = class_method %1 : $D, #D.foo!1 : (D) -> () -> (), $@convention(method) (@guaranteed D) -> () // user: %3
+  %3 = apply %2(%1) : $@convention(method) (@guaranteed D) -> ()
+  %4 = tuple ()                                   // user: %5
+  return %4 : $()                                 // id: %5
+} // end sil function '$s14TypeHierarchy11DCAA4BaseA2aDP3fooyyFTW'
+
+// getBase(x:)
+sil hidden @$s14TypeHierarchy17getBase1xAA0D0_pSi_tF : $@convention(thin) (Int) -> @out Base {
+// %0                                             // users: %30, %24, %12
+// %1                                             // users: %4, %16, %2
+bb0(%0 : $*Base, %1 : $Int):
+  debug_value %1 : $Int, let, name "x", argno 1   // id: %2
+  %3 = integer_literal $Builtin.Int64, 0          // user: %5
+  %4 = struct_extract %1 : $Int, #Int._value      // user: %5
+  %5 = builtin "cmp_slt_Int64"(%3 : $Builtin.Int64, %4 : $Builtin.Int64) : $Builtin.Int1 // user: %6
+  %6 = struct $Bool (%5 : $Builtin.Int1)          // user: %7
+  %7 = struct_extract %6 : $Bool, #Bool._value    // user: %8
+  cond_br %7, bb1, bb2                            // id: %8
+
+bb1:                                              // Preds: bb0
+  %9 = metatype $@thick A.Type                    // user: %11
+  // function_ref A.__allocating_init()
+  %10 = function_ref @$s14TypeHierarchy11ACACycfC : $@convention(method) (@thick A.Type) -> @owned A // user: %11
+  %11 = apply %10(%9) : $@convention(method) (@thick A.Type) -> @owned A // user: %13
+  %12 = init_existential_addr %0 : $*Base, $A     // user: %13
+  store %11 to %12 : $*A                          // id: %13
+  br bb5                                          // id: %14
+
+bb2:                                              // Preds: bb0
+  %15 = integer_literal $Builtin.Int64, 0         // user: %17
+  %16 = struct_extract %1 : $Int, #Int._value     // user: %17
+  %17 = builtin "cmp_slt_Int64"(%16 : $Builtin.Int64, %15 : $Builtin.Int64) : $Builtin.Int1 // user: %18
+  %18 = struct $Bool (%17 : $Builtin.Int1)        // user: %19
+  %19 = struct_extract %18 : $Bool, #Bool._value  // user: %20
+  cond_br %19, bb3, bb4                           // id: %20
+
+bb3:                                              // Preds: bb2
+  %21 = metatype $@thick B.Type                   // user: %23
+  // function_ref B.__allocating_init()
+  %22 = function_ref @$s14TypeHierarchy11BCACycfC : $@convention(method) (@thick B.Type) -> @owned B // user: %23
+  %23 = apply %22(%21) : $@convention(method) (@thick B.Type) -> @owned B // user: %25
+  %24 = init_existential_addr %0 : $*Base, $B     // user: %25
+  store %23 to %24 : $*B                          // id: %25
+  br bb5                                          // id: %26
+
+bb4:                                              // Preds: bb2
+  %27 = metatype $@thick C.Type                   // user: %29
+  // function_ref C.__allocating_init()
+  %28 = function_ref @$s14TypeHierarchy11CCACycfC : $@convention(method) (@thick C.Type) -> @owned C // user: %29
+  %29 = apply %28(%27) : $@convention(method) (@thick C.Type) -> @owned C // user: %31
+  %30 = init_existential_addr %0 : $*Base, $C     // user: %31
+  store %29 to %30 : $*C                          // id: %31
+  br bb5                                          // id: %32
+
+bb5:                                              // Preds: bb4 bb3 bb1
+  %33 = tuple ()                                  // user: %34
+  return %33 : $()                                // id: %34
+} // end sil function '$s14TypeHierarchy17getBase1xAA0D0_pSi_tF'
+
+// Int.init(_builtinIntegerLiteral:)
+sil public_external [transparent] [serialized] @$sSi22_builtinIntegerLiteralSiBI_tcfC : $@convention(method) (Builtin.IntLiteral, @thin Int.Type) -> Int {
+// %0                                             // user: %2
+bb0(%0 : $Builtin.IntLiteral, %1 : $@thin Int.Type):
+  %2 = builtin "s_to_s_checked_trunc_IntLiteral_Int64"(%0 : $Builtin.IntLiteral) : $(Builtin.Int64, Builtin.Int1) // user: %3
+  %3 = tuple_extract %2 : $(Builtin.Int64, Builtin.Int1), 0 // user: %4
+  %4 = struct $Int (%3 : $Builtin.Int64)          // user: %5
+  return %4 : $Int                                // id: %5
+} // end sil function '$sSi22_builtinIntegerLiteralSiBI_tcfC'
+
+// static Int.> infix(_:_:)
+sil public_external [transparent] [serialized] @$sSi1goiySbSi_SitFZ : $@convention(method) (Int, Int, @thin Int.Type) -> Bool {
+// %0                                             // user: %4
+// %1                                             // user: %3
+bb0(%0 : $Int, %1 : $Int, %2 : $@thin Int.Type):
+  %3 = struct_extract %1 : $Int, #Int._value      // user: %5
+  %4 = struct_extract %0 : $Int, #Int._value      // user: %5
+  %5 = builtin "cmp_slt_Int64"(%3 : $Builtin.Int64, %4 : $Builtin.Int64) : $Builtin.Int1 // user: %6
+  %6 = struct $Bool (%5 : $Builtin.Int1)          // user: %7
+  return %6 : $Bool                               // id: %7
+} // end sil function '$sSi1goiySbSi_SitFZ'
+
+// static Int.< infix(_:_:)
+sil public_external [transparent] [serialized] @$sSi1loiySbSi_SitFZ : $@convention(method) (Int, Int, @thin Int.Type) -> Bool {
+// %0                                             // user: %3
+// %1                                             // user: %4
+bb0(%0 : $Int, %1 : $Int, %2 : $@thin Int.Type):
+  %3 = struct_extract %0 : $Int, #Int._value      // user: %5
+  %4 = struct_extract %1 : $Int, #Int._value      // user: %5
+  %5 = builtin "cmp_slt_Int64"(%3 : $Builtin.Int64, %4 : $Builtin.Int64) : $Builtin.Int1 // user: %6
+  %6 = struct $Bool (%5 : $Builtin.Int1)          // user: %7
+  return %6 : $Bool                               // id: %7
+} // end sil function '$sSi1loiySbSi_SitFZ'
+
+// getC(x:)
+sil hidden @$s14TypeHierarchy14getC1xAA1BCSi_tF : $@convention(thin) (Int) -> @owned B {
+// %0                                             // users: %3, %1
+bb0(%0 : $Int):
+  debug_value %0 : $Int, let, name "x", argno 1   // id: %1
+  %2 = integer_literal $Builtin.Int64, 0          // user: %4
+  %3 = struct_extract %0 : $Int, #Int._value      // user: %4
+  %4 = builtin "cmp_slt_Int64"(%2 : $Builtin.Int64, %3 : $Builtin.Int64) : $Builtin.Int1 // user: %5
+  %5 = struct $Bool (%4 : $Builtin.Int1)          // user: %6
+  %6 = struct_extract %5 : $Bool, #Bool._value    // user: %7
+  cond_br %6, bb1, bb2                            // id: %7
+
+bb1:                                              // Preds: bb0
+  %8 = metatype $@thick C.Type                    // user: %10
+  // function_ref C.__allocating_init()
+  %9 = function_ref @$s14TypeHierarchy11CCACycfC : $@convention(method) (@thick C.Type) -> @owned C // user: %10
+  %10 = apply %9(%8) : $@convention(method) (@thick C.Type) -> @owned C // user: %11
+  %11 = upcast %10 : $C to $B                     // user: %12
+  br bb3(%11 : $B)                                // id: %12
+
+bb2:                                              // Preds: bb0
+  %13 = metatype $@thick C2.Type                  // user: %15
+  // function_ref C2.__allocating_init()
+  %14 = function_ref @$s14TypeHierarchy12C2CACycfC : $@convention(method) (@thick C2.Type) -> @owned C2 // user: %15
+  %15 = apply %14(%13) : $@convention(method) (@thick C2.Type) -> @owned C2 // user: %16
+  %16 = upcast %15 : $C2 to $B                    // user: %17
+  br bb3(%16 : $B)                                // id: %17
+
+// %18                                            // user: %19
+bb3(%18 : $B):                                    // Preds: bb2 bb1
+  return %18 : $B                                 // id: %19
+} // end sil function '$s14TypeHierarchy14getC1xAA1BCSi_tF'
+
+sil_vtable A {
+  #A.foo!1: (A) -> () -> () : @$s14TypeHierarchy11AC3fooyyF	// A.foo()
+  #A.bar!1: (A) -> () -> () : @$s14TypeHierarchy11AC3baryyF	// A.bar()
+  #A.init!allocator.1: (A.Type) -> () -> A : @$s14TypeHierarchy11ACACycfC	// A.__allocating_init()
+  #A.deinit!deallocator.1: @$s14TypeHierarchy11ACfD	// A.__deallocating_deinit
+}
+
+sil_vtable B {
+  #B.foo!1: (B) -> () -> () : @$s14TypeHierarchy11BC3fooyyF	// B.foo()
+  #B.baz!1: (B) -> () -> () : @$s14TypeHierarchy11BC3bazyyF	// B.baz()
+  #B.init!allocator.1: (B.Type) -> () -> B : @$s14TypeHierarchy11BCACycfC	// B.__allocating_init()
+  #B.deinit!deallocator.1: @$s14TypeHierarchy11BCfD	// B.__deallocating_deinit
+}
+
+sil_vtable C {
+  #B.foo!1: (B) -> () -> () : @$s14TypeHierarchy11BC3fooyyF [inherited]	// B.foo()
+  #B.baz!1: (B) -> () -> () : @$s14TypeHierarchy11BC3bazyyF [inherited]	// B.baz()
+  #B.init!allocator.1: (B.Type) -> () -> B : @$s14TypeHierarchy11CCACycfC [override]	// C.__allocating_init()
+  #C.deinit!deallocator.1: @$s14TypeHierarchy11CCfD	// C.__deallocating_deinit
+}
+
+sil_vtable C2 {
+  #B.foo!1: (B) -> () -> () : @$s14TypeHierarchy11BC3fooyyF [inherited]	// B.foo()
+  #B.baz!1: (B) -> () -> () : @$s14TypeHierarchy11BC3bazyyF [inherited]	// B.baz()
+  #B.init!allocator.1: (B.Type) -> () -> B : @$s14TypeHierarchy12C2CACycfC [override]	// C2.__allocating_init()
+  #C2.deinit!deallocator.1: @$s14TypeHierarchy12C2CfD	// C2.__deallocating_deinit
+}
+
+sil_vtable D {
+  #D.foo!1: (D) -> () -> () : @$s14TypeHierarchy11DC3fooyyF	// D.foo()
+  #D.bar!1: (D) -> () -> () : @$s14TypeHierarchy11DC3baryyF	// D.bar()
+  #D.init!allocator.1: (D.Type) -> () -> D : @$s14TypeHierarchy11DCACycfC	// D.__allocating_init()
+  #D.deinit!deallocator.1: @$s14TypeHierarchy11DCfD	// D.__deallocating_deinit
+}
+
+sil_witness_table hidden A: Base module TypeHierarchy1 {
+  method #Base.foo!1: <Self where Self : Base> (Self) -> () -> () : @$s14TypeHierarchy11ACAA4BaseA2aDP3fooyyFTW	// protocol witness for Base.foo() in conformance A
+}
+
+sil_witness_table hidden A: AnotherBase module TypeHierarchy1 {
+  base_protocol Base: A: Base module TypeHierarchy1
+  method #AnotherBase.bar!1: <Self where Self : AnotherBase> (Self) -> () -> () : @$s14TypeHierarchy11ACAA11AnotherBaseA2aDP3baryyFTW	// protocol witness for AnotherBase.bar() in conformance A
+}
+
+sil_witness_table hidden B: Base module TypeHierarchy1 {
+  method #Base.foo!1: <Self where Self : Base> (Self) -> () -> () : @$s14TypeHierarchy11BCAA4BaseA2aDP3fooyyFTW	// protocol witness for Base.foo() in conformance B
+}
+
+sil_witness_table hidden D: AnotherBase module TypeHierarchy1 {
+  base_protocol Base: D: Base module TypeHierarchy1
+  method #AnotherBase.bar!1: <Self where Self : AnotherBase> (Self) -> () -> () : @$s14TypeHierarchy11DCAA11AnotherBaseA2aDP3baryyFTW	// protocol witness for AnotherBase.bar() in conformance D
+}
+
+sil_witness_table hidden D: Base module TypeHierarchy1 {
+  method #Base.foo!1: <Self where Self : Base> (Self) -> () -> () : @$s14TypeHierarchy11DCAA4BaseA2aDP3fooyyFTW	// protocol witness for Base.foo() in conformance D
+}
+
+
+

@@ -10,6 +10,7 @@
 
 package ca.ualberta.maple.swan.parser
 
+import ca.ualberta.maple.swan.parser.SILFunctionAttribute.specialize.Kind
 import ca.ualberta.maple.swan.parser.SILFunctionAttribute.{FunctionEffects, FunctionInlining, FunctionOptimization, FunctionPurpose, Thunk}
 
 // Many printX will return the description for convenience.
@@ -153,6 +154,7 @@ class SILPrinter extends Printer {
       }
       case SILOperator.allocBox(tpe, attributes) => {
         print("alloc_box ")
+        if (tpe.isInstanceOf[SILType.genericType]) print("$")
         print(tpe)
         print(whenEmpty = false, ", ", attributes, ", ", "", (a: SILDebugAttribute) => print(a))
       }
@@ -290,6 +292,14 @@ class SILPrinter extends Printer {
       }
       case SILOperator.strongRelease(operand) => {
         print("strong_release ")
+        print(operand)
+      }
+      case SILOperator.copyUnownedValue(operand) => {
+        print("copy_unowned_value ")
+        print(operand)
+      }
+      case SILOperator.unownedRetain(operand) => {
+        print("unowned_retain ")
         print(operand)
       }
       case SILOperator.loadWeak(take: Boolean, operand) => {
@@ -905,7 +915,7 @@ class SILPrinter extends Printer {
         print(unwindLabel)
       }
       case SILTerminator.unwind => {
-        print("unwind ")
+        print("unwind")
       }
       case SILTerminator.br(label, operands) => {
         print("br ")
@@ -1036,6 +1046,7 @@ class SILPrinter extends Printer {
     print(": ")
     if (vEntry.tpe.nonEmpty) { naked(vEntry.tpe.get); print(" ") }
     print(": ", vEntry.tpe.nonEmpty)
+    if (vEntry.linkage.nonEmpty) print(vEntry.linkage.get)
     print(vEntry.functionName)
     print(" ", vEntry.kind != SILVTableEntryKind.normal)
     print(vEntry.kind)
@@ -1122,11 +1133,13 @@ class SILPrinter extends Printer {
   def print(protocolConformance: SILProtocolConformance): Unit = {
     protocolConformance match {
       case SILProtocolConformance.normal(pc) => print(pc)
-      case SILProtocolConformance.inherit(pc) => {
+      case SILProtocolConformance.inherit(tpe, pc) => {
+        naked(tpe)
+        print(": ")
         print("inherit ")
-        print("( ")
+        print("(")
         print(pc)
-        print(" )")
+        print(")")
       }
       case SILProtocolConformance.specialize(substitutions, pc) => {
         print("specialize " )
@@ -1402,10 +1415,22 @@ class SILPrinter extends Printer {
         literal(value)
         print("]")
       }
-      case SILFunctionAttribute.specialize(value) => {
+      case SILFunctionAttribute.specialize(exported, kind, reqs) => {
         print("[_specialize ")
-        literal(value)
-        print("]")
+        if (exported.nonEmpty) {
+          print("exported: ")
+          print(exported.get)
+          print(", ")
+        }
+        if (kind.nonEmpty) {
+          print("kind: ")
+          kind.get match {
+            case Kind.full => print("full")
+            case Kind.partial =>print("partial")
+          }
+          print(", ")
+        }
+        print(whenEmpty = true, "where ", reqs, ",", "]", (t: SILTypeRequirement) => print(t))
       }
       case SILFunctionAttribute.clang(value) => {
         print("[clang ")
@@ -1578,9 +1603,13 @@ class SILPrinter extends Printer {
       case SILType.selfTypeOptional => {
         print("Self?")
       }
-      case SILType.specializedType(tpe, args) => {
+      case SILType.specializedType(tpe, args, optional) => {
         naked(tpe)
+        if (tpe.isInstanceOf[SILType.varType]) {
+          print(" ")
+        }
         print(whenEmpty = true, "<", args, ", ", ">", (t: SILType) => naked(t))
+        print("?", when = optional)
       }
       case SILType.arrayType(arguments, nakedStyle, optional) => {
         if (nakedStyle) {

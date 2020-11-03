@@ -12,6 +12,8 @@ package ca.ualberta.maple.swan.parser
 
 import java.nio.file.Path
 
+import ca.ualberta.maple.swan.parser.SILFunctionAttribute.specialize.Kind
+
 import scala.collection.mutable.ArrayBuffer
 import sys.process._
 
@@ -114,9 +116,11 @@ object SILOperator {
   case class strongRetain(operand: SILOperand) extends SILOperator
   case class strongRelease(operand: SILOperand) extends SILOperator
   // NSIP: set_deallocating
+  // This is an old (outdated) instruction.
+  case class copyUnownedValue(operand: SILOperand) extends SILOperator
   // NSIP: strong_copy_unowned_value
   // NSIP: strong_retain_unowned
-  // NSIP: unowned_retain
+  case class unownedRetain(operand: SILOperand) extends SILOperator
   // NSIP: unowned_release
   case class loadWeak(take: Boolean, operand: SILOperand) extends SILOperator
   case class storeWeak(from: String, initialization: Boolean, to: SILOperand) extends SILOperator
@@ -491,7 +495,15 @@ object SILFunctionAttribute {
     case object releasenone extends FunctionEffects
   }
   case class semantics(value: String) extends SILFunctionAttribute
-  case class specialize(value: String) extends SILFunctionAttribute
+  case class specialize(exported: Option[Boolean], kind: Option[Kind],
+                        reqs: Array[SILTypeRequirement]) extends SILFunctionAttribute
+  object specialize {
+    sealed trait Kind
+    object Kind {
+      case object full extends Kind
+      case object partial extends Kind
+    }
+  }
   case class clang(value: String) extends SILFunctionAttribute
 }
 
@@ -550,7 +562,7 @@ object SILType {
   case class namedArgType(name: String, tpe: SILType, squareBrackets: Boolean) extends SILType
   case object selfType extends SILType
   case object selfTypeOptional extends SILType
-  case class specializedType(tpe: SILType, arguments: Array[SILType]) extends SILType
+  case class specializedType(tpe: SILType, arguments: Array[SILType], optional: Boolean) extends SILType
   case class arrayType(arguments: Array[SILType], nakedStyle: Boolean, optional: Boolean) extends SILType
   case class tupleType(parameters: Array[SILType], optional: Boolean) extends SILType
   case class withOwnership(attribute: SILTypeAttribute, tpe: SILType) extends SILType
@@ -652,7 +664,7 @@ object SILVTableEntryKind {
 }
 
 class SILVEntry(val declRef: SILDeclRef, val tpe: Option[SILType], val kind: SILVTableEntryKind,
-                val nonoverridden: Boolean, val functionName: SILMangledName)
+                val nonoverridden: Boolean, val linkage: Option[SILLinkage], val functionName: SILMangledName)
 
 sealed trait SILWitnessEntry
 object SILWitnessEntry {
@@ -667,7 +679,8 @@ class SILNormalProtocolConformance(val tpe: SILType, val protocol: String, val m
 sealed trait SILProtocolConformance
 object SILProtocolConformance {
   case class normal(pc: SILNormalProtocolConformance) extends SILProtocolConformance
-  case class inherit(pc: SILProtocolConformance) extends SILProtocolConformance
+  // Not consistent with SIL.rst.
+  case class inherit(tpe: SILType, pc: SILProtocolConformance) extends SILProtocolConformance
   case class specialize(substitutions: Array[SILType], pc: SILProtocolConformance) extends SILProtocolConformance
   case object dependent extends SILProtocolConformance
 }

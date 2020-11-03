@@ -22,21 +22,28 @@ public class TestUtils {
 
     // Account for any known transformations that the parser does,
     // such as superficial type conversions, here.
-    static String doReplacements(String inst) {
+    static String doReplacements(String line) {
         //inst = inst.replaceAll("\\[([a-zA-Z0-9]+)\\]", "Array<$1>");
-        if (inst.startsWith("func ")) {
+        if (line.startsWith("func ")) {
             return "";
         }
-        if (inst.contains("{ get set }")) {
+        if (line.startsWith("@_hasStorage")) {
             return "";
         }
-        if (inst.startsWith("sil_property ")) { // Remove this because it's not supported yet
+        if (line.startsWith("typealias")) {
             return "";
         }
-        inst = inst.replace(" -> (@error Error)", " -> @error Error");
-        inst = inst.split("//")[0];
-        inst = inst.replaceAll("\\s+$", ""); // right trim
-        return inst;
+        if (line.contains("{ get set }")) {
+            return "";
+        }
+        if (line.startsWith("sil_property ")) { // Remove this because it's not supported yet
+            return "";
+        }
+        line = line.replace("unwind ,", "unwind,");
+        line = line.replace(" -> (@error Error)", " -> @error Error");
+        line = line.split("//")[0];
+        line = line.replaceAll("\\s+$", ""); // right trim
+        return line;
     }
 
     static String readFile(File file) throws IOException {
@@ -49,11 +56,25 @@ public class TestUtils {
         StringBuilder result = new StringBuilder();
         ArrayList<String> scopes = new ArrayList<String>();
         String line;
+        boolean delete = false;
         while((line = reader.readLine()) != null) {
             // Empty line, preserve empty lines
             if (line.trim().isEmpty() && !result.toString().endsWith("\n\n") && emptyLines) {
                 result.append(System.lineSeparator());
                 continue;
+            }
+            if (delete) {
+                if (line.equals("}")) {
+                    delete = false;
+                }
+                line = "";
+            } else if (line.startsWith("struct") ||
+                       line.startsWith("protocol") ||
+                       line.startsWith("final class") ||
+                       line.startsWith("class") ||
+                       line.startsWith("extension")) {
+                line = "";
+                delete = true;
             }
             line = doReplacements(line);
             // For commented out lines

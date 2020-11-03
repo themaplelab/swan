@@ -7,6 +7,7 @@
 %5 = alloc_ref_dynamic [objc] %4 : $@objc_metatype Gizmo.Type, $Gizmo
 %2 = alloc_ref_dynamic %1 : $@thick A.Type, $A
 
+%52 = alloc_box $<τ_0_0><τ_1_0 where τ_0_0 == τ_1_0.Element, τ_1_0 : ObserverType> { var τ_1_0 } <Element, Observer>, loc "/Users/tiganov/Documents/RxSwift/RxSwift/Observables/Producer.swift":24:65, scope 26 // users: %55, %53
 %182 = alloc_box ${ var @sil_weak Optional<CardCell> }, loc "/Users/abdulalib/Documents/swan-spds/benchmark/mobile-ios-vipergame/Memory/Modules/Game/User Interface/View/CardCell.swift":65:76, scope 1144 // users: %204, %199, %191, %186, %183
 
 %0 = alloc_value_buffer $Int in %b : $*Builtin.UnsafeValueBuffer
@@ -47,6 +48,8 @@ strong_retain %0 : $Builtin.BridgeObject, loc "<compiler-generated>":0:0, scope 
 
 strong_release %21 : $@convention(block) () -> (), loc "<compiler-generated>":0:0, scope 876 // id: %51
 
+unowned_retain %13 : $@sil_unowned TimerOneOffSink<Observer>
+
 %14 = load_weak %13 : $*@sil_weak Optional<UILabel>, scope 1225 // users: %26, %17
 
 store_weak %54 to [initialization] %53 : $*@sil_weak Optional<UIViewController>, loc "/Users/abdulalib/Documents/swan-spds/benchmark/mobile-ios-vipergame/Memory/Utilities/ErrorAlert.swift":35:42, scope 843 // id: %55
@@ -64,6 +67,8 @@ store_unowned %1 to %0 : $*@sil_unowned C
 
 // Missing "copy_block_without_escaping"
 
+// Has a complex type
+%50 = function_ref @$s7RxSwift8ProducerC9subscribeyAA10Disposable_pqd__7ElementQyd__RszAA12ObserverTypeRd__lFAaE_pyt_tcfU_ : $@convention(thin) <τ_0_0><τ_1_0 where τ_0_0 == τ_1_0.Element, τ_1_0 : ObserverType> (@guaranteed Producer<τ_0_0>, @guaranteed <τ_0_0><τ_1_0 where τ_0_0 == τ_1_0.Element, τ_1_0 : ObserverType> { var τ_1_0 } <τ_0_0, τ_1_0>) -> @out Disposable
 %32 = function_ref @$sSS10FoundationE19_bridgeToObjectiveCSo8NSStringCyF : $@convention(method) (@guaranteed String) -> @owned NSString, scope 901 // user: %33
 
 %0 = dynamic_function_ref @test_dynamically_replaceable : $@convention(thin) () -> ()
@@ -79,7 +84,7 @@ store_unowned %1 to %0 : $*@sil_unowned C
 
 %17 = string_literal utf8 "Fatal error", scope 326 // user: %19
 
-// Missing "class_method"
+%23 = class_method %0 : $VirtualTimeScheduler<Converter>, #VirtualTimeScheduler.findNext!1 : <Converter where Converter : VirtualTimeConverterType> (VirtualTimeScheduler<Converter>) -> () -> VirtualSchedulerItem<Converter.VirtualTimeUnit>?, $@convention(method) <τ_0_0 where τ_0_0 : VirtualTimeConverterType> (@guaranteed VirtualTimeScheduler<τ_0_0>) -> @owned Optional<VirtualSchedulerItem<τ_0_0.VirtualTimeUnit>>, loc "/Users/tiganov/Documents/RxSwift/RxSwift/Schedulers/VirtualTimeScheduler.swift":139:35, scope 3717 // user: %24
 
 %35 = objc_method %33 : $UIViewController, #UIViewController.present!1.foreign : (UIViewController) -> (UIViewController, Bool, (() -> ())?) -> (), $@convention(objc_method) (UIViewController, Bool, Optional<@convention(block) () -> ()>, UIViewController) -> (), loc "/Users/abdulalib/Documents/swan-spds/benchmark/mobile-ios-vipergame/Memory/Utilities/ErrorAlert.swift":36:19, scope 1786 // user: %36
 
