@@ -10,9 +10,11 @@
 
 package ca.ualberta.maple.swan.ir.raw
 
-import ca.ualberta.maple.swan.ir.Exceptions.{ExperimentalException, UnexpectedSILFormatException, UnexpectedSILTypeBehaviourException}
-import ca.ualberta.maple.swan.ir.{Argument, Position, Type}
+import ca.ualberta.maple.swan.ir.Exceptions.{UnexpectedSILFormatException, UnexpectedSILTypeBehaviourException}
+import ca.ualberta.maple.swan.ir.{Position, Type}
 import ca.ualberta.maple.swan.parser._
+
+import scala.collection.mutable.ArrayBuffer
 
 object Utils {
 
@@ -24,17 +26,59 @@ object Utils {
     new SILPrinter()
   }
 
-  // SIL $T to SWANIR $T
+  // SIL $T to SWIRL $T
   def SILTypeToType(rootTpe: SILType): Type = {
     new Type(printer.naked(rootTpe))
   }
 
-  // SIL $T to SWANIR $*T
+  // SIL $T to SWIRL $*T
   def SILTypeToPointerType(rootTpe: SILType): Type = {
     new Type(printer.naked(SILType.addressType(rootTpe)))
   }
 
-  // SIL $*T to SWANIR $T
+  def getFunctionTypeFromType(rootTpe: SILType): SILType.functionType = {
+    var curType = rootTpe
+    def unexpected(): Nothing = {
+      throw new UnexpectedSILFormatException("Unexpected SIL function type")
+    }
+    // Not all handled types are necessarily expected.
+    while (!curType.isInstanceOf[SILType.functionType]) {
+      curType match {
+        case SILType.addressType(tpe) => curType = tpe
+        case SILType.attributedType(_, tpe) => curType = tpe
+        case SILType.coroutineTokenType => unexpected()
+        case SILType.functionType(_, _, _, _) => unexpected()
+        case SILType.genericType(_, _, tpe) => curType = tpe
+        case SILType.namedType(_) => unexpected()
+        case SILType.selectType(tpe, _) => curType = tpe
+        case SILType.namedArgType(_, tpe, _) => curType = tpe
+        case SILType.selfType => unexpected()
+        case SILType.selfTypeOptional => unexpected()
+        case SILType.specializedType(tpe, _, _) => curType = tpe
+        case SILType.arrayType(_, _, _) => unexpected()
+        case SILType.tupleType(_, _) => unexpected()
+        case SILType.withOwnership(_, tpe) => curType = tpe
+        case SILType.varType(tpe) => curType = tpe
+      }
+    }
+    curType.asInstanceOf[SILType.functionType]
+  }
+
+  def SILFunctionTypeToReturnType(rootTpe: SILType): Type = {
+    val tpe = getFunctionTypeFromType(rootTpe)
+    SILTypeToType(tpe.result)
+  }
+
+  def SILFunctionTypeToParamTypes(rootTpe: SILType): Array[Type] = {
+    val tpe = getFunctionTypeFromType(rootTpe)
+    val params = new ArrayBuffer[Type]()
+    tpe.parameters.foreach(t => {
+      params.append(SILTypeToType(t))
+    })
+    params.toArray
+  }
+
+  // SIL $*T to SWIRL $T
   @throws[UnexpectedSILTypeBehaviourException]
   def SILPointerTypeToType(tpe: SILType): Type = {
     if (!tpe.isInstanceOf[SILType.addressType]) {
@@ -48,7 +92,7 @@ object Utils {
     0 // TODO: Temp
   }
 
-  // SIL $(T...), 123 to SWANIR type of the selected element using "123"
+  // SIL $(T...), 123 to SWIRL type of the selected element using "123"
   // pointer specifies whether the type is a pointer (tuple_element_addr case)
   @throws[UnexpectedSILTypeBehaviourException]
   @throws[UnexpectedSILFormatException]
@@ -95,7 +139,7 @@ object Utils {
 
   def SILTupleElementsToType(elements: SILTupleElements): Type = {
     elements match {
-      case SILTupleElements.labeled(tpe: SILType, values: Array[String]) => {
+      case SILTupleElements.labeled(tpe: SILType, _) => {
         SILTypeToType(tpe)
       }
       case SILTupleElements.unlabeled(operands: Array[SILOperand]) => {
@@ -130,7 +174,7 @@ object Utils {
   }
 
   def print(tpe: SILType): String = {
-    printer.naked(tpe);
+    printer.naked(tpe)
   }
 
   def print(declRef: SILDeclRef): String = {

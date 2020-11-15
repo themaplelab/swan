@@ -67,37 +67,37 @@ store_unowned %1 to %0 : $*@sil_unowned C ~ pointer_write %1 to %0
 
 %0 = prev_dynamic_function_ref @test_dynamic_replacement_for : $@convention(thin) () -> () ~ %0 = function_ref @`test_dynamic_replacement_for`, $`@convention(thin) () -> ()`
 
-%91 = global_addr @globalinit_33_09824A4F0B3ADFC1D63FE8FD1BE2AC3B_token1 : $*Builtin.Word ~ %91 = assign_global @globalinit_33_09824A4F0B3ADFC1D63FE8FD1BE2AC3B_token1, $`*Builtin.Word`
+%91 = global_addr @globalinit_33_09824A4F0B3ADFC1D63FE8FD1BE2AC3B_token1 : $*Builtin.Word ~ %91 = singleton_read `globalinit_33_09824A4F0B3ADFC1D63FE8FD1BE2AC3B_token1` from Globals, $`*Builtin.Word`
 
-%68 = integer_literal $Builtin.Int64, 0 ~ %68 = literal [int] #0, $`Builtin.Int64`
+%68 = integer_literal $Builtin.Int64, 0 ~ %68 = literal [int] 0, $`Builtin.Int64`
 
-%2 = float_literal $Builtin.FPIEEE64, 0x400921FB54442D18 ~ %2 = literal [float] #0.0, $`Builtin.FPIEEE64`
+%2 = float_literal $Builtin.FPIEEE64, 0x400921FB54442D18 ~ %2 = literal [float] 0.0, $`Builtin.FPIEEE64`
 
-%17 = string_literal utf8 "Fatal error" ~ %17 = literal [string] #"Fatal error", $`$Builtin.RawPointer`
+%17 = string_literal utf8 "Fatal error" ~ %17 = literal [string] "Fatal error", $`$Builtin.RawPointer`
 
 # Dynamic dispatch expected SWANIR is empty because these rely on v/witness table information.
 # A separate test is needed for dynamic dispatch instruction testing.
 
-%35 = objc_method %33 : $UIViewController, #UIViewController.present!1.foreign : (UIViewController) -> (UIViewController, Bool, (() -> ())?) -> (), $@convention(objc_method) (UIViewController, Bool, Optional<@convention(block) () -> ()>, UIViewController) -> () ~ %35 = builtin_ref [decl] "#UIViewController.present!1.foreign", $`@convention(objc_method) (UIViewController, Bool, Optional<@convention(block) () -> ()>, UIViewController) -> ()`
+%35 = objc_method %33 : $UIViewController, #UIViewController.present!1.foreign : (UIViewController) -> (UIViewController, Bool, (() -> ())?) -> (), $@convention(objc_method) (UIViewController, Bool, Optional<@convention(block) () -> ()>, UIViewController) -> () ~ %35 = builtin_ref @`#UIViewController.present!1.foreign`, $`@convention(objc_method) (UIViewController, Bool, Optional<@convention(block) () -> ()>, UIViewController) -> ()`
 
-%45 = objc_super_method %1 : $CardCell, #UICollectionViewCell.init!initializer.1.foreign : (UICollectionViewCell.Type) -> (NSCoder) -> UICollectionViewCell?, $@convention(objc_method) (NSCoder, @owned UICollectionViewCell) -> @owned Optional<UICollectionViewCell> ~ %45 = builtin_ref [decl] "UICollectionViewCell.init", $`@convention(objc_method) (NSCoder, @owned UICollectionViewCell) -> @owned Optional<UICollectionViewCell>`
+%45 = objc_super_method %1 : $CardCell, #UICollectionViewCell.init!initializer.1.foreign : (UICollectionViewCell.Type) -> (NSCoder) -> UICollectionViewCell?, $@convention(objc_method) (NSCoder, @owned UICollectionViewCell) -> @owned Optional<UICollectionViewCell> ~ %45 = builtin_ref @`#UICollectionViewCell.init!initializer.1.foreign`, $`@convention(objc_method) (NSCoder, @owned UICollectionViewCell) -> @owned Optional<UICollectionViewCell>`
 
 %52 = witness_method $DispatchWorkItemFlags, #SetAlgebra.init!allocator.1 : <Self where Self : SetAlgebra><S where S : Sequence, Self.Element == S.Element> (Self.Type) -> (__owned S) -> Self : $@convention(witness_method: SetAlgebra) <τ_0_0 where τ_0_0 : SetAlgebra><τ_1_0 where τ_1_0 : Sequence, τ_0_0.Element == τ_1_0.Element> (@in τ_1_0, @thick τ_0_0.Type) -> @out τ_0_0 ~ NOP
 witness_method $Self, #Comparable."<="!1 : <Self where Self : Comparable> (Self.Type) -> (Self, Self) -> Bool : $@convention(witness_method: Comparable) <τ_0_0 where τ_0_0 : Comparable> (@in_guaranteed τ_0_0, @in_guaranteed τ_0_0, @thick τ_0_0.Type) -> Bool ~ NOP
 
-%149 = apply %148<[Int], PartialRangeFrom<Int>>(%143, %146, %144) : $@convention(method) <τ_0_0 where τ_0_0 : MutableCollection><τ_1_0 where τ_1_0 : RangeExpression, τ_0_0.Index == τ_1_0.Bound> (@in_guaranteed τ_1_0, @in_guaranteed τ_0_0) -> @out τ_0_0.SubSequence ~ %149 = apply %148(%143, %146, %144), $`@convention(method) <τ_0_0 where τ_0_0 : MutableCollection><τ_1_0 where τ_1_0 : RangeExpression, τ_0_0.Index == τ_1_0.Bound> (@in_guaranteed τ_1_0, @in_guaranteed τ_0_0) -> @out τ_0_0.SubSequence`
-%59 = apply %58(%34, %35, %41, %33, %25) : $@convention(method) (@guaranteed Optional<DispatchGroup>, @in_guaranteed DispatchQoS, @in_guaranteed DispatchWorkItemFlags, @guaranteed @convention(block) () -> (), @guaranteed DispatchQueue) -> () ~ %59 = apply %58(%34, %35, %41, %33, %25), $`@convention(method) (@guaranteed Optional<DispatchGroup>, @in_guaranteed DispatchQoS, @in_guaranteed DispatchWorkItemFlags, @guaranteed @convention(block) () -> (), @guaranteed DispatchQueue) -> ()`
+%149 = apply %148<[Int], PartialRangeFrom<Int>>(%143, %146, %144) : $@convention(method) <τ_0_0 where τ_0_0 : MutableCollection><τ_1_0 where τ_1_0 : RangeExpression, τ_0_0.Index == τ_1_0.Bound> (@in_guaranteed τ_1_0, @in_guaranteed τ_0_0) -> @out τ_0_0.SubSequence ~ %149 = apply %148(%143, %146, %144), $`@out τ_0_0.SubSequence`
+%59 = apply %58(%34, %35, %41, %33, %25) : $@convention(method) (@guaranteed Optional<DispatchGroup>, @in_guaranteed DispatchQoS, @in_guaranteed DispatchWorkItemFlags, @guaranteed @convention(block) () -> (), @guaranteed DispatchQueue) -> () ~ %59 = apply %58(%34, %35, %41, %33, %25), $`()`
 
-(%38, %39) = begin_apply %16<C>(%34, %36) : $@yield_once @convention(witness_method: Collection) <τ_0_0 where τ_0_0 : Collection> (@in_guaranteed τ_0_0.Index, @in_guaranteed τ_0_0) -> @yields @in_guaranteed τ_0_0.Element ~
+(%38, %39) = begin_apply %16<C>(%34, %36) : $@yield_once @convention(witness_method: Collection) <τ_0_0 where τ_0_0 : Collection> (@in_guaranteed τ_0_0.Index, @in_guaranteed τ_0_0) -> @yields @in_guaranteed τ_0_0.Element ~ %38 = apply %16(%34, %36), $`@yields @in_guaranteed τ_0_0.Element`
 
-abort_apply %6 ~ abort_coroutine %6
+abort_apply %6 ~ NOP
 
-end_apply %22 ~ end_coroutine %22
+end_apply %22 ~ NOP
 
 %57 = partial_apply [callee_guaranteed] %56(%52, %27, %3, %4) : $@convention(thin) (@guaranteed { var @sil_weak Optional<UIViewController> }, @guaranteed UIAlertController, Bool, @guaranteed Optional<@callee_guaranteed () -> ()>) -> () ~
 %5 = partial_apply [callee_guaranteed] [on_stack] %4<Element, R>(%1) : $@convention(thin) <τ_0_0><τ_1_0> (UnsafeBufferPointer<τ_0_0>, @noescape @callee_guaranteed (UnsafeBufferPointer<τ_0_0>) -> (@out τ_1_0, @error Error)) -> (@out τ_1_0, @error Error) ~
 
-%24 = builtin "assumeNonNegative_Int64"(%23 : $Builtin.Int64) : $Builtin.Int64 ~ %24_i_0 = builtin_ref "assumeNonNegative_Int64", $`Any` ::: %24 = apply %24_i_0(%23), $`Builtin.Int64`
+%24 = builtin "assumeNonNegative_Int64"(%23 : $Builtin.Int64) : $Builtin.Int64 ~ %24_i_0 = builtin_ref @`assumeNonNegative_Int64`, $`Any` ::: %24 = apply %24_i_0(%23), $`Builtin.Int64`
 
 %106 = metatype $@thick AnyObject.Protocol ~ %106 = new $`@thick AnyObject.Protocol`
 %10 = metatype $@objc_metatype Bundle.Type ~ %10 = new $`@objc_metatype Bundle.Type`
@@ -136,16 +136,16 @@ autorelease_value %4 : $Optional<Hive> ~ NOP
 
 %initval = object $GlobalObject (%0 : $Builtin.Int64, [tail_elems] %1 : $Builtin.Int64, %1 : $Builtin.Int64) ~ %initval = new $`GlobalObject`
 
-%19 = ref_element_addr %18 : $__ContiguousArrayStorageBase, #__ContiguousArrayStorageBase.countAndCapacity ~ %19 = field_read %18, countAndCapacity, $`*Any`
+%19 = ref_element_addr %18 : $__ContiguousArrayStorageBase, #__ContiguousArrayStorageBase.countAndCapacity ~ %19 = field_read [alias] %18, countAndCapacity, $`*Any`
 
-%15 = enum $Optional<GameInteractorInputProtocol>, #Optional.none!enumelt ~ %15 = new $`Optional<GameInteractorInputProtocol>` ::: %15_i_0 = literal [string] #"#Optional.none!enumelt", $`Builtin.RawPointer` ::: field_write %15_i_0 to %15, type
-%41 = enum $Optional<String>, #Optional.some!enumelt, %40 : $String ~ %41 = new $`Optional<String>` ::: %41_i_0 = literal [string] #"#Optional.some!enumelt", $`Builtin.RawPointer` ::: field_write %41_i_0 to %41, type ::: field_write %40 to %41, data
+%15 = enum $Optional<GameInteractorInputProtocol>, #Optional.none!enumelt ~ %15 = new $`Optional<GameInteractorInputProtocol>` ::: %15_i_0 = literal [string] "#Optional.none!enumelt", $`Builtin.RawPointer` ::: field_write %15_i_0 to %15, type
+%41 = enum $Optional<String>, #Optional.some!enumelt, %40 : $String ~ %41 = new $`Optional<String>` ::: %41_i_0 = literal [string] "#Optional.some!enumelt", $`Builtin.RawPointer` ::: field_write %41_i_0 to %41, type ::: field_write %40 to %41, data
 
 %34 = unchecked_enum_data %18 : $Optional<FloatingPointSign>, #Optional.some!enumelt.1 ~ %34 = field_read %18, data, $`Any`
 
 %15 = init_enum_data_addr %0 : $*Optional<Self.Element>, #Optional.some!enumelt.1 ~ %15 = field_read [alias] %0, data, $`*Any`
 
-inject_enum_addr %0 : $*Optional<Self>, #Optional.some!enumelt.1 ~ %0_i_0 = literal [string] #"#Optional.some!enumelt.1", $`Builtin.RawPointer` ::: field_write %0_i_0 to %0, type
+inject_enum_addr %0 : $*Optional<Self>, #Optional.some!enumelt.1 ~ %0_i_0 = literal [string] "#Optional.some!enumelt.1", $`Builtin.RawPointer` ::: field_write %0_i_0 to %0, type
 
 %112 = unchecked_take_enum_data_addr %84 : $*Optional<S.Element>, #Optional.some!enumelt.1 ~ %112 = field_read [alias] %84, data, $`*Any`
 
@@ -243,7 +243,7 @@ switch_enum %1 : $Either, case #Either.left!enumelt: bb1, default bb2 ~ switch_e
 
 switch_enum_addr %52 : $*Optional<S.Element>, case #Optional.some!enumelt.1: bb8, case #Optional.none!enumelt: bb7 ~ %52_i_0 = pointer_read %52, $`Optional<S.Element>` ::: switch_enum %52_i_0, case #Optional.some!enumelt.1 : bb8, case #Optional.none!enumelt : bb7
 
-dynamic_method_br %0 : $ProtocolA, #ProtocolA.funcA!foreign, bb1, bb2 ~ %0_i_0 = unary_op [arb] %0, $`Builtin.Int1` ::: cond_br %0_i_0, true bb1, false bb2
+dynamic_method_br %0 : $ProtocolA, #ProtocolA.funcA!foreign, bb1, bb2 ~ %0_i_1 = unary_op [arb] %0, $`Builtin.Int1` ::: cond_br %0_i_1, true bb1, false bb2
 dynamic_method_br %2 : $@opened("01234567-89ab-cdef-0123-000000000000") AnyObject, #X.f!foreign, bb1, bb2 ~ %2_i_0 = unary_op [arb] %2, $`Builtin.Int1` ::: cond_br %2_i_0, true bb1, false bb2
 
 checked_cast_br %33 : $AnyObject to $NSDictionary, bb6, bb7 ~ %33_i_0 = unary_op [arb] %33, $`Builtin.Int1` ::: cond_br %33_i_0, true bb6, false bb7

@@ -15,11 +15,11 @@ package ca.ualberta.maple.swan.ir
 // Dumb thing about Scala is there are no checked exceptions.
 // Just try to annotate as best as possible. We want interoperability
 // with Java. Annoyingly, also need to annotate callers if they don't
-// catch callee exceptions.
+// catch callee exceptions. TODO: Find a better way to handle exceptions.
 object Exceptions {
 
   // Deeper (dataflow semantic) problems such as value never allocated.
-  class IncompleteRawSWANIRException(message: String) extends Exception(message) {
+  class IncompleteRawSWIRLException(message: String) extends Exception(message) {
     def this(message: String, cause: Throwable) = {
       this(message)
       initCause(cause)
@@ -50,8 +50,8 @@ object Exceptions {
     }
   }
 
-  // Incorrect SWANIR data structure construction
-  class IncorrectSWANIRStructureException(message: String) extends Exception(message) {
+  // Incorrect SWIRL data structure construction
+  class IncorrectSWIRLStructureException(message: String) extends Exception(message) {
     def this(message: String, cause: Throwable) = {
       this(message)
       initCause(cause)

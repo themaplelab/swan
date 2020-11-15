@@ -8,33 +8,24 @@
  *
  */
 
-/* NOTES
- *  - Results are not in OperatorDef because some operators do not
- *    have a result. Also, it should be explicit whether an instruction
- *    has a result.
- */
-
 package ca.ualberta.maple.swan.ir
 
-import ca.ualberta.maple.swan.parser.{SILBlock, SILFunction, SILModule}
-
-import scala.collection.mutable
+import scala.collection.{immutable, mutable}
 import scala.collection.mutable.ArrayBuffer
 
-// NOTE: 'var' is used where passes mutate date
-
 // Imports might be useful for modelling later, but probably not.
-class Module(val functions: ArrayBuffer[Function], val imports: Array[String])
+class Module(val functions: ArrayBuffer[Function])
 
+// instantiatedTypes are used for RTA later
 class Function(val attribute: Option[FunctionAttribute], val name: String, val tpe: Type,
-               var blocks: ArrayBuffer[Block], val refTable: RefTable)
+               val blocks: ArrayBuffer[Block], val refTable: RefTable,
+               val instantiatedTypes: immutable.HashSet[String])
 
-class Block(val blockRef: BlockRef, var arguments: Array[Argument],
-            var operators: ArrayBuffer[OperatorDef], var terminator: TerminatorDef)
+class Block(val blockRef: BlockRef, val arguments: Array[Argument],
+            val operators: ArrayBuffer[OperatorDef], val terminator: TerminatorDef)
 
 sealed trait FunctionAttribute
 object FunctionAttribute {
-  case object global_init extends FunctionAttribute
   case object coroutine extends FunctionAttribute
   case object stub extends FunctionAttribute
   case object model extends FunctionAttribute
@@ -47,7 +38,7 @@ class Position(val path: String, val line: Int, val col: Int)
 
 class Argument(val name: SymbolRef, val tpe: Type)
 
-sealed abstract trait InstructionDef {
+sealed trait InstructionDef {
   val instruction: Instruction
 }
 object InstructionDef {
@@ -71,17 +62,17 @@ object Instruction {
 
 sealed trait Operator
 object Operator { // WIP
-  // *** SHARED ***
-  case class newGlobal(name: String) extends Operator
   case class neww(result: Symbol) extends WithResult(result)
-  case class assignGlobal(result: Symbol, name: String) extends WithResult(result)
   case class assign(result: Symbol, from: SymbolRef) extends WithResult(result)
   case class literal(result: Symbol, literal: Literal) extends WithResult(result)
-  case class builtinRef(result: Symbol, decl: Boolean, name: String) extends WithResult(result)
-  case class functionRef(result: Symbol, var names: Array[String]) extends WithResult(result)
+  case class dynamicRef(result: Symbol, index: String) extends WithResult(result)
+  case class builtinRef(result: Symbol, name: String) extends WithResult(result)
+  case class functionRef(result: Symbol, var name: String) extends WithResult(result)
   case class apply(result: Symbol, functionRef: SymbolRef, arguments: Array[SymbolRef]) extends WithResult(result)
   case class arrayRead(result: Symbol, alias: Boolean, arr: SymbolRef) extends WithResult(result)
   case class arrayWrite(value: SymbolRef, arr: SymbolRef) extends Operator
+  case class singletonRead(result: Symbol, tpe: String, field: String) extends WithResult(result)
+  case class singletonWrite(value: SymbolRef, tpe: String, field: String) extends Operator
   case class fieldRead(result: Symbol, alias: Boolean, obj: SymbolRef, field: String) extends WithResult(result)
   case class fieldWrite(value: SymbolRef, obj: SymbolRef, field: String) extends Operator
   case class unaryOp(result: Symbol, operation: UnaryOperation, operand: SymbolRef) extends WithResult(result)
@@ -89,15 +80,12 @@ object Operator { // WIP
   case class condFail(value: SymbolRef) extends Operator
   case class switchEnumAssign(result: Symbol, switchOn: SymbolRef,
                               cases: Array[EnumAssignCase], default: Option[SymbolRef]) extends WithResult(result)
-  // *** RAW ONLY ***
-  case class applyCoroutine(functionRef: SymbolRef, arguments: Array[SymbolRef]) extends Operator
+  // Coroutines are now handled by a regular apply. Analysis only needs to handle yield and unwind.
+  // case class applyCoroutine(result: Symbol, functionRef: SymbolRef, arguments: Array[SymbolRef], token: Symbol) extends WithResult(result)
+  // case class abortCoroutine(value: SymbolRef) extends Operator
+  // case class endCoroutine(value: SymbolRef) extends Operator
   case class pointerRead(result: Symbol, pointer: SymbolRef) extends WithResult(result)
   case class pointerWrite(value: SymbolRef, pointer: SymbolRef) extends Operator
-  case class abortCoroutine(value: SymbolRef) extends Operator
-  case class endCoroutine(value: SymbolRef) extends Operator
-
-  // *** CANONICAL ***
-  case class unhandledApply(result: Symbol, function: String, arguments: Array[SymbolRef]) extends WithResult(result)
 }
 
 abstract class WithResult(val value: Symbol) extends Operator
@@ -113,19 +101,15 @@ object Terminator {
   case class thro(value: SymbolRef) extends Terminator
   case class tryApply(functionRef: SymbolRef, arguments: Array[SymbolRef],
                       normal: BlockRef, error: BlockRef) extends Terminator
-  // *** RAW ONLY ***
   case object unreachable extends Terminator
   case class yld(yields: Array[SymbolRef], resume: BlockRef, unwind: BlockRef) extends Terminator
   case object unwind extends Terminator
 }
 
-// swanir-enum-assign-case ::= 'case' sil-decl-ref ':' swanir-value-name
 class EnumAssignCase(val decl: String, val value: SymbolRef)
 
-// swanir-switch-case ::= 'case' swanir-value-name ':' swanir-identifier
 class SwitchCase(val value: String, val destination: BlockRef)
 
-// swanir-switch-enum-case ::= 'case' sil-decl-ref ':' swanir-value-name
 class SwitchEnumCase(val decl: String, val destination: BlockRef)
 
 sealed trait UnaryOperation
@@ -150,7 +134,7 @@ class Symbol(val ref: SymbolRef, val tpe: Type)
 // This is so that we can change symbol names throughout the program
 // for things like symbol_copy folding.
 class SymbolRef(var name: String)
-class BlockRef(var label: String) // Might need it
+class BlockRef(var label: String)
 // No function ref for now (I don't see a reason for it)
 
 class RefTable {
@@ -161,7 +145,7 @@ class RefTable {
 class SymbolTables {
   // Map of function to its value table
   val tables = new mutable.HashMap[String, mutable.HashMap[String, SymbolTableEntry]]()
-  // TODO: global table
+  // T0DO: global table?
 }
 
 sealed trait SymbolTableEntry
@@ -169,9 +153,3 @@ object SymbolTableEntry {
   case class operator(symbol: Symbol, var operator: Operator) extends SymbolTableEntry
   case class argument(argument: Argument) extends SymbolTableEntry
 }
-
-// This isn't true dynamic context. It's just a container to hold
-// the module/function/block when translating instructions.
-class Context(val silModule: SILModule, val silFunction: SILFunction,
-              val silBlock: SILBlock, val pos: Option[Position],
-              val refTable: RefTable)

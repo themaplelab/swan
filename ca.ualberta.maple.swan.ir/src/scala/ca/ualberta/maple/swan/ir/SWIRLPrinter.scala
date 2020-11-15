@@ -12,7 +12,7 @@ package ca.ualberta.maple.swan.ir
 
 import scala.collection.mutable.ArrayBuffer
 
-class SWANIRPrinter extends Printer {
+class SWIRLPrinter extends Printer {
 
   // Options easier on the eyes for debugging
   // Tests are not guaranteed to pass with these options on!
@@ -22,14 +22,8 @@ class SWANIRPrinter extends Printer {
   // Maybe add option here for function names (they can be quite long).
 
   def print(module: Module): String = {
-    print("swanir_stage raw")
+    print("swirl_stage raw")
     print("\n\n")
-    module.imports.foreach(imprt => {
-      print("import ")
-      print(imprt)
-      print("\n")
-    })
-    print("\n")
     module.functions.foreach(function => {
       print(function)
       print("\n")
@@ -99,18 +93,10 @@ class SWANIRPrinter extends Printer {
       case _ =>
     }
     operator match {
-      case Operator.newGlobal(name) => {
-        print("new_global ")
-        printGlobal(name)
-      }
       case Operator.neww(result) => {
         print("new ")
         print(result.tpe)
         return // don't print , $T
-      }
-      case Operator.assignGlobal(_, name) => {
-        print("assign_global ")
-        printGlobal(name)
       }
       case Operator.assign(_, from) => {
         print("assign ")
@@ -124,30 +110,29 @@ class SWANIRPrinter extends Printer {
           case Literal.float(value) => print("[float] "); literal(value)
         }
       }
-      case Operator.builtinRef(_, declRef, name) => {
-        print("builtin_ref ")
-        print("[decl] ", when = declRef)
-        literal(name)
+      case Operator.dynamicRef(_, index) => {
+        print("dynamic_ref ")
+        print("@`")
+        print(index)
+        print("`")
       }
-      case Operator.functionRef(_, names) => {
+      case Operator.builtinRef(_, name) => {
+        print("builtin_ref ")
+        print("@`")
+        print(name)
+        print("`")
+      }
+      case Operator.functionRef(_, name) => {
         print("function_ref ")
         print("@")
-        names.foreach(name => {
-          print('`')
-          print(name)
-          print('`')
-          if (name != names.last) {
-            print(" or ")
-          }
-        })
+        print('`')
+        print(name)
+        print('`')
       }
       case Operator.apply(_, functionRef, arguments) => {
         print("apply ")
         print(functionRef)
         print(whenEmpty = true, "(", arguments, ", ", ")", (arg: SymbolRef) => print(arg))
-      }
-      case Operator.applyCoroutine(functionRef, arguments) => {
-        // TODO
       }
       case Operator.arrayRead(_, alias, arr) => {
         print("array_read ")
@@ -159,6 +144,20 @@ class SWANIRPrinter extends Printer {
         print(value)
         print(" to ")
         print(arr)
+      }
+      case Operator.singletonRead(_, tpe, field) => {
+        print("singleton_read `")
+        print(field)
+        print("` from ")
+        print(tpe)
+      }
+      case Operator.singletonWrite(value, tpe, field) => {
+        print("singleton_write ")
+        print(value)
+        print(" to `")
+        print(field)
+        print("` in ")
+        print(tpe)
       }
       case Operator.fieldRead(_, alias, obj, field) =>
         print("field_read ")
@@ -178,7 +177,7 @@ class SWANIRPrinter extends Printer {
         print(operation)
         print(" ")
         print(operand)
-      case Operator.binaryOp(result, operation, lhs, rhs) => {
+      case Operator.binaryOp(_, operation, lhs, rhs) => {
         print("binary_op ")
         print(lhs)
         print(" ")
@@ -190,13 +189,20 @@ class SWANIRPrinter extends Printer {
         print("cond_fail ")
         print(value)
       }
-      case Operator.switchEnumAssign(result, switchOn, cases, default) => {
+      case Operator.switchEnumAssign(_, switchOn, cases, default) => {
         print("switch_enum_assign ")
         print(switchOn)
         print(whenEmpty = false, ", ", cases, ", ", "", (c : EnumAssignCase) => print(c))
         if (default.nonEmpty) { print(", default "); print(default.get) }
-      }
-      case Operator.pointerRead(result, pointer) => {
+      } /*
+      case Operator.applyCoroutine(_, functionRef, arguments, token) => {
+        print("apply_coroutine ")
+        print(functionRef)
+        print(whenEmpty = true, "(", arguments, ", ", ")", (arg: SymbolRef) => print(arg))
+        print(", token: ")
+        print(token.ref)
+      } */
+      case Operator.pointerRead(_, pointer) => {
         print("pointer_read ")
         print(pointer)
       }
@@ -205,7 +211,7 @@ class SWANIRPrinter extends Printer {
         print(value)
         print(" to ")
         print(pointer)
-      }
+      } /*
       case Operator.abortCoroutine(value) => {
         print("abort_coroutine ")
         print(value)
@@ -213,13 +219,7 @@ class SWANIRPrinter extends Printer {
       case Operator.endCoroutine(value) => {
         print("end_coroutine ")
         print(value)
-      }
-      case Operator.unhandledApply(_, name, arguments) => {
-        print("unhandled_apply @`")
-        print(name)
-        print("`")
-        print(whenEmpty = true, "(", arguments, ", ", ")", (arg: SymbolRef) => print(arg))
-      }
+      } */
       case _: WithResult =>
     }
     operator match {
@@ -315,7 +315,6 @@ class SWANIRPrinter extends Printer {
 
   def print(functionAttribute: FunctionAttribute): Unit = {
     functionAttribute match {
-      case FunctionAttribute.global_init => print("[global_init] ")
       case FunctionAttribute.coroutine => print("[coroutine] ")
       case FunctionAttribute.stub => print("[stub] ")
       case FunctionAttribute.model => print("[model] ")
