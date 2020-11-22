@@ -111,10 +111,7 @@ object Utils {
         }
       }
 
-      param match {
-        case SILType.namedArgType(_, tpe, _) => makeType(tpe, pointer)
-        case _ => makeType(param, pointer)
-      }
+      makeType(param, pointer)
     }
 
     tpe match {

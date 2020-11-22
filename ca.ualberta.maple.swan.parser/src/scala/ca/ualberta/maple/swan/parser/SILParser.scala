@@ -228,7 +228,7 @@ class SILParser extends SILPrinter {
   // https://github.com/apple/swift/blob/master/docs/SIL.rst#syntax
   @throws[Error]
   def parseModule(): SILModule = {
-    Logging.printParsingInfo("Parsing SIL Module from " + this.path)
+    Logging.printInfo("Parsing SIL Module from " + this.path)
     if (!skip("sil_stage canonical")) {
       throw parseError("This parser only supports canonical SIL")
     }
@@ -272,7 +272,6 @@ class SILParser extends SILPrinter {
       }
     }
     progressBar.done()
-    Logging.printParsingInfo("Done parsing SIL Module\n")
     new SILModule(functions, witnessTables, vTables, imports, globalVariables, scopes, properties, inits)
   }
 

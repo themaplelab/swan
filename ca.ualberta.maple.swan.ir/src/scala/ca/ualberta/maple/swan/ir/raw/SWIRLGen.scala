@@ -12,6 +12,7 @@ package ca.ualberta.maple.swan.ir.raw
 
 import ca.ualberta.maple.swan.ir.Exceptions.{ExperimentalException, IncorrectSWIRLStructureException, UnexpectedSILFormatException, UnexpectedSILTypeBehaviourException}
 import ca.ualberta.maple.swan.ir.{Argument, BinaryOperation, Block, BlockRef, EnumAssignCase, Function, FunctionAttribute, InstructionDef, Literal, Module, Operator, OperatorDef, Position, RefTable, SwitchCase, SwitchEnumCase, Symbol, SymbolRef, Terminator, TerminatorDef, Type, UnaryOperation}
+import ca.ualberta.maple.swan.parser.Logging.ProgressBar
 import ca.ualberta.maple.swan.parser._
 
 import scala.collection.{immutable, mutable}
@@ -28,7 +29,7 @@ import scala.util.control.Breaks.{break, breakable}
  * See SWIRL documentation in Wiki for more info.
  *
  * TODO: Recovery options.
- * TODO: Manually "typed" exceptions are gross.
+ * TODO: Manually "checked" exceptions are gross.
  */
 object SWIRLGen {
 
@@ -49,8 +50,11 @@ object SWIRLGen {
   @throws[UnexpectedSILFormatException]
   @throws[UnexpectedSILTypeBehaviourException]
   def translateSILModule(silModule: SILModule): Module = {
+    val progressBar = new ProgressBar("Translating", silModule.functions.length, false)
     val functions = new ArrayBuffer[Function](0)
-    silModule.functions.foreach((silFunction: SILFunction) => {
+    silModule.functions.zipWithIndex.foreach(zippedFunction => {
+      val silFunction = zippedFunction._1
+      progressBar.update(zippedFunction._2)
       val instantiatedTypes = new mutable.HashSet[String]()
       functions.append({
         intermediateSymbols.clear()
@@ -184,7 +188,8 @@ object SWIRLGen {
         Operator.apply(new Symbol(retRef, new Type("Int32")), functionRef, Array(arg0, arg1)), None))
       functions.append(fmFunction)
     }
-    new Module(functions)
+    progressBar.done()
+    new Module(functions, true)
   }
 
   private def getFunctionAttribute(silFunction: SILFunction): Option[FunctionAttribute] = {
@@ -564,7 +569,7 @@ object SWIRLGen {
   @throws[UnexpectedSILFormatException]
   def visitIndexAddr(r: Option[SILResult], I: SILOperator.indexAddr, ctx: Context): Array[InstructionDef] = {
     val result = getSingleResult(r, Utils.SILTypeToType(I.addr.tpe), ctx)
-    makeOperator(ctx, Operator.arrayRead(result, alias = true, makeSymbolRef(I.addr.value, ctx)))
+    makeOperator(ctx, Operator.arrayRead(result, makeSymbolRef(I.addr.value, ctx)))
   }
 
   // def visitTailAddr(r: Option[SILResult], I: SILOperator.tailAddr, ctx: Context): Array[InstructionDef]
@@ -755,7 +760,6 @@ object SWIRLGen {
     if (r.isEmpty) {
       throw new UnexpectedSILFormatException("begin_apply instruction expected to have at least one result")
     }
-    val token = makeSymbolRef(r.get.valueNames(r.get.valueNames.length - 1), ctx) // token is always last return value
     val yieldVal: Option[SymbolRef] = {
       if (r.get.valueNames.length > 1) {
         Some(makeSymbolRef(r.get.valueNames(0), ctx)) // yield value is always the first return value (when rets > 1)
@@ -769,7 +773,11 @@ object SWIRLGen {
       if (yieldVal.nonEmpty) {
         new Symbol(yieldVal.get, Utils.SILFunctionTypeToReturnType(I.tpe))
       } else {
-        new Symbol(generateSymbolName(token.name, ctx), Utils.SILTypeToType(SILType.namedType("*Any")))
+        // Note: Do NOT create a symbol ref entry for the token because the symbol table will break.
+        // All symbol ref values have to appear as return values. This is coupled to end_apply and
+        // abort_apply being NOPs.
+        val token = r.get.valueNames(r.get.valueNames.length - 1) // token is always last return value
+        new Symbol(generateSymbolName(token, ctx), Utils.SILTypeToType(SILType.namedType("*Any")))
       }
     }
     makeOperator(ctx, Operator.apply/*Coroutine*/(result, makeSymbolRef(I.value, ctx),
@@ -878,13 +886,15 @@ object SWIRLGen {
     operators.append(makeOperator(ctx, Operator.neww(result))(0))
     I.elements match {
       case SILTupleElements.labeled(_, values) => {
-        values.foreach(value => {
-          operators.append(makeOperator(ctx, Operator.arrayWrite(makeSymbolRef(value, ctx), result.ref))(0))
+        values.zipWithIndex.foreach(value => {
+          operators.append(makeOperator(ctx,
+            Operator.fieldWrite(makeSymbolRef(value._1, ctx), result.ref, value._2.toString))(0))
         })
       }
       case SILTupleElements.unlabeled(operands) => {
-        operands.foreach(operand => {
-          operators.append(makeOperator(ctx, Operator.arrayWrite(makeSymbolRef(operand.value, ctx), result.ref))(0))
+        operands.zipWithIndex.foreach(operand => {
+          operators.append(makeOperator(ctx,
+            Operator.fieldWrite(makeSymbolRef(operand._1.value, ctx), result.ref, operand._2.toString))(0))
         })
       }
     }
@@ -895,14 +905,19 @@ object SWIRLGen {
   @throws[UnexpectedSILTypeBehaviourException]
   def visitTupleExtract(r: Option[SILResult], I: SILOperator.tupleExtract, ctx: Context): Array[InstructionDef] = {
     val result = getSingleResult(r, Utils.SILTupleTypeToType(I.operand.tpe, I.declRef, pointer = false), ctx)
-    makeOperator(ctx, Operator.arrayRead(result, alias = false, makeSymbolRef(I.operand.value, ctx)))
+    makeOperator(ctx, Operator.fieldRead(result, None, makeSymbolRef(I.operand.value, ctx), I.declRef.toString))
   }
 
   @throws[UnexpectedSILFormatException]
   @throws[UnexpectedSILTypeBehaviourException]
   def visitTupleElementAddr(r: Option[SILResult], I: SILOperator.tupleElementAddr, ctx: Context): Array[InstructionDef] = {
     val result = getSingleResult(r, Utils.SILTupleTypeToType(I.operand.tpe, I.declRef, pointer = true), ctx)
-    makeOperator(ctx, Operator.arrayRead(result, alias = true, makeSymbolRef(I.operand.value, ctx)))
+    val aliasResult = new Symbol(generateSymbolName(result.ref.name, ctx),
+      Utils.SILTupleTypeToType(I.operand.tpe, I.declRef, pointer = false))
+    makeOperator(ctx,
+      Operator.neww(result),
+      Operator.fieldRead(aliasResult, Some(result.ref), makeSymbolRef(I.operand.value, ctx), I.declRef.toString),
+      Operator.pointerWrite(aliasResult.ref, result.ref))
   }
 
   @throws[UnexpectedSILFormatException]
@@ -914,9 +929,10 @@ object SWIRLGen {
     verifySILResult(r, tupleType.parameters.length)
     val operators = ArrayBuffer[InstructionDef]()
     tupleType.parameters.zipWithIndex.foreach(param => {
-      operators.append(makeOperator(ctx, Operator.arrayRead(
-        new Symbol(makeSymbolRef(r.get.valueNames(param._2), ctx), Utils.SILTypeToType(param._1)),
-        alias = false, makeSymbolRef(I.operand.value, ctx)))(0))
+      operators.append(makeOperator(ctx,
+        Operator.fieldRead(
+          new Symbol(makeSymbolRef(r.get.valueNames(param._2), ctx), Utils.SILTypeToType(param._1)),
+          None, makeSymbolRef(I.operand.value, ctx), param._2.toString))(0))
     })
     operators.toArray
   }
@@ -957,14 +973,19 @@ object SWIRLGen {
   def visitStructExtract(r: Option[SILResult], I: SILOperator.structExtract, ctx: Context): Array[InstructionDef] = {
     // Type is statically unknown, at least for now
     val result = getSingleResult(r, new Type("Any"), ctx)
-    makeOperator(ctx, Operator.fieldRead(result, alias = false, makeSymbolRef(I.operand.value, ctx), Utils.SILStructFieldDeclRefToString(I.declRef)))
+    makeOperator(ctx, Operator.fieldRead(result, None, makeSymbolRef(I.operand.value, ctx), Utils.SILStructFieldDeclRefToString(I.declRef)))
   }
 
   @throws[UnexpectedSILFormatException]
   def visitStructElementAddr(r: Option[SILResult], I: SILOperator.structElementAddr, ctx: Context): Array[InstructionDef] = {
     // Type is statically unknown, at least for now
     val result = getSingleResult(r, new Type("*Any"), ctx)
-    makeOperator(ctx, Operator.fieldRead(result, alias = true, makeSymbolRef(I.operand.value, ctx), Utils.SILStructFieldDeclRefToString(I.declRef)))
+    val aliasResult = new Symbol(generateSymbolName(result.ref.name, ctx), new Type("Any"))
+    makeOperator(ctx,
+      Operator.neww(result),
+      Operator.fieldRead(aliasResult, Some(result.ref),
+        makeSymbolRef(I.operand.value, ctx), Utils.SILStructFieldDeclRefToString(I.declRef)),
+      Operator.pointerWrite(aliasResult.ref, result.ref))
   }
 
   // def visitDestructureStruct(r: Option[SILResult], I: SILOperator.destructureStruct, ctx: Context): Array[InstructionDef]
@@ -980,13 +1001,18 @@ object SWIRLGen {
   def visitRefElementAddr(r: Option[SILResult], I: SILOperator.refElementAddr, ctx: Context): Array[InstructionDef] = {
     // Type is statically unknown, at least for now
     val result = getSingleResult(r, new Type("*Any"), ctx)
-    makeOperator(ctx, Operator.fieldRead(result, alias = true, makeSymbolRef(I.operand.value, ctx), Utils.SILStructFieldDeclRefToString(I.declRef)))
+    val aliasResult = new Symbol(generateSymbolName(result.ref.name, ctx), new Type("Any"))
+    makeOperator(ctx,
+      Operator.neww(result),
+      Operator.fieldRead(aliasResult, Some(result.ref),
+        makeSymbolRef(I.operand.value, ctx), Utils.SILStructFieldDeclRefToString(I.declRef)),
+      Operator.pointerWrite(aliasResult.ref, result.ref))
   }
 
   @throws[UnexpectedSILFormatException]
   def visitRefTailAddr(r: Option[SILResult], I: SILOperator.refTailAddr, ctx: Context): Array[InstructionDef] = {
     val result = getSingleResult(r, Utils.SILTypeToPointerType(I.tpe), ctx) // $*T to $T
-    makeOperator(ctx, Operator.arrayRead(result, alias = true, makeSymbolRef(I.operand.value, ctx)))
+    makeOperator(ctx, Operator.arrayRead(result, makeSymbolRef(I.operand.value, ctx)))
   }
 
   /* ENUMS */
@@ -1009,14 +1035,18 @@ object SWIRLGen {
   def visitUncheckedEnumData(r: Option[SILResult], I: SILOperator.uncheckedEnumData, ctx: Context): Array[InstructionDef] = {
     val result = getSingleResult(r, new Type("Any"), ctx)
     // No alias for now, but this might change.
-    makeOperator(ctx, Operator.fieldRead(result, alias = false, makeSymbolRef(I.operand.value, ctx), "data"))
+    makeOperator(ctx, Operator.fieldRead(result, None, makeSymbolRef(I.operand.value, ctx), "data"))
   }
 
   @throws[UnexpectedSILFormatException]
   def visitInitEnumDataAddr(r: Option[SILResult], I: SILOperator.initEnumDataAddr, ctx: Context): Array[InstructionDef] = {
     // Type is statically unknown, at least for now.
     val result = getSingleResult(r, new Type("*Any"), ctx)
-    makeOperator(ctx, Operator.fieldRead(result, alias = true, makeSymbolRef(I.operand.value, ctx), "data"))
+    val aliasResult = new Symbol(generateSymbolName(result.ref.name, ctx), new Type("Any"))
+    makeOperator(ctx,
+      Operator.neww(result),
+      Operator.fieldRead(aliasResult, Some(result.ref), makeSymbolRef(I.operand.value, ctx), "data"),
+      Operator.pointerWrite(aliasResult.ref, result.ref))
   }
 
   def visitInjectEnumAddr(r: Option[SILResult], I: SILOperator.injectEnumAddr, ctx: Context): Array[InstructionDef] = {
@@ -1030,7 +1060,11 @@ object SWIRLGen {
   def visitUncheckedTakeEnumDataAddr(r: Option[SILResult], I: SILOperator.uncheckedTakeEnumDataAddr, ctx: Context): Array[InstructionDef] = {
     // Type is statically unknown, at least for now.
     val result = getSingleResult(r, new Type("*Any"), ctx)
-    makeOperator(ctx, Operator.fieldRead(result, alias = true, makeSymbolRef(I.operand.value, ctx), "data"))
+    val aliasResult = new Symbol(generateSymbolName(result.ref.name, ctx), new Type("Any"))
+    makeOperator(ctx,
+      Operator.neww(result),
+      Operator.fieldRead(aliasResult, Some(result.ref), makeSymbolRef(I.operand.value, ctx), "data"),
+      Operator.pointerWrite(aliasResult.ref, result.ref))
   }
 
   @throws[UnexpectedSILFormatException]

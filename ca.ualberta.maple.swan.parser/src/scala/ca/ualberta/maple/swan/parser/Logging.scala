@@ -64,7 +64,7 @@ object Logging {
     }
   }
 
-  def printParsingInfo(msg: String): Unit = {
+  def printInfo(msg: String): Unit = {
     System.out.println(msg);
   }
 }

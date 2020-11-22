@@ -37,7 +37,7 @@ copy_addr [take] %105 to [initialization] %107 : $*UUID ~ %105_i_0 = pointer_rea
 
 destroy_addr %28 : $*DispatchWorkItemFlags ~ NOP
 
-%28 = index_addr %19 : $*JSONSerialization.ReadingOptions, %27 : $Builtin.Word ~ %28 = array_read [alias] %19, $`*JSONSerialization.ReadingOptions`
+%28 = index_addr %19 : $*JSONSerialization.ReadingOptions, %27 : $Builtin.Word ~ %28 = array_read %19, $`*JSONSerialization.ReadingOptions`
 
 %138 = begin_access [modify] [dynamic] %137 : $*Optional<Card> ~ symbol_copy %137 to %138
 
@@ -115,16 +115,16 @@ release_value %103 : $Optional<GameWireFrameProtocol> ~ NOP
 
 autorelease_value %4 : $Optional<Hive> ~ NOP
 
-%12 = tuple (%4 : $Array<Element>, %10 : $UnsafeMutablePointer<Element>) ~ %12 = new $`(Array<Element>, UnsafeMutablePointer<Element>)` ::: array_write %4 to %12 ::: array_write %10 to %12
+%12 = tuple (%4 : $Array<Element>, %10 : $UnsafeMutablePointer<Element>) ~ %12 = new $`(Array<Element>, UnsafeMutablePointer<Element>)` ::: field_write %4 to %12, 0 ::: field_write %10 to %12, 1
 %46 = tuple () ~ %46 = new $`()`
-%9 = tuple $(Builtin.Word, Builtin.Word) (%0, %1) ~ %9 = new $`(Builtin.Word, Builtin.Word)` ::: array_write %0 to %9 ::: array_write %1 to %9
+%9 = tuple $(Builtin.Word, Builtin.Word) (%0, %1) ~ %9 = new $`(Builtin.Word, Builtin.Word)` ::: field_write %0 to %9, 0 ::: field_write %1 to %9, 1
 
-%35 = tuple_extract %34 : $(Builtin.Int64, Builtin.Int1), 0 ~ %35 = array_read %34, $`Builtin.Int64`
-%35 = tuple_extract %34 : $(Builtin.Int64, Builtin.Int1), 1 ~ %35 = array_read %34, $`Builtin.Int1`
+%35 = tuple_extract %34 : $(Builtin.Int64, Builtin.Int1), 0 ~ %35 = field_read %34, 0, $`Builtin.Int64`
+%35 = tuple_extract %34 : $(Builtin.Int64, Builtin.Int1), 1 ~ %35 = field_read %34, 1, $`Builtin.Int1`
 
-%20 = tuple_element_addr %19 : $*(lower: Bound, upper: Bound), 0 ~ %20 = array_read [alias] %19, $`*Bound`
+%20 = tuple_element_addr %19 : $*(lower: Bound, upper: Bound), 0 ~ %20 = new $`*lower: Bound` ::: %20_i_0 = field_read [alias %20] %19, 0, $`lower: Bound` ::: pointer_write %20_i_0 to %20
 
-(%2, %3) = destructure_tuple %0 : $(Builtin.NativeObject, Builtin.Int32) ~ %2 = array_read %0, $`Builtin.NativeObject` ::: %3 = array_read %0, $`Builtin.Int32`
+(%2, %3) = destructure_tuple %0 : $(Builtin.NativeObject, Builtin.Int32) ~ %2 = field_read %0, 0, $`Builtin.NativeObject` ::: %3 = field_read %0, 1, $`Builtin.Int32`
 
 %36 = struct $Array<DispatchWorkItemFlags> (%35 : $_ArrayBuffer<DispatchWorkItemFlags>) ~ NOP
 %47 = struct $_BridgeStorage<__ContiguousArrayStorageBase> (%46 : $Builtin.BridgeObject) ~ NOP
@@ -132,22 +132,22 @@ autorelease_value %4 : $Optional<Hive> ~ NOP
 
 %55 = struct_extract %47 : $_ContiguousArrayBuffer<Card>, #_ContiguousArrayBuffer._storage ~ %55 = field_read %47, _storage, $`Any`
 
-%5 = struct_element_addr %1 : $*UIView.AnimationOptions, #UIView.AnimationOptions.rawValue ~ %5 = field_read [alias] %1, rawValue, $`*Any`
+%5 = struct_element_addr %1 : $*UIView.AnimationOptions, #UIView.AnimationOptions.rawValue ~ %5 = new $`*Any` ::: %5_i_0 = field_read [alias %5] %1, rawValue, $`Any` ::: pointer_write %5_i_0 to %5
 
 %initval = object $GlobalObject (%0 : $Builtin.Int64, [tail_elems] %1 : $Builtin.Int64, %1 : $Builtin.Int64) ~ %initval = new $`GlobalObject`
 
-%19 = ref_element_addr %18 : $__ContiguousArrayStorageBase, #__ContiguousArrayStorageBase.countAndCapacity ~ %19 = field_read [alias] %18, countAndCapacity, $`*Any`
+%19 = ref_element_addr %18 : $__ContiguousArrayStorageBase, #__ContiguousArrayStorageBase.countAndCapacity ~ %19 = new $`*Any` ::: %19_i_0 = field_read [alias %19] %18, countAndCapacity, $`Any` ::: pointer_write %19_i_0 to %19
 
 %15 = enum $Optional<GameInteractorInputProtocol>, #Optional.none!enumelt ~ %15 = new $`Optional<GameInteractorInputProtocol>` ::: %15_i_0 = literal [string] "#Optional.none!enumelt", $`Builtin.RawPointer` ::: field_write %15_i_0 to %15, type
 %41 = enum $Optional<String>, #Optional.some!enumelt, %40 : $String ~ %41 = new $`Optional<String>` ::: %41_i_0 = literal [string] "#Optional.some!enumelt", $`Builtin.RawPointer` ::: field_write %41_i_0 to %41, type ::: field_write %40 to %41, data
 
 %34 = unchecked_enum_data %18 : $Optional<FloatingPointSign>, #Optional.some!enumelt.1 ~ %34 = field_read %18, data, $`Any`
 
-%15 = init_enum_data_addr %0 : $*Optional<Self.Element>, #Optional.some!enumelt.1 ~ %15 = field_read [alias] %0, data, $`*Any`
+%15 = init_enum_data_addr %0 : $*Optional<Self.Element>, #Optional.some!enumelt.1 ~ %15 = new $`*Any` ::: %15_i_1 = field_read [alias %15] %0, data, $`Any` ::: pointer_write %15_i_1 to %15
 
 inject_enum_addr %0 : $*Optional<Self>, #Optional.some!enumelt.1 ~ %0_i_0 = literal [string] "#Optional.some!enumelt.1", $`Builtin.RawPointer` ::: field_write %0_i_0 to %0, type
 
-%112 = unchecked_take_enum_data_addr %84 : $*Optional<S.Element>, #Optional.some!enumelt.1 ~ %112 = field_read [alias] %84, data, $`*Any`
+%112 = unchecked_take_enum_data_addr %84 : $*Optional<S.Element>, #Optional.some!enumelt.1 ~ %112 = new $`*Any` ::: %112_i_0 = field_read [alias %112] %84, data, $`Any` ::: pointer_write %112_i_0 to %112
 
 %757 = select_enum %754 : $FloatingPointSign, case #FloatingPointSign.plus!enumelt: %755, case #FloatingPointSign.minus!enumelt: %756 : $Builtin.Int64 ~ %757 = switch_enum_assign %754, case "#FloatingPointSign.plus!enumelt" : %755, case "#FloatingPointSign.minus!enumelt" : %756, $`Builtin.Int64`
 

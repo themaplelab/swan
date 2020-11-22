@@ -22,7 +22,9 @@ class SWIRLPrinter extends Printer {
   // Maybe add option here for function names (they can be quite long).
 
   def print(module: Module): String = {
-    print("swirl_stage raw")
+    print("swirl_stage ")
+    print("raw", when = module.raw)
+    print("canonical", when = !module.raw)
     print("\n\n")
     module.functions.foreach(function => {
       print(function)
@@ -134,15 +136,8 @@ class SWIRLPrinter extends Printer {
         print(functionRef)
         print(whenEmpty = true, "(", arguments, ", ", ")", (arg: SymbolRef) => print(arg))
       }
-      case Operator.arrayRead(_, alias, arr) => {
+      case Operator.arrayRead(_, arr) => {
         print("array_read ")
-        print("[alias] ", when = alias)
-        print(arr)
-      }
-      case Operator.arrayWrite(value, arr) => {
-        print("array_write ")
-        print(value)
-        print(" to ")
         print(arr)
       }
       case Operator.singletonRead(_, tpe, field) => {
@@ -161,7 +156,11 @@ class SWIRLPrinter extends Printer {
       }
       case Operator.fieldRead(_, alias, obj, field) =>
         print("field_read ")
-        print("[alias] ", when = alias)
+        if (alias.nonEmpty) {
+          print("[alias ")
+          print(alias.get)
+          print("] ")
+        }
         print(obj)
         print(", ")
         print(field)

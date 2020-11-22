@@ -14,7 +14,7 @@ import scala.collection.{immutable, mutable}
 import scala.collection.mutable.ArrayBuffer
 
 // Imports might be useful for modelling later, but probably not.
-class Module(val functions: ArrayBuffer[Function])
+class Module(val functions: ArrayBuffer[Function], var raw: Boolean)
 
 // instantiatedTypes are used for RTA later
 class Function(val attribute: Option[FunctionAttribute], val name: String, val tpe: Type,
@@ -69,11 +69,10 @@ object Operator { // WIP
   case class builtinRef(result: Symbol, name: String) extends WithResult(result)
   case class functionRef(result: Symbol, var name: String) extends WithResult(result)
   case class apply(result: Symbol, functionRef: SymbolRef, arguments: Array[SymbolRef]) extends WithResult(result)
-  case class arrayRead(result: Symbol, alias: Boolean, arr: SymbolRef) extends WithResult(result)
-  case class arrayWrite(value: SymbolRef, arr: SymbolRef) extends Operator
+  case class arrayRead(result: Symbol, arr: SymbolRef) extends WithResult(result)
   case class singletonRead(result: Symbol, tpe: String, field: String) extends WithResult(result)
   case class singletonWrite(value: SymbolRef, tpe: String, field: String) extends Operator
-  case class fieldRead(result: Symbol, alias: Boolean, obj: SymbolRef, field: String) extends WithResult(result)
+  case class fieldRead(result: Symbol, alias: Option[SymbolRef], obj: SymbolRef, field: String) extends WithResult(result)
   case class fieldWrite(value: SymbolRef, obj: SymbolRef, field: String) extends Operator
   case class unaryOp(result: Symbol, operation: UnaryOperation, operand: SymbolRef) extends WithResult(result)
   case class binaryOp(result: Symbol, operation: BinaryOperation, lhs: SymbolRef, rhs: SymbolRef) extends WithResult(result)

@@ -9,6 +9,7 @@
  */
 
 import ca.ualberta.maple.swan.ir.*;
+import ca.ualberta.maple.swan.ir.canonical.SWIRLPass;
 import ca.ualberta.maple.swan.ir.raw.SWIRLGen.Context;
 import ca.ualberta.maple.swan.ir.raw.SWIRLGen;
 import ca.ualberta.maple.swan.parser.*;
@@ -66,8 +67,9 @@ public class TranslationTests {
     }
 
     @Test
-    void testModuleParsing() throws Error, URISyntaxException, Exceptions.IncompleteRawSWIRLException,
-            Exceptions.IncorrectSWIRLStructureException, Exceptions.UnexpectedSILFormatException, Exceptions.UnexpectedSILTypeBehaviourException {
+    // Just smoke test for now.
+    void testModuleParsing() throws Error, URISyntaxException, Exceptions.IncorrectSWIRLStructureException,
+            Exceptions.UnexpectedSILFormatException, Exceptions.UnexpectedSILTypeBehaviourException {
         System.out.println("Testing modules");
         File fileDir = new File(getClass().getClassLoader()
                 .getResource("sil/modules/").toURI());
@@ -79,10 +81,10 @@ public class TranslationTests {
             // System.out.println(new SILPrinter().print(silModule));
             // System.out.println("============================================");
             Module swirlModule = SWIRLGen.translateSILModule(silModule);
-            // System.out.print(new SWIRLPrinter().print(swirlModule));
-            // SWIRLPass pass = new SWIRLPass(swirlModule);
-            // pass.runPasses();
-            // System.out.print(new SWIRLPrinter().print(swirlModule));
+            //System.out.print(new SWIRLPrinter().print(swirlModule));
+            //System.out.println("============================================");
+            SWIRLPass.runPasses(swirlModule);
+            //System.out.print(new SWIRLPrinter().print(swirlModule));
         }
     }
 
