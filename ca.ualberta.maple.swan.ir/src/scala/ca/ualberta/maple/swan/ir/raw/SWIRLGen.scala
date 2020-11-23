@@ -11,7 +11,7 @@
 package ca.ualberta.maple.swan.ir.raw
 
 import ca.ualberta.maple.swan.ir.Exceptions.{ExperimentalException, IncorrectSWIRLStructureException, UnexpectedSILFormatException, UnexpectedSILTypeBehaviourException}
-import ca.ualberta.maple.swan.ir.{Argument, BinaryOperation, Block, BlockRef, EnumAssignCase, Function, FunctionAttribute, InstructionDef, Literal, Module, Operator, OperatorDef, Position, RefTable, SwitchCase, SwitchEnumCase, Symbol, SymbolRef, Terminator, TerminatorDef, Type, UnaryOperation}
+import ca.ualberta.maple.swan.ir.{Argument, BinaryOperation, Block, BlockRef, DynamicDispatchGraph, EnumAssignCase, Function, FunctionAttribute, InstructionDef, Literal, Module, Operator, OperatorDef, Position, RefTable, SwitchCase, SwitchEnumCase, Symbol, SymbolRef, Terminator, TerminatorDef, Type, UnaryOperation}
 import ca.ualberta.maple.swan.parser.Logging.ProgressBar
 import ca.ualberta.maple.swan.parser._
 
@@ -189,7 +189,7 @@ object SWIRLGen {
       functions.append(fmFunction)
     }
     progressBar.done()
-    new Module(functions, true)
+    new Module(functions, true, new DynamicDispatchGraph(silModule))
   }
 
   private def getFunctionAttribute(silFunction: SILFunction): Option[FunctionAttribute] = {

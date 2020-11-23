@@ -11,11 +11,10 @@
 package ca.ualberta.maple.swan.ir.canonical
 
 
-import ca.ualberta.maple.swan.ir.Exceptions.{ExperimentalException, IncompleteRawSWIRLException, UnexpectedSILFormatException}
-import ca.ualberta.maple.swan.ir.{Block, Function, Module, Operator, OperatorDef, SymbolRef, SymbolTableEntry, SymbolTables, WithResult}
+import ca.ualberta.maple.swan.ir.Exceptions.IncompleteRawSWIRLException
+import ca.ualberta.maple.swan.ir.{Module, Operator, OperatorDef, SymbolTableEntry, SymbolTables, WithResult}
 
 import scala.collection.mutable
-import scala.collection.mutable.ArrayBuffer
 
 
 object SWIRLPass {

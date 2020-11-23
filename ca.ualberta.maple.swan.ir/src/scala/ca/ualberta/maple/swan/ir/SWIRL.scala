@@ -14,7 +14,7 @@ import scala.collection.{immutable, mutable}
 import scala.collection.mutable.ArrayBuffer
 
 // Imports might be useful for modelling later, but probably not.
-class Module(val functions: ArrayBuffer[Function], var raw: Boolean)
+class Module(val functions: ArrayBuffer[Function], var raw: Boolean, val ddg: DynamicDispatchGraph)
 
 // instantiatedTypes are used for RTA later
 class Function(val attribute: Option[FunctionAttribute], val name: String, val tpe: Type,
