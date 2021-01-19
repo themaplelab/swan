@@ -37,7 +37,13 @@ object SWIRLGen {
   // the module/function/block when translating instructions.
   class Context(val silModule: SILModule, val silFunction: SILFunction,
                 val silBlock: SILBlock, val pos: Option[Position],
-                val refTable: RefTable, val instantiatedTypes: mutable.HashSet[String])
+                val refTable: RefTable, val instantiatedTypes: mutable.HashSet[String],
+                val arguments: ArrayBuffer[Argument])
+  object Context {
+    def dummy(refTable: RefTable): Context = {
+      new Context(null, null, null, null, refTable, null, null)
+    }
+  }
 
   val NOP: Null = null // explicit NOP marker
   val COPY: Null = null // explicit COPY marker
@@ -66,14 +72,14 @@ object SWIRLGen {
             val arguments = new ArrayBuffer[Argument]()
             silBlock.arguments.foreach((a: SILArgument) => {
               arguments.append(new Argument(makeSymbolRef(a.valueName,
-                new Context(null, null, null, null, refTable, null)),
+                Context.dummy(refTable)),
                 Utils.SILTypeToType(a.tpe)))
             })
             val operators = new ArrayBuffer[OperatorDef](0)
             silBlock.operatorDefs.foreach((silOperatorDef: SILOperatorDef) => {
               breakable {
                 val position: Option[Position] = Utils.SILSourceInfoToPosition(silOperatorDef.sourceInfo)
-                val ctx = new Context(silModule, silFunction, silBlock, position, refTable, instantiatedTypes)
+                val ctx = new Context(silModule, silFunction, silBlock, position, refTable, instantiatedTypes, arguments)
                 val instructions: Array[InstructionDef] = translateSILInstruction(SILInstructionDef.operator(silOperatorDef), ctx)
                 if (instructions == NOP) {
                   break()
@@ -89,7 +95,7 @@ object SWIRLGen {
             })
             val terminator: TerminatorDef = {
               val position: Option[Position] = Utils.SILSourceInfoToPosition(silBlock.terminatorDef.sourceInfo)
-              val ctx = new Context(silModule, silFunction, silBlock, position, refTable, instantiatedTypes)
+              val ctx = new Context(silModule, silFunction, silBlock, position, refTable, instantiatedTypes, arguments)
               val instructions = translateSILInstruction(
                 SILInstructionDef.terminator(silBlock.terminatorDef), ctx)
               if (instructions == null) {
@@ -126,7 +132,7 @@ object SWIRLGen {
         // If function is empty, generate a stub based on return type.
         if (silFunction.blocks.isEmpty) {
           intermediateSymbols.clear()
-          val dummyCtx = new Context(null, null, null, null, refTable, null)
+          val dummyCtx = Context.dummy(refTable)
           val blockRef = makeBlockRef("bb0", dummyCtx)
           val retRef = makeSymbolRef("%ret", dummyCtx)
           refTable.blocks.put(blockRef.label, blockRef)
@@ -155,7 +161,7 @@ object SWIRLGen {
       intermediateSymbols.clear()
       val fmRefTable = new RefTable()
       val fmInstantiatedTypes = new immutable.HashSet[String]
-      val dummyCtx = new Context(null, null, null, null, fmRefTable, null)
+      val dummyCtx = Context.dummy(fmRefTable)
       val fmFunction = new Function(None, "SWAN_FAKE_MAIN", new Type("Int32"),
         new ArrayBuffer[Block](), fmRefTable, fmInstantiatedTypes)
       val blockRef = makeBlockRef("bb0", dummyCtx)
@@ -496,7 +502,12 @@ object SWIRLGen {
   def visitDebugValue(r: Option[SILResult], I: SILOperator.debugValue, ctx: Context): Array[InstructionDef] = {
     if (I.operand.value != "undef") {
       I.attributes.foreach {
-        case SILDebugAttribute.argno(_) =>
+        case SILDebugAttribute.argno(index) => {
+          if (ctx.arguments.length < index) {
+            throw new UnexpectedSILFormatException("debug_value arg number out of bounds")
+          }
+          ctx.arguments(index - 1).pos = ctx.pos
+        }
         case SILDebugAttribute.name(name) => {
           makeSymbolRef(I.operand.value, ctx).name = name
         }
@@ -509,7 +520,12 @@ object SWIRLGen {
 
   def visitDebugValueAddr(r: Option[SILResult], I: SILOperator.debugValueAddr, ctx: Context): Array[InstructionDef] = {
     I.attributes.foreach {
-      case SILDebugAttribute.argno(_) =>
+      case SILDebugAttribute.argno(index) => {
+        if (ctx.arguments.length < index) {
+          throw new UnexpectedSILFormatException("debug_value arg number out of bounds")
+        }
+        ctx.arguments(index - 1).pos = ctx.pos
+      }
       case SILDebugAttribute.name(name) => {
         makeSymbolRef(I.operand.value, ctx).name = name
       }

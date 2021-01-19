@@ -10,21 +10,34 @@
 
 package ca.ualberta.maple.swan.ir
 
+import org.jgrapht.Graph
+import org.jgrapht.graph.DefaultEdge
+
 import scala.collection.mutable.ArrayBuffer
 
 class SWIRLPrinter extends Printer {
 
   // Options easier on the eyes for debugging
   // Tests are not guaranteed to pass with these options on!
-  val DONT_PRINT_POSITION = false
-  val ARBITRARY_TYPE_NAMES = false
+  val DONT_PRINT_POSITION = false // DEFAULT: false
+  val ARBITRARY_TYPE_NAMES = false // DEFAULT: false
   var ARBITRARY_TYPE_NAME_COUNTER = new ArrayBuffer[String]()
-  // Maybe add option here for function names (they can be quite long).
+  val PRINT_LINE_NUMBERS_WHEN_CAN = true // DEFAULT: true
+  val PRINT_CFG_WHEN_CAN = true // DEFAULT: true
+
+  var raw = true // assume true
+  var canModule: CanModule = null // needed global for printing line numbers
+
+  def print(canModule: CanModule): String = {
+    this.canModule = canModule
+    print(canModule.m)
+  }
 
   def print(module: Module): String = {
+    raw = module.raw
     print("swirl_stage ")
-    print("raw", when = module.raw)
-    print("canonical", when = !module.raw)
+    print("raw", when = raw)
+    print("canonical", when = !raw)
     print("\n\n")
     module.functions.foreach(function => {
       print(function)
@@ -34,6 +47,14 @@ class SWIRLPrinter extends Printer {
   }
 
   def print(function: Function): String = {
+    if (!raw && PRINT_CFG_WHEN_CAN) {
+      // T0D0: slow?
+      val cfg = canModule.functions.find(p => p.f == function).get.cfg
+      print(function, cfg)
+    }
+    if (!raw && PRINT_LINE_NUMBERS_WHEN_CAN) {
+      print(canModule.lineNumbers(function).toString + ": ")
+    }
     print("func ")
     if (function.attribute.nonEmpty) print(function.attribute.get)
     print("@`")
@@ -46,11 +67,30 @@ class SWIRLPrinter extends Printer {
     this.toString
   }
 
+  def print(function: Function, cfg: Graph[Block, DefaultEdge]): Unit = {
+    function.blocks.foreach(b => {
+      print(b.blockRef.label + " -> ")
+      val it = cfg.outgoingEdgesOf(b).iterator()
+      while (it.hasNext) {
+        print(cfg.getEdgeTarget(it.next()).blockRef.label)
+        if (it.hasNext) {
+          print(", ")
+        }
+      }
+      print("\n")
+    })
+  }
+
   def print(block: Block): Unit = {
+    if (!raw && PRINT_LINE_NUMBERS_WHEN_CAN) {
+      print(canModule.lineNumbers(block).toString + ": ")
+    }
     print(block.blockRef)
     print(whenEmpty = false, "(", block.arguments, ", ", ")", (arg: Argument) => print(arg))
     print(":")
-    indent()
+    if (raw || !PRINT_LINE_NUMBERS_WHEN_CAN) {
+      indent()
+    }
     block.operators.foreach(op => {
       print("\n")
       print(op)
@@ -59,7 +99,9 @@ class SWIRLPrinter extends Printer {
     // if statements only while terminators are still WIP
     if (block.terminator != null) print(block.terminator)
     if (block.terminator != null) print("\n")
-    unindent()
+    if (raw || !PRINT_LINE_NUMBERS_WHEN_CAN) {
+      unindent()
+    }
   }
 
   def print(argument: Argument): Unit = {
@@ -77,12 +119,18 @@ class SWIRLPrinter extends Printer {
   }
 
   def print(op: OperatorDef): String = {
+    if (!raw && PRINT_LINE_NUMBERS_WHEN_CAN) {
+      print(canModule.lineNumbers(op).toString + ":   ")
+    }
     print(op.operator)
     print(op.position, (pos: Position) => print(pos))
     this.toString
   }
 
   def print(term: TerminatorDef): String = {
+    if (!raw && PRINT_LINE_NUMBERS_WHEN_CAN) {
+      print(canModule.lineNumbers(term).toString + ":   ")
+    }
     print(term.terminator)
     print(term.position, (pos: Position) => print(pos))
     this.toString
@@ -156,7 +204,7 @@ class SWIRLPrinter extends Printer {
       }
       case Operator.fieldRead(_, alias, obj, field) =>
         print("field_read ")
-        if (alias.nonEmpty) {
+        if (alias.nonEmpty && raw) {
           print("[alias ")
           print(alias.get)
           print("] ")
@@ -193,14 +241,7 @@ class SWIRLPrinter extends Printer {
         print(switchOn)
         print(whenEmpty = false, ", ", cases, ", ", "", (c : EnumAssignCase) => print(c))
         if (default.nonEmpty) { print(", default "); print(default.get) }
-      } /*
-      case Operator.applyCoroutine(_, functionRef, arguments, token) => {
-        print("apply_coroutine ")
-        print(functionRef)
-        print(whenEmpty = true, "(", arguments, ", ", ")", (arg: SymbolRef) => print(arg))
-        print(", token: ")
-        print(token.ref)
-      } */
+      }
       case Operator.pointerRead(_, pointer) => {
         print("pointer_read ")
         print(pointer)
@@ -210,15 +251,7 @@ class SWIRLPrinter extends Printer {
         print(value)
         print(" to ")
         print(pointer)
-      } /*
-      case Operator.abortCoroutine(value) => {
-        print("abort_coroutine ")
-        print(value)
       }
-      case Operator.endCoroutine(value) => {
-        print("end_coroutine ")
-        print(value)
-      } */
       case _: WithResult =>
     }
     operator match {

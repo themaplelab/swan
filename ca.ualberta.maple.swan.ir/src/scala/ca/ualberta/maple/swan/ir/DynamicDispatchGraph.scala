@@ -45,7 +45,7 @@ class DynamicDispatchGraph(module: SILModule) {
       while (iterator.hasNext) {
         val cur = iterator.next()
         if (iterator.getDepth(cur) > 1) {
-          break
+          break()
         }
         cur match {
           case Node.Method(s) => {
@@ -54,7 +54,7 @@ class DynamicDispatchGraph(module: SILModule) {
                 classNodes.get.foreach(cls => {
                   if (paths.getPath(cls, cur) != null) {
                     functions.append(s)
-                    break
+                    break()
                   }
                 })
               }

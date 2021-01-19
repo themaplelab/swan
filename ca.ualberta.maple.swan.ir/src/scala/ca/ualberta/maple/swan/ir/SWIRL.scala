@@ -10,6 +10,9 @@
 
 package ca.ualberta.maple.swan.ir
 
+import org.jgrapht.Graph
+import org.jgrapht.graph.DefaultEdge
+
 import scala.collection.{immutable, mutable}
 import scala.collection.mutable.ArrayBuffer
 
@@ -24,6 +27,15 @@ class Function(val attribute: Option[FunctionAttribute], val name: String, val t
 class Block(val blockRef: BlockRef, val arguments: Array[Argument],
             val operators: ArrayBuffer[OperatorDef], val terminator: TerminatorDef)
 
+class CanModule(val m: Module, val functions: ArrayBuffer[CanFunction],
+                val lineNumbers: mutable.HashMap[Object, Int]) {
+  m.raw = false
+}
+
+// CFG is generic, not engine specific.
+class CanFunction(val f: Function, val symbolTable: mutable.HashMap[String, SymbolTableEntry],
+                  val cfg: Graph[Block, DefaultEdge])
+
 sealed trait FunctionAttribute
 object FunctionAttribute {
   case object coroutine extends FunctionAttribute
@@ -36,7 +48,8 @@ class Type(val name: String = "Any")
 
 class Position(val path: String, val line: Int, val col: Int)
 
-class Argument(val name: SymbolRef, val tpe: Type)
+// `pos` can be changed by debug_value and debug_value_addr.
+class Argument(val name: SymbolRef, val tpe: Type, var pos: Option[Position] = None)
 
 sealed trait InstructionDef {
   val instruction: Instruction
@@ -139,12 +152,6 @@ class BlockRef(var label: String)
 class RefTable {
   val symbols = new mutable.HashMap[String, SymbolRef]()
   val blocks = new mutable.HashMap[String, BlockRef]()
-}
-
-class SymbolTables {
-  // Map of function to its value table
-  val tables = new mutable.HashMap[String, mutable.HashMap[String, SymbolTableEntry]]()
-  // T0DO: global table?
 }
 
 sealed trait SymbolTableEntry

@@ -49,7 +49,7 @@ public class TranslationTests {
         // non-null context elements for translation. e.g. struct
         InstructionDef[] swirl = SWIRLGen.translateSILInstruction(
                 instruction, new Context(createEmptyModule(), null, null,
-                        scala.Option.apply(null), new RefTable(), new scala.collection.mutable.HashSet<String>()));
+                        scala.Option.apply(null), new RefTable(), new scala.collection.mutable.HashSet<String>(), null));
         if (swirl == null) {
             return;
         }
@@ -81,10 +81,10 @@ public class TranslationTests {
             // System.out.println(new SILPrinter().print(silModule));
             // System.out.println("============================================");
             Module swirlModule = SWIRLGen.translateSILModule(silModule);
-            //System.out.print(new SWIRLPrinter().print(swirlModule));
-            //System.out.println("============================================");
-            SWIRLPass.runPasses(swirlModule);
-            //System.out.print(new SWIRLPrinter().print(swirlModule));
+            // System.out.print(new SWIRLPrinter().print(swirlModule));
+            // System.out.println("============================================");
+            CanModule canSwirlModule = SWIRLPass.runPasses(swirlModule);
+            // System.out.print(new SWIRLPrinter().print(canSwirlModule));
         }
     }
 
