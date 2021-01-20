@@ -185,7 +185,9 @@ object SWIRLPass {
           graph.addEdge(b, getTarget(normal))
           graph.addEdge(b, getTarget(error))
         }
-        case Terminator.unreachable => // ?
+        case Terminator.unreachable =>
+          // Every unreachable must be preceded by a no-return apply ($Never),
+          // which usually (always?) means a total program abort.
         case Terminator.yld(_, resume, unwind) => {
           graph.addEdge(b, exitBlock)
           graph.addEdge(b, getTarget(resume))

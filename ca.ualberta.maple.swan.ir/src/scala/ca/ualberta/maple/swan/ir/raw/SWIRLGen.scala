@@ -503,10 +503,10 @@ object SWIRLGen {
     if (I.operand.value != "undef") {
       I.attributes.foreach {
         case SILDebugAttribute.argno(index) => {
-          if (ctx.arguments.length < index) {
-            throw new UnexpectedSILFormatException("debug_value arg number out of bounds")
+          // For some reason "argno" is not necessarily within bounds.
+          if (ctx.arguments.length >= index) {
+            ctx.arguments(index - 1).pos = ctx.pos
           }
-          ctx.arguments(index - 1).pos = ctx.pos
         }
         case SILDebugAttribute.name(name) => {
           makeSymbolRef(I.operand.value, ctx).name = name
@@ -521,10 +521,9 @@ object SWIRLGen {
   def visitDebugValueAddr(r: Option[SILResult], I: SILOperator.debugValueAddr, ctx: Context): Array[InstructionDef] = {
     I.attributes.foreach {
       case SILDebugAttribute.argno(index) => {
-        if (ctx.arguments.length < index) {
-          throw new UnexpectedSILFormatException("debug_value arg number out of bounds")
+        if (ctx.arguments.length >= index) {
+          ctx.arguments(index - 1).pos = ctx.pos
         }
-        ctx.arguments(index - 1).pos = ctx.pos
       }
       case SILDebugAttribute.name(name) => {
         makeSymbolRef(I.operand.value, ctx).name = name
