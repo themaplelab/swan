@@ -4,6 +4,8 @@
 # SWAN
 A static program analysis framework for analyzing Swift (incl. iOS/macOS) applications using [WALA](https://github.com/wala/WALA) as the analysis core. SWAN is being developed for detecting security vulnerabilities in Swift applications using taint analysis.
 
+:warning: Unfortunately, SWAN is not usable in its current state because SWAN's Swift compiler hook can no longer be compiled due to macOS, Swift, and Xcode version changes. **We are actively working on fixing this.**
+
 :page_facing_up: [SWAN: A Static Analysis Framework for Swift](https://karimali.ca/resources/papers/swan.pdf)
 
 :tv: [Video demonstration](https://www.youtube.com/watch?v=AZwfhOGqwFs)
@@ -96,15 +98,11 @@ This is mostly useful for debugging. The original VSCode window's debug view wil
 
 ### Important Notes
 
-- We used to build the Swift compiler in order to link against it with our C++ code. However, Apple keeps changing XCode versions and OS requirements, and, therefore, building the Swift compiler is incredibly unstable. We can no longer build the latest Swift since Catalina is required by Xcode 11.4, and switching to Catalina, at least for now, isn't realistic for us nor many other developers. The last tag we were able to build was [swift-DEVELOPMENT-SNAPSHOT-2019-09-15-a](https://github.com/apple/swift/releases/tag/swift-DEVELOPMENT-SNAPSHOT-2019-09-15-a). We now release our C++ translator, which was compiled against that tag's build, as `./lib/libswiftWala.dylib`. This means that changes cannot be made to the C++ translator. We still have access to a Swift build if we do need to recompile the C++ translator. This is unlikely to be needed.
+- We used to build the Swift compiler in order to link against it with our C++ code. However, Apple keeps changing XCode versions and OS requirements, and, therefore, building the Swift compiler is incredibly unstable. We can no longer build the latest Swift since Catalina is required by Xcode 11.4, and switching to Catalina, at least for now, isn't realistic for us nor many other developers. The last tag we were able to build was [swift-DEVELOPMENT-SNAPSHOT-2019-09-15-a](https://github.com/apple/swift/releases/tag/swift-DEVELOPMENT-SNAPSHOT-2019-09-15-a). We now release our C++ translator, which was compiled against that tag's build, as `./lib/libswiftWala.dylib`. **Edit: This release is hardcoded to a particular machine. Therefore, SWAN is not usable in its current state.** This means that changes cannot be made to the C++ translator. We still have access to a Swift build if we do need to recompile the C++ translator. This is unlikely to be needed.
 
 - Using the aforementioned tag, we were able to compile and analyze Xcode apps using Xcode 11.2 beta 2 and macOS Mojave 10.14.4. We can no longer do this due to `xcodebuild` errors on macOS Mojave 10.14.6, even with the same build binaries and Xcode version.
 
-- We are not sure why, but now compiling a single Swift application that does not use any libraries requires giving the compiler the `-sdk` flag. This can perhaps be worked around by transfering an SDK to the Linux machine. Either way, we can no longer support Linux because building old tags of Swift on Linux is also unstable, and we don't have a build available for us to generate a `libswiftWala.so` from.
-
-- We are working on developing a new way of grabbing SIL by dumping it to plain text and parsing it, as opposed to our current solution of intercepting SIL during compiler runtime and then sending the SIL as jobjects to the JVM. This is WIP and has not been publicly released yet.
-
-- You may see references to "SPDS". This is because we are working towards implementing an alternative engine to WALA, and therefore we have adjusted our infrastructure to eventually support both.
+- We are working on developing a new way of grabbing SIL by dumping it to plain text and parsing it, as opposed to our current solution of intercepting SIL during compiler runtime and then sending the SIL as jobjects to the JVM.
 
 ### Building SWAN
 
