@@ -48,8 +48,9 @@ public class ParserTests {
             String expected = TestUtils.readFile(sil);
             SILParser parser = new SILParser(sil.toPath());
             SILModule module = parser.parseModule();
-            String result = parser.print(module);
+            String result = parser.print(module, new SILPrinterOptions());
             // TODO: assertEquals dumps XML to terminal. Not sure why.
+            // Assertions.assertEquals(expected, result);
             Assertions.assertTrue(expected.equals(result));
         }
     }
@@ -59,6 +60,7 @@ public class ParserTests {
     // Don't compare because printing + comparing + modifying expected
     // is far too expensive for files that are 200k lines.
     @Test
+    @Disabled
     void testModuleParsingDontCompare() throws Error, URISyntaxException, IOException {
         System.out.println("Testing modules");
         File fileDir = new File(getClass().getClassLoader()
@@ -139,7 +141,7 @@ public class ParserTests {
             System.out.println("    -> " + sil.getName());
             String expected = TestUtils.readFile(sil);
             SILParser parser = new SILParser(sil.toPath());
-            String result = parser.print(parser.parseModule());
+            String result = parser.print(parser.parseModule(), new SILPrinterOptions());
             // Remove excess newlines
             result = result.replaceAll("\n\n\n", "\n\n");
             expected = expected.replaceAll("\n\n\n", "\n\n");
@@ -162,7 +164,7 @@ public class ParserTests {
             System.out.println("    -> " + sil.getName());
             String expected = TestUtils.readFile(sil);
             SILParser parser = new SILParser(sil.toPath());
-            String result = parser.print(parser.parseModule());
+            String result = parser.print(parser.parseModule(), new SILPrinterOptions());
             // Remove excess newlines
             result = result.replaceAll("\n\n\n", "\n\n");
             expected = expected.replaceAll("\n\n\n", "\n\n");
@@ -206,7 +208,7 @@ public class ParserTests {
             String expected = TestUtils.readFile(sil);
             SILParser parser = new SILParser(sil.toPath());
             SILModule module = parser.parseModule();
-            String result = parser.print(module);
+            String result = parser.print(module, new SILPrinterOptions());
             // Remove excess newlines
             expected = expected.trim() + "\n";
             result = result.trim() + "\n";
@@ -253,7 +255,7 @@ public class ParserTests {
             System.out.println("    -> " + sil.getName());
             String expected = TestUtils.readFile(sil);
             SILParser parser = new SILParser(sil.toPath());
-            String result = parser.print(parser.parseModule());
+            String result = parser.print(parser.parseModule(), new SILPrinterOptions());
             expected = expected.trim() + "\n";
             result = result.trim() + "\n";
             Assertions.assertTrue(expected.equals(result));

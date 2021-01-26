@@ -17,7 +17,8 @@ import scala.collection.{immutable, mutable}
 import scala.collection.mutable.ArrayBuffer
 
 // Imports might be useful for modelling later, but probably not.
-class Module(val functions: ArrayBuffer[Function], var raw: Boolean, val ddg: DynamicDispatchGraph)
+class Module(val functions: ArrayBuffer[Function], var raw: Boolean,
+             val ddg: DynamicDispatchGraph, val silMap: mutable.HashMap[Object, Object])
 
 // instantiatedTypes are used for RTA later
 class Function(val attribute: Option[FunctionAttribute], val name: String, val tpe: Type,
@@ -32,9 +33,15 @@ class CanModule(val m: Module, val functions: ArrayBuffer[CanFunction],
   m.raw = false
 }
 
-// CFG is generic, not engine specific.
 class CanFunction(val f: Function, val symbolTable: mutable.HashMap[String, SymbolTableEntry],
-                  val cfg: Graph[Block, DefaultEdge])
+                  val cfg: Graph[Block, DefaultEdge]) {
+  def getSymbol(name: String): Symbol = {
+    symbolTable(name) match {
+      case SymbolTableEntry.operator(symbol, _) => symbol
+      case SymbolTableEntry.argument(argument) => argument
+    }
+  }
+}
 
 sealed trait FunctionAttribute
 object FunctionAttribute {
@@ -47,9 +54,6 @@ object FunctionAttribute {
 class Type(val name: String = "Any")
 
 class Position(val path: String, val line: Int, val col: Int)
-
-// `pos` can be changed by debug_value and debug_value_addr.
-class Argument(val name: SymbolRef, val tpe: Type, var pos: Option[Position] = None)
 
 sealed trait InstructionDef {
   val instruction: Instruction
@@ -142,6 +146,9 @@ object Literal {
 }
 
 class Symbol(val ref: SymbolRef, val tpe: Type)
+
+// `pos` can be changed by debug_value and debug_value_addr.
+class Argument(ref: SymbolRef, tpe: Type, var pos: Option[Position] = None) extends Symbol(ref, tpe)
 
 // This is so that we can change symbol names throughout the program
 // for things like symbol_copy folding.

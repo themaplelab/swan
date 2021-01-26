@@ -1,0 +1,123 @@
+sil_stage canonical
+
+import Builtin
+import Swift
+import SwiftShims
+
+// sourced
+sil_global hidden [let] @$s4test7sourcedSSvp : $String
+
+sil_scope 1 {  parent @main : $@convention(c) (Int32, UnsafeMutablePointer<Optional<UnsafeMutablePointer<Int8>>>) -> Int32 }
+sil_scope 2 { loc "test.swift":12:1 parent 1 }
+sil_scope 3 { loc "test.swift":13:1 parent 1 }
+
+// main
+sil [ossa] @main : $@convention(c) (Int32, UnsafeMutablePointer<Optional<UnsafeMutablePointer<Int8>>>) -> Int32 {
+bb0(%0 : $Int32, %1 : $UnsafeMutablePointer<Optional<UnsafeMutablePointer<Int8>>>):
+  alloc_global @$s4test7sourcedSSvp, loc "test.swift":12:5, scope 2 // id: %2
+  %3 = global_addr @$s4test7sourcedSSvp : $*String, loc "test.swift":12:5, scope 2 // users: %7, %6
+  // function_ref source()
+  %4 = function_ref @$s4test6sourceSSyF : $@convention(thin) () -> @owned String, loc "test.swift":12:15, scope 2 // user: %5
+  %5 = apply %4() : $@convention(thin) () -> @owned String, loc "test.swift":12:15, scope 2 // user: %6
+  store %5 to [init] %3 : $*String, loc "test.swift":12:15, scope 2 // id: %6
+  %7 = load_borrow %3 : $*String, loc "test.swift":13:12, scope 3 // users: %10, %9
+  // function_ref sink(sunk:)
+  %8 = function_ref @$s4test4sink4sunkySS_tF : $@convention(thin) (@guaranteed String) -> (), loc "test.swift":13:1, scope 3 // user: %9
+  %9 = apply %8(%7) : $@convention(thin) (@guaranteed String) -> (), loc "test.swift":13:1, scope 3
+  end_borrow %7 : $String, loc "test.swift":13:19, scope 3 // id: %10
+  %11 = integer_literal $Builtin.Int32, 0, scope 3 // user: %12
+  %12 = struct $Int32 (%11 : $Builtin.Int32), scope 3 // user: %13
+  return %12 : $Int32, scope 3                    // id: %13
+} // end sil function 'main'
+
+sil_scope 4 { loc "test.swift":4:6 parent @$s4test6sourceSSyF : $@convention(thin) () -> @owned String }
+sil_scope 5 { loc "test.swift":4:25 parent 4 }
+
+// source()
+sil hidden [ossa] @$s4test6sourceSSyF : $@convention(thin) () -> @owned String {
+bb0:
+  %0 = string_literal utf8 "I'm bad", loc "test.swift":5:12, scope 5 // user: %5
+  %1 = integer_literal $Builtin.Word, 7, loc "test.swift":5:12, scope 5 // user: %5
+  %2 = integer_literal $Builtin.Int1, -1, loc "test.swift":5:12, scope 5 // user: %5
+  %3 = metatype $@thin String.Type, loc "test.swift":5:12, scope 5 // user: %5
+  // function_ref String.init(_builtinStringLiteral:utf8CodeUnitCount:isASCII:)
+  %4 = function_ref @$sSS21_builtinStringLiteral17utf8CodeUnitCount7isASCIISSBp_BwBi1_tcfC : $@convention(method) (Builtin.RawPointer, Builtin.Word, Builtin.Int1, @thin String.Type) -> @owned String, loc "test.swift":5:12, scope 5 // user: %5
+  %5 = apply %4(%0, %1, %2, %3) : $@convention(method) (Builtin.RawPointer, Builtin.Word, Builtin.Int1, @thin String.Type) -> @owned String, loc "test.swift":5:12, scope 5 // user: %6
+  return %5 : $String, loc "test.swift":5:5, scope 5 // id: %6
+} // end sil function '$s4test6sourceSSyF'
+
+
+// String.init(_builtinStringLiteral:utf8CodeUnitCount:isASCII:)
+sil [serialized] [always_inline] [readonly] [_semantics "string.makeUTF8"] @$sSS21_builtinStringLiteral17utf8CodeUnitCount7isASCIISSBp_BwBi1_tcfC : $@convention(method) (Builtin.RawPointer, Builtin.Word, Builtin.Int1, @thin String.Type) -> @owned String
+
+sil_scope 6 { loc "test.swift":8:6 parent @$s4test4sink4sunkySS_tF : $@convention(thin) (@guaranteed String) -> () }
+sil_scope 7 { loc "test.swift":8:25 parent 6 }
+
+// sink(sunk:)
+sil hidden [ossa] @$s4test4sink4sunkySS_tF : $@convention(thin) (@guaranteed String) -> () {
+// %0 "sunk"                                      // users: %8, %1
+bb0(%0 : @guaranteed $String):
+  debug_value %0 : $String, let, name "sunk", argno 1, loc "test.swift":8:11, scope 6 // id: %1
+  %2 = integer_literal $Builtin.Word, 1, loc "test.swift":9:11, scope 7 // user: %4
+  // function_ref _allocateUninitializedArray<A>(_:)
+  %3 = function_ref @$ss27_allocateUninitializedArrayySayxG_BptBwlF : $@convention(thin) <τ_0_0> (Builtin.Word) -> (@owned Array<τ_0_0>, Builtin.RawPointer), loc "test.swift":9:11, scope 7 // user: %4
+  %4 = apply %3<Any>(%2) : $@convention(thin) <τ_0_0> (Builtin.Word) -> (@owned Array<τ_0_0>, Builtin.RawPointer), loc "test.swift":9:11, scope 7 // user: %5
+  (%5, %6) = destructure_tuple %4 : $(Array<Any>, Builtin.RawPointer), loc "test.swift":9:11, scope 7 // users: %19, %16, %7
+  %7 = pointer_to_address %6 : $Builtin.RawPointer to [strict] $*Any, loc "test.swift":9:11, scope 7 // user: %9
+  %8 = copy_value %0 : $String, loc "test.swift":9:11, scope 7 // user: %10
+  %9 = init_existential_addr %7 : $*Any, $String, loc "test.swift":9:11, scope 7 // user: %10
+  store %8 to [init] %9 : $*String, loc "test.swift":9:11, scope 7 // id: %10
+  // function_ref default argument 1 of print(_:separator:terminator:)
+  %11 = function_ref @$ss5print_9separator10terminatoryypd_S2StFfA0_ : $@convention(thin) () -> @owned String, loc "test.swift":9:10, scope 7 // user: %12
+  %12 = apply %11() : $@convention(thin) () -> @owned String, loc "test.swift":9:10, scope 7 // users: %18, %16
+  // function_ref default argument 2 of print(_:separator:terminator:)
+  %13 = function_ref @$ss5print_9separator10terminatoryypd_S2StFfA1_ : $@convention(thin) () -> @owned String, loc "test.swift":9:10, scope 7 // user: %14
+  %14 = apply %13() : $@convention(thin) () -> @owned String, loc "test.swift":9:10, scope 7 // users: %17, %16
+  // function_ref print(_:separator:terminator:)
+  %15 = function_ref @$ss5print_9separator10terminatoryypd_S2StF : $@convention(thin) (@guaranteed Array<Any>, @guaranteed String, @guaranteed String) -> (), loc "test.swift":9:5, scope 7 // user: %16
+  %16 = apply %15(%5, %12, %14) : $@convention(thin) (@guaranteed Array<Any>, @guaranteed String, @guaranteed String) -> (), loc "test.swift":9:5, scope 7
+  destroy_value %14 : $String, loc "test.swift":9:15, scope 7 // id: %17
+  destroy_value %12 : $String, loc "test.swift":9:15, scope 7 // id: %18
+  destroy_value %5 : $Array<Any>, loc "test.swift":9:15, scope 7 // id: %19
+  %20 = tuple (), loc "test.swift":10:1, scope 7  // user: %21
+  return %20 : $(), loc "test.swift":10:1, scope 7 // id: %21
+} // end sil function '$s4test4sink4sunkySS_tF'
+
+
+// _allocateUninitializedArray<A>(_:)
+sil [serialized] [always_inline] [_semantics "array.uninitialized_intrinsic"] @$ss27_allocateUninitializedArrayySayxG_BptBwlF : $@convention(thin) <τ_0_0> (Builtin.Word) -> (@owned Array<τ_0_0>, Builtin.RawPointer)
+
+sil_scope 8 {  parent @$ss5print_9separator10terminatoryypd_S2StFfA0_ : $@convention(thin) () -> @owned String }
+
+// default argument 1 of print(_:separator:terminator:)
+sil shared_external [serialized] @$ss5print_9separator10terminatoryypd_S2StFfA0_ : $@convention(thin) () -> @owned String {
+bb0:
+  %0 = string_literal utf8 " ", scope 8           // user: %5
+  %1 = integer_literal $Builtin.Word, 1, scope 8  // user: %5
+  %2 = integer_literal $Builtin.Int1, -1, scope 8 // user: %5
+  %3 = metatype $@thin String.Type, scope 8       // user: %5
+  // function_ref String.init(_builtinStringLiteral:utf8CodeUnitCount:isASCII:)
+  %4 = function_ref @$sSS21_builtinStringLiteral17utf8CodeUnitCount7isASCIISSBp_BwBi1_tcfC : $@convention(method) (Builtin.RawPointer, Builtin.Word, Builtin.Int1, @thin String.Type) -> @owned String, scope 8 // user: %5
+  %5 = apply %4(%0, %1, %2, %3) : $@convention(method) (Builtin.RawPointer, Builtin.Word, Builtin.Int1, @thin String.Type) -> @owned String, scope 8 // user: %6
+  return %5 : $String, scope 8                    // id: %6
+} // end sil function '$ss5print_9separator10terminatoryypd_S2StFfA0_'
+
+sil_scope 9 {  parent @$ss5print_9separator10terminatoryypd_S2StFfA1_ : $@convention(thin) () -> @owned String }
+
+// default argument 2 of print(_:separator:terminator:)
+sil shared_external [serialized] @$ss5print_9separator10terminatoryypd_S2StFfA1_ : $@convention(thin) () -> @owned String {
+bb0:
+  %0 = string_literal utf8 "\n", scope 9          // user: %5
+  %1 = integer_literal $Builtin.Word, 1, scope 9  // user: %5
+  %2 = integer_literal $Builtin.Int1, -1, scope 9 // user: %5
+  %3 = metatype $@thin String.Type, scope 9       // user: %5
+  // function_ref String.init(_builtinStringLiteral:utf8CodeUnitCount:isASCII:)
+  %4 = function_ref @$sSS21_builtinStringLiteral17utf8CodeUnitCount7isASCIISSBp_BwBi1_tcfC : $@convention(method) (Builtin.RawPointer, Builtin.Word, Builtin.Int1, @thin String.Type) -> @owned String, scope 9 // user: %5
+  %5 = apply %4(%0, %1, %2, %3) : $@convention(method) (Builtin.RawPointer, Builtin.Word, Builtin.Int1, @thin String.Type) -> @owned String, scope 9 // user: %6
+  return %5 : $String, scope 9                    // id: %6
+} // end sil function '$ss5print_9separator10terminatoryypd_S2StFfA1_'
+
+
+// print(_:separator:terminator:)
+sil @$ss5print_9separator10terminatoryypd_S2StF : $@convention(thin) (@guaranteed Array<Any>, @guaranteed String, @guaranteed String) -> ()
+

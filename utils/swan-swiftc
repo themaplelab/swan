@@ -38,10 +38,10 @@ def write_sil(sil):
   return output_file
 
 def run_swiftc_cmd():
-  emit_silgen = "-emit-sil"
-  info("Adding " + emit_silgen)
+  emit_sil = "-emit-sil -Xfrontend -gsil -Xllvm -sil-print-debuginfo -Xllvm -sil-print-before=SerializeSILPass"
+  info("Adding " + emit_sil)
 
-  cmd = ["swiftc", emit_silgen, " ".join(sys.argv[1:])]
+  cmd = ["swiftc", emit_sil, " ".join(sys.argv[1:])]
   string_cmd = " ".join(cmd)
   info("Running swiftc:\n    " + string_cmd + "\n", "\n")
 

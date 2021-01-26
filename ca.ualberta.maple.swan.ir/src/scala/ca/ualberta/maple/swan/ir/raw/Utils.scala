@@ -28,7 +28,11 @@ object Utils {
 
   // SIL $T to SWIRL $T
   def SILTypeToType(rootTpe: SILType): Type = {
-    new Type(printer.naked(rootTpe))
+    if (rootTpe.isInstanceOf[SILType.withOwnership]) {
+      new Type(printer.print(rootTpe))
+    } else {
+      new Type(printer.naked(rootTpe))
+    }
   }
 
   // SIL $T to SWIRL $*T

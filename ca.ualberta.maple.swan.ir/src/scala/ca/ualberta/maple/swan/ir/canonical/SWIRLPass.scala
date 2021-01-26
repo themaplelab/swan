@@ -18,6 +18,8 @@ import org.jgrapht.graph.{DefaultDirectedGraph, DefaultEdge}
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
 
+// TODO: Resolve block arguments (as assigns?)
+// TODO: Perhaps change unwind to return new object of function return type?
 object SWIRLPass {
 
   def runPasses(module: Module): CanModule = {
@@ -40,7 +42,7 @@ object SWIRLPass {
     val table = new mutable.HashMap[String, SymbolTableEntry]
     function.blocks.foreach(block => {
       block.arguments.foreach(argument => {
-        table.put(argument.name.name, SymbolTableEntry.argument(argument))
+        table.put(argument.ref.name, SymbolTableEntry.argument(argument))
       })
       block.operators.foreach(op => {
         op.operator match {

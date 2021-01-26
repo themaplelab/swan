@@ -13,47 +13,70 @@ package ca.ualberta.maple.swan.parser
 import ca.ualberta.maple.swan.parser.SILFunctionAttribute.specialize.Kind
 import ca.ualberta.maple.swan.parser.SILFunctionAttribute.{FunctionEffects, FunctionInlining, FunctionOptimization, FunctionPurpose, Thunk}
 
+import scala.collection.mutable
+
+class SILPrinterOptions {
+  var printLocation = true
+  def printLocation(b: Boolean): SILPrinterOptions = {
+    printLocation = b
+    this
+  }
+}
+
 // Many printX will return the description for convenience.
 class SILPrinter extends Printer {
 
-  def print(module: SILModule): String = {
+  val silLocMap: mutable.HashMap[Object, (Int, Int)] =
+    new mutable.HashMap[Object, (Int, Int)]()
+
+  // Is only correct for single files
+  val swiftLocMap: mutable.HashMap[Object, (Int, Int)] =
+    new mutable.HashMap[Object, (Int, Int)]()
+
+  var options = new SILPrinterOptions()
+
+  def print(module: SILModule, opts: SILPrinterOptions): String = {
+
+    options = opts
+
     print("sil_stage canonical")
-    print("\n\n")
+    printNewline();printNewline()
     // These are not actually all printed at once, but this is fine
     // because we can modify the expected input to expect it here.
     module.scopes.foreach(scope => {
       print(scope)
-      print("\n")
+      printNewline()
     })
     module.imports.foreach(imprt => {
       print("import ")
       print(imprt)
-      print("\n")
+      printNewline()
     })
-    print("\n")
+    printNewline()
     module.globalVariables.foreach(gv => {
       print(gv)
     })
     module.functions.foreach(f => {
       print(f)
-      print("\n")
+      printNewline()
     })
     module.vTables.foreach(v => {
       print(v)
-      print("\n")
+      printNewline()
     })
     module.witnessTables.foreach(w => {
       print(w)
-      print("\n")
+      printNewline()
     })
     module.properties.foreach(p => {
       print(p)
-      print("\n")
+      printNewline()
     })
     this.toString
   }
 
   def print(function: SILFunction): String = {
+    silLocMap.put(function, (this.line, this.getCol))
     print("sil ")
     print(function.linkage)
     print(whenEmpty = false, "", function.attributes, " ", " ", (attribute: SILFunctionAttribute) => print(attribute))
@@ -61,22 +84,23 @@ class SILPrinter extends Printer {
     print(" : ")
     print(function.tpe)
     print(whenEmpty = false, " {\n", function.blocks, "\n", "}", (block: SILBlock) => print(block))
-    print("\n")
+    printNewline()
     this.toString
   }
 
   def print(block: SILBlock): String = {
+    silLocMap.put(block, (this.line, this.getCol))
     print(block.identifier)
     print(whenEmpty = false, "(", block.arguments, ", ", ")", (arg: SILArgument) => print(arg))
     print(":")
     indent()
     block.operatorDefs.foreach(op => {
-      print("\n")
+      printNewline()
       print(op)
     })
-    print("\n")
+    printNewline()
     print(block.terminatorDef)
-    print("\n")
+    printNewline()
     unindent()
     this.toString
   }
@@ -90,16 +114,30 @@ class SILPrinter extends Printer {
   }
 
   def print(operatorDef: SILOperatorDef): String = {
+    silLocMap.put(operatorDef, (this.line, this.getCol))
     print(operatorDef.result, " = ", (r: SILResult) => {
       print(r)
     })
     print(operatorDef.operator)
+    if (operatorDef.sourceInfo.nonEmpty) {
+      val loc = operatorDef.sourceInfo.get.loc
+      if (loc.nonEmpty) {
+        swiftLocMap.put(operatorDef, (loc.get.line, loc.get.column))
+      }
+    }
     print(operatorDef.sourceInfo, (si: SILSourceInfo) => print(si))
     this.toString
   }
 
   def print(terminatorDef: SILTerminatorDef): String = {
+    silLocMap.put(terminatorDef, (this.line, this.getCol))
     print(terminatorDef.terminator)
+    if (terminatorDef.sourceInfo.nonEmpty) {
+      val loc = terminatorDef.sourceInfo.get.loc
+      if (loc.nonEmpty) {
+        swiftLocMap.put(terminatorDef, (loc.get.line, loc.get.column))
+      }
+    }
     print(terminatorDef.sourceInfo, (si: SILSourceInfo) => print(si))
     this.toString
   }
@@ -246,6 +284,10 @@ class SILPrinter extends Printer {
       }
       case SILOperator.endBorrow(operand) => {
         print("end_borrow ")
+        print(operand)
+      }
+      case SILOperator.endLifetime(operand) => {
+        print("end_lifetime ")
         print(operand)
       }
       case SILOperator.copyAddr(take, value, initialization, operand) => {
@@ -777,6 +819,14 @@ class SILPrinter extends Printer {
         print(" to ")
         print(tpe)
       }
+      case SILOperator.uncheckedOwnershipConversion(operand, from, to) => {
+        print("unchecked_ownership_conversion ")
+        print(operand)
+        print(", ")
+        print(from)
+        print(" to ")
+        print(to)
+      }
       case SILOperator.rawPointerToRef(operand, tpe) => {
         print("raw_pointer_to_ref ")
         print(operand)
@@ -1013,12 +1063,12 @@ class SILPrinter extends Printer {
       indent()
       globalVariable.instructions.get.foreach(instruction => {
         print(instruction)
-        print("\n")
+        printNewline()
       })
       unindent()
       print("}")
     }
-    print("\n\n")
+    printNewline();printNewline()
     this.toString
   }
 
@@ -1028,16 +1078,16 @@ class SILPrinter extends Printer {
     print(vTable.name)
     print(" {")
     if (vTable.entries.nonEmpty) {
-      print("\n")
+      printNewline()
       indent()
       vTable.entries.foreach(entry => {
         print(entry)
-        print("\n")
+        printNewline()
       })
       unindent()
     }
     print("}")
-    print("\n")
+    printNewline()
     this.toString
   }
 
@@ -1073,7 +1123,7 @@ class SILPrinter extends Printer {
     indent()
     witnessTable.entries.foreach(entry => {
       print(entry)
-      print("\n")
+      printNewline()
     })
     unindent()
     print("}\n")
@@ -1386,7 +1436,7 @@ class SILPrinter extends Printer {
       case SILFunctionAttribute.weakImported => print("[weak_imported]")
       case SILFunctionAttribute.available(version) => {
         print("[available ")
-        print(whenEmpty = false, "", version, ".", "", (x: String) => literal(x, true))
+        print(whenEmpty = false, "", version, ".", "", (x: String) => literal(x, naked = true))
         print("]")
       }
       case inlining: SILFunctionAttribute.FunctionInlining => {
@@ -1469,6 +1519,9 @@ class SILPrinter extends Printer {
   }
 
   def print(sourceInfo: SILSourceInfo): Unit = {
+    if (!options.printLocation) {
+      return
+    }
     // The SIL docs say that scope refs precede locations, but this is
     // not true once you look at the compiler outputs or its source code.
     print(", ", sourceInfo.loc, (l: SILLoc) => print(l))
@@ -1488,7 +1541,7 @@ class SILPrinter extends Printer {
       print(scope.inlinedAt.get)
     }
     print(" }")
-    print("\n")
+    printNewline()
   }
 
   def print(loc: SILLoc): Unit = {
@@ -1533,10 +1586,9 @@ class SILPrinter extends Printer {
     print(name.mangled)
   }
 
-  def print(tpe: SILType): Unit = {
+  def print(tpe: SILType): String = {
     tpe match {
       case SILType.withOwnership(attribute, subtype) => {
-        print("$")
         print(attribute)
         print(" ")
         print(subtype)
@@ -1549,6 +1601,7 @@ class SILPrinter extends Printer {
         naked(tpe)
       }
     }
+    this.toString
   }
 
   def naked(nakedTpe: SILType): String = {
@@ -1722,6 +1775,7 @@ class SILPrinter extends Printer {
     storeOwnership match {
       case SILStoreOwnership.init => print("[init]")
       case SILStoreOwnership.trivial => print("[trivial]")
+      case SILStoreOwnership.assign => print("[assign]")
     }
   }
 

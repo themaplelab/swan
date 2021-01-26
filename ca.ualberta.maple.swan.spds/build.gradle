@@ -1,0 +1,75 @@
+/*
+ * This source file is part fo the SWAN open-source project.
+ *
+ * Copyright (c) 2020 the SWAN project authors.
+ * Licensed under Apache License v2.0
+ *
+ * See https://github.com/themaplelab/swan/LICENSE.txt for license information.
+ *
+ */
+
+plugins {
+    id 'java'
+    id 'scala'
+}
+
+sourceSets {
+    main {
+        scala {
+            srcDirs = ['src/scala']
+        }
+        java {
+            srcDirs = []
+        }
+    }
+    test {
+        scala {
+            srcDirs = []
+        }
+        java {
+            srcDirs = ['src/test/java']
+        }
+    }
+}
+
+repositories {
+    mavenCentral()
+    maven {
+        name = "github"
+        url = uri("https://maven.pkg.github.com/CodeShield-Security/SPDS/")
+        credentials {
+            username = "tiganov"
+            password = "ba16a9b82497a88ac68a9f98cb230057d3ce57c4"
+        }
+    }
+    maven {
+        name = "soot"
+        url = uri("https://soot-build.cs.uni-paderborn.de/nexus/repository/soot-release/")
+    }
+}
+
+group 'ca.ualberta.maple.swan'
+
+sourceCompatibility = 1.8
+
+dependencies {
+    implementation project(":ca.ualberta.maple.swan.parser")
+    implementation project(":ca.ualberta.maple.swan.ir")
+
+    implementation 'de.fraunhofer.iem:WPDS:3.0.8'
+    implementation 'de.fraunhofer.iem:boomerangScope:3.0.8'
+    implementation 'de.fraunhofer.iem:boomerangPDS:2.5.1'
+
+    implementation 'org.scala-lang:scala-library:2.13.3'
+    testImplementation 'org.scala-lang:scala-library:2.13.3'
+    testImplementation 'org.scalatest:scalatest_2.13:3.2.0'
+
+    testImplementation('org.junit.jupiter:junit-jupiter-api:5.4.2')
+    testImplementation('org.junit.jupiter:junit-jupiter-params:5.4.2')
+    testRuntime('org.junit.jupiter:junit-jupiter-engine:5.4.2')
+}
+
+test {
+    useJUnitPlatform()
+    testLogging.showStandardStreams true
+}

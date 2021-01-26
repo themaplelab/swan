@@ -95,6 +95,8 @@ object SILOperator {
   case class beginBorrow(operand: SILOperand) extends SILOperator
   // NOTE: The SIL.rst for end_borrow is not consistent with in-practice instructions at all.
   case class endBorrow(operand: SILOperand) extends SILOperator
+  // Not documented in SIL.rst
+  case class endLifetime(operand: SILOperand) extends SILOperator
   // Raw SIL only: assign
   // Raw SIL only: assign_by_wrapper
   // Raw SIL only: mark_uninitialized
@@ -238,6 +240,7 @@ object SILOperator {
   case class uncheckedAddrCast(operand: SILOperand, tpe: SILType) extends SILOperator
   case class uncheckedTrivialBitCast(operand: SILOperand, tpe: SILType) extends SILOperator
   // NSIP: unchecked_bitwise_cast
+  case class uncheckedOwnershipConversion(operand: SILOperand, from: SILTypeAttribute, to: SILTypeAttribute) extends SILOperator
   // NSIP: ref_to_raw_pointer
   case class rawPointerToRef(operand: SILOperand, tpe: SILType) extends SILOperator
   // SIL.rst: sil-instruction ::= 'ref_to_unowned' sil-operand
@@ -422,7 +425,7 @@ object SILEnforcement {
 class SILMangledName(val mangled: String) {
   val demangled: String = {
     // TODO: ship demangler with SWAN
-    ("/Library/Developer/CommandLineTools/usr/bin/swift-demangle -compact \'" + mangled + '\'').!!.replaceAll(System.lineSeparator(), "")
+    ("/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swift-demangle -compact \'" + mangled + '\'').!!.replaceAll(System.lineSeparator(), "")
   }
 }
 
@@ -643,6 +646,7 @@ sealed trait SILStoreOwnership
 object SILStoreOwnership {
   case object init extends SILStoreOwnership
   case object trivial extends SILStoreOwnership
+  case object assign extends SILStoreOwnership
 }
 
 class SILGlobalVariable(val linkage: SILLinkage, val serialized: Boolean,

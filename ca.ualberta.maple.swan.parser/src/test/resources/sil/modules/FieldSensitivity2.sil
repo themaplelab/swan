@@ -1,0 +1,1001 @@
+sil_stage canonical
+
+import Builtin
+import Swift
+import SwiftShims
+
+// a
+sil_global hidden [let] @$s4test1aAA1ACvp : $A
+
+// b
+sil_global hidden [let] @$s4test1bAA1BCSgvp : $Optional<B>
+
+sil_scope 1 {  parent @main : $@convention(c) (Int32, UnsafeMutablePointer<Optional<UnsafeMutablePointer<Int8>>>) -> Int32 }
+sil_scope 2 { loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":24:1 parent 1 }
+sil_scope 3 { loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":25:1 parent 1 }
+sil_scope 4 { loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":26:1 parent 1 }
+sil_scope 5 { loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":27:1 parent 1 }
+sil_scope 6 { loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":28:1 parent 1 }
+sil_scope 7 { loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":29:1 parent 1 }
+
+// main
+sil [ossa] @main : $@convention(c) (Int32, UnsafeMutablePointer<Optional<UnsafeMutablePointer<Int8>>>) -> Int32 {
+bb0(%0 : $Int32, %1 : $UnsafeMutablePointer<Optional<UnsafeMutablePointer<Int8>>>):
+  alloc_global @$s4test1aAA1ACvp, loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":24:5, scope 2 // id: %2
+  %3 = global_addr @$s4test1aAA1ACvp : $*A, loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":24:5, scope 2 // users: %62, %18, %8, %7
+  %4 = metatype $@thick A.Type, loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":24:9, scope 2 // user: %6
+  // function_ref A.__allocating_init()
+  %5 = function_ref @$s4test1ACACycfC : $@convention(method) (@thick A.Type) -> @owned A, loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":24:9, scope 2 // user: %6
+  %6 = apply %5(%4) : $@convention(method) (@thick A.Type) -> @owned A, loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":24:9, scope 2 // user: %7
+  store %6 to [init] %3 : $*A, loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":24:9, scope 2 // id: %7
+  %8 = load_borrow %3 : $*A, loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":25:1, scope 3 // users: %15, %14, %13
+  %9 = metatype $@thick B.Type, loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":25:7, scope 3 // user: %11
+  // function_ref B.__allocating_init()
+  %10 = function_ref @$s4test1BCACycfC : $@convention(method) (@thick B.Type) -> @owned B, loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":25:7, scope 3 // user: %11
+  %11 = apply %10(%9) : $@convention(method) (@thick B.Type) -> @owned B, loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":25:7, scope 3 // user: %12
+  %12 = enum $Optional<B>, #Optional.some!enumelt, %11 : $B, loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":25:7, scope 3 // user: %14
+  %13 = class_method %8 : $A, #A.b!setter : (A) -> (B?) -> (), $@convention(method) (@owned Optional<B>, @guaranteed A) -> (), loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":25:5, scope 3 // user: %14
+  %14 = apply %13(%12, %8) : $@convention(method) (@owned Optional<B>, @guaranteed A) -> (), loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":25:5, scope 3
+  end_borrow %8 : $A, loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":25:9, scope 3 // id: %15
+  alloc_global @$s4test1bAA1BCSgvp, loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":26:5, scope 4 // id: %16
+  %17 = global_addr @$s4test1bAA1BCSgvp : $*Optional<B>, loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":26:5, scope 4 // users: %138, %23, %21
+  %18 = load_borrow %3 : $*A, loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":26:9, scope 4 // users: %22, %20, %19
+  %19 = class_method %18 : $A, #A.b!getter : (A) -> () -> B?, $@convention(method) (@guaranteed A) -> @owned Optional<B>, loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":26:11, scope 4 // user: %20
+  %20 = apply %19(%18) : $@convention(method) (@guaranteed A) -> @owned Optional<B>, loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":26:11, scope 4 // user: %21
+  store %20 to [init] %17 : $*Optional<B>, loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":26:11, scope 4 // id: %21
+  end_borrow %18 : $A, loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":26:11, scope 4 // id: %22
+  %23 = load [copy] %17 : $*Optional<B>, loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":27:1, scope 5 // user: %24
+  switch_enum %23 : $Optional<B>, case #Optional.some!enumelt: bb8, case #Optional.none!enumelt: bb1, loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":27:2, scope 5 // id: %24
+
+bb1:                                              // Preds: bb0
+  %25 = string_literal utf8 "test/test.swift", loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":27:2, scope 5 // user: %34
+  %26 = integer_literal $Builtin.Word, 15, loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":27:2, scope 5 // user: %38
+  %27 = integer_literal $Builtin.Word, 2, loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":27:2, scope 5
+  br bb2, loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":27:2, scope 5 // id: %28
+
+bb2:                                              // Preds: bb1
+  %29 = string_literal utf8 "Unexpectedly found nil while unwrapping an Optional value", loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":27:2, scope 5 // user: %31
+  %30 = integer_literal $Builtin.Word, 57, loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":27:2, scope 5 // user: %33
+  %31 = builtin "ptrtoint_Word"(%29 : $Builtin.RawPointer) : $Builtin.Word, loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":27:2, scope 5 // user: %33
+  %32 = integer_literal $Builtin.Int8, 2, loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":27:2, scope 5 // user: %33
+  %33 = struct $StaticString (%31 : $Builtin.Word, %30 : $Builtin.Word, %32 : $Builtin.Int8), loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":27:2, scope 5 // user: %52
+  %34 = builtin "ptrtoint_Word"(%25 : $Builtin.RawPointer) : $Builtin.Word, loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":27:2, scope 5 // user: %38
+  br bb3, loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":27:2, scope 5 // id: %35
+
+bb3:                                              // Preds: bb2
+  %36 = integer_literal $Builtin.Int8, 2, loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":27:2, scope 5 // user: %38
+  br bb4, loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":27:2, scope 5 // id: %37
+
+bb4:                                              // Preds: bb3
+  %38 = struct $StaticString (%34 : $Builtin.Word, %26 : $Builtin.Word, %36 : $Builtin.Int8), loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":27:2, scope 5 // user: %52
+  %39 = integer_literal $Builtin.Int64, 27, loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":27:2, scope 5 // user: %40
+  %40 = struct $UInt (%39 : $Builtin.Int64), loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":27:2, scope 5 // user: %52
+  br bb5, loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":27:2, scope 5 // id: %41
+
+bb5:                                              // Preds: bb4
+  %42 = string_literal utf8 "Fatal error", loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":27:2, scope 5 // user: %44
+  %43 = integer_literal $Builtin.Word, 11, loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":27:2, scope 5 // user: %46
+  %44 = builtin "ptrtoint_Word"(%42 : $Builtin.RawPointer) : $Builtin.Word, loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":27:2, scope 5 // user: %46
+  %45 = integer_literal $Builtin.Int8, 2, loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":27:2, scope 5 // user: %46
+  %46 = struct $StaticString (%44 : $Builtin.Word, %43 : $Builtin.Word, %45 : $Builtin.Int8), loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":27:2, scope 5 // user: %52
+  br bb6, loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":27:2, scope 5 // id: %47
+
+bb6:                                              // Preds: bb5
+  %48 = integer_literal $Builtin.Int32, 1, loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":27:2, scope 5 // user: %49
+  %49 = struct $UInt32 (%48 : $Builtin.Int32), loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":27:2, scope 5 // user: %52
+  br bb7, loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":27:2, scope 5 // id: %50
+
+bb7:                                              // Preds: bb6
+  // function_ref _assertionFailure(_:_:file:line:flags:)
+  %51 = function_ref @$ss17_assertionFailure__4file4line5flagss5NeverOs12StaticStringV_A2HSus6UInt32VtF : $@convention(thin) (StaticString, StaticString, StaticString, UInt, UInt32) -> Never, loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":27:2, scope 5 // user: %52
+  %52 = apply %51(%46, %33, %38, %40, %49) : $@convention(thin) (StaticString, StaticString, StaticString, UInt, UInt32) -> Never, loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":27:2, scope 5
+  unreachable , scope 5                           // id: %53
+
+// %54                                            // users: %61, %60, %59
+bb8(%54 : @owned $B):                             // Preds: bb0
+  %55 = metatype $@thick C.Type, loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":27:8, scope 5 // user: %57
+  // function_ref C.__allocating_init()
+  %56 = function_ref @$s4test1CCACycfC : $@convention(method) (@thick C.Type) -> @owned C, loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":27:8, scope 5 // user: %57
+  %57 = apply %56(%55) : $@convention(method) (@thick C.Type) -> @owned C, loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":27:8, scope 5 // user: %58
+  %58 = enum $Optional<C>, #Optional.some!enumelt, %57 : $C, loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":27:8, scope 5 // user: %60
+  %59 = class_method %54 : $B, #B.c!setter : (B) -> (C?) -> (), $@convention(method) (@owned Optional<C>, @guaranteed B) -> (), loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":27:6, scope 5 // user: %60
+  %60 = apply %59(%58, %54) : $@convention(method) (@owned Optional<C>, @guaranteed B) -> (), loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":27:6, scope 5
+  destroy_value %54 : $B, loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":27:2, scope 5 // id: %61
+  %62 = load_borrow %3 : $*A, loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":28:1, scope 6 // users: %137, %64, %63
+  %63 = class_method %62 : $A, #A.b!getter : (A) -> () -> B?, $@convention(method) (@guaranteed A) -> @owned Optional<B>, loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":28:3, scope 6 // user: %64
+  %64 = apply %63(%62) : $@convention(method) (@guaranteed A) -> @owned Optional<B>, loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":28:3, scope 6 // user: %65
+  switch_enum %64 : $Optional<B>, case #Optional.some!enumelt: bb16, case #Optional.none!enumelt: bb9, loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":28:4, scope 6 // id: %65
+
+bb9:                                              // Preds: bb8
+  %66 = string_literal utf8 "test/test.swift", loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":28:4, scope 6 // user: %75
+  %67 = integer_literal $Builtin.Word, 15, loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":28:4, scope 6 // user: %79
+  %68 = integer_literal $Builtin.Word, 4, loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":28:4, scope 6
+  br bb10, loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":28:4, scope 6 // id: %69
+
+bb10:                                             // Preds: bb9
+  %70 = string_literal utf8 "Unexpectedly found nil while unwrapping an Optional value", loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":28:4, scope 6 // user: %72
+  %71 = integer_literal $Builtin.Word, 57, loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":28:4, scope 6 // user: %74
+  %72 = builtin "ptrtoint_Word"(%70 : $Builtin.RawPointer) : $Builtin.Word, loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":28:4, scope 6 // user: %74
+  %73 = integer_literal $Builtin.Int8, 2, loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":28:4, scope 6 // user: %74
+  %74 = struct $StaticString (%72 : $Builtin.Word, %71 : $Builtin.Word, %73 : $Builtin.Int8), loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":28:4, scope 6 // user: %93
+  %75 = builtin "ptrtoint_Word"(%66 : $Builtin.RawPointer) : $Builtin.Word, loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":28:4, scope 6 // user: %79
+  br bb11, loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":28:4, scope 6 // id: %76
+
+bb11:                                             // Preds: bb10
+  %77 = integer_literal $Builtin.Int8, 2, loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":28:4, scope 6 // user: %79
+  br bb12, loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":28:4, scope 6 // id: %78
+
+bb12:                                             // Preds: bb11
+  %79 = struct $StaticString (%75 : $Builtin.Word, %67 : $Builtin.Word, %77 : $Builtin.Int8), loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":28:4, scope 6 // user: %93
+  %80 = integer_literal $Builtin.Int64, 28, loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":28:4, scope 6 // user: %81
+  %81 = struct $UInt (%80 : $Builtin.Int64), loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":28:4, scope 6 // user: %93
+  br bb13, loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":28:4, scope 6 // id: %82
+
+bb13:                                             // Preds: bb12
+  %83 = string_literal utf8 "Fatal error", loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":28:4, scope 6 // user: %85
+  %84 = integer_literal $Builtin.Word, 11, loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":28:4, scope 6 // user: %87
+  %85 = builtin "ptrtoint_Word"(%83 : $Builtin.RawPointer) : $Builtin.Word, loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":28:4, scope 6 // user: %87
+  %86 = integer_literal $Builtin.Int8, 2, loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":28:4, scope 6 // user: %87
+  %87 = struct $StaticString (%85 : $Builtin.Word, %84 : $Builtin.Word, %86 : $Builtin.Int8), loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":28:4, scope 6 // user: %93
+  br bb14, loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":28:4, scope 6 // id: %88
+
+bb14:                                             // Preds: bb13
+  %89 = integer_literal $Builtin.Int32, 1, loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":28:4, scope 6 // user: %90
+  %90 = struct $UInt32 (%89 : $Builtin.Int32), loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":28:4, scope 6 // user: %93
+  br bb15, loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":28:4, scope 6 // id: %91
+
+bb15:                                             // Preds: bb14
+  // function_ref _assertionFailure(_:_:file:line:flags:)
+  %92 = function_ref @$ss17_assertionFailure__4file4line5flagss5NeverOs12StaticStringV_A2HSus6UInt32VtF : $@convention(thin) (StaticString, StaticString, StaticString, UInt, UInt32) -> Never, loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":28:4, scope 6 // user: %93
+  %93 = apply %92(%87, %74, %79, %81, %90) : $@convention(thin) (StaticString, StaticString, StaticString, UInt, UInt32) -> Never, loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":28:4, scope 6
+  unreachable , scope 6                           // id: %94
+
+// %95                                            // users: %100, %96
+bb16(%95 : @owned $B):                            // Preds: bb8
+  %96 = begin_borrow %95 : $B, loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":28:6, scope 6 // users: %99, %98, %97
+  %97 = class_method %96 : $B, #B.c!getter : (B) -> () -> C?, $@convention(method) (@guaranteed B) -> @owned Optional<C>, loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":28:6, scope 6 // user: %98
+  %98 = apply %97(%96) : $@convention(method) (@guaranteed B) -> @owned Optional<C>, loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":28:6, scope 6 // user: %101
+  end_borrow %96 : $B, loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":28:6, scope 6 // id: %99
+  destroy_value %95 : $B, loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":28:4, scope 6 // id: %100
+  switch_enum %98 : $Optional<C>, case #Optional.some!enumelt: bb24, case #Optional.none!enumelt: bb17, loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":28:7, scope 6 // id: %101
+
+bb17:                                             // Preds: bb16
+  %102 = string_literal utf8 "test/test.swift", loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":28:7, scope 6 // user: %111
+  %103 = integer_literal $Builtin.Word, 15, loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":28:7, scope 6 // user: %115
+  %104 = integer_literal $Builtin.Word, 7, loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":28:7, scope 6
+  br bb18, loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":28:7, scope 6 // id: %105
+
+bb18:                                             // Preds: bb17
+  %106 = string_literal utf8 "Unexpectedly found nil while unwrapping an Optional value", loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":28:7, scope 6 // user: %108
+  %107 = integer_literal $Builtin.Word, 57, loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":28:7, scope 6 // user: %110
+  %108 = builtin "ptrtoint_Word"(%106 : $Builtin.RawPointer) : $Builtin.Word, loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":28:7, scope 6 // user: %110
+  %109 = integer_literal $Builtin.Int8, 2, loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":28:7, scope 6 // user: %110
+  %110 = struct $StaticString (%108 : $Builtin.Word, %107 : $Builtin.Word, %109 : $Builtin.Int8), loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":28:7, scope 6 // user: %129
+  %111 = builtin "ptrtoint_Word"(%102 : $Builtin.RawPointer) : $Builtin.Word, loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":28:7, scope 6 // user: %115
+  br bb19, loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":28:7, scope 6 // id: %112
+
+bb19:                                             // Preds: bb18
+  %113 = integer_literal $Builtin.Int8, 2, loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":28:7, scope 6 // user: %115
+  br bb20, loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":28:7, scope 6 // id: %114
+
+bb20:                                             // Preds: bb19
+  %115 = struct $StaticString (%111 : $Builtin.Word, %103 : $Builtin.Word, %113 : $Builtin.Int8), loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":28:7, scope 6 // user: %129
+  %116 = integer_literal $Builtin.Int64, 28, loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":28:7, scope 6 // user: %117
+  %117 = struct $UInt (%116 : $Builtin.Int64), loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":28:7, scope 6 // user: %129
+  br bb21, loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":28:7, scope 6 // id: %118
+
+bb21:                                             // Preds: bb20
+  %119 = string_literal utf8 "Fatal error", loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":28:7, scope 6 // user: %121
+  %120 = integer_literal $Builtin.Word, 11, loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":28:7, scope 6 // user: %123
+  %121 = builtin "ptrtoint_Word"(%119 : $Builtin.RawPointer) : $Builtin.Word, loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":28:7, scope 6 // user: %123
+  %122 = integer_literal $Builtin.Int8, 2, loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":28:7, scope 6 // user: %123
+  %123 = struct $StaticString (%121 : $Builtin.Word, %120 : $Builtin.Word, %122 : $Builtin.Int8), loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":28:7, scope 6 // user: %129
+  br bb22, loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":28:7, scope 6 // id: %124
+
+bb22:                                             // Preds: bb21
+  %125 = integer_literal $Builtin.Int32, 1, loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":28:7, scope 6 // user: %126
+  %126 = struct $UInt32 (%125 : $Builtin.Int32), loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":28:7, scope 6 // user: %129
+  br bb23, loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":28:7, scope 6 // id: %127
+
+bb23:                                             // Preds: bb22
+  // function_ref _assertionFailure(_:_:file:line:flags:)
+  %128 = function_ref @$ss17_assertionFailure__4file4line5flagss5NeverOs12StaticStringV_A2HSus6UInt32VtF : $@convention(thin) (StaticString, StaticString, StaticString, UInt, UInt32) -> Never, loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":28:7, scope 6 // user: %129
+  %129 = apply %128(%123, %110, %115, %117, %126) : $@convention(thin) (StaticString, StaticString, StaticString, UInt, UInt32) -> Never, loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":28:7, scope 6
+  unreachable , scope 6                           // id: %130
+
+// %131                                           // users: %136, %135, %134
+bb24(%131 : @owned $C):                           // Preds: bb16
+  // function_ref source()
+  %132 = function_ref @$s4test6sourceSSyF : $@convention(thin) () -> @owned String, loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":28:13, scope 6 // user: %133
+  %133 = apply %132() : $@convention(thin) () -> @owned String, loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":28:13, scope 6 // user: %135
+  %134 = class_method %131 : $C, #C.s!setter : (C) -> (String) -> (), $@convention(method) (@owned String, @guaranteed C) -> (), loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":28:11, scope 6 // user: %135
+  %135 = apply %134(%133, %131) : $@convention(method) (@owned String, @guaranteed C) -> (), loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":28:11, scope 6
+  destroy_value %131 : $C, loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":28:7, scope 6 // id: %136
+  end_borrow %62 : $A, loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":28:20, scope 6 // id: %137
+  %138 = load [copy] %17 : $*Optional<B>, loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":29:12, scope 7 // user: %139
+  switch_enum %138 : $Optional<B>, case #Optional.some!enumelt: bb32, case #Optional.none!enumelt: bb25, loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":29:13, scope 7 // id: %139
+
+bb25:                                             // Preds: bb24
+  %140 = string_literal utf8 "test/test.swift", loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":29:13, scope 7 // user: %149
+  %141 = integer_literal $Builtin.Word, 15, loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":29:13, scope 7 // user: %153
+  %142 = integer_literal $Builtin.Word, 13, loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":29:13, scope 7
+  br bb26, loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":29:13, scope 7 // id: %143
+
+bb26:                                             // Preds: bb25
+  %144 = string_literal utf8 "Unexpectedly found nil while unwrapping an Optional value", loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":29:13, scope 7 // user: %146
+  %145 = integer_literal $Builtin.Word, 57, loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":29:13, scope 7 // user: %148
+  %146 = builtin "ptrtoint_Word"(%144 : $Builtin.RawPointer) : $Builtin.Word, loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":29:13, scope 7 // user: %148
+  %147 = integer_literal $Builtin.Int8, 2, loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":29:13, scope 7 // user: %148
+  %148 = struct $StaticString (%146 : $Builtin.Word, %145 : $Builtin.Word, %147 : $Builtin.Int8), loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":29:13, scope 7 // user: %167
+  %149 = builtin "ptrtoint_Word"(%140 : $Builtin.RawPointer) : $Builtin.Word, loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":29:13, scope 7 // user: %153
+  br bb27, loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":29:13, scope 7 // id: %150
+
+bb27:                                             // Preds: bb26
+  %151 = integer_literal $Builtin.Int8, 2, loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":29:13, scope 7 // user: %153
+  br bb28, loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":29:13, scope 7 // id: %152
+
+bb28:                                             // Preds: bb27
+  %153 = struct $StaticString (%149 : $Builtin.Word, %141 : $Builtin.Word, %151 : $Builtin.Int8), loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":29:13, scope 7 // user: %167
+  %154 = integer_literal $Builtin.Int64, 29, loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":29:13, scope 7 // user: %155
+  %155 = struct $UInt (%154 : $Builtin.Int64), loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":29:13, scope 7 // user: %167
+  br bb29, loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":29:13, scope 7 // id: %156
+
+bb29:                                             // Preds: bb28
+  %157 = string_literal utf8 "Fatal error", loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":29:13, scope 7 // user: %159
+  %158 = integer_literal $Builtin.Word, 11, loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":29:13, scope 7 // user: %161
+  %159 = builtin "ptrtoint_Word"(%157 : $Builtin.RawPointer) : $Builtin.Word, loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":29:13, scope 7 // user: %161
+  %160 = integer_literal $Builtin.Int8, 2, loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":29:13, scope 7 // user: %161
+  %161 = struct $StaticString (%159 : $Builtin.Word, %158 : $Builtin.Word, %160 : $Builtin.Int8), loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":29:13, scope 7 // user: %167
+  br bb30, loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":29:13, scope 7 // id: %162
+
+bb30:                                             // Preds: bb29
+  %163 = integer_literal $Builtin.Int32, 1, loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":29:13, scope 7 // user: %164
+  %164 = struct $UInt32 (%163 : $Builtin.Int32), loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":29:13, scope 7 // user: %167
+  br bb31, loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":29:13, scope 7 // id: %165
+
+bb31:                                             // Preds: bb30
+  // function_ref _assertionFailure(_:_:file:line:flags:)
+  %166 = function_ref @$ss17_assertionFailure__4file4line5flagss5NeverOs12StaticStringV_A2HSus6UInt32VtF : $@convention(thin) (StaticString, StaticString, StaticString, UInt, UInt32) -> Never, loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":29:13, scope 7 // user: %167
+  %167 = apply %166(%161, %148, %153, %155, %164) : $@convention(thin) (StaticString, StaticString, StaticString, UInt, UInt32) -> Never, loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":29:13, scope 7
+  unreachable , scope 7                           // id: %168
+
+// %169                                           // users: %174, %170
+bb32(%169 : @owned $B):                           // Preds: bb24
+  %170 = begin_borrow %169 : $B, loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":29:15, scope 7 // users: %173, %172, %171
+  %171 = class_method %170 : $B, #B.c!getter : (B) -> () -> C?, $@convention(method) (@guaranteed B) -> @owned Optional<C>, loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":29:15, scope 7 // user: %172
+  %172 = apply %171(%170) : $@convention(method) (@guaranteed B) -> @owned Optional<C>, loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":29:15, scope 7 // user: %175
+  end_borrow %170 : $B, loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":29:15, scope 7 // id: %173
+  destroy_value %169 : $B, loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":29:13, scope 7 // id: %174
+  switch_enum %172 : $Optional<C>, case #Optional.some!enumelt: bb40, case #Optional.none!enumelt: bb33, loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":29:16, scope 7 // id: %175
+
+bb33:                                             // Preds: bb32
+  %176 = string_literal utf8 "test/test.swift", loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":29:16, scope 7 // user: %185
+  %177 = integer_literal $Builtin.Word, 15, loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":29:16, scope 7 // user: %189
+  %178 = integer_literal $Builtin.Word, 16, loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":29:16, scope 7
+  br bb34, loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":29:16, scope 7 // id: %179
+
+bb34:                                             // Preds: bb33
+  %180 = string_literal utf8 "Unexpectedly found nil while unwrapping an Optional value", loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":29:16, scope 7 // user: %182
+  %181 = integer_literal $Builtin.Word, 57, loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":29:16, scope 7 // user: %184
+  %182 = builtin "ptrtoint_Word"(%180 : $Builtin.RawPointer) : $Builtin.Word, loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":29:16, scope 7 // user: %184
+  %183 = integer_literal $Builtin.Int8, 2, loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":29:16, scope 7 // user: %184
+  %184 = struct $StaticString (%182 : $Builtin.Word, %181 : $Builtin.Word, %183 : $Builtin.Int8), loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":29:16, scope 7 // user: %203
+  %185 = builtin "ptrtoint_Word"(%176 : $Builtin.RawPointer) : $Builtin.Word, loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":29:16, scope 7 // user: %189
+  br bb35, loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":29:16, scope 7 // id: %186
+
+bb35:                                             // Preds: bb34
+  %187 = integer_literal $Builtin.Int8, 2, loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":29:16, scope 7 // user: %189
+  br bb36, loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":29:16, scope 7 // id: %188
+
+bb36:                                             // Preds: bb35
+  %189 = struct $StaticString (%185 : $Builtin.Word, %177 : $Builtin.Word, %187 : $Builtin.Int8), loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":29:16, scope 7 // user: %203
+  %190 = integer_literal $Builtin.Int64, 29, loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":29:16, scope 7 // user: %191
+  %191 = struct $UInt (%190 : $Builtin.Int64), loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":29:16, scope 7 // user: %203
+  br bb37, loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":29:16, scope 7 // id: %192
+
+bb37:                                             // Preds: bb36
+  %193 = string_literal utf8 "Fatal error", loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":29:16, scope 7 // user: %195
+  %194 = integer_literal $Builtin.Word, 11, loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":29:16, scope 7 // user: %197
+  %195 = builtin "ptrtoint_Word"(%193 : $Builtin.RawPointer) : $Builtin.Word, loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":29:16, scope 7 // user: %197
+  %196 = integer_literal $Builtin.Int8, 2, loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":29:16, scope 7 // user: %197
+  %197 = struct $StaticString (%195 : $Builtin.Word, %194 : $Builtin.Word, %196 : $Builtin.Int8), loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":29:16, scope 7 // user: %203
+  br bb38, loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":29:16, scope 7 // id: %198
+
+bb38:                                             // Preds: bb37
+  %199 = integer_literal $Builtin.Int32, 1, loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":29:16, scope 7 // user: %200
+  %200 = struct $UInt32 (%199 : $Builtin.Int32), loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":29:16, scope 7 // user: %203
+  br bb39, loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":29:16, scope 7 // id: %201
+
+bb39:                                             // Preds: bb38
+  // function_ref _assertionFailure(_:_:file:line:flags:)
+  %202 = function_ref @$ss17_assertionFailure__4file4line5flagss5NeverOs12StaticStringV_A2HSus6UInt32VtF : $@convention(thin) (StaticString, StaticString, StaticString, UInt, UInt32) -> Never, loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":29:16, scope 7 // user: %203
+  %203 = apply %202(%197, %184, %189, %191, %200) : $@convention(thin) (StaticString, StaticString, StaticString, UInt, UInt32) -> Never, loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":29:16, scope 7
+  unreachable , scope 7                           // id: %204
+
+// %205                                           // users: %210, %206
+bb40(%205 : @owned $C):                           // Preds: bb32
+  %206 = begin_borrow %205 : $C, loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":29:18, scope 7 // users: %209, %208, %207
+  %207 = class_method %206 : $C, #C.s!getter : (C) -> () -> String, $@convention(method) (@guaranteed C) -> @owned String, loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":29:18, scope 7 // user: %208
+  %208 = apply %207(%206) : $@convention(method) (@guaranteed C) -> @owned String, loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":29:18, scope 7 // users: %213, %212
+  end_borrow %206 : $C, loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":29:18, scope 7 // id: %209
+  destroy_value %205 : $C, loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":29:16, scope 7 // id: %210
+  // function_ref sink(sunk:)
+  %211 = function_ref @$s4test4sink4sunkySS_tF : $@convention(thin) (@guaranteed String) -> (), loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":29:1, scope 7 // user: %212
+  %212 = apply %211(%208) : $@convention(thin) (@guaranteed String) -> (), loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":29:1, scope 7
+  destroy_value %208 : $String, loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":29:19, scope 7 // id: %213
+  %214 = integer_literal $Builtin.Int32, 0, scope 7 // user: %215
+  %215 = struct $Int32 (%214 : $Builtin.Int32), scope 7 // user: %216
+  return %215 : $Int32, scope 7                   // id: %216
+} // end sil function 'main'
+
+sil_scope 8 {  parent @$s4test1AC1bAA1BCSgvpfi : $@convention(thin) () -> @owned Optional<B> }
+
+// variable initialization expression of A.b
+sil hidden [transparent] [ossa] @$s4test1AC1bAA1BCSgvpfi : $@convention(thin) () -> @owned Optional<B> {
+bb0:
+  %0 = enum $Optional<B>, #Optional.none!enumelt, scope 8 // user: %1
+  return %0 : $Optional<B>, scope 8               // id: %1
+} // end sil function '$s4test1AC1bAA1BCSgvpfi'
+
+sil_scope 9 { loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":2:9 parent @$s4test1AC1bAA1BCSgvg : $@convention(method) (@guaranteed A) -> @owned Optional<B> }
+sil_scope 10 { loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":2:9 parent 9 }
+
+// A.b.getter
+sil hidden [transparent] [ossa] @$s4test1AC1bAA1BCSgvg : $@convention(method) (@guaranteed A) -> @owned Optional<B> {
+// %0 "self"                                      // users: %2, %1
+bb0(%0 : @guaranteed $A):
+  debug_value %0 : $A, let, name "self", argno 1, loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":2:9, scope 9 // id: %1
+  %2 = ref_element_addr %0 : $A, #A.b, scope 10   // user: %3
+  %3 = begin_access [read] [dynamic] %2 : $*Optional<B>, scope 10 // users: %5, %4
+  %4 = load [copy] %3 : $*Optional<B>, scope 10   // user: %6
+  end_access %3 : $*Optional<B>, scope 10         // id: %5
+  return %4 : $Optional<B>, loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":2:9, scope 10 // id: %6
+} // end sil function '$s4test1AC1bAA1BCSgvg'
+
+sil_scope 11 { loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":2:9 parent @$s4test1AC1bAA1BCSgvs : $@convention(method) (@owned Optional<B>, @guaranteed A) -> () }
+sil_scope 12 { loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":2:9 parent 11 }
+
+// A.b.setter
+sil hidden [transparent] [ossa] @$s4test1AC1bAA1BCSgvs : $@convention(method) (@owned Optional<B>, @guaranteed A) -> () {
+// %0 "value"                                     // users: %11, %4, %2
+// %1 "self"                                      // users: %6, %3
+bb0(%0 : @owned $Optional<B>, %1 : @guaranteed $A):
+  debug_value %0 : $Optional<B>, let, name "value", argno 1, loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":2:9, scope 11 // id: %2
+  debug_value %1 : $A, let, name "self", argno 2, loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":2:9, scope 11 // id: %3
+  %4 = begin_borrow %0 : $Optional<B>, scope 12   // users: %10, %5
+  %5 = copy_value %4 : $Optional<B>, scope 12     // user: %8
+  %6 = ref_element_addr %1 : $A, #A.b, scope 12   // user: %7
+  %7 = begin_access [modify] [dynamic] %6 : $*Optional<B>, scope 12 // users: %8, %9
+  store %5 to [assign] %7 : $*Optional<B>, scope 12 // id: %8
+  end_access %7 : $*Optional<B>, scope 12         // id: %9
+  end_borrow %4 : $Optional<B>, scope 12          // id: %10
+  destroy_value %0 : $Optional<B>, loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":2:9, scope 12 // id: %11
+  %12 = tuple (), loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":2:9, scope 12 // user: %13
+  return %12 : $(), loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":2:9, scope 12 // id: %13
+} // end sil function '$s4test1AC1bAA1BCSgvs'
+
+sil_scope 13 { loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":2:9 parent @$s4test1AC1bAA1BCSgvM : $@yield_once @convention(method) (@guaranteed A) -> @yields @inout Optional<B> }
+sil_scope 14 { loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":2:9 parent 13 }
+
+// A.b.modify
+sil hidden [transparent] [ossa] @$s4test1AC1bAA1BCSgvM : $@yield_once @convention(method) (@guaranteed A) -> @yields @inout Optional<B> {
+// %0 "self"                                      // users: %2, %1
+bb0(%0 : @guaranteed $A):
+  debug_value %0 : $A, let, name "self", argno 1, loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":2:9, scope 13 // id: %1
+  %2 = ref_element_addr %0 : $A, #A.b, scope 14   // user: %3
+  %3 = begin_access [modify] [dynamic] %2 : $*Optional<B>, scope 14 // users: %5, %8, %4
+  yield %3 : $*Optional<B>, resume bb1, unwind bb2, loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":2:9, scope 14 // id: %4
+
+bb1:                                              // Preds: bb0
+  end_access %3 : $*Optional<B>, scope 14         // id: %5
+  %6 = tuple (), loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":2:9, scope 14 // user: %7
+  return %6 : $(), loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":2:9, scope 14 // id: %7
+
+bb2:                                              // Preds: bb0
+  end_access %3 : $*Optional<B>, scope 14         // id: %8
+  unwind , loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":2:9, scope 14 // id: %9
+} // end sil function '$s4test1AC1bAA1BCSgvM'
+
+sil_scope 15 { loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":3:5 parent @$s4test1ACACycfC : $@convention(method) (@thick A.Type) -> @owned A }
+
+// A.__allocating_init()
+sil hidden [exact_self_class] [ossa] @$s4test1ACACycfC : $@convention(method) (@thick A.Type) -> @owned A {
+// %0 "$metatype"
+bb0(%0 : $@thick A.Type):
+  %1 = alloc_ref $A, loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":3:5, scope 15 // user: %3
+  // function_ref A.init()
+  %2 = function_ref @$s4test1ACACycfc : $@convention(method) (@owned A) -> @owned A, loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":3:5, scope 15 // user: %3
+  %3 = apply %2(%1) : $@convention(method) (@owned A) -> @owned A, loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":3:5, scope 15 // user: %4
+  return %3 : $A, loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":3:13, scope 15 // id: %4
+} // end sil function '$s4test1ACACycfC'
+
+sil_scope 16 { loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":3:5 parent @$s4test1ACACycfc : $@convention(method) (@owned A) -> @owned A }
+sil_scope 17 { loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":3:12 parent 16 }
+
+// A.init()
+sil hidden [ossa] @$s4test1ACACycfc : $@convention(method) (@owned A) -> @owned A {
+// %0 "self"                                      // users: %3, %9, %10, %1
+bb0(%0 : @owned $A):
+  debug_value %0 : $A, let, name "self", argno 1, loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":3:5, scope 16 // id: %1
+  %2 = enum $Optional<B>, #Optional.none!enumelt, scope 16 // user: %6
+  %3 = begin_borrow %0 : $A, loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":2:9, scope 16 // users: %8, %4
+  %4 = ref_element_addr %3 : $A, #A.b, loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":2:9, scope 16 // user: %5
+  %5 = begin_access [modify] [dynamic] %4 : $*Optional<B>, loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":2:9, scope 16 // users: %6, %7
+  store %2 to [init] %5 : $*Optional<B>, loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":2:9, scope 16 // id: %6
+  end_access %5 : $*Optional<B>, loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":2:9, scope 16 // id: %7
+  end_borrow %3 : $A, loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":2:14, scope 16 // id: %8
+  %9 = copy_value %0 : $A, loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":3:13, scope 17 // user: %11
+  destroy_value %0 : $A, loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":3:13, scope 17 // id: %10
+  return %9 : $A, loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":3:13, scope 17 // id: %11
+} // end sil function '$s4test1ACACycfc'
+
+sil_scope 18 { loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":1:7 parent @$s4test1ACfd : $@convention(method) (@guaranteed A) -> @owned Builtin.NativeObject }
+sil_scope 19 { loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":1:7 parent 18 }
+
+// A.deinit
+sil hidden [ossa] @$s4test1ACfd : $@convention(method) (@guaranteed A) -> @owned Builtin.NativeObject {
+// %0 "self"                                      // users: %6, %2, %1
+bb0(%0 : @guaranteed $A):
+  debug_value %0 : $A, let, name "self", argno 1, loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":1:7, scope 18 // id: %1
+  %2 = ref_element_addr %0 : $A, #A.b, loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":1:7, scope 19 // user: %3
+  %3 = begin_access [deinit] [static] %2 : $*Optional<B>, loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":1:7, scope 19 // users: %5, %4
+  destroy_addr %3 : $*Optional<B>, loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":1:7, scope 19 // id: %4
+  end_access %3 : $*Optional<B>, loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":1:7, scope 19 // id: %5
+  %6 = unchecked_ref_cast %0 : $A to $Builtin.NativeObject, loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":1:7, scope 19 // user: %7
+  %7 = unchecked_ownership_conversion %6 : $Builtin.NativeObject, @guaranteed to @owned, loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":1:7, scope 19 // user: %8
+  return %7 : $Builtin.NativeObject, loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":1:7, scope 19 // id: %8
+} // end sil function '$s4test1ACfd'
+
+sil_scope 20 { loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":1:7 parent @$s4test1ACfD : $@convention(method) (@owned A) -> () }
+
+// A.__deallocating_deinit
+sil hidden [ossa] @$s4test1ACfD : $@convention(method) (@owned A) -> () {
+// %0 "self"                                      // users: %6, %3, %1
+bb0(%0 : @owned $A):
+  debug_value %0 : $A, let, name "self", argno 1, loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":1:7, scope 20 // id: %1
+  // function_ref A.deinit
+  %2 = function_ref @$s4test1ACfd : $@convention(method) (@guaranteed A) -> @owned Builtin.NativeObject, loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":1:7, scope 20 // user: %4
+  %3 = begin_borrow %0 : $A, loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":1:7, scope 20 // users: %5, %4
+  %4 = apply %2(%3) : $@convention(method) (@guaranteed A) -> @owned Builtin.NativeObject, loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":1:7, scope 20 // user: %7
+  end_borrow %3 : $A, loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":1:7, scope 20 // id: %5
+  end_lifetime %0 : $A, loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":1:7, scope 20 // id: %6
+  %7 = unchecked_ref_cast %4 : $Builtin.NativeObject to $A, loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":1:7, scope 20 // user: %8
+  dealloc_ref %7 : $A, loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":1:7, scope 20 // id: %8
+  %9 = tuple (), loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":1:7, scope 20 // user: %10
+  return %9 : $(), loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":1:7, scope 20 // id: %10
+} // end sil function '$s4test1ACfD'
+
+sil_scope 21 {  parent @$s4test1BC1cAA1CCSgvpfi : $@convention(thin) () -> @owned Optional<C> }
+
+// variable initialization expression of B.c
+sil hidden [transparent] [ossa] @$s4test1BC1cAA1CCSgvpfi : $@convention(thin) () -> @owned Optional<C> {
+bb0:
+  %0 = enum $Optional<C>, #Optional.none!enumelt, scope 21 // user: %1
+  return %0 : $Optional<C>, scope 21              // id: %1
+} // end sil function '$s4test1BC1cAA1CCSgvpfi'
+
+sil_scope 22 { loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":7:9 parent @$s4test1BC1cAA1CCSgvg : $@convention(method) (@guaranteed B) -> @owned Optional<C> }
+sil_scope 23 { loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":7:9 parent 22 }
+
+// B.c.getter
+sil hidden [transparent] [ossa] @$s4test1BC1cAA1CCSgvg : $@convention(method) (@guaranteed B) -> @owned Optional<C> {
+// %0 "self"                                      // users: %2, %1
+bb0(%0 : @guaranteed $B):
+  debug_value %0 : $B, let, name "self", argno 1, loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":7:9, scope 22 // id: %1
+  %2 = ref_element_addr %0 : $B, #B.c, scope 23   // user: %3
+  %3 = begin_access [read] [dynamic] %2 : $*Optional<C>, scope 23 // users: %5, %4
+  %4 = load [copy] %3 : $*Optional<C>, scope 23   // user: %6
+  end_access %3 : $*Optional<C>, scope 23         // id: %5
+  return %4 : $Optional<C>, loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":7:9, scope 23 // id: %6
+} // end sil function '$s4test1BC1cAA1CCSgvg'
+
+sil_scope 24 { loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":7:9 parent @$s4test1BC1cAA1CCSgvs : $@convention(method) (@owned Optional<C>, @guaranteed B) -> () }
+sil_scope 25 { loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":7:9 parent 24 }
+
+// B.c.setter
+sil hidden [transparent] [ossa] @$s4test1BC1cAA1CCSgvs : $@convention(method) (@owned Optional<C>, @guaranteed B) -> () {
+// %0 "value"                                     // users: %11, %4, %2
+// %1 "self"                                      // users: %6, %3
+bb0(%0 : @owned $Optional<C>, %1 : @guaranteed $B):
+  debug_value %0 : $Optional<C>, let, name "value", argno 1, loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":7:9, scope 24 // id: %2
+  debug_value %1 : $B, let, name "self", argno 2, loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":7:9, scope 24 // id: %3
+  %4 = begin_borrow %0 : $Optional<C>, scope 25   // users: %10, %5
+  %5 = copy_value %4 : $Optional<C>, scope 25     // user: %8
+  %6 = ref_element_addr %1 : $B, #B.c, scope 25   // user: %7
+  %7 = begin_access [modify] [dynamic] %6 : $*Optional<C>, scope 25 // users: %8, %9
+  store %5 to [assign] %7 : $*Optional<C>, scope 25 // id: %8
+  end_access %7 : $*Optional<C>, scope 25         // id: %9
+  end_borrow %4 : $Optional<C>, scope 25          // id: %10
+  destroy_value %0 : $Optional<C>, loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":7:9, scope 25 // id: %11
+  %12 = tuple (), loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":7:9, scope 25 // user: %13
+  return %12 : $(), loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":7:9, scope 25 // id: %13
+} // end sil function '$s4test1BC1cAA1CCSgvs'
+
+sil_scope 26 { loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":7:9 parent @$s4test1BC1cAA1CCSgvM : $@yield_once @convention(method) (@guaranteed B) -> @yields @inout Optional<C> }
+sil_scope 27 { loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":7:9 parent 26 }
+
+// B.c.modify
+sil hidden [transparent] [ossa] @$s4test1BC1cAA1CCSgvM : $@yield_once @convention(method) (@guaranteed B) -> @yields @inout Optional<C> {
+// %0 "self"                                      // users: %2, %1
+bb0(%0 : @guaranteed $B):
+  debug_value %0 : $B, let, name "self", argno 1, loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":7:9, scope 26 // id: %1
+  %2 = ref_element_addr %0 : $B, #B.c, scope 27   // user: %3
+  %3 = begin_access [modify] [dynamic] %2 : $*Optional<C>, scope 27 // users: %5, %8, %4
+  yield %3 : $*Optional<C>, resume bb1, unwind bb2, loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":7:9, scope 27 // id: %4
+
+bb1:                                              // Preds: bb0
+  end_access %3 : $*Optional<C>, scope 27         // id: %5
+  %6 = tuple (), loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":7:9, scope 27 // user: %7
+  return %6 : $(), loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":7:9, scope 27 // id: %7
+
+bb2:                                              // Preds: bb0
+  end_access %3 : $*Optional<C>, scope 27         // id: %8
+  unwind , loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":7:9, scope 27 // id: %9
+} // end sil function '$s4test1BC1cAA1CCSgvM'
+
+sil_scope 28 { loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":8:5 parent @$s4test1BCACycfC : $@convention(method) (@thick B.Type) -> @owned B }
+
+// B.__allocating_init()
+sil hidden [exact_self_class] [ossa] @$s4test1BCACycfC : $@convention(method) (@thick B.Type) -> @owned B {
+// %0 "$metatype"
+bb0(%0 : $@thick B.Type):
+  %1 = alloc_ref $B, loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":8:5, scope 28 // user: %3
+  // function_ref B.init()
+  %2 = function_ref @$s4test1BCACycfc : $@convention(method) (@owned B) -> @owned B, loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":8:5, scope 28 // user: %3
+  %3 = apply %2(%1) : $@convention(method) (@owned B) -> @owned B, loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":8:5, scope 28 // user: %4
+  return %3 : $B, loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":8:13, scope 28 // id: %4
+} // end sil function '$s4test1BCACycfC'
+
+sil_scope 29 { loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":8:5 parent @$s4test1BCACycfc : $@convention(method) (@owned B) -> @owned B }
+sil_scope 30 { loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":8:12 parent 29 }
+
+// B.init()
+sil hidden [ossa] @$s4test1BCACycfc : $@convention(method) (@owned B) -> @owned B {
+// %0 "self"                                      // users: %3, %9, %10, %1
+bb0(%0 : @owned $B):
+  debug_value %0 : $B, let, name "self", argno 1, loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":8:5, scope 29 // id: %1
+  %2 = enum $Optional<C>, #Optional.none!enumelt, scope 29 // user: %6
+  %3 = begin_borrow %0 : $B, loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":7:9, scope 29 // users: %8, %4
+  %4 = ref_element_addr %3 : $B, #B.c, loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":7:9, scope 29 // user: %5
+  %5 = begin_access [modify] [dynamic] %4 : $*Optional<C>, loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":7:9, scope 29 // users: %6, %7
+  store %2 to [init] %5 : $*Optional<C>, loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":7:9, scope 29 // id: %6
+  end_access %5 : $*Optional<C>, loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":7:9, scope 29 // id: %7
+  end_borrow %3 : $B, loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":7:14, scope 29 // id: %8
+  %9 = copy_value %0 : $B, loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":8:13, scope 30 // user: %11
+  destroy_value %0 : $B, loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":8:13, scope 30 // id: %10
+  return %9 : $B, loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":8:13, scope 30 // id: %11
+} // end sil function '$s4test1BCACycfc'
+
+sil_scope 31 { loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":6:7 parent @$s4test1BCfd : $@convention(method) (@guaranteed B) -> @owned Builtin.NativeObject }
+sil_scope 32 { loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":6:7 parent 31 }
+
+// B.deinit
+sil hidden [ossa] @$s4test1BCfd : $@convention(method) (@guaranteed B) -> @owned Builtin.NativeObject {
+// %0 "self"                                      // users: %6, %2, %1
+bb0(%0 : @guaranteed $B):
+  debug_value %0 : $B, let, name "self", argno 1, loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":6:7, scope 31 // id: %1
+  %2 = ref_element_addr %0 : $B, #B.c, loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":6:7, scope 32 // user: %3
+  %3 = begin_access [deinit] [static] %2 : $*Optional<C>, loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":6:7, scope 32 // users: %5, %4
+  destroy_addr %3 : $*Optional<C>, loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":6:7, scope 32 // id: %4
+  end_access %3 : $*Optional<C>, loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":6:7, scope 32 // id: %5
+  %6 = unchecked_ref_cast %0 : $B to $Builtin.NativeObject, loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":6:7, scope 32 // user: %7
+  %7 = unchecked_ownership_conversion %6 : $Builtin.NativeObject, @guaranteed to @owned, loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":6:7, scope 32 // user: %8
+  return %7 : $Builtin.NativeObject, loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":6:7, scope 32 // id: %8
+} // end sil function '$s4test1BCfd'
+
+sil_scope 33 { loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":6:7 parent @$s4test1BCfD : $@convention(method) (@owned B) -> () }
+
+// B.__deallocating_deinit
+sil hidden [ossa] @$s4test1BCfD : $@convention(method) (@owned B) -> () {
+// %0 "self"                                      // users: %6, %3, %1
+bb0(%0 : @owned $B):
+  debug_value %0 : $B, let, name "self", argno 1, loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":6:7, scope 33 // id: %1
+  // function_ref B.deinit
+  %2 = function_ref @$s4test1BCfd : $@convention(method) (@guaranteed B) -> @owned Builtin.NativeObject, loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":6:7, scope 33 // user: %4
+  %3 = begin_borrow %0 : $B, loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":6:7, scope 33 // users: %5, %4
+  %4 = apply %2(%3) : $@convention(method) (@guaranteed B) -> @owned Builtin.NativeObject, loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":6:7, scope 33 // user: %7
+  end_borrow %3 : $B, loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":6:7, scope 33 // id: %5
+  end_lifetime %0 : $B, loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":6:7, scope 33 // id: %6
+  %7 = unchecked_ref_cast %4 : $Builtin.NativeObject to $B, loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":6:7, scope 33 // user: %8
+  dealloc_ref %7 : $B, loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":6:7, scope 33 // id: %8
+  %9 = tuple (), loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":6:7, scope 33 // user: %10
+  return %9 : $(), loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":6:7, scope 33 // id: %10
+} // end sil function '$s4test1BCfD'
+
+sil_scope 34 { loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":12:22 parent @$s4test1CC1sSSvpfi : $@convention(thin) () -> @owned String }
+
+// variable initialization expression of C.s
+sil hidden [transparent] [ossa] @$s4test1CC1sSSvpfi : $@convention(thin) () -> @owned String {
+bb0:
+  %0 = string_literal utf8 "not tainted", loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":12:22, scope 34 // user: %5
+  %1 = integer_literal $Builtin.Word, 11, loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":12:22, scope 34 // user: %5
+  %2 = integer_literal $Builtin.Int1, -1, loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":12:22, scope 34 // user: %5
+  %3 = metatype $@thin String.Type, loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":12:22, scope 34 // user: %5
+  // function_ref String.init(_builtinStringLiteral:utf8CodeUnitCount:isASCII:)
+  %4 = function_ref @$sSS21_builtinStringLiteral17utf8CodeUnitCount7isASCIISSBp_BwBi1_tcfC : $@convention(method) (Builtin.RawPointer, Builtin.Word, Builtin.Int1, @thin String.Type) -> @owned String, loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":12:22, scope 34 // user: %5
+  %5 = apply %4(%0, %1, %2, %3) : $@convention(method) (Builtin.RawPointer, Builtin.Word, Builtin.Int1, @thin String.Type) -> @owned String, loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":12:22, scope 34 // user: %6
+  return %5 : $String, loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":12:22, scope 34 // id: %6
+} // end sil function '$s4test1CC1sSSvpfi'
+
+
+// String.init(_builtinStringLiteral:utf8CodeUnitCount:isASCII:)
+sil [serialized] [always_inline] [readonly] [_semantics "string.makeUTF8"] @$sSS21_builtinStringLiteral17utf8CodeUnitCount7isASCIISSBp_BwBi1_tcfC : $@convention(method) (Builtin.RawPointer, Builtin.Word, Builtin.Int1, @thin String.Type) -> @owned String
+
+sil_scope 35 { loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":12:9 parent @$s4test1CC1sSSvg : $@convention(method) (@guaranteed C) -> @owned String }
+sil_scope 36 { loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":12:9 parent 35 }
+
+// C.s.getter
+sil hidden [transparent] [ossa] @$s4test1CC1sSSvg : $@convention(method) (@guaranteed C) -> @owned String {
+// %0 "self"                                      // users: %2, %1
+bb0(%0 : @guaranteed $C):
+  debug_value %0 : $C, let, name "self", argno 1, loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":12:9, scope 35 // id: %1
+  %2 = ref_element_addr %0 : $C, #C.s, scope 36   // user: %3
+  %3 = begin_access [read] [dynamic] %2 : $*String, scope 36 // users: %5, %4
+  %4 = load [copy] %3 : $*String, scope 36        // user: %6
+  end_access %3 : $*String, scope 36              // id: %5
+  return %4 : $String, loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":12:9, scope 36 // id: %6
+} // end sil function '$s4test1CC1sSSvg'
+
+sil_scope 37 { loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":12:9 parent @$s4test1CC1sSSvs : $@convention(method) (@owned String, @guaranteed C) -> () }
+sil_scope 38 { loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":12:9 parent 37 }
+
+// C.s.setter
+sil hidden [transparent] [ossa] @$s4test1CC1sSSvs : $@convention(method) (@owned String, @guaranteed C) -> () {
+// %0 "value"                                     // users: %11, %4, %2
+// %1 "self"                                      // users: %6, %3
+bb0(%0 : @owned $String, %1 : @guaranteed $C):
+  debug_value %0 : $String, let, name "value", argno 1, loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":12:9, scope 37 // id: %2
+  debug_value %1 : $C, let, name "self", argno 2, loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":12:9, scope 37 // id: %3
+  %4 = begin_borrow %0 : $String, scope 38        // users: %10, %5
+  %5 = copy_value %4 : $String, scope 38          // user: %8
+  %6 = ref_element_addr %1 : $C, #C.s, scope 38   // user: %7
+  %7 = begin_access [modify] [dynamic] %6 : $*String, scope 38 // users: %8, %9
+  store %5 to [assign] %7 : $*String, scope 38    // id: %8
+  end_access %7 : $*String, scope 38              // id: %9
+  end_borrow %4 : $String, scope 38               // id: %10
+  destroy_value %0 : $String, loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":12:9, scope 38 // id: %11
+  %12 = tuple (), loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":12:9, scope 38 // user: %13
+  return %12 : $(), loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":12:9, scope 38 // id: %13
+} // end sil function '$s4test1CC1sSSvs'
+
+sil_scope 39 { loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":12:9 parent @$s4test1CC1sSSvM : $@yield_once @convention(method) (@guaranteed C) -> @yields @inout String }
+sil_scope 40 { loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":12:9 parent 39 }
+
+// C.s.modify
+sil hidden [transparent] [ossa] @$s4test1CC1sSSvM : $@yield_once @convention(method) (@guaranteed C) -> @yields @inout String {
+// %0 "self"                                      // users: %2, %1
+bb0(%0 : @guaranteed $C):
+  debug_value %0 : $C, let, name "self", argno 1, loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":12:9, scope 39 // id: %1
+  %2 = ref_element_addr %0 : $C, #C.s, scope 40   // user: %3
+  %3 = begin_access [modify] [dynamic] %2 : $*String, scope 40 // users: %5, %8, %4
+  yield %3 : $*String, resume bb1, unwind bb2, loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":12:9, scope 40 // id: %4
+
+bb1:                                              // Preds: bb0
+  end_access %3 : $*String, scope 40              // id: %5
+  %6 = tuple (), loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":12:9, scope 40 // user: %7
+  return %6 : $(), loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":12:9, scope 40 // id: %7
+
+bb2:                                              // Preds: bb0
+  end_access %3 : $*String, scope 40              // id: %8
+  unwind , loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":12:9, scope 40 // id: %9
+} // end sil function '$s4test1CC1sSSvM'
+
+sil_scope 41 { loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":13:5 parent @$s4test1CCACycfC : $@convention(method) (@thick C.Type) -> @owned C }
+
+// C.__allocating_init()
+sil hidden [exact_self_class] [ossa] @$s4test1CCACycfC : $@convention(method) (@thick C.Type) -> @owned C {
+// %0 "$metatype"
+bb0(%0 : $@thick C.Type):
+  %1 = alloc_ref $C, loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":13:5, scope 41 // user: %3
+  // function_ref C.init()
+  %2 = function_ref @$s4test1CCACycfc : $@convention(method) (@owned C) -> @owned C, loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":13:5, scope 41 // user: %3
+  %3 = apply %2(%1) : $@convention(method) (@owned C) -> @owned C, loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":13:5, scope 41 // user: %4
+  return %3 : $C, loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":13:13, scope 41 // id: %4
+} // end sil function '$s4test1CCACycfC'
+
+sil_scope 42 { loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":13:5 parent @$s4test1CCACycfc : $@convention(method) (@owned C) -> @owned C }
+sil_scope 43 { loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":13:12 parent 42 }
+
+// C.init()
+sil hidden [ossa] @$s4test1CCACycfc : $@convention(method) (@owned C) -> @owned C {
+// %0 "self"                                      // users: %8, %14, %15, %1
+bb0(%0 : @owned $C):
+  debug_value %0 : $C, let, name "self", argno 1, loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":13:5, scope 42 // id: %1
+  %2 = string_literal utf8 "not tainted", loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":12:22, scope 42 // user: %7
+  %3 = integer_literal $Builtin.Word, 11, loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":12:22, scope 42 // user: %7
+  %4 = integer_literal $Builtin.Int1, -1, loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":12:22, scope 42 // user: %7
+  %5 = metatype $@thin String.Type, loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":12:22, scope 42 // user: %7
+  // function_ref String.init(_builtinStringLiteral:utf8CodeUnitCount:isASCII:)
+  %6 = function_ref @$sSS21_builtinStringLiteral17utf8CodeUnitCount7isASCIISSBp_BwBi1_tcfC : $@convention(method) (Builtin.RawPointer, Builtin.Word, Builtin.Int1, @thin String.Type) -> @owned String, loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":12:22, scope 42 // user: %7
+  %7 = apply %6(%2, %3, %4, %5) : $@convention(method) (Builtin.RawPointer, Builtin.Word, Builtin.Int1, @thin String.Type) -> @owned String, loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":12:22, scope 42 // user: %11
+  %8 = begin_borrow %0 : $C, loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":12:9, scope 42 // users: %13, %9
+  %9 = ref_element_addr %8 : $C, #C.s, loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":12:9, scope 42 // user: %10
+  %10 = begin_access [modify] [dynamic] %9 : $*String, loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":12:9, scope 42 // users: %11, %12
+  store %7 to [init] %10 : $*String, loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":12:9, scope 42 // id: %11
+  end_access %10 : $*String, loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":12:9, scope 42 // id: %12
+  end_borrow %8 : $C, loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":12:13, scope 42 // id: %13
+  %14 = copy_value %0 : $C, loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":13:13, scope 43 // user: %16
+  destroy_value %0 : $C, loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":13:13, scope 43 // id: %15
+  return %14 : $C, loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":13:13, scope 43 // id: %16
+} // end sil function '$s4test1CCACycfc'
+
+sil_scope 44 { loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":11:7 parent @$s4test1CCfd : $@convention(method) (@guaranteed C) -> @owned Builtin.NativeObject }
+sil_scope 45 { loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":11:7 parent 44 }
+
+// C.deinit
+sil hidden [ossa] @$s4test1CCfd : $@convention(method) (@guaranteed C) -> @owned Builtin.NativeObject {
+// %0 "self"                                      // users: %6, %2, %1
+bb0(%0 : @guaranteed $C):
+  debug_value %0 : $C, let, name "self", argno 1, loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":11:7, scope 44 // id: %1
+  %2 = ref_element_addr %0 : $C, #C.s, loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":11:7, scope 45 // user: %3
+  %3 = begin_access [deinit] [static] %2 : $*String, loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":11:7, scope 45 // users: %5, %4
+  destroy_addr %3 : $*String, loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":11:7, scope 45 // id: %4
+  end_access %3 : $*String, loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":11:7, scope 45 // id: %5
+  %6 = unchecked_ref_cast %0 : $C to $Builtin.NativeObject, loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":11:7, scope 45 // user: %7
+  %7 = unchecked_ownership_conversion %6 : $Builtin.NativeObject, @guaranteed to @owned, loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":11:7, scope 45 // user: %8
+  return %7 : $Builtin.NativeObject, loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":11:7, scope 45 // id: %8
+} // end sil function '$s4test1CCfd'
+
+sil_scope 46 { loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":11:7 parent @$s4test1CCfD : $@convention(method) (@owned C) -> () }
+
+// C.__deallocating_deinit
+sil hidden [ossa] @$s4test1CCfD : $@convention(method) (@owned C) -> () {
+// %0 "self"                                      // users: %6, %3, %1
+bb0(%0 : @owned $C):
+  debug_value %0 : $C, let, name "self", argno 1, loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":11:7, scope 46 // id: %1
+  // function_ref C.deinit
+  %2 = function_ref @$s4test1CCfd : $@convention(method) (@guaranteed C) -> @owned Builtin.NativeObject, loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":11:7, scope 46 // user: %4
+  %3 = begin_borrow %0 : $C, loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":11:7, scope 46 // users: %5, %4
+  %4 = apply %2(%3) : $@convention(method) (@guaranteed C) -> @owned Builtin.NativeObject, loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":11:7, scope 46 // user: %7
+  end_borrow %3 : $C, loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":11:7, scope 46 // id: %5
+  end_lifetime %0 : $C, loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":11:7, scope 46 // id: %6
+  %7 = unchecked_ref_cast %4 : $Builtin.NativeObject to $C, loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":11:7, scope 46 // user: %8
+  dealloc_ref %7 : $C, loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":11:7, scope 46 // id: %8
+  %9 = tuple (), loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":11:7, scope 46 // user: %10
+  return %9 : $(), loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":11:7, scope 46 // id: %10
+} // end sil function '$s4test1CCfD'
+
+sil_scope 47 { loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":16:6 parent @$s4test6sourceSSyF : $@convention(thin) () -> @owned String }
+sil_scope 48 { loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":16:25 parent 47 }
+
+// source()
+sil hidden [ossa] @$s4test6sourceSSyF : $@convention(thin) () -> @owned String {
+bb0:
+  %0 = string_literal utf8 "I'm bad", loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":17:12, scope 48 // user: %5
+  %1 = integer_literal $Builtin.Word, 7, loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":17:12, scope 48 // user: %5
+  %2 = integer_literal $Builtin.Int1, -1, loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":17:12, scope 48 // user: %5
+  %3 = metatype $@thin String.Type, loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":17:12, scope 48 // user: %5
+  // function_ref String.init(_builtinStringLiteral:utf8CodeUnitCount:isASCII:)
+  %4 = function_ref @$sSS21_builtinStringLiteral17utf8CodeUnitCount7isASCIISSBp_BwBi1_tcfC : $@convention(method) (Builtin.RawPointer, Builtin.Word, Builtin.Int1, @thin String.Type) -> @owned String, loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":17:12, scope 48 // user: %5
+  %5 = apply %4(%0, %1, %2, %3) : $@convention(method) (Builtin.RawPointer, Builtin.Word, Builtin.Int1, @thin String.Type) -> @owned String, loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":17:12, scope 48 // user: %6
+  return %5 : $String, loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":17:5, scope 48 // id: %6
+} // end sil function '$s4test6sourceSSyF'
+
+sil_scope 49 { loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":20:6 parent @$s4test4sink4sunkySS_tF : $@convention(thin) (@guaranteed String) -> () }
+sil_scope 50 { loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":20:25 parent 49 }
+
+// sink(sunk:)
+sil hidden [ossa] @$s4test4sink4sunkySS_tF : $@convention(thin) (@guaranteed String) -> () {
+// %0 "sunk"                                      // users: %8, %1
+bb0(%0 : @guaranteed $String):
+  debug_value %0 : $String, let, name "sunk", argno 1, loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":20:11, scope 49 // id: %1
+  %2 = integer_literal $Builtin.Word, 1, loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":21:11, scope 50 // user: %4
+  // function_ref _allocateUninitializedArray<A>(_:)
+  %3 = function_ref @$ss27_allocateUninitializedArrayySayxG_BptBwlF : $@convention(thin) <τ_0_0> (Builtin.Word) -> (@owned Array<τ_0_0>, Builtin.RawPointer), loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":21:11, scope 50 // user: %4
+  %4 = apply %3<Any>(%2) : $@convention(thin) <τ_0_0> (Builtin.Word) -> (@owned Array<τ_0_0>, Builtin.RawPointer), loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":21:11, scope 50 // user: %5
+  (%5, %6) = destructure_tuple %4 : $(Array<Any>, Builtin.RawPointer), loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":21:11, scope 50 // users: %19, %16, %7
+  %7 = pointer_to_address %6 : $Builtin.RawPointer to [strict] $*Any, loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":21:11, scope 50 // user: %9
+  %8 = copy_value %0 : $String, loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":21:11, scope 50 // user: %10
+  %9 = init_existential_addr %7 : $*Any, $String, loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":21:11, scope 50 // user: %10
+  store %8 to [init] %9 : $*String, loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":21:11, scope 50 // id: %10
+  // function_ref default argument 1 of print(_:separator:terminator:)
+  %11 = function_ref @$ss5print_9separator10terminatoryypd_S2StFfA0_ : $@convention(thin) () -> @owned String, loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":21:10, scope 50 // user: %12
+  %12 = apply %11() : $@convention(thin) () -> @owned String, loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":21:10, scope 50 // users: %18, %16
+  // function_ref default argument 2 of print(_:separator:terminator:)
+  %13 = function_ref @$ss5print_9separator10terminatoryypd_S2StFfA1_ : $@convention(thin) () -> @owned String, loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":21:10, scope 50 // user: %14
+  %14 = apply %13() : $@convention(thin) () -> @owned String, loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":21:10, scope 50 // users: %17, %16
+  // function_ref print(_:separator:terminator:)
+  %15 = function_ref @$ss5print_9separator10terminatoryypd_S2StF : $@convention(thin) (@guaranteed Array<Any>, @guaranteed String, @guaranteed String) -> (), loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":21:5, scope 50 // user: %16
+  %16 = apply %15(%5, %12, %14) : $@convention(thin) (@guaranteed Array<Any>, @guaranteed String, @guaranteed String) -> (), loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":21:5, scope 50
+  destroy_value %14 : $String, loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":21:15, scope 50 // id: %17
+  destroy_value %12 : $String, loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":21:15, scope 50 // id: %18
+  destroy_value %5 : $Array<Any>, loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":21:15, scope 50 // id: %19
+  %20 = tuple (), loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":22:1, scope 50 // user: %21
+  return %20 : $(), loc "/var/folders/hn/l7rbhtbx5pbg_60_n5c2r41c0000gn/T/test.swift":22:1, scope 50 // id: %21
+} // end sil function '$s4test4sink4sunkySS_tF'
+
+
+// _allocateUninitializedArray<A>(_:)
+sil [serialized] [always_inline] [_semantics "array.uninitialized_intrinsic"] @$ss27_allocateUninitializedArrayySayxG_BptBwlF : $@convention(thin) <τ_0_0> (Builtin.Word) -> (@owned Array<τ_0_0>, Builtin.RawPointer)
+
+sil_scope 51 {  parent @$ss5print_9separator10terminatoryypd_S2StFfA0_ : $@convention(thin) () -> @owned String }
+
+// default argument 1 of print(_:separator:terminator:)
+sil shared_external [serialized] @$ss5print_9separator10terminatoryypd_S2StFfA0_ : $@convention(thin) () -> @owned String {
+bb0:
+  %0 = string_literal utf8 " ", scope 51          // user: %5
+  %1 = integer_literal $Builtin.Word, 1, scope 51 // user: %5
+  %2 = integer_literal $Builtin.Int1, -1, scope 51 // user: %5
+  %3 = metatype $@thin String.Type, scope 51      // user: %5
+  // function_ref String.init(_builtinStringLiteral:utf8CodeUnitCount:isASCII:)
+  %4 = function_ref @$sSS21_builtinStringLiteral17utf8CodeUnitCount7isASCIISSBp_BwBi1_tcfC : $@convention(method) (Builtin.RawPointer, Builtin.Word, Builtin.Int1, @thin String.Type) -> @owned String, scope 51 // user: %5
+  %5 = apply %4(%0, %1, %2, %3) : $@convention(method) (Builtin.RawPointer, Builtin.Word, Builtin.Int1, @thin String.Type) -> @owned String, scope 51 // user: %6
+  return %5 : $String, scope 51                   // id: %6
+} // end sil function '$ss5print_9separator10terminatoryypd_S2StFfA0_'
+
+sil_scope 52 {  parent @$ss5print_9separator10terminatoryypd_S2StFfA1_ : $@convention(thin) () -> @owned String }
+
+// default argument 2 of print(_:separator:terminator:)
+sil shared_external [serialized] @$ss5print_9separator10terminatoryypd_S2StFfA1_ : $@convention(thin) () -> @owned String {
+bb0:
+  %0 = string_literal utf8 "\n", scope 52         // user: %5
+  %1 = integer_literal $Builtin.Word, 1, scope 52 // user: %5
+  %2 = integer_literal $Builtin.Int1, -1, scope 52 // user: %5
+  %3 = metatype $@thin String.Type, scope 52      // user: %5
+  // function_ref String.init(_builtinStringLiteral:utf8CodeUnitCount:isASCII:)
+  %4 = function_ref @$sSS21_builtinStringLiteral17utf8CodeUnitCount7isASCIISSBp_BwBi1_tcfC : $@convention(method) (Builtin.RawPointer, Builtin.Word, Builtin.Int1, @thin String.Type) -> @owned String, scope 52 // user: %5
+  %5 = apply %4(%0, %1, %2, %3) : $@convention(method) (Builtin.RawPointer, Builtin.Word, Builtin.Int1, @thin String.Type) -> @owned String, scope 52 // user: %6
+  return %5 : $String, scope 52                   // id: %6
+} // end sil function '$ss5print_9separator10terminatoryypd_S2StFfA1_'
+
+
+// print(_:separator:terminator:)
+sil @$ss5print_9separator10terminatoryypd_S2StF : $@convention(thin) (@guaranteed Array<Any>, @guaranteed String, @guaranteed String) -> ()
+
+sil_scope 53 {  parent @$ss30_diagnoseUnexpectedNilOptional14_filenameStart01_E6Length01_E7IsASCII5_line17_isImplicitUnwrapyBp_BwBi1_BwBi1_tF : $@convention(thin) (Builtin.RawPointer, Builtin.Word, Builtin.Int1, Builtin.Word, Builtin.Int1) -> () }
+
+// _diagnoseUnexpectedNilOptional(_filenameStart:_filenameLength:_filenameIsASCII:_line:_isImplicitUnwrap:)
+sil public_external [transparent] [serialized] [ossa] @$ss30_diagnoseUnexpectedNilOptional14_filenameStart01_E6Length01_E7IsASCII5_line17_isImplicitUnwrapyBp_BwBi1_BwBi1_tF : $@convention(thin) (Builtin.RawPointer, Builtin.Word, Builtin.Int1, Builtin.Word, Builtin.Int1) -> () {
+// %0                                             // users: %46, %13
+// %1                                             // users: %53, %20
+// %2                                             // users: %47, %14
+// %3                                             // users: %54, %21
+// %4                                             // user: %5
+bb0(%0 : $Builtin.RawPointer, %1 : $Builtin.Word, %2 : $Builtin.Int1, %3 : $Builtin.Word, %4 : $Builtin.Int1):
+  cond_br %4, bb13, bb1, scope 53                 // id: %5
+
+bb1:                                              // Preds: bb0
+  %6 = string_literal utf8 "Unexpectedly found nil while unwrapping an Optional value", scope 53 // user: %8
+  %7 = integer_literal $Builtin.Word, 57, scope 53 // user: %12
+  %8 = builtin "ptrtoint_Word"(%6 : $Builtin.RawPointer) : $Builtin.Word, scope 53 // user: %12
+  br bb2, scope 53                                // id: %9
+
+bb2:                                              // Preds: bb1
+  %10 = integer_literal $Builtin.Int8, 2, scope 53 // user: %12
+  br bb3, scope 53                                // id: %11
+
+bb3:                                              // Preds: bb2
+  %12 = struct $StaticString (%8 : $Builtin.Word, %7 : $Builtin.Word, %10 : $Builtin.Int8), scope 53 // user: %37
+  %13 = builtin "ptrtoint_Word"(%0 : $Builtin.RawPointer) : $Builtin.Word, scope 53 // user: %20
+  cond_br %2, bb5, bb4, scope 53                  // id: %14
+
+bb4:                                              // Preds: bb3
+  %15 = integer_literal $Builtin.Int8, 0, scope 53 // user: %16
+  br bb6(%15 : $Builtin.Int8), scope 53           // id: %16
+
+bb5:                                              // Preds: bb3
+  %17 = integer_literal $Builtin.Int8, 2, scope 53 // user: %18
+  br bb6(%17 : $Builtin.Int8), scope 53           // id: %18
+
+// %19                                            // user: %20
+bb6(%19 : $Builtin.Int8):                         // Preds: bb5 bb4
+  %20 = struct $StaticString (%13 : $Builtin.Word, %1 : $Builtin.Word, %19 : $Builtin.Int8), scope 53 // user: %37
+  %21 = builtin "zextOrBitCast_Word_Int64"(%3 : $Builtin.Word) : $Builtin.Int64, scope 53 // user: %22
+  %22 = struct $UInt (%21 : $Builtin.Int64), scope 53 // user: %37
+  br bb7, scope 53                                // id: %23
+
+bb7:                                              // Preds: bb6
+  br bb8, scope 53                                // id: %24
+
+bb8:                                              // Preds: bb7
+  %25 = string_literal utf8 "Fatal error", scope 53 // user: %27
+  %26 = integer_literal $Builtin.Word, 11, scope 53 // user: %31
+  %27 = builtin "ptrtoint_Word"(%25 : $Builtin.RawPointer) : $Builtin.Word, scope 53 // user: %31
+  br bb9, scope 53                                // id: %28
+
+bb9:                                              // Preds: bb8
+  %29 = integer_literal $Builtin.Int8, 2, scope 53 // user: %31
+  br bb10, scope 53                               // id: %30
+
+bb10:                                             // Preds: bb9
+  %31 = struct $StaticString (%27 : $Builtin.Word, %26 : $Builtin.Word, %29 : $Builtin.Int8), scope 53 // user: %37
+  br bb11, scope 53                               // id: %32
+
+bb11:                                             // Preds: bb10
+  %33 = integer_literal $Builtin.Int32, 1, scope 53 // user: %34
+  %34 = struct $UInt32 (%33 : $Builtin.Int32), scope 53 // user: %37
+  br bb12, scope 53                               // id: %35
+
+bb12:                                             // Preds: bb11
+  // function_ref _assertionFailure(_:_:file:line:flags:)
+  %36 = function_ref @$ss17_assertionFailure__4file4line5flagss5NeverOs12StaticStringV_A2HSus6UInt32VtF : $@convention(thin) (StaticString, StaticString, StaticString, UInt, UInt32) -> Never, scope 53 // user: %37
+  %37 = apply %36(%31, %12, %20, %22, %34) : $@convention(thin) (StaticString, StaticString, StaticString, UInt, UInt32) -> Never, scope 53
+  unreachable , scope 53                          // id: %38
+
+bb13:                                             // Preds: bb0
+  %39 = string_literal utf8 "Unexpectedly found nil while implicitly unwrapping an Optional value", scope 53 // user: %41
+  %40 = integer_literal $Builtin.Word, 68, scope 53 // user: %45
+  %41 = builtin "ptrtoint_Word"(%39 : $Builtin.RawPointer) : $Builtin.Word, scope 53 // user: %45
+  br bb14, scope 53                               // id: %42
+
+bb14:                                             // Preds: bb13
+  %43 = integer_literal $Builtin.Int8, 2, scope 53 // user: %45
+  br bb15, scope 53                               // id: %44
+
+bb15:                                             // Preds: bb14
+  %45 = struct $StaticString (%41 : $Builtin.Word, %40 : $Builtin.Word, %43 : $Builtin.Int8), scope 53 // user: %70
+  %46 = builtin "ptrtoint_Word"(%0 : $Builtin.RawPointer) : $Builtin.Word, scope 53 // user: %53
+  cond_br %2, bb17, bb16, scope 53                // id: %47
+
+bb16:                                             // Preds: bb15
+  %48 = integer_literal $Builtin.Int8, 0, scope 53 // user: %49
+  br bb18(%48 : $Builtin.Int8), scope 53          // id: %49
+
+bb17:                                             // Preds: bb15
+  %50 = integer_literal $Builtin.Int8, 2, scope 53 // user: %51
+  br bb18(%50 : $Builtin.Int8), scope 53          // id: %51
+
+// %52                                            // user: %53
+bb18(%52 : $Builtin.Int8):                        // Preds: bb17 bb16
+  %53 = struct $StaticString (%46 : $Builtin.Word, %1 : $Builtin.Word, %52 : $Builtin.Int8), scope 53 // user: %70
+  %54 = builtin "zextOrBitCast_Word_Int64"(%3 : $Builtin.Word) : $Builtin.Int64, scope 53 // user: %55
+  %55 = struct $UInt (%54 : $Builtin.Int64), scope 53 // user: %70
+  br bb19, scope 53                               // id: %56
+
+bb19:                                             // Preds: bb18
+  br bb20, scope 53                               // id: %57
+
+bb20:                                             // Preds: bb19
+  %58 = string_literal utf8 "Fatal error", scope 53 // user: %60
+  %59 = integer_literal $Builtin.Word, 11, scope 53 // user: %64
+  %60 = builtin "ptrtoint_Word"(%58 : $Builtin.RawPointer) : $Builtin.Word, scope 53 // user: %64
+  br bb21, scope 53                               // id: %61
+
+bb21:                                             // Preds: bb20
+  %62 = integer_literal $Builtin.Int8, 2, scope 53 // user: %64
+  br bb22, scope 53                               // id: %63
+
+bb22:                                             // Preds: bb21
+  %64 = struct $StaticString (%60 : $Builtin.Word, %59 : $Builtin.Word, %62 : $Builtin.Int8), scope 53 // user: %70
+  br bb23, scope 53                               // id: %65
+
+bb23:                                             // Preds: bb22
+  %66 = integer_literal $Builtin.Int32, 1, scope 53 // user: %67
+  %67 = struct $UInt32 (%66 : $Builtin.Int32), scope 53 // user: %70
+  br bb24, scope 53                               // id: %68
+
+bb24:                                             // Preds: bb23
+  // function_ref _assertionFailure(_:_:file:line:flags:)
+  %69 = function_ref @$ss17_assertionFailure__4file4line5flagss5NeverOs12StaticStringV_A2HSus6UInt32VtF : $@convention(thin) (StaticString, StaticString, StaticString, UInt, UInt32) -> Never, scope 53 // user: %70
+  %70 = apply %69(%64, %45, %53, %55, %67) : $@convention(thin) (StaticString, StaticString, StaticString, UInt, UInt32) -> Never, scope 53
+  unreachable , scope 53                          // id: %71
+} // end sil function '$ss30_diagnoseUnexpectedNilOptional14_filenameStart01_E6Length01_E7IsASCII5_line17_isImplicitUnwrapyBp_BwBi1_BwBi1_tF'
+
+
+// _assertionFailure(_:_:file:line:flags:)
+sil [noinline] [_semantics "programtermination_point"] @$ss17_assertionFailure__4file4line5flagss5NeverOs12StaticStringV_A2HSus6UInt32VtF : $@convention(thin) (StaticString, StaticString, StaticString, UInt, UInt32) -> Never
+
+sil_vtable A {
+  #A.b!getter: (A) -> () -> B? : @$s4test1AC1bAA1BCSgvg	// A.b.getter
+  #A.b!setter: (A) -> (B?) -> () : @$s4test1AC1bAA1BCSgvs	// A.b.setter
+  #A.b!modify: (A) -> () -> () : @$s4test1AC1bAA1BCSgvM	// A.b.modify
+  #A.init!allocator: (A.Type) -> () -> A : @$s4test1ACACycfC	// A.__allocating_init()
+  #A.deinit!deallocator: @$s4test1ACfD	// A.__deallocating_deinit
+}
+
+sil_vtable B {
+  #B.c!getter: (B) -> () -> C? : @$s4test1BC1cAA1CCSgvg	// B.c.getter
+  #B.c!setter: (B) -> (C?) -> () : @$s4test1BC1cAA1CCSgvs	// B.c.setter
+  #B.c!modify: (B) -> () -> () : @$s4test1BC1cAA1CCSgvM	// B.c.modify
+  #B.init!allocator: (B.Type) -> () -> B : @$s4test1BCACycfC	// B.__allocating_init()
+  #B.deinit!deallocator: @$s4test1BCfD	// B.__deallocating_deinit
+}
+
+sil_vtable C {
+  #C.s!getter: (C) -> () -> String : @$s4test1CC1sSSvg	// C.s.getter
+  #C.s!setter: (C) -> (String) -> () : @$s4test1CC1sSSvs	// C.s.setter
+  #C.s!modify: (C) -> () -> () : @$s4test1CC1sSSvM	// C.s.modify
+  #C.init!allocator: (C.Type) -> () -> C : @$s4test1CCACycfC	// C.__allocating_init()
+  #C.deinit!deallocator: @$s4test1CCfD	// C.__deallocating_deinit
+}
+

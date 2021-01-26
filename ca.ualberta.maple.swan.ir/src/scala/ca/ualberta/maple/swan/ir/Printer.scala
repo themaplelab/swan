@@ -10,7 +10,11 @@
 
 package ca.ualberta.maple.swan.ir
 
+import scala.util.control.Breaks.{break, breakable}
+
 class Printer {
+
+  var line: Int = 1
 
   var description: StringBuilder = new StringBuilder()
   private var indentation: String = ""
@@ -26,6 +30,12 @@ class Printer {
     indentation = new String(" " * count)
   }
 
+  def printNewline(): Unit = {
+    line += 1
+    description ++= "\n"
+    indented = false
+  }
+
   def print[T](i: T, when: Boolean = true): Unit = {
     if (!when) return
     val s = i.toString
@@ -39,6 +49,7 @@ class Printer {
     })
     if (allNewLines) {
       description ++= "\n" * s.length
+      line += s.length
       indented = false
       return
     }
@@ -48,10 +59,12 @@ class Printer {
         description ++= indentation
       }
       description ++= s
+      line += 1
       indented = false
       return
     }
     // "string0\nstring1\nstring2[\n]"
+    this.line += s.count(_ == '\n')
     val lines = s.split('\n').iterator
     var lineIdx = 0
     while(lines.hasNext) {
@@ -61,7 +74,6 @@ class Printer {
         indented = true
       }
       description ++= line
-
       if (lineIdx < lines.length - 1) {
         description ++= "\n"
         indented = false
@@ -109,6 +121,19 @@ class Printer {
     print(pre)
     print(xs, sep, fn)
     print(suf)
+  }
+
+  def getCol: Int = {
+    var count = indentation.length
+    breakable {
+      for (i <- description.length() - 1 to 0 by -1) {
+        if (description(i) == '\n') {
+          break()
+        }
+        count += 1
+      }
+    }
+    count
   }
 
   def literal(b: Boolean): Unit = {

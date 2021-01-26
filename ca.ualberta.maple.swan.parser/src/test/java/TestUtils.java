@@ -72,7 +72,8 @@ public class TestUtils {
                        line.startsWith("protocol") ||
                        line.startsWith("final class") ||
                        line.startsWith("class") ||
-                       line.startsWith("extension")) {
+                       line.startsWith("extension") ||
+                       line.startsWith("@_inheritsConvenienceInitializers")) {
                 line = "";
                 delete = true;
             }

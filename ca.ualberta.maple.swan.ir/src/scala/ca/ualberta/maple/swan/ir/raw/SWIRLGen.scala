@@ -38,10 +38,10 @@ object SWIRLGen {
   class Context(val silModule: SILModule, val silFunction: SILFunction,
                 val silBlock: SILBlock, val pos: Option[Position],
                 val refTable: RefTable, val instantiatedTypes: mutable.HashSet[String],
-                val arguments: ArrayBuffer[Argument])
+                val arguments: ArrayBuffer[Argument], val silMap: mutable.HashMap[Object, Object])
   object Context {
     def dummy(refTable: RefTable): Context = {
-      new Context(null, null, null, null, refTable, null, null)
+      new Context(null, null, null, null, refTable, null, null, null)
     }
   }
 
@@ -58,6 +58,7 @@ object SWIRLGen {
   def translateSILModule(silModule: SILModule): Module = {
     val progressBar = new ProgressBar("Translating", silModule.functions.length, false)
     val functions = new ArrayBuffer[Function](0)
+    val silMap = new mutable.HashMap[Object, Object]()
     silModule.functions.zipWithIndex.foreach(zippedFunction => {
       val silFunction = zippedFunction._1
       progressBar.update(zippedFunction._2)
@@ -79,23 +80,25 @@ object SWIRLGen {
             silBlock.operatorDefs.foreach((silOperatorDef: SILOperatorDef) => {
               breakable {
                 val position: Option[Position] = Utils.SILSourceInfoToPosition(silOperatorDef.sourceInfo)
-                val ctx = new Context(silModule, silFunction, silBlock, position, refTable, instantiatedTypes, arguments)
+                val ctx = new Context(silModule, silFunction, silBlock, position, refTable, instantiatedTypes, arguments, silMap)
                 val instructions: Array[InstructionDef] = translateSILInstruction(SILInstructionDef.operator(silOperatorDef), ctx)
                 if (instructions == NOP) {
                   break()
                 }
                 instructions.foreach((inst: InstructionDef) => {
-                  if (!inst.isInstanceOf[InstructionDef.operator]) {
-                    throw new IncorrectSWIRLStructureException("Operator expected")
+                  inst match {
+                    case InstructionDef.operator(operatorDef) =>
+                      operators.append(operatorDef)
+                      silMap.put(silOperatorDef, operatorDef)
+                    case InstructionDef.terminator(_) =>
+                      throw new IncorrectSWIRLStructureException("Operator expected")
                   }
-                  val operator: OperatorDef = inst.asInstanceOf[InstructionDef.operator].operatorDef
-                  operators.append(operator)
                 })
               }
             })
             val terminator: TerminatorDef = {
               val position: Option[Position] = Utils.SILSourceInfoToPosition(silBlock.terminatorDef.sourceInfo)
-              val ctx = new Context(silModule, silFunction, silBlock, position, refTable, instantiatedTypes, arguments)
+              val ctx = new Context(silModule, silFunction, silBlock, position, refTable, instantiatedTypes, arguments, silMap)
               val instructions = translateSILInstruction(
                 SILInstructionDef.terminator(silBlock.terminatorDef), ctx)
               if (instructions == null) {
@@ -105,27 +108,35 @@ object SWIRLGen {
                 instructions.zipWithIndex.foreach(term => {
                   val instruction = term._1
                   if (term._2 != instructions.length - 1) {
-                    if (!instruction.isInstanceOf[InstructionDef.operator]) {
-                      throw new IncorrectSWIRLStructureException("All instructions before the last instruction must be operators")
+                    instruction match {
+                      case InstructionDef.operator(operatorDef) =>
+                        operators.append(operatorDef)
+                        silMap.put(silBlock.terminatorDef, operatorDef)
+                      case InstructionDef.terminator(_) =>
+                        throw new IncorrectSWIRLStructureException("All instructions before the last instruction must be operators")
                     }
-                    operators.append(instruction.asInstanceOf[InstructionDef.operator].operatorDef)
                   } else {
-                    if (!instruction.isInstanceOf[InstructionDef.terminator]) {
-                      throw new IncorrectSWIRLStructureException("Last instruction must be a terminator.")
+                    instruction match {
+                      case InstructionDef.operator(_) =>
+                        throw new IncorrectSWIRLStructureException("Last instruction must be a terminator.")
+                      case InstructionDef.terminator(terminatorDef) =>
+                        terminator = terminatorDef
                     }
-                    terminator = instruction.asInstanceOf[InstructionDef.terminator].terminatorDef
                   }
                 })
                 if (terminator == null) {
                   throw new IncorrectSWIRLStructureException("Terminator expected for block " +
                     silBlock.identifier + " in function " + silFunction.name.demangled)
                 }
+                silMap.put(silBlock.terminatorDef, terminator)
                 terminator
               }
             }
             val blockRef = new BlockRef(silBlock.identifier)
             refTable.blocks.put(blockRef.label, blockRef)
-            new Block(blockRef, arguments.toArray, operators, terminator)
+            val b = new Block(blockRef, arguments.toArray, operators, terminator)
+            silMap.put(silBlock, b)
+            b
           })
         })
         val returnType = Utils.SILFunctionTypeToReturnType(silFunction.tpe)
@@ -147,8 +158,10 @@ object SWIRLGen {
             new TerminatorDef(Terminator.ret(retRef), None)))
           attribute = Some(FunctionAttribute.stub)
         }
-        new Function(attribute, silFunction.name.demangled, returnType,
+        val f = new Function(attribute, silFunction.name.demangled, returnType,
           blocks, refTable, immutable.HashSet[String]() ++ instantiatedTypes)
+        silMap.put(silFunction, f)
+        f
       })
     })
 
@@ -195,7 +208,7 @@ object SWIRLGen {
       functions.append(fmFunction)
     }
     progressBar.done()
-    new Module(functions, true, new DynamicDispatchGraph(silModule))
+    new Module(functions, true, new DynamicDispatchGraph(silModule), silMap)
   }
 
   private def getFunctionAttribute(silFunction: SILFunction): Option[FunctionAttribute] = {
@@ -279,6 +292,7 @@ object SWIRLGen {
           case inst: SILOperator.loadBorrow => visitLoadBorrow(result, inst, ctx)
           case inst: SILOperator.beginBorrow => visitBeginBorrow(result, inst, ctx)
           case inst: SILOperator.endBorrow => visitEndBorrow(result, inst, ctx)
+          case inst: SILOperator.endLifetime => visitEndLifetime(result, inst, ctx)
           case inst: SILOperator.copyAddr => visitCopyAddr(result, inst, ctx)
           case inst: SILOperator.destroyAddr => visitDestroyAddr(result, inst, ctx)
           case inst: SILOperator.indexAddr => visitIndexAddr(result, inst, ctx)
@@ -358,6 +372,7 @@ object SWIRLGen {
           case inst: SILOperator.uncheckedRefCast => visitUncheckedRefCast(result, inst, ctx)
           case inst: SILOperator.uncheckedAddrCast => visitUncheckedAddrCast(result, inst, ctx)
           case inst: SILOperator.uncheckedTrivialBitCast => visitUncheckedTrivialBitCast(result, inst, ctx)
+          case inst: SILOperator.uncheckedOwnershipConversion => visitUncheckedOwnershipConverstion(result, inst, ctx)
           case inst: SILOperator.rawPointerToRef => visitRawPointerToRef(result, inst, ctx)
           case inst: SILOperator.refToUnowned => visitRefToUnowned(result, inst, ctx)
           case inst: SILOperator.refToUnmanaged => visitRefToUnmanaged(result, inst, ctx)
@@ -564,6 +579,10 @@ object SWIRLGen {
   }
 
   def visitEndBorrow(r: Option[SILResult], I: SILOperator.endBorrow, ctx: Context): Array[InstructionDef] = {
+    NOP
+  }
+
+  def visitEndLifetime(r: Option[SILResult], I: SILOperator.endLifetime, ctx: Context): Array[InstructionDef] = {
     NOP
   }
 
@@ -1257,6 +1276,12 @@ object SWIRLGen {
 
   // def visitUncheckedBitwiseCast(r: Option[SILResult], I: SILOperator.uncheckedBitwiseCast, ctx: Context): Array[InstructionDef]
   // def visitRefToRawPointer(r: Option[SILResult], I: SILOperator.refToRawPointer, ctx: Context): Array[InstructionDef]
+
+  @throws[UnexpectedSILFormatException]
+  def visitUncheckedOwnershipConverstion(r: Option[SILResult], I: SILOperator.uncheckedOwnershipConversion, ctx: Context): Array[InstructionDef] = {
+    verifySILResult(r, 1)
+    copySymbol(I.operand.value, r.get.valueNames(0), ctx)
+  }
 
   @throws[UnexpectedSILFormatException]
   def visitRawPointerToRef(r: Option[SILResult], I: SILOperator.rawPointerToRef, ctx: Context): Array[InstructionDef] = {

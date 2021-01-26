@@ -533,6 +533,8 @@ class SILParser extends SILPrinter {
           ownership = Some(SILStoreOwnership.init)
         } else if (skip("[trivial]")) {
           ownership = Some(SILStoreOwnership.trivial)
+        } else if (skip("[assign]")) {
+          ownership = Some(SILStoreOwnership.assign)
         }
         val operand = parseOperand()
         SILInstruction.operator(SILOperator.store(value, ownership, operand))
@@ -548,6 +550,10 @@ class SILParser extends SILPrinter {
       case "end_borrow" => {
         val operand = parseOperand()
         SILInstruction.operator(SILOperator.endBorrow(operand))
+      }
+      case "end_lifetime" => {
+        val operand = parseOperand()
+        SILInstruction.operator(SILOperator.endLifetime(operand))
       }
       case "copy_addr" => {
         val take = skip("[take]")
@@ -1185,6 +1191,14 @@ class SILParser extends SILPrinter {
       case "unchecked_bitwise_cast" => {
         throw parseError("unhandled instruction") // NSIP
       }
+      case "unchecked_ownership_conversion" => {
+        val operand = parseOperand()
+        take(",")
+        val from = parseTypeAttribute()
+        take("to")
+        val to = parseTypeAttribute()
+        SILInstruction.operator(SILOperator.uncheckedOwnershipConversion(operand, from, to))
+      }
       case "ref_to_raw_pointer" => {
         throw parseError("unhandled instruction") // NSIP
       }
@@ -1498,7 +1512,14 @@ class SILParser extends SILPrinter {
   def parseArgument(): SILArgument = {
     val valueName = parseValueName()
     take(":")
-    val tpe = parseType()
+    val tpe = {
+      if (peek("@")) {
+        val attr = parseTypeAttribute()
+        SILType.withOwnership(attr, parseType())
+      } else {
+        parseType()
+      }
+    }
     new SILArgument(valueName, tpe)
   }
 
@@ -2326,9 +2347,9 @@ class SILParser extends SILPrinter {
   // in unconditional_checked_cast_addr instruction.
   @throws[Error]
   def parseType(naked: Boolean = false): SILType = {
-    // NB: Ownership SSA has a surprising convention of printing the
-    //     ownership type before the actual type, so we first try to
-    //     parse the type attribute.
+    // Ownership SSA has a surprising convention of printing the
+    // ownership type before the actual type, so we first try to
+    // parse the type attribute.
     if (naked) {
       skip("$")
     } else if (!skip("$")) {
