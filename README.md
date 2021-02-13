@@ -13,6 +13,18 @@ We have completely redesigned SWAN. It now parses plain-text that can either be 
 - [SWIRL](https://github.com/themaplelab/swan/wiki/SWIRL)
 - [SWIRLGen: SIL to SWIRL Compilation](https://github.com/themaplelab/swan/wiki/SWIRLGen:-SIL-to-SWIRL-Compilation)
 
+## Developing
+
+```
+git clone git@github.com:themaplelab/swan.git -b spds
+```
+
+Open the cloned repo in IntelliJ. Be sure to select *Import as Gradle Project*.
+
+Add your github username and token to ca.ualberta.maple.swan.spds/build.gradle. This is required for adding SPDS as a dependency.
+
+Run the *SWIRL Tests* and *SIL Tests* configurations to test everything works.
+
 ### Repository layout
 
 - ca.ualberta.maple.swan.client

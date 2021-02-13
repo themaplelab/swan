@@ -38,8 +38,8 @@ repositories {
         name = "github"
         url = uri("https://maven.pkg.github.com/CodeShield-Security/SPDS/")
         credentials {
-            username = "tiganov"
-            password = "ba16a9b82497a88ac68a9f98cb230057d3ce57c4"
+            username = "foo"
+            password = "bar"
         }
     }
     maven {
