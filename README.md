@@ -8,6 +8,11 @@ This branch contains the new generation of the SWAN framework. **It is still WIP
 
 We have completely redesigned SWAN. It now parses plain-text that can either be dumped with `xcodebuild` or `swiftc`. Previously, we hooked into the Swift compiler which created many build problems and added complexity. We've developed a new IR, called *SWIRL*, that is simple, well documented, and easy to understand. Any analysis engine should be able to analyze SWIRL without having to handle complex semantics. We are currently working on integrating SWIRL into [SPDS](https://github.com/CodeShield-Security/SPDS).
 
+### Relevant Wiki pages
+
+- [SWIRL](https://github.com/themaplelab/swan/wiki/SWIRL)
+- [SWIRLGen: SIL to SWIRL Compilation](https://github.com/themaplelab/swan/wiki/SWIRLGen:-SIL-to-SWIRL-Compilation)
+
 ### Repository layout
 
 - ca.ualberta.maple.swan.client
