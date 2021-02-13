@@ -58,8 +58,8 @@ struct SWANXcodeBuild: ParsableCommand {
   }
   
   func run() throws {
-    
-    let outputDir = URL(fileURLWithPath: FileManager.default.currentDirectoryPath).appendingPathComponent(self.silDir!)
+
+    let outputDir = URL(fileURLWithPath: self.silDir!)
     
     let xcodebuildLog = outputDir.appendingPathComponent(Constants.xcodebuildLog)
         

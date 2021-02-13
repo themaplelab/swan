@@ -1703,6 +1703,7 @@ class SILPrinter extends Printer {
       case SILTypeAttribute.inoutAliasable => print("@inout_aliasable")
       case SILTypeAttribute.noescape => print("@noescape")
       case SILTypeAttribute.out => print("@out")
+      case SILTypeAttribute.unowned => print("@unowned")
       case SILTypeAttribute.owned => print("@owned")
       case SILTypeAttribute.thick => print("@thick")
       case SILTypeAttribute.thin => print("@thin")

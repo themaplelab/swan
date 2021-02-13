@@ -22,7 +22,6 @@ import scala.jdk.CollectionConverters.CollectionHasAsScala
 import scala.reflect.ClassTag
 import scala.util.control.Breaks.{break, breakable}
 
-
 class DynamicDispatchGraph(module: SILModule) {
 
   private val graph: Graph[Node, DefaultEdge] = new SimpleGraph(classOf[DefaultEdge])

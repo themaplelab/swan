@@ -53,13 +53,13 @@ class SWANMethod(val delegate: CanFunction) extends Method {
 
   override def getStatements: util.List[Statement] = cfg.getStatements
 
-  override def getDeclaringClass: WrappedClass = ???
+  override def getDeclaringClass: WrappedClass = null
 
   override def getControlFlowGraph: ControlFlowGraph = cfg
 
-  override def getSubSignature: String = delegate.f.name
+  override def getSubSignature: String = delegate.name
 
-  override def getName: String = delegate.f.name
+  override def getName: String = delegate.name
 
   override def isConstructor: Boolean = false
 

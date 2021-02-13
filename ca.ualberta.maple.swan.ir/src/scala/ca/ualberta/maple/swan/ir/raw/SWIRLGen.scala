@@ -11,7 +11,7 @@
 package ca.ualberta.maple.swan.ir.raw
 
 import ca.ualberta.maple.swan.ir.Exceptions.{ExperimentalException, IncorrectSWIRLStructureException, UnexpectedSILFormatException, UnexpectedSILTypeBehaviourException}
-import ca.ualberta.maple.swan.ir.{Argument, BinaryOperation, Block, BlockRef, DynamicDispatchGraph, EnumAssignCase, Function, FunctionAttribute, InstructionDef, Literal, Module, Operator, OperatorDef, Position, RefTable, SwitchCase, SwitchEnumCase, Symbol, SymbolRef, Terminator, TerminatorDef, Type, UnaryOperation}
+import ca.ualberta.maple.swan.ir.{Argument, BinaryOperation, Block, BlockRef, DynamicDispatchGraph, EnumAssignCase, Function, FunctionAttribute, InstructionDef, Literal, Module, Operator, Position, RawOperator, RawOperatorDef, RawTerminator, RawTerminatorDef, RefTable, SILMap, SwitchCase, SwitchEnumCase, Symbol, SymbolRef, Terminator, Type, UnaryOperation}
 import ca.ualberta.maple.swan.parser.Logging.ProgressBar
 import ca.ualberta.maple.swan.parser._
 
@@ -20,7 +20,7 @@ import scala.collection.mutable.ArrayBuffer
 import scala.util.control.Breaks.{break, breakable}
 
 /*
- * IMPORTANT: For now, boxes are treated as pointers.
+ * For now, boxes are treated as pointers.
  *
  * Type information either at apply or reference time may be useful for
  * generating stubs later. However, it gets complicated for dynamic dispatch
@@ -38,7 +38,7 @@ object SWIRLGen {
   class Context(val silModule: SILModule, val silFunction: SILFunction,
                 val silBlock: SILBlock, val pos: Option[Position],
                 val refTable: RefTable, val instantiatedTypes: mutable.HashSet[String],
-                val arguments: ArrayBuffer[Argument], val silMap: mutable.HashMap[Object, Object])
+                val arguments: ArrayBuffer[Argument], val silMap: SILMap)
   object Context {
     def dummy(refTable: RefTable): Context = {
       new Context(null, null, null, null, refTable, null, null, null)
@@ -48,7 +48,7 @@ object SWIRLGen {
   val NOP: Null = null // explicit NOP marker
   val COPY: Null = null // explicit COPY marker
 
-  val GLOBAL_SINGLETON = "Globals"
+  val GLOBAL_SINGLETON = "Globals" // Change later for cross-module support
 
   protected val missingStructs: mutable.Set[String] = mutable.Set[String]()
 
@@ -58,7 +58,7 @@ object SWIRLGen {
   def translateSILModule(silModule: SILModule): Module = {
     val progressBar = new ProgressBar("Translating", silModule.functions.length, false)
     val functions = new ArrayBuffer[Function](0)
-    val silMap = new mutable.HashMap[Object, Object]()
+    val silMap = new SILMap
     silModule.functions.zipWithIndex.foreach(zippedFunction => {
       val silFunction = zippedFunction._1
       progressBar.update(zippedFunction._2)
@@ -72,11 +72,12 @@ object SWIRLGen {
           blocks.append({
             val arguments = new ArrayBuffer[Argument]()
             silBlock.arguments.foreach((a: SILArgument) => {
-              arguments.append(new Argument(makeSymbolRef(a.valueName,
-                Context.dummy(refTable)),
+              val bbArgRef = new SymbolRef(a.valueName)
+              refTable.temporaryBBArgs.put(bbArgRef.name, bbArgRef)
+              arguments.append(new Argument(bbArgRef,
                 Utils.SILTypeToType(a.tpe)))
             })
-            val operators = new ArrayBuffer[OperatorDef](0)
+            val operators = new ArrayBuffer[RawOperatorDef](0)
             silBlock.operatorDefs.foreach((silOperatorDef: SILOperatorDef) => {
               breakable {
                 val position: Option[Position] = Utils.SILSourceInfoToPosition(silOperatorDef.sourceInfo)
@@ -87,16 +88,16 @@ object SWIRLGen {
                 }
                 instructions.foreach((inst: InstructionDef) => {
                   inst match {
-                    case InstructionDef.operator(operatorDef) =>
+                    case InstructionDef.rawOperator(operatorDef) =>
                       operators.append(operatorDef)
-                      silMap.put(silOperatorDef, operatorDef)
-                    case InstructionDef.terminator(_) =>
-                      throw new IncorrectSWIRLStructureException("Operator expected")
+                      silMap.map(silOperatorDef, operatorDef)
+                    case _ =>
+                      throw new IncorrectSWIRLStructureException("Raw operator expected")
                   }
                 })
               }
             })
-            val terminator: TerminatorDef = {
+            val terminator: RawTerminatorDef = {
               val position: Option[Position] = Utils.SILSourceInfoToPosition(silBlock.terminatorDef.sourceInfo)
               val ctx = new Context(silModule, silFunction, silBlock, position, refTable, instantiatedTypes, arguments, silMap)
               val instructions = translateSILInstruction(
@@ -104,23 +105,23 @@ object SWIRLGen {
               if (instructions == null) {
                 null // Only for while terminators are WIP
               } else {
-                var terminator: TerminatorDef = null
+                var terminator: RawTerminatorDef = null
                 instructions.zipWithIndex.foreach(term => {
                   val instruction = term._1
                   if (term._2 != instructions.length - 1) {
                     instruction match {
-                      case InstructionDef.operator(operatorDef) =>
+                      case InstructionDef.rawOperator(operatorDef) =>
                         operators.append(operatorDef)
-                        silMap.put(silBlock.terminatorDef, operatorDef)
-                      case InstructionDef.terminator(_) =>
-                        throw new IncorrectSWIRLStructureException("All instructions before the last instruction must be operators")
+                        silMap.map(silBlock.terminatorDef, operatorDef)
+                      case _ =>
+                        throw new IncorrectSWIRLStructureException("All instructions before the last instruction must be gen operators")
                     }
                   } else {
                     instruction match {
-                      case InstructionDef.operator(_) =>
-                        throw new IncorrectSWIRLStructureException("Last instruction must be a terminator.")
-                      case InstructionDef.terminator(terminatorDef) =>
+                      case InstructionDef.rawTerminator(terminatorDef) =>
                         terminator = terminatorDef
+                      case _ =>
+                        throw new IncorrectSWIRLStructureException("Last instruction must be a gen terminator.")
                     }
                   }
                 })
@@ -128,14 +129,14 @@ object SWIRLGen {
                   throw new IncorrectSWIRLStructureException("Terminator expected for block " +
                     silBlock.identifier + " in function " + silFunction.name.demangled)
                 }
-                silMap.put(silBlock.terminatorDef, terminator)
+                silMap.map(silBlock.terminatorDef, terminator)
                 terminator
               }
             }
             val blockRef = new BlockRef(silBlock.identifier)
             refTable.blocks.put(blockRef.label, blockRef)
             val b = new Block(blockRef, arguments.toArray, operators, terminator)
-            silMap.put(silBlock, b)
+            silMap.map(silBlock, b)
             b
           })
         })
@@ -153,14 +154,14 @@ object SWIRLGen {
               args.append(new Argument(makeSymbolRef("%" + t._2.toString, dummyCtx), t._1))
             })
             args.toArray
-          }, ArrayBuffer(new OperatorDef(
+          }, ArrayBuffer(new RawOperatorDef(
             Operator.neww(new Symbol(retRef, returnType)), None)),
-            new TerminatorDef(Terminator.ret(retRef), None)))
+            new RawTerminatorDef(Terminator.ret(retRef), None)))
           attribute = Some(FunctionAttribute.stub)
         }
         val f = new Function(attribute, silFunction.name.demangled, returnType,
           blocks, refTable, immutable.HashSet[String]() ++ instantiatedTypes)
-        silMap.put(silFunction, f)
+        silMap.map(silFunction, f)
         f
       })
     })
@@ -180,35 +181,35 @@ object SWIRLGen {
       val blockRef = makeBlockRef("bb0", dummyCtx)
       val retRef = makeSymbolRef("ret", dummyCtx)
       val block = new Block(blockRef, Array(), {
-          val ops = new ArrayBuffer[OperatorDef]()
+          val ops = new ArrayBuffer[RawOperatorDef]()
           ops
-        }, new TerminatorDef(Terminator.ret(retRef), None))
+        }, new RawTerminatorDef(Terminator.ret(retRef), None))
       fmFunction.blocks.append(block)
       silModule.globalVariables.zipWithIndex.foreach(g => {
         val global = g._1
         val idx = g._2
         val ref = makeSymbolRef("g_" + idx.toString, dummyCtx)
-        block.operators.append(new OperatorDef(
+        block.operators.append(new RawOperatorDef(
           Operator.neww(new Symbol(ref, Utils.SILTypeToType(global.tpe))), None))
-        block.operators.append(new OperatorDef(
+        block.operators.append(new RawOperatorDef(
           Operator.singletonWrite(ref, GLOBAL_SINGLETON, global.globalName.demangled), None))
       })
       val functionRef = makeSymbolRef("main_function_ref", dummyCtx)
       val arg0 = makeSymbolRef("arg0", dummyCtx)
       val arg1 = makeSymbolRef("arg1", dummyCtx)
-      block.operators.append(new OperatorDef(
+      block.operators.append(new RawOperatorDef(
         Operator.neww(new Symbol(arg0, new Type("Int32"))), None))
-      block.operators.append(new OperatorDef(
+      block.operators.append(new RawOperatorDef(
         Operator.neww(new Symbol(arg1,
           new Type("UnsafeMutablePointer<Optional<UnsafeMutablePointer<Int8>>>"))), None))
-      block.operators.append(new OperatorDef(
+      block.operators.append(new RawOperatorDef(
         Operator.functionRef(new Symbol(functionRef, new Type("Any")), "main"), None))
-      block.operators.append(new OperatorDef(
+      block.operators.append(new RawOperatorDef(
         Operator.apply(new Symbol(retRef, new Type("Int32")), functionRef, Array(arg0, arg1)), None))
       functions.append(fmFunction)
     }
     progressBar.done()
-    new Module(functions, true, new DynamicDispatchGraph(silModule), silMap)
+    new Module(functions, new DynamicDispatchGraph(silModule), silMap)
   }
 
   private def getFunctionAttribute(silFunction: SILFunction): Option[FunctionAttribute] = {
@@ -236,7 +237,7 @@ object SWIRLGen {
     if (!intermediateSymbols.contains(value)) {
       intermediateSymbols.put(value, 0)
     }
-    val ret = value + "_i_" + intermediateSymbols(value).toString
+    val ret = value + "i" + intermediateSymbols(value).toString
     intermediateSymbols(value) = intermediateSymbols(value) + 1
     makeSymbolRef(ret, ctx)
   }
@@ -247,9 +248,15 @@ object SWIRLGen {
       symbols.put(ref, symbols(ref))
       symbols(ref)
     } else {
-      val symbolRef = new SymbolRef(ref)
-      symbols.put(ref, symbolRef)
-      symbolRef
+      if (ctx.refTable.temporaryBBArgs.contains(ref)) {
+        symbols.put(ref, ctx.refTable.temporaryBBArgs(ref))
+        ctx.refTable.temporaryBBArgs.remove(ref)
+        symbols(ref)
+      } else {
+        val symbolRef = new SymbolRef(ref)
+        symbols.put(ref, symbolRef)
+        symbolRef
+      }
     }
   }
 
@@ -415,10 +422,10 @@ object SWIRLGen {
     }
   }
 
-  private def makeOperator(ctx: Context, operator: Operator*): Array[InstructionDef] = {
+  private def makeOperator(ctx: Context, operator: RawOperator*): Array[InstructionDef] = {
     val arr: Array[InstructionDef] = new Array[InstructionDef](operator.length)
-    operator.zipWithIndex.foreach( (op: (Operator, Int))  => {
-      arr(op._2) = InstructionDef.operator(new OperatorDef(op._1, ctx.pos))
+    operator.zipWithIndex.foreach( (op: (RawOperator, Int))  => {
+      arr(op._2) = InstructionDef.rawOperator(new RawOperatorDef(op._1, ctx.pos))
     })
     arr
   }
@@ -431,8 +438,8 @@ object SWIRLGen {
     ret.toArray
   }
 
-  private def makeTerminator(ctx: Context, terminator: Terminator): Array[InstructionDef] = {
-    Array[InstructionDef](InstructionDef.terminator(new TerminatorDef(terminator, ctx.pos)))
+  private def makeTerminator(ctx: Context, terminator: RawTerminator): Array[InstructionDef] = {
+    Array[InstructionDef](InstructionDef.rawTerminator(new RawTerminatorDef(terminator, ctx.pos)))
   }
 
   private def copySymbol(from: String, to: String, ctx: Context): Null = {
@@ -1457,7 +1464,7 @@ object SWIRLGen {
       val arr = new ArrayBuffer[SwitchCase]()
       I.cases.foreach {
         case SILSwitchValueCase.cs(value, label) => {
-          arr.append(new SwitchCase(value, makeBlockRef(label, ctx)))
+          arr.append(new SwitchCase(makeSymbolRef(value, ctx), makeBlockRef(label, ctx)))
         }
         case SILSwitchValueCase.default(label) => {
           default = Some(makeBlockRef(label, ctx))
@@ -1541,9 +1548,23 @@ object SWIRLGen {
 
   // def visitCheckedCastValueBr(I: SILTerminator.checkedCastValueBr, ctx: Context): Array[InstructionDef]
 
+  @throws[UnexpectedSILFormatException]
   def visitTryApply(I: SILTerminator.tryApply, ctx: Context): Array[InstructionDef] = {
+    // Receiving error block argument type does not have attributes (e.g., @error).
+    val funcType = Utils.getFunctionTypeFromType(I.tpe)
+    val retTypes: Array[Type] = {
+      funcType.result match {
+          // [...] -> @error $Error, in this case normal block takes $()
+        case SILType.attributedType(_, tpe) => Array(new Type("()"), Utils.SILTypeToType(tpe))
+        case _ =>
+          Utils.SILFunctionTupleTypeToReturnType(I.tpe, removeAttributes = true)
+      }
+    }
+    if (retTypes.length != 2) {
+      throw new UnexpectedSILFormatException("Expected try_apply function return type to be a two element tuple: " + Utils.print(I.tpe))
+    }
     val terminator = Terminator.tryApply(makeSymbolRef(I.value, ctx), stringArrayToSymbolRefArray(I.arguments, ctx),
-      makeBlockRef(I.normalLabel, ctx), makeBlockRef(I.errorLabel, ctx))
+      makeBlockRef(I.normalLabel, ctx), retTypes(0), makeBlockRef(I.errorLabel, ctx), retTypes(1))
     makeTerminator(ctx, terminator)
   }
 

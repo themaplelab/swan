@@ -21,7 +21,7 @@ class SWANType(val tpe: ca.ualberta.maple.swan.ir.Type) extends Type {
 
   override def getArrayBaseType: Type = null
 
-  override def getWrappedClass: WrappedClass = new SWANClass(tpe)
+  override def getWrappedClass: WrappedClass = null
 
   override def doesCastFail(targetVal: Type, target: Val): Boolean = false
 

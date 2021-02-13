@@ -61,7 +61,7 @@ object Main {
     silParser.silLocMap.foreach(item => {
       val swiftLoc = silParser.swiftLocMap.get(item._1)
       val silLoc = silParser.silLocMap(item._1)
-      val swirlObject = swirlModule.silMap.get(item._1)
+      val swirlObject = swirlModule.silMap.silToSWIRL.get(item._1)
       val swirlLoc = if (swirlObject.nonEmpty) swirlPrinter.locMap.get(swirlObject.get) else None
       locationFile.write(
         s"${locToString(swiftLoc)}," +

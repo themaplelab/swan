@@ -60,7 +60,6 @@ public class ParserTests {
     // Don't compare because printing + comparing + modifying expected
     // is far too expensive for files that are 200k lines.
     @Test
-    @Disabled
     void testModuleParsingDontCompare() throws Error, URISyntaxException, IOException {
         System.out.println("Testing modules");
         File fileDir = new File(getClass().getClassLoader()
@@ -222,7 +221,7 @@ public class ParserTests {
     // <xcodeproj_path>, <scheme>, <optional_xcodebuild_args>
     // The CSV can contain comments as long as they start with "#".
     @ParameterizedTest
-    @Disabled
+    @Disabled // swan-xcodebuild needs to be updated
     @CsvFileSource(resources = "xcodeproj/projects.csv")
     void getSILForAllXcodeProjects(String xcodeproj, String scheme, String optionalArgs) throws URISyntaxException, IOException, Error {
         System.out.println("Testing " + xcodeproj);

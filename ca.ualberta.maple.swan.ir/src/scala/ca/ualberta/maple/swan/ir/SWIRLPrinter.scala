@@ -16,12 +16,11 @@ import org.jgrapht.graph.DefaultEdge
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
 
-// Tests are not guaranteed to pass if these options are changed.
+// Tests are not guaranteed to pass if these options are changed from their defaults.
 class SWIRLPrinterOptions {
   var printLocation = true
   var useArbitraryTypeNames = false
-  var printLineNumbersWhenCanonical = false
-  var printCFGWhenCanonical = true
+  var printCFG = true
   def printLocation(b: Boolean): SWIRLPrinterOptions = {
     printLocation = b
     this
@@ -30,12 +29,8 @@ class SWIRLPrinterOptions {
     useArbitraryTypeNames = b
     this
   }
-  def printLineNumberWhenCanonical(b: Boolean): SWIRLPrinterOptions = {
-    printLineNumbersWhenCanonical = b
-    this
-  }
   def printCFGWhenCanonical(b: Boolean): SWIRLPrinterOptions = {
-    printCFGWhenCanonical = b
+    printCFG = b
     this
   }
 }
@@ -44,25 +39,16 @@ class SWIRLPrinter extends Printer {
 
   var ARBITRARY_TYPE_NAME_COUNTER = new ArrayBuffer[String]()
 
-  var raw = true // assume true
-  var canModule: CanModule = null // needed global for printing line numbers
+  var canModule: CanModule = _ // needed global for printing line numbers
 
   var options = new SWIRLPrinterOptions()
 
   val locMap: mutable.HashMap[Object, (Int, Int)] =
     new mutable.HashMap[Object, (Int, Int)]()
 
-  def print(canModule: CanModule, opts: SWIRLPrinterOptions): String = {
+  def print(module: Module, opts: SWIRLPrinterOptions): String = {
     options = opts
-    this.canModule = canModule
-    print(canModule.m)
-  }
-
-  def print(module: Module): String = {
-    raw = module.raw
-    print("swirl_stage ")
-    print("raw", when = raw)
-    print("canonical", when = !raw)
+    print("swirl_stage raw")
     printNewline();printNewline()
     module.functions.foreach(function => {
       print(function)
@@ -71,15 +57,19 @@ class SWIRLPrinter extends Printer {
     this.toString
   }
 
+  def print(canModule: CanModule, opts: SWIRLPrinterOptions): String = {
+    options = opts
+    this.canModule = canModule
+    print("swirl_stage canonical")
+    printNewline();printNewline()
+    canModule.functions.foreach(function => {
+      print(function)
+      printNewline()
+    })
+    this.toString
+  }
+
   def print(function: Function): String = {
-    if (!raw && options.printCFGWhenCanonical) {
-      // T0D0: slow?
-      val cfg = canModule.functions.find(p => p.f == function).get.cfg
-      print(function, cfg)
-    }
-    if (!raw && options.printLineNumbersWhenCanonical) {
-      print(canModule.lineNumbers(function).toString + ": ")
-    }
     locMap.put(function, (line, getCol))
     print("func ")
     if (function.attribute.nonEmpty) print(function.attribute.get)
@@ -93,7 +83,27 @@ class SWIRLPrinter extends Printer {
     this.toString
   }
 
-  def print(function: Function, cfg: Graph[Block, DefaultEdge]): Unit = {
+  def print(function: CanFunction): String = {
+    if (options.printCFG) {
+      // T0D0: slow?
+      val cfg = canModule.functions.find(p => p == function).get.cfg
+      print(function, cfg)
+    }
+    locMap.put(function, (line, getCol))
+    print("func ")
+    if (function.attribute.nonEmpty) print(function.attribute.get)
+    print("@`")
+    print(function.name)
+    print("`")
+    print(whenEmpty = false, "(", function.arguments, ", ", ")", (arg: Argument) => print(arg))
+    print(" : ")
+    print(function.tpe)
+    print(whenEmpty = false, " {\n", function.blocks.toArray, "\n", "}", (block: CanBlock) => print(block))
+    printNewline()
+    this.toString
+  }
+
+  def print(function: CanFunction, cfg: Graph[CanBlock, DefaultEdge]): Unit = {
     function.blocks.foreach(b => {
       print(b.blockRef.label + " -> ")
       val it = cfg.outgoingEdgesOf(b).iterator()
@@ -108,16 +118,11 @@ class SWIRLPrinter extends Printer {
   }
 
   def print(block: Block): Unit = {
-    if (!raw && options.printLineNumbersWhenCanonical) {
-      print(canModule.lineNumbers(block).toString + ": ")
-    }
     locMap.put(block, (line, getCol))
     print(block.blockRef)
     print(whenEmpty = false, "(", block.arguments, ", ", ")", (arg: Argument) => print(arg))
     print(":")
-    if (raw || !options.printLineNumbersWhenCanonical) {
-      indent()
-    }
+    indent()
     block.operators.foreach(op => {
       printNewline()
       print(op)
@@ -126,9 +131,23 @@ class SWIRLPrinter extends Printer {
     // if statements only while terminators are still WIP
     if (block.terminator != null) print(block.terminator)
     if (block.terminator != null) printNewline()
-    if (raw || !options.printLineNumbersWhenCanonical) {
-      unindent()
-    }
+    unindent()
+  }
+
+  def print(block: CanBlock): Unit = {
+    locMap.put(block, (line, getCol))
+    print(block.blockRef)
+    print(":")
+    indent()
+    block.operators.foreach(op => {
+      printNewline()
+      print(op)
+    })
+    printNewline()
+    // if statements only while terminators are still WIP
+    if (block.terminator != null) print(block.terminator)
+    if (block.terminator != null) printNewline()
+    unindent()
   }
 
   def print(argument: Argument): Unit = {
@@ -139,28 +158,38 @@ class SWIRLPrinter extends Printer {
 
   def print(inst: InstructionDef): String = {
     inst match {
-      case InstructionDef.operator(operatorDef) => print(operatorDef)
-      case InstructionDef.terminator(terminatorDef) => print(terminatorDef)
+      case InstructionDef.rawOperator(operatorDef) => print(operatorDef)
+      case InstructionDef.canOperator(operatorDef) => print(operatorDef)
+      case InstructionDef.rawTerminator(terminatorDef) => print(terminatorDef)
+      case InstructionDef.canTerminator(terminatorDef) => print(terminatorDef)
     }
     this.toString
   }
 
-  def print(op: OperatorDef): String = {
-    if (!raw && options.printLineNumbersWhenCanonical) {
-      print(canModule.lineNumbers(op).toString + ":   ")
-    }
+  def print(op: RawOperatorDef): String = {
     locMap.put(op, (line, getCol))
-    print(op.operator)
+    print(op.operator.asInstanceOf[Operator])
     print(op.position, (pos: Position) => print(pos))
     this.toString
   }
 
-  def print(term: TerminatorDef): String = {
-    if (!raw && options.printLineNumbersWhenCanonical) {
-      print(canModule.lineNumbers(term).toString + ":   ")
-    }
+  def print(op: CanOperatorDef): String = {
+    locMap.put(op, (line, getCol))
+    print(op.operator.asInstanceOf[Operator])
+    print(op.position, (pos: Position) => print(pos))
+    this.toString
+  }
+
+  def print(term: RawTerminatorDef): String = {
     locMap.put(term, (line, getCol))
-    print(term.terminator)
+    print(term.terminator.asInstanceOf[Terminator])
+    print(term.position, (pos: Position) => print(pos))
+    this.toString
+  }
+
+  def print(term: CanTerminatorDef): String = {
+    locMap.put(term, (line, getCol))
+    print(term.terminator.asInstanceOf[Terminator])
     print(term.position, (pos: Position) => print(pos))
     this.toString
   }
@@ -177,9 +206,10 @@ class SWIRLPrinter extends Printer {
         print(result.tpe)
         return // don't print , $T
       }
-      case Operator.assign(_, from) => {
+      case Operator.assign(_, from, bbArg) => {
         print("assign ")
         print(from)
+        print(" [bb arg]", when = bbArg)
       }
       case Operator.literal(_, lit) => {
         print("literal ")
@@ -231,20 +261,22 @@ class SWIRLPrinter extends Printer {
         print("` in ")
         print(tpe)
       }
-      case Operator.fieldRead(_, alias, obj, field) =>
+      case Operator.fieldRead(_, alias, obj, field, pointer) =>
         print("field_read ")
-        if (alias.nonEmpty && raw) {
+        if (alias.nonEmpty && (canModule == null)) {
           print("[alias ")
           print(alias.get)
           print("] ")
         }
+        print("[pointer] ", when = pointer)
         print(obj)
         print(", ")
         print(field)
-      case Operator.fieldWrite(value, obj, field) =>
+      case Operator.fieldWrite(value, obj, field, pointer) =>
         print("field_write ")
         print(value)
         print(" to ")
+        print("[pointer] ", when = pointer)
         print(obj)
         print(", ")
         print(field)
@@ -301,6 +333,23 @@ class SWIRLPrinter extends Printer {
           print(whenEmpty = false, "(", args, ", ", ")", (s: SymbolRef) => print(s))
         }
       }
+      case Terminator.br_can(to) => {
+        print("br ")
+        print(to)
+      }
+      case Terminator.brIf(cond, target, args) => {
+        print("br_if ")
+        print(cond)
+        print(", ")
+        print(target)
+        print(whenEmpty = false, "(", args, ", ", ")", (s: SymbolRef) => print(s))
+      }
+      case Terminator.brIf_can(cond, target) => {
+        print("br_if ")
+        print(cond)
+        print(", ")
+        print(target)
+      }
       case Terminator.condBr(cond, trueBlock, trueArgs, falseBlock, falseArgs) => {
         print("cond_br ")
         print(cond)
@@ -331,14 +380,18 @@ class SWIRLPrinter extends Printer {
         print("throw ")
         print(value)
       }
-      case Terminator.tryApply(functionRef, arguments, normal, error) => {
+      case Terminator.tryApply(functionRef, arguments, normal, normalType, error, errorType) => {
         print("try_apply ")
         print(functionRef)
         print(whenEmpty = true, "(", arguments, ", ", ")", (arg: SymbolRef) => print(arg))
         print(", normal ")
         print(normal)
+        print(", ")
+        print(normalType)
         print(", error ")
         print(error)
+        print(", ")
+        print(errorType)
       }
       case Terminator.unreachable => print("unreachable")
       case Terminator.yld(yields, resume, unwind) => {
@@ -391,6 +444,7 @@ class SWIRLPrinter extends Printer {
   def print(binaryOperation: BinaryOperation): Unit = {
     binaryOperation match {
       case BinaryOperation.arbitrary => print("[arb]")
+      case BinaryOperation.equals => print("[eq]")
     }
   }
 

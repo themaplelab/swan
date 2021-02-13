@@ -2394,6 +2394,7 @@ class SILParser extends SILPrinter {
     if(skip("@noescape")) return SILTypeAttribute.noescape
     if(skip("@thick")) return SILTypeAttribute.thick
     if(skip("@out")) return SILTypeAttribute.out
+    if(skip("@unowned")) return SILTypeAttribute.unowned
     if(skip("@owned")) return SILTypeAttribute.owned
     if(skip("@thin")) return SILTypeAttribute.thin
     if(skip("@yield_once")) return SILTypeAttribute.yieldOnce

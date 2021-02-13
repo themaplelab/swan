@@ -21,5 +21,15 @@
       <option name="name" value="BintrayJCenter" />
       <option name="url" value="https://jcenter.bintray.com/" />
     </remote-repository>
+    <remote-repository>
+      <option name="id" value="github" />
+      <option name="name" value="github" />
+      <option name="url" value="https://maven.pkg.github.com/CodeShield-Security/SPDS/" />
+    </remote-repository>
+    <remote-repository>
+      <option name="id" value="soot" />
+      <option name="name" value="soot" />
+      <option name="url" value="https://soot-build.cs.uni-paderborn.de/nexus/repository/soot-release/" />
+    </remote-repository>
   </component>
 </project>

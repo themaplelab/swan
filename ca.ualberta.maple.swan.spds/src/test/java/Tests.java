@@ -8,23 +8,18 @@
  *
  */
 
-import ca.ualberta.maple.swan.ir.*;
+import ca.ualberta.maple.swan.ir.CanModule;
+import ca.ualberta.maple.swan.ir.Exceptions;
+import ca.ualberta.maple.swan.ir.Module;
 import ca.ualberta.maple.swan.ir.canonical.SWIRLPass;
 import ca.ualberta.maple.swan.ir.raw.SWIRLGen;
-import ca.ualberta.maple.swan.ir.raw.SWIRLGen.Context;
 import ca.ualberta.maple.swan.parser.Error;
-import ca.ualberta.maple.swan.parser.*;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.Disabled;
+import ca.ualberta.maple.swan.parser.SILModule;
+import ca.ualberta.maple.swan.parser.SILParser;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.CsvFileSource;
 
 import java.io.File;
-import java.io.IOException;
 import java.net.URISyntaxException;
-
-import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 public class Tests {
 
@@ -47,7 +42,6 @@ public class Tests {
             // System.out.println("============================================");
             CanModule canSwirlModule = SWIRLPass.runPasses(swirlModule);
             // System.out.print(new SWIRLPrinter().print(canSwirlModule, new SWIRLPrinterOptions()));
-
         }
     }
 

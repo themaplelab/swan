@@ -13,31 +13,30 @@ package ca.ualberta.maple.swan.spds
 import java.util
 
 import boomerang.scene.{Field, IfStatement, InvokeExpr, Pair, Statement, StaticFieldVal, Val}
-import ca.ualberta.maple.swan.ir.{InstructionDef, Literal, Operator, Position, Terminator, WithResult}
+import ca.ualberta.maple.swan.ir.{InstructionDef, Literal, Operator, Position, Terminator}
 
 class SWANStatement(val inst: InstructionDef, method: SWANMethod) extends Statement(method) {
 
   override def containsStaticFieldAccess(): Boolean = {
-    inst.isInstanceOf[InstructionDef.operator] &&
-      (inst.asInstanceOf[InstructionDef.operator]
+    inst.isInstanceOf[InstructionDef.canOperator] &&
+      (inst.asInstanceOf[InstructionDef.canOperator]
         .operatorDef.operator.isInstanceOf[Operator.singletonWrite] ||
-      inst.asInstanceOf[InstructionDef.operator]
+      inst.asInstanceOf[InstructionDef.canOperator]
         .operatorDef.operator.isInstanceOf[Operator.singletonRead])
   }
 
   override def containsInvokeExpr(): Boolean = {
-    inst.isInstanceOf[InstructionDef.operator] &&
-      inst.asInstanceOf[InstructionDef.operator]
+    inst.isInstanceOf[InstructionDef.canOperator] &&
+      inst.asInstanceOf[InstructionDef.canOperator]
         .operatorDef.operator.isInstanceOf[Operator.apply]
   }
 
   override def getWrittenField: Field = {
     inst match {
-      case InstructionDef.operator(operatorDef) => {
+      case InstructionDef.canOperator(operatorDef) => {
         operatorDef.operator match {
           case Operator.singletonWrite(_, _, field) => new SWANField(field)
-          case Operator.fieldWrite(_, _, field) => new SWANField(field)
-          case Operator.pointerWrite(_, _) => Field.wildcard()
+          case Operator.fieldWrite(_, _, field, _) => new SWANField(field)
           case _ => throw new RuntimeException("getWrittenField called on non-field instruction")
         }
       }
@@ -55,11 +54,10 @@ class SWANStatement(val inst: InstructionDef, method: SWANMethod) extends Statem
 
   override def getLoadedField: Field = {
     inst match {
-      case InstructionDef.operator(operatorDef) => {
+      case InstructionDef.canOperator(operatorDef) => {
         operatorDef.operator match {
           case Operator.singletonRead(_, _, field) => new SWANField(field)
-          case Operator.fieldRead(_, _, _, field) => new SWANField(field)
-          case Operator.pointerRead(_, _) => Field.wildcard()
+          case Operator.fieldRead(_, _, _, field, _) => new SWANField(field)
           case _ => throw new RuntimeException("getLoadedField called on non-field instruction")
         }}
       case _ =>
@@ -76,8 +74,8 @@ class SWANStatement(val inst: InstructionDef, method: SWANMethod) extends Statem
   }
 
   override def isAssign: Boolean = {
-    inst.isInstanceOf[InstructionDef.operator] &&
-      inst.asInstanceOf[InstructionDef.operator]
+    inst.isInstanceOf[InstructionDef.canOperator] &&
+      inst.asInstanceOf[InstructionDef.canOperator]
         .operatorDef.operator.isInstanceOf[Operator.assign]
   }
 
@@ -85,7 +83,7 @@ class SWANStatement(val inst: InstructionDef, method: SWANMethod) extends Statem
     if (!isAssign) {
       throw new RuntimeException("getLeftOp called on non-assign statement")
     }
-    val assign = inst.asInstanceOf[InstructionDef.operator]
+    val assign = inst.asInstanceOf[InstructionDef.canOperator]
       .operatorDef.operator.asInstanceOf[Operator.assign]
     new SWANVal(assign.result)
   }
@@ -94,7 +92,7 @@ class SWANStatement(val inst: InstructionDef, method: SWANMethod) extends Statem
     if (!isAssign) {
       throw new RuntimeException("getRightOp called on non-assign statement")
     }
-    val assign = inst.asInstanceOf[InstructionDef.operator]
+    val assign = inst.asInstanceOf[InstructionDef.canOperator]
       .operatorDef.operator.asInstanceOf[Operator.assign]
     new SWANVal(method.delegate.getSymbol(assign.from.name))
   }
@@ -109,16 +107,15 @@ class SWANStatement(val inst: InstructionDef, method: SWANMethod) extends Statem
     if (!containsInvokeExpr) {
       throw new RuntimeException("getInvokeExpr called on non-invoke statement")
     }
-    new SWANInvokeExpr(inst.asInstanceOf[InstructionDef.operator].asInstanceOf[Operator.apply], method)
+    new SWANInvokeExpr(inst.asInstanceOf[InstructionDef.canOperator].asInstanceOf[Operator.apply], method)
   }
 
   override def isReturnStmt: Boolean = {
     inst match {
-      case terminator: InstructionDef.terminator => {
+      case terminator: InstructionDef.canTerminator => {
         terminator.terminatorDef.terminator match {
           case Terminator.ret(_) => true
           case Terminator.yld(_, _, _) => true
-          case Terminator.unwind => true
           case _ => false
         }
       }
@@ -128,8 +125,8 @@ class SWANStatement(val inst: InstructionDef, method: SWANMethod) extends Statem
   }
 
   override def isThrowStmt: Boolean = {
-    inst.isInstanceOf[InstructionDef.terminator] &&
-      inst.asInstanceOf[InstructionDef.terminator]
+    inst.isInstanceOf[InstructionDef.canTerminator] &&
+      inst.asInstanceOf[InstructionDef.canTerminator]
         .terminatorDef.terminator.isInstanceOf[Terminator.thro]
   }
 
@@ -142,12 +139,10 @@ class SWANStatement(val inst: InstructionDef, method: SWANMethod) extends Statem
       throw new RuntimeException("getReturnOp called on non-return statement")
     }
     val sym: ca.ualberta.maple.swan.ir.Symbol = {
-      inst.asInstanceOf[InstructionDef.terminator].terminatorDef.terminator match {
+      inst.asInstanceOf[InstructionDef.canTerminator].terminatorDef.terminator match {
         case Terminator.ret(value) => method.delegate.getSymbol(value.name)
-        // TODO: yield can have multiple operands, for now just use first one
+        // yield can have multiple operands, for now just use first one
         case Terminator.yld(yields, _, _) => method.delegate.getSymbol(yields(0).name)
-        // TODO: return void
-        case Terminator.unwind => null
         case _ => throw new RuntimeException("unexpected: check isReturnStmt implementation")
       }
     }
@@ -158,7 +153,7 @@ class SWANStatement(val inst: InstructionDef, method: SWANMethod) extends Statem
 
   override def isStringAllocation: Boolean = {
     inst match {
-      case InstructionDef.operator(operatorDef) => {
+      case InstructionDef.canOperator(operatorDef) => {
         operatorDef.operator match {
           case lit: Operator.literal => {
             lit.literal match {
@@ -169,41 +164,39 @@ class SWANStatement(val inst: InstructionDef, method: SWANMethod) extends Statem
           case _ => false
         }
       }
-      case InstructionDef.terminator(_) => false
+      case InstructionDef.canTerminator(_) => false
     }
   }
 
   override def isFieldStore: Boolean = {
     inst match {
-      case InstructionDef.operator(operatorDef) => {
+      case InstructionDef.canOperator(operatorDef) => {
         operatorDef.operator match {
-          case Operator.fieldWrite(_, _, _) => true
-          case Operator.pointerWrite(_, _) => true
+          case Operator.fieldWrite(_, _, _, _) => true
           case _ => false
         }
       }
-      case InstructionDef.terminator(_) => false
+      case InstructionDef.canTerminator(_) => false
     }
   }
 
   override def isArrayStore: Boolean = false
 
   override def isArrayLoad: Boolean = {
-    inst.isInstanceOf[InstructionDef.operator] &&
-      inst.asInstanceOf[InstructionDef.operator]
+    inst.isInstanceOf[InstructionDef.canOperator] &&
+      inst.asInstanceOf[InstructionDef.canOperator]
         .operatorDef.operator.isInstanceOf[Operator.arrayRead]
   }
 
   override def isFieldLoad: Boolean = {
     inst match {
-      case InstructionDef.operator(operatorDef) => {
+      case InstructionDef.canOperator(operatorDef) => {
         operatorDef.operator match {
-          case Operator.fieldRead(_, _, _, _) => true
-          case Operator.pointerRead(_, _) => true
+          case Operator.fieldRead(_, _, _, _, _) => true
           case _ => false
         }
       }
-      case InstructionDef.terminator(_) => false
+      case InstructionDef.canTerminator(_) => false
     }
   }
 
@@ -214,24 +207,24 @@ class SWANStatement(val inst: InstructionDef, method: SWANMethod) extends Statem
   override def getFieldLoad: Pair[Val, Field] = ???
 
   override def isStaticFieldLoad: Boolean = {
-    inst.isInstanceOf[InstructionDef.operator] &&
-      inst.asInstanceOf[InstructionDef.operator]
+    inst.isInstanceOf[InstructionDef.canOperator] &&
+      inst.asInstanceOf[InstructionDef.canOperator]
         .operatorDef.operator.isInstanceOf[Operator.singletonRead]
   }
 
   override def isStaticFieldStore: Boolean = {
-    inst.isInstanceOf[InstructionDef.operator] &&
-      inst.asInstanceOf[InstructionDef.operator]
+    inst.isInstanceOf[InstructionDef.canOperator] &&
+      inst.asInstanceOf[InstructionDef.canOperator]
         .operatorDef.operator.isInstanceOf[Operator.singletonWrite]
   }
 
   override def getStaticField: StaticFieldVal = {
     val field = {
       if (isStaticFieldLoad) {
-        inst.asInstanceOf[InstructionDef.operator]
+        inst.asInstanceOf[InstructionDef.canOperator]
           .operatorDef.operator.asInstanceOf[Operator.singletonRead].field
       } else if (isStaticFieldStore) {
-        inst.asInstanceOf[InstructionDef.operator]
+        inst.asInstanceOf[InstructionDef.canOperator]
           .operatorDef.operator.asInstanceOf[Operator.singletonWrite].field
       } else {
         throw new RuntimeException("getStaticField called on non-static statement")
@@ -249,15 +242,15 @@ class SWANStatement(val inst: InstructionDef, method: SWANMethod) extends Statem
       throw new RuntimeException("getArrayBase called on non-array statement")
     }
     new SWANVal(method.delegate.getSymbol(
-      inst.asInstanceOf[InstructionDef.operator]
+      inst.asInstanceOf[InstructionDef.canOperator]
       .operatorDef.operator.asInstanceOf[Operator.arrayRead].arr.name))
   }
 
   def getPosition: Option[Position] = {
     inst match {
-      case InstructionDef.operator(operatorDef) =>
+      case InstructionDef.canOperator(operatorDef) =>
         operatorDef.position
-      case InstructionDef.terminator(terminatorDef) =>
+      case InstructionDef.canTerminator(terminatorDef) =>
         terminatorDef.position
     }
   }

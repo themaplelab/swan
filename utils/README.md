@@ -1,0 +1,1 @@
+These are SIL dumping drivers used in tests. We plan on creating Swift CLI tools, instead, so we do not maintain these scripts or guarantee them to work.

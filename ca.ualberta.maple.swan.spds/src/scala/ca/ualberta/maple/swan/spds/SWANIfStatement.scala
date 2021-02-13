@@ -14,7 +14,7 @@ import boomerang.scene.{IfStatement, Statement, Val}
 
 class SWANIfStatement extends IfStatement {
 
-  override def getTarget: Statement = ???
+  override def getTarget: Statement = null
 
   override def evaluate(v: Val): IfStatement.Evaluation = ???
 

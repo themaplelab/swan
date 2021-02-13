@@ -18,8 +18,6 @@ import scala.collection.mutable.ArrayBuffer
 
 object Utils {
 
-  // ************* TYPE CONVERSION *************
-
   // Type conversions should remove conventions.
 
   def printer: SILPrinter = {
@@ -71,6 +69,23 @@ object Utils {
   def SILFunctionTypeToReturnType(rootTpe: SILType): Type = {
     val tpe = getFunctionTypeFromType(rootTpe)
     SILTypeToType(tpe.result)
+  }
+
+  def SILFunctionTupleTypeToReturnType(rootType: SILType, removeAttributes: Boolean): Array[Type] = {
+    val silTypes = getFunctionTypeFromType(rootType)
+      .result.asInstanceOf[SILType.tupleType].parameters
+    val types = new Array[Type](silTypes.length)
+    silTypes.zipWithIndex.foreach(t => {
+      var tpe = t._1
+      if (removeAttributes) {
+        t._1 match {
+          case SILType.attributedType(_, f) => tpe = f
+          case _ =>
+        }
+      }
+      types(t._2) = SILTypeToType(tpe)
+    })
+    types
   }
 
   def SILFunctionTypeToParamTypes(rootTpe: SILType): Array[Type] = {
@@ -181,5 +196,4 @@ object Utils {
   def print(declRef: SILDeclRef): String = {
     printer.print(declRef)
   }
-
 }

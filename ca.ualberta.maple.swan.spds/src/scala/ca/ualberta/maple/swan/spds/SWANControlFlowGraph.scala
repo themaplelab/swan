@@ -30,21 +30,21 @@ class SWANControlFlowGraph(val method: SWANMethod) extends ControlFlowGraph {
   private val predsOfCache: Multimap[Statement, Statement] = HashMultimap.create
   private val statements: java.util.List[Statement] = Lists.newArrayList
 
-  method.delegate.f.blocks.foreach(b => {
+  method.delegate.blocks.foreach(b => {
     b.operators.foreach(op => {
-      val statement = new SWANStatement(InstructionDef.operator(op), method)
+      val statement = new SWANStatement(InstructionDef.canOperator(op), method)
       mappedStatements.put(op, statement)
       statements.add(statement)
     })
-    val termStatement = new SWANStatement(InstructionDef.terminator(b.terminator), method)
+    val termStatement = new SWANStatement(InstructionDef.canTerminator(b.terminator), method)
     mappedStatements.put(b.terminator, termStatement)
     statements.add(termStatement)
   })
 
   startPointCache.add(
-    mappedStatements.get(method.delegate.f.blocks(0).operators(0)))
+    mappedStatements.get(method.delegate.blocks(0).operators(0)))
 
-  method.delegate.f.blocks.foreach(b => {
+  method.delegate.blocks.foreach(b => {
     var prev: Statement = null
     b.operators.foreach(op => {
       val curr = mappedStatements.get(op)

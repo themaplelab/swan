@@ -70,14 +70,13 @@ def run_xcodebuild_cmd():
   other_swift_flags="OTHER_SWIFT_FLAGS=\"-Xfrontend -gsil -Xllvm -sil-print-debuginfo -Xllvm -sil-print-before=SerializeSILPass\""
   info("Adding/overwriting OTHER_SWIFT_FLAGS:\n    " + other_swift_flags)
 
-  # wholemodule not working currently
-  # wholemodule="SWIFT_COMPILATION_MODE=wholemodule"
-  # info("Compiling in wholemodule mode: " + wholemodule)
+  wholemodule="SWIFT_COMPILATION_MODE=wholemodule"
+  info("Compiling in wholemodule mode: " + wholemodule)
 
   build_actions=["clean", "build"]
   info("Adding build actions:\n    " + ", ".join(build_actions))
 
-  cmd = ["xcodebuild", code_sign, other_swift_flags, " ".join(sys.argv[1:]), " ".join(build_actions)]
+  cmd = ["xcodebuild", code_sign, wholemodule, other_swift_flags, " ".join(sys.argv[1:]), " ".join(build_actions)]
   string_cmd = " ".join(cmd)
   info("Running xcodebuild:\n    " + string_cmd + "\n", "\n")
 

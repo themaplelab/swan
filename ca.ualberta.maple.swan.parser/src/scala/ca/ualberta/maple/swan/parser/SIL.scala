@@ -589,6 +589,7 @@ object SILTypeAttribute {
   case object inoutAliasable extends SILTypeAttribute
   case object noescape extends SILTypeAttribute
   case object out extends SILTypeAttribute
+  case object unowned extends SILTypeAttribute
   case object owned extends SILTypeAttribute
   case object thick extends SILTypeAttribute
   case object thin extends SILTypeAttribute

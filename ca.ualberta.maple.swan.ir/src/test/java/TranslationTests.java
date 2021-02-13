@@ -32,6 +32,7 @@ public class TranslationTests {
 
     /* CSV based instruction-level tests.
      * Format: sil-instruction '~' swirl-instruction ( ":::" swirl-instruction )*
+     * For _Raw_ SWIRL.
      */
     @ParameterizedTest
     @CsvFileSource(resources = "instructions.csv", delimiter = '~')
@@ -81,10 +82,10 @@ public class TranslationTests {
             // System.out.println(new SILPrinter().print(silModule));
             // System.out.println("============================================");
             Module swirlModule = SWIRLGen.translateSILModule(silModule);
-            // System.out.print(new SWIRLPrinter().print(swirlModule));
+            // System.out.print(new SWIRLPrinter().print(swirlModule, new SWIRLPrinterOptions()));
             // System.out.println("============================================");
             CanModule canSwirlModule = SWIRLPass.runPasses(swirlModule);
-            System.out.print(new SWIRLPrinter().print(canSwirlModule, new SWIRLPrinterOptions()));
+            // System.out.print(new SWIRLPrinter().print(canSwirlModule, new SWIRLPrinterOptions()));
         }
     }
 
@@ -110,6 +111,7 @@ public class TranslationTests {
             p = pb.start();
             p.waitFor();
         } catch (InterruptedException e) {
+            e.printStackTrace();
             p.destroy();
         }
         // Check exit code for now
@@ -125,7 +127,7 @@ public class TranslationTests {
             SILParser parser = new SILParser(sil.toPath());
             SILModule silModule = parser.parseModule();
             Module swirlModule = SWIRLGen.translateSILModule(silModule);
-            System.out.print(new SWIRLPrinter().print(swirlModule));
+            System.out.print(new SWIRLPrinter().print(swirlModule, new SWIRLPrinterOptions()));
         }
     }
 
