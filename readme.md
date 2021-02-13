@@ -1,10 +1,12 @@
 
 <img src="https://karimali.ca/resources/images/projects/swan.png" width="150">
 
+## We are actively developing the new generation of SWAN on the [spds](https://github.com/themaplelab/swan/tree/spds) branch.
+
 # SWAN
 A static program analysis framework for analyzing Swift (incl. iOS/macOS) applications using [WALA](https://github.com/wala/WALA) as the analysis core. SWAN is being developed for detecting security vulnerabilities in Swift applications using taint analysis.
 
-:warning: Unfortunately, SWAN is not usable in its current state because SWAN's Swift compiler hook can no longer be compiled due to macOS, Swift, and Xcode version changes. **We are actively working on fixing this.**
+:warning: Unfortunately, SWAN is not usable in its current state because SWAN's Swift compiler hook can no longer be compiled due to macOS, Swift, and Xcode version changes
 
 :page_facing_up: [SWAN: A Static Analysis Framework for Swift](https://karimali.ca/resources/papers/swan.pdf)
 
