@@ -21,7 +21,7 @@ git clone git@github.com:themaplelab/swan.git -b spds
 
 Open the cloned repo in IntelliJ. Be sure to select *Import as Gradle Project*.
 
-Add your github username and token to ca.ualberta.maple.swan.spds/build.gradle. This is required for adding SPDS as a dependency.
+Add your github username and [personal access token](https://docs.github.com/en/github/authenticating-to-github/creating-a-personal-access-token) (default configuration) to ca.ualberta.maple.swan.spds/build.gradle. This is required for adding SPDS as a dependency. Do **not** push this token.
 
 Run the *SWIRL Tests* and *SIL Tests* configurations to test everything works.
 
