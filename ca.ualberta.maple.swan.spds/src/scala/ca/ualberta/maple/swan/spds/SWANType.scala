@@ -25,6 +25,7 @@ class SWANType(val tpe: ca.ualberta.maple.swan.ir.Type) extends Type {
 
   override def doesCastFail(targetVal: Type, target: Val): Boolean = false
 
+  // TODO: Use type hierarchy?
   override def isSubtypeOf(tpe: String): Boolean = false
 
   override def isBooleanType: Boolean = false

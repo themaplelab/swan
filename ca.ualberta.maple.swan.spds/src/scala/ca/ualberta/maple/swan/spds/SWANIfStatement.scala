@@ -11,12 +11,11 @@
 package ca.ualberta.maple.swan.spds
 
 import boomerang.scene.{IfStatement, Statement, Val}
+import ca.ualberta.maple.swan.ir.{Terminator, CanTerminatorDef}
 
-class SWANIfStatement extends IfStatement {
+class SWANIfStatement(val stmt: SWANStatement.ConditionalBranch) extends IfStatement {
 
   override def getTarget: Statement = null
-
-  override def evaluate(v: Val): IfStatement.Evaluation = ???
-
-  override def uses(v: Val): Boolean = ???
+  override def evaluate(v: Val): IfStatement.Evaluation = null
+  override def uses(v: Val): Boolean = stmt.getRightOp.equals(v)
 }

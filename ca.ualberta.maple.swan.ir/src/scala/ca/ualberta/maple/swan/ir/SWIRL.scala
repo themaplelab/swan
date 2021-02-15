@@ -62,20 +62,26 @@ class Type(val name: String = "Any")
 
 class Position(val path: String, val line: Int, val col: Int)
 
-sealed trait InstructionDef {
+sealed trait RawInstructionDef {
   val instruction: Instruction
 }
-object InstructionDef {
-  case class rawOperator(operatorDef: RawOperatorDef) extends InstructionDef {
+sealed trait CanInstructionDef {
+  val instruction: Instruction
+}
+
+object RawInstructionDef {
+  case class operator(operatorDef: RawOperatorDef) extends RawInstructionDef {
     override val instruction: Instruction = Instruction.rawOperator(operatorDef.operator)
   }
-  case class canOperator(operatorDef: CanOperatorDef) extends InstructionDef {
-    override val instruction: Instruction = Instruction.canOperator(operatorDef.operator)
-  }
-  case class rawTerminator(terminatorDef: RawTerminatorDef) extends InstructionDef {
+  case class terminator(terminatorDef: RawTerminatorDef) extends RawInstructionDef {
     override val instruction: Instruction = Instruction.rawTerminator(terminatorDef.terminator)
   }
-  case class canTerminator(terminatorDef: CanTerminatorDef) extends InstructionDef {
+}
+object CanInstructionDef {
+  case class operator(operatorDef: CanOperatorDef) extends CanInstructionDef {
+    override val instruction: Instruction = Instruction.canOperator(operatorDef.operator)
+  }
+  case class terminator(terminatorDef: CanTerminatorDef) extends CanInstructionDef {
     override val instruction: Instruction = Instruction.canTerminator(terminatorDef.terminator)
   }
 }
@@ -224,4 +230,11 @@ class SILMap {
       swirlToSIL.put(newSWIRL, sil)
     }
   }
+}
+
+object Constants {
+  final val pointerField = "value"
+  final val globalsSingleton = "Globals"
+  final val exitBlock = "EXIT"
+  final val fakeMain = "SWAN_FAKE_MAIN"
 }

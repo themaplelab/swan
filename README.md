@@ -16,7 +16,7 @@ We have completely redesigned SWAN. It now parses plain-text that can either be 
 ## Developing
 
 ```
-git clone git@github.com:themaplelab/swan.git -b spds
+git clone git@github.com:themaplelab/swan.git -b spds --recurse-submodules
 ```
 
 Open the cloned repo in IntelliJ. Be sure to select *Import as Gradle Project*.

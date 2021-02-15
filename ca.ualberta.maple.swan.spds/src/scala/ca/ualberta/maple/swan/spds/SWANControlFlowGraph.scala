@@ -17,7 +17,7 @@ import com.google.common.collect.Maps
 import java.util
 
 import boomerang.scene.{ControlFlowGraph, Statement}
-import ca.ualberta.maple.swan.ir.InstructionDef
+import ca.ualberta.maple.swan.ir.{Constants, Operator, Terminator}
 
 class SWANControlFlowGraph(val method: SWANMethod) extends ControlFlowGraph {
 
@@ -32,11 +32,39 @@ class SWANControlFlowGraph(val method: SWANMethod) extends ControlFlowGraph {
 
   method.delegate.blocks.foreach(b => {
     b.operators.foreach(op => {
-      val statement = new SWANStatement(InstructionDef.canOperator(op), method)
+      val statement: SWANStatement = {
+        op.operator match {
+          case operator: Operator.neww => SWANStatement.Allocation(op, operator, method)
+          case operator: Operator.assign => SWANStatement.Assign(op, operator, method)
+          case operator: Operator.literal => SWANStatement.Literal(op, operator, method)
+          case operator: Operator.dynamicRef => SWANStatement.DynamicFunctionRef(op, operator, method)
+          case operator: Operator.builtinRef => SWANStatement.BuiltinFunctionRef(op, operator, method)
+          case operator: Operator.functionRef => SWANStatement.FunctionRef(op, operator, method)
+          case operator: Operator.apply => SWANStatement.ApplyFunctionRef(op, operator, method)
+          case operator: Operator.arrayRead => SWANStatement.ArrayLoad(op, operator, method)
+          case operator: Operator.singletonRead => SWANStatement.StaticFieldLoad(op, operator, method)
+          case operator: Operator.singletonWrite => SWANStatement.StaticFieldStore(op, operator, method)
+          case operator: Operator.fieldRead => SWANStatement.FieldLoad(op, operator, method)
+          case operator: Operator.fieldWrite => SWANStatement.FieldWrite(op, operator, method)
+          case operator: Operator.unaryOp =>  SWANStatement.UnaryOperation(op, operator, method)
+          case operator: Operator.binaryOp => SWANStatement.BinaryOperation(op, operator, method)
+          case operator: Operator.condFail => SWANStatement.ConditionalFatalError(op, operator, method)
+        }
+      }
       mappedStatements.put(op, statement)
       statements.add(statement)
     })
-    val termStatement = new SWANStatement(InstructionDef.canTerminator(b.terminator), method)
+    val termStatement: SWANStatement = {
+      val term = b.terminator
+      b.terminator.terminator match {
+        case terminator: Terminator.br_can => SWANStatement.Branch(term, terminator, method)
+        case terminator: Terminator.brIf_can => SWANStatement.ConditionalBranch(term, terminator, method)
+        case terminator: Terminator.ret => SWANStatement.Return(term, terminator, method)
+        case terminator: Terminator.thro => SWANStatement.Throw(term, terminator, method)
+        case Terminator.unreachable => SWANStatement.Unreachable(term, method)
+        case terminator: Terminator.yld => SWANStatement.Yield(term, terminator, method)
+      }
+    }
     mappedStatements.put(b.terminator, termStatement)
     statements.add(termStatement)
   })
@@ -61,7 +89,7 @@ class SWANControlFlowGraph(val method: SWANMethod) extends ControlFlowGraph {
     }
     method.delegate.cfg.outgoingEdgesOf(b).forEach(e => {
       val target = method.delegate.cfg.getEdgeTarget(e)
-      if (target.blockRef.label == "EXIT") {
+      if (target.blockRef.label == Constants.exitBlock) {
         endPointCache.add(term)
       } else {
         val targetStatement = mappedStatements.get({

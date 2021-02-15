@@ -48,7 +48,7 @@ public class TranslationTests {
         }
         // Translate after checking NOP because certain instructions require
         // non-null context elements for translation. e.g. struct
-        InstructionDef[] swirl = SWIRLGen.translateSILInstruction(
+        RawInstructionDef[] swirl = SWIRLGen.translateSILInstruction(
                 instruction, new Context(createEmptyModule(), null, null,
                         scala.Option.apply(null), new RefTable(), new scala.collection.mutable.HashSet<String>(), null, null));
         if (swirl == null) {

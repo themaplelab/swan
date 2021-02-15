@@ -156,12 +156,18 @@ class SWIRLPrinter extends Printer {
     print(argument.tpe)
   }
 
-  def print(inst: InstructionDef): String = {
+  def print(inst: RawInstructionDef): String = {
     inst match {
-      case InstructionDef.rawOperator(operatorDef) => print(operatorDef)
-      case InstructionDef.canOperator(operatorDef) => print(operatorDef)
-      case InstructionDef.rawTerminator(terminatorDef) => print(terminatorDef)
-      case InstructionDef.canTerminator(terminatorDef) => print(terminatorDef)
+      case RawInstructionDef.operator(operatorDef) => print(operatorDef)
+      case RawInstructionDef.terminator(terminatorDef) => print(terminatorDef)
+    }
+    this.toString
+  }
+
+  def print(inst: CanInstructionDef): String = {
+    inst match {
+      case CanInstructionDef.operator(operatorDef) => print(operatorDef)
+      case CanInstructionDef.terminator(terminatorDef) => print(terminatorDef)
     }
     this.toString
   }

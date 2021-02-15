@@ -16,7 +16,13 @@ import com.google.common.collect.{Lists, Sets}
 import boomerang.scene.{ControlFlowGraph, Method, Statement, Val, WrappedClass}
 import ca.ualberta.maple.swan.ir.{CanFunction, SymbolTableEntry}
 
+import scala.collection.mutable
+
 class SWANMethod(val delegate: CanFunction) extends Method {
+
+  // Use allValues instead of create new Vals, when possible
+  // (contains simple vals - those as results or arguments)
+  val allValues: mutable.HashMap[String, Val] = new mutable.HashMap[String, Val]()
 
   private val localParams: util.List[Val] = Lists.newArrayList
   private val localValues: util.Set[Val] = Sets.newHashSet
@@ -25,10 +31,14 @@ class SWANMethod(val delegate: CanFunction) extends Method {
   delegate.symbolTable.foreach(sym => {
     sym._2 match {
       case SymbolTableEntry.operator(symbol, _) => {
-        localValues.add(new SWANVal(symbol))
+        val v = SWANVal.Simple(symbol, this)
+        localValues.add(v)
+        allValues.put(symbol.ref.name, v)
       }
       case SymbolTableEntry.argument(argument) => {
-        localParams.add(new SWANVal(argument))
+        val v = SWANVal.Argument(argument, localParams.size(), this)
+        localParams.add(v)
+        allValues.put(argument.ref.name, v)
       }
     }
   })
@@ -36,7 +46,7 @@ class SWANMethod(val delegate: CanFunction) extends Method {
   override def isStaticInitializer: Boolean = false
 
   override def isParameterLocal(v: Val): Boolean = {
-    delegate.symbolTable.contains(v.getVariableName)
+    localParams.contains(v)
   }
 
   override def isThisLocal(v: Val): Boolean = false

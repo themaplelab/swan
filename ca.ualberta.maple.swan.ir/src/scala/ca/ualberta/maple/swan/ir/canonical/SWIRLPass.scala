@@ -11,7 +11,7 @@
 package ca.ualberta.maple.swan.ir.canonical
 
 import ca.ualberta.maple.swan.ir.Exceptions.{IncompleteRawSWIRLException, IncorrectRawSWIRLException, UnexpectedSILFormatException}
-import ca.ualberta.maple.swan.ir.{Argument, BinaryOperation, Block, BlockRef, CanBlock, CanFunction, CanModule, CanOperator, CanOperatorDef, CanTerminator, CanTerminatorDef, Function, Literal, Module, Operator, RawOperatorDef, RawTerminatorDef, SwitchEnumCase, Symbol, SymbolRef, SymbolTableEntry, Terminator, Type, WithResult}
+import ca.ualberta.maple.swan.ir.{Argument, BinaryOperation, Block, BlockRef, CanBlock, CanFunction, CanModule, CanOperator, CanOperatorDef, CanTerminator, CanTerminatorDef, Constants, Function, Literal, Module, Operator, RawOperatorDef, RawTerminatorDef, SwitchEnumCase, Symbol, SymbolRef, SymbolTableEntry, Terminator, Type, WithResult}
 import org.jgrapht.Graph
 import org.jgrapht.graph.{DefaultDirectedGraph, DefaultEdge}
 
@@ -153,12 +153,12 @@ object SWIRLPass {
             b.operators.remove(op._2, continueBlock.operators.length + 1)
           }
           case Operator.pointerRead(result, pointer) => {
-            val fr = new RawOperatorDef(Operator.fieldRead(result, None, pointer, "value", pointer = true), op._1.position)
+            val fr = new RawOperatorDef(Operator.fieldRead(result, None, pointer, Constants.pointerField, pointer = true), op._1.position)
             mapToSIL(op._1, fr, module)
             b.operators(op._2) = fr
           }
           case Operator.pointerWrite(value, pointer) => {
-            val fw = new RawOperatorDef(Operator.fieldWrite(value, pointer, "value", pointer = true), op._1.position)
+            val fw = new RawOperatorDef(Operator.fieldWrite(value, pointer, Constants.pointerField, pointer = true), op._1.position)
             mapToSIL(op._1, fw, module)
             b.operators(op._2) = fw
           }
@@ -410,7 +410,7 @@ object SWIRLPass {
   @throws[IncompleteRawSWIRLException]
   def generateCFG(blocks: ArrayBuffer[CanBlock]): Graph[CanBlock, DefaultEdge] = {
     val graph: Graph[CanBlock, DefaultEdge] = new DefaultDirectedGraph(classOf[DefaultEdge])
-    val exitBlock = new CanBlock(new BlockRef("EXIT"), null, null)
+    val exitBlock = new CanBlock(new BlockRef(Constants.exitBlock), null, null)
     graph.addVertex(exitBlock)
     def getTarget(ref: BlockRef): CanBlock = {
       // Not really efficient

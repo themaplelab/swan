@@ -20,20 +20,20 @@ class SWANInvokeExpr(val delegate: Operator.apply, val method: SWANMethod) exten
   val args: util.List[Val] = util.Collections.emptyList
 
   delegate.arguments.foreach(arg => {
-    args.add(new SWANVal(method.delegate.getSymbol(arg.name)))
+    args.add(method.allValues(arg.name))
   })
 
   override def getArg(index: Int): Val = args.get(index)
 
   override def getArgs: util.List[Val] = args
 
-  override def isInstanceInvokeExpr: Boolean = ???
+  override def isInstanceInvokeExpr: Boolean = true
 
   override def getBase: Val = ???
 
-  override def getMethod: DeclaredMethod = ???
+  override def getMethod: DeclaredMethod = null
 
-  override def isSpecialInvokeExpr: Boolean = ???
+  override def isSpecialInvokeExpr: Boolean = false
 
-  override def isStaticInvokeExpr: Boolean = ???
+  override def isStaticInvokeExpr: Boolean = false
 }
