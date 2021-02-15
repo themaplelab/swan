@@ -11,7 +11,7 @@
 package ca.ualberta.maple.swan.spds
 
 import boomerang.scene.ControlFlowGraph.Edge
-import boomerang.scene.{Method, Pair, Statement, Type, Val}
+import boomerang.scene.{Method, Pair, Type, Val}
 import ca.ualberta.maple.swan.ir.{BinaryOperation, Literal, Symbol, UnaryOperation}
 
 abstract class SWANVal(mthd: Method) extends Val(mthd) {
@@ -27,8 +27,8 @@ abstract class SWANVal(mthd: Method) extends Val(mthd) {
   override def getIntValue: Int = 0
   override def getLongValue: Long = 0
   override def getArrayBase: Pair[boomerang.scene.Val,Integer] = null
-  override def isThrowableAllocationType: Boolean = ???
-  override def isArrayRef: Boolean = ???
+  override def isThrowableAllocationType: Boolean = false
+  override def isArrayRef: Boolean = false
 
   // Shared
   final override def isStatic: Boolean = false
@@ -69,6 +69,8 @@ object SWANVal {
   case class Constant(delegate: Symbol, literal: Literal, method: Method) extends SWANVal(method) {
     private val tpe = SWANType.create(delegate.tpe)
     override def getType: Type = tpe
+    override def isNewExpr: Boolean = true
+    override def getNewExprType: Type = tpe
     override def isStringConstant: Boolean = literal.isInstanceOf[Literal.string]
     override def getStringValue: String = literal.asInstanceOf[Literal.string].value
     override def isIntConstant: Boolean = literal.isInstanceOf[Literal.string]
@@ -89,5 +91,29 @@ object SWANVal {
     override def getType: Type = tpe
     override def getVariableName: String = null // TODO
   }
-  case class FunctionRefExpr()
+  case class FunctionRef(delegate: Symbol, val ref: String, method: Method) extends SWANVal(method) {
+    private val tpe = SWANType.create(delegate.tpe)
+    override def getType: Type = tpe
+    override def isNewExpr: Boolean = true
+    override def getNewExprType: Type = tpe
+    override def getVariableName: String = delegate.ref.name
+  }
+  case class BuiltinFunctionRef(delegate: Symbol, val ref: String, method: Method) extends SWANVal(method) {
+    private val tpe = SWANType.create(delegate.tpe)
+    override def getType: Type = tpe
+    override def isNewExpr: Boolean = true
+    override def getNewExprType: Type = tpe
+    override def getVariableName: String = delegate.ref.name
+  }
+  case class DynamicFunctionRef(delegate: Symbol, val index: String, method: Method) extends SWANVal(method) {
+    private val tpe = SWANType.create(delegate.tpe)
+    override def getType: Type = tpe
+    override def isNewExpr: Boolean = true
+    override def getNewExprType: Type = tpe
+    override def getVariableName: String = delegate.ref.name
+  }
+  case class Singleton(name: String, method: Method) extends SWANVal(method) {
+    override def getType: Type = new SWANType(new ca.ualberta.maple.swan.ir.Type("Singleton"))
+    override def getVariableName: String = name
+  }
 }
