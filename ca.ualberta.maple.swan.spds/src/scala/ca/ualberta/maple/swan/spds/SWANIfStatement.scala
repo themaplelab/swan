@@ -11,7 +11,6 @@
 package ca.ualberta.maple.swan.spds
 
 import boomerang.scene.{IfStatement, Statement, Val}
-import ca.ualberta.maple.swan.ir.{Terminator, CanTerminatorDef}
 
 class SWANIfStatement(val stmt: SWANStatement.ConditionalBranch) extends IfStatement {
 

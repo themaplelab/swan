@@ -39,7 +39,7 @@ abstract class SWANStatement(val delegate: CanInstructionDef, m: SWANMethod) ext
   override def isStaticFieldLoad: Boolean = false
   override def isStaticFieldStore: Boolean = false
   override def getStaticField: StaticFieldVal = null
-  override def getArrayBase: Val = null
+  override def getArrayBase: Pair[boomerang.scene.Val,Integer] = null
   // Not limited to WithResult, but this takes care of most cases.
   override def isAssign: Boolean = {
     delegate match {
@@ -113,7 +113,7 @@ object SWANStatement {
                        val m: SWANMethod) extends SWANStatement(CanInstructionDef.operator(opDef), m) {
     override def getRightOp: Val = ???
     override def isArrayLoad: Boolean = ???
-    override def getArrayBase: Val = ???
+    override def getArrayBase: Pair[boomerang.scene.Val,Integer] = ???
   }
   case class StaticFieldLoad(val opDef: CanOperatorDef, val inst: Operator.singletonRead,
                              val m: SWANMethod) extends SWANStatement(CanInstructionDef.operator(opDef), m) {
@@ -173,7 +173,8 @@ object SWANStatement {
                               val m: SWANMethod) extends SWANStatement(CanInstructionDef.operator(opDef), m) {
     override def containsInvokeExpr(): Boolean = true
     override def getRightOp: Val = ???
-    override def getInvokeExpr: InvokeExpr = new SWANInvokeExpr(inst, m)
+    override def getInvokeExpr: InvokeExpr = new SWANInvokeExpr(this, m)
+    def getFunctionRef: Val = m.allValues(inst.functionRef.name)
   }
   case class BinaryOperation(val opDef: CanOperatorDef, val inst: Operator.binaryOp,
                              val m: SWANMethod) extends SWANStatement(CanInstructionDef.operator(opDef), m) {

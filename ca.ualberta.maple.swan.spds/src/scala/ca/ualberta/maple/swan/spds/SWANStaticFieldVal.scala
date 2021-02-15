@@ -10,11 +10,12 @@
 
 package ca.ualberta.maple.swan.spds
 
-import boomerang.scene.{Field, Method, Statement, StaticFieldVal, Type, Val}
+import boomerang.scene.ControlFlowGraph.Edge
+import boomerang.scene.{Field, Method, Pair, Statement, StaticFieldVal, Type, Val}
 
 class SWANStaticFieldVal(val field: Field, method: SWANMethod) extends StaticFieldVal(method) {
 
-  override def asUnbalanced(stmt: Statement): Val = ???
+  override def asUnbalanced(edge: Edge): Val = ???
 
   override def getType: Type = ???
 
@@ -66,7 +67,7 @@ class SWANStaticFieldVal(val field: Field, method: SWANMethod) extends StaticFie
 
   override def getLongValue: Long = ???
 
-  override def getArrayBase: Val = ???
+  override def getArrayBase: Pair[boomerang.scene.Val,Integer] = ???
 
   override def getVariableName: String = ???
 }

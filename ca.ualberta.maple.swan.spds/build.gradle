@@ -56,9 +56,9 @@ dependencies {
     implementation project(":ca.ualberta.maple.swan.parser")
     implementation project(":ca.ualberta.maple.swan.ir")
 
-    implementation 'de.fraunhofer.iem:WPDS:3.0.8'
-    implementation 'de.fraunhofer.iem:boomerangScope:3.0.8'
-    implementation 'de.fraunhofer.iem:boomerangPDS:2.5.1'
+    implementation 'de.fraunhofer.iem:WPDS:3.1.1'
+    implementation 'de.fraunhofer.iem:boomerangScope:3.1.1'
+    implementation 'de.fraunhofer.iem:boomerangPDS:3.1.1'
 
     implementation 'org.scala-lang:scala-library:2.13.3'
     testImplementation 'org.scala-lang:scala-library:2.13.3'

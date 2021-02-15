@@ -10,7 +10,8 @@
 
 package ca.ualberta.maple.swan.spds
 
-import boomerang.scene.{Method, Statement, Type, Val}
+import boomerang.scene.ControlFlowGraph.Edge
+import boomerang.scene.{Method, Pair, Statement, Type, Val}
 import ca.ualberta.maple.swan.ir.{BinaryOperation, Literal, Symbol, UnaryOperation}
 
 abstract class SWANVal(mthd: Method) extends Val(mthd) {
@@ -25,7 +26,7 @@ abstract class SWANVal(mthd: Method) extends Val(mthd) {
   override def isIntConstant: Boolean = false
   override def getIntValue: Int = 0
   override def getLongValue: Long = 0
-  override def getArrayBase: Val = null
+  override def getArrayBase: Pair[boomerang.scene.Val,Integer] = null
   override def isThrowableAllocationType: Boolean = ???
   override def isArrayRef: Boolean = ???
 
@@ -34,7 +35,7 @@ abstract class SWANVal(mthd: Method) extends Val(mthd) {
   final override def isLocal: Boolean = true
   final override def isStringBufferOrBuilder: Boolean = false
   // TODO: ???
-  final override def asUnbalanced(stmt: Statement): Val = ???
+  final override def asUnbalanced(edge: Edge): Val = ???
   final override def isCast: Boolean = false
   final override def getCastOp: Val = null
   final override def isInstanceOfExpr: Boolean = false

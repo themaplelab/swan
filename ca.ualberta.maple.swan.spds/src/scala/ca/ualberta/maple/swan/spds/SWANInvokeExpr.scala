@@ -14,14 +14,17 @@ import java.util
 
 import boomerang.scene.{DeclaredMethod, InvokeExpr, Val}
 import ca.ualberta.maple.swan.ir.Operator
+import ca.ualberta.maple.swan.spds.SWANStatement.ApplyFunctionRef
 
-class SWANInvokeExpr(val delegate: Operator.apply, val method: SWANMethod) extends InvokeExpr {
+class SWANInvokeExpr(val stmt: ApplyFunctionRef, val method: SWANMethod) extends InvokeExpr {
 
-  val args: util.List[Val] = util.Collections.emptyList
+  val args: util.List[Val] = new util.ArrayList[Val]()
 
-  delegate.arguments.foreach(arg => {
+  stmt.inst.arguments.foreach(arg => {
     args.add(method.allValues(arg.name))
   })
+
+  def getFunctionRef: Val = stmt.getFunctionRef
 
   override def getArg(index: Int): Val = args.get(index)
 
