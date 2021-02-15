@@ -13,7 +13,6 @@ package ca.ualberta.maple.swan.spds
 import java.util
 
 import boomerang.scene.{DeclaredMethod, InvokeExpr, Val}
-import ca.ualberta.maple.swan.ir.Operator
 import ca.ualberta.maple.swan.spds.SWANStatement.ApplyFunctionRef
 
 class SWANInvokeExpr(val stmt: ApplyFunctionRef, val method: SWANMethod) extends InvokeExpr {
@@ -30,7 +29,7 @@ class SWANInvokeExpr(val stmt: ApplyFunctionRef, val method: SWANMethod) extends
 
   override def getArgs: util.List[Val] = args
 
-  override def isInstanceInvokeExpr: Boolean = true
+  override def isInstanceInvokeExpr: Boolean = false
 
   override def getBase: Val = ???
 
@@ -39,4 +38,12 @@ class SWANInvokeExpr(val stmt: ApplyFunctionRef, val method: SWANMethod) extends
   override def isSpecialInvokeExpr: Boolean = false
 
   override def isStaticInvokeExpr: Boolean = false
+
+  override def toString: String = {
+    if (getMethod == null) {
+      stmt.inst.functionRef.name + "(" + args + ")"
+    } else {
+      getMethod.toString + "(" + args + ")"
+    }
+  }
 }

@@ -22,6 +22,7 @@ class SWANMethod(val delegate: CanFunction) extends Method {
 
   // Use allValues instead of create new Vals, when possible
   // (contains simple vals - those as results or arguments)
+  // Only use for non allocation (simple value references).
   val allValues: mutable.HashMap[String, Val] = new mutable.HashMap[String, Val]()
 
   private val localParams: util.List[Val] = Lists.newArrayList
@@ -74,4 +75,8 @@ class SWANMethod(val delegate: CanFunction) extends Method {
   override def isConstructor: Boolean = false
 
   override def isPublic: Boolean = true
+
+  override def toString: String = {
+    getName
+  }
 }

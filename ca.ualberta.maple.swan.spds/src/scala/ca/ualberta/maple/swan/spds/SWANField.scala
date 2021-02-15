@@ -12,6 +12,4 @@ package ca.ualberta.maple.swan.spds
 
 import boomerang.scene.Field
 
-class SWANField(val name: String) extends Field {
-
-}
+class SWANField(val name: String) extends Field

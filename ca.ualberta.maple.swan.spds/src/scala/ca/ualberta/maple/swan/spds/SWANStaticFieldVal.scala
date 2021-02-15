@@ -11,63 +11,80 @@
 package ca.ualberta.maple.swan.spds
 
 import boomerang.scene.ControlFlowGraph.Edge
-import boomerang.scene.{Field, Method, Pair, Statement, StaticFieldVal, Type, Val}
+import boomerang.scene.{Field, Method, Pair, StaticFieldVal, Type, Val}
 
-class SWANStaticFieldVal(val field: Field, method: SWANMethod) extends StaticFieldVal(method) {
+class SWANStaticFieldVal(val field: Field, method: Method) extends StaticFieldVal(method) {
 
-  override def asUnbalanced(edge: Edge): Val = ???
+  def this(field: Field, method: SWANMethod, unbalanced: Edge) = {
+    this(field, method)
+  }
 
-  override def getType: Type = ???
+  def this(field: Field, method: Method, unbalanced: Edge) = {
+    this(field, method)
+  }
 
-  override def isStatic: Boolean = ???
+  override def asUnbalanced(edge: Edge): Val = {
+    new SWANStaticFieldVal(field, method, edge)
+  }
 
-  override def isNewExpr: Boolean = ???
+  override def getType: Type = null
 
-  override def getNewExprType: Type = ???
+  override def isStatic: Boolean = true
 
-  override def isLocal: Boolean = ???
+  override def isNewExpr: Boolean = false
 
-  override def isArrayAllocationVal: Boolean = ???
+  override def getNewExprType: Type = null
 
-  override def isNull: Boolean = ???
+  override def isLocal: Boolean = false
 
-  override def isStringConstant: Boolean = ???
+  override def isArrayAllocationVal: Boolean = false
 
-  override def getStringValue: String = ???
+  override def isNull: Boolean = false
 
-  override def isStringBufferOrBuilder: Boolean = ???
+  override def isStringConstant: Boolean = false
 
-  override def isThrowableAllocationType: Boolean = ???
+  override def getStringValue: String = null
 
-  override def isCast: Boolean = ???
+  override def isStringBufferOrBuilder: Boolean = false
 
-  override def getCastOp: Val = ???
+  override def isThrowableAllocationType: Boolean = false
 
-  override def isArrayRef: Boolean = ???
+  override def isCast: Boolean = false
 
-  override def isInstanceOfExpr: Boolean = ???
+  override def getCastOp: Val = null
 
-  override def getInstanceOfOp: Val = ???
+  override def isArrayRef: Boolean = false
 
-  override def isLengthExpr: Boolean = ???
+  override def isInstanceOfExpr: Boolean = false
 
-  override def getLengthOp: Val = ???
+  override def getInstanceOfOp: Val = null
 
-  override def isIntConstant: Boolean = ???
+  override def isLengthExpr: Boolean = false
 
-  override def isClassConstant: Boolean = ???
+  override def getLengthOp: Val = null
 
-  override def getClassConstantType: Type = ???
+  override def isIntConstant: Boolean = false
 
-  override def withNewMethod(method: Method): Val = ???
+  override def isClassConstant: Boolean = false
 
-  override def isLongConstant: Boolean = ???
+  override def getClassConstantType: Type = null
 
-  override def getIntValue: Int = ???
+  override def withNewMethod(method: Method): Val = {
+    new SWANStaticFieldVal(field, method, unbalancedStmt)
+  }
 
-  override def getLongValue: Long = ???
+  override def isLongConstant: Boolean = false
 
-  override def getArrayBase: Pair[boomerang.scene.Val,Integer] = ???
+  override def getIntValue: Int = -1
 
-  override def getVariableName: String = ???
+  override def getLongValue: Long = -1
+
+  override def getArrayBase: Pair[boomerang.scene.Val,Integer] = null
+
+  override def getVariableName: String = field.toString
+
+  // Temporary
+  override def toString: String = {
+    "(static field) " + field.toString
+  }
 }

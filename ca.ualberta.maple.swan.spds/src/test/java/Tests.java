@@ -14,9 +14,7 @@ import boomerang.DefaultBoomerangOptions;
 import boomerang.Query;
 import boomerang.results.BackwardBoomerangResults;
 import boomerang.scene.*;
-import ca.ualberta.maple.swan.ir.CanModule;
-import ca.ualberta.maple.swan.ir.Exceptions;
-import ca.ualberta.maple.swan.ir.Module;
+import ca.ualberta.maple.swan.ir.*;
 import ca.ualberta.maple.swan.ir.canonical.SWIRLPass;
 import ca.ualberta.maple.swan.ir.raw.SWIRLGen;
 import ca.ualberta.maple.swan.parser.Error;
@@ -43,6 +41,9 @@ public class Tests {
                 .getResource("sil/modules/").toURI());
         File[] silFiles = fileDir.listFiles((dir, name) -> name.endsWith(".sil"));
         for (File sil : silFiles) {
+            if (!sil.getName().contains("simple")) {
+                continue;
+            }
             System.out.println("    -> " + sil.getName());
             SILParser parser = new SILParser(sil.toPath());
             SILModule silModule = parser.parseModule();
@@ -52,7 +53,7 @@ public class Tests {
             // System.out.print(new SWIRLPrinter().print(swirlModule));
             // System.out.println("============================================");
             CanModule canSwirlModule = SWIRLPass.runPasses(swirlModule);
-            // System.out.print(new SWIRLPrinter().print(canSwirlModule, new SWIRLPrinterOptions()));
+            System.out.print(new SWIRLPrinter().print(canSwirlModule, new SWIRLPrinterOptions()));
 
             SWANCallGraph cg = new SWANCallGraph(canSwirlModule);
             AnalysisScope scope =

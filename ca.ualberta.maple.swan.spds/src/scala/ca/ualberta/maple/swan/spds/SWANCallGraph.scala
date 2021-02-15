@@ -20,11 +20,11 @@ import com.google.common.collect.Sets
 import scala.util.control.Breaks.{break, breakable}
 
 // TODO: iOS lifecycle
-// TODO: dynamic CG
 class SWANCallGraph(val module: CanModule) extends CallGraph {
 
   private val methods = Sets.newHashSet[SWANMethod]
 
+  // TODO: Add all methods
   breakable {
     module.functions.foreach(f => {
       if (f.name == Constants.fakeMain) {
