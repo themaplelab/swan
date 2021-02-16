@@ -60,7 +60,7 @@ public class Tests {
                 new AnalysisScope(cg) {
                     @Override
                     protected Collection<? extends Query> generate(ControlFlowGraph.Edge edge) {
-                        Statement statement = edge.getStart();
+                        Statement statement = edge.getTarget();
                         if (statement.containsInvokeExpr()) {
                             Val ref = ((SWANInvokeExpr) statement.getInvokeExpr()).getFunctionRef();
                             return Collections.singleton(BackwardQuery.make(edge, ref));

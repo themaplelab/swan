@@ -13,7 +13,7 @@ package ca.ualberta.maple.swan.spds
 import java.util
 
 import boomerang.scene.{Field, IfStatement, InvokeExpr, Pair, Statement, StaticFieldVal, Val}
-import ca.ualberta.maple.swan.ir.{CanInstructionDef, CanOperatorDef, CanTerminatorDef, Constants, Literal, Operator, Position, Symbol, Terminator, WithResult}
+import ca.ualberta.maple.swan.ir.{BinaryOperation, CanInstructionDef, CanOperatorDef, CanTerminatorDef, Constants, Literal, Operator, Position, Symbol, Terminator, UnaryOperation, WithResult}
 
 // toString implementations are not necessarily accurate
 abstract class SWANStatement(val delegate: CanInstructionDef, m: SWANMethod) extends Statement(m) {
@@ -189,15 +189,34 @@ object SWANStatement {
   }
   case class BinaryOperation(opDef: CanOperatorDef, inst: Operator.binaryOp,
                              m: SWANMethod) extends SWANStatement(CanInstructionDef.operator(opDef), m) {
-    override def getRightOp: Val = SWANVal.BinaryExpr(inst.result.tpe,
-      m.delegate.getSymbol(inst.lhs.name), m.delegate.getSymbol(inst.rhs.name), inst.operation, m)
+    override def getRightOp: Val = {
+      inst.operation match {
+        case ca.ualberta.maple.swan.ir.BinaryOperation.arbitrary =>
+          SWANVal.BinaryExpr(inst.result.tpe,
+            m.delegate.getSymbol(inst.lhs.name), m.delegate.getSymbol(inst.rhs.name), inst.operation, m)
+        case ca.ualberta.maple.swan.ir.BinaryOperation.equals =>
+          SWANVal.BinaryExpr(inst.result.tpe,
+            m.delegate.getSymbol(inst.lhs.name), m.delegate.getSymbol(inst.rhs.name), inst.operation, m)
+        // case operator that transfers operand properties =>
+          // TODO ?
+      }
+
+    }
     override def toString: String = {
       getLeftOp.toString + " = " + getRightOp.toString
     }
   }
   case class UnaryOperation(opDef: CanOperatorDef, inst: Operator.unaryOp,
                             m: SWANMethod) extends SWANStatement(CanInstructionDef.operator(opDef), m) {
-    override def getRightOp: Val = SWANVal.UnaryExpr(inst.result.tpe, m.delegate.getSymbol(inst.operand.name), inst.operation, m)
+    override def getRightOp: Val = {
+      inst.operation match {
+        case ca.ualberta.maple.swan.ir.UnaryOperation.arbitrary =>
+          SWANVal.UnaryExpr(inst.result.tpe, m.delegate.getSymbol(inst.operand.name), inst.operation, m)
+        // case operator that transfers operand properties =>
+          // SWANVal.Simple(inst.result, m)
+      }
+    }
+
     override def toString: String = {
       getLeftOp.toString + " = " + getRightOp.toString
     }

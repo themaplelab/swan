@@ -12,6 +12,7 @@ package ca.ualberta.maple.swan.spds
 
 import boomerang.scene.ControlFlowGraph.Edge
 import boomerang.scene.{Field, Method, Pair, StaticFieldVal, Type, Val}
+import ca.ualberta.maple.swan.ir.Constants
 
 class SWANStaticFieldVal(val field: Field, method: Method) extends StaticFieldVal(method) {
 
@@ -27,7 +28,8 @@ class SWANStaticFieldVal(val field: Field, method: Method) extends StaticFieldVa
     new SWANStaticFieldVal(field, method, edge)
   }
 
-  override def getType: Type = null
+  override def getType: Type = new SWANType(
+    new ca.ualberta.maple.swan.ir.Type(Constants.globalsSingleton))
 
   override def isStatic: Boolean = true
 

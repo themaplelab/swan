@@ -34,7 +34,7 @@ Run the *SWIRL Tests* and *SIL Tests* configurations to test everything works.
 - ca.ualberta.maple.swan.parser
   - Contains SIL printer/parser
 - ca.ualberta.maple.swan.spds
-  - Contains SPDS/Boomerang data structures for SWIRL
+  - Contains SPDS/Boomerang data structures for SWIRL + simple query test
 - ca.ualberta.maple.swan.viewer
   - JVM-side driver for SwanViewer
 - SwanViewer
