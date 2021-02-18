@@ -15,7 +15,6 @@ import java.util.concurrent.TimeUnit
 
 object Logging {
 
-  // TODO: Doesn't work properly for CLI: doesn't overwrite line
   class ProgressBar(val label: String, val max: Int, val useSpinner: Boolean) {
 
     private val spinner = Array('|', '/', '-', '\\')
@@ -26,7 +25,9 @@ object Logging {
     update(0)
 
     def update(newVal: Int): Unit = {
-      print(generateNewString(newVal))
+      // TODO: Doesn't work properly for CLI: doesn't overwrite line
+      // and spams stdout. Work for IntelliJ output, however.
+      //print(generateNewString(newVal))
     }
 
     def generateNewString(at: Int): String = {
@@ -53,7 +54,7 @@ object Logging {
     }
 
     def done(): Unit = {
-      print(generateNewString(max))
+      // print(generateNewString(max))
       print("\n")
       val millis = System.currentTimeMillis() - startTime
       val timeTaken = String.format("%02d min, %02d sec",

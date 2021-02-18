@@ -1,5 +1,7 @@
 <img src="https://karimali.ca/resources/images/projects/swan.png" width="150">
 
+[![Java CI with Gradle](https://github.com/themaplelab/swan/workflows/Java%20CI%20with%20Gradle/badge.svg?branch=spds)](https://github.com/themaplelab/swan/actions)
+
 # :new: SWAN
 
 This branch contains the new generation of the SWAN framework. **It is still WIP and not ready for use. ​**:construction: SWAN ESEC/FSE 2020 is located on the [this](https://github.com/themaplelab/swan/tree/master) branch.
