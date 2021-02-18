@@ -22,8 +22,6 @@ apply plugin: 'application'
 mainClassName = "ca.ualberta.maple.swan.client.Main"
 
 dependencies {
-    implementation project(":ca.ualberta.maple.swan.parser")
-    implementation project(":ca.ualberta.maple.swan.ir")
 }
 
 run {

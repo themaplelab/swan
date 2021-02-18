@@ -15,6 +15,7 @@ import java.util.concurrent.TimeUnit
 
 object Logging {
 
+  // TODO: Doesn't work properly for CLI: doesn't overwrite line
   class ProgressBar(val label: String, val max: Int, val useSpinner: Boolean) {
 
     private val spinner = Array('|', '/', '-', '\\')

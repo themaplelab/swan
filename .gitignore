@@ -1,7 +1,7 @@
 ### SWAN SPECIFIC ###
 
 # Produced by Swift compiler when dumping SIL
-_.gsil_*
+*.gsil_*
 
 ### MISC ###
 
