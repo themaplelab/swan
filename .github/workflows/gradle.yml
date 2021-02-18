@@ -26,5 +26,5 @@ jobs:
     - name: Grant execute permission for gradlew
       run: chmod +x gradlew
     - name: Build with Gradle
-      run: ./gradlew build -x :ca.ualberta.maple.swan.spds:compileScala
+      run: ./gradlew build -x :ca.ualberta.maple.swan.spds:compileScala -x :ca.ualberta.maple.swan.spds:compileTestJava
 
