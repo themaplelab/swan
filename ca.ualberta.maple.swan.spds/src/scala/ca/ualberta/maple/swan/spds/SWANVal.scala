@@ -82,7 +82,7 @@ object SWANVal {
     }
   }
   case class NewExpr(delegate: Symbol, method: Method, unbalanced: Edge = null) extends SWANVal(method, unbalanced) {
-    private val tpe = SWANType.create(delegate.tpe)
+    val tpe = SWANType.create(delegate.tpe)
     override def getType: Type = tpe
     override def isNewExpr: Boolean = true
     override def getNewExprType: Type = tpe
@@ -98,7 +98,7 @@ object SWANVal {
       false
     }
     override def toString: String = {
-      "new " + getVariableName
+      "new " + this.getType.asInstanceOf[SWANType].tpe.name
     }
   }
   case class Constant(delegate: Symbol, literal: Literal, method: Method, unbalanced: Edge = null) extends SWANVal(method, unbalanced) {

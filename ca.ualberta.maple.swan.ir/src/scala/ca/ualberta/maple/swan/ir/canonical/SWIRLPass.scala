@@ -421,7 +421,8 @@ object SWIRLPass {
       graph.addVertex(to.get)
       to.get
     }
-    blocks.foreach(b => {
+    blocks.zipWithIndex.foreach(bit => {
+      val b = bit._1
       graph.addVertex(b)
       b.terminator.terminator match {
         case Terminator.br_can(to) => {
@@ -429,6 +430,7 @@ object SWIRLPass {
         }
         case Terminator.brIf_can(_, target) => {
           graph.addEdge(b, getTarget(target))
+          graph.addEdge(b, blocks(bit._2 + 1))
         }
         case Terminator.ret(_) => {
           graph.addEdge(b, exitBlock)
