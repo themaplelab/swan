@@ -430,6 +430,7 @@ object SWIRLPass {
         }
         case Terminator.brIf_can(_, target) => {
           graph.addEdge(b, getTarget(target))
+          graph.addVertex(blocks(bit._2 + 1))
           graph.addEdge(b, blocks(bit._2 + 1))
         }
         case Terminator.ret(_) => {
