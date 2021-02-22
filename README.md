@@ -12,8 +12,8 @@ We have completely redesigned SWAN. It now parses plain-text that can either be 
 
 ### Relevant Wiki pages
 
-- [[SWIRL]]
-- [[SIL To SWIRL Spec]]
+- [SWIRL](https://github.com/themaplelab/swan/wiki/SWIRL)
+- [SIL To SWIRL Spec](https://github.com/themaplelab/swan/wiki/SIL-To-SWIRL-Spec)
 
 ## Developing
 
