@@ -56,6 +56,8 @@ public class Tests {
             System.out.print(new SWIRLPrinter().print(canSwirlModule, new SWIRLPrinterOptions()));
 
             SWANCallGraph cg = new SWANCallGraph(canSwirlModule);
+            cg.constructStaticCG();
+
             AnalysisScope scope =
                 new AnalysisScope(cg) {
                     @Override
