@@ -80,14 +80,13 @@ object SWANVal {
       val prime = 31
       var result = 1
       result = prime * result + delegate.hashCode
-      result = prime * result + index.hashCode
       result = prime * result + method.hashCode
       result
     }
     override def equals(obj: Any): Boolean = {
       obj match {
         case other: Argument =>
-          delegate.equals(other.delegate) && index == other.index && method.equals(other.m)
+          delegate.equals(other.delegate) && method.equals(other.m)
         case _ =>
       }
       false
@@ -120,7 +119,7 @@ object SWANVal {
       false
     }
     override def toString: String = {
-      "new " + this.getType.asInstanceOf[SWANType].tpe.name
+      this.delegate.ref.name + " <-- new " + this.getType.asInstanceOf[SWANType].tpe.name
     }
   }
   case class Constant(delegate: Symbol, literal: Literal, method: Method, unbalanced: Edge = null) extends SWANVal(method, unbalanced) {
@@ -140,14 +139,13 @@ object SWANVal {
       val prime = 31
       var result = 1
       result = prime * result + delegate.hashCode
-      result = prime * result + literal.hashCode
       result = prime * result + method.hashCode
       result
     }
     override def equals(obj: Any): Boolean = {
       obj match {
         case other: Constant =>
-          delegate.equals(other.delegate) && literal == other.literal && method.equals(other.m)
+          delegate.equals(other.delegate) && method.equals(other.m)
         case _ =>
       }
       false
@@ -224,14 +222,13 @@ object SWANVal {
       val prime = 31
       var result = 1
       result = prime * result + delegate.hashCode
-      result = prime * result + ref.hashCode
       result = prime * result + method.hashCode
       result
     }
     override def equals(obj: Any): Boolean = {
       obj match {
         case other: FunctionRef =>
-          delegate.equals(other.delegate) && ref == other.ref && method.equals(other.m)
+          delegate.equals(other.delegate) && method.equals(other.m)
         case _ =>
       }
       false
@@ -251,14 +248,13 @@ object SWANVal {
       val prime = 31
       var result = 1
       result = prime * result + delegate.hashCode
-      result = prime * result + ref.hashCode
       result = prime * result + method.hashCode
       result
     }
     override def equals(obj: Any): Boolean = {
       obj match {
         case other: BuiltinFunctionRef =>
-          delegate.equals(other.delegate) && ref == other.ref && method.equals(other.m)
+          delegate.equals(other.delegate) && method.equals(other.m)
         case _ =>
       }
       false
@@ -278,14 +274,13 @@ object SWANVal {
       val prime = 31
       var result = 1
       result = prime * result + delegate.hashCode
-      result = prime * result + index.hashCode
       result = prime * result + method.hashCode
       result
     }
     override def equals(obj: Any): Boolean = {
       obj match {
         case other: DynamicFunctionRef =>
-          delegate.equals(other.delegate) && index == other.index && method.equals(other.m)
+          delegate.equals(other.delegate) && method.equals(other.m)
         case _ =>
       }
       false
