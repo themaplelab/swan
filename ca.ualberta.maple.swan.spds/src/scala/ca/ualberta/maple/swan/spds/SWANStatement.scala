@@ -60,7 +60,7 @@ abstract class SWANStatement(val delegate: CanInstructionDef, m: SWANMethod) ext
     delegate.asInstanceOf[CanInstructionDef.operator].operatorDef.operator.asInstanceOf[WithResult].value
   }
   override def getLeftOp: Val = {
-    SWANVal.Simple(getResult, m)
+    m.newValues(getResult.ref.name)
   }
   final override def isStringAllocation: Boolean = false
   final override def isArrayStore: Boolean = false
@@ -75,6 +75,20 @@ abstract class SWANStatement(val delegate: CanInstructionDef, m: SWANMethod) ext
   final override def getEndLineNumber: Int = getStartLineNumber
   final override def getEndColumnNumber: Int = getStartColumnNumber
   final override def isCatchStmt: Boolean = false
+
+  override def hashCode: Int = {
+    val prime = 31
+    var result = 1
+    result = prime * result + delegate.hashCode
+    result = prime * result + m.hashCode
+    result
+  }
+  override def equals(obj: Any): Boolean = {
+    obj match {
+      case s: SWANStatement => s.delegate.equals(this.delegate) && s.method.equals(this.method)
+      case _ => false
+    }
+  }
 }
 
 object SWANStatement {
@@ -144,9 +158,9 @@ object SWANStatement {
   }
   case class Allocation(opDef: CanOperatorDef, inst: Operator.neww,
                         m: SWANMethod) extends SWANStatement(CanInstructionDef.operator(opDef), m) {
-    override def getRightOp: Val = SWANVal.NewExpr(inst.result, m)
+    override def getRightOp: Val = ??? // SWANVal.NewExpr(inst.result, m)
     override def toString: String = {
-      getLeftOp.toString + " = " + getRightOp.toString
+      getLeftOp.toString + " = " // + getRightOp.toString
     }
   }
   case class Literal(opDef: CanOperatorDef, inst: Operator.literal,

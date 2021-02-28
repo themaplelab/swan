@@ -207,7 +207,7 @@ object SWIRLGen {
       functions.append(fmFunction)
     }
     progressBar.done()
-    new Module(functions, new DynamicDispatchGraph(silModule), silMap)
+    new Module(functions, Some(new DynamicDispatchGraph(silModule)), silMap)
   }
 
   private def getFunctionAttribute(silFunction: SILFunction): Option[FunctionAttribute] = {

@@ -21,9 +21,9 @@ import scala.collection.mutable
 class SWANMethod(val delegate: CanFunction) extends Method {
 
   // Use allValues instead of create new Vals, when possible
-  // (contains simple vals - those as results or arguments)
   // Only use for non allocation (simple value references).
   val allValues: mutable.HashMap[String, Val] = new mutable.HashMap[String, Val]()
+  val newValues: mutable.HashMap[String, Val] = new mutable.HashMap[String, Val]()
 
   private val localParams: util.List[Val] = Lists.newArrayList
   private val localValues: util.Set[Val] = Sets.newHashSet
@@ -35,6 +35,9 @@ class SWANMethod(val delegate: CanFunction) extends Method {
         val v = SWANVal.Simple(symbol, this)
         localValues.add(v)
         allValues.put(symbol.ref.name, v)
+        val n = SWANVal.NewExpr(symbol, this)
+        localValues.add(n)
+        newValues.put(symbol.ref.name, n)
       }
       case SymbolTableEntry.argument(argument) => {
         val v = SWANVal.Argument(argument, localParams.size(), this)
@@ -78,5 +81,19 @@ class SWANMethod(val delegate: CanFunction) extends Method {
 
   override def toString: String = {
     getName
+  }
+
+  override def hashCode(): Int = {
+    val prime = 31
+    var result = 1
+    result = prime * result + delegate.hashCode
+    result
+  }
+
+  override def equals(obj: Any): Boolean = {
+    obj match {
+      case m: SWANMethod => m.delegate == this.delegate
+      case _ => false
+    }
   }
 }

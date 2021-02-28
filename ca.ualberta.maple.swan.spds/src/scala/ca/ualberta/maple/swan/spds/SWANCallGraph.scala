@@ -11,7 +11,7 @@
 package ca.ualberta.maple.swan.spds
 
 import java.util
-import java.util.{Collections}
+import java.util.Collections
 
 import boomerang.{BackwardQuery, Boomerang, DefaultBoomerangOptions, Query}
 import boomerang.scene.{AnalysisScope, CallGraph, ControlFlowGraph, DataFlowScope}
@@ -24,8 +24,9 @@ class SWANCallGraph(val module: CanModule) extends CallGraph {
   private val methods = Maps.newHashMap[String, SWANMethod]
 
   module.functions.foreach(f => {
-    val m = makeMethod(f)
+    //val m = makeMethod(f)
     if (f.name == Constants.fakeMain) {
+      val m = makeMethod(f) // ++
       this.getEntryPoints.add(m)
     }
   })

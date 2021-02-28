@@ -89,4 +89,19 @@ class SWANStaticFieldVal(val field: Field, method: Method) extends StaticFieldVa
   override def toString: String = {
     "(static field) " + field.toString
   }
+
+  override def hashCode: Int = {
+    val prime = 31
+    var result = 1
+    result = prime * result + field.hashCode
+    result = prime * result + m.hashCode
+    result
+  }
+
+  override def equals(obj: Any): Boolean = {
+    obj match {
+      case sfv: SWANStaticFieldVal => sfv.field.equals(this.field) && sfv.m.equals(this.m)
+      case _ => false
+    }
+  }
 }

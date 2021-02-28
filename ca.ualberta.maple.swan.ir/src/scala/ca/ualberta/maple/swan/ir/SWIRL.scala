@@ -22,10 +22,10 @@ import scala.collection.{immutable, mutable}
 import scala.collection.mutable.ArrayBuffer
 
 // Imports might be useful for modelling later, but probably not.
-class Module(val functions: ArrayBuffer[Function], val ddg: DynamicDispatchGraph,
+class Module(val functions: ArrayBuffer[Function], val ddg: Option[DynamicDispatchGraph],
              val silMap: SILMap)
 
-class CanModule(val functions: ArrayBuffer[CanFunction], val ddg: DynamicDispatchGraph,
+class CanModule(val functions: ArrayBuffer[CanFunction], val ddg: Option[DynamicDispatchGraph],
                 val silMap: SILMap)
 
 class Function(val attribute: Option[FunctionAttribute], val name: String, val tpe: Type,
@@ -58,7 +58,20 @@ object FunctionAttribute {
   case object model extends FunctionAttribute
 }
 
-class Type(val name: String = "Any")
+class Type(val name: String = "Any") {
+  override def hashCode: Int = {
+    val prime = 31
+    var result = 1
+    result = prime * result + this.name.hashCode
+    result
+  }
+  override def equals(obj: Any): Boolean = {
+    obj match {
+      case t: Type => t.name == this.name
+      case _ => false
+    }
+  }
+}
 
 class Position(val path: String, val line: Int, val col: Int)
 
@@ -174,7 +187,23 @@ object Literal {
   case class float(value: Float) extends Literal
 }
 
-class Symbol(val ref: SymbolRef, val tpe: Type)
+class Symbol(val ref: SymbolRef, val tpe: Type) {
+  override def hashCode: Int = {
+    val prime = 31
+    var result = 1
+    result = prime * result + this.ref.hashCode
+    result = prime * result + this.tpe.hashCode
+    result
+  }
+  override def equals(other: Any): Boolean = {
+    other match {
+      case symbol: Symbol =>
+        this.ref.equals(symbol.ref) && this.tpe.equals(symbol.tpe)
+      case _ =>
+        false
+    }
+  }
+}
 
 // `pos` can be changed by debug_value and debug_value_addr.
 class Argument(ref: SymbolRef, tpe: Type, var pos: Option[Position] = None) extends Symbol(ref, tpe)
@@ -182,22 +211,30 @@ class Argument(ref: SymbolRef, tpe: Type, var pos: Option[Position] = None) exte
 // This is so that we can change symbol names throughout the program
 // for things like symbol_copy folding.
 class SymbolRef(var name: String) {
+  override def hashCode: Int = {
+    val prime = 31
+    var result = 1
+    result = prime * result + this.name.hashCode
+    result
+  }
   override def equals(other: Any): Boolean = {
     other match {
-      case ref: SymbolRef =>
-        ref.name == name
-      case _ =>
-        false
+      case ref: SymbolRef => ref.name == this.name
+      case _ => false
     }
   }
 }
 class BlockRef(var label: String) {
+  override def hashCode: Int = {
+    val prime = 31
+    var result = 1
+    result = prime * result + this.label.hashCode
+    result
+  }
   override def equals(other: Any): Boolean = {
     other match {
-      case ref: BlockRef =>
-        ref.label == label
-      case _ =>
-        false
+      case ref: BlockRef => ref.label == this.label
+      case _ => false
     }
   }
 }

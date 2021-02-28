@@ -16,4 +16,17 @@ class SWANField(val name: String) extends Field {
   override def toString: String = {
     name
   }
+  override def hashCode: Int = {
+    val prime = 31
+    var result = 1
+    result = prime * result + name.hashCode
+    result
+  }
+
+  override def equals(obj: Any): Boolean = {
+    obj match {
+      case f: SWANField => f.name == this.name
+      case _ => false
+    }
+  }
 }
