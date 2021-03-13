@@ -295,17 +295,20 @@ object SWIRLGen {
           case inst: SILOperator.load => visitLoad(result, inst, ctx)
           case inst: SILOperator.store => visitStore(result, inst, ctx)
           case inst: SILOperator.loadBorrow => visitLoadBorrow(result, inst, ctx)
+          case inst: SILOperator.storeBorrow => visitStoreBorrow(result, inst, ctx)
           case inst: SILOperator.beginBorrow => visitBeginBorrow(result, inst, ctx)
           case inst: SILOperator.endBorrow => visitEndBorrow(result, inst, ctx)
           case inst: SILOperator.endLifetime => visitEndLifetime(result, inst, ctx)
           case inst: SILOperator.copyAddr => visitCopyAddr(result, inst, ctx)
           case inst: SILOperator.destroyAddr => visitDestroyAddr(result, inst, ctx)
           case inst: SILOperator.indexAddr => visitIndexAddr(result, inst, ctx)
+          case inst: SILOperator.bindMemory => visitBindMemory(result, inst, ctx)
           case inst: SILOperator.beginAccess => visitBeginAccess(result, inst, ctx)
           case inst: SILOperator.endAccess => visitEndAccess(result, inst, ctx)
           case inst: SILOperator.strongRetain => visitStrongRetain(result, inst, ctx)
           case inst: SILOperator.strongRelease => visitStrongRelease(result, inst, ctx)
           case inst: SILOperator.copyUnownedValue => visitCopyUnownedValue(result, inst, ctx)
+          case inst: SILOperator.strongCopyUnownedValue => visitStrongCopyUnownedValue(result, inst, ctx)
           case inst: SILOperator.unownedRetain => visitUnownedRetain(result, inst, ctx)
           case inst: SILOperator.loadWeak => visitLoadWeak(result, inst, ctx)
           case inst: SILOperator.storeWeak => visitStoreWeak(result, inst, ctx)
@@ -338,7 +341,9 @@ object SWIRLGen {
           case inst: SILOperator.objcProtocol => visitObjCProtocol(result, inst, ctx)
           case inst: SILOperator.retainValue => visitRetainValue(result, inst, ctx)
           case inst: SILOperator.copyValue => visitCopyValue(result, inst, ctx)
+          case inst: SILOperator.strongCopyUnmanagedValue => visitStrongCopyUnmanagedValue(result, inst, ctx)
           case inst: SILOperator.releaseValue => visitReleaseValue(result, inst, ctx)
+          case inst: SILOperator.unmanagedReleaseValue => visitUnmanagedReleaseValue(result, inst, ctx)
           case inst: SILOperator.destroyValue => visitDestroyValue(result, inst, ctx)
           case inst: SILOperator.autoreleaseValue => visitAutoreleaseValue(result, inst, ctx)
           case inst: SILOperator.tuple => visitTuple(result, inst, ctx)
@@ -578,6 +583,13 @@ object SWIRLGen {
   }
 
   @throws[UnexpectedSILFormatException]
+  @throws[UnexpectedSILTypeBehaviourException]
+  @throws[UnexpectedSILTypeBehaviourException]
+  def visitStoreBorrow(r: Option[SILResult], I: SILOperator.storeBorrow, ctx: Context): Array[RawInstructionDef] = {
+    makeOperator(ctx, Operator.pointerWrite(makeSymbolRef(I.from, ctx), makeSymbolRef(I.to.value, ctx)))
+  }
+
+  @throws[UnexpectedSILFormatException]
   def visitBeginBorrow(r: Option[SILResult], I: SILOperator.beginBorrow, ctx: Context): Array[RawInstructionDef] = {
     verifySILResult(r, 1)
     copySymbol(I.operand.value, r.get.valueNames(0), ctx)
@@ -611,6 +623,10 @@ object SWIRLGen {
     makeOperator(ctx, Operator.arrayRead(result, makeSymbolRef(I.addr.value, ctx)))
   }
 
+  def visitBindMemory(r: Option[SILResult], I: SILOperator.bindMemory, ctx: Context): Array[RawInstructionDef] = {
+    NOP
+  }
+
   // def visitTailAddr(r: Option[SILResult], I: SILOperator.tailAddr, ctx: Context): Array[RawInstructionDef]
   // def visitIndexRawPointer(r: Option[SILResult], I: SILOperator.indexRawPointer, ctx: Context): Array[RawInstructionDef]
   // def visitBindMemory(r: Option[SILResult], I: SILOperator.bindMemory, ctx: Context): Array[RawInstructionDef]
@@ -640,6 +656,13 @@ object SWIRLGen {
 
   def visitCopyUnownedValue(r: Option[SILResult], I: SILOperator.copyUnownedValue, ctx: Context): Array[RawInstructionDef] = {
     // TODO: Result should have the @sil_unowned removed from operand type.
+    val result = getSingleResult(r, Utils.SILTypeToType(I.operand.tpe), ctx)
+    // Assign for now, maybe COPY would work.
+    makeOperator(ctx, Operator.assign(result, makeSymbolRef(I.operand.value, ctx)))
+  }
+
+  def visitStrongCopyUnownedValue(r: Option[SILResult], I: SILOperator.strongCopyUnownedValue, ctx: Context): Array[RawInstructionDef] = {
+    // TODO: Result should have the @owned removed from operand type.
     val result = getSingleResult(r, Utils.SILTypeToType(I.operand.tpe), ctx)
     // Assign for now, maybe COPY would work.
     makeOperator(ctx, Operator.assign(result, makeSymbolRef(I.operand.value, ctx)))
@@ -819,9 +842,24 @@ object SWIRLGen {
         new Symbol(generateSymbolName(token, ctx), Utils.SILTypeToType(SILType.namedType("*Any")))
       }
     }
-    makeOperator(ctx, Operator.apply/*Coroutine*/(result, makeSymbolRef(I.value, ctx),
-      stringArrayToSymbolRefArray(I.arguments, ctx),
-      /* new Symbol(token, Utils.SILTypeToType(SILType.namedType("*Any")))*/ ))
+    val operators = new ArrayBuffer[RawInstructionDef]()
+    // TODO: This is a janky/temporary way to handle more than one yielded
+    //  value and is required to not blow up the symbol table.
+    if (r.get.valueNames.length > 2) {
+      val resultTypes = Utils.SILFunctionTupleTypeToReturnType(I.tpe, removeAttributes = true)
+      r.get.valueNames.zipWithIndex.foreach(vn => {
+        val idx = vn._2
+        if (idx > 0 && idx < r.get.valueNames.length - 1) {
+          val r = new Symbol(makeSymbolRef(vn._1, ctx), resultTypes(idx))
+          operators.append(makeOperator(ctx, Operator.neww(r))(0))
+        }
+      })
+    }
+    operators.append(makeOperator(ctx,
+      Operator.apply/*Coroutine*/(result, makeSymbolRef(I.value, ctx),
+        stringArrayToSymbolRefArray(I.arguments, ctx),
+      /* new Symbol(token, Utils.SILTypeToType(SILType.namedType("*Any")))*/ ))(0))
+    operators.toArray
   }
 
   def visitAbortApply(r: Option[SILResult], I: SILOperator.abortApply, ctx: Context): Array[RawInstructionDef] = {
@@ -903,12 +941,21 @@ object SWIRLGen {
     copySymbol(I.operand.value, r.get.valueNames(0), ctx)
   }
 
+  @throws[UnexpectedSILFormatException]
+  def visitStrongCopyUnmanagedValue(r: Option[SILResult], I: SILOperator.strongCopyUnmanagedValue, ctx: Context): Array[RawInstructionDef] = {
+    verifySILResult(r, 1)
+    copySymbol(I.operand.value, r.get.valueNames(0), ctx)
+  }
+
   def visitReleaseValue(r: Option[SILResult], I: SILOperator.releaseValue, ctx: Context): Array[RawInstructionDef] = {
     NOP
   }
 
   // def visitReleaseValueAddr(r: Option[SILResult], I: SILOperator.releaseValueAddr, ctx: Context): Array[RawInstructionDef]
-  // def visitUnmanagedReleaseValue(r: Option[SILResult], I: SILOperator.unmanagedReleaseValue, ctx: Context): Array[RawInstructionDef]
+
+  def visitUnmanagedReleaseValue(r: Option[SILResult], I: SILOperator.unmanagedReleaseValue, ctx: Context): Array[RawInstructionDef] = {
+    NOP
+  }
 
   def visitDestroyValue(r: Option[SILResult], I: SILOperator.destroyValue, ctx: Context): Array[RawInstructionDef] = {
     NOP
@@ -1528,7 +1575,8 @@ object SWIRLGen {
     instructions.appendAll(makeOperator(ctx, Operator.unaryOp(result, UnaryOperation.arbitrary, makeSymbolRef(I.operand.value, ctx))))
     instructions.appendAll(makeTerminator(ctx,
       Terminator.condBr(result.ref,
-        makeBlockRef(I.succeedLabel, ctx), Array(), makeBlockRef(I.failureLabel, ctx), Array())))
+        makeBlockRef(I.succeedLabel, ctx), Array({makeSymbolRef(I.operand.value, ctx)}),
+        makeBlockRef(I.failureLabel, ctx), Array({makeSymbolRef(I.operand.value, ctx)}))))
     instructions.toArray
   }
 

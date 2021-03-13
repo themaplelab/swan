@@ -246,7 +246,7 @@ switch_enum_addr %52 : $*Optional<S.Element>, case #Optional.some!enumelt.1: bb8
 dynamic_method_br %0 : $ProtocolA, #ProtocolA.funcA!foreign, bb1, bb2 ~ %0i1 = unary_op [arb] %0, $`Builtin.Int1` ::: cond_br %0i1, true bb1, false bb2
 dynamic_method_br %2 : $@opened("01234567-89ab-cdef-0123-000000000000") AnyObject, #X.f!foreign, bb1, bb2 ~ %2i0 = unary_op [arb] %2, $`Builtin.Int1` ::: cond_br %2i0, true bb1, false bb2
 
-checked_cast_br %33 : $AnyObject to $NSDictionary, bb6, bb7 ~ %33i0 = unary_op [arb] %33, $`Builtin.Int1` ::: cond_br %33i0, true bb6, false bb7
+checked_cast_br %33 : $AnyObject to $NSDictionary, bb6, bb7 ~ %33i0 = unary_op [arb] %33, $`Builtin.Int1` ::: cond_br %33i0, true bb6(%33), false bb7(%33)
 
 checked_cast_addr_br take_always Any in %97 : $*Any to NSDictionary in %99 : $*NSDictionary, bb6, bb7 ~ %97i0 = binary_op %97 [arb] %99, $`Builtin.Int1` ::: cond_br %97i0, true bb6, false bb7
 

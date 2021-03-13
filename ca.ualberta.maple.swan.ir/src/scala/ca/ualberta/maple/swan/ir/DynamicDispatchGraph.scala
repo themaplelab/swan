@@ -126,8 +126,11 @@ class DynamicDispatchGraph(module: SILModule) {
           graph.addEdge(makeNode(declRef.name(0), "Protocol"), method) // MethodType.virtual
           graph.addEdge(makeNode(declRefToString(declRef.name), "Index"), method)
         }
+        // TODO: investigate
         case SILWitnessEntry.associatedType(identifier0, identifier1) =>
-        case SILWitnessEntry.associatedTypeProtocol(identifier0, identifier1, pc) =>
+        case SILWitnessEntry.associatedTypeProtocol(identifier0) =>
+        //case SILWitnessEntry.associatedTypeProtocol(identifier0, identifier1, pc) =>
+        case SILWitnessEntry.conditionalConformance(identifier) =>
       }
     })
 

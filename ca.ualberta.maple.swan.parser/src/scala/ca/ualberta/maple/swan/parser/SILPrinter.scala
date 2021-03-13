@@ -278,6 +278,12 @@ class SILPrinter extends Printer {
         print("load_borrow ")
         print(operand)
       }
+      case SILOperator.storeBorrow(from, to) => {
+        print("store_borrow ")
+        print(from)
+        print(" to ")
+        print(to)
+      }
       case SILOperator.beginBorrow(operand) => {
         print("begin_borrow ")
         print(operand)
@@ -307,6 +313,14 @@ class SILPrinter extends Printer {
         print(addr)
         print(", ")
         print(index)
+      }
+      case SILOperator.bindMemory(operand1, operand2, toType) => {
+        print("bind_memory ")
+        print(operand1)
+        print(", ")
+        print(operand2)
+        print(" to ")
+        print(toType)
       }
       case SILOperator.beginAccess(access, enforcement, noNestedConflict, builtin, operand) => {
         print("begin_access ")
@@ -338,6 +352,10 @@ class SILPrinter extends Printer {
       }
       case SILOperator.copyUnownedValue(operand) => {
         print("copy_unowned_value ")
+        print(operand)
+      }
+      case SILOperator.strongCopyUnownedValue(operand) => {
+        print("strong_copy_unowned_value ")
         print(operand)
       }
       case SILOperator.unownedRetain(operand) => {
@@ -373,8 +391,9 @@ class SILPrinter extends Printer {
         print(" on ")
         print(on)
       }
-      case SILOperator.isEscapingClosure(operand) => {
+      case SILOperator.isEscapingClosure(operand, objc) => {
         print("is_escaping_closure ")
+        print("[objc] ", when = objc)
         print(operand)
       }
       case SILOperator.copyBlock(operand) => {
@@ -567,8 +586,16 @@ class SILPrinter extends Printer {
         print("copy_value ")
         print(operand)
       }
+      case SILOperator.strongCopyUnmanagedValue(operand) => {
+        print("strong_copy_unmanaged_value ")
+        print(operand)
+      }
       case SILOperator.releaseValue(operand) => {
         print("release_value ")
+        print(operand)
+      }
+      case SILOperator.unmanagedReleaseValue(operand) => {
+        print("unmanaged_release_value ")
         print(operand)
       }
       case SILOperator.destroyValue(operand) => {
@@ -913,7 +940,7 @@ class SILPrinter extends Printer {
         print("unconditional_checked_cast ")
         print(operand)
         print(" to ")
-        print(tpe)
+        naked(tpe)
       }
       case SILOperator.unconditionalCheckedCastAddr(fromTpe, fromOperand, toType, toOperand) => {
         print("unconditional_checked_cast_addr ")
@@ -1007,12 +1034,13 @@ class SILPrinter extends Printer {
         print(", ")
         print(notNamedLabel)
       }
-      case SILTerminator.checkedCastBr(exact, operand, tpe, succeedLabel, failureLabel) => {
+      case SILTerminator.checkedCastBr(exact, operand, tpe, nkd, succeedLabel, failureLabel) => {
         print("checked_cast_br ")
         print("[exact] ", exact)
         print(operand)
         print(" to ")
-        print(tpe)
+        print("$", when = nkd)
+        naked(tpe)
         print(", ")
         print(succeedLabel)
         print(", ")
@@ -1152,15 +1180,20 @@ class SILPrinter extends Printer {
         print(": ")
         print(identifier1)
       }
-      case SILWitnessEntry.associatedTypeProtocol(identifier0, identifier1, pc) => {
+      case SILWitnessEntry.associatedTypeProtocol(identifier/*0, identifier1, pc*/) => {
         print("associated_type_protocol ")
-        print("(")
+        print(identifier)
+        /*print("(")
         print(identifier0)
         print(": ")
         print(identifier1)
         print(")")
         print(": ")
-        print(pc)
+        print(pc)*/
+      }
+      case SILWitnessEntry.conditionalConformance(identifier) => {
+        print("conditional_conformance ")
+        print(identifier)
       }
     }
   }
@@ -1673,9 +1706,10 @@ class SILPrinter extends Printer {
           print(whenEmpty = true, "<", arguments, ", ", ">", (t: SILType) => naked(t))
         }
       }
-      case SILType.tupleType(params, optional) => {
+      case SILType.tupleType(params, optional, dots) => {
         print(whenEmpty = true, "(", params, ", ", ")", (t: SILType) => naked(t))
         print("?", when = optional)
+        print("...", when = dots)
       }
       case SILType.withOwnership(_, _) => {
         throw new Error("<printing>", "Types with ownership should be printed before naked type print!", null)
@@ -1685,6 +1719,21 @@ class SILPrinter extends Printer {
         naked(tpe)
         print(" }")
       }
+      case SILType.forType(tpe, fr) => {
+        naked(tpe)
+        print(" for ")
+        print(whenEmpty = true, "<", fr, ", ", ">", (t: SILType) => naked(t))
+      }
+      case SILType.andType(tpe1, tpe2) => {
+        naked(tpe1)
+        print(" & ")
+        naked(tpe2)
+      }
+      case SILType.dotType(tpe) => {
+        print("(")
+        naked(tpe)
+        print(").Type")
+      }
     }
     this.toString
   }
@@ -1692,6 +1741,7 @@ class SILPrinter extends Printer {
   def print(attribute: SILTypeAttribute): Unit = {
     attribute match {
       case SILTypeAttribute.calleeGuaranteed => print("@callee_guaranteed")
+      case SILTypeAttribute.substituted => print("@substituted")
       case SILTypeAttribute.convention(convention) => {
         print("@convention")
         print(convention)
@@ -1704,6 +1754,7 @@ class SILPrinter extends Printer {
       case SILTypeAttribute.noescape => print("@noescape")
       case SILTypeAttribute.out => print("@out")
       case SILTypeAttribute.unowned => print("@unowned")
+      case SILTypeAttribute.unownedInnerPointer => print("@unowned_inner_pointer")
       case SILTypeAttribute.owned => print("@owned")
       case SILTypeAttribute.thick => print("@thick")
       case SILTypeAttribute.thin => print("@thin")

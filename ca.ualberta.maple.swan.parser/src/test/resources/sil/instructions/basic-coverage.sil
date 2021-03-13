@@ -1,3 +1,5 @@
+%15 = enum $Optional<(closure: @callee_guaranteed (@guaranteed Progress) -> (), queue: DispatchQueue)>, #Optional.some!enumelt, %14 : $(closure: @callee_guaranteed (@guaranteed Progress) -> (), queue: DispatchQueue), loc "/Users/tiganov/Downloads/MyWeatherApp-main/Pods/Alamofire/Source/Request.swift":410:40, scope 1368 // user: %17
+
 %3 = alloc_stack $Hasher, scope 110             // users: %48, %47, %44, %7
 
 %14 = alloc_ref [stack] $_ContiguousArrayStorage<Card>, scope 306 // users: %43, %42, %32, %31, %22, %15, %44
@@ -129,6 +131,7 @@ autorelease_value %4 : $Optional<Hive>
 
 %12 = tuple (%4 : $Array<Element>, %10 : $UnsafeMutablePointer<Element>), scope 80 // user: %13
 %46 = tuple (), scope 103                       // user: %47
+%303 = tuple $(error: Error) (%300), loc "/Users/tiganov/Downloads/MyWeatherApp-main/Pods/Alamofire/Source/AFError.swift":89:14, scope 671 // user: %304
 
 %35 = tuple_extract %34 : $(Builtin.Int64, Builtin.Int1), 0, scope 124 // users: %38, %36
 
@@ -219,7 +222,7 @@ objc_to_thick_metatype undef : $@objc_metatype C.Type to $@thick C.Type
 
 %y = objc_existential_metatype_to_object %b : $@objc_metatype SomeClassProtocol.Type to $AnyObject
 
-%8 = unconditional_checked_cast %7 : $UIViewController to $T, loc "/Users/abdulalib/Documents/swan-spds/benchmark/mobile-ios-vipergame/Memory/Utilities/UIStoryboard.swift":43:56, scope 1536 // user: %9
+%8 = unconditional_checked_cast %7 : $UIViewController to T, loc "/Users/abdulalib/Documents/swan-spds/benchmark/mobile-ios-vipergame/Memory/Utilities/UIStoryboard.swift":43:56, scope 1536 // user: %9
 
 unconditional_checked_cast_addr Card in %101 : $*Card to Any in %91 : $*Any, scope 1406 // id: %103
 
@@ -251,7 +254,7 @@ switch_enum_addr %52 : $*Optional<S.Element>, case #Optional.some!enumelt.1: bb8
 dynamic_method_br %0 : $ProtocolA, #ProtocolA.funcA!foreign, bb1, bb2
 dynamic_method_br %2 : $@opened("01234567-89ab-cdef-0123-000000000000") AnyObject, #X.f!foreign, bb1, bb2
 
-checked_cast_br %33 : $AnyObject to $NSDictionary, bb6, bb7, scope 125 // id: %35
+checked_cast_br %33 : $AnyObject to NSDictionary, bb6, bb7, scope 125 // id: %35
 
 checked_cast_addr_br take_always Any in %97 : $*Any to NSDictionary in %99 : $*NSDictionary, bb6, bb7, loc "/Users/abdulalib/Documents/swan-spds/benchmark/mobile-ios-vipergame/Memory/Utilities/File.swift":55:77, scope 251 // id: %100
 

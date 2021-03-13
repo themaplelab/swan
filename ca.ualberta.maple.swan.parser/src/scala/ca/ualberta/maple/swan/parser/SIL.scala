@@ -107,7 +107,7 @@ object SILOperator {
   case class indexAddr(addr: SILOperand, index: SILOperand) extends SILOperator
   // NSIP: tail_addr
   // NSIP: index_raw_pointer
-  // NSIP: bind_memory
+  case class bindMemory(operand1: SILOperand, operand2: SILOperand, toType: SILType) extends SILOperator
   case class beginAccess(access: SILAccess, enforcement: SILEnforcement, noNestedConflict: Boolean,
                          builtin: Boolean, operand: SILOperand) extends SILOperator
   case class endAccess(abort: Boolean, operand: SILOperand) extends SILOperator
@@ -120,6 +120,7 @@ object SILOperator {
   // NSIP: set_deallocating
   // This is an old (outdated) instruction.
   case class copyUnownedValue(operand: SILOperand) extends SILOperator
+  case class strongCopyUnownedValue(operand: SILOperand) extends SILOperator
   // NSIP: strong_copy_unowned_value
   // NSIP: strong_retain_unowned
   case class unownedRetain(operand: SILOperand) extends SILOperator
@@ -127,12 +128,13 @@ object SILOperator {
   case class loadWeak(take: Boolean, operand: SILOperand) extends SILOperator
   case class storeWeak(from: String, initialization: Boolean, to: SILOperand) extends SILOperator
   case class loadUnowned(operand: SILOperand) extends SILOperator
+  case class storeBorrow(from: String, to: SILOperand) extends SILOperator
   case class storeUnowned(from: String, initialization: Boolean, to: SILOperand) extends SILOperator
   // NSIP: fix_lifetime
   case class markDependence(operand: SILOperand, on: SILOperand) extends SILOperator
   // NSIP: is_unique
   // Skip begin_cow_mutation and end_cow_mutation for now (new instructions)
-  case class isEscapingClosure(operand: SILOperand) extends SILOperator
+  case class isEscapingClosure(operand: SILOperand, objc: Boolean) extends SILOperator
   case class copyBlock(operand: SILOperand) extends SILOperator
   case class copyBlockWithoutEscaping(operand1: SILOperand, operand2: SILOperand) extends SILOperator
   // builtin "unsafeGuaranteed" not sure what to do about this one
@@ -182,11 +184,11 @@ object SILOperator {
   case class retainValue(operand: SILOperand) extends SILOperator
   // NSIP: retain_value_addr
   // NSIP: unmanaged_retain_value
-  // Skip strong_copy_unmanaged_value for now (new instruction?).
+  case class strongCopyUnmanagedValue(operand: SILOperand) extends SILOperator
   case class copyValue(operand: SILOperand) extends SILOperator
   case class releaseValue(operand: SILOperand) extends SILOperator
   // NSIP: release_value_addr
-  // NSIP: unmanaged_release_value
+  case class unmanagedReleaseValue(operand: SILOperand) extends SILOperator
   case class destroyValue(operand: SILOperand) extends SILOperator
   case class autoreleaseValue(operand: SILOperand) extends SILOperator
   case class tuple(elements: SILTupleElements) extends SILOperator
@@ -291,7 +293,7 @@ object SILTerminator {
   case class switchEnumAddr(operand: SILOperand, cases: Array[SILSwitchEnumCase]) extends SILTerminator
   case class dynamicMethodBr(operand: SILOperand, declRef: SILDeclRef,
                              namedLabel: String, notNamedLabel: String) extends SILTerminator
-  case class checkedCastBr(exact: Boolean, operand: SILOperand, tpe: SILType,
+  case class checkedCastBr(exact: Boolean, operand: SILOperand, tpe: SILType, naked: Boolean,
                            succeedLabel: String, failureLabel: String) extends SILTerminator
   // NSIP: checked_cast_value_br
   case class checkedCastAddrBr(kind: SILCastConsumptionKind, fromTpe: SILType, fromOperand: SILOperand,
@@ -567,9 +569,12 @@ object SILType {
   case object selfTypeOptional extends SILType
   case class specializedType(tpe: SILType, arguments: Array[SILType], optional: Boolean) extends SILType
   case class arrayType(arguments: Array[SILType], nakedStyle: Boolean, optional: Boolean) extends SILType
-  case class tupleType(parameters: Array[SILType], optional: Boolean) extends SILType
+  case class tupleType(parameters: Array[SILType], optional: Boolean, dots: Boolean) extends SILType
   case class withOwnership(attribute: SILTypeAttribute, tpe: SILType) extends SILType
   case class varType(tpe: SILType) extends SILType
+  case class forType(tpe: SILType, fr: Array[SILType]) extends SILType // -> T for <T>
+  case class andType(tpe1: SILType, tpe2: SILType) extends SILType // (T & T)
+  case class dotType(tpe: SILType) extends SILType // (andType).Type
 
   @throws[Error]
   def parse(silString: String): SILType = {
@@ -581,6 +586,7 @@ object SILType {
 sealed trait SILTypeAttribute
 object SILTypeAttribute {
   case object calleeGuaranteed extends SILTypeAttribute
+  case object substituted extends SILTypeAttribute
   case class convention(convention: SILConvention) extends SILTypeAttribute
   case object guaranteed extends SILTypeAttribute
   case object inGuaranteed extends SILTypeAttribute
@@ -590,6 +596,7 @@ object SILTypeAttribute {
   case object noescape extends SILTypeAttribute
   case object out extends SILTypeAttribute
   case object unowned extends SILTypeAttribute
+  case object unownedInnerPointer extends SILTypeAttribute
   case object owned extends SILTypeAttribute
   case object thick extends SILTypeAttribute
   case object thin extends SILTypeAttribute
@@ -676,7 +683,9 @@ object SILWitnessEntry {
   case class baseProtocol(identifier: String, pc: SILProtocolConformance) extends SILWitnessEntry
   case class method(declRef: SILDeclRef, declType: SILType, functionName: SILMangledName) extends SILWitnessEntry
   case class associatedType(identifier0: String, identifier1: String) extends SILWitnessEntry
-  case class associatedTypeProtocol(identifier0: String, identifier1: String, pc: SILProtocolConformance) extends SILWitnessEntry
+  case class associatedTypeProtocol(identifier: String) extends SILWitnessEntry
+  //case class associatedTypeProtocol(identifier0: String, identifier1: String, pc: SILProtocolConformance) extends SILWitnessEntry
+  case class conditionalConformance(identifier: String) extends SILWitnessEntry
 }
 
 class SILNormalProtocolConformance(val tpe: SILType, val protocol: String, val module: String)

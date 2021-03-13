@@ -58,9 +58,10 @@ object Utils {
         case SILType.selfTypeOptional => unexpected()
         case SILType.specializedType(tpe, _, _) => curType = tpe
         case SILType.arrayType(_, _, _) => unexpected()
-        case SILType.tupleType(_, _) => unexpected()
+        case SILType.tupleType(_, _, _) => unexpected()
         case SILType.withOwnership(_, tpe) => curType = tpe
         case SILType.varType(tpe) => curType = tpe
+        case _ => unexpected()
       }
     }
     curType.asInstanceOf[SILType.functionType]
@@ -72,8 +73,14 @@ object Utils {
   }
 
   def SILFunctionTupleTypeToReturnType(rootType: SILType, removeAttributes: Boolean): Array[Type] = {
-    val silTypes = getFunctionTypeFromType(rootType)
-      .result.asInstanceOf[SILType.tupleType].parameters
+    val silTypes = {
+      val ft = getFunctionTypeFromType(rootType)
+      ft.result match {
+        case SILType.tupleType(parameters, _, _) => parameters
+        case SILType.forType(tpe, _) => tpe.asInstanceOf[SILType.tupleType].parameters
+        case _ => throw new UnexpectedSILTypeBehaviourException()
+      }
+    }
     val types = new Array[Type](silTypes.length)
     silTypes.zipWithIndex.foreach(t => {
       var tpe = t._1
@@ -136,11 +143,11 @@ object Utils {
     tpe match {
       case SILType.addressType(tpe) => {
         tpe match {
-          case SILType.tupleType(parameters, _) => getTypeAtIndex(parameters)
+          case SILType.tupleType(parameters, _, _) => getTypeAtIndex(parameters)
           case _ => throw new UnexpectedSILTypeBehaviourException("Underlying type should be tuple type")
         }
       }
-      case SILType.tupleType(parameters, _) => getTypeAtIndex(parameters)
+      case SILType.tupleType(parameters, _, _) => getTypeAtIndex(parameters)
       case _ => throw new UnexpectedSILTypeBehaviourException("Address type or tuple type expected")
     }
   }
