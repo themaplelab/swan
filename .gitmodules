@@ -1,6 +1,6 @@
-[submodule "ca.ualberta.maple.swan.parser/src/test/resources/xcodeproj/swift-2048"]
-	path = ca.ualberta.maple.swan.parser/src/test/resources/xcodeproj/swift-2048
+[submodule "jvm/ca.ualberta.maple.swan.parser/src/test/resources/xcodeproj/swift-2048"]
+	path = jvm/ca.ualberta.maple.swan.parser/src/test/resources/xcodeproj/swift-2048
 	url = https://github.com/austinzheng/swift-2048
-[submodule "ca.ualberta.maple.swan.parser/src/test/resources/xcodeproj/iosCoreLocationEnergy"]
-	path = ca.ualberta.maple.swan.parser/src/test/resources/xcodeproj/iosCoreLocationEnergy
+[submodule "jvm/ca.ualberta.maple.swan.parser/src/test/resources/xcodeproj/iosCoreLocationEnergy"]
+	path = jvm/ca.ualberta.maple.swan.parser/src/test/resources/xcodeproj/iosCoreLocationEnergy
 	url = https://github.com/themaplelab/iosCoreLocationEnergy.git

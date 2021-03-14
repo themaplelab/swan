@@ -21,27 +21,34 @@ We have completely redesigned SWAN. It now parses plain-text SIL that can either
 git clone git@github.com:themaplelab/swan.git -b spds --recurse-submodules
 ```
 
-Open the cloned repo in IntelliJ. Be sure to select *Import as Gradle Project*.
+Add your github username and [personal access token](https://docs.github.com/en/github/authenticating-to-github/creating-a-personal-access-token) (with read:packages) to `jvm/ca.ualberta.maple.swan.spds/build.gradle`. This is required for adding SPDS as a dependency. Do **not** push this token.
 
-Add your github username and [personal access token](https://docs.github.com/en/github/authenticating-to-github/creating-a-personal-access-token) (with read:packages) to ca.ualberta.maple.swan.spds/build.gradle. This is required for adding SPDS as a dependency. Do **not** push this token.
+Run `./build.sh` in the repo root. You can also run nested `build.sh` scripts from root to build separate toolchain components.
+
+All toolchain executables should now be available in `lib/`.
+### IDE
+
+Open `jvm/` in IntelliJ. Be sure to select *Import as Gradle Project*.
 
 Run the *SWIRL Tests* and *SIL Tests* configurations to test everything works.
 
-### Repository layout
+## Toolchain Usage
 
-- ca.ualberta.maple.swan.client
-  - Empty driver
-- ca.ualberta.maple.swan.ir
-  - Contains SWIRL
-- ca.ualberta.maple.swan.parser
-  - Contains SIL printer/parser
-- ca.ualberta.maple.swan.spds
-  - Contains SPDS/Boomerang data structures for SWIRL + simple query test
-- ca.ualberta.maple.swan.viewer
-  - JVM-side driver for SwanViewer
-- SwanViewer
-  - Swift tool that displays Swift, SIL, and SWIRL side-by-side
-- swan-xcodebuild
-  - Swift CLI wrapper for `xcodebuild` that extracts SIL from build output
-- utils
-  - SIL dumping scripts, only used for testing
+### Dump SIL using either `swan-swiftc` or `swan-xcodebuild`
+
+`swan-xcodebuild` is used for building and dumping SIL for Xcode projects. Use it as you normally would use `xcodebuild`, but put your arguments after `--`.
+```
+swan-xcodebuild -- -project MyProject.xcodeproj -scheme MyScheme
+```
+You can optionally specify the output directory with `--swan-dir`.
+```
+swan-xcodebuild --swan-dir custom-dir -- -project []...]`
+```
+The same idea applies for `swan-swiftc`, but you only specify the Swift file you want to dump the SIL for.
+```
+swan-swiftc -- MyFile.swift
+```
+
+### Analysis Client
+
+There is currently no ready dataflow client for SWAN.

@@ -1,5 +1,8 @@
 ### SWAN SPECIFIC ###
 
+lib/*
+dev/SwanViewer/SwanViewer.xcodeproj/project.xcworkspace
+
 # Produced by Swift compiler when dumping SIL
 *.gsil_*
 
