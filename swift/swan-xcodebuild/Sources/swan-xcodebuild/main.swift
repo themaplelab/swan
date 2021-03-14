@@ -3,7 +3,7 @@ import ColorizeSwift
 import Foundation
 
 struct Constants {
-  static let defaultSwanSIL = "swan-sil/"
+  static let defaultSwanSIL = "swan-dir/"
   static let xcodebuildFile = "/usr/bin/xcodebuild"
   static let xcodebuildLog  = "xcodebuild.log"
 }
@@ -22,7 +22,7 @@ func ==(lhs: Section, rhs: Section) -> Bool {
   return ((lhs.target == rhs.target) && (lhs.project == rhs.project) && (lhs.sil == rhs.sil))
 }
 
-struct SWANXcodeBuild: ParsableCommand {
+struct SWANXcodebuild: ParsableCommand {
   static let configuration = CommandConfiguration(
     abstract: "Build and dump SIL for a Swift application using xcodebuild.")
   
@@ -179,5 +179,5 @@ struct SWANXcodeBuild: ParsableCommand {
   
 }
 
-SWANXcodeBuild.main()
+SWANXcodebuild.main()
 
