@@ -72,6 +72,7 @@ store_unowned %1 to %0 : $*@sil_unowned C ~ pointer_write %1 to %0
 %68 = integer_literal $Builtin.Int64, 0 ~ %68 = literal [int] 0, $`Builtin.Int64`
 
 %2 = float_literal $Builtin.FPIEEE64, 0x400921FB54442D18 ~ %2 = literal [float] 3.141592653589793, $`Builtin.FPIEEE64`
+# %186 = float_literal $Builtin.FPIEEE64, 0xC05C606583E8576D ~ %186 = literal [float] 3.141592653589793, $`Builtin.FPIEEE64`
 
 %17 = string_literal utf8 "Fatal error" ~ %17 = literal [string] "Fatal error", $`$Builtin.RawPointer`
 

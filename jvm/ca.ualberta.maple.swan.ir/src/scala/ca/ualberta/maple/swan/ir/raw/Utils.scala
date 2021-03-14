@@ -115,8 +115,12 @@ object Utils {
 
   // SIL "0x3F800000" to double
   def SILFloatStringToDouble(float: String): Double = {
-    val i = java.lang.Long.parseLong(float, 16)
-    java.lang.Double.longBitsToDouble(i)
+    try { // TODO: Handle problematic cases. e.g., 0xC05C606583E8576D
+      val i = java.lang.Long.parseLong(float, 16)
+      java.lang.Double.longBitsToDouble(i)
+    } catch {
+      case _: Throwable => 0.0
+    }
   }
 
   // SIL $(T...), 123 to SWIRL type of the selected element using "123"
