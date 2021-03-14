@@ -144,6 +144,10 @@ class Printer {
     print(f.toString)
   }
 
+  def literal(d: Double): Unit = {
+    print(d.toString)
+  }
+
   def literal(n: BigInt): Unit = {
     print(n.toString)
   }

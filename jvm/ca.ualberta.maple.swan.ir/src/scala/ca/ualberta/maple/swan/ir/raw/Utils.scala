@@ -113,9 +113,10 @@ object Utils {
     new Type(printer.naked(tpe.asInstanceOf[SILType.addressType].tpe))
   }
 
-  // SIL "0x3F800000" to float
-  def SILFloatStringToFloat(float: String): Float = {
-    0 // TODO: Temp
+  // SIL "0x3F800000" to double
+  def SILFloatStringToDouble(float: String): Double = {
+    val i = java.lang.Long.parseLong(float, 16)
+    java.lang.Double.longBitsToDouble(i)
   }
 
   // SIL $(T...), 123 to SWIRL type of the selected element using "123"

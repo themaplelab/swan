@@ -766,7 +766,7 @@ object SWIRLGen {
   @throws[UnexpectedSILFormatException]
   def visitFloatLiteral(r: Option[SILResult], I: SILOperator.floatLiteral, ctx: Context): Array[RawInstructionDef] = {
     val result = getSingleResult(r, Utils.SILTypeToType(I.tpe), ctx)
-    makeOperator(ctx, Operator.literal(result, Literal.float(Utils.SILFloatStringToFloat(I.value))))
+    makeOperator(ctx, Operator.literal(result, Literal.float(Utils.SILFloatStringToDouble(I.value))))
   }
 
   @throws[UnexpectedSILFormatException]

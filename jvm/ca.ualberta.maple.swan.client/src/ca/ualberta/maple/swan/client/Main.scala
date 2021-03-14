@@ -33,22 +33,30 @@ object Main {
     "kCLLocationAccuracyBestForNavigation"
   )
 
+  val activityTypeValues: Array[String] = Array(
+    "#CLActivityType.airborne!enumelt",
+    "#CLActivityType.automotiveNavigation!enumelt",
+    "#CLActivityType.other!enumelt",
+    "#CLActivityType.otherNavigation!enumelt",
+    "#CLActivityType.fitness!enumelt"
+  )
+
   def desiredAccuracy(c: CanFunction, value: String): QueryResults = {
     val msg = "desiredAccuracy setting: " + value
     var global = false
-    var desiredAccuracy = false
+    var setter = false
     var position: Option[Position] = None
     c.blocks.foreach(b => {
       b.operators.foreach(opdef => {
         opdef.operator match {
           case Operator.builtinRef(_, name) => {
             if (name == "#CLLocationManager.desiredAccuracy!setter.foreign") {
-              desiredAccuracy = true
+              setter = true
               position = opdef.position
             }
           }
           case Operator.singletonRead(_, _, field) => {
-            if (field == "") {
+            if (field == value) {
               global = true
             }
           }
@@ -56,19 +64,57 @@ object Main {
         }
       })
     })
-    new QueryResults(global && desiredAccuracy, msg, position)
+    new QueryResults(global && setter, msg, position)
+  }
+
+  def activityType(c: CanFunction, value: String): QueryResults = {
+    val msg = "activityType setting: " + value
+    var fieldWrite = false
+    var literal = false
+    var setter = false
+    var position: Option[Position] = None
+    c.blocks.foreach(b => {
+      b.operators.foreach(opdef => {
+        opdef.operator match {
+          case Operator.builtinRef(_, name) => {
+            if (name == "#CLLocationManager.activityType!setter.foreign") {
+              setter = true
+              position = opdef.position
+            }
+          }
+          case Operator.fieldWrite(_, _, field, _) => {
+            if (field == "type") {
+              fieldWrite = true
+            }
+          }
+          case Operator.literal(_, l) => {
+            l match {
+              case Literal.string(v) => {
+                if (value == v) {
+                  literal = true
+                }
+              }
+              case _ =>
+            }
+          }
+          case _ =>
+        }
+      })
+    })
+    new QueryResults(fieldWrite && setter && literal, msg, position)
   }
 
   def distanceFilter(c: CanFunction): QueryResults = {
-    var float: Float = -1
-    var distanceFilter = false
+    var float: Double = 0
+    var floatSet = false
+    var setter = false
     var position: Option[Position] = None
     c.blocks.foreach(b => {
       b.operators.foreach(opdef => {
         opdef.operator match {
           case Operator.builtinRef(_, name) => {
             if (name == "#CLLocationManager.distanceFilter!setter.foreign") {
-              distanceFilter = true
+              setter = true
               position = opdef.position
             }
           }
@@ -76,6 +122,7 @@ object Main {
             literal match {
               case Literal.float(value) => {
                 float = value
+                floatSet = true
               }
               case _ =>
             }
@@ -85,7 +132,7 @@ object Main {
       })
     })
     val msg = "distanceFilter setting: " + float.toString
-    new QueryResults(float > 0 && distanceFilter, msg, position)
+    new QueryResults(floatSet && setter, msg, position)
   }
 
   def startUpdatingLocation(c: CanFunction): QueryResults = {
@@ -97,6 +144,46 @@ object Main {
         opdef.operator match {
           case Operator.builtinRef(_, name) => {
             if (name == "#CLLocationManager.startUpdatingLocation!foreign") {
+              found = true
+              position = opdef.position
+            }
+          }
+          case _ =>
+        }
+      })
+    })
+    new QueryResults(found, msg, position)
+  }
+
+  def startMonitoringSignificantLocationChanges(c: CanFunction): QueryResults = {
+    val msg = "startMonitoringSignificantLocationChanges method"
+    var found = false
+    var position: Option[Position] = None
+    c.blocks.foreach(b => {
+      b.operators.foreach(opdef => {
+        opdef.operator match {
+          case Operator.builtinRef(_, name) => {
+            if (name == "#CLLocationManager.startMonitoringSignificantLocationChanges!foreign") {
+              found = true
+              position = opdef.position
+            }
+          }
+          case _ =>
+        }
+      })
+    })
+    new QueryResults(found, msg, position)
+  }
+
+  def startMonitoringVisits(c: CanFunction): QueryResults = {
+    val msg = "startMonitoringVisits method"
+    var found = false
+    var position: Option[Position] = None
+    c.blocks.foreach(b => {
+      b.operators.foreach(opdef => {
+        opdef.operator match {
+          case Operator.builtinRef(_, name) => {
+            if (name == "#CLLocationManager.startMonitoringVisits!foreign") {
               found = true
               position = opdef.position
             }
@@ -149,8 +236,13 @@ object Main {
         desiredAccuracyValues.foreach(v => {
           printQueryResult(desiredAccuracy(f, v))
         })
+        activityTypeValues.foreach(v => {
+          printQueryResult(activityType(f, v))
+        })
         printQueryResult(startUpdatingLocation(f))
+        printQueryResult(startMonitoringVisits(f))
         printQueryResult(distanceFilter(f))
+        printQueryResult(startMonitoringSignificantLocationChanges(f))
       })
     }
   }

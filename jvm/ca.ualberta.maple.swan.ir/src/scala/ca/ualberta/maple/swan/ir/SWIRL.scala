@@ -184,7 +184,7 @@ sealed trait Literal
 object Literal {
   case class string(value: String) extends Literal
   case class int(value: BigInt) extends Literal
-  case class float(value: Float) extends Literal
+  case class float(value: Double) extends Literal
 }
 
 class Symbol(val ref: SymbolRef, val tpe: Type) {
