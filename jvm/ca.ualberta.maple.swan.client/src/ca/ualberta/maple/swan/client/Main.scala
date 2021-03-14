@@ -33,12 +33,12 @@ object Main {
     "kCLLocationAccuracyBestForNavigation"
   )
 
-  val activityTypeValues: Array[String] = Array(
-    "#CLActivityType.airborne!enumelt",
-    "#CLActivityType.automotiveNavigation!enumelt",
-    "#CLActivityType.other!enumelt",
-    "#CLActivityType.otherNavigation!enumelt",
-    "#CLActivityType.fitness!enumelt"
+  val activityTypeValues: Array[(String, String)] = Array(
+    ("#CLActivityType.airborne!enumelt", "CLActivityType.airborne") ,
+    ("#CLActivityType.automotiveNavigation!enumelt", "CLActivityType.automotiveNavigation"),
+    ("#CLActivityType.other!enumelt", "CLActivityType.other"),
+    ("#CLActivityType.otherNavigation!enumelt", "CLActivityType.otherNavigation"),
+    ("#CLActivityType.fitness!enumelt", "CLActivityType.fitness")
   )
 
   def desiredAccuracy(c: CanFunction, value: String): QueryResults = {
@@ -67,8 +67,8 @@ object Main {
     new QueryResults(global && setter, msg, position)
   }
 
-  def activityType(c: CanFunction, value: String): QueryResults = {
-    val msg = "activityType setting: " + value
+  def activityType(c: CanFunction, value: (String, String)): QueryResults = {
+    val msg = "activityType setting: " + value._2
     var fieldWrite = false
     var literal = false
     var setter = false
@@ -90,7 +90,7 @@ object Main {
           case Operator.literal(_, l) => {
             l match {
               case Literal.string(v) => {
-                if (value == v) {
+                if (value._1 == v) {
                   literal = true
                 }
               }
