@@ -74,7 +74,7 @@ public class TranslationTests {
         System.out.println("Testing modules");
         File fileDir = new File(getClass().getClassLoader()
                 .getResource("sil/modules/").toURI());
-        File[] silFiles = fileDir.listFiles((dir, name) -> name.endsWith("test.sil"));
+        File[] silFiles = fileDir.listFiles((dir, name) -> name.endsWith(".sil"));
         for (File sil : silFiles) {
             System.out.println("    -> " + sil.getName());
             SILParser parser = new SILParser(sil.toPath());
@@ -82,7 +82,7 @@ public class TranslationTests {
             // System.out.println(new SILPrinter().print(silModule));
             // System.out.println("============================================");
             Module swirlModule = SWIRLGen.translateSILModule(silModule);
-            System.out.print(new SWIRLPrinter().print(swirlModule, new SWIRLPrinterOptions()));
+            // System.out.print(new SWIRLPrinter().print(swirlModule, new SWIRLPrinterOptions()));
             // System.out.println("============================================");
             CanModule canSwirlModule = SWIRLPass.runPasses(swirlModule);
             // System.out.print(new SWIRLPrinter().print(canSwirlModule, new SWIRLPrinterOptions()));

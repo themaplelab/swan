@@ -392,25 +392,17 @@ class SILParser extends SILPrinter {
 
   @throws[Error]
   def parseInstructionBody(instructionName: String): SILInstruction = {
-    // NPOTP: Not part of tensorflow parser
-    //
-    // NSIP: Not seen in practice (generated SIL from apple/swift benchmarks and
-    // never saw these instructions). Things could have changed since then as that
-    // was in Fall 2019. It also appears that tensorflow handles some instructions
-    // that never showed up in practice for us.
-    //
-    // LP: Low priority (most likely because it doesn't affect analysis, we treat it
-    // as a NOP)
-    //
+    // NSIP: Not seen in practice
     // Case instruction ordering based on apple/swift tag swift-5.2-RELEASE SIL.rst
     instructionName match {
 
         // *** ALLOCATION AND DEALLOCATION ***
 
       case "alloc_stack" => {
+        val dynamicLifetime = skip("[dynamic_lifetime]")
         val tpe = parseType()
         val attributes = parseUntilNil( parseDebugAttribute )
-        SILInstruction.operator(SILOperator.allocStack(tpe, attributes))
+        SILInstruction.operator(SILOperator.allocStack(tpe, dynamicLifetime, attributes))
       }
       case "alloc_ref" => {
         var allocAttributes = new Array[SILAllocAttribute](0)
@@ -2455,6 +2447,7 @@ class SILParser extends SILPrinter {
   // IMPORTANT: TypeSpecifiers are handled in parseNakedType() because they
   // don't start with '@'.
   def parseTypeAttribute(): SILTypeAttribute = {
+    if(skip("@pseudogeneric")) return SILTypeAttribute.pseudoGeneric
     if(skip("@callee_guaranteed")) return SILTypeAttribute.calleeGuaranteed
     if(skip("@substituted")) return SILTypeAttribute.substituted
     if(skip("@convention")) return SILTypeAttribute.convention(parseConvention())

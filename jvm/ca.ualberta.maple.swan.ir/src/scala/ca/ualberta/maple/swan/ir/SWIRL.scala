@@ -245,6 +245,11 @@ class RefTable {
   // Eliminate any args that are not used later
   // Otherwise, move to `symbols` cache
   val temporaryBBArgs = new mutable.HashMap[String, SymbolRef]()
+  def clear(): Unit = {
+    symbols.clear()
+    blocks.clear()
+    temporaryBBArgs.clear()
+  }
 }
 
 sealed trait SymbolTableEntry

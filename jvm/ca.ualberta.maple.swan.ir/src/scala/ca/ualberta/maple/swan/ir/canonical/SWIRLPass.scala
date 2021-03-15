@@ -143,7 +143,7 @@ object SWIRLPass {
               newBlocks.append(newBlock)
             }
             val continueBlock = new Block(continueRef, Array{new Argument(result.ref, result.tpe, None)},
-              b.operators.slice(op._2, b.operators.length - 1), b.terminator)
+              b.operators.slice(op._2 + 1, b.operators.length - 1), b.terminator)
             mapToSIL(b, continueBlock, module)
             newBlocks.append(continueBlock)
             val switchEnum = new RawTerminatorDef(Terminator.switchEnum(switchOn, newCases.toArray,
@@ -166,7 +166,7 @@ object SWIRLPass {
         }
       })
       f.blocks.insertAll(i + 1, newBlocks)
-      i = i + newBlocks.length + 1
+      i = i + /* newBlocks.length + */ 1
     }
     i = 0
     while (i < f.blocks.length) {

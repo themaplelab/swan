@@ -147,8 +147,9 @@ class SILPrinter extends Printer {
 
         // *** ALLOCATION AND DEALLOCATION ***
 
-      case SILOperator.allocStack(tpe, attributes) => {
+      case SILOperator.allocStack(tpe, dynamicLifetime, attributes) => {
         print("alloc_stack ")
+        print("[dynamic_lifetime] ", when = dynamicLifetime)
         print(tpe)
         print(whenEmpty = false, ", ", attributes, ", ", "", (a: SILDebugAttribute) => print(a))
       }
@@ -1740,6 +1741,7 @@ class SILPrinter extends Printer {
 
   def print(attribute: SILTypeAttribute): Unit = {
     attribute match {
+      case SILTypeAttribute.pseudoGeneric => print("@pseudogeneric")
       case SILTypeAttribute.calleeGuaranteed => print("@callee_guaranteed")
       case SILTypeAttribute.substituted => print("@substituted")
       case SILTypeAttribute.convention(convention) => {
