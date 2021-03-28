@@ -11,12 +11,12 @@
 package ca.ualberta.maple.swan.ir.raw
 
 import ca.ualberta.maple.swan.ir.Exceptions.{ExperimentalException, IncorrectSWIRLStructureException, UnexpectedSILFormatException, UnexpectedSILTypeBehaviourException}
-import ca.ualberta.maple.swan.ir.{Argument, BinaryOperation, Block, BlockRef, Constants, DynamicDispatchGraph, EnumAssignCase, Function, FunctionAttribute, Literal, Module, Operator, Position, RawInstructionDef, RawOperator, RawOperatorDef, RawTerminator, RawTerminatorDef, RefTable, SILMap, SwitchCase, SwitchEnumCase, Symbol, SymbolRef, Terminator, Type, UnaryOperation}
-import ca.ualberta.maple.swan.parser.Logging.ProgressBar
+import ca.ualberta.maple.swan.ir.{Argument, BinaryOperation, Block, BlockRef, Constants, DynamicDispatchGraph, EnumAssignCase, Function, FunctionAttribute, Literal, Module, ModuleMetadata, Operator, Position, RawInstructionDef, RawOperator, RawOperatorDef, RawTerminator, RawTerminatorDef, RefTable, SILMap, SwitchCase, SwitchEnumCase, Symbol, SymbolRef, Terminator, Type, UnaryOperation}
 import ca.ualberta.maple.swan.parser._
+import ca.ualberta.maple.swan.utils.Logging
 
-import scala.collection.{immutable, mutable}
 import scala.collection.mutable.ArrayBuffer
+import scala.collection.{immutable, mutable}
 import scala.util.control.Breaks.{break, breakable}
 
 /*
@@ -31,19 +31,23 @@ import scala.util.control.Breaks.{break, breakable}
  * TODO: Recovery options.
  * TODO: Manually "checked" exceptions are gross.
  */
-object SWIRLGen {
+class SWIRLGen {
 
   // This isn't true dynamic context. It's just a container to hold
   // the module/function/block when translating instructions.
   class Context(val silModule: SILModule, val silFunction: SILFunction,
                 val silBlock: SILBlock, val pos: Option[Position],
                 val refTable: RefTable, val instantiatedTypes: mutable.HashSet[String],
-                val arguments: ArrayBuffer[Argument], val silMap: SILMap)
+                val arguments: ArrayBuffer[Argument], val silMap: SILMap) {
+    def globalsSingletonName: String = Constants.globalsSingleton + silModule.toString
+  }
   object Context {
-    def dummy(refTable: RefTable): Context = {
-      new Context(null, null, null, null, refTable, null, null, null)
+    def dummy(silModule: SILModule, refTable: RefTable): Context = {
+      new Context(silModule, null, null, null, refTable, null, null, null)
     }
   }
+
+  val NonePosition: Option[Position] = None // For Java
 
   val NOP: Null = null // explicit NOP marker
   val COPY: Null = null // explicit COPY marker
@@ -54,12 +58,11 @@ object SWIRLGen {
   @throws[UnexpectedSILFormatException]
   @throws[UnexpectedSILTypeBehaviourException]
   def translateSILModule(silModule: SILModule): Module = {
-    val progressBar = new ProgressBar("Translating", silModule.functions.length, false)
+    Logging.printInfo("Translating " + silModule.meta.file.getName + " to SWIRL")
     val functions = new ArrayBuffer[Function](0)
     val silMap = new SILMap
     silModule.functions.zipWithIndex.foreach(zippedFunction => {
       val silFunction = zippedFunction._1
-      progressBar.update(zippedFunction._2)
       val instantiatedTypes = new mutable.HashSet[String]()
       functions.append({
         intermediateSymbols.clear()
@@ -142,7 +145,7 @@ object SWIRLGen {
         // If function is empty, generate a stub based on return type.
         if (silFunction.blocks.isEmpty) {
           intermediateSymbols.clear()
-          val dummyCtx = Context.dummy(refTable)
+          val dummyCtx = Context.dummy(silModule, refTable)
           val blockRef = makeBlockRef("bb0", dummyCtx)
           val retRef = makeSymbolRef("%ret", dummyCtx)
           refTable.blocks.put(blockRef.label, blockRef)
@@ -169,20 +172,25 @@ object SWIRLGen {
     // handle the SIL `object` instruction, and therefore we don't consider
     // when a global is initialized with instructions/object. This global
     // initialization is here mostly for completeness and explicitness.
-    {
+    val mainFunction = functions.find(f => f.name == "main")
+    var fmFunction: Option[Function] = None
+    if (mainFunction.nonEmpty) {
+      val newMainFunctionName = "main_" + silModule.toString
+      val fakeMainFunctionName = Constants.fakeMain + silModule.toString
+      mainFunction.get.name = newMainFunctionName
       intermediateSymbols.clear()
       val fmRefTable = new RefTable()
       val fmInstantiatedTypes = new immutable.HashSet[String]
-      val dummyCtx = Context.dummy(fmRefTable)
-      val fmFunction = new Function(None, Constants.fakeMain, new Type("Int32"),
-        new ArrayBuffer[Block](), fmRefTable, fmInstantiatedTypes)
+      val dummyCtx = Context.dummy(silModule, fmRefTable)
+      fmFunction = Some(new Function(Some(FunctionAttribute.entry), fakeMainFunctionName,
+        new Type("Int32"), new ArrayBuffer[Block](), fmRefTable, fmInstantiatedTypes))
       val blockRef = makeBlockRef("bb0", dummyCtx)
       val retRef = makeSymbolRef("ret", dummyCtx)
       val block = new Block(blockRef, Array(), {
           val ops = new ArrayBuffer[RawOperatorDef]()
           ops
         }, new RawTerminatorDef(Terminator.ret(retRef), None))
-      fmFunction.blocks.append(block)
+      fmFunction.get.blocks.append(block)
       silModule.globalVariables.zipWithIndex.foreach(g => {
         val global = g._1
         val idx = g._2
@@ -190,7 +198,7 @@ object SWIRLGen {
         block.operators.append(new RawOperatorDef(
           Operator.neww(new Symbol(ref, Utils.SILTypeToType(global.tpe))), None))
         block.operators.append(new RawOperatorDef(
-          Operator.singletonWrite(ref, Constants.globalsSingleton, global.globalName.demangled), None))
+          Operator.singletonWrite(ref, dummyCtx.globalsSingletonName, global.globalName.demangled), None))
       })
       val functionRef = makeSymbolRef("main_function_ref", dummyCtx)
       val arg0 = makeSymbolRef("arg0", dummyCtx)
@@ -201,13 +209,12 @@ object SWIRLGen {
         Operator.neww(new Symbol(arg1,
           new Type("UnsafeMutablePointer<Optional<UnsafeMutablePointer<Int8>>>"))), None))
       block.operators.append(new RawOperatorDef(
-        Operator.functionRef(new Symbol(functionRef, new Type("Any")), "main"), None))
+        Operator.functionRef(new Symbol(functionRef, new Type("Any")), newMainFunctionName), None))
       block.operators.append(new RawOperatorDef(
         Operator.apply(new Symbol(retRef, new Type("Int32")), functionRef, Array(arg0, arg1)), None))
-      functions.append(fmFunction)
+      functions.insert(0, fmFunction.get)
     }
-    progressBar.done()
-    new Module(functions, Some(new DynamicDispatchGraph(silModule)), silMap)
+    new Module(functions, fmFunction, Some(new DynamicDispatchGraph(silModule)), silMap, new ModuleMetadata(None, Some(silModule.meta.file)))
   }
 
   private def getFunctionAttribute(silFunction: SILFunction): Option[FunctionAttribute] = {
@@ -752,7 +759,7 @@ object SWIRLGen {
   @throws[UnexpectedSILFormatException]
   def visitGlobalAddr(r: Option[SILResult], I: SILOperator.globalAddr, ctx: Context): Array[RawInstructionDef] = {
     val result = getSingleResult(r, Utils.SILTypeToType(I.tpe), ctx)
-    makeOperator(ctx, Operator.singletonRead(result, Constants.globalsSingleton, I.name.demangled))
+    makeOperator(ctx, Operator.singletonRead(result, ctx.globalsSingletonName, I.name.demangled))
   }
 
   // def visitGlobalValue(r: Option[SILResult], I: SILOperator.globalValue, ctx: Context): Array[RawInstructionDef]
@@ -1576,7 +1583,7 @@ object SWIRLGen {
     instructions.appendAll(makeTerminator(ctx,
       Terminator.condBr(result.ref,
         makeBlockRef(I.succeedLabel, ctx), Array({makeSymbolRef(I.operand.value, ctx)}),
-        makeBlockRef(I.failureLabel, ctx), Array({makeSymbolRef(I.operand.value, ctx)}))))
+        makeBlockRef(I.failureLabel, ctx), Array.empty)))
     instructions.toArray
   }
 
@@ -1606,11 +1613,14 @@ object SWIRLGen {
           Utils.SILFunctionTupleTypeToReturnType(I.tpe, removeAttributes = true)
       }
     }
-    if (retTypes.length != 2) {
-      throw new UnexpectedSILFormatException("Expected try_apply function return type to be a two element tuple: " + Utils.print(I.tpe))
+    // retTypes can apparently be more than two
+    // e.g., (@out O1.Element, @out O2.Element, @error Error)
+    // therefore, use the last type for the error value
+    if (retTypes.length < 2) {
+      throw new UnexpectedSILFormatException("Expected try_apply function return type to have at least two elements: \n" + Utils.print(I.tpe))
     }
     val terminator = Terminator.tryApply(makeSymbolRef(I.value, ctx), stringArrayToSymbolRefArray(I.arguments, ctx),
-      makeBlockRef(I.normalLabel, ctx), retTypes(0), makeBlockRef(I.errorLabel, ctx), retTypes(1))
+      makeBlockRef(I.normalLabel, ctx), retTypes(0), makeBlockRef(I.errorLabel, ctx), retTypes(retTypes.length-1))
     makeTerminator(ctx, terminator)
   }
 

@@ -1,6 +1,0 @@
-sil_witness_table [serialized] <Element> AsyncSubject<Element>: SubjectType module RxSwift {
-  base_protocol ObservableType: AsyncSubject<Element>: inherit (<Element> Observable<Element>: ObservableType module RxSwift)
-  associated_type_protocol (Observer: ObserverType): <Element> AsyncSubject<Element>: ObserverType module RxSwift
-  associated_type Observer: AsyncSubject<Element>
-  method #SubjectType.asObserver!1: <Self where Self : SubjectType> (Self) -> () -> Self.Observer : @$s7RxSwift12AsyncSubjectCyxGAA0D4TypeA2aEP10asObserver0G0QzyFTW	// protocol witness for SubjectType.asObserver() in conformance AsyncSubject<A>
-}

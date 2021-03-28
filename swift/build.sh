@@ -13,4 +13,4 @@ fi
 
 "${scriptdir}"/swan-xcodebuild/build.sh
 
-# "${scriptdir}"/swan-swiftc/build.sh
+"${scriptdir}"/swan-swiftc/build.sh

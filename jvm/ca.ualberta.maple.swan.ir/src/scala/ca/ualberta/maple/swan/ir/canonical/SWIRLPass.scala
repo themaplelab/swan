@@ -12,15 +12,17 @@ package ca.ualberta.maple.swan.ir.canonical
 
 import ca.ualberta.maple.swan.ir.Exceptions.{IncompleteRawSWIRLException, IncorrectRawSWIRLException, UnexpectedSILFormatException}
 import ca.ualberta.maple.swan.ir.{Argument, BinaryOperation, Block, BlockRef, CanBlock, CanFunction, CanModule, CanOperator, CanOperatorDef, CanTerminator, CanTerminatorDef, Constants, Function, Literal, Module, Operator, RawOperatorDef, RawTerminatorDef, SwitchEnumCase, Symbol, SymbolRef, SymbolTableEntry, Terminator, Type, WithResult}
+import ca.ualberta.maple.swan.utils.Logging
 import org.jgrapht.Graph
 import org.jgrapht.graph.{DefaultDirectedGraph, DefaultEdge}
 
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
 
-object SWIRLPass {
+class SWIRLPass {
 
   def runPasses(module: Module): CanModule = {
+    Logging.printInfo("Running SWIRL canonical passes on " + module)
     resolveAliases(module)
     val functions = new ArrayBuffer[CanFunction]()
     module.functions.foreach(f => {
@@ -33,7 +35,14 @@ object SWIRLPass {
       generateSymbolTable(canFunction)
       functions.append(canFunction)
     })
-    new CanModule(functions, module.ddg, module.silMap)
+    val entryFunction: Option[CanFunction] = {
+      if (functions.nonEmpty && functions(0).name.startsWith(Constants.fakeMain)) {
+        Some(functions(0))
+      } else {
+        None
+      }
+    }
+    new CanModule(functions, entryFunction, module.ddg, module.silMap, module.meta)
   }
 
   @throws[IncompleteRawSWIRLException]
@@ -61,7 +70,7 @@ object SWIRLPass {
       // Keys are effectively non-concrete aliases for the actual values.
       if (!table.contains(ref._2.name)) {
         // TODO: Recover with `new` instruction.
-        throw new IncompleteRawSWIRLException("Symbol reference to value " + ref._2.name + " in function `" + function.name +
+        throw new IncompleteRawSWIRLException("Symbol reference to value '" + ref._2.name + "' in function `" + function.name +
           "` is invalid. Value is not a block argument nor the result of an operator.")
       }
     })
@@ -114,8 +123,10 @@ object SWIRLPass {
     while (i < f.blocks.length) {
       val b = f.blocks(i)
       val newBlocks: ArrayBuffer[Block] = ArrayBuffer[Block]()
-      b.operators.zipWithIndex.foreach(op => {
-        op._1.operator match {
+      var j: Int = 0
+      while (j < b.operators.length) {
+        val op = b.operators(j)
+        op.operator match {
           case Operator.switchEnumAssign(result, switchOn, cases, default) => {
             val blockRefs: ArrayBuffer[BlockRef] = ArrayBuffer.empty
             val newCases: ArrayBuffer[SwitchEnumCase] = ArrayBuffer.empty
@@ -129,42 +140,43 @@ object SWIRLPass {
             }
             val continueRef = generateBlockName(b.blockRef.label)
             cases.zipWithIndex.foreach(cse => {
-              val br = new RawTerminatorDef(Terminator.br(continueRef, Array{cse._1.value}), op._1.position)
-              mapToSIL(op._1, br, module) // Kind of weird to map a terminator to operator
+              val br = new RawTerminatorDef(Terminator.br(continueRef, Array{cse._1.value}), op.position)
+              mapToSIL(op, br, module) // Kind of weird to map a terminator to operator
               val newBlock = new Block(blockRefs(cse._2), Array.empty, ArrayBuffer.empty, br)
               mapToSIL(b, newBlock, module)
               newBlocks.append(newBlock)
             })
             if (default.nonEmpty) {
-              val br = new RawTerminatorDef(Terminator.br(continueRef, Array{default.get}), op._1.position)
-              mapToSIL(op._1, br, module)
+              val br = new RawTerminatorDef(Terminator.br(continueRef, Array{default.get}), op.position)
+              mapToSIL(op, br, module)
               val newBlock = new Block(blockRefs(blockRefs.length - 1), Array.empty, ArrayBuffer.empty, br)
               mapToSIL(b, newBlock, module)
               newBlocks.append(newBlock)
             }
             val continueBlock = new Block(continueRef, Array{new Argument(result.ref, result.tpe, None)},
-              b.operators.slice(op._2 + 1, b.operators.length - 1), b.terminator)
+              b.operators.slice(j + 1, b.operators.length), b.terminator)
             mapToSIL(b, continueBlock, module)
             newBlocks.append(continueBlock)
             val switchEnum = new RawTerminatorDef(Terminator.switchEnum(switchOn, newCases.toArray,
-              if (default.nonEmpty) Some(blockRefs.last) else None), op._1.position)
-            mapToSIL(op._1, switchEnum, module)
+              if (default.nonEmpty) Some(blockRefs.last) else None), op.position)
+            mapToSIL(op, switchEnum, module)
             b.terminator = switchEnum
-            b.operators.remove(op._2, continueBlock.operators.length + 1)
+            b.operators.remove(j, continueBlock.operators.length + 1)
           }
           case Operator.pointerRead(result, pointer) => {
-            val fr = new RawOperatorDef(Operator.fieldRead(result, None, pointer, Constants.pointerField, pointer = true), op._1.position)
-            mapToSIL(op._1, fr, module)
-            b.operators(op._2) = fr
+            val fr = new RawOperatorDef(Operator.fieldRead(result, None, pointer, Constants.pointerField, pointer = true), op.position)
+            mapToSIL(op, fr, module)
+            b.operators(j) = fr
           }
           case Operator.pointerWrite(value, pointer) => {
-            val fw = new RawOperatorDef(Operator.fieldWrite(value, pointer, Constants.pointerField, pointer = true), op._1.position)
-            mapToSIL(op._1, fw, module)
-            b.operators(op._2) = fw
+            val fw = new RawOperatorDef(Operator.fieldWrite(value, pointer, Constants.pointerField, pointer = true), op.position)
+            mapToSIL(op, fw, module)
+            b.operators(j) = fw
           }
           case _ =>
         }
-      })
+        j = j + 1
+      }
       f.blocks.insertAll(i + 1, newBlocks)
       i = i + /* newBlocks.length + */ 1
     }
@@ -292,8 +304,8 @@ object SWIRLPass {
         case Terminator.br(to, args) => {
           args.zipWithIndex.foreach(arg => {
             // T0DO: SLOW
-            val block = f.blocks.find(b => b.blockRef.equals(to)).get
-            val targetArgument = block.arguments(arg._2)
+            val b = f.blocks.find(b => b.blockRef.equals(to)).get
+            val targetArgument = b.arguments(arg._2)
             val assign = new RawOperatorDef(Operator.assign(
               new Symbol(targetArgument.ref, targetArgument.tpe), arg._1, bbArg = true), block.terminator.position)
             mapToSIL(block.terminator, assign, module)

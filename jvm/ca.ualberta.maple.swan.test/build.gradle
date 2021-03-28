@@ -1,0 +1,54 @@
+/*
+ * This source file is part fo the SWAN open-source project.
+ *
+ * Copyright (c) 2020 the SWAN project authors.
+ * Licensed under Apache License v2.0
+ *
+ * See https://github.com/themaplelab/swan/LICENSE.txt for license information.
+ *
+ */
+
+plugins {
+    id 'java'
+    id 'scala'
+}
+
+group 'ca.ualberta.maple.swan'
+
+sourceCompatibility = 1.8
+
+sourceSets {
+    main {
+        scala {
+            srcDirs = ['src/scala']
+        }
+        java {
+            srcDirs = []
+        }
+    }
+    test {
+        scala {
+            srcDirs = []
+        }
+        java {
+            srcDirs = ['src/test/java']
+        }
+    }
+}
+
+dependencies {
+    implementation project(":ca.ualberta.maple.swan.ir")
+    implementation project(":ca.ualberta.maple.swan.parser")
+    implementation project(":ca.ualberta.maple.swan.drivers")
+    implementation project(":ca.ualberta.maple.swan.utils")
+
+    implementation 'org.scala-lang:scala-library:'+project.property("SCALA_VERSION")
+
+    testImplementation('org.junit.jupiter:junit-jupiter-api:5.4.2')
+    testImplementation('org.junit.jupiter:junit-jupiter-params:5.4.2')
+    testRuntime('org.junit.jupiter:junit-jupiter-engine:5.4.2')
+}
+
+test {
+    useJUnitPlatform()
+}

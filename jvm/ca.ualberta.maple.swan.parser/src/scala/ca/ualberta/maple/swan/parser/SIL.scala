@@ -10,30 +10,25 @@
 
 package ca.ualberta.maple.swan.parser
 
-import java.nio.file.Path
+import java.io.File
 
 import ca.ualberta.maple.swan.parser.SILFunctionAttribute.specialize.Kind
 
 import scala.collection.mutable.ArrayBuffer
-import sys.process._
+import scala.sys.process._
+
+// Only file is used for now
+class SILModuleMetadata(val file: File,
+                        val platform: String,
+                        val target: String,
+                        val project: String)
 
 class SILModule(val functions: Array[SILFunction], val witnessTables: Array[SILWitnessTable],
                 val vTables: Array[SILVTable], val imports: Array[String],
                 val globalVariables: Array[SILGlobalVariable], val scopes: Array[SILScope],
-                var properties: Array[SILProperty], val inits: Array[StructInit]) {
-
-  object Parse {
-    @throws[Error]
-    def parsePath(silPath: Path): SILModule = {
-      val parser = new SILParser(silPath)
-      parser.parseModule()
-    }
-
-    @throws[Error]
-    def parseString(silString: String): SILModule = {
-      val parser = new SILParser(silString)
-      parser.parseModule()
-    }
+                var properties: Array[SILProperty], val inits: Array[StructInit], val meta: SILModuleMetadata) {
+  override def toString: String = {
+    meta.file.getName
   }
 }
 
@@ -390,7 +385,7 @@ object SILDeclKind {
   case object destroyer extends SILDeclKind
   case object deallocator extends SILDeclKind
   case object globalAccessor extends SILDeclKind
-  case class defaultArgGenerator(val index: String) extends SILDeclKind
+  case class defaultArgGenerator(index: String) extends SILDeclKind
   case object storedPropertyInitalizer extends SILDeclKind
   case object ivarInitializer extends SILDeclKind
   case object ivarDestroyer extends SILDeclKind
@@ -424,12 +419,19 @@ object SILEnforcement {
   case object unsafe extends SILEnforcement
 }
 
-class SILMangledName(val mangled: String) {
-  val demangled: String = {
-    // TODO: ship demangler with SWAN
-    ("/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swift-demangle -compact \'" + mangled + '\'').!!.replaceAll(System.lineSeparator(), "")
-  }
+class SILMangledName(var mangled: String) {
+  var demangled = ""
+  // The swift-demangle call is expensive
+  // Putting it on a new thread increases overall performance by up to ~4 times
+  // The value isn't immediately needed so this is fine to do
+  new Thread(){
+    override def run(): Unit = {
+      // TODO: ship demangler with SWAN
+      demangled = ("/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swift-demangle -compact \'" + mangled + '\'').!!.replaceAll(System.lineSeparator(), "")
+    }
+  }.start()
 }
+
 
 class StructInit(val name: String, val args: Array[String], val tpe: InitType)
 object StructInit {
@@ -455,7 +457,7 @@ object InitType {
 sealed trait SILFunctionAttribute
 object SILFunctionAttribute {
   case object canonical extends SILFunctionAttribute
-  case class differentiable(val spec: String) extends SILFunctionAttribute
+  case class differentiable(spec: String) extends SILFunctionAttribute
   case object dynamicallyReplacable extends SILFunctionAttribute
   case object alwaysInline extends SILFunctionAttribute
   case object noInline extends SILFunctionAttribute
@@ -538,7 +540,7 @@ class SILSourceInfo(val scopeRef: Option[SILScopeRef], val loc: Option[SILLoc])
 
 sealed trait SILScopeParent
 object SILScopeParent {
-  case class func(name: SILMangledName, val tpe: SILType) extends SILScopeParent
+  case class func(name: SILMangledName, tpe: SILType) extends SILScopeParent
   case class ref(ref: Int) extends SILScopeParent
 }
 
@@ -612,7 +614,7 @@ object SILTypeAttribute {
   case object autoreleased extends SILTypeAttribute
   case object blockStorage extends SILTypeAttribute
   case object escaping extends SILTypeAttribute
-  case class opened(val value: String) extends SILTypeAttribute
+  case class opened(value: String) extends SILTypeAttribute
   // type-specifier -> 'inout' | '__owned' | '__unowned'
   // Not in SIL.rst but used in naked types. e.g. "[...] -> (__owned Self) [..]"
   case object typeSpecifierInOut extends SILTypeAttribute

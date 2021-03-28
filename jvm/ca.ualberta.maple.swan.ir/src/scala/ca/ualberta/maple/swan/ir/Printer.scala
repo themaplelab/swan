@@ -116,7 +116,7 @@ class Printer {
     }
   }
 
-  def print[T](whenEmpty: Boolean, pre: String, xs: Array[T], sep: String, suf: String, fn: (T) => Unit): Unit = {
+  def print[T](whenEmpty: Boolean, pre: String, xs: Array[T], sep: String, suf: String, fn: T => Unit): Unit = {
     if (!(xs.nonEmpty || whenEmpty)) return
     print(pre)
     print(xs, sep, fn)

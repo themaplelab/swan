@@ -11,7 +11,7 @@
 package ca.ualberta.maple.swan.spds
 
 import boomerang.scene.ControlFlowGraph.Edge
-import boomerang.scene.{Field, Method, Pair, StaticFieldVal, Type, Val}
+import boomerang.scene._
 import ca.ualberta.maple.swan.ir.Constants
 
 class SWANStaticFieldVal(val field: Field, method: Method) extends StaticFieldVal(method) {

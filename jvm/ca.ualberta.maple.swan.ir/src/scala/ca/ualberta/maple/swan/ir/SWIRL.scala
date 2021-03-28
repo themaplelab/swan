@@ -15,24 +15,67 @@
 
 package ca.ualberta.maple.swan.ir
 
+import java.io.File
+import java.util.UUID
+
 import org.jgrapht.Graph
 import org.jgrapht.graph.DefaultEdge
 
-import scala.collection.{immutable, mutable}
 import scala.collection.mutable.ArrayBuffer
+import scala.collection.{immutable, mutable}
+
+class ModuleGroup(val functions: ArrayBuffer[CanFunction],
+                  val entries: immutable.HashSet[CanFunction],
+                  val ddgs: ArrayBuffer[DynamicDispatchGraph],
+                  val silMap: SILMap, val metas: ArrayBuffer[ModuleMetadata]) {
+  override def toString: String = {
+    val sb = new StringBuilder
+    sb.append("Module group\n")
+    metas.foreach(m => {
+      sb.append("  ");
+      sb.append(m.toString);
+      sb.append("\n")
+    })
+    sb.toString()
+  }
+}
+
+class ModuleMetadata(val file: Option[File],
+                     val silSource: Option[File]) {
+  override def toString: String = {
+    if (file.nonEmpty) {
+      file.get.getName
+    } else if (silSource.nonEmpty) {
+      silSource.get.getName
+    } else {
+      "internal Raw SWIRL module " + UUID.randomUUID()
+    }
+  }
+}
 
 // Imports might be useful for modelling later, but probably not.
-class Module(val functions: ArrayBuffer[Function], val ddg: Option[DynamicDispatchGraph],
-             val silMap: SILMap)
+class Module(val functions: ArrayBuffer[Function], val entryFunction: Option[Function],
+             val ddg: Option[DynamicDispatchGraph],
+             val silMap: SILMap, val meta: ModuleMetadata) {
+  // Also used as unique identifier
+  override def toString: String = {
+    meta.toString
+  }
+}
 
-class CanModule(val functions: ArrayBuffer[CanFunction], val ddg: Option[DynamicDispatchGraph],
-                val silMap: SILMap)
+class CanModule(val functions: ArrayBuffer[CanFunction], val entryFunction: Option[CanFunction],
+                val ddg: Option[DynamicDispatchGraph],
+                val silMap: SILMap, val meta: ModuleMetadata) {
+  override def toString: String = {
+    meta.toString
+  }
+}
 
-class Function(val attribute: Option[FunctionAttribute], val name: String, val tpe: Type,
+class Function(val attribute: Option[FunctionAttribute], var name: String, val tpe: Type,
                val blocks: ArrayBuffer[Block], val refTable: RefTable,
                val instantiatedTypes: immutable.HashSet[String])
 
-class CanFunction(val attribute: Option[FunctionAttribute], val name: String, val tpe: Type,
+class CanFunction(var attribute: Option[FunctionAttribute], val name: String, val tpe: Type,
                   val arguments: Array[Argument], val blocks: ArrayBuffer[CanBlock],
                   val refTable: RefTable, val instantiatedTypes: immutable.HashSet[String],
                   val symbolTable: mutable.HashMap[String, SymbolTableEntry],
@@ -56,6 +99,8 @@ object FunctionAttribute {
   case object coroutine extends FunctionAttribute
   case object stub extends FunctionAttribute
   case object model extends FunctionAttribute
+  case object entry extends FunctionAttribute
+  case object linked extends FunctionAttribute
 }
 
 class Type(val name: String = "Any") {
@@ -272,11 +317,15 @@ class SILMap {
       swirlToSIL.put(newSWIRL, sil)
     }
   }
+  def combine(other: SILMap): Unit = {
+    silToSWIRL.addAll(other.silToSWIRL)
+    swirlToSIL.addAll(other.swirlToSIL)
+  }
 }
 
 object Constants {
   final val pointerField = "value"
-  final val globalsSingleton = "Globals"
+  final val globalsSingleton = "Globals_"
   final val exitBlock = "EXIT"
-  final val fakeMain = "SWAN_FAKE_MAIN"
+  final val fakeMain = "SWAN_FAKE_MAIN_"
 }

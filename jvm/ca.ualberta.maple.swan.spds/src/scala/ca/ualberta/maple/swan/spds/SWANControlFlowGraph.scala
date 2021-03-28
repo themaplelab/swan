@@ -10,14 +10,11 @@
 
 package ca.ualberta.maple.swan.spds
 
-import com.google.common.collect.HashMultimap
-import com.google.common.collect.Lists
-import com.google.common.collect.Multimap
-import com.google.common.collect.Maps
 import java.util
 
 import boomerang.scene.{ControlFlowGraph, Statement}
 import ca.ualberta.maple.swan.ir.{Constants, Operator, Terminator}
+import com.google.common.collect.{HashMultimap, Lists, Maps, Multimap}
 
 class SWANControlFlowGraph(val method: SWANMethod) extends ControlFlowGraph {
 

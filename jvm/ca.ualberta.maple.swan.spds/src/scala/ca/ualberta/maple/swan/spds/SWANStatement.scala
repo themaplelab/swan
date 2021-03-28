@@ -160,7 +160,7 @@ object SWANStatement {
                         m: SWANMethod) extends SWANStatement(CanInstructionDef.operator(opDef), m) {
     override def getRightOp: Val = ??? // SWANVal.NewExpr(inst.result, m)
     override def toString: String = {
-      getLeftOp.toString + " = " // + getRightOp.toString
+      getLeftOp.toString // + " = " + getRightOp.toString
     }
   }
   case class Literal(opDef: CanOperatorDef, inst: Operator.literal,

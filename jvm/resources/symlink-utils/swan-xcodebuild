@@ -1,0 +1,107 @@
+#!/usr/bin/env python
+
+"""
+//===---------------------------------------------------------------------===//
+//
+// This source file is part of the SWAN open source project
+//
+// Copyright (c) 2020 Maple @ University of Alberta
+// All rights reserved. This program and the accompanying materials (unless
+// otherwise specified by a license inside of the accompanying material)
+// are made available under the terms of the Eclipse Public License v2.0
+// which accompanies this distribution, and is available at
+// http://www.eclipse.org/legal/epl-v20.html
+//
+//===---------------------------------------------------------------------===//
+"""
+
+import os
+import shutil
+import sys
+import re
+import subprocess
+from subprocess import Popen, PIPE, STDOUT
+
+XCODEBUILD_LOG_FILE="xcodebuild.log"
+OUTPUT_SIL_FOLDER="/sil/"
+
+def info(msg, prepend = ""):
+  sys.stdout.write(prepend + "[swan-xcodebuild] " + msg + "\n")
+
+def error_info(msg, prepend = ""):
+  sys.stderr.write("[swan-xcodebuild] ERROR: " + msg + "\n")
+
+def extract_sil():
+  # Write the SIL to the directory of the xcodeproj
+  
+  # Get the directory the xcodeproj is in (this is a bit janky).
+  project_dir = ""
+  for arg in sys.argv[1:]:
+    if arg.endswith(".xcodeproj") or arg.endswith(".xcodeproj/"):
+      # in case xcodeproj ends with "/", which would mess up splitting
+      arg = arg.split(".xcodeproj")[0]
+      project_dir = "."
+      if os.path.sep in arg:
+        project_dir = arg.rsplit(os.path.sep, 1)[0]
+      break
+  if project_dir == "":
+    error_info("FATAL: No *.xcodeproj found in args")
+    exit(1)
+  output_folder = project_dir + OUTPUT_SIL_FOLDER
+
+  with open(XCODEBUILD_LOG_FILE, "r") as f:
+    lines = f.read()
+    split_lines = re.split(r"\s*\*\*\* SIL module[^\n]*\n", lines)
+    # remove the first element
+    split_lines = split_lines[1:]
+    if os.path.exists(output_folder):
+      shutil.rmtree(output_folder)
+    os.makedirs(output_folder)
+    for i in range(0, len(split_lines)):
+      with open(output_folder + str(i) + ".sil", "w") as sil:
+        remove_non_sil = re.split(r"CompileSwift", split_lines[1])[0]
+        sil.write(remove_non_sil+"\n")
+    info("SIL written to " + output_folder)
+
+def run_xcodebuild_cmd():
+  code_sign = "CODE_SIGN_IDENTITY=\"\" CODE_SIGNING_REQUIRED=NO CODE_SIGNING_ALLOWED=NO"
+  info("Removing code signing:\n    " + code_sign)
+
+  other_swift_flags="OTHER_SWIFT_FLAGS=\"-Xfrontend -gsil -Xllvm -sil-print-debuginfo -Xllvm -sil-print-before=SerializeSILPass\""
+  info("Adding/overwriting OTHER_SWIFT_FLAGS:\n    " + other_swift_flags)
+
+  wholemodule="SWIFT_COMPILATION_MODE=wholemodule"
+  info("Compiling in wholemodule mode: " + wholemodule)
+
+  build_actions=["clean", "build"]
+  info("Adding build actions:\n    " + ", ".join(build_actions))
+
+  cmd = ["xcodebuild", code_sign, wholemodule, other_swift_flags, " ".join(sys.argv[1:]), " ".join(build_actions)]
+  string_cmd = " ".join(cmd)
+  info("Running xcodebuild:\n    " + string_cmd + "\n", "\n")
+
+  # `xcodebuild` doesn't respect stderr and stdout well. Some error messsages
+  # go to stderr and some go to stdout. It seems that the swift compiler's
+  # stderr goes to xcodebuild's stdout.
+  p = Popen(string_cmd, stdin=PIPE, stdout=PIPE, stderr=STDOUT, shell=True)
+  stdout, stderr = p.communicate()
+  with open(XCODEBUILD_LOG_FILE, "w") as f:
+    f.write(stdout)
+  if (p.returncode != 0):
+    error_info("`xcodebuild` failed. See " + XCODEBUILD_LOG_FILE)
+    exit(1)
+  else:
+    info("`xcodebuild` output written to " + XCODEBUILD_LOG_FILE + "\n")
+  extract_sil()
+
+def main():
+  if len(sys.argv) == 1:
+    print("This tool is a wrapper for `xcodebuild`. It adds code signing,\nOTHER_SWIFT_FLAGS, and build actions to its arguments, and gives the combined\narguments to `xcodebuild`. You should just need to specify -project and\n-scheme options for the majority of Xcode iOS projects.\n\nYou should add this executable to your PATH for convenience.\n\nTested on\nXcode 11.3.1 | Build version 11C505 | macOS Mojave 10.14.6")
+    exit(0)
+  run_xcodebuild_cmd()
+
+if __name__ == "__main__":
+  try:
+    sys.exit(main())
+  except KeyboardInterrupt:
+    sys.exit(1)

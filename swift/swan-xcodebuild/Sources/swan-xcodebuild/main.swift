@@ -3,7 +3,7 @@ import ColorizeSwift
 import Foundation
 
 struct Constants {
-  static let defaultSwanSIL = "swan-dir/"
+  static let defaultSwanDir = "swan-dir/"
   static let xcodebuildFile = "/usr/bin/xcodebuild"
   static let xcodebuildLog  = "xcodebuild.log"
 }
@@ -27,7 +27,7 @@ struct SWANXcodebuild: ParsableCommand {
     abstract: "Build and dump SIL for a Swift application using xcodebuild.")
   
   // Ignore the warning generated from this.
-  @Option(default: Constants.defaultSwanSIL, help: "Output directory for SIL.")
+  @Option(default: Constants.defaultSwanDir, help: "Output directory for SIL.")
   var silDir: String?
   
   @Argument(help: "Prefix these arguments with --")
@@ -85,6 +85,7 @@ struct SWANXcodebuild: ParsableCommand {
     
     let start = DispatchTime.now()
     task.launch()
+    task.waitUntilExit()
     
     let data = pipe.fileHandleForReading.readDataToEndOfFile()
     let output: String = String(data: data, encoding: String.Encoding.utf8)!

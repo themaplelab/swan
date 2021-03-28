@@ -37,7 +37,7 @@ class SWIRLPrinterOptions {
 
 class SWIRLPrinter extends Printer {
 
-  var ARBITRARY_TYPE_NAME_COUNTER = new ArrayBuffer[String]()
+  val ARBITRARY_TYPE_NAME_COUNTER = new ArrayBuffer[String]()
 
   var canModule: CanModule = _ // needed global for printing line numbers
 
@@ -45,6 +45,18 @@ class SWIRLPrinter extends Printer {
 
   val locMap: mutable.HashMap[Object, (Int, Int)] =
     new mutable.HashMap[Object, (Int, Int)]()
+
+  def print(mg: ModuleGroup, opts: SWIRLPrinterOptions): String = {
+    options = opts
+    this.canModule = new CanModule(mg.functions, None, None, mg.silMap, null)
+    print("swirl_stage canonical")
+    printNewline();printNewline()
+    canModule.functions.foreach(function => {
+      print(function)
+      printNewline()
+    })
+    this.toString
+  }
 
   def print(module: Module, opts: SWIRLPrinterOptions): String = {
     options = opts
@@ -117,7 +129,7 @@ class SWIRLPrinter extends Printer {
     })
   }
 
-  def print(block: Block): Unit = {
+  def print(block: Block): String = {
     locMap.put(block, (line, getCol))
     print(block.blockRef)
     print(whenEmpty = false, "(", block.arguments, ", ", ")", (arg: Argument) => print(arg))
@@ -132,6 +144,7 @@ class SWIRLPrinter extends Printer {
     if (block.terminator != null) print(block.terminator)
     if (block.terminator != null) printNewline()
     unindent()
+    this.toString
   }
 
   def print(block: CanBlock): Unit = {
@@ -239,8 +252,7 @@ class SWIRLPrinter extends Printer {
       }
       case Operator.functionRef(_, name) => {
         print("function_ref ")
-        print("@")
-        print('`')
+        print("@`")
         print(name)
         print('`')
       }
@@ -427,9 +439,9 @@ class SWIRLPrinter extends Printer {
   }
 
   def print(cse: SwitchEnumCase): Unit = {
-    print("case ")
+    print("case \"")
     print(cse.decl)
-    print(" : ")
+    print("\" : ")
     print(cse.destination)
   }
 
@@ -438,6 +450,8 @@ class SWIRLPrinter extends Printer {
       case FunctionAttribute.coroutine => print("[coroutine] ")
       case FunctionAttribute.stub => print("[stub] ")
       case FunctionAttribute.model => print("[model] ")
+      case FunctionAttribute.entry => print("[entry] ")
+      case FunctionAttribute.linked => print("[linked] ")
     }
   }
 
@@ -495,9 +509,9 @@ class SWIRLPrinter extends Printer {
     if (!options.printLocation) {
       return
     }
-    print(", loc ")
+    print(", loc \"")
     print(pos.path)
-    print(":")
+    print("\":")
     literal(pos.line)
     print(":")
     literal(pos.col)

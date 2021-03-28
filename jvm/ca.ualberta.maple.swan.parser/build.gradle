@@ -41,9 +41,9 @@ group 'ca.ualberta.maple.swan'
 sourceCompatibility = 1.8
 
 dependencies {
-    implementation 'org.scala-lang:scala-library:2.13.3'
-    testImplementation 'org.scala-lang:scala-library:2.13.3'
-    testImplementation 'org.scalatest:scalatest_2.13:3.2.0'
+    implementation project(":ca.ualberta.maple.swan.utils")
+
+    implementation 'org.scala-lang:scala-library:'+project.property("SCALA_VERSION")
 
     testImplementation('org.junit.jupiter:junit-jupiter-api:5.4.2')
     testImplementation('org.junit.jupiter:junit-jupiter-params:5.4.2')

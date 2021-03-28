@@ -38,8 +38,8 @@ object Main {
     silResultFile.write(silPrintedText)
     silResultFile.close()
 
-    val swirlModule = SWIRLGen.translateSILModule(silModule)
-    val canSwirlModule = SWIRLPass.runPasses(swirlModule)
+    val swirlModule = new SWIRLGen().translateSILModule(silModule)
+    val canSwirlModule = new SWIRLPass().runPasses(swirlModule)
     val swirlPrinter = new SWIRLPrinter()
     val swirlPrintedText = swirlPrinter.print(canSwirlModule,
       new SWIRLPrinterOptions().printLocation(false).printCFGWhenCanonical(false))

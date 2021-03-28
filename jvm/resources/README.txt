@@ -1,0 +1,1 @@
+This directory is symlinked to the modules, so that they all share the same resources.

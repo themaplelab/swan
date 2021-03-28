@@ -2,7 +2,7 @@
 <project version="4">
   <component name="ScalaCompilerConfiguration">
     <option name="implicitConversions" value="true" />
-    <profile name="Gradle 1" modules="swan-spds.ca.ualberta.maple.swan.client.main,swan-spds.ca.ualberta.maple.swan.client.test,swan-spds.ca.ualberta.maple.swan.ir.main,swan-spds.ca.ualberta.maple.swan.ir.test,swan-spds.ca.ualberta.maple.swan.parser.main,swan-spds.ca.ualberta.maple.swan.parser.test,swan-spds.ca.ualberta.maple.swan.spds.main,swan-spds.ca.ualberta.maple.swan.spds.test,swan-spds.ca.ualberta.maple.swan.viewer.main,swan-spds.ca.ualberta.maple.swan.viewer.test">
+    <profile name="Gradle 1" modules="swan-spds.ca.ualberta.maple.swan.analysis.main,swan-spds.ca.ualberta.maple.swan.analysis.test,swan-spds.ca.ualberta.maple.swan.client.main,swan-spds.ca.ualberta.maple.swan.client.test,swan-spds.ca.ualberta.maple.swan.drivers.main,swan-spds.ca.ualberta.maple.swan.drivers.test,swan-spds.ca.ualberta.maple.swan.ir.main,swan-spds.ca.ualberta.maple.swan.ir.test,swan-spds.ca.ualberta.maple.swan.parser.main,swan-spds.ca.ualberta.maple.swan.parser.test,swan-spds.ca.ualberta.maple.swan.spds.main,swan-spds.ca.ualberta.maple.swan.spds.test,swan-spds.ca.ualberta.maple.swan.test.main,swan-spds.ca.ualberta.maple.swan.test.test,swan-spds.ca.ualberta.maple.swan.testclient.main,swan-spds.ca.ualberta.maple.swan.testclient.test,swan-spds.ca.ualberta.maple.swan.utils.main,swan-spds.ca.ualberta.maple.swan.utils.test,swan-spds.ca.ualberta.maple.swan.viewer.main,swan-spds.ca.ualberta.maple.swan.viewer.test">
       <option name="deprecationWarnings" value="true" />
       <option name="uncheckedWarnings" value="true" />
       <parameters>

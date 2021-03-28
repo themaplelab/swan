@@ -11,7 +11,7 @@
 package ca.ualberta.maple.swan.parser
 
 import ca.ualberta.maple.swan.parser.SILFunctionAttribute.specialize.Kind
-import ca.ualberta.maple.swan.parser.SILFunctionAttribute.{FunctionEffects, FunctionInlining, FunctionOptimization, FunctionPurpose, Thunk}
+import ca.ualberta.maple.swan.parser.SILFunctionAttribute._
 
 import scala.collection.mutable
 

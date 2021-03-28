@@ -3,9 +3,9 @@ import ColorizeSwift
 import Foundation
 
 struct Constants {
-  static let defaultSwanSIL = "swan-sil/"
-  static let xcodebuildFile = "/usr/bin/swiftc"
-  static let xcodebuildLog  = "swiftc.log"
+  static let defaultSwanDir = "swan-dir/"
+  static let swiftcFile = "/usr/bin/swiftc"
+  static let swiftcLog  = "swiftc.log"
 }
 
 struct Section {
@@ -22,26 +22,28 @@ func ==(lhs: Section, rhs: Section) -> Bool {
   return ((lhs.target == rhs.target) && (lhs.project == rhs.project) && (lhs.sil == rhs.sil))
 }
 
-struct SWANXcodeBuild: ParsableCommand {
+struct SWANSwiftcBuild: ParsableCommand {
   static let configuration = CommandConfiguration(
-    abstract: "Build and dump SIL for a Swift application using xcodebuild.")
+    abstract: "Build and dump SIL for a Swift application using swiftc.")
   
   // Ignore the warning generated from this.
-  @Option(default: Constants.defaultSwanSIL, help: "Output directory for SIL.")
+  @Option(default: Constants.defaultSwanDir, help: "Output directory for SIL.")
   var swanDir: String?
   
   @Argument(help: "Prefix these arguments with --")
-  var xcodebuildArgs: [String]
+  var swiftcArgs: [String]
   
   init() { }
   
-  func generateXcodebuildArgs() -> [String] {
-    return self.xcodebuildArgs + [
-      "SWIFT_COMPILATION_MODE=wholemodule",
-      "CODE_SIGN_IDENTITY=\"\"",
-      "CODE_SIGNING_REQUIRED=NO",
-      "CODE_SIGNING_ALLOWED=NO",
-      "OTHER_SWIFT_FLAGS=-Xfrontend -gsil -Xllvm -sil-print-debuginfo -Xllvm -sil-print-before=SerializeSILPass"
+  func generateSwiftcArgs() -> [String] {
+    return self.swiftcArgs + [
+      "-emit-sil",
+      "-Xfrontend",
+      "-gsil",
+      "-Xllvm",
+      "-sil-print-debuginfo",
+      "-Xllvm",
+      "-sil-print-before=SerializeSILPass"
     ]
   }
   
@@ -61,7 +63,7 @@ struct SWANXcodeBuild: ParsableCommand {
 
     let outputDir = URL(fileURLWithPath: self.swanDir!)
     
-    let xcodebuildLog = outputDir.appendingPathComponent(Constants.xcodebuildLog)
+    let swiftcLog = outputDir.appendingPathComponent(Constants.swiftcLog)
         
     do {
       try FileManager.default.createDirectory(at: outputDir, withIntermediateDirectories: true)
@@ -71,13 +73,13 @@ struct SWANXcodeBuild: ParsableCommand {
       throw ExitCode.failure
     }
     
-    let args = generateXcodebuildArgs()
-    printStatus("Running xcodebuild " + args.joined(separator: " "))
+    let args = generateSwiftcArgs()
+    printStatus("Running swiftc " + args.joined(separator: " "))
     
     let task = Process()
     let pipe = Pipe()
     
-    task.launchPath = URL(string: Constants.xcodebuildFile)?.absoluteString
+    task.launchPath = URL(string: Constants.swiftcFile)?.absoluteString
     task.arguments = args
     task.standardInput = FileHandle.nullDevice
     task.standardOutput = pipe
@@ -85,6 +87,7 @@ struct SWANXcodeBuild: ParsableCommand {
     
     let start = DispatchTime.now()
     task.launch()
+    task.waitUntilExit()
     
     let data = pipe.fileHandleForReading.readDataToEndOfFile()
     let output: String = String(data: data, encoding: String.Encoding.utf8)!
@@ -93,91 +96,39 @@ struct SWANXcodeBuild: ParsableCommand {
     let nanoTime = (end.uptimeNanoseconds - start.uptimeNanoseconds)
     let timeInterval = Int(round(Double(nanoTime) / 1_000_000_000))
     
-    printStatus("\nxcodebuild finished in \(timeInterval.description)s")
+    printStatus("\nswiftc finished in \(timeInterval.description)s")
     
     do {
-      try output.write(to: xcodebuildLog, atomically: true, encoding: String.Encoding.utf8)
-      printStatus("xcodebuild output written to \(Constants.xcodebuildLog)")
+      try output.write(to: swiftcLog, atomically: true, encoding: String.Encoding.utf8)
+      printStatus("swiftc output written to \(Constants.swiftcLog)")
     } catch {
-      printFailure("Could not write xcodebuild output to " + Constants.xcodebuildLog + "\nReason: " + error.localizedDescription)
+      printFailure("Could not write swiftc output to " + Constants.swiftcLog + "\nReason: " + error.localizedDescription)
       return
     }
     
     if (task.terminationStatus != 0) {
-      printWarning("\nxcodebuild failed. Please see \(xcodebuildLog.relativeString)\n")
+      printWarning("\nswiftc failed. Please see \(swiftcLog.relativeString)\n")
       return
     }
     
     print("")
     
-    var roughSections = output.components(separatedBy: "\nCompileSwift normal ")
-    roughSections.removeFirst()
-    var sections = [Section]()
+    var sil = output.components(separatedBy: "\nsil_stage canonical")[1]
+    sil = "sil_stage canonical\(sil)\n\n"
     
-    for s in roughSections {
-      // Quick and dirty parsing
-      let chars: [Character] = Array(s[s.startIndex...s.firstIndex(of: "\n")!])
-      var cursor: Int = 0
-      let platform = String(chars.suffix(from: cursor).prefix(while: { (character) -> Bool in
-        return character != " "
-      }))
-      cursor += platform.count + 1
-      // Some sources have a Swift file path.
-      if (chars[cursor] != "(") {
-        let path = String(chars.suffix(from: cursor).prefix(while: { (character) -> Bool in
-          return character != " "
-        }))
-        cursor += path.count + 1
-      }
-      var expected = "(in target '"
-      if (!chars.suffix(from: cursor).starts(with: expected)) {
-        throw "parsing error: target expected\n\(String(chars))"
-      }
-      cursor += expected.count
-      let target = String(chars.suffix(from: cursor).prefix(while: { (character) -> Bool in
-        return character != "'"
-      }))
-      cursor += target.count
-      expected = "' from project '"
-      if (!chars.suffix(from: cursor).starts(with: expected)) {
-        throw "parsing error: project expected\n\(String(chars))"
-      }
-      cursor += expected.count
-      let project = String(chars.suffix(from: cursor).prefix(while: { (character) -> Bool in
-        return character != "'"
-      }))
-      // Isolate SIL from rest of output
-      var sil = s.components(separatedBy: "\nsil_stage canonical")[1].components(separatedBy: "\n\n\n\n")[0]
-      sil = "sil_stage canonical\(sil)\n\n"
-      let newSection = Section(platform: platform, target: target, project: project, sil: sil)
-      print("Detected compilation unit\n  target: \(target)\n  project: \(project)\n  platform: \(platform)\n  SIL lines: \(sil.components(separatedBy: "\n").count)\n")
-      if (!sections.contains(where: { (section) -> Bool in return section == newSection})) {
-        sections.append(newSection)
-      } else {
-        print("Ignored section because it already exists under another platform.")
-      }
+    let filename = outputDir.appendingPathComponent("out.sil")
+    do {
+      try sil.write(to: filename, atomically: true, encoding: String.Encoding.utf8)
+    } catch {
+      printFailure("Could not write SIL to \(filename)\nReason: \(error.localizedDescription)")
     }
     
-    for section in sections {
-      let filename = outputDir.appendingPathComponent("\(section.target).\(section.project).sil")
-      do {
-        if FileManager.default.fileExists(atPath: filename.path) {
-          let existing = try String(contentsOf: filename)
-          // Write and compares files instead. This is temporary because comparing strings does not work reliably.
-          if (existing.components(separatedBy: "\n").count != section.sil.components(separatedBy: "\n").count) {
-            printStatus("Detected change: \(section.target).\(section.project)")
-          }
-        }
-        try section.sil.write(to: filename, atomically: true, encoding: String.Encoding.utf8)
-      } catch {
-        printFailure("Could not write SIL to \(filename)\nReason: \(error.localizedDescription)")
-      }
-    }
+    // Delete generated unneeded generate file '-.gsil_0.sil'
+    try FileManager().removeItem(at: URL(fileURLWithPath: "-.gsil_0.sil"))
     
     printStatus("\nSIL written to \(outputDir.path)")
   }
   
 }
 
-SWANXcodeBuild.main()
-
+SWANSwiftcBuild.main()

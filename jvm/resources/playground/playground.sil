@@ -1,0 +1,132 @@
+sil_stage canonical
+
+sil_scope 1 { loc "-.gsil_0.sil":1:1 parent @main : $@convention(c) (Int32, UnsafeMutablePointer<Optional<UnsafeMutablePointer<Int8>>>) -> Int32 }
+
+sil_scope 2 { loc "-.gsil_0.sil":47:1 parent @$s10playground6sourceSSyF : $@convention(thin) () -> @owned String }
+
+sil_scope 3 { loc "-.gsil_0.sil":67:1 parent @$s10playground4sink4sunkySS_tF : $@convention(thin) (@guaranteed String) -> () }
+
+sil_scope 4 { loc "-.gsil_0.sil":105:1 parent @$ss5print_9separator10terminatoryypd_S2StFfA0_ : $@convention(thin) () -> @owned String }
+
+sil_scope 5 { loc "-.gsil_0.sil":120:1 parent @$ss5print_9separator10terminatoryypd_S2StFfA1_ : $@convention(thin) () -> @owned String }
+
+sil_scope 6 { loc "-.gsil_0.sil":147:1 parent @$sSi22_builtinIntegerLiteralSiBI_tcfC : $@convention(method) (Builtin.IntLiteral, @thin Int.Type) -> Int }
+
+import Builtin
+import Swift
+import SwiftShims
+
+sil_global hidden @$s10playground7stringsSaySSGvp : $Array<String>
+
+sil @main : $@convention(c) (Int32, UnsafeMutablePointer<Optional<UnsafeMutablePointer<Int8>>>) -> Int32 {
+bb0(%0 : $Int32, %1 : $UnsafeMutablePointer<Optional<UnsafeMutablePointer<Int8>>>):
+  alloc_global @$s10playground7stringsSaySSGvp, loc "-.gsil_0.sil":9:1, scope 1
+  %3 = global_addr @$s10playground7stringsSaySSGvp : $*Array<String>, loc "-.gsil_0.sil":10:1, scope 1
+  %4 = metatype $@thin Array<String>.Type, loc "-.gsil_0.sil":11:1, scope 1
+  %5 = function_ref @$sS2ayxGycfC : $@convention(method) <τ_0_0> (@thin Array<τ_0_0>.Type) -> @owned Array<τ_0_0>, loc "-.gsil_0.sil":12:1, scope 1
+  %6 = apply %5<String>(%4) : $@convention(method) <τ_0_0> (@thin Array<τ_0_0>.Type) -> @owned Array<τ_0_0>, loc "-.gsil_0.sil":14:1, scope 1
+  store %6 to %3 : $*Array<String>, loc "-.gsil_0.sil":15:1, scope 1
+  %8 = function_ref @$s10playground6sourceSSyF : $@convention(thin) () -> @owned String, loc "-.gsil_0.sil":16:1, scope 1
+  %9 = apply %8() : $@convention(thin) () -> @owned String, loc "-.gsil_0.sil":18:1, scope 1
+  %10 = alloc_stack $String, loc "-.gsil_0.sil":19:1, scope 1
+  store %9 to %10 : $*String, loc "-.gsil_0.sil":20:1, scope 1
+  %12 = begin_access [modify] [dynamic] %3 : $*Array<String>, loc "-.gsil_0.sil":21:1, scope 1
+  %13 = function_ref @$sSa6appendyyxnF : $@convention(method) <τ_0_0> (@in τ_0_0, @inout Array<τ_0_0>) -> (), loc "-.gsil_0.sil":22:1, scope 1
+  %14 = apply %13<String>(%10, %12) : $@convention(method) <τ_0_0> (@in τ_0_0, @inout Array<τ_0_0>) -> (), loc "-.gsil_0.sil":24:1, scope 1
+  end_access %12 : $*Array<String>, loc "-.gsil_0.sil":25:1, scope 1
+  dealloc_stack %10 : $*String, loc "-.gsil_0.sil":26:1, scope 1
+  %17 = integer_literal $Builtin.Int64, 0, loc "-.gsil_0.sil":27:1, scope 1
+  %18 = struct $Int (%17 : $Builtin.Int64), loc "-.gsil_0.sil":28:1, scope 1
+  %19 = begin_access [read] [dynamic] %3 : $*Array<String>, loc "-.gsil_0.sil":29:1, scope 1
+  %20 = load %19 : $*Array<String>, loc "-.gsil_0.sil":30:1, scope 1
+  %21 = alloc_stack $String, loc "-.gsil_0.sil":31:1, scope 1
+  %22 = function_ref @$sSayxSicig : $@convention(method) <τ_0_0> (Int, @guaranteed Array<τ_0_0>) -> @out τ_0_0, loc "-.gsil_0.sil":32:1, scope 1
+  %23 = apply %22<String>(%21, %18, %20) : $@convention(method) <τ_0_0> (Int, @guaranteed Array<τ_0_0>) -> @out τ_0_0, loc "-.gsil_0.sil":34:1, scope 1
+  %24 = load %21 : $*String, loc "-.gsil_0.sil":35:1, scope 1
+  end_access %19 : $*Array<String>, loc "-.gsil_0.sil":36:1, scope 1
+  %26 = function_ref @$s10playground4sink4sunkySS_tF : $@convention(thin) (@guaranteed String) -> (), loc "-.gsil_0.sil":37:1, scope 1
+  %27 = apply %26(%24) : $@convention(thin) (@guaranteed String) -> (), loc "-.gsil_0.sil":39:1, scope 1
+  release_value %24 : $String, loc "-.gsil_0.sil":40:1, scope 1
+  dealloc_stack %21 : $*String, loc "-.gsil_0.sil":41:1, scope 1
+  %30 = integer_literal $Builtin.Int32, 0, loc "-.gsil_0.sil":42:1, scope 1
+  %31 = struct $Int32 (%30 : $Builtin.Int32), loc "-.gsil_0.sil":43:1, scope 1
+  return %31 : $Int32, loc "-.gsil_0.sil":44:1, scope 1
+}
+
+sil hidden @$s10playground6sourceSSyF : $@convention(thin) () -> @owned String {
+bb0:
+  %0 = string_literal utf8 "I'm bad", loc "-.gsil_0.sil":53:1, scope 2
+  %1 = integer_literal $Builtin.Word, 7, loc "-.gsil_0.sil":54:1, scope 2
+  %2 = integer_literal $Builtin.Int1, -1, loc "-.gsil_0.sil":55:1, scope 2
+  %3 = metatype $@thin String.Type, loc "-.gsil_0.sil":56:1, scope 2
+  %4 = function_ref @$sSS21_builtinStringLiteral17utf8CodeUnitCount7isASCIISSBp_BwBi1_tcfC : $@convention(method) (Builtin.RawPointer, Builtin.Word, Builtin.Int1, @thin String.Type) -> @owned String, loc "-.gsil_0.sil":57:1, scope 2
+  %5 = apply %4(%0, %1, %2, %3) : $@convention(method) (Builtin.RawPointer, Builtin.Word, Builtin.Int1, @thin String.Type) -> @owned String, loc "-.gsil_0.sil":59:1, scope 2
+  return %5 : $String, loc "-.gsil_0.sil":60:1, scope 2
+}
+
+sil [serialized] [always_inline] [readonly] [_semantics "string.makeUTF8"] @$sSS21_builtinStringLiteral17utf8CodeUnitCount7isASCIISSBp_BwBi1_tcfC : $@convention(method) (Builtin.RawPointer, Builtin.Word, Builtin.Int1, @thin String.Type) -> @owned String
+
+sil hidden @$s10playground4sink4sunkySS_tF : $@convention(thin) (@guaranteed String) -> () {
+bb0(%0 : $String):
+  %1 = integer_literal $Builtin.Word, 1, loc "-.gsil_0.sil":75:1, scope 3
+  %2 = function_ref @$ss27_allocateUninitializedArrayySayxG_BptBwlF : $@convention(thin) <τ_0_0> (Builtin.Word) -> (@owned Array<τ_0_0>, Builtin.RawPointer), loc "-.gsil_0.sil":76:1, scope 3
+  %3 = apply %2<Any>(%1) : $@convention(thin) <τ_0_0> (Builtin.Word) -> (@owned Array<τ_0_0>, Builtin.RawPointer), loc "-.gsil_0.sil":78:1, scope 3
+  %4 = tuple_extract %3 : $(Array<Any>, Builtin.RawPointer), 0, loc "-.gsil_0.sil":79:1, scope 3
+  %5 = tuple_extract %3 : $(Array<Any>, Builtin.RawPointer), 1, loc "-.gsil_0.sil":80:1, scope 3
+  %6 = pointer_to_address %5 : $Builtin.RawPointer to [strict] $*Any, loc "-.gsil_0.sil":81:1, scope 3
+  retain_value %0 : $String, loc "-.gsil_0.sil":82:1, scope 3
+  %8 = init_existential_addr %6 : $*Any, $String, loc "-.gsil_0.sil":83:1, scope 3
+  store %0 to %8 : $*String, loc "-.gsil_0.sil":84:1, scope 3
+  %10 = function_ref @$ss5print_9separator10terminatoryypd_S2StFfA0_ : $@convention(thin) () -> @owned String, loc "-.gsil_0.sil":85:1, scope 3
+  %11 = apply %10() : $@convention(thin) () -> @owned String, loc "-.gsil_0.sil":87:1, scope 3
+  %12 = function_ref @$ss5print_9separator10terminatoryypd_S2StFfA1_ : $@convention(thin) () -> @owned String, loc "-.gsil_0.sil":88:1, scope 3
+  %13 = apply %12() : $@convention(thin) () -> @owned String, loc "-.gsil_0.sil":90:1, scope 3
+  %14 = function_ref @$ss5print_9separator10terminatoryypd_S2StF : $@convention(thin) (@guaranteed Array<Any>, @guaranteed String, @guaranteed String) -> (), loc "-.gsil_0.sil":91:1, scope 3
+  %15 = apply %14(%4, %11, %13) : $@convention(thin) (@guaranteed Array<Any>, @guaranteed String, @guaranteed String) -> (), loc "-.gsil_0.sil":93:1, scope 3
+  release_value %13 : $String, loc "-.gsil_0.sil":94:1, scope 3
+  release_value %11 : $String, loc "-.gsil_0.sil":95:1, scope 3
+  release_value %4 : $Array<Any>, loc "-.gsil_0.sil":96:1, scope 3
+  %19 = tuple (), loc "-.gsil_0.sil":97:1, scope 3
+  return %19 : $(), loc "-.gsil_0.sil":98:1, scope 3
+}
+
+sil [serialized] [always_inline] [_semantics "array.uninitialized_intrinsic"] @$ss27_allocateUninitializedArrayySayxG_BptBwlF : $@convention(thin) <τ_0_0> (Builtin.Word) -> (@owned Array<τ_0_0>, Builtin.RawPointer)
+
+sil shared_external [serialized] @$ss5print_9separator10terminatoryypd_S2StFfA0_ : $@convention(thin) () -> @owned String {
+bb0:
+  %0 = string_literal utf8 " ", loc "-.gsil_0.sil":110:1, scope 4
+  %1 = integer_literal $Builtin.Word, 1, loc "-.gsil_0.sil":111:1, scope 4
+  %2 = integer_literal $Builtin.Int1, -1, loc "-.gsil_0.sil":112:1, scope 4
+  %3 = metatype $@thin String.Type, loc "-.gsil_0.sil":113:1, scope 4
+  %4 = function_ref @$sSS21_builtinStringLiteral17utf8CodeUnitCount7isASCIISSBp_BwBi1_tcfC : $@convention(method) (Builtin.RawPointer, Builtin.Word, Builtin.Int1, @thin String.Type) -> @owned String, loc "-.gsil_0.sil":114:1, scope 4
+  %5 = apply %4(%0, %1, %2, %3) : $@convention(method) (Builtin.RawPointer, Builtin.Word, Builtin.Int1, @thin String.Type) -> @owned String, loc "-.gsil_0.sil":116:1, scope 4
+  return %5 : $String, loc "-.gsil_0.sil":117:1, scope 4
+}
+
+sil shared_external [serialized] @$ss5print_9separator10terminatoryypd_S2StFfA1_ : $@convention(thin) () -> @owned String {
+bb0:
+  %0 = string_literal utf8 "\n", loc "-.gsil_0.sil":125:1, scope 5
+  %1 = integer_literal $Builtin.Word, 1, loc "-.gsil_0.sil":126:1, scope 5
+  %2 = integer_literal $Builtin.Int1, -1, loc "-.gsil_0.sil":127:1, scope 5
+  %3 = metatype $@thin String.Type, loc "-.gsil_0.sil":128:1, scope 5
+  %4 = function_ref @$sSS21_builtinStringLiteral17utf8CodeUnitCount7isASCIISSBp_BwBi1_tcfC : $@convention(method) (Builtin.RawPointer, Builtin.Word, Builtin.Int1, @thin String.Type) -> @owned String, loc "-.gsil_0.sil":129:1, scope 5
+  %5 = apply %4(%0, %1, %2, %3) : $@convention(method) (Builtin.RawPointer, Builtin.Word, Builtin.Int1, @thin String.Type) -> @owned String, loc "-.gsil_0.sil":131:1, scope 5
+  return %5 : $String, loc "-.gsil_0.sil":132:1, scope 5
+}
+
+sil @$ss5print_9separator10terminatoryypd_S2StF : $@convention(thin) (@guaranteed Array<Any>, @guaranteed String, @guaranteed String) -> ()
+
+sil [serialized] [_semantics "array.init.empty"] @$sS2ayxGycfC : $@convention(method) <τ_0_0> (@thin Array<τ_0_0>.Type) -> @owned Array<τ_0_0>
+
+sil [serialized] [_semantics "array.append_element"] @$sSa6appendyyxnF : $@convention(method) <τ_0_0> (@in τ_0_0, @inout Array<τ_0_0>) -> ()
+
+sil public_external [transparent] [serialized] @$sSi22_builtinIntegerLiteralSiBI_tcfC : $@convention(method) (Builtin.IntLiteral, @thin Int.Type) -> Int {
+bb0(%0 : $Builtin.IntLiteral, %1 : $@thin Int.Type):
+  %2 = builtin "s_to_s_checked_trunc_IntLiteral_Int64"(%0 : $Builtin.IntLiteral) : $(Builtin.Int64, Builtin.Int1), loc "-.gsil_0.sil":153:1, scope 6
+  %3 = tuple_extract %2 : $(Builtin.Int64, Builtin.Int1), 0, loc "-.gsil_0.sil":154:1, scope 6
+  %4 = struct $Int (%3 : $Builtin.Int64), loc "-.gsil_0.sil":155:1, scope 6
+  return %4 : $Int, loc "-.gsil_0.sil":156:1, scope 6
+}
+
+sil [serialized] @$sSayxSicig : $@convention(method) <τ_0_0> (Int, @guaranteed Array<τ_0_0>) -> @out τ_0_0
+

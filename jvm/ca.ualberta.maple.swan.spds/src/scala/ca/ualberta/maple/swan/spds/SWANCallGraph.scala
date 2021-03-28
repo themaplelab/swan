@@ -13,8 +13,8 @@ package ca.ualberta.maple.swan.spds
 import java.util
 import java.util.Collections
 
-import boomerang.{BackwardQuery, Boomerang, DefaultBoomerangOptions, Query}
 import boomerang.scene.{AnalysisScope, CallGraph, ControlFlowGraph, DataFlowScope}
+import boomerang.{BackwardQuery, Boomerang, DefaultBoomerangOptions, Query}
 import ca.ualberta.maple.swan.ir.{CanFunction, CanModule, Constants}
 import com.google.common.collect.Maps
 

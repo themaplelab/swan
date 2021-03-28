@@ -10,12 +10,14 @@
 
 package ca.ualberta.maple.swan.parser
 
+import java.io.File
 import java.nio.charset.StandardCharsets
 import java.nio.file.{Files, Path}
 import java.util
 
-import ca.ualberta.maple.swan.parser.Logging.ProgressBar
+import ca.ualberta.maple.swan.utils.Logging
 
+import scala.annotation.tailrec
 import scala.collection.mutable.ArrayBuffer
 import scala.reflect.ClassTag
 import scala.util.control.Breaks
@@ -27,8 +29,6 @@ import scala.util.control.Breaks.{break, breakable}
 class SILParser extends SILPrinter {
 
   // Default constructor should not be called.
-  // I can't think of an elegant way to address the exclusive or
-  // of Path/String parameters.
 
   private[parser] var path: String = _
   private[parser] var chars: Array[Char] = _
@@ -94,7 +94,7 @@ class SILParser extends SILPrinter {
 
   protected def skip(whileFn: Char => Boolean): Boolean = {
     val result : String = take(whileFn)
-    !result.isEmpty
+    result.nonEmpty
   }
 
   protected def skipTrivia(): Unit = {
@@ -223,13 +223,30 @@ class SILParser extends SILPrinter {
     })
     val line = newlines.length + 1
     val column = position - (if (newlines.isEmpty) 0 else newlines.last)
-    new Error(path, line, column, message, if (path == "<memory>") chars else null)
+    def singleLine: Array[Char] = {
+      if (path == "<memory>") chars else {
+        breakable {
+          var currLine = 1
+          chars.zipWithIndex.foreach(c => {
+            if (line == currLine) {
+              return chars.slice(c._2, chars.length - 1).takeWhile(_ != '\n')
+            }
+            if (c._1 == '\n') {
+              currLine = currLine + 1
+            }
+          })
+        }
+        Array.empty
+      }
+    }
+    new Error(path, line, column, message, singleLine)
   }
 
   // https://github.com/apple/swift/blob/master/docs/SIL.rst#syntax
   @throws[Error]
   def parseModule(): SILModule = {
-    Logging.printInfo("Parsing SIL Module from " + this.path)
+    Logging.printInfo("Parsing " + new File(this.path).getName)
+    val startTime = System.nanoTime()
     if (!skip("sil_stage canonical")) {
       throw parseError("This parser only supports canonical SIL")
     }
@@ -241,9 +258,7 @@ class SILParser extends SILPrinter {
     var scopes = Array[SILScope]()
     val properties = Array[SILProperty]()
     var done = false
-    val progressBar = new ProgressBar("Parsing", this.chars.length, false)
     while(!done) {
-      progressBar.update(this.cursor)
       if(peek("sil ")) {
         val function = parseFunction()
         functions :+= function
@@ -272,8 +287,8 @@ class SILParser extends SILPrinter {
         }
       }
     }
-    progressBar.done()
-    new SILModule(functions, witnessTables, vTables, imports, globalVariables, scopes, properties, inits)
+    Logging.printTimeStamp(2, startTime, "parsing", chars.count(_ == '\n'), "lines")
+    new SILModule(functions, witnessTables, vTables, imports, globalVariables, scopes, properties, inits, new SILModuleMetadata(new File(path), "", "", ""))
   }
 
   // https://github.com/apple/swift/blob/master/docs/SIL.rst#functions
@@ -319,7 +334,7 @@ class SILParser extends SILPrinter {
   // https://github.com/apple/swift/blob/master/docs/SIL.rst#basic-blocks
   @throws[Error]
   def parseInstructionDef(): SILInstructionDef = {
-    nakedStack.clear
+    nakedStack.clear()
     val result = parseResult()
     val body = parseInstruction()
     val sourceInfo = parseSourceInfo()
@@ -1653,8 +1668,8 @@ class SILParser extends SILPrinter {
       take(".")
       // [SU]+ but identifier is fine
       val indices = parseIdentifier()
-      return (if (jvp) Some(SILAutoDiff.jvp(indices))
-        else Some(SILAutoDiff.vjp(indices)))
+      return if (jvp) Some(SILAutoDiff.jvp(indices))
+        else Some(SILAutoDiff.vjp(indices))
     }
     None
   }
@@ -2067,33 +2082,33 @@ class SILParser extends SILPrinter {
       case object Square extends Type
       case object Arrows extends Type
     }
-    def clear: Unit = {
+    def clear(): Unit = {
       this.stack.clear()
     }
-    def openParen: Unit = {
+    def openParen(): Unit = {
       stack.push('(')
     }
-    def closeParen: Unit = {
+    def closeParen(): Unit = {
       if (this.stack.peek() == '(') {
         stack.pop()
       } else {
         throw new RuntimeException("Unmatched paren")
       }
     }
-    def openSquare: Unit = {
+    def openSquare(): Unit = {
       stack.push('[')
     }
-    def closeSquare: Unit = {
+    def closeSquare(): Unit = {
       if (this.stack.peek() == '[') {
         stack.pop()
       } else {
         throw new RuntimeException("Unmatched square")
       }
     }
-    def openArrows: Unit = {
+    def openArrows(): Unit = {
       stack.push('<')
     }
-    def closeArrows: Unit = {
+    def closeArrows(): Unit = {
       if (this.stack.peek() == '<') {
         stack.pop()
       } else {
@@ -2156,6 +2171,7 @@ class SILParser extends SILPrinter {
   @throws[Error]
   def parseNakedType(): SILType = {
     @throws[Error]
+    @tailrec
     def grow(tpe: SILType): SILType = {
       if (peek("<")) {
         val types = parseMany("<",",",">", parseNakedType)
@@ -2181,7 +2197,7 @@ class SILParser extends SILPrinter {
       }
     }
     if (skip("<")) {
-      nakedStack.openArrows
+      nakedStack.openArrows()
       val params = new ArrayBuffer[String]
       var break = false
       while (!break) {
@@ -2200,7 +2216,7 @@ class SILParser extends SILPrinter {
         reqs.clear()
         take(">")
       }
-      nakedStack.closeArrows
+      nakedStack.closeArrows()
       val tpe = parseNakedType()
       SILType.genericType(params.toArray, reqs.toArray, tpe)
     } else if (peek("@")) {
@@ -2223,15 +2239,15 @@ class SILParser extends SILPrinter {
       val tpe = parseNakedType()
       SILType.addressType(tpe)
     } else if (skip("[")) {
-      nakedStack.openSquare
+      nakedStack.openSquare()
       val subtype = parseNakedType()
       take("]")
-      nakedStack.closeSquare
+      nakedStack.closeSquare()
       SILType.arrayType(Array[SILType]{subtype}, nakedStyle = true, optional = skip("?"))
     } else if (peek("(")) {
-      nakedStack.openParen
+      nakedStack.openParen()
       val types: Array[SILType] = parseMany("(", ",", ")", parseNakedType)
-      nakedStack.closeParen
+      nakedStack.closeParen()
       if (skip(".Type")) {
         if (types.length > 1) {
           parseError("Expected one type (& type) in (<here>).Type")
@@ -2366,7 +2382,7 @@ class SILParser extends SILPrinter {
   def parseString(): String = {
     // T0D0: Parse string literals with control characters.
     //  - Already jankily handle escaped " character
-    take("\"", false)
+    take("\"", skip = false)
     var s = ""
     def continue(): Boolean = {
       var i = 0
@@ -2566,7 +2582,7 @@ class Error(path : String, message : String, val chars: Array[Char]) extends Exc
       return path + ":" + line.get + ": " + message
     }
     if (chars != null) {
-      chars.mkString("") + ":" + column.get + ": " + message + System.lineSeparator() + (" " * column.get) + "^"
+      path + ":" + line.get + ":" + column.get + ": " + message + System.lineSeparator() + chars.mkString("") + System.lineSeparator() + (" " * column.get) + "^"
     } else {
       path + ":" + line.get + ":" + column.get + ": " + message
     }

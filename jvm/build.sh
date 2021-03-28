@@ -13,12 +13,13 @@ fi
 
 cd "${scriptdir}" && ./gradlew shadowJar && cd ..
 
-if [ ! -d "lib" ]; then
-  mkdir lib
-fi
+rm -rf lib
+mkdir lib
 
 cp "${scriptdir}"/ca.ualberta.maple.swan.viewer/build/libs/ca.ualberta.maple.swan.viewer-all.jar lib/viewer.jar
 
 cp lib/viewer.jar dev/SwanViewer/viewer.jar
 
-cp "${scriptdir}"/ca.ualberta.maple.swan.client/build/libs/ca.ualberta.maple.swan.client-all.jar lib/client.jar
+cp "${scriptdir}"/ca.ualberta.maple.swan.testclient/build/libs/ca.ualberta.maple.swan.testclient-all.jar lib/testclient.jar
+
+cp "${scriptdir}"/ca.ualberta.maple.swan.drivers/build/libs/ca.ualberta.maple.swan.drivers-all.jar lib/default-driver.jar

@@ -12,9 +12,9 @@ package ca.ualberta.maple.swan.spds
 
 import java.util
 
-import com.google.common.collect.{Lists, Sets}
-import boomerang.scene.{ControlFlowGraph, Method, Statement, Val, WrappedClass}
+import boomerang.scene._
 import ca.ualberta.maple.swan.ir.{CanFunction, SymbolTableEntry}
+import com.google.common.collect.{Lists, Sets}
 
 import scala.collection.mutable
 
