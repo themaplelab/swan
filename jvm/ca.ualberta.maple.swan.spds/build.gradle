@@ -38,8 +38,8 @@ repositories {
         name = "github"
         url = uri("https://maven.pkg.github.com/CodeShield-Security/SPDS/")
         credentials {
-            username = "foo"
-            password = "bar"
+            username = project.property("USERNAME")
+            password = project.property("PASSWORD")
         }
     }
     maven {
@@ -55,14 +55,14 @@ sourceCompatibility = 1.8
 dependencies {
     implementation project(":ca.ualberta.maple.swan.parser")
     implementation project(":ca.ualberta.maple.swan.ir")
+    implementation project(":ca.ualberta.maple.swan.test")
+    implementation project(":ca.ualberta.maple.swan.utils")
 
     implementation 'de.fraunhofer.iem:WPDS:3.1.1'
     implementation 'de.fraunhofer.iem:boomerangScope:3.1.1'
     implementation 'de.fraunhofer.iem:boomerangPDS:3.1.1'
 
-    implementation 'org.scala-lang:scala-library:2.13.3'
-    testImplementation 'org.scala-lang:scala-library:2.13.3'
-    testImplementation 'org.scalatest:scalatest_2.13:3.2.0'
+    implementation 'org.scala-lang:scala-library:'+project.property("SCALA_VERSION")
 
     testImplementation('org.junit.jupiter:junit-jupiter-api:5.4.2')
     testImplementation('org.junit.jupiter:junit-jupiter-params:5.4.2')
