@@ -85,7 +85,6 @@ struct SWANXcodebuild: ParsableCommand {
     
     let start = DispatchTime.now()
     task.launch()
-    task.waitUntilExit()
     
     let data = pipe.fileHandleForReading.readDataToEndOfFile()
     let output: String = String(data: data, encoding: String.Encoding.utf8)!
