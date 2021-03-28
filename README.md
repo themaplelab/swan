@@ -18,10 +18,10 @@ We have completely redesigned SWAN. It now parses plain-text SIL that can either
 ## Developing
 
 ```
-git clone git@github.com:themaplelab/swan.git -b spds --recurse-submodules
+git clone git@github.com:themaplelab/swan.git -b spds
 ```
 
-Add your github username and [personal access token](https://docs.github.com/en/github/authenticating-to-github/creating-a-personal-access-token) (with read:packages) to `jvm/ca.ualberta.maple.swan.spds/build.gradle`. This is required for adding SPDS as a dependency. Do **not** push this token.
+Add your github username and [personal access token](https://docs.github.com/en/github/authenticating-to-github/creating-a-personal-access-token) (with read:packages) to `jvm/gradle.properties`. This is required for adding SPDS as a dependency. Do **not** push these.
 
 Run `./build.sh` in the repo root. You can also run nested `build.sh` scripts from root to build separate toolchain components.
 
