@@ -58,6 +58,8 @@ dependencies {
     implementation project(":ca.ualberta.maple.swan.test")
     implementation project(":ca.ualberta.maple.swan.utils")
 
+    compile 'org.jsoup:jsoup:1.12.1' // pretty print html
+
     implementation 'de.fraunhofer.iem:WPDS:3.1.1'
     implementation 'de.fraunhofer.iem:boomerangScope:3.1.1'
     implementation 'de.fraunhofer.iem:boomerangPDS:3.1.1'

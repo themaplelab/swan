@@ -122,7 +122,7 @@ object SWANStatement {
     override def getRightOp: Val = m.allValues(inst.from.name)
     override def isIdentityStmt: Boolean = true
     override def toString: String = {
-      getLeftOp.toString + " = " + getRightOp.toString
+      "<assign><lhs>" + getLeftOp.toString + "</lhs><rhs>" + getRightOp.toString + "</rhs></assign>"
     }
   }
   case class ArrayLoad(opDef: CanOperatorDef, inst: Operator.arrayRead,
@@ -158,9 +158,10 @@ object SWANStatement {
   }
   case class Allocation(opDef: CanOperatorDef, inst: Operator.neww,
                         m: SWANMethod) extends SWANStatement(CanInstructionDef.operator(opDef), m) {
-    override def getRightOp: Val = ??? // SWANVal.NewExpr(inst.result, m)
+    override def getLeftOp: Val = SWANVal.Simple(inst.result, m)
+    override def getRightOp: Val = SWANVal.NewExpr(inst.result, m)
     override def toString: String = {
-      getLeftOp.toString // + " = " + getRightOp.toString
+      "<alloc><lhs>" + getLeftOp.toString + "</lhs><rhs>" + getRightOp.toString + "</rhs></alloc>"
     }
   }
   case class Literal(opDef: CanOperatorDef, inst: Operator.literal,
@@ -188,7 +189,7 @@ object SWANStatement {
                          m: SWANMethod) extends SWANStatement(CanInstructionDef.operator(opDef), m) {
     override def getRightOp: Val = SWANVal.FunctionRef(inst.result, inst.name, m)
     override def toString: String = {
-      getLeftOp.toString + " = " + getRightOp.toString
+      "<func_ref><lhs>" + getLeftOp.toString + "</lhs><rhs>" + getRightOp.toString + "</rhs></func_ref>"
     }
   }
   case class ApplyFunctionRef(opDef: CanOperatorDef, inst: Operator.apply,
@@ -198,7 +199,7 @@ object SWANStatement {
     override def getInvokeExpr: InvokeExpr = new SWANInvokeExpr(this, m)
     def getFunctionRef: Val = m.allValues(inst.functionRef.name)
     override def toString: String = {
-      getLeftOp.toString + " = " + getInvokeExpr.toString
+      "<apply><lhs>" + getLeftOp.toString + "</lhs>" + getInvokeExpr.toString + "</apply>"
     }
   }
   case class BinaryOperation(opDef: CanOperatorDef, inst: Operator.binaryOp,
@@ -230,15 +231,17 @@ object SWANStatement {
           // SWANVal.Simple(inst.result, m)
       }
     }
-
     override def toString: String = {
       getLeftOp.toString + " = " + getRightOp.toString
     }
   }
   case class ConditionalFatalError(opDef: CanOperatorDef, inst: Operator.condFail,
-                                   m: SWANMethod) extends SWANStatement(CanInstructionDef.operator(opDef), m)
-  override def toString: String = {
-    "conditional_fail"
+                                   m: SWANMethod) extends SWANStatement(CanInstructionDef.operator(opDef), m) {
+    override def getLeftOp: Val = ???
+    override def getRightOp: Val = ??? // T0D0
+    override def toString: String = {
+      "<conditional_fail/>"
+    }
   }
   // *** TERMINATORS ***
   case class Branch(termDef: CanTerminatorDef, inst: Terminator.br_can,
@@ -259,31 +262,39 @@ object SWANStatement {
   }
   case class Return(termDef: CanTerminatorDef, inst: Terminator.ret,
                     m: SWANMethod) extends SWANStatement(CanInstructionDef.terminator(termDef), m) {
+    override def getLeftOp: Val = ???
+    override def getRightOp: Val = ??? // T0D0
     override def isReturnStmt: Boolean = true
     override def getReturnOp: Val = m.allValues(inst.value.name)
     override def toString: String = {
-      "return " + getReturnOp.toString
+      "<return>" + getReturnOp.toString + "</return>"
     }
   }
   case class Throw(termDef: CanTerminatorDef, inst: Terminator.thro,
                    m: SWANMethod) extends SWANStatement(CanInstructionDef.terminator(termDef), m) {
+    override def getLeftOp: Val = ???
+    override def getRightOp: Val = ??? // T0D0
     override def isThrowStmt: Boolean = true
     override def toString: String = {
-      "throw"
+      "<throw/>"
     }
   }
   case class Unreachable(termDef: CanTerminatorDef,
                          m: SWANMethod) extends SWANStatement(CanInstructionDef.terminator(termDef), m) {
+    override def getLeftOp: Val = ???
+    override def getRightOp: Val = ???
     override def toString: String = {
-      "unreachable"
+      "<unreachable/>"
     }
   }
   case class Yield(termDef: CanTerminatorDef, inst: Terminator.yld,
                    m: SWANMethod) extends SWANStatement(CanInstructionDef.terminator(termDef), m) {
+    override def getLeftOp: Val = ???
+    override def getRightOp: Val = ???
     override def isReturnStmt: Boolean = true
     override def getReturnOp: Val = m.allValues(inst.yields(0).name)
     override def toString: String = {
-      "yield (return) " + getReturnOp.toString
+      "<yield>" + getReturnOp.toString + "</yield>"
     }
   }
 }

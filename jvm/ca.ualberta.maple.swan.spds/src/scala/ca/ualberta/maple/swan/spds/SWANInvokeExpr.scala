@@ -40,10 +40,17 @@ class SWANInvokeExpr(val stmt: ApplyFunctionRef, val method: SWANMethod) extends
   override def isStaticInvokeExpr: Boolean = false
 
   override def toString: String = {
-    if (getMethod == null) {
-      stmt.inst.functionRef.name + "(" + args + ")"
-    } else {
-      getMethod.toString + "(" + args + ")"
-    }
+    val sb = new StringBuilder()
+    sb.append("<invoke_expr>")
+    sb.append(getFunctionRef.toString)
+    sb.append("<args>")
+    args.forEach(a => {
+      sb.append("<arg>")
+      sb.append(a.toString)
+      sb.append("</arg>")
+    })
+    sb.append("</args>")
+    sb.append("</invoke_expr>")
+    sb.toString()
   }
 }

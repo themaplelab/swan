@@ -21,11 +21,10 @@ import com.google.common.collect.Maps
 // TODO: iOS lifecycle
 class SWANCallGraph(val module: CanModule) extends CallGraph {
 
-  private val methods = Maps.newHashMap[String, SWANMethod]
+  val methods = Maps.newHashMap[String, SWANMethod]
 
   module.functions.foreach(f => {
-    //val m = makeMethod(f)
-    if (f.name == Constants.fakeMain) {
+    if (f.name.startsWith(Constants.fakeMain)) {
       val m = makeMethod(f) // ++
       this.getEntryPoints.add(m)
     }

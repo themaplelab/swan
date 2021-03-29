@@ -68,7 +68,7 @@ object SWANVal {
       false
     }
     override def toString: String = {
-      getVariableName
+      "<var name=" + getVariableName + " type=" + getType.toString + " hash=" + hashCode + " />"
     }
   }
   case class Argument(delegate: Symbol, index: Int, method: Method, unbalanced: Edge = null) extends SWANVal(method, unbalanced) {
@@ -119,7 +119,7 @@ object SWANVal {
       false
     }
     override def toString: String = {
-      this.delegate.ref.name + " (new " + this.getType.asInstanceOf[SWANType].tpe.name + ")"
+      "<new_var name=" + getVariableName + " type=" + this.getType.toString + " hash=" + hashCode + " />"
     }
   }
   case class Constant(delegate: Symbol, literal: Literal, method: Method, unbalanced: Edge = null) extends SWANVal(method, unbalanced) {
@@ -234,7 +234,7 @@ object SWANVal {
       false
     }
     override def toString: String = {
-      delegate.ref.name + ": @" + ref
+      "<func_ref_var name=" + getVariableName + " type=" + getType.toString + " func=" + ref + " hash=" + hashCode + " />"
     }
   }
   case class BuiltinFunctionRef(delegate: Symbol, ref: String, method: Method, unbalanced: Edge = null) extends SWANVal(method, unbalanced) {

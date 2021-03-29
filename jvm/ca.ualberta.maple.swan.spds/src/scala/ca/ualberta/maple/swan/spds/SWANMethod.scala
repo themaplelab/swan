@@ -80,7 +80,16 @@ class SWANMethod(val delegate: CanFunction) extends Method {
   override def isPublic: Boolean = true
 
   override def toString: String = {
-    getName
+    val sb = new StringBuilder()
+    sb.append("<method name=")
+    sb.append(getName)
+    sb.append(">\n")
+    getStatements.forEach(s => {
+      sb.append(s.toString)
+      sb.append("\n")
+    })
+    sb.append("</method>\n")
+    sb.toString()
   }
 
   override def hashCode(): Int = {

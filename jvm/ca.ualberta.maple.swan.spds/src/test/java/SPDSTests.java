@@ -19,7 +19,10 @@ import ca.ualberta.maple.swan.ir.*;
 import ca.ualberta.maple.swan.ir.canonical.SWIRLPass;
 import ca.ualberta.maple.swan.spds.SWANCallGraph;
 import ca.ualberta.maple.swan.spds.SWANInvokeExpr;
+import ca.ualberta.maple.swan.spds.SWANStatement;
 import ca.ualberta.maple.swan.utils.Logging;
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
 import org.junit.jupiter.api.Test;
 import wpds.impl.Weight;
 
@@ -36,7 +39,7 @@ public class SPDSTests {
     // For now, this test is here but should really be in .test later
     void testSPDSTranslation() throws URISyntaxException, Error {
         File swirlFile = new File(Objects.requireNonNull(getClass().getClassLoader()
-                .getResource("playground/playground.swirl")).toURI());
+                .getResource("playground/spds.swirl")).toURI());
         Logging.printInfo("(Playground) testSWIRL: Testing " + swirlFile.getName());
         Module parsedModule = new SWIRLParser(swirlFile.toPath()).parseModule();
         CanModule module = new SWIRLPass().runPasses(parsedModule);
@@ -45,6 +48,8 @@ public class SPDSTests {
         System.out.print(result);
 
         SWANCallGraph cg = new SWANCallGraph(module);
+        Document doc = Jsoup.parse(cg.methods().values().iterator().next().toString());   // pretty print HTML
+        System.out.println(doc.body().toString());
         // cg.constructStaticCG();
 
         AnalysisScope scope =
@@ -53,7 +58,8 @@ public class SPDSTests {
                     protected Collection<? extends Query> generate(ControlFlowGraph.Edge edge) {
                         Statement statement = edge.getStart();
                         if (statement.containsInvokeExpr()) {
-                            Val ref = ((SWANInvokeExpr) statement.getInvokeExpr()).getFunctionRef();
+                            // Val ref = ((SWANInvokeExpr) statement.getInvokeExpr()).getFunctionRef();
+                            Val ref = statement.getInvokeExpr().getArg(0);
                             return Collections.singleton(BackwardQuery.make(edge, ref));
                         }
                         return Collections.emptySet();

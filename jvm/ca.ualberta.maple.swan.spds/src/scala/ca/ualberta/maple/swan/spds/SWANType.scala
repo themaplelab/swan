@@ -37,17 +37,26 @@ class SWANNullType(tpe: ca.ualberta.maple.swan.ir.Type) extends SWANType(tpe) {
   override def isNullType: Boolean = {
     true
   }
+  override def toString: String = {
+    "(null)" + tpe.name
+  }
 }
 
 class SWANBoolType(tpe: ca.ualberta.maple.swan.ir.Type) extends SWANType(tpe) {
   override def isBooleanType: Boolean = {
     true
   }
+  override def toString: String = {
+    "(bool)" + tpe.name
+  }
 }
 
 class SWANArrayType(tpe: ca.ualberta.maple.swan.ir.Type) extends SWANType(tpe) {
   override def isArrayType: Boolean = {
     true
+  }
+  override def toString: String = {
+    "(array)" + tpe.name
   }
 }
 

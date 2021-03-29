@@ -1,0 +1,16 @@
+swirl_stage raw
+
+func [entry] @`SWAN_FAKE_MAIN_playground.sil` : $`Int32` {
+bb0:
+  a = new $`A`
+  foo_ref = function_ref @`foo`, $`Any`
+  ret = apply foo_ref(a), $`Any`
+  return ret
+}
+
+func @`foo` : $`Any` {
+bb0:
+  ret = new $`Any`
+  return ret
+}
+
