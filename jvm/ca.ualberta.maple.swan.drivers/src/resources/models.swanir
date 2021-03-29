@@ -1,3 +1,21 @@
 swirl_stage raw
 
-// add models here
+// ------------------------------------------------------------------
+// Add models in this file.
+// Use the [model] function attribute.
+// Comment model functionality.
+//
+// Do not rely on stubs for the initial signature. They are based
+// on the function type which doesn't always represent the real args.
+// ------------------------------------------------------------------
+
+// Read from array %2 and write its value to pointer %0
+// %1 is the array index but it is not used
+// return value is never used in practice so its a dummy
+func [model] @`Swift.Array.subscript.getter : (Swift.Int) -> A` : $`@out τ_0_0` {
+bb0(%0 : $`*Any`, %1 : $`Int`, %2 : $`@guaranteed Array<τ_0_0>`):
+  val = array_read %2, $`Any`
+  pointer_write val to %0
+  ret = new $`@out τ_0_0`
+  return ret
+}

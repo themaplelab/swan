@@ -94,14 +94,16 @@ public class Tests {
     }
 
     // INPUT: swan-dir
-    // Smoke test for now
+    // Smoke test and also lightly verify that functions got merged
     @Test
     void testDefaultDriver() throws URISyntaxException {
         File fileDir = new File(Objects.requireNonNull(getClass().getClassLoader()
                 .getResource("example-swan-dir/")).toURI());
         Logging.printInfo("(Tests) testDefaultDriver: Testing " + fileDir.getName());
         ModuleGroup group = DefaultDriver.run(fileDir);
-        // String result = new SWIRLPrinter().print(group, new SWIRLPrinterOptions());
+        String result = new SWIRLPrinter().print(group, new SWIRLPrinterOptions());
+        Assertions.assertTrue(result.contains("func [model] @`Swift.Array.subscript.getter"));
+        Assertions.assertTrue(result.contains("func [linked] @`Sourceful.SyntaxTextView.colorTextView"));
         // System.out.println(result);
     }
 }

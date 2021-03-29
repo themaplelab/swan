@@ -99,6 +99,7 @@ object FunctionAttribute {
   case object coroutine extends FunctionAttribute
   case object stub extends FunctionAttribute
   case object model extends FunctionAttribute
+  case object modelOverride extends FunctionAttribute
   case object entry extends FunctionAttribute
   case object linked extends FunctionAttribute
 }

@@ -450,6 +450,7 @@ class SWIRLPrinter extends Printer {
       case FunctionAttribute.coroutine => print("[coroutine] ")
       case FunctionAttribute.stub => print("[stub] ")
       case FunctionAttribute.model => print("[model] ")
+      case FunctionAttribute.modelOverride => print("[model_override] ")
       case FunctionAttribute.entry => print("[entry] ")
       case FunctionAttribute.linked => print("[linked] ")
     }

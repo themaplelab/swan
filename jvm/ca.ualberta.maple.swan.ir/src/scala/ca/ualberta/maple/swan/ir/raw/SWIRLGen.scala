@@ -143,6 +143,7 @@ class SWIRLGen {
         })
         val returnType = Utils.SILFunctionTypeToReturnType(silFunction.tpe)
         // If function is empty, generate a stub based on return type.
+        // However, param types isn't reliable - actual args may be different.
         if (silFunction.blocks.isEmpty) {
           intermediateSymbols.clear()
           val dummyCtx = Context.dummy(silModule, refTable)

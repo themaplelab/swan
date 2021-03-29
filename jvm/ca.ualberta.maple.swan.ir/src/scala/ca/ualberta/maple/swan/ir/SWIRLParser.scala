@@ -694,6 +694,7 @@ class SWIRLParser extends SWIRLPrinter {
     if(skip("[coroutine]")) return Some(FunctionAttribute.coroutine)
     if(skip("[stub]")) return Some(FunctionAttribute.stub)
     if(skip("[model]")) return Some(FunctionAttribute.model)
+    if(skip("[model_override]")) return Some(FunctionAttribute.modelOverride)
     if(skip("[entry]")) return Some(FunctionAttribute.entry)
     if(skip("[linked]")) return Some(FunctionAttribute.linked)
     None
