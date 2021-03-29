@@ -52,9 +52,9 @@ class SWIRLParser extends SWIRLPrinter {
     skipTrivia()
   }
 
-  def this(s: String) = {
+  def this(s: String, model: Boolean = false) = {
     this()
-    this.path = "<memory>"
+    this.path = if (model) "<models>" else "<memory>"
     this.chars = s.toCharArray
     skipTrivia()
   }
@@ -228,7 +228,8 @@ class SWIRLParser extends SWIRLPrinter {
   // https://github.com/apple/swift/blob/master/docs/SIL.rst#syntax
   @throws[Error]
   def parseModule(): Module = {
-    Logging.printInfo("Parsing " + new File(this.path).getName)
+    Logging.printInfo("Parsing " +
+      { if (this.path == "<models>") "models module" else new File(this.path).getName })
     val startTime = System.nanoTime()
     if (!skip("swirl_stage raw")) {
       throw parseError("This parser only supports raw SWIRL")
@@ -255,7 +256,18 @@ class SWIRLParser extends SWIRLPrinter {
       }
     }
     Logging.printTimeStamp(2, startTime, "parsing", chars.count(_ == '\n'), "lines")
-    new Module(functions, mainFunction, None, new SILMap, new ModuleMetadata(Some(new File(path)), None))
+    val metadata = {
+      this.path match {
+        case "<models>" => new ModuleMetadata(None, None) {
+          override def toString: String = {
+            "models"
+          }
+        }
+        case "<memory>" => new ModuleMetadata(None, None)
+        case _ => new ModuleMetadata(Some(new File(path)), None)
+      }
+    }
+    new Module(functions, mainFunction, None, new SILMap, metadata)
   }
 
   // https://github.com/apple/swift/blob/master/docs/SIL.rst#functions

@@ -11,12 +11,14 @@
 package ca.ualberta.maple.swan.drivers
 
 import java.io.File
+import java.nio.charset.StandardCharsets
 
 import ca.ualberta.maple.swan.ir.canonical.SWIRLPass
 import ca.ualberta.maple.swan.ir.raw.SWIRLGen
 import ca.ualberta.maple.swan.ir.{CanModule, ModuleGroup, ModuleGrouper, SWIRLParser}
 import ca.ualberta.maple.swan.parser.SILParser
 import ca.ualberta.maple.swan.utils.Logging
+import org.apache.commons.io.IOUtils
 
 import scala.collection.mutable.ArrayBuffer
 
@@ -37,8 +39,8 @@ object DefaultDriver {
     canSwirlModule
   }
 
-  def modelRunner(file: File): CanModule = {
-    val swirlModule = new SWIRLParser(file.toPath).parseModule()
+  def modelRunner(modelsContent: String): CanModule = {
+    val swirlModule = new SWIRLParser(modelsContent, model = true).parseModule()
     val canSwirlModule = new SWIRLPass().runPasses(swirlModule)
     canSwirlModule
   }
@@ -57,16 +59,16 @@ object DefaultDriver {
       threads.append(t)
       t.start()
     })
-    // Single file for now (models/*.swanir is tricky with JAR resources)
-    /*val in = getClass.getClassLoader.getResourceAsStream("models.swanir")
-    val br = new BufferedReader(new InputStreamReader(in))
+    // Single file for now, iterating files is tricky with JAR resources)
+    val in = DefaultDriver.getClass.getClassLoader.getResourceAsStream("models.swanir")
+    val modelsContent = IOUtils.toString(in, StandardCharsets.UTF_8)
     val t = new Thread {
       override def run(): Unit = {
-        // modules.append(modelRunner(modelsFile))
+        modules.append(modelRunner(modelsContent))
       }
     }
     threads.append(t)
-    t.start()*/
+    t.start()
     threads.foreach(f => f.join())
     val group = ModuleGrouper.group(modules)
     Logging.printInfo("Group ready:\n"+group.toString+group.functions.length+" functions")
