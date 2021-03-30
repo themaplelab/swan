@@ -31,7 +31,8 @@ object Main {
 
     val silParser = new SILParser(silFile.toPath)
     val silModule = silParser.parseModule()
-    val silPrintedText = silParser.print(silModule, new SILPrinterOptions().printLocation(false))
+    val silPrintedText = silParser.print(silModule,
+      new SILPrinterOptions().printLocation(false).genLocationMap(true))
 
     // Overwrite existing SIL with printed SIL
     val silResultFile = new FileWriter(silPathString, false)
@@ -42,7 +43,7 @@ object Main {
     val canSwirlModule = new SWIRLPass().runPasses(swirlModule)
     val swirlPrinter = new SWIRLPrinter()
     val swirlPrintedText = swirlPrinter.print(canSwirlModule,
-      new SWIRLPrinterOptions().printLocation(false).printCFGWhenCanonical(false))
+      new SWIRLPrinterOptions().printLocation(false).printCFGWhenCanonical(false).genLocationMap(true))
 
     val swirlResultFile = new FileWriter(silPathString + ".swirl")
     swirlResultFile.write(swirlPrintedText)

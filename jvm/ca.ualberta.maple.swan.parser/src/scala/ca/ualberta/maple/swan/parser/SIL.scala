@@ -23,20 +23,20 @@ class SILModuleMetadata(val file: File,
                         val target: String,
                         val project: String)
 
-class SILModule(val functions: Array[SILFunction], val witnessTables: Array[SILWitnessTable],
-                val vTables: Array[SILVTable], val imports: Array[String],
-                val globalVariables: Array[SILGlobalVariable], val scopes: Array[SILScope],
-                var properties: Array[SILProperty], val inits: Array[StructInit], val meta: SILModuleMetadata) {
+class SILModule(val functions: ArrayBuffer[SILFunction], val witnessTables: ArrayBuffer[SILWitnessTable],
+                val vTables: ArrayBuffer[SILVTable], val imports: ArrayBuffer[String],
+                val globalVariables: ArrayBuffer[SILGlobalVariable], val scopes: ArrayBuffer[SILScope],
+                var properties: ArrayBuffer[SILProperty], val inits: ArrayBuffer[StructInit], val meta: SILModuleMetadata) {
   override def toString: String = {
     meta.file.getName
   }
 }
 
-class SILFunction(val linkage: SILLinkage, val attributes: Array[SILFunctionAttribute],
-                  val name: SILMangledName, val tpe: SILType, val blocks: Array[SILBlock])
+class SILFunction(val linkage: SILLinkage, val attributes: ArrayBuffer[SILFunctionAttribute],
+                  val name: SILMangledName, val tpe: SILType, val blocks: ArrayBuffer[SILBlock])
 
-class SILBlock(val identifier: String, val arguments: Array[SILArgument],
-               val operatorDefs: Array[SILOperatorDef], val terminatorDef: SILTerminatorDef) {
+class SILBlock(val identifier: String, val arguments: ArrayBuffer[SILArgument],
+               val operatorDefs: ArrayBuffer[SILOperatorDef], val terminatorDef: SILTerminatorDef) {
 
   def ==(that: SILBlock): Boolean = {
     (identifier, arguments, operatorDefs, terminatorDef) == (that.identifier, that.arguments, that.operatorDefs, that.terminatorDef)
@@ -63,10 +63,10 @@ object SILInstructionDef {
 sealed trait SILOperator
 object SILOperator {
   /***** ALLOCATION AND DEALLOCATION *****/
-  case class allocStack(tpe: SILType, dynamicLifetime: Boolean, attributes: Array[SILDebugAttribute]) extends SILOperator
-  case class allocRef(attributes: Array[SILAllocAttribute], tailElems: Array[(SILType, SILOperand)], tpe: SILType) extends SILOperator
-  case class allocRefDynamic(objc: Boolean, tailElems: Array[(SILType, SILOperand)], operand: SILOperand, tpe: SILType) extends SILOperator
-  case class allocBox(tpe: SILType, attributes: Array[SILDebugAttribute]) extends SILOperator
+  case class allocStack(tpe: SILType, dynamicLifetime: Boolean, attributes: ArrayBuffer[SILDebugAttribute]) extends SILOperator
+  case class allocRef(attributes: ArrayBuffer[SILAllocAttribute], tailElems: ArrayBuffer[(SILType, SILOperand)], tpe: SILType) extends SILOperator
+  case class allocRefDynamic(objc: Boolean, tailElems: ArrayBuffer[(SILType, SILOperand)], operand: SILOperand, tpe: SILType) extends SILOperator
+  case class allocBox(tpe: SILType, attributes: ArrayBuffer[SILDebugAttribute]) extends SILOperator
   case class allocValueBuffer(tpe: SILType, operand: SILOperand) extends SILOperator
   case class allocGlobal(name: SILMangledName) extends SILOperator
   case class deallocStack(operand: SILOperand) extends SILOperator
@@ -78,8 +78,8 @@ object SILOperator {
   // NSIP: project_value_buffer
 
   /***** DEBUG INFORMATION *****/
-  case class debugValue(operand: SILOperand, attributes: Array[SILDebugAttribute]) extends SILOperator
-  case class debugValueAddr(operand: SILOperand, attributes: Array[SILDebugAttribute]) extends SILOperator
+  case class debugValue(operand: SILOperand, attributes: ArrayBuffer[SILDebugAttribute]) extends SILOperator
+  case class debugValueAddr(operand: SILOperand, attributes: ArrayBuffer[SILDebugAttribute]) extends SILOperator
 
   /***** ACCESSING MEMORY *****/
   case class load(kind: Option[SILLoadOwnership], operand: SILOperand) extends SILOperator
@@ -157,17 +157,17 @@ object SILOperator {
                            declType: SILType, value: Option[SILOperand], tpe: SILType) extends SILOperator
 
   /***** FUNCTION APPLICATION *****/
-  case class apply(nothrow: Boolean, value: String, substitutions: Array[SILType],
-                   arguments: Array[String], tpe: SILType) extends SILOperator
-  case class beginApply(nothrow: Boolean, value: String, substitutions: Array[SILType],
-                        arguments: Array[String], tpe: SILType) extends SILOperator
+  case class apply(nothrow: Boolean, value: String, substitutions: ArrayBuffer[SILType],
+                   arguments: ArrayBuffer[String], tpe: SILType) extends SILOperator
+  case class beginApply(nothrow: Boolean, value: String, substitutions: ArrayBuffer[SILType],
+                        arguments: ArrayBuffer[String], tpe: SILType) extends SILOperator
   case class abortApply(value: String) extends SILOperator
   case class endApply(value: String) extends SILOperator
   case class partialApply(
                            calleeGuaranteed: Boolean, onStack: Boolean, value: String,
-                           substitutions: Array[SILType], arguments: Array[String], tpe: SILType
+                           substitutions: ArrayBuffer[SILType], arguments: ArrayBuffer[String], tpe: SILType
                          ) extends SILOperator
-  case class builtin(name: String, templateTpe: Option[SILType], operands: Array[SILOperand], tpe: SILType) extends SILOperator
+  case class builtin(name: String, templateTpe: Option[SILType], operands: ArrayBuffer[SILOperand], tpe: SILType) extends SILOperator
 
   /***** METATYPES *****/
   case class metatype(tpe: SILType) extends SILOperator
@@ -190,11 +190,11 @@ object SILOperator {
   case class tupleExtract(operand: SILOperand, declRef: Int) extends SILOperator
   case class tupleElementAddr(operand: SILOperand, declRef: Int) extends SILOperator
   case class destructureTuple(operand: SILOperand) extends SILOperator
-  case class struct(tpe: SILType, operands: Array[SILOperand]) extends SILOperator
+  case class struct(tpe: SILType, operands: ArrayBuffer[SILOperand]) extends SILOperator
   case class structExtract(operand: SILOperand, declRef: SILDeclRef) extends SILOperator
   case class structElementAddr(operand: SILOperand, declRef: SILDeclRef) extends SILOperator
   // NSIP: destructure_struct
-  case class objct(tpe: SILType, operands: Array[SILOperand], tailElems: Array[SILOperand]) extends SILOperator
+  case class objct(tpe: SILType, operands: ArrayBuffer[SILOperand], tailElems: ArrayBuffer[SILOperand]) extends SILOperator
   case class refElementAddr(immutable: Boolean, operand: SILOperand, declRef: SILDeclRef) extends SILOperator
   case class refTailAddr(immutable: Boolean, operand: SILOperand, tpe: SILType) extends SILOperator
 
@@ -204,8 +204,8 @@ object SILOperator {
   case class initEnumDataAddr(operand: SILOperand, declRef: SILDeclRef) extends SILOperator
   case class injectEnumAddr(operand: SILOperand, declRef: SILDeclRef) extends SILOperator
   case class uncheckedTakeEnumDataAddr(operand: SILOperand, declRef: SILDeclRef) extends SILOperator
-  case class selectEnum(operand: SILOperand, cases: Array[SILSwitchEnumCase], tpe: SILType) extends SILOperator
-  case class selectEnumAddr(operand: SILOperand, cases: Array[SILSwitchEnumCase], tpe: SILType) extends SILOperator
+  case class selectEnum(operand: SILOperand, cases: ArrayBuffer[SILSwitchEnumCase], tpe: SILType) extends SILOperator
+  case class selectEnumAddr(operand: SILOperand, cases: ArrayBuffer[SILSwitchEnumCase], tpe: SILType) extends SILOperator
 
   /***** PROTOCOL AND PROTOCOL COMPOSITION TYPES *****/
   case class initExistentialAddr(operand: SILOperand, tpe: SILType) extends SILOperator
@@ -277,15 +277,15 @@ object SILTerminator {
   case object unreachable extends SILTerminator
   case class ret(operand: SILOperand) extends SILTerminator
   case class thro(operand: SILOperand) extends SILTerminator
-  case class yld(operands: Array[SILOperand], resumeLabel: String, unwindLabel: String) extends SILTerminator
+  case class yld(operands: ArrayBuffer[SILOperand], resumeLabel: String, unwindLabel: String) extends SILTerminator
   case object unwind extends SILTerminator
-  case class br(label: String, operands: Array[SILOperand]) extends SILTerminator
+  case class br(label: String, operands: ArrayBuffer[SILOperand]) extends SILTerminator
   case class condBr(cond: String,
-                    trueLabel: String, trueOperands: Array[SILOperand],
-                    falseLabel: String, falseOperands: Array[SILOperand]) extends SILTerminator
-  case class switchValue(operand: SILOperand, cases: Array[SILSwitchValueCase]) extends SILTerminator
-  case class switchEnum(operand: SILOperand, cases: Array[SILSwitchEnumCase]) extends SILTerminator
-  case class switchEnumAddr(operand: SILOperand, cases: Array[SILSwitchEnumCase]) extends SILTerminator
+                    trueLabel: String, trueOperands: ArrayBuffer[SILOperand],
+                    falseLabel: String, falseOperands: ArrayBuffer[SILOperand]) extends SILTerminator
+  case class switchValue(operand: SILOperand, cases: ArrayBuffer[SILSwitchValueCase]) extends SILTerminator
+  case class switchEnum(operand: SILOperand, cases: ArrayBuffer[SILSwitchEnumCase]) extends SILTerminator
+  case class switchEnumAddr(operand: SILOperand, cases: ArrayBuffer[SILSwitchEnumCase]) extends SILTerminator
   case class dynamicMethodBr(operand: SILOperand, declRef: SILDeclRef,
                              namedLabel: String, notNamedLabel: String) extends SILTerminator
   case class checkedCastBr(exact: Boolean, operand: SILOperand, tpe: SILType, naked: Boolean,
@@ -293,8 +293,8 @@ object SILTerminator {
   // NSIP: checked_cast_value_br
   case class checkedCastAddrBr(kind: SILCastConsumptionKind, fromTpe: SILType, fromOperand: SILOperand,
                                toTpe: SILType, toOperand: SILOperand, succeedLabel: String, failureLabel: String) extends SILTerminator
-  case class tryApply(value: String, substitutions: Array[SILType],
-                      arguments: Array[String], tpe: SILType, normalLabel: String, errorLabel: String) extends SILTerminator
+  case class tryApply(value: String, substitutions: ArrayBuffer[SILType],
+                      arguments: ArrayBuffer[String], tpe: SILType, normalLabel: String, errorLabel: String) extends SILTerminator
 }
 
 sealed trait SILInstruction
@@ -402,7 +402,7 @@ object SILDeclSubRef {
   case class level(level: Int, foreign: Boolean) extends SILDeclSubRef
 }
 
-class SILDeclRef(val name: Array[String], val subRef: Option[SILDeclSubRef])
+class SILDeclRef(val name: ArrayBuffer[String], val subRef: Option[SILDeclSubRef])
 
 sealed trait SILEncoding
 object SILEncoding {
@@ -433,17 +433,17 @@ class SILMangledName(var mangled: String) {
 }
 
 
-class StructInit(val name: String, val args: Array[String], val tpe: InitType)
+class StructInit(val name: String, val args: ArrayBuffer[String], val tpe: InitType)
 object StructInit {
   // Add non-user struct init definitions here
-  def populateInits(): Array[StructInit] = {
+  def populateInits(): ArrayBuffer[StructInit] = {
     val arr = new ArrayBuffer[StructInit]()
     val basicTypes = Array(
       "Double", "Int", "Int8", "Int32", "Int64", "UInt", "UInt8", "UInt32", "UInt64")
     basicTypes.foreach(t => {
-      arr.append(new StructInit(t, Array("_value"), InitType.normal))
+      arr.append(new StructInit(t, ArrayBuffer("_value"), InitType.normal))
     })
-    arr.toArray
+    arr
   }
 }
 
@@ -482,7 +482,7 @@ object SILFunctionAttribute {
   }
   case object weakImported extends SILFunctionAttribute
   // String because version numbers can start with 0
-  case class available(version: Array[String]) extends SILFunctionAttribute
+  case class available(version: ArrayBuffer[String]) extends SILFunctionAttribute
   sealed trait FunctionInlining extends SILFunctionAttribute
   object FunctionInlining {
     case object never extends FunctionInlining
@@ -503,7 +503,7 @@ object SILFunctionAttribute {
   }
   case class semantics(value: String) extends SILFunctionAttribute
   case class specialize(exported: Option[Boolean], kind: Option[Kind],
-                        reqs: Array[SILTypeRequirement]) extends SILFunctionAttribute
+                        reqs: ArrayBuffer[SILTypeRequirement]) extends SILFunctionAttribute
   object specialize {
     sealed trait Kind
     object Kind {
@@ -548,33 +548,33 @@ class SILScopeRef(val num: Int)
 
 class SILOperand(val value: String, val tpe: SILType)
 
-class SILResult(val valueNames: Array[String])
+class SILResult(val valueNames: ArrayBuffer[String])
 
 sealed trait SILTupleElements
 object SILTupleElements {
-  case class labeled(tpe: SILType, values: Array[String]) extends SILTupleElements
-  case class unlabeled(operands: Array[SILOperand]) extends SILTupleElements
+  case class labeled(tpe: SILType, values: ArrayBuffer[String]) extends SILTupleElements
+  case class unlabeled(operands: ArrayBuffer[SILOperand]) extends SILTupleElements
 }
 
 sealed trait SILType
 object SILType {
   case class addressType(tpe: SILType) extends SILType
-  case class attributedType(attributes: Array[SILTypeAttribute], tpe: SILType) extends SILType
+  case class attributedType(attributes: ArrayBuffer[SILTypeAttribute], tpe: SILType) extends SILType
   case object coroutineTokenType extends SILType
-  case class functionType(parameters: Array[SILType], optional: Boolean, throws: Boolean, result: SILType) extends SILType
-  case class genericType(parameters: Array[String], requirements: Array[SILTypeRequirement], tpe: SILType) extends SILType
+  case class functionType(parameters: ArrayBuffer[SILType], optional: Boolean, throws: Boolean, result: SILType) extends SILType
+  case class genericType(parameters: ArrayBuffer[String], requirements: ArrayBuffer[SILTypeRequirement], tpe: SILType) extends SILType
   case class namedType(name: String) extends SILType
   case class selectType(tpe: SILType, name: String) extends SILType
   // squareBrackets is a needed space needed to make our test comparisons happy.
   case class namedArgType(name: String, tpe: SILType, squareBrackets: Boolean) extends SILType
   case object selfType extends SILType
   case object selfTypeOptional extends SILType
-  case class specializedType(tpe: SILType, arguments: Array[SILType], optional: Boolean) extends SILType
-  case class arrayType(arguments: Array[SILType], nakedStyle: Boolean, optional: Boolean) extends SILType
-  case class tupleType(parameters: Array[SILType], optional: Boolean, dots: Boolean) extends SILType
+  case class specializedType(tpe: SILType, arguments: ArrayBuffer[SILType], optional: Boolean) extends SILType
+  case class arrayType(arguments: ArrayBuffer[SILType], nakedStyle: Boolean, optional: Boolean) extends SILType
+  case class tupleType(parameters: ArrayBuffer[SILType], optional: Boolean, dots: Boolean) extends SILType
   case class withOwnership(attribute: SILTypeAttribute, tpe: SILType) extends SILType
   case class varType(tpe: SILType) extends SILType
-  case class forType(tpe: SILType, fr: Array[SILType]) extends SILType // -> T for <T>
+  case class forType(tpe: SILType, fr: ArrayBuffer[SILType]) extends SILType // -> T for <T>
   case class andType(tpe1: SILType, tpe2: SILType) extends SILType // (T & T)
   case class dotType(tpe: SILType) extends SILType // (andType).Type
 
@@ -662,14 +662,14 @@ object SILStoreOwnership {
 
 class SILGlobalVariable(val linkage: SILLinkage, val serialized: Boolean,
                         val let: Boolean, val globalName: SILMangledName,
-                        val tpe: SILType, val instructions: Option[Array[SILOperatorDef]])
+                        val tpe: SILType, val instructions: Option[ArrayBuffer[SILOperatorDef]])
 
 class SILWitnessTable(val linkage: SILLinkage, val attribute: Option[SILFunctionAttribute],
-                      val normalProtocolConformance: SILNormalProtocolConformance, val entries: Array[SILWitnessEntry])
+                      val normalProtocolConformance: SILNormalProtocolConformance, val entries: ArrayBuffer[SILWitnessEntry])
 
 class SILProperty(val serialized: Boolean, val decl: SILDeclRef, val component: SILType)
 
-class SILVTable(val name: String, val serialized: Boolean, val entries: Array[SILVEntry])
+class SILVTable(val name: String, val serialized: Boolean, val entries: ArrayBuffer[SILVEntry])
 
 sealed trait SILVTableEntryKind
 object SILVTableEntryKind {
@@ -698,6 +698,6 @@ object SILProtocolConformance {
   case class normal(pc: SILNormalProtocolConformance) extends SILProtocolConformance
   // Not consistent with SIL.rst.
   case class inherit(tpe: SILType, pc: SILProtocolConformance) extends SILProtocolConformance
-  case class specialize(substitutions: Array[SILType], pc: SILProtocolConformance) extends SILProtocolConformance
+  case class specialize(substitutions: ArrayBuffer[SILType], pc: SILProtocolConformance) extends SILProtocolConformance
   case object dependent extends SILProtocolConformance
 }

@@ -72,7 +72,7 @@ object Utils {
     SILTypeToType(tpe.result)
   }
 
-  def SILFunctionTupleTypeToReturnType(rootType: SILType, removeAttributes: Boolean): Array[Type] = {
+  def SILFunctionTupleTypeToReturnType(rootType: SILType, removeAttributes: Boolean): ArrayBuffer[Type] = {
     val silTypes = {
       val ft = getFunctionTypeFromType(rootType)
       ft.result match {
@@ -81,7 +81,7 @@ object Utils {
         case _ => throw new UnexpectedSILTypeBehaviourException()
       }
     }
-    val types = new Array[Type](silTypes.length)
+    val types = ArrayBuffer.empty[Type]
     silTypes.zipWithIndex.foreach(t => {
       var tpe = t._1
       if (removeAttributes) {
@@ -90,18 +90,18 @@ object Utils {
           case _ =>
         }
       }
-      types(t._2) = SILTypeToType(tpe)
+      types.append(SILTypeToType(tpe))
     })
     types
   }
 
-  def SILFunctionTypeToParamTypes(rootTpe: SILType): Array[Type] = {
+  def SILFunctionTypeToParamTypes(rootTpe: SILType): ArrayBuffer[Type] = {
     val tpe = getFunctionTypeFromType(rootTpe)
     val params = new ArrayBuffer[Type]()
     tpe.parameters.foreach(t => {
       params.append(SILTypeToType(t))
     })
-    params.toArray
+    params
   }
 
   // SIL $*T to SWIRL $T
@@ -128,7 +128,7 @@ object Utils {
   @throws[UnexpectedSILTypeBehaviourException]
   @throws[UnexpectedSILFormatException]
   def SILTupleTypeToType(tpe: SILType, index: Int, pointer: Boolean): Type = {
-    def getTypeAtIndex(parameters: Array[SILType]): Type = {
+    def getTypeAtIndex(parameters: ArrayBuffer[SILType]): Type = {
       if (parameters.length - 1 < index) {
         throw new UnexpectedSILFormatException("SIL tuple type " + print(tpe) +
           " should have enough parameter types for the index (" + index.toString + ")")
@@ -170,7 +170,7 @@ object Utils {
       case SILTupleElements.labeled(tpe: SILType, _) => {
         SILTypeToType(tpe)
       }
-      case SILTupleElements.unlabeled(operands: Array[SILOperand]) => {
+      case SILTupleElements.unlabeled(operands: ArrayBuffer[SILOperand]) => {
         if (operands.isEmpty) {
           return new Type("()")
         }

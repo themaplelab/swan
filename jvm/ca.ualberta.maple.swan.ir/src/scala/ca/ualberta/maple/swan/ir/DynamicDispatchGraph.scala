@@ -149,7 +149,7 @@ class DynamicDispatchGraph(module: SILModule) {
     })
   }
 
-  private def declRefToString(decl: Array[String]): String = {
+  private def declRefToString(decl: ArrayBuffer[String]): String = {
     decl.slice(0, 2).mkString(".")
   }
 

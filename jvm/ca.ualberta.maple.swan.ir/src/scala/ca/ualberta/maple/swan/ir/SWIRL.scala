@@ -32,8 +32,8 @@ class ModuleGroup(val functions: ArrayBuffer[CanFunction],
     val sb = new StringBuilder
     sb.append("Module group\n")
     metas.foreach(m => {
-      sb.append("  ");
-      sb.append(m.toString);
+      sb.append("  ")
+      sb.append(m.toString)
       sb.append("\n")
     })
     sb.toString()
@@ -76,7 +76,7 @@ class Function(val attribute: Option[FunctionAttribute], var name: String, val t
                val instantiatedTypes: immutable.HashSet[String])
 
 class CanFunction(var attribute: Option[FunctionAttribute], val name: String, val tpe: Type,
-                  val arguments: Array[Argument], val blocks: ArrayBuffer[CanBlock],
+                  val arguments: ArrayBuffer[Argument], val blocks: ArrayBuffer[CanBlock],
                   val refTable: RefTable, val instantiatedTypes: immutable.HashSet[String],
                   val symbolTable: mutable.HashMap[String, SymbolTableEntry],
                   val cfg: Graph[CanBlock, DefaultEdge]) {
@@ -88,7 +88,7 @@ class CanFunction(var attribute: Option[FunctionAttribute], val name: String, va
   }
 }
 
-class Block(val blockRef: BlockRef, val arguments: Array[Argument],
+class Block(val blockRef: BlockRef, val arguments: ArrayBuffer[Argument],
             val operators: ArrayBuffer[RawOperatorDef], var terminator: RawTerminatorDef)
 
 class CanBlock(val blockRef: BlockRef, val operators: ArrayBuffer[CanOperatorDef],
@@ -170,7 +170,7 @@ object Operator {
   case class dynamicRef(result: Symbol, index: String) extends WithResult(result) with RawOperator with CanOperator
   case class builtinRef(result: Symbol, name: String) extends WithResult(result) with RawOperator with CanOperator
   case class functionRef(result: Symbol, var name: String) extends WithResult(result) with RawOperator with CanOperator
-  case class apply(result: Symbol, functionRef: SymbolRef, arguments: Array[SymbolRef]) extends WithResult(result) with RawOperator with CanOperator
+  case class apply(result: Symbol, functionRef: SymbolRef, arguments: ArrayBuffer[SymbolRef]) extends WithResult(result) with RawOperator with CanOperator
   case class arrayRead(result: Symbol, arr: SymbolRef) extends WithResult(result) with RawOperator with CanOperator
   case class singletonRead(result: Symbol, tpe: String, field: String) extends WithResult(result) with RawOperator with CanOperator
   case class singletonWrite(value: SymbolRef, tpe: String, field: String) extends Operator with RawOperator with CanOperator
@@ -180,7 +180,7 @@ object Operator {
   case class binaryOp(result: Symbol, operation: BinaryOperation, lhs: SymbolRef, rhs: SymbolRef) extends WithResult(result) with RawOperator with CanOperator
   case class condFail(value: SymbolRef) extends Operator with RawOperator with CanOperator
   case class switchEnumAssign(result: Symbol, switchOn: SymbolRef,
-                              cases: Array[EnumAssignCase], default: Option[SymbolRef]) extends WithResult(result) with RawOperator
+                              cases: ArrayBuffer[EnumAssignCase], default: Option[SymbolRef]) extends WithResult(result) with RawOperator
   case class pointerRead(result: Symbol, pointer: SymbolRef) extends WithResult(result) with RawOperator
   case class pointerWrite(value: SymbolRef, pointer: SymbolRef) extends Operator with RawOperator
 }
@@ -192,20 +192,20 @@ sealed trait RawTerminator extends Terminator
 sealed trait CanTerminator extends Terminator
 
 object Terminator {
-  case class br(to: BlockRef, args: Array[SymbolRef]) extends RawTerminator
+  case class br(to: BlockRef, args: ArrayBuffer[SymbolRef]) extends RawTerminator
   case class br_can(to: BlockRef) extends CanTerminator
-  case class brIf(cond: SymbolRef, target: BlockRef, args: Array[SymbolRef]) extends RawTerminator
+  case class brIf(cond: SymbolRef, target: BlockRef, args: ArrayBuffer[SymbolRef]) extends RawTerminator
   case class brIf_can(cond: SymbolRef, target: BlockRef) extends CanTerminator
-  case class condBr(cond: SymbolRef, trueBlock: BlockRef, trueArgs: Array[SymbolRef],
-                    falseBlock: BlockRef, falseArgs: Array[SymbolRef]) extends RawTerminator
-  case class switch(switchOn: SymbolRef, cases: Array[SwitchCase], default: Option[BlockRef]) extends RawTerminator
-  case class switchEnum(switchOn: SymbolRef, cases: Array[SwitchEnumCase], default: Option[BlockRef]) extends RawTerminator
+  case class condBr(cond: SymbolRef, trueBlock: BlockRef, trueArgs: ArrayBuffer[SymbolRef],
+                    falseBlock: BlockRef, falseArgs: ArrayBuffer[SymbolRef]) extends RawTerminator
+  case class switch(switchOn: SymbolRef, cases: ArrayBuffer[SwitchCase], default: Option[BlockRef]) extends RawTerminator
+  case class switchEnum(switchOn: SymbolRef, cases: ArrayBuffer[SwitchEnumCase], default: Option[BlockRef]) extends RawTerminator
   case class ret(value: SymbolRef) extends RawTerminator with CanTerminator
   case class thro(value: SymbolRef) extends RawTerminator with CanTerminator
-  case class tryApply(functionRef: SymbolRef, arguments: Array[SymbolRef],
+  case class tryApply(functionRef: SymbolRef, arguments: ArrayBuffer[SymbolRef],
                       normal: BlockRef, normalType: Type, error: BlockRef, errorType: Type) extends RawTerminator
   case object unreachable extends RawTerminator with CanTerminator
-  case class yld(yields: Array[SymbolRef], resume: BlockRef, unwind: BlockRef) extends RawTerminator with CanTerminator
+  case class yld(yields: ArrayBuffer[SymbolRef], resume: BlockRef, unwind: BlockRef) extends RawTerminator with CanTerminator
   case object unwind extends RawTerminator
 }
 

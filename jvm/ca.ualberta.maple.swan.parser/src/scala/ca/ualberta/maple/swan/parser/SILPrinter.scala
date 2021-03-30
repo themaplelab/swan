@@ -17,8 +17,13 @@ import scala.collection.mutable
 
 class SILPrinterOptions {
   var printLocation = true
+  var genLocationMap = false // expensive
   def printLocation(b: Boolean): SILPrinterOptions = {
     printLocation = b
+    this
+  }
+  def genLocationMap(b: Boolean): SILPrinterOptions = {
+    genLocationMap = b
     this
   }
 }
@@ -76,7 +81,7 @@ class SILPrinter extends Printer {
   }
 
   def print(function: SILFunction): String = {
-    silLocMap.put(function, (this.line, this.getCol))
+    if (options.genLocationMap) silLocMap.put(function, (this.line, this.getCol))
     print("sil ")
     print(function.linkage)
     print(whenEmpty = false, "", function.attributes, " ", " ", (attribute: SILFunctionAttribute) => print(attribute))
@@ -89,7 +94,7 @@ class SILPrinter extends Printer {
   }
 
   def print(block: SILBlock): String = {
-    silLocMap.put(block, (this.line, this.getCol))
+    if (options.genLocationMap) silLocMap.put(block, (this.line, this.getCol))
     print(block.identifier)
     print(whenEmpty = false, "(", block.arguments, ", ", ")", (arg: SILArgument) => print(arg))
     print(":")
@@ -114,7 +119,7 @@ class SILPrinter extends Printer {
   }
 
   def print(operatorDef: SILOperatorDef): String = {
-    silLocMap.put(operatorDef, (this.line, this.getCol))
+    if (options.genLocationMap) silLocMap.put(operatorDef, (this.line, this.getCol))
     print(operatorDef.result, " = ", (r: SILResult) => {
       print(r)
     })
@@ -122,7 +127,7 @@ class SILPrinter extends Printer {
     if (operatorDef.sourceInfo.nonEmpty) {
       val loc = operatorDef.sourceInfo.get.loc
       if (loc.nonEmpty) {
-        swiftLocMap.put(operatorDef, (loc.get.line, loc.get.column))
+        if (options.genLocationMap) swiftLocMap.put(operatorDef, (loc.get.line, loc.get.column))
       }
     }
     print(operatorDef.sourceInfo, (si: SILSourceInfo) => print(si))
@@ -130,12 +135,12 @@ class SILPrinter extends Printer {
   }
 
   def print(terminatorDef: SILTerminatorDef): String = {
-    silLocMap.put(terminatorDef, (this.line, this.getCol))
+    if (options.genLocationMap) silLocMap.put(terminatorDef, (this.line, this.getCol))
     print(terminatorDef.terminator)
     if (terminatorDef.sourceInfo.nonEmpty) {
       val loc = terminatorDef.sourceInfo.get.loc
       if (loc.nonEmpty) {
-        swiftLocMap.put(terminatorDef, (loc.get.line, loc.get.column))
+        if (options.genLocationMap) swiftLocMap.put(terminatorDef, (loc.get.line, loc.get.column))
       }
     }
     print(terminatorDef.sourceInfo, (si: SILSourceInfo) => print(si))

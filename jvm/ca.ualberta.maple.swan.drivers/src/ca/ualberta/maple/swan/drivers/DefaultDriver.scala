@@ -10,12 +10,13 @@
 
 package ca.ualberta.maple.swan.drivers
 
-import java.io.File
+import java.io.{File, FileWriter}
 import java.nio.charset.StandardCharsets
+import java.nio.file.{Files, Paths}
 
 import ca.ualberta.maple.swan.ir.canonical.SWIRLPass
 import ca.ualberta.maple.swan.ir.raw.SWIRLGen
-import ca.ualberta.maple.swan.ir.{CanModule, ModuleGroup, ModuleGrouper, SWIRLParser}
+import ca.ualberta.maple.swan.ir.{CanModule, Module, ModuleGroup, ModuleGrouper, SWIRLParser, SWIRLPrinter, SWIRLPrinterOptions}
 import ca.ualberta.maple.swan.parser.SILParser
 import ca.ualberta.maple.swan.utils.Logging
 import org.apache.commons.io.IOUtils
@@ -31,17 +32,64 @@ object DefaultDriver {
     run(new File(args(0)))
   }
 
-  def runner(file: File): CanModule = {
+  def writeFile(module: Object, intermediateDir: File, prefix: String): Unit = {
+    val printedSwirlModule = {
+      module match {
+        case canModule: CanModule =>
+          new SWIRLPrinter().print(canModule, new SWIRLPrinterOptions)
+        case rawModule: Module =>
+          new SWIRLPrinter().print(rawModule, new SWIRLPrinterOptions)
+        case groupModule: ModuleGroup =>
+          new SWIRLPrinter().print(groupModule, new SWIRLPrinterOptions)
+        case _ =>
+          throw new RuntimeException("unexpected")
+      }
+    }
+    val f = Paths.get(intermediateDir.getPath, prefix + ".swirl").toFile
+    val fw = new FileWriter(f)
+    fw.write(printedSwirlModule)
+    fw.close()
+  }
+
+  def runner(intermediateDir: File, file: File, threads: ArrayBuffer[Thread]): CanModule = {
     val silParser = new SILParser(file.toPath)
     val silModule = silParser.parseModule()
     val swirlModule = new SWIRLGen().translateSILModule(silModule)
+    val rawPt = new Thread() {
+      override def run(): Unit = {
+        writeFile(swirlModule, intermediateDir, file.getName + ".raw")
+      }
+    }
+    threads.append(rawPt)
+    rawPt.start()
     val canSwirlModule = new SWIRLPass().runPasses(swirlModule)
+    val canPt = new Thread() {
+      override def run(): Unit = {
+        writeFile(canSwirlModule, intermediateDir, file.getName)
+      }
+    }
+    threads.append(canPt)
+    canPt.start()
     canSwirlModule
   }
 
-  def modelRunner(modelsContent: String): CanModule = {
+  def modelRunner(intermediateDir: File, modelsContent: String, threads: ArrayBuffer[Thread]): CanModule = {
     val swirlModule = new SWIRLParser(modelsContent, model = true).parseModule()
+    val pt = new Thread() {
+      override def run(): Unit = {
+        writeFile(swirlModule, intermediateDir, "models.raw")
+      }
+    }
+    threads.append(pt)
+    pt.start()
     val canSwirlModule = new SWIRLPass().runPasses(swirlModule)
+    val canPt = new Thread() {
+      override def run(): Unit = {
+        writeFile(canSwirlModule, intermediateDir, "models.raw")
+      }
+    }
+    threads.append(canPt)
+    canPt.start()
     canSwirlModule
   }
 
@@ -50,10 +98,12 @@ object DefaultDriver {
     val silFiles = dirProcessor.process()
     val threads = new ArrayBuffer[Thread]()
     val modules = new ArrayBuffer[CanModule]()
+    val intermediateDir = Files.createDirectories(
+      Paths.get(swanDir.getPath, "intermediate-dir")).toFile
     silFiles.foreach(f => {
       val t = new Thread {
         override def run(): Unit = {
-          modules.append(runner(f))
+          modules.append(runner(intermediateDir, f, threads))
         }
       }
       threads.append(t)
@@ -64,7 +114,7 @@ object DefaultDriver {
     val modelsContent = IOUtils.toString(in, StandardCharsets.UTF_8)
     val t = new Thread {
       override def run(): Unit = {
-        modules.append(modelRunner(modelsContent))
+        modules.append(modelRunner(intermediateDir, modelsContent, threads))
       }
     }
     threads.append(t)
@@ -72,6 +122,7 @@ object DefaultDriver {
     threads.foreach(f => f.join())
     val group = ModuleGrouper.group(modules)
     Logging.printInfo("Group ready:\n"+group.toString+group.functions.length+" functions")
+    writeFile(group, intermediateDir, "group")
     group
   }
 }

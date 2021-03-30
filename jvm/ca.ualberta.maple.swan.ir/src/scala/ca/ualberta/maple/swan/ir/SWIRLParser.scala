@@ -138,13 +138,13 @@ class SWIRLParser extends SWIRLPrinter {
   }
 
   @throws[Error]
-  protected def parseNilOrMany[T:ClassTag](pre: String, sep: String = "", suf: String = "", parseOne: () => T): Option[Array[T]] = {
+  protected def parseNilOrMany[T:ClassTag](pre: String, sep: String = "", suf: String = "", parseOne: () => T): Option[ArrayBuffer[T]] = {
     if (!peek(pre)) return None
     Some(parseMany(pre, sep, suf, parseOne))
   }
 
   @throws[Error]
-  protected def parseMany[T:ClassTag](pre: String, sep: String, suf: String, parseOne: () => T): Array[T] = {
+  protected def parseMany[T:ClassTag](pre: String, sep: String, suf: String, parseOne: () => T): ArrayBuffer[T] = {
     take(pre)
     val result = new ArrayBuffer[T]
     if (!peek(suf)) {
@@ -166,17 +166,17 @@ class SWIRLParser extends SWIRLPrinter {
       }
     }
     take(suf)
-    result.toArray
+    result
   }
 
   @throws[Error]
-  protected def parseNilOrMany[T:ClassTag](pre: String, parseOne: () => T): Option[Array[T]] = {
+  protected def parseNilOrMany[T:ClassTag](pre: String, parseOne: () => T): Option[ArrayBuffer[T]] = {
     if (!peek(pre)) return None
     Some(parseMany(pre, parseOne))
   }
 
   @throws[Error]
-  protected def parseUntilNil[T:ClassTag](parseOne: () => Option[T]): Array[T] = {
+  protected def parseUntilNil[T:ClassTag](parseOne: () => Option[T]): ArrayBuffer[T] = {
     val result = new ArrayBuffer[T]
     var break = false
     while (!break) {
@@ -187,27 +187,27 @@ class SWIRLParser extends SWIRLPrinter {
         result.append(element.get)
       }
     }
-    result.toArray
+    result
   }
 
   @throws[Error]
-  protected def parseMany[T:ClassTag](pre: String, parseOne: () => T): Array[T] = {
+  protected def parseMany[T:ClassTag](pre: String, parseOne: () => T): ArrayBuffer[T] = {
     val result = new ArrayBuffer[T]
     do {
       val element = parseOne()
       result.append(element)
     } while (peek(pre))
-    result.toArray
+    result
   }
 
   // ***** Error reporting *****
 
   protected def parseError(message: String, at: Option[Int] = None): Error = {
     val position = if (at.isDefined) at.get else cursor
-    var newlines: Array[Int] = new Array(0)
+    val newlines: ArrayBuffer[Int] = new ArrayBuffer(0)
     chars.view.take(position).zipWithIndex.foreach(charIdx => {
       if (charIdx._1 == '\n') {
-        newlines = newlines :+ charIdx._2
+        newlines.append(charIdx._2)
       }
     })
     val line = newlines.length + 1
@@ -240,7 +240,7 @@ class SWIRLParser extends SWIRLPrinter {
     if (!skip("swirl_stage raw")) {
       throw parseError("This parser only supports raw SWIRL")
     }
-    var functions = ArrayBuffer[Function]()
+    val functions = ArrayBuffer[Function]()
     var mainFunction: Option[Function] = None
     var done = false
     while(!done) {
@@ -286,7 +286,7 @@ class SWIRLParser extends SWIRLPrinter {
     val name = parseGlobalOrFunctionName()
     take(":")
     val tpe = parseType()
-    val blocks = { parseNilOrMany("{", "", "}", parseBlock) }.getOrElse(Array.empty[Block])
+    val blocks = { parseNilOrMany("{", "", "}", parseBlock) }.getOrElse(ArrayBuffer.empty[Block])
     new Function(attr, name, tpe, blocks.to(ArrayBuffer), refTable, instantiatedTypes.to(immutable.HashSet))
   }
 
@@ -312,7 +312,7 @@ class SWIRLParser extends SWIRLPrinter {
   @throws[Error]
   def parseBlock(): Block = {
     val blockRef = parseBlockRef()
-    val arguments = { parseNilOrMany("(", ",", ")", parseArgument) }.getOrElse(Array.empty[Argument])
+    val arguments = { parseNilOrMany("(", ",", ")", parseArgument) }.getOrElse(ArrayBuffer.empty[Argument])
     take(":")
     val (operatorDefs, terminatorDef) = parseInstructionDefs()
     new Block(blockRef, arguments, operatorDefs.to(ArrayBuffer), terminatorDef)
@@ -320,12 +320,12 @@ class SWIRLParser extends SWIRLPrinter {
 
   // https://github.com/apple/swift/blob/master/docs/SIL.rst#basic-blocks
   @throws[Error]
-  def parseInstructionDefs(): (Array[RawOperatorDef], RawTerminatorDef) = {
-    var operatorDefs = Array[RawOperatorDef]()
+  def parseInstructionDefs(): (ArrayBuffer[RawOperatorDef], RawTerminatorDef) = {
+    val operatorDefs = ArrayBuffer[RawOperatorDef]()
     var done = false
     while(!done){
       parseInstructionDef() match {
-        case RawInstructionDef.operator(operatorDef) => operatorDefs :+= operatorDef
+        case RawInstructionDef.operator(operatorDef) => operatorDefs.append(operatorDef)
         case RawInstructionDef.terminator(terminatorDef) => return (operatorDefs, terminatorDef)
       }
       if(peek("bb") || peek("}")) {
@@ -562,14 +562,14 @@ class SWIRLParser extends SWIRLPrinter {
       instructionName match {
         case "br" => {
           val to = parseBlockRef()
-          val arguments = { parseNilOrMany("(", ",", ")", parseSymbolRef) }.getOrElse(Array.empty[SymbolRef])
+          val arguments = { parseNilOrMany("(", ",", ")", parseSymbolRef) }.getOrElse(ArrayBuffer.empty[SymbolRef])
           Instruction.rawTerminator(Terminator.br(to, arguments))
         }
         case "br_if" => {
           val cond = parseSymbolRef()
           take(",")
           val target = parseBlockRef()
-          val arguments = { parseNilOrMany("(", ",", ")", parseSymbolRef) }.getOrElse(Array.empty[SymbolRef])
+          val arguments = { parseNilOrMany("(", ",", ")", parseSymbolRef) }.getOrElse(ArrayBuffer.empty[SymbolRef])
           Instruction.rawTerminator(Terminator.brIf(cond, target, arguments))
         }
         case "cond_br" => {
@@ -577,11 +577,11 @@ class SWIRLParser extends SWIRLPrinter {
           take(",")
           take("true")
           val trueBlock = parseBlockRef()
-          val trueArgs = { parseNilOrMany("(", ",", ")", parseSymbolRef) }.getOrElse(Array.empty[SymbolRef])
+          val trueArgs = { parseNilOrMany("(", ",", ")", parseSymbolRef) }.getOrElse(ArrayBuffer.empty[SymbolRef])
           take(",")
           take("false")
           val falseBlock = parseBlockRef()
-          val falseArgs = { parseNilOrMany("(", ",", ")", parseSymbolRef) }.getOrElse(Array.empty[SymbolRef])
+          val falseArgs = { parseNilOrMany("(", ",", ")", parseSymbolRef) }.getOrElse(ArrayBuffer.empty[SymbolRef])
           Instruction.rawTerminator(Terminator.condBr(cond, trueBlock, trueArgs, falseBlock, falseArgs))
         }
         case "switch" => {
@@ -659,7 +659,7 @@ class SWIRLParser extends SWIRLPrinter {
         }
         case "unreachable" => Instruction.rawTerminator(Terminator.unreachable)
         case "yield" => {
-          val args = { parseNilOrMany("(", ",", ")", parseSymbolRef) }.getOrElse(Array.empty[SymbolRef])
+          val args = { parseNilOrMany("(", ",", ")", parseSymbolRef) }.getOrElse(ArrayBuffer.empty[SymbolRef])
           take(",")
           take("resume")
           val resume = parseBlockRef()

@@ -10,6 +10,7 @@
 
 package ca.ualberta.maple.swan.ir
 
+import scala.collection.mutable.ArrayBuffer
 import scala.util.control.Breaks.{break, breakable}
 
 class Printer {
@@ -32,7 +33,7 @@ class Printer {
 
   def printNewline(): Unit = {
     line += 1
-    description ++= "\n"
+    description.append("\n")
     indented = false
   }
 
@@ -48,7 +49,7 @@ class Printer {
       }
     })
     if (allNewLines) {
-      description ++= "\n" * s.length
+      description.append("\n" * s.length)
       line += s.length
       indented = false
       return
@@ -56,9 +57,9 @@ class Printer {
     // "mystring\n"
     if (s.count(_ == '\n') == 1 && s.endsWith("\n")) {
       if (!indented) {
-        description ++= indentation
+        description.append(indentation)
       }
-      description ++= s
+      description.append(s)
       line += 1
       indented = false
       return
@@ -70,12 +71,12 @@ class Printer {
     while(lines.hasNext) {
       val line = lines.next()
       if (!indented && !line.isEmpty) {
-        description ++= indentation
+        description.append(indentation)
         indented = true
       }
-      description ++= line
+      description.append(line)
       if (lineIdx < lines.length - 1) {
-        description ++= "\n"
+        description.append("\n")
         indented = false
       }
       lineIdx += 1
@@ -105,6 +106,12 @@ class Printer {
     }
   }
 
+  def print[T](xs: ArrayBuffer[T], fn: T => Unit): Unit = {
+    for (x <- xs) {
+      fn(x)
+    }
+  }
+
   def print[T](xs: Array[T], sep: String, fn: T => Unit): Unit = {
     var needSep = false
     for (x <- xs) {
@@ -116,13 +123,25 @@ class Printer {
     }
   }
 
-  def print[T](whenEmpty: Boolean, pre: String, xs: Array[T], sep: String, suf: String, fn: T => Unit): Unit = {
+  def print[T](xs: ArrayBuffer[T], sep: String, fn: T => Unit): Unit = {
+    var needSep = false
+    for (x <- xs) {
+      if (needSep) {
+        print(sep)
+      }
+      needSep = true
+      fn(x)
+    }
+  }
+
+  def print[T](whenEmpty: Boolean, pre: String, xs: ArrayBuffer[T], sep: String, suf: String, fn: T => Unit): Unit = {
     if (!(xs.nonEmpty || whenEmpty)) return
     print(pre)
     print(xs, sep, fn)
     print(suf)
   }
 
+  // TODO: This is impressively inefficient
   def getCol: Int = {
     var count = indentation.length
     breakable {

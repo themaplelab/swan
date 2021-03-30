@@ -21,6 +21,7 @@ class SWIRLPrinterOptions {
   var printLocation = true
   var useArbitraryTypeNames = false
   var printCFG = true
+  var genLocationMap = false // expensive
   def printLocation(b: Boolean): SWIRLPrinterOptions = {
     printLocation = b
     this
@@ -31,6 +32,10 @@ class SWIRLPrinterOptions {
   }
   def printCFGWhenCanonical(b: Boolean): SWIRLPrinterOptions = {
     printCFG = b
+    this
+  }
+  def genLocationMap(b: Boolean): SWIRLPrinterOptions = {
+    genLocationMap = b
     this
   }
 }
@@ -51,6 +56,10 @@ class SWIRLPrinter extends Printer {
     this.canModule = new CanModule(mg.functions, None, None, mg.silMap, null)
     print("swirl_stage canonical")
     printNewline();printNewline()
+    mg.toString.split("\n").foreach(s => {
+      print("// " + s + "\n")
+    })
+    printNewline()
     canModule.functions.foreach(function => {
       print(function)
       printNewline()
@@ -81,8 +90,8 @@ class SWIRLPrinter extends Printer {
     this.toString
   }
 
-  def print(function: Function): String = {
-    locMap.put(function, (line, getCol))
+  def print(function: Function): Unit = {
+    if (options.genLocationMap) locMap.put(function, (line, getCol))
     print("func ")
     if (function.attribute.nonEmpty) print(function.attribute.get)
     print("@`")
@@ -90,18 +99,17 @@ class SWIRLPrinter extends Printer {
     print("`")
     print(" : ")
     print(function.tpe)
-    print(whenEmpty = false, " {\n", function.blocks.toArray, "\n", "}", (block: Block) => print(block))
+    print(whenEmpty = false, " {\n", function.blocks, "\n", "}", (block: Block) => print(block))
     printNewline()
-    this.toString
   }
 
-  def print(function: CanFunction): String = {
+  def print(function: CanFunction): Unit = {
     if (options.printCFG) {
       // T0D0: slow?
       val cfg = canModule.functions.find(p => p == function).get.cfg
       print(function, cfg)
     }
-    locMap.put(function, (line, getCol))
+    if (options.genLocationMap) locMap.put(function, (line, getCol))
     print("func ")
     if (function.attribute.nonEmpty) print(function.attribute.get)
     print("@`")
@@ -110,9 +118,8 @@ class SWIRLPrinter extends Printer {
     print(whenEmpty = false, "(", function.arguments, ", ", ")", (arg: Argument) => print(arg))
     print(" : ")
     print(function.tpe)
-    print(whenEmpty = false, " {\n", function.blocks.toArray, "\n", "}", (block: CanBlock) => print(block))
+    print(whenEmpty = false, " {\n", function.blocks, "\n", "}", (block: CanBlock) => print(block))
     printNewline()
-    this.toString
   }
 
   def print(function: CanFunction, cfg: Graph[CanBlock, DefaultEdge]): Unit = {
@@ -129,8 +136,8 @@ class SWIRLPrinter extends Printer {
     })
   }
 
-  def print(block: Block): String = {
-    locMap.put(block, (line, getCol))
+  def print(block: Block): Unit = {
+    if (options.genLocationMap) locMap.put(block, (line, getCol))
     print(block.blockRef)
     print(whenEmpty = false, "(", block.arguments, ", ", ")", (arg: Argument) => print(arg))
     print(":")
@@ -144,11 +151,10 @@ class SWIRLPrinter extends Printer {
     if (block.terminator != null) print(block.terminator)
     if (block.terminator != null) printNewline()
     unindent()
-    this.toString
   }
 
   def print(block: CanBlock): Unit = {
-    locMap.put(block, (line, getCol))
+    if (options.genLocationMap) locMap.put(block, (line, getCol))
     print(block.blockRef)
     print(":")
     indent()
@@ -169,48 +175,42 @@ class SWIRLPrinter extends Printer {
     print(argument.tpe)
   }
 
-  def print(inst: RawInstructionDef): String = {
+  def print(inst: RawInstructionDef): Unit = {
     inst match {
       case RawInstructionDef.operator(operatorDef) => print(operatorDef)
       case RawInstructionDef.terminator(terminatorDef) => print(terminatorDef)
     }
-    this.toString
   }
 
-  def print(inst: CanInstructionDef): String = {
+  def print(inst: CanInstructionDef): Unit = {
     inst match {
       case CanInstructionDef.operator(operatorDef) => print(operatorDef)
       case CanInstructionDef.terminator(terminatorDef) => print(terminatorDef)
     }
-    this.toString
   }
 
-  def print(op: RawOperatorDef): String = {
-    locMap.put(op, (line, getCol))
+  def print(op: RawOperatorDef): Unit = {
+    if (options.genLocationMap) locMap.put(op, (line, getCol))
     print(op.operator.asInstanceOf[Operator])
     print(op.position, (pos: Position) => print(pos))
-    this.toString
   }
 
-  def print(op: CanOperatorDef): String = {
-    locMap.put(op, (line, getCol))
+  def print(op: CanOperatorDef): Unit = {
+    if (options.genLocationMap) locMap.put(op, (line, getCol))
     print(op.operator.asInstanceOf[Operator])
     print(op.position, (pos: Position) => print(pos))
-    this.toString
   }
 
-  def print(term: RawTerminatorDef): String = {
-    locMap.put(term, (line, getCol))
+  def print(term: RawTerminatorDef): Unit = {
+    if (options.genLocationMap) locMap.put(term, (line, getCol))
     print(term.terminator.asInstanceOf[Terminator])
     print(term.position, (pos: Position) => print(pos))
-    this.toString
   }
 
-  def print(term: CanTerminatorDef): String = {
-    locMap.put(term, (line, getCol))
+  def print(term: CanTerminatorDef): Unit = {
+    if (options.genLocationMap) locMap.put(term, (line, getCol))
     print(term.terminator.asInstanceOf[Terminator])
     print(term.position, (pos: Position) => print(pos))
-    this.toString
   }
 
   def print(operator: Operator): Unit = {
@@ -347,7 +347,7 @@ class SWIRLPrinter extends Printer {
       case Terminator.br(to, args) => {
         print("br ")
         print(to)
-        if (args.length > 0) {
+        if (args.nonEmpty) {
           print(whenEmpty = false, "(", args, ", ", ")", (s: SymbolRef) => print(s))
         }
       }

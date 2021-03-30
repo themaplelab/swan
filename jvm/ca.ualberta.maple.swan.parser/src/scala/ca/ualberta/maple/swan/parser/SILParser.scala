@@ -35,7 +35,7 @@ class SILParser extends SILPrinter {
   private[parser] var cursor: Int = 0
   def position(): Int = { cursor }
 
-  private[parser] var inits: Array[StructInit] = StructInit.populateInits()
+  private[parser] val inits: ArrayBuffer[StructInit] = StructInit.populateInits()
 
   def this(path: Path) = {
     this()
@@ -117,7 +117,7 @@ class SILParser extends SILPrinter {
           take(".init")
           val args = parseMany("(", ":", ")", parseIdentifier)
           // take("\n")
-          this.inits = this.inits :+ new StructInit(name, args, tpe)
+          this.inits.append(new StructInit(name, args, tpe))
           None
         })
       }
@@ -149,13 +149,13 @@ class SILParser extends SILPrinter {
   }
 
   @throws[Error]
-  protected def parseNilOrMany[T:ClassTag](pre: String, sep: String = "", suf: String = "", parseOne: () => T): Option[Array[T]] = {
+  protected def parseNilOrMany[T:ClassTag](pre: String, sep: String = "", suf: String = "", parseOne: () => T): Option[ArrayBuffer[T]] = {
     if (!peek(pre)) return None
     Some(parseMany(pre, sep, suf, parseOne))
   }
 
   @throws[Error]
-  protected def parseMany[T:ClassTag](pre: String, sep: String, suf: String, parseOne: () => T): Array[T] = {
+  protected def parseMany[T:ClassTag](pre: String, sep: String, suf: String, parseOne: () => T): ArrayBuffer[T] = {
     take(pre)
     val result = new ArrayBuffer[T]
     if (!peek(suf)) {
@@ -177,17 +177,17 @@ class SILParser extends SILPrinter {
       }
     }
     take(suf)
-    result.toArray
+    result
   }
 
   @throws[Error]
-  protected def parseNilOrMany[T:ClassTag](pre: String, parseOne: () => T): Option[Array[T]] = {
+  protected def parseNilOrMany[T:ClassTag](pre: String, parseOne: () => T): Option[ArrayBuffer[T]] = {
     if (!peek(pre)) return None
     Some(parseMany(pre, parseOne))
   }
 
   @throws[Error]
-  protected def parseUntilNil[T:ClassTag](parseOne: () => Option[T]): Array[T] = {
+  protected def parseUntilNil[T:ClassTag](parseOne: () => Option[T]): ArrayBuffer[T] = {
     val result = new ArrayBuffer[T]
     var break = false
     while (!break) {
@@ -198,27 +198,27 @@ class SILParser extends SILPrinter {
         result.append(element.get)
       }
     }
-    result.toArray
+    result
   }
 
   @throws[Error]
-  protected def parseMany[T:ClassTag](pre: String, parseOne: () => T): Array[T] = {
+  protected def parseMany[T:ClassTag](pre: String, parseOne: () => T): ArrayBuffer[T] = {
     val result = new ArrayBuffer[T]
     do {
       val element = parseOne()
       result.append(element)
     } while (peek(pre))
-    result.toArray
+    result
   }
 
   // ***** Error reporting *****
 
   protected def parseError(message: String, at: Option[Int] = None): Error = {
     val position = if (at.isDefined) at.get else cursor
-    var newlines: Array[Int] = new Array(0)
+    val newlines: ArrayBuffer[Int] = ArrayBuffer.empty
     chars.view.take(position).zipWithIndex.foreach(charIdx => {
       if (charIdx._1 == '\n') {
-        newlines = newlines :+ charIdx._2
+        newlines.append(charIdx._2)
       }
     })
     val line = newlines.length + 1
@@ -250,34 +250,34 @@ class SILParser extends SILPrinter {
     if (!skip("sil_stage canonical")) {
       throw parseError("This parser only supports canonical SIL")
     }
-    var functions = Array[SILFunction]()
-    var witnessTables = Array[SILWitnessTable]()
-    var vTables = Array[SILVTable]()
-    var imports = Array[String]()
-    var globalVariables = Array[SILGlobalVariable]()
-    var scopes = Array[SILScope]()
-    val properties = Array[SILProperty]()
+    val functions = ArrayBuffer[SILFunction]()
+    val witnessTables = ArrayBuffer[SILWitnessTable]()
+    val vTables = ArrayBuffer[SILVTable]()
+    val imports = ArrayBuffer[String]()
+    val globalVariables = ArrayBuffer[SILGlobalVariable]()
+    val scopes = ArrayBuffer[SILScope]()
+    val properties = ArrayBuffer[SILProperty]()
     var done = false
     while(!done) {
       if(peek("sil ")) {
         val function = parseFunction()
-        functions :+= function
+        functions.append(function)
       } else if (peek("sil_witness_table ")) {
-        witnessTables :+= parseWitnessTable()
+        witnessTables.append(parseWitnessTable())
       } else if (peek("sil_default_witness_table ")) {
         // TODO: Has not appeared yet. Leave for now.
       } else if (peek("sil_vtable ")) {
-        vTables :+= parseVTable()
+        vTables.append(parseVTable())
       } else if (peek("sil_global ")) {
-        globalVariables :+= parseGlobalVariable()
+        globalVariables.append(parseGlobalVariable())
       // } else if (peek("sil_property")) { TODO: Need to parse component
-        // properties :+= parseProperty()
+        // properties.append(parseProperty())
       } else if (peek("import ")) {
         take("import")
         // Identifier should be OK here.
-        imports :+= parseIdentifier()
+        imports.append(parseIdentifier())
       } else if (peek("sil_scope")) {
-        scopes :+= parseScope()
+        scopes.append(parseScope())
       } else {
         Breaks.breakable {
           if(skip(_ != '\n')) Breaks.break()
@@ -296,11 +296,11 @@ class SILParser extends SILPrinter {
   def parseFunction(): SILFunction = {
     take("sil")
     val linkage = parseLinkage()
-    val attributes = { parseNilOrMany("[", parseFunctionAttribute) }.getOrElse(Array.empty[SILFunctionAttribute])
+    val attributes = { parseNilOrMany("[", parseFunctionAttribute) }.getOrElse(ArrayBuffer.empty[SILFunctionAttribute])
     val name = parseMangledName()
     take(":")
     val tpe = parseType()
-    val blocks = { parseNilOrMany("{", "", "}", parseBlock) }.getOrElse(Array.empty[SILBlock])
+    val blocks = { parseNilOrMany("{", "", "}", parseBlock) }.getOrElse(ArrayBuffer.empty[SILBlock])
     new SILFunction(linkage, attributes, name, tpe, blocks)
   }
 
@@ -308,7 +308,7 @@ class SILParser extends SILPrinter {
   @throws[Error]
   def parseBlock(): SILBlock = {
     val identifier = parseIdentifier()
-    val arguments = { parseNilOrMany("(", ",", ")", parseArgument) }.getOrElse(Array.empty[SILArgument])
+    val arguments = { parseNilOrMany("(", ",", ")", parseArgument) }.getOrElse(ArrayBuffer.empty[SILArgument])
     take(":")
     val (operatorDefs, terminatorDef) = parseInstructionDefs()
     new SILBlock(identifier, arguments, operatorDefs, terminatorDef)
@@ -316,12 +316,12 @@ class SILParser extends SILPrinter {
 
   // https://github.com/apple/swift/blob/master/docs/SIL.rst#basic-blocks
   @throws[Error]
-  def parseInstructionDefs(): (Array[SILOperatorDef], SILTerminatorDef) = {
-    var operatorDefs = Array[SILOperatorDef]()
+  def parseInstructionDefs(): (ArrayBuffer[SILOperatorDef], SILTerminatorDef) = {
+    val operatorDefs = ArrayBuffer[SILOperatorDef]()
     var done = false
     while(!done){
       parseInstructionDef() match {
-        case SILInstructionDef.operator(operatorDef) => operatorDefs :+= operatorDef
+        case SILInstructionDef.operator(operatorDef) => operatorDefs.append(operatorDef)
         case SILInstructionDef.terminator(terminatorDef) => return (operatorDefs, terminatorDef)
       }
       if(peek("bb") || peek("}")) {
@@ -364,7 +364,7 @@ class SILParser extends SILPrinter {
     val name = parseMangledName()
     take(":")
     val tpe = parseType()
-    var entries: Option[Array[SILOperatorDef]] = None
+    var entries: Option[ArrayBuffer[SILOperatorDef]] = None
     if (skip("=")) {
       entries = parseNilOrMany("{", "", "}", () => {
         parseInstructionDef().asInstanceOf[SILInstructionDef.operator].operatorDef
@@ -390,7 +390,7 @@ class SILParser extends SILPrinter {
     take("sil_vtable")
     val serialized = skip("[serialized]")
     val name = parseIdentifier()
-    val entries = { parseNilOrMany("{", "", "}", parseVEntry) }.getOrElse(Array.empty[SILVEntry])
+    val entries = { parseNilOrMany("{", "", "}", parseVEntry) }.getOrElse(ArrayBuffer.empty[SILVEntry])
     new SILVTable(name, serialized, entries)
   }
 
@@ -401,7 +401,7 @@ class SILParser extends SILPrinter {
     val linkage = parseLinkage()
     val functionAttribute = if (peek("[")) Some(parseFunctionAttribute()) else None
     val normalProtocolConformance = parseNormalProtocolConformance()
-    val entries = { parseNilOrMany("{", "", "}", parseWitnessEntry) }.getOrElse(Array.empty[SILWitnessEntry])
+    val entries = { parseNilOrMany("{", "", "}", parseWitnessEntry) }.getOrElse(ArrayBuffer.empty[SILWitnessEntry])
     new SILWitnessTable(linkage, functionAttribute, normalProtocolConformance, entries)
   }
 
@@ -420,10 +420,10 @@ class SILParser extends SILPrinter {
         SILInstruction.operator(SILOperator.allocStack(tpe, dynamicLifetime, attributes))
       }
       case "alloc_ref" => {
-        var allocAttributes = new Array[SILAllocAttribute](0)
-        if(skip("[objc]")) allocAttributes = allocAttributes :+ SILAllocAttribute.objc
-        if(skip("[stack]")) { allocAttributes = allocAttributes :+ SILAllocAttribute.stack }
-        var tailElems: Array[(SILType, SILOperand)] = new Array[(SILType, SILOperand)](0)
+        var allocAttributes = ArrayBuffer.empty[SILAllocAttribute]
+        if(skip("[objc]")) { allocAttributes = allocAttributes.append(SILAllocAttribute.objc) }
+        if(skip("[stack]")) { allocAttributes = allocAttributes.append(SILAllocAttribute.stack) }
+        val tailElems: ArrayBuffer[(SILType, SILOperand)] = ArrayBuffer.empty
         while(peek("[")) {
           take("[")
           take("tail_elems")
@@ -431,14 +431,14 @@ class SILParser extends SILPrinter {
           take("*")
           val operand: SILOperand = parseOperand()
           take("]")
-          tailElems = tailElems :+ (tailType, operand)
+          tailElems.append((tailType, operand))
         }
         val tpe: SILType = parseType()
         SILInstruction.operator(SILOperator.allocRef(allocAttributes, tailElems, tpe))
       }
       case "alloc_ref_dynamic" => {
         val objc: Boolean =  skip("[objc]")
-        var tailElems: Array[(SILType, SILOperand)] = new Array[(SILType, SILOperand)](0)
+        val tailElems = ArrayBuffer.empty[(SILType, SILOperand)]
         while(peek("[")) {
           take("[")
           take("tail_elems")
@@ -446,7 +446,7 @@ class SILParser extends SILPrinter {
           take("*")
           val operand: SILOperand = parseOperand()
           take("]")
-          tailElems = tailElems :+ (tailType, operand)
+          tailElems.append((tailType, operand))
         }
         val operand: SILOperand = parseOperand()
         take(",")
@@ -819,9 +819,9 @@ class SILParser extends SILPrinter {
         val value = parseValue()
         val substitutions = parseNilOrMany("<", ",",">", parseNakedType)
         // I'm sure there's a more elegant way to do this.
-        val substitutionsNonOptional: Array[SILType] = {
+        val substitutionsNonOptional: ArrayBuffer[SILType] = {
           if (substitutions.isEmpty) {
-            new Array[SILType](0)
+            ArrayBuffer.empty
           } else {
             substitutions.get
           }
@@ -834,8 +834,8 @@ class SILParser extends SILPrinter {
       case "begin_apply" => {
         val nothrow = skip("[nothrow]")
         val value = parseValue()
-        val s : Option[Array[SILType]] = parseNilOrMany("<",",",">",parseNakedType)
-        val substitutions = if (s.nonEmpty) s.get else new Array[SILType](0)
+        val s = parseNilOrMany("<",",",">", parseNakedType)
+        val substitutions = if (s.nonEmpty) s.get else ArrayBuffer.empty[SILType]
         val arguments = parseMany("(",",",")", parseValue)
         take(":")
         val tpe = parseType()
@@ -854,7 +854,7 @@ class SILParser extends SILPrinter {
         val onStack = skip("[on_stack]")
         val value = parseValue()
         val s = parseNilOrMany("<",",",">", parseNakedType)
-        val substitutions = if (s.nonEmpty) s.get else new Array[SILType](0)
+        val substitutions = if (s.nonEmpty) s.get else ArrayBuffer.empty[SILType]
         val arguments = parseMany("(",",",")", parseValue)
         take(":")
         val tpe = parseType()
@@ -984,8 +984,8 @@ class SILParser extends SILPrinter {
       }
       case "object" => {
         val tpe = parseType()
-        var operands: Array[SILOperand] = Array()
-        var tailElems: Array[SILOperand] = Array()
+        val operands: ArrayBuffer[SILOperand] = ArrayBuffer()
+        val tailElems: ArrayBuffer[SILOperand] = ArrayBuffer()
         var tail = false
         parseMany("(",",",")", () => {
           if (skip("[tail_elems]")) {
@@ -993,9 +993,9 @@ class SILParser extends SILPrinter {
           }
           val op = parseOperand()
           if (tail) {
-            tailElems :+= op
+            tailElems.append(op)
           } else {
-            operands :+= op
+            operands.append(op)
           }
           ()
         })
@@ -1384,13 +1384,11 @@ class SILParser extends SILPrinter {
       case "yield" => {
         // Multiple yielded values -> values are inside parentheses.
         // Single yielded value -> no parentheses.
-        val operands: Array[SILOperand] = {
+        val operands: ArrayBuffer[SILOperand] = {
           if(peek("(")) {
             parseMany("(", ",", ")", parseOperand)
           } else {
-            val arr = new Array[SILOperand](1)
-            arr(0) = parseOperand()
-            arr
+            ArrayBuffer(parseOperand())
           }
         }
         take(",")
@@ -1406,20 +1404,20 @@ class SILParser extends SILPrinter {
       }
       case "br" => {
         val label = parseIdentifier()
-        val o : Option[Array[SILOperand]] = parseNilOrMany("(",",",")", parseOperand)
-        val operands = if (o.nonEmpty) o.get else new Array[SILOperand](0)
+        val o : Option[ArrayBuffer[SILOperand]] = parseNilOrMany("(",",",")", parseOperand)
+        val operands = if (o.nonEmpty) o.get else ArrayBuffer.empty[SILOperand]
         SILInstruction.terminator(SILTerminator.br(label, operands))
       }
       case "cond_br" => {
         val cond = parseValueName()
         take(",")
         val trueLabel = parseIdentifier()
-        val to : Option[Array[SILOperand]] = parseNilOrMany("(",",",")",parseOperand)
-        val trueOperands = if (to.nonEmpty) to.get else new Array[SILOperand](0)
+        val to : Option[ArrayBuffer[SILOperand]] = parseNilOrMany("(",",",")", parseOperand)
+        val trueOperands = if (to.nonEmpty) to.get else ArrayBuffer.empty[SILOperand]
         take(",")
         val falseLabel = parseIdentifier()
-        val fo : Option[Array[SILOperand]] = parseNilOrMany("(",",",")",parseOperand)
-        val falseOperands = if (fo.nonEmpty) to.get else new Array[SILOperand](0)
+        val fo : Option[ArrayBuffer[SILOperand]] = parseNilOrMany("(",",",")", parseOperand)
+        val falseOperands = if (fo.nonEmpty) to.get else ArrayBuffer.empty[SILOperand]
         SILInstruction.terminator(SILTerminator.condBr(cond, trueLabel, trueOperands, falseLabel, falseOperands))
       }
       case "switch_value" => {
@@ -1485,7 +1483,7 @@ class SILParser extends SILPrinter {
       case "try_apply" => {
         val value = parseValue()
         val s = parseNilOrMany("<",",",">", parseNakedType)
-        val substitutions = if (s.nonEmpty) s.get else new Array[SILType](0)
+        val substitutions = if (s.nonEmpty) s.get else ArrayBuffer.empty[SILType]
         val arguments = parseMany("(",",",")", parseValue)
         take(":")
         val tpe = parseType()
@@ -1746,7 +1744,7 @@ class SILParser extends SILPrinter {
       }
     }
     val subref = parseDeclSubRef()
-    new SILDeclRef(name.toArray, subref)
+    new SILDeclRef(name, subref)
   }
 
   // https://github.com/apple/swift/blob/master/docs/SIL.rst#string-literal
@@ -1812,7 +1810,7 @@ class SILParser extends SILPrinter {
         }
       }
       take("]")
-      return SILFunctionAttribute.available(version.toArray)
+      return SILFunctionAttribute.available(version)
     }
     if(skip("[never]")) return SILFunctionAttribute.FunctionInlining.never
     if(skip("[always]")) return SILFunctionAttribute.FunctionInlining.always
@@ -1960,7 +1958,7 @@ class SILParser extends SILPrinter {
       SILProtocolConformance.inherit(tpe, protocolConformance)
     } else if(skip("specialize")) { // Not yet tested
       val s = parseNilOrMany("<",",",">", parseNakedType)
-      val substitutions = if (s.nonEmpty) s.get else new Array[SILType](0)
+      val substitutions = if (s.nonEmpty) s.get else ArrayBuffer.empty[SILType]
       take("(")
       val protocolConformance = parseProtocolConformance()
       take(")")
@@ -2218,7 +2216,7 @@ class SILParser extends SILPrinter {
       }
       nakedStack.closeArrows()
       val tpe = parseNakedType()
-      SILType.genericType(params.toArray, reqs.toArray, tpe)
+      SILType.genericType(params, reqs, tpe)
     } else if (peek("@")) {
       val attrs = parseMany("@", parseTypeAttribute)
       val tpe = parseNakedType()
@@ -2226,15 +2224,15 @@ class SILParser extends SILPrinter {
     } else if (peek("inout")) {
       take("inout")
       val tpe = parseNakedType()
-      SILType.attributedType(Array[SILTypeAttribute]{SILTypeAttribute.typeSpecifierInOut}, tpe)
+      SILType.attributedType(ArrayBuffer(SILTypeAttribute.typeSpecifierInOut), tpe)
     } else if (peek("__owned")) {
       take("__owned")
       val tpe = parseNakedType()
-      SILType.attributedType(Array[SILTypeAttribute]{SILTypeAttribute.typeSpecifierOwned}, tpe)
+      SILType.attributedType(ArrayBuffer(SILTypeAttribute.typeSpecifierOwned), tpe)
     } else if (peek("__shared")) {
       take("__shared")
       val tpe = parseNakedType()
-      SILType.attributedType(Array[SILTypeAttribute]{SILTypeAttribute.typeSpecifierUnowned}, tpe)
+      SILType.attributedType(ArrayBuffer(SILTypeAttribute.typeSpecifierUnowned), tpe)
     } else if (skip("*")) {
       val tpe = parseNakedType()
       SILType.addressType(tpe)
@@ -2243,10 +2241,10 @@ class SILParser extends SILPrinter {
       val subtype = parseNakedType()
       take("]")
       nakedStack.closeSquare()
-      SILType.arrayType(Array[SILType]{subtype}, nakedStyle = true, optional = skip("?"))
+      SILType.arrayType(ArrayBuffer(subtype), nakedStyle = true, optional = skip("?"))
     } else if (peek("(")) {
       nakedStack.openParen()
-      val types: Array[SILType] = parseMany("(", ",", ")", parseNakedType)
+      val types = parseMany("(", ",", ")", parseNakedType)
       nakedStack.closeParen()
       if (skip(".Type")) {
         if (types.length > 1) {
@@ -2314,7 +2312,7 @@ class SILParser extends SILPrinter {
     if(peek("%")) {
       val valueName = parseValueName()
       take("=")
-      Some(new SILResult(Array(valueName)))
+      Some(new SILResult(ArrayBuffer(valueName)))
     } else if (peek("(")) {
       val valueNames = parseMany("(", ",", ")", parseValueName)
       take("=")

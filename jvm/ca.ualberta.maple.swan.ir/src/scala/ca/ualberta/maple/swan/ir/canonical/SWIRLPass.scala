@@ -140,24 +140,24 @@ class SWIRLPass {
             }
             val continueRef = generateBlockName(b.blockRef.label)
             cases.zipWithIndex.foreach(cse => {
-              val br = new RawTerminatorDef(Terminator.br(continueRef, Array{cse._1.value}), op.position)
+              val br = new RawTerminatorDef(Terminator.br(continueRef, ArrayBuffer(cse._1.value)), op.position)
               mapToSIL(op, br, module) // Kind of weird to map a terminator to operator
-              val newBlock = new Block(blockRefs(cse._2), Array.empty, ArrayBuffer.empty, br)
+              val newBlock = new Block(blockRefs(cse._2), ArrayBuffer.empty, ArrayBuffer.empty, br)
               mapToSIL(b, newBlock, module)
               newBlocks.append(newBlock)
             })
             if (default.nonEmpty) {
-              val br = new RawTerminatorDef(Terminator.br(continueRef, Array{default.get}), op.position)
+              val br = new RawTerminatorDef(Terminator.br(continueRef, ArrayBuffer(default.get)), op.position)
               mapToSIL(op, br, module)
-              val newBlock = new Block(blockRefs(blockRefs.length - 1), Array.empty, ArrayBuffer.empty, br)
+              val newBlock = new Block(blockRefs(blockRefs.length - 1), ArrayBuffer.empty, ArrayBuffer.empty, br)
               mapToSIL(b, newBlock, module)
               newBlocks.append(newBlock)
             }
-            val continueBlock = new Block(continueRef, Array{new Argument(result.ref, result.tpe, None)},
+            val continueBlock = new Block(continueRef, ArrayBuffer(new Argument(result.ref, result.tpe, None)),
               b.operators.slice(j + 1, b.operators.length), b.terminator)
             mapToSIL(b, continueBlock, module)
             newBlocks.append(continueBlock)
-            val switchEnum = new RawTerminatorDef(Terminator.switchEnum(switchOn, newCases.toArray,
+            val switchEnum = new RawTerminatorDef(Terminator.switchEnum(switchOn, newCases,
               if (default.nonEmpty) Some(blockRefs.last) else None), op.position)
             mapToSIL(op, switchEnum, module)
             b.terminator = switchEnum
@@ -192,7 +192,7 @@ class SWIRLPass {
           mapToSIL(b.terminator, brIf, module)
           mapToSIL(b.terminator, brIf, module)
           b.terminator = brIf
-          val newBlock = new Block(generateBlockName(b.blockRef.label), Array.empty, ArrayBuffer.empty, br)
+          val newBlock = new Block(generateBlockName(b.blockRef.label), ArrayBuffer.empty, ArrayBuffer.empty, br)
           mapToSIL(b, newBlock, module)
           newBlocks.append(newBlock)
         }
@@ -202,7 +202,7 @@ class SWIRLPass {
             val cse = c._1
             val cond = new Symbol(generateSymbolName(cse.value.name), new Type("Builtin.Int1"))
             val binaryOp = new RawOperatorDef(Operator.binaryOp(cond, BinaryOperation.equals, cse.value, switchOn), position)
-            val brIf = new RawTerminatorDef(Terminator.brIf(cond.ref, cse.destination, Array.empty), position)
+            val brIf = new RawTerminatorDef(Terminator.brIf(cond.ref, cse.destination, ArrayBuffer.empty), position)
             mapToSIL(b.terminator, binaryOp, module)
             mapToSIL(b.terminator, brIf, module)
             currBlock.operators.append(binaryOp)
@@ -211,13 +211,13 @@ class SWIRLPass {
               newBlocks.append(currBlock)
             }
             if (c._2 + 1 < cases.length) {
-              currBlock = new Block(generateBlockName(b.blockRef.label), Array.empty, ArrayBuffer.empty, null)
+              currBlock = new Block(generateBlockName(b.blockRef.label), ArrayBuffer.empty, ArrayBuffer.empty, null)
               mapToSIL(b, currBlock, module)
             }
           })
           if (default.nonEmpty) {
-            val br = new RawTerminatorDef(Terminator.br(default.get, Array.empty), position)
-            val newBlock = new Block(generateBlockName(b.blockRef.label), Array.empty, ArrayBuffer.empty, br)
+            val br = new RawTerminatorDef(Terminator.br(default.get, ArrayBuffer.empty), position)
+            val newBlock = new Block(generateBlockName(b.blockRef.label), ArrayBuffer.empty, ArrayBuffer.empty, br)
             newBlocks.append(newBlock)
           }
         }
@@ -241,7 +241,7 @@ class SWIRLPass {
             // T0DO: SLOW
             val targetBlock = f.blocks.find(p => p.blockRef.equals(cse.destination)).get
             val brIf = new RawTerminatorDef(Terminator.brIf(cond.ref, cse.destination,
-              if (targetBlock.arguments.length > 0) Array{dataSymbol.ref} else Array.empty), position)
+              if (targetBlock.arguments.nonEmpty) ArrayBuffer(dataSymbol.ref) else ArrayBuffer.empty), position)
             mapToSIL(b.terminator, typeLiteral, module)
             mapToSIL(b.terminator, binaryOp, module)
             mapToSIL(b.terminator, brIf, module)
@@ -252,13 +252,13 @@ class SWIRLPass {
               newBlocks.append(currBlock)
             }
             if (c._2 + 1 < cases.length) {
-              currBlock = new Block(generateBlockName(b.blockRef.label), Array.empty, ArrayBuffer.empty, null)
+              currBlock = new Block(generateBlockName(b.blockRef.label), ArrayBuffer.empty, ArrayBuffer.empty, null)
               mapToSIL(b, currBlock, module)
             }
           })
           if (default.nonEmpty) {
-            val br = new RawTerminatorDef(Terminator.br(default.get, Array.empty), position)
-            val newBlock = new Block(generateBlockName(b.blockRef.label), Array.empty, ArrayBuffer.empty, br)
+            val br = new RawTerminatorDef(Terminator.br(default.get, ArrayBuffer.empty), position)
+            val newBlock = new Block(generateBlockName(b.blockRef.label), ArrayBuffer.empty, ArrayBuffer.empty, br)
             newBlocks.append(newBlock)
           }
         }
@@ -281,7 +281,7 @@ class SWIRLPass {
           val errorValue = new Symbol(targetErrorBlock.arguments(0).ref, errorType)
           val apply = new RawOperatorDef(Operator.apply(retValue, functionRef, args), position)
           val newRet = new RawOperatorDef(Operator.neww(errorValue), position)
-          val br = new RawTerminatorDef(Terminator.br(normal, Array{retValue.ref}), position)
+          val br = new RawTerminatorDef(Terminator.br(normal, ArrayBuffer(retValue.ref)), position)
           mapToSIL(b.terminator, apply, module)
           mapToSIL(b.terminator, newRet, module)
           mapToSIL(b.terminator, br, module)
@@ -296,7 +296,7 @@ class SWIRLPass {
     }
   }
 
-  def resolveBasicBlockArguments(f: Function, module: Module): Array[Argument] = {
+  def resolveBasicBlockArguments(f: Function, module: Module): ArrayBuffer[Argument] = {
     f.blocks.zipWithIndex.foreach(bIdx => {
       val block = bIdx._1
       val assigns: ArrayBuffer[RawOperatorDef] = ArrayBuffer.empty
