@@ -307,7 +307,7 @@ class SILParser extends SILPrinter {
     batches.append(currBatch)
     toDemangle.foreach(m => {
       currBatch.append(m)
-      if (currBatch.length > 10000) {
+      if (currBatch.length > 5000) {
         currBatch = new ArrayBuffer[SILMangledName]()
         batches.append(currBatch)
       }
