@@ -79,6 +79,12 @@ class SWIRLParser extends SWIRLPrinter {
     }
   }
 
+  protected def skipNoTrivia(query: String): Boolean = {
+    if (!peek(query)) return false
+    cursor += query.length
+    true
+  }
+
   protected def skip(query: String): Boolean = {
     if (!peek(query)) return false
     cursor += query.length
@@ -103,7 +109,7 @@ class SWIRLParser extends SWIRLPrinter {
     if (Character.isWhitespace(chars(cursor))) {
       cursor += 1
       skipTrivia()
-    } else if (skip("//")) {
+    } else if (skipNoTrivia("//")) {
       while (cursor < chars.length && chars(cursor) != '\n') {
         cursor += 1
       }

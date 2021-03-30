@@ -102,8 +102,8 @@ public class Tests {
         Logging.printInfo("(Tests) testDefaultDriver: Testing " + fileDir.getName());
         ModuleGroup group = DefaultDriver.run(fileDir);
         String result = new SWIRLPrinter().print(group, new SWIRLPrinterOptions());
+        // System.out.println(result);
         Assertions.assertTrue(result.contains("func [model] @`Swift.Array.subscript.getter"));
         Assertions.assertTrue(result.contains("func [linked] @`Sourceful.SyntaxTextView.colorTextView"));
-        // System.out.println(result);
     }
 }
