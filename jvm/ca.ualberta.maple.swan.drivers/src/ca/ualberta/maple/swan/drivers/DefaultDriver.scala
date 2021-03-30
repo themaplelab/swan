@@ -85,7 +85,7 @@ object DefaultDriver {
     val canSwirlModule = new SWIRLPass().runPasses(swirlModule)
     val canPt = new Thread() {
       override def run(): Unit = {
-        writeFile(canSwirlModule, intermediateDir, "models.raw")
+        writeFile(canSwirlModule, intermediateDir, "models")
       }
     }
     threads.append(canPt)
