@@ -299,15 +299,16 @@ class SILParser extends SILPrinter {
   def demangleNames(): Unit = {
     // The swift-demangle I/O operation is expensive
     // Demangling the strings all at once at the end is significantly quicker
-    // swift-demangle can only take ~10000 at a time, so batches are used
-    // (actual length limit is character based, not count based)
+    // swift-demangle can only take a certain amount at a time, so batches are used
+    // Actual length limit is character based, not count based, and seems to
+    // vary from system to system.
     val swiftDemangle = "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swift-demangle -compact "
     val batches = new ArrayBuffer[ArrayBuffer[SILMangledName]]()
     var currBatch = new ArrayBuffer[SILMangledName]()
     batches.append(currBatch)
     toDemangle.foreach(m => {
       currBatch.append(m)
-      if (currBatch.length > 5000) {
+      if (currBatch.length > 1000) {
         currBatch = new ArrayBuffer[SILMangledName]()
         batches.append(currBatch)
       }
