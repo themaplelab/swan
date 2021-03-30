@@ -17,60 +17,83 @@ import scala.collection.{immutable, mutable}
 
 object ModuleGrouper {
 
-  def merge(functions: mutable.HashMap[String, CanFunction], f: CanFunction): Unit = {
-    // Merge functions - need to handle both directions of overriding
-    if (functions.contains(f.name)) {
-      val existing = functions(f.name)
-      def throwException(msg: String): Unit = {
-        throw new RuntimeException(msg +
-          "\n  existing: " + existing.name + " attr: " + existing.attribute +
-          "\n  adding: " + f.name + " attr: " + f.attribute)
+  def merge(toMerge: ArrayBuffer[CanFunction],
+            existingFunctions: mutable.HashMap[String, CanFunction],
+            entries: ArrayBuffer[CanFunction], models: ArrayBuffer[CanFunction],
+            others: ArrayBuffer[CanFunction], stubs: ArrayBuffer[CanFunction],
+            linked: ArrayBuffer[CanFunction]): Unit = {
+    def add(f: CanFunction, attr: FunctionAttribute = null): Unit = {
+      // Ordering for convenience
+      if (attr != null) {
+        f.attribute = Some(attr)
       }
-      def add(attr: Option[FunctionAttribute] = f.attribute): Unit = {
-        f.attribute = attr
-        functions.put(f.name, f)
-      }
-      if (existing.attribute.nonEmpty) { // Existing has an attribute
-        if (f.attribute.nonEmpty) { // to add also has an attribute
-          existing.attribute.get match {
-            case FunctionAttribute.model => {
-              f.attribute.get match {
-                case FunctionAttribute.stub => // ignore
-                case _ => throwException("unexpected")
-              }
-            }
-            case FunctionAttribute.stub => {
-              f.attribute.get match {
-                case FunctionAttribute.stub => // ignore
-                case FunctionAttribute.model => add()
-                case FunctionAttribute.coroutine => add()
-                case _ => throwException("unexpected")
-              }
-            }
-            case _ => throwException("unexpected")
-          }
-        } else { // to add has no attribute
-          existing.attribute.get match {
-            case FunctionAttribute.model => existing.attribute = Some(FunctionAttribute.modelOverride)
-            case FunctionAttribute.stub => add(Some(FunctionAttribute.linked))
-            case FunctionAttribute.modelOverride => // ignore
-            case _ => throwException("unexpected")
-          }
-        }
-      } else { // Existing has no attribute
-        if (f.attribute.nonEmpty) { // to add has an attribute
+      if (f.name.startsWith("main_")) {
+        others.insert(0, f)
+      } else {
+        if (f.attribute.nonEmpty) {
           f.attribute.get match {
-            case FunctionAttribute.model => add(Some(FunctionAttribute.modelOverride))
-            case FunctionAttribute.stub => // ignore
-            case _ => throwException("unexpected")
+            case FunctionAttribute.entry => entries.append(f)
+            case FunctionAttribute.model => models.append(f)
+            case FunctionAttribute.stub => stubs.append(f)
+            case FunctionAttribute.linked => linked.append(f)
+            case _ => others.append(f)
           }
-        } else { // to add also has no attribute
-          // Duplicates are expected due to inlining, builtin implementations, etc
+        } else {
+          others.append(f)
         }
       }
-    } else {
-      functions.put(f.name, f)
+      existingFunctions.put(f.name, f)
     }
+    toMerge.foreach(f => {
+      if (existingFunctions.contains(f.name)) {
+        val existing = existingFunctions(f.name)
+        def throwException(msg: String): Unit = {
+          throw new RuntimeException(msg +
+            "\n  existing: " + existing.name + " attr: " + existing.attribute +
+            "\n  adding: " + f.name + " attr: " + f.attribute)
+        }
+        if (existing.attribute.nonEmpty) { // Existing has an attribute
+          if (f.attribute.nonEmpty) { // to add also has an attribute
+            existing.attribute.get match {
+              case FunctionAttribute.model => {
+                f.attribute.get match {
+                  case FunctionAttribute.stub => // ignore
+                  case _ => throwException("unexpected")
+                }
+              }
+              case FunctionAttribute.stub => {
+                f.attribute.get match {
+                  case FunctionAttribute.stub => // ignore
+                  case FunctionAttribute.model => add(f)
+                  case FunctionAttribute.coroutine => add(f)
+                  case _ => throwException("unexpected")
+                }
+              }
+              case _ => throwException("unexpected")
+            }
+          } else { // to add has no attribute
+            existing.attribute.get match {
+              case FunctionAttribute.model => existing.attribute = Some(FunctionAttribute.modelOverride)
+              case FunctionAttribute.stub => add(f, FunctionAttribute.linked)
+              case FunctionAttribute.modelOverride => // ignore
+              case _ => throwException("unexpected")
+            }
+          }
+        } else { // Existing has no attribute
+          if (f.attribute.nonEmpty) { // to add has an attribute
+            f.attribute.get match {
+              case FunctionAttribute.model => add(f, FunctionAttribute.modelOverride)
+              case FunctionAttribute.stub => // ignore
+              case _ => throwException("unexpected")
+            }
+          } else { // to add also has no attribute
+            // Duplicates are expected due to inlining, builtin implementations, etc
+          }
+        }
+      } else {
+        add(f)
+      }
+    })
   }
 
   def group(modules: ArrayBuffer[CanModule]): ModuleGroup = {
@@ -82,24 +105,29 @@ object ModuleGrouper {
       sb.append("\n")
     })
     Logging.printInfo(sb.toString())
-    val entries = mutable.HashSet.empty[CanFunction]
-    val functions = new mutable.HashMap[String, CanFunction]()
+    val functions = ArrayBuffer.empty[CanFunction]
+    val entries = ArrayBuffer.empty[CanFunction]
+    val models = ArrayBuffer.empty[CanFunction]
+    val others = ArrayBuffer.empty[CanFunction]
+    val stubs = ArrayBuffer.empty[CanFunction]
+    val linked = ArrayBuffer.empty[CanFunction]
+    val existingFunctions = new mutable.HashMap[String, CanFunction]()
     val ddgs = ArrayBuffer.empty[DynamicDispatchGraph]
     val silMap = new SILMap
     val metas = ArrayBuffer.empty[ModuleMetadata]
     modules.foreach(module => {
-      if (module.entryFunction.nonEmpty) {
-        entries.add(module.entryFunction.get)
-      }
-      module.functions.foreach(f => {
-        merge(functions, f)
-      })
+      merge(module.functions, existingFunctions, entries, models, others, stubs, linked)
       if (module.ddg.nonEmpty) {
         ddgs.append(module.ddg.get)
       }
       silMap.combine(module.silMap)
       metas.append(module.meta)
     })
-    new ModuleGroup(functions.values.to(ArrayBuffer), entries.to(immutable.HashSet), ddgs, silMap, metas)
+    functions.appendAll(entries)
+    functions.appendAll(models)
+    functions.appendAll(linked)
+    functions.appendAll(others)
+    functions.appendAll(stubs)
+    new ModuleGroup(functions, entries.to(immutable.HashSet), ddgs, silMap, metas)
   }
 }

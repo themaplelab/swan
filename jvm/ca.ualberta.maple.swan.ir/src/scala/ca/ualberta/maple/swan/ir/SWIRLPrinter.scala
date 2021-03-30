@@ -53,7 +53,7 @@ class SWIRLPrinter extends Printer {
 
   def print(mg: ModuleGroup, opts: SWIRLPrinterOptions): String = {
     options = opts
-    this.canModule = new CanModule(mg.functions, None, None, mg.silMap, null)
+    this.canModule = new CanModule(mg.functions, None, mg.silMap, null)
     print("swirl_stage canonical")
     printNewline();printNewline()
     mg.toString.split("\n").foreach(s => {

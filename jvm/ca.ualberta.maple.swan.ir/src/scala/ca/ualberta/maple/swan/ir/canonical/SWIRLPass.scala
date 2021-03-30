@@ -35,14 +35,7 @@ class SWIRLPass {
       generateSymbolTable(canFunction)
       functions.append(canFunction)
     })
-    val entryFunction: Option[CanFunction] = {
-      if (functions.nonEmpty && functions(0).name.startsWith(Constants.fakeMain)) {
-        Some(functions(0))
-      } else {
-        None
-      }
-    }
-    new CanModule(functions, entryFunction, module.ddg, module.silMap, module.meta)
+    new CanModule(functions, module.ddg, module.silMap, module.meta)
   }
 
   @throws[IncompleteRawSWIRLException]

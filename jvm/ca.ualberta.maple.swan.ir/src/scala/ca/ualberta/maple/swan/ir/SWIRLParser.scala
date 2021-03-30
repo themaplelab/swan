@@ -241,14 +241,12 @@ class SWIRLParser extends SWIRLPrinter {
       throw parseError("This parser only supports raw SWIRL")
     }
     val functions = ArrayBuffer[Function]()
-    var mainFunction: Option[Function] = None
     var done = false
     while(!done) {
       if(peek("func ")) {
         val function = parseFunction()
         if (function.name == "main") {
-          mainFunction = Some(function)
-          functions.insert(0, mainFunction.get)
+          functions.insert(0, function)
         } else {
           functions.append(function)
         }
@@ -273,7 +271,7 @@ class SWIRLParser extends SWIRLPrinter {
         case _ => new ModuleMetadata(Some(new File(path)), None)
       }
     }
-    new Module(functions, mainFunction, None, new SILMap, metadata)
+    new Module(functions, None, new SILMap, metadata)
   }
 
   // https://github.com/apple/swift/blob/master/docs/SIL.rst#functions

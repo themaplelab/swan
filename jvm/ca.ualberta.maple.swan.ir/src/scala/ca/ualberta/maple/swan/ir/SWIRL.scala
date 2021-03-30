@@ -54,7 +54,7 @@ class ModuleMetadata(val file: Option[File],
 }
 
 // Imports might be useful for modelling later, but probably not.
-class Module(val functions: ArrayBuffer[Function], val entryFunction: Option[Function],
+class Module(val functions: ArrayBuffer[Function],
              val ddg: Option[DynamicDispatchGraph],
              val silMap: SILMap, val meta: ModuleMetadata) {
   // Also used as unique identifier
@@ -63,7 +63,7 @@ class Module(val functions: ArrayBuffer[Function], val entryFunction: Option[Fun
   }
 }
 
-class CanModule(val functions: ArrayBuffer[CanFunction], val entryFunction: Option[CanFunction],
+class CanModule(val functions: ArrayBuffer[CanFunction],
                 val ddg: Option[DynamicDispatchGraph],
                 val silMap: SILMap, val meta: ModuleMetadata) {
   override def toString: String = {

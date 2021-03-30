@@ -107,7 +107,7 @@ object DefaultDriver {
     threads.foreach(f => f.join())
     val group = ModuleGrouper.group(modules)
     Logging.printInfo("Group ready:\n"+group.toString+group.functions.length+" functions")
-    if (options.printSwirl) writeFile(group, debugDir, "group")
+    if (options.printSwirl) writeFile(group, debugDir, "grouped")
     group
   }
 }
