@@ -53,7 +53,7 @@ swan-swiftc -- MyFile.swift
 
 ### Analysis Client
 
-There is currently no ready dataflow client for SWAN. However, you can use the *DefaultClient* which will parse, translate, and combine the dumped SIL modules.
+There is currently no ready dataflow client for SWAN. However, you can use the `default-driver` which will parse, translate, and combine the dumped SIL modules.
 
 ```
 java -jar default-driver.jar swan-dir/
