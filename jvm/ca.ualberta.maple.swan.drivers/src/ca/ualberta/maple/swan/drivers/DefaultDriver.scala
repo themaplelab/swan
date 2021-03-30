@@ -25,11 +25,19 @@ import scala.collection.mutable.ArrayBuffer
 
 object DefaultDriver {
 
+  class DriverOptions {
+    var printSwirl = true
+    def printSwirl(v: Boolean): DriverOptions = {
+      this.printSwirl = v
+      this
+    }
+  }
+
   def main(args: Array[String]): Unit = {
     if (args.length != 1) {
       throw new RuntimeException("Expected 1 argument: the swan-dir file path")
     }
-    run(new File(args(0)))
+    run(new File(args(0)), new DriverOptions)
   }
 
   def writeFile(module: Object, debugDir: File, prefix: String): Unit = {
@@ -51,49 +59,25 @@ object DefaultDriver {
     fw.close()
   }
 
-  def runner(debugDir: File, file: File, threads: ArrayBuffer[Thread]): CanModule = {
+  def runner(debugDir: File, file: File, options: DriverOptions): CanModule = {
     val silParser = new SILParser(file.toPath)
     val silModule = silParser.parseModule()
     val swirlModule = new SWIRLGen().translateSILModule(silModule)
-    val rawPt = new Thread() {
-      override def run(): Unit = {
-        writeFile(swirlModule, debugDir, file.getName + ".raw")
-      }
-    }
-    threads.append(rawPt)
-    rawPt.start()
+    if (options.printSwirl) writeFile(swirlModule, debugDir, file.getName + ".raw")
     val canSwirlModule = new SWIRLPass().runPasses(swirlModule)
-    val canPt = new Thread() {
-      override def run(): Unit = {
-        writeFile(canSwirlModule, debugDir, file.getName)
-      }
-    }
-    threads.append(canPt)
-    canPt.start()
+    if (options.printSwirl) writeFile(canSwirlModule, debugDir, file.getName)
     canSwirlModule
   }
 
-  def modelRunner(debugDir: File, modelsContent: String, threads: ArrayBuffer[Thread]): CanModule = {
+  def modelRunner(debugDir: File, modelsContent: String, options: DriverOptions): CanModule = {
     val swirlModule = new SWIRLParser(modelsContent, model = true).parseModule()
-    val pt = new Thread() {
-      override def run(): Unit = {
-        writeFile(swirlModule, debugDir, "models.raw")
-      }
-    }
-    threads.append(pt)
-    pt.start()
+    if (options.printSwirl) writeFile(swirlModule, debugDir, "models.raw")
     val canSwirlModule = new SWIRLPass().runPasses(swirlModule)
-    val canPt = new Thread() {
-      override def run(): Unit = {
-        writeFile(canSwirlModule, debugDir, "models")
-      }
-    }
-    threads.append(canPt)
-    canPt.start()
+    if (options.printSwirl) writeFile(canSwirlModule, debugDir, "models")
     canSwirlModule
   }
 
-  def run(swanDir: File): ModuleGroup = {
+  def run(swanDir: File, options: DriverOptions): ModuleGroup = {
     val dirProcessor = new DirProcessor(swanDir.toPath)
     val silFiles = dirProcessor.process()
     val threads = new ArrayBuffer[Thread]()
@@ -104,7 +88,7 @@ object DefaultDriver {
     silFiles.foreach(f => {
       val t = new Thread {
         override def run(): Unit = {
-          modules.append(runner(debugDir, f, threads))
+          modules.append(runner(debugDir, f, options))
         }
       }
       threads.append(t)
@@ -115,7 +99,7 @@ object DefaultDriver {
     val modelsContent = IOUtils.toString(in, StandardCharsets.UTF_8)
     val t = new Thread {
       override def run(): Unit = {
-        modules.append(modelRunner(debugDir, modelsContent, threads))
+        modules.append(modelRunner(debugDir, modelsContent, options))
       }
     }
     threads.append(t)
@@ -123,7 +107,7 @@ object DefaultDriver {
     threads.foreach(f => f.join())
     val group = ModuleGrouper.group(modules)
     Logging.printInfo("Group ready:\n"+group.toString+group.functions.length+" functions")
-    writeFile(group, debugDir, "group")
+    if (options.printSwirl) writeFile(group, debugDir, "group")
     group
   }
 }
