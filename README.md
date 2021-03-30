@@ -32,7 +32,7 @@ Open `jvm/` in IntelliJ. Be sure to select *Import as Gradle Project*.
 
 Install the Scala plugin (*Preferences -> Plugins*, Search for *Scala*).
 
-Run the *SWIRL Tests* and *SIL Tests* configurations to test everything works.
+Run the *General Tests* configuration to test everything works.
 
 ## Toolchain Usage
 
