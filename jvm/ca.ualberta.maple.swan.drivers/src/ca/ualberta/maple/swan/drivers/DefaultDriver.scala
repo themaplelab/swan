@@ -19,7 +19,7 @@ import ca.ualberta.maple.swan.ir.raw.SWIRLGen
 import ca.ualberta.maple.swan.ir.{CanModule, Module, ModuleGroup, ModuleGrouper, SWIRLParser, SWIRLPrinter, SWIRLPrinterOptions}
 import ca.ualberta.maple.swan.parser.SILParser
 import ca.ualberta.maple.swan.utils.Logging
-import org.apache.commons.io.IOUtils
+import org.apache.commons.io.{FileUtils, IOUtils}
 
 import scala.collection.mutable.ArrayBuffer
 
@@ -32,7 +32,7 @@ object DefaultDriver {
     run(new File(args(0)))
   }
 
-  def writeFile(module: Object, intermediateDir: File, prefix: String): Unit = {
+  def writeFile(module: Object, debugDir: File, prefix: String): Unit = {
     val printedSwirlModule = {
       module match {
         case canModule: CanModule =>
@@ -45,19 +45,19 @@ object DefaultDriver {
           throw new RuntimeException("unexpected")
       }
     }
-    val f = Paths.get(intermediateDir.getPath, prefix + ".swirl").toFile
+    val f = Paths.get(debugDir.getPath, prefix + ".swirl").toFile
     val fw = new FileWriter(f)
     fw.write(printedSwirlModule)
     fw.close()
   }
 
-  def runner(intermediateDir: File, file: File, threads: ArrayBuffer[Thread]): CanModule = {
+  def runner(debugDir: File, file: File, threads: ArrayBuffer[Thread]): CanModule = {
     val silParser = new SILParser(file.toPath)
     val silModule = silParser.parseModule()
     val swirlModule = new SWIRLGen().translateSILModule(silModule)
     val rawPt = new Thread() {
       override def run(): Unit = {
-        writeFile(swirlModule, intermediateDir, file.getName + ".raw")
+        writeFile(swirlModule, debugDir, file.getName + ".raw")
       }
     }
     threads.append(rawPt)
@@ -65,7 +65,7 @@ object DefaultDriver {
     val canSwirlModule = new SWIRLPass().runPasses(swirlModule)
     val canPt = new Thread() {
       override def run(): Unit = {
-        writeFile(canSwirlModule, intermediateDir, file.getName)
+        writeFile(canSwirlModule, debugDir, file.getName)
       }
     }
     threads.append(canPt)
@@ -73,11 +73,11 @@ object DefaultDriver {
     canSwirlModule
   }
 
-  def modelRunner(intermediateDir: File, modelsContent: String, threads: ArrayBuffer[Thread]): CanModule = {
+  def modelRunner(debugDir: File, modelsContent: String, threads: ArrayBuffer[Thread]): CanModule = {
     val swirlModule = new SWIRLParser(modelsContent, model = true).parseModule()
     val pt = new Thread() {
       override def run(): Unit = {
-        writeFile(swirlModule, intermediateDir, "models.raw")
+        writeFile(swirlModule, debugDir, "models.raw")
       }
     }
     threads.append(pt)
@@ -85,7 +85,7 @@ object DefaultDriver {
     val canSwirlModule = new SWIRLPass().runPasses(swirlModule)
     val canPt = new Thread() {
       override def run(): Unit = {
-        writeFile(canSwirlModule, intermediateDir, "models")
+        writeFile(canSwirlModule, debugDir, "models")
       }
     }
     threads.append(canPt)
@@ -98,12 +98,13 @@ object DefaultDriver {
     val silFiles = dirProcessor.process()
     val threads = new ArrayBuffer[Thread]()
     val modules = new ArrayBuffer[CanModule]()
-    val intermediateDir = Files.createDirectories(
-      Paths.get(swanDir.getPath, "intermediate-dir")).toFile
+    val debugDir = Files.createDirectories(
+      Paths.get(swanDir.getPath, "debug-dir")).toFile
+    FileUtils.cleanDirectory(debugDir)
     silFiles.foreach(f => {
       val t = new Thread {
         override def run(): Unit = {
-          modules.append(runner(intermediateDir, f, threads))
+          modules.append(runner(debugDir, f, threads))
         }
       }
       threads.append(t)
@@ -114,7 +115,7 @@ object DefaultDriver {
     val modelsContent = IOUtils.toString(in, StandardCharsets.UTF_8)
     val t = new Thread {
       override def run(): Unit = {
-        modules.append(modelRunner(intermediateDir, modelsContent, threads))
+        modules.append(modelRunner(debugDir, modelsContent, threads))
       }
     }
     threads.append(t)
@@ -122,7 +123,7 @@ object DefaultDriver {
     threads.foreach(f => f.join())
     val group = ModuleGrouper.group(modules)
     Logging.printInfo("Group ready:\n"+group.toString+group.functions.length+" functions")
-    writeFile(group, intermediateDir, "group")
+    writeFile(group, debugDir, "group")
     group
   }
 }
