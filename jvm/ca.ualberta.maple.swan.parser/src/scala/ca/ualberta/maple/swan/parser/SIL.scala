@@ -15,7 +15,6 @@ import java.io.File
 import ca.ualberta.maple.swan.parser.SILFunctionAttribute.specialize.Kind
 
 import scala.collection.mutable.ArrayBuffer
-import scala.sys.process._
 
 // Only file is used for now
 class SILModuleMetadata(val file: File,
@@ -419,19 +418,7 @@ object SILEnforcement {
   case object unsafe extends SILEnforcement
 }
 
-class SILMangledName(var mangled: String) {
-  var demangled = ""
-  // The swift-demangle call is expensive
-  // Putting it on a new thread increases overall performance by up to ~4 times
-  // The value isn't immediately needed so this is fine to do
-  new Thread(){
-    override def run(): Unit = {
-      // TODO: ship demangler with SWAN
-      demangled = ("/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swift-demangle -compact \'" + mangled + '\'').!!.replaceAll(System.lineSeparator(), "")
-    }
-  }.start()
-}
-
+class SILMangledName(val mangled: String, var demangled: String = "")
 
 class StructInit(val name: String, val args: ArrayBuffer[String], val tpe: InitType)
 object StructInit {

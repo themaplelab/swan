@@ -17,6 +17,8 @@ import java.util
 
 import ca.ualberta.maple.swan.utils.Logging
 
+import scala.sys.process._
+
 import scala.annotation.tailrec
 import scala.collection.mutable.ArrayBuffer
 import scala.reflect.ClassTag
@@ -34,6 +36,8 @@ class SILParser extends SILPrinter {
   private[parser] var chars: Array[Char] = _
   private[parser] var cursor: Int = 0
   def position(): Int = { cursor }
+
+  private[parser] val toDemangle: ArrayBuffer[SILMangledName] = ArrayBuffer.empty[SILMangledName]
 
   private[parser] val inits: ArrayBuffer[StructInit] = StructInit.populateInits()
 
@@ -287,8 +291,35 @@ class SILParser extends SILPrinter {
         }
       }
     }
+    demangleNames()
     Logging.printTimeStamp(2, startTime, "parsing", chars.count(_ == '\n'), "lines")
     new SILModule(functions, witnessTables, vTables, imports, globalVariables, scopes, properties, inits, new SILModuleMetadata(new File(path), "", "", ""))
+  }
+
+  def demangleNames(): Unit = {
+    // The swift-demangle I/O operation is expensive
+    // Demangling the strings all at once at the end is significantly quicker
+    // swift-demangle can only take ~10000 at a time, so batches are used
+    // (actual length limit is character based, not count based)
+    val swiftDemangle = "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swift-demangle -compact "
+    val batches = new ArrayBuffer[ArrayBuffer[SILMangledName]]()
+    var currBatch = new ArrayBuffer[SILMangledName]()
+    batches.append(currBatch)
+    toDemangle.foreach(m => {
+      currBatch.append(m)
+      if (currBatch.length > 10000) {
+        currBatch = new ArrayBuffer[SILMangledName]()
+        batches.append(currBatch)
+      }
+    })
+    batches.foreach(batch => {
+      val strings = new ArrayBuffer[String]()
+      batch.foreach(m => {
+        strings.append("\'" + m.mangled + "\'")
+      })
+      val demangled = (swiftDemangle + strings.mkString(" ")).!!.split(System.lineSeparator())
+      batch.zipWithIndex.foreach(m => m._1.demangled = demangled(m._2))
+    })
   }
 
   // https://github.com/apple/swift/blob/master/docs/SIL.rst#functions
@@ -1865,7 +1896,9 @@ class SILParser extends SILPrinter {
     if(skip("@")) {
       val name = take(x => x == '$' || x.isLetterOrDigit || x == '_' )
       if(!name.isEmpty) {
-        return new SILMangledName(name)
+        val m = new SILMangledName(name)
+        toDemangle.append(m)
+        return m
       }
     }
     throw parseError("function or global name expected", Some(start))
