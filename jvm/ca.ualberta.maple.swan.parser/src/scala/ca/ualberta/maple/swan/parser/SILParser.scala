@@ -292,7 +292,7 @@ class SILParser extends SILPrinter {
       }
     }
     demangleNames()
-    Logging.printTimeStamp(2, startTime, "parsing", chars.count(_ == '\n'), "lines")
+    Logging.printTimeStamp(0, startTime, "parsing", chars.count(_ == '\n'), "lines")
     new SILModule(functions, witnessTables, vTables, imports, globalVariables, scopes, properties, inits, new SILModuleMetadata(new File(path), "", "", ""))
   }
 

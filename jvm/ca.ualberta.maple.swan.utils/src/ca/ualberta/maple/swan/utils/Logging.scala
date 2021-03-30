@@ -17,10 +17,11 @@ object Logging {
   }
 
   def printTimeStamp(min: Int, startTime: Long, action: String, value: Long, unit: String): Unit = {
-    val timeElapsed = (System.nanoTime() - startTime) / 1000000000
-    if (timeElapsed >= min) {
-      Logging.printInfo(String.format("Done %s %d %s in %02dm%02ds (%d %s/s)",
-        action, value, unit, timeElapsed / 60, timeElapsed % 60, value / timeElapsed, unit))
+    val millis = (System.nanoTime() - startTime) / 1000000
+    val seconds: Double = millis.toDouble / 1000
+    if (seconds >= min) {
+      Logging.printInfo(String.format("Done %s %d %s in %d.%03ds (%d %s/s)",
+        action, value, unit, millis / 1000, millis % 1000, (value / seconds).toInt, unit))
     }
   }
 
