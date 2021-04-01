@@ -37,7 +37,7 @@ object DefaultDriver {
     if (args.length != 1) {
       throw new RuntimeException("Expected 1 argument: the swan-dir file path")
     }
-    run(new File(args(0)), new DriverOptions)
+    run(new File(args(0)), new DriverOptions().printSwirl(false))
   }
 
   def writeFile(module: Object, debugDir: File, prefix: String): Unit = {

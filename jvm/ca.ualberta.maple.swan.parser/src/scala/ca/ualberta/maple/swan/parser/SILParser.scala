@@ -1431,6 +1431,41 @@ class SILParser extends SILPrinter {
         throw parseError("unhandled instruction") // NSIP
       }
 
+        // *** OTHER (e.g., undocumented) ***
+
+      // This parsing is not complete but it handles the only case we've seen in practice
+      case "keypath" => {
+        val tpe = parseType()
+        take(",")
+        take("(")
+        take("objc")
+        val objc = parseString()
+        take(";")
+        take("root")
+        val root = parseType()
+        take(";")
+        take("settable_property")
+        val settableProperty = parseType()
+        take(",")
+        take("id")
+        val id = parseDeclRef()
+        take(":")
+        val idTpe = parseNakedType()
+        take(",")
+        take("getter")
+        val getter = parseMangledName()
+        take(":")
+        val getterTpe = parseType()
+        take(",")
+        take("setter")
+        val setter = parseMangledName()
+        take(":")
+        val setterTpe = parseType()
+        take(")")
+        SILInstruction.operator(SILOperator.keypath(
+          tpe, objc, root, settableProperty, id, idTpe, getter, getterTpe, setter, setterTpe))
+      }
+
         // *** RUNTIME FAILURES ***
 
       case "cond_fail" => {

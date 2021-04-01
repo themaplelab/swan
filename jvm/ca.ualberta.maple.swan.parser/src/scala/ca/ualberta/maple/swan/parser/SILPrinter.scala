@@ -1080,6 +1080,32 @@ class SILPrinter extends Printer {
         print(tpe)
       }
 
+        // *** OTHER ***
+
+      case SILOperator.keypath(tpe, objc, root, settableProperty, id, idTpe, getter, getterTpe, setter, setterTpe) => {
+        print("keypath ")
+        print(tpe)
+        print(", (objc \"")
+        print(objc)
+        print("\"; root ")
+        print(root)
+        print("; settable_property ")
+        print(settableProperty)
+        print(", id ")
+        print(id)
+        print(" : ")
+        print(idTpe)
+        print(", getter ")
+        print(getter)
+        print(" : ")
+        print(getterTpe)
+        print(", setter ")
+        print(setter)
+        print(" : ")
+        print(setterTpe)
+        print(")")
+      }
+
         // *** RUNTIME FAILURES ***
 
       case SILOperator.condFail(operand, message) => {

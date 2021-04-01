@@ -11,7 +11,7 @@
 package ca.ualberta.maple.swan.ir.canonical
 
 import ca.ualberta.maple.swan.ir.Exceptions.{IncompleteRawSWIRLException, IncorrectRawSWIRLException, UnexpectedSILFormatException}
-import ca.ualberta.maple.swan.ir.{Argument, BinaryOperation, Block, BlockRef, CanBlock, CanFunction, CanModule, CanOperator, CanOperatorDef, CanTerminator, CanTerminatorDef, Constants, Function, Literal, Module, Operator, RawOperatorDef, RawTerminatorDef, SwitchCase, SwitchEnumCase, Symbol, SymbolRef, SymbolTableEntry, Terminator, Type, WithResult}
+import ca.ualberta.maple.swan.ir.{Argument, BinaryOperation, Block, BlockRef, CanBlock, CanFunction, CanModule, CanOperator, CanOperatorDef, CanTerminator, CanTerminatorDef, Constants, Function, Literal, Module, Operator, RawOperatorDef, RawTerminatorDef, SWIRLPrinter, SwitchCase, SwitchEnumCase, Symbol, SymbolRef, SymbolTableEntry, Terminator, Type, WithResult}
 import ca.ualberta.maple.swan.utils.Logging
 import org.jgrapht.Graph
 import org.jgrapht.graph.{DefaultDirectedGraph, DefaultEdge}
@@ -236,7 +236,7 @@ class SWIRLPass {
             mapToSIL(b.terminator, binaryOp, module)
             mapToSIL(b.terminator, brIf, module)
             currBlock.operators.append(binaryOp)
-            currBlock.terminator = brIf
+            currBlock.terminator = new RawTerminatorDef(Terminator.br(cse.destination, ArrayBuffer.empty), position)// brIf
             if (c._2 > 0) {
               newBlocks.append(currBlock)
             }
@@ -249,6 +249,16 @@ class SWIRLPass {
             val br = new RawTerminatorDef(Terminator.br(default.get, ArrayBuffer.empty), position)
             val newBlock = new Block(generateBlockName(b.blockRef.label), ArrayBuffer.empty, ArrayBuffer.empty, br)
             newBlocks.append(newBlock)
+          } else if (newBlocks.nonEmpty) {
+            val td = newBlocks.last.terminator
+            td.terminator match {
+              case Terminator.brIf(_, target, args) => {
+                val br = new RawTerminatorDef(Terminator.br(target, args), td.position)
+                mapToSIL(b.terminator, br, module)
+                newBlocks.last.terminator = br
+              }
+              case _ =>
+            }
           }
         }
         case Terminator.switchEnum(switchOn, cases, default) => {
@@ -290,6 +300,16 @@ class SWIRLPass {
             val br = new RawTerminatorDef(Terminator.br(default.get, ArrayBuffer.empty), position)
             val newBlock = new Block(generateBlockName(b.blockRef.label), ArrayBuffer.empty, ArrayBuffer.empty, br)
             newBlocks.append(newBlock)
+          } else if (newBlocks.nonEmpty) {
+            val td = newBlocks.last.terminator
+            td.terminator match {
+              case Terminator.brIf(_, target, args) => {
+                val br = new RawTerminatorDef(Terminator.br(target, args), td.position)
+                mapToSIL(b.terminator, br, module)
+                newBlocks.last.terminator = br
+              }
+              case _ =>
+            }
           }
         }
         case Terminator.unwind => {
@@ -472,6 +492,9 @@ class SWIRLPass {
         }
         case Terminator.brIf_can(_, target) => {
           graph.addEdge(b, getTarget(target))
+          if (bit._2 + 1 > blocks.length - 1) {
+            System.out.println()
+          }
           graph.addVertex(blocks(bit._2 + 1))
           graph.addEdge(b, blocks(bit._2 + 1))
         }

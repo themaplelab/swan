@@ -273,6 +273,12 @@ object SILOperator {
                                           toOperand: SILOperand) extends SILOperator
   // NSIP: unconditional_checked_cast_value
 
+  /***** OTHER *****/
+
+  // Weird undocumented instruction
+  case class keypath(tpe: SILType, objc: String, root: SILType, settableProperty: SILType, id: SILDeclRef, idTpe: SILType,
+                     getter: SILMangledName, getterTpe: SILType, setter: SILMangledName, setterTpe: SILType) extends SILOperator
+
   /***** RUNTIME FAILURES *****/
   case class condFail(operand: SILOperand, message: Option[String]) extends SILOperator
 

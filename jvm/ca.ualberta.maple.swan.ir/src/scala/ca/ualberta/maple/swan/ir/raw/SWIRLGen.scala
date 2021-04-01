@@ -428,6 +428,7 @@ class SWIRLGen {
           case inst: SILOperator.unconditionalCheckedCast => visitUnconditionalCheckedCast(result, inst, ctx)
           case inst: SILOperator.unconditionalCheckedCastAddr => visitUnconditionalCheckedCastAddr(result, inst, ctx)
           case inst: SILOperator.selectValue => visitSelectValue(result, inst, ctx)
+          case inst: SILOperator.keypath => visitKeypath(result, inst, ctx)
           case inst: SILOperator.condFail => visitCondFail(result, inst, ctx)
         }
       }
@@ -1557,7 +1558,17 @@ class SWIRLGen {
     makeOperator(ctx, Operator.switchValueAssign(result, makeSymbolRef(I.operand.value, ctx), cases, default))
   }
 
-  /* RUNTIME FAILURES */
+  /* OTHER */
+
+  def visitKeypath(r: Option[SILResult], I: SILOperator.keypath, ctx: Context): ArrayBuffer[RawInstructionDef] = {
+    // We are still uncertain about this instruction. Parsing is not complete either.
+    // So this is just temporary
+    val result = getSingleResult(r, Utils.SILTypeToPointerType(I.tpe), ctx) // $T to $*T
+    ctx.instantiatedTypes.add(Utils.print(I.tpe))
+    makeOperator(ctx, Operator.neww(result))
+  }
+
+    /* RUNTIME FAILURES */
 
   def visitCondFail(r: Option[SILResult], I: SILOperator.condFail, ctx: Context): ArrayBuffer[RawInstructionDef] = {
     makeOperator(ctx, Operator.condFail(makeSymbolRef(I.operand.value, ctx)))
