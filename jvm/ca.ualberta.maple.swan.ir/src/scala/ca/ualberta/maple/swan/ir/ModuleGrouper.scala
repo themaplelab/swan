@@ -17,6 +17,7 @@ import scala.collection.{immutable, mutable}
 
 object ModuleGrouper {
 
+  // Would be also good to check that the implementations are equal
   def merge(toMerge: ArrayBuffer[CanFunction],
             existingFunctions: mutable.HashMap[String, CanFunction],
             entries: ArrayBuffer[CanFunction], models: ArrayBuffer[CanFunction],
@@ -65,6 +66,12 @@ object ModuleGrouper {
                 f.attribute.get match {
                   case FunctionAttribute.stub => // ignore
                   case FunctionAttribute.model => add(f)
+                  case FunctionAttribute.coroutine => add(f)
+                  case _ => throwException("unexpected")
+                }
+              }
+              case FunctionAttribute.coroutine => {
+                f.attribute.get match {
                   case FunctionAttribute.coroutine => add(f)
                   case _ => throwException("unexpected")
                 }

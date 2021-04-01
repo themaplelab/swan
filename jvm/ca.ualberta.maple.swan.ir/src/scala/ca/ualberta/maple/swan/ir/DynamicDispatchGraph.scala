@@ -122,9 +122,11 @@ class DynamicDispatchGraph(module: SILModule) {
           graph.addEdge(cls, makeNode(identifier, "Protocol"))
         }
         case SILWitnessEntry.method(declRef, declType, functionName) => {
-          val method = makeNode(functionName.demangled, "Method") // MethodType.implements
-          graph.addEdge(makeNode(declRef.name(0), "Protocol"), method) // MethodType.virtual
-          graph.addEdge(makeNode(declRefToString(declRef.name), "Index"), method)
+          if (functionName.nonEmpty) {
+            val method = makeNode(functionName.get.demangled, "Method") // MethodType.implements
+            graph.addEdge(makeNode(declRef.name(0), "Protocol"), method) // MethodType.virtual
+            graph.addEdge(makeNode(declRefToString(declRef.name), "Index"), method)
+          }
         }
         // TODO: investigate
         case SILWitnessEntry.associatedType(identifier0, identifier1) =>

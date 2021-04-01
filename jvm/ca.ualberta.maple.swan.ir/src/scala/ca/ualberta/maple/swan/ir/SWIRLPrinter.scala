@@ -321,6 +321,12 @@ class SWIRLPrinter extends Printer {
         print(whenEmpty = false, ", ", cases, ", ", "", (c : EnumAssignCase) => print(c))
         if (default.nonEmpty) { print(", default "); print(default.get) }
       }
+      case Operator.switchValueAssign(_, switchOn, cases, default) => {
+        print("switch_value_assign ")
+        print(switchOn)
+        print(whenEmpty = false, ", ", cases, ", ", "", (c : ValueAssignCase) => print(c))
+        if (default.nonEmpty) { print(", default "); print(default.get) }
+      }
       case Operator.pointerRead(_, pointer) => {
         print("pointer_read ")
         print(pointer)
@@ -429,6 +435,13 @@ class SWIRLPrinter extends Printer {
     print(cse.decl)
     print("\" : ")
     print(cse.value)
+  }
+
+  def print(cse: ValueAssignCase): Unit = {
+    print("case ")
+    print(cse.value)
+    print(" : ")
+    print(cse.select)
   }
 
   def print(cse: SwitchCase): Unit = {

@@ -320,6 +320,12 @@ class SILPrinter extends Printer {
         print(", ")
         print(index)
       }
+      case SILOperator.indexRawPointer(pointer, offset) => {
+        print("index_raw_pointer ")
+        print(pointer)
+        print(", ")
+        print(offset)
+      }
       case SILOperator.bindMemory(operand1, operand2, toType) => {
         print("bind_memory ")
         print(operand1)
@@ -368,6 +374,10 @@ class SILPrinter extends Printer {
         print("unowned_retain ")
         print(operand)
       }
+      case SILOperator.unownedRelease(operand) => {
+        print("unowned_release ")
+        print(operand)
+      }
       case SILOperator.loadWeak(take: Boolean, operand) => {
         print("load_weak ")
         print("[take]", take)
@@ -391,11 +401,19 @@ class SILPrinter extends Printer {
         print("[initialization] ", initialization)
         print(to)
       }
+      case SILOperator.fixLifetime(operand) => {
+        print("fix_lifetime")
+        print(operand)
+      }
       case SILOperator.markDependence(operand, on) => {
         print("mark_dependence ")
         print(operand)
         print(" on ")
         print(on)
+      }
+      case SILOperator.isUnique(operand) => {
+        print("is_unique ")
+        print(operand)
       }
       case SILOperator.isEscapingClosure(operand, objc) => {
         print("is_escaping_closure ")
@@ -860,6 +878,12 @@ class SILPrinter extends Printer {
         print(" to ")
         print(to)
       }
+      case SILOperator.refToRawPointer(operand, tpe) => {
+        print("ref_to_raw_pointer ")
+        print(operand)
+        print(" to ")
+        print(tpe)
+      }
       case SILOperator.rawPointerToRef(operand, tpe) => {
         print("raw_pointer_to_ref ")
         print(operand)
@@ -899,12 +923,28 @@ class SILPrinter extends Printer {
         print(" to ")
         print(tpe)
       }
+      case SILOperator.classifyBridgeObject(operand) => {
+        print("classify_bridge_object ")
+        print(operand)
+      }
       case SILOperator.valueToBridgeObject(operand) => {
         print("value_to_bridge_object ")
         print(operand)
       }
+      case SILOperator.refToBridgeObject(operand1, operand2) => {
+        print("ref_to_bridge_object ")
+        print(operand1)
+        print(", ")
+        print(operand2)
+      }
       case SILOperator.bridgeObjectToRef(operand, tpe) => {
         print("bridge_object_to_ref ")
+        print(operand)
+        print(" to ")
+        print(tpe)
+      }
+      case SILOperator.bridgeObjectToWord(operand, tpe) => {
+        print("bridge_object_to_word ")
         print(operand)
         print(" to ")
         print(tpe)
@@ -957,6 +997,13 @@ class SILPrinter extends Printer {
         naked(toType)
         print(" in ")
         print(toOperand)
+      }
+      case SILOperator.selectValue(operand, cases, tpe) => {
+        print("select_value ")
+        print(operand)
+        print(whenEmpty = false, "", cases, "", "", (c: SILSelectValueCase) => print(c))
+        print(" : ")
+        print(tpe)
       }
 
         // *** RUNTIME FAILURES ***
@@ -1178,7 +1225,7 @@ class SILPrinter extends Printer {
         print(": ")
         print(declType)
         print(" : ")
-        print(functionName)
+        if (functionName.nonEmpty) print(functionName) else print("nil")
       }
       case SILWitnessEntry.associatedType(identifier0, identifier1) => {
         print("associated_type ")
@@ -1307,6 +1354,22 @@ class SILPrinter extends Printer {
       case SILSwitchValueCase.default(label) => {
         print("default ")
         print(label)
+      }
+    }
+  }
+
+  def print(cse: SILSelectValueCase): Unit = {
+    print(", ")
+    cse match {
+      case SILSelectValueCase.cs(value, select) => {
+        print("case ")
+        print(value)
+        print(" : ")
+        print(select)
+      }
+      case SILSelectValueCase.default(select) => {
+        print("default ")
+        print(select)
       }
     }
   }
@@ -1735,10 +1798,8 @@ class SILPrinter extends Printer {
         print(" & ")
         naked(tpe2)
       }
-      case SILType.dotType(tpe) => {
-        print("(")
-        naked(tpe)
-        print(").Type")
+      case SILType.dotType(tpes) => {
+        print(whenEmpty = true, "(", tpes, ", ", ").Type", (t: SILType) => naked(t))
       }
     }
     this.toString

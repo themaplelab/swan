@@ -100,7 +100,7 @@ object SILOperator {
   case class destroyAddr(operand: SILOperand) extends SILOperator
   case class indexAddr(addr: SILOperand, index: SILOperand) extends SILOperator
   // NSIP: tail_addr
-  // NSIP: index_raw_pointer
+  case class indexRawPointer(pointer: SILOperand, offset: SILOperand) extends SILOperator
   case class bindMemory(operand1: SILOperand, operand2: SILOperand, toType: SILType) extends SILOperator
   case class beginAccess(access: SILAccess, enforcement: SILEnforcement, noNestedConflict: Boolean,
                          builtin: Boolean, operand: SILOperand) extends SILOperator
@@ -118,15 +118,16 @@ object SILOperator {
   // NSIP: strong_copy_unowned_value
   // NSIP: strong_retain_unowned
   case class unownedRetain(operand: SILOperand) extends SILOperator
-  // NSIP: unowned_release
+  case class unownedRelease(operand: SILOperand) extends SILOperator
   case class loadWeak(take: Boolean, operand: SILOperand) extends SILOperator
   case class storeWeak(from: String, initialization: Boolean, to: SILOperand) extends SILOperator
   case class loadUnowned(operand: SILOperand) extends SILOperator
   case class storeBorrow(from: String, to: SILOperand) extends SILOperator
   case class storeUnowned(from: String, initialization: Boolean, to: SILOperand) extends SILOperator
-  // NSIP: fix_lifetime
+  case class fixLifetime(operand: SILOperand) extends SILOperator
   case class markDependence(operand: SILOperand, on: SILOperand) extends SILOperator
-  // NSIP: is_unique
+  case class isUnique(operand: SILOperand) extends SILOperator
+
   // Skip begin_cow_mutation and end_cow_mutation for now (new instructions)
   case class isEscapingClosure(operand: SILOperand, objc: Boolean) extends SILOperator
   case class copyBlock(operand: SILOperand) extends SILOperator
@@ -237,7 +238,7 @@ object SILOperator {
   case class uncheckedTrivialBitCast(operand: SILOperand, tpe: SILType) extends SILOperator
   // NSIP: unchecked_bitwise_cast
   case class uncheckedOwnershipConversion(operand: SILOperand, from: SILTypeAttribute, to: SILTypeAttribute) extends SILOperator
-  // NSIP: ref_to_raw_pointer
+  case class refToRawPointer(operand: SILOperand, tpe: SILType) extends SILOperator
   case class rawPointerToRef(operand: SILOperand, tpe: SILType) extends SILOperator
   // SIL.rst: sil-instruction ::= 'ref_to_unowned' sil-operand
   // reality: sil-instruction ::= 'ref_to_unowned' sil-operand 'to' sil-type
@@ -250,11 +251,11 @@ object SILOperator {
                                      operand: SILOperand, tpe: SILType) extends SILOperator
   // NSIP: thin_function_to_pointer
   // NSIP: pointer_to_thin_function
-  // NSIP: classify_bridge_object
+  case class classifyBridgeObject(operand: SILOperand) extends SILOperator
   case class valueToBridgeObject(operand: SILOperand) extends SILOperator
-  // NSIP: ref_to_bridge_object
+  case class refToBridgeObject(operand1: SILOperand, operand2: SILOperand) extends SILOperator
   case class bridgeObjectToRef(operand: SILOperand, tpe: SILType) extends SILOperator
-  // NSIP: bridge_object_to_word
+  case class bridgeObjectToWord(operand: SILOperand, tpe: SILType) extends SILOperator
   case class thinToThickFunction(operand: SILOperand, tpe: SILType) extends SILOperator
   case class thickToObjcMetatype(operand: SILOperand, tpe: SILType) extends SILOperator
   case class objcToThickMetatype(operand: SILOperand, tpe: SILType) extends SILOperator
@@ -269,6 +270,10 @@ object SILOperator {
 
   /***** RUNTIME FAILURES *****/
   case class condFail(operand: SILOperand, message: Option[String]) extends SILOperator
+
+  // SIL.rst says this is a terminator but it is not.
+  case class selectValue(operand: SILOperand, cases: ArrayBuffer[SILSelectValueCase], tpe: SILType) extends SILOperator
+
 }
 
 sealed trait SILTerminator
@@ -333,9 +338,16 @@ object SILSwitchEnumCase {
 
 sealed trait SILSwitchValueCase
 object SILSwitchValueCase {
-  case class cs(value: String, label: String) extends SILSwitchValueCase
-  case class default(label: String) extends SILSwitchValueCase
+  case class cs(value: String, select: String) extends SILSwitchValueCase
+  case class default(select: String) extends SILSwitchValueCase
 }
+
+sealed trait SILSelectValueCase
+object SILSelectValueCase {
+  case class cs(value: String, select: String) extends SILSelectValueCase
+  case class default(select: String) extends SILSelectValueCase
+}
+
 
 sealed trait SILConvention
 object SILConvention {
@@ -563,7 +575,7 @@ object SILType {
   case class varType(tpe: SILType) extends SILType
   case class forType(tpe: SILType, fr: ArrayBuffer[SILType]) extends SILType // -> T for <T>
   case class andType(tpe1: SILType, tpe2: SILType) extends SILType // (T & T)
-  case class dotType(tpe: SILType) extends SILType // (andType).Type
+  case class dotType(tpes: ArrayBuffer[SILType]) extends SILType // (andType).Type
 
   @throws[Error]
   def parse(silString: String): SILType = {
@@ -671,7 +683,7 @@ class SILVEntry(val declRef: SILDeclRef, val tpe: Option[SILType], val kind: SIL
 sealed trait SILWitnessEntry
 object SILWitnessEntry {
   case class baseProtocol(identifier: String, pc: SILProtocolConformance) extends SILWitnessEntry
-  case class method(declRef: SILDeclRef, declType: SILType, functionName: SILMangledName) extends SILWitnessEntry
+  case class method(declRef: SILDeclRef, declType: SILType, functionName: Option[SILMangledName]) extends SILWitnessEntry
   case class associatedType(identifier0: String, identifier1: String) extends SILWitnessEntry
   case class associatedTypeProtocol(identifier: String) extends SILWitnessEntry
   //case class associatedTypeProtocol(identifier0: String, identifier1: String, pc: SILProtocolConformance) extends SILWitnessEntry

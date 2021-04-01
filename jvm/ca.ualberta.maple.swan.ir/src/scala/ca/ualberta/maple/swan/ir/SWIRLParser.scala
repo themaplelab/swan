@@ -210,24 +210,12 @@ class SWIRLParser extends SWIRLPrinter {
         newlines.append(charIdx._2)
       }
     })
+    val newlineOffset = chars.view.slice(0, position).reverse.takeWhile(_ != '\n').size
     val line = newlines.length + 1
     val column = position - (if (newlines.isEmpty) 0 else newlines.last)
-    def singleLine: Array[Char] = {
-      if (path == "<memory>") chars else {
-        breakable {
-          var currLine = 1
-          chars.zipWithIndex.foreach(c => {
-            if (line == currLine) {
-              return chars.slice(c._2, chars.length - 1).takeWhile(_ != '\n')
-            }
-            if (c._1 == '\n') {
-              currLine = currLine + 1
-            }
-          })
-        }
-        Array.empty
-      }
-    }
+    val singleLine: Array[Char] =
+      if (path == "<memory>") chars
+      else chars.view.slice(position-newlineOffset, chars.length - 1).takeWhile(_ != '\n').toArray
     new Error(path, line, column, message, singleLine)
   }
 

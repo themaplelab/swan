@@ -225,24 +225,12 @@ class SILParser extends SILPrinter {
         newlines.append(charIdx._2)
       }
     })
+    val newlineOffset = chars.view.slice(0, position).reverse.takeWhile(_ != '\n').size
     val line = newlines.length + 1
     val column = position - (if (newlines.isEmpty) 0 else newlines.last)
-    def singleLine: Array[Char] = {
-      if (path == "<memory>") chars else {
-        breakable {
-          var currLine = 1
-          chars.zipWithIndex.foreach(c => {
-            if (line == currLine) {
-              return chars.slice(c._2, chars.length - 1).takeWhile(_ != '\n')
-            }
-            if (c._1 == '\n') {
-              currLine = currLine + 1
-            }
-          })
-        }
-        Array.empty
-      }
-    }
+    val singleLine: Array[Char] =
+      if (path == "<memory>") chars
+      else chars.view.slice(position-newlineOffset, chars.length - 1).takeWhile(_ != '\n').toArray
     new Error(path, line, column, message, singleLine)
   }
 
@@ -623,7 +611,10 @@ class SILParser extends SILPrinter {
         throw parseError("unhandled instruction") // NSIP
       }
       case "index_raw_pointer" => {
-        throw parseError("unhandled instruction") // NSIP
+        val pointer = parseOperand()
+        take(",")
+        val offset = parseOperand()
+        SILInstruction.operator(SILOperator.indexRawPointer(pointer, offset))
       }
       case "bind_memory" => {
         val operand1 = parseOperand()
@@ -686,7 +677,8 @@ class SILParser extends SILPrinter {
         SILInstruction.operator(SILOperator.unownedRetain(operand))
       }
       case "unowned_release" => {
-        throw parseError("unhandled instruction") // NSIP
+        val operand = parseOperand()
+        SILInstruction.operator(SILOperator.unownedRelease(operand))
       }
       case "load_weak" => {
         val take = skip("[take]")
@@ -712,7 +704,8 @@ class SILParser extends SILPrinter {
         SILInstruction.operator(SILOperator.storeUnowned(from, initialization, to))
       }
       case "fix_lifetime" => {
-        throw parseError("unhandled instruction") // NSIP
+        val operand = parseOperand()
+        SILInstruction.operator(SILOperator.fixLifetime(operand))
       }
       case "mark_dependence" => {
         val operand = parseOperand()
@@ -721,7 +714,8 @@ class SILParser extends SILPrinter {
         SILInstruction.operator(SILOperator.markDependence(operand, on))
       }
       case "is_unique" => {
-        throw parseError("unhandled instruction") // NSIP
+        val operand = parseOperand()
+        SILInstruction.operator(SILOperator.isUnique(operand))
       }
       case "is_escaping_closure" => {
         val objc = skip("[objc]")
@@ -1259,7 +1253,10 @@ class SILParser extends SILPrinter {
         SILInstruction.operator(SILOperator.uncheckedOwnershipConversion(operand, from, to))
       }
       case "ref_to_raw_pointer" => {
-        throw parseError("unhandled instruction") // NSIP
+        val operand = parseOperand()
+        take("to")
+        val tpe = parseType()
+        SILInstruction.operator(SILOperator.refToRawPointer(operand, tpe))
       }
       case "raw_pointer_to_ref" => {
         val operand = parseOperand()
@@ -1310,14 +1307,18 @@ class SILParser extends SILPrinter {
         throw parseError("unhandled instruction") // NSIP
       }
       case "classify_bridge_object" => {
-        throw parseError("unhandled instruction") // NSIP
+        val operand = parseOperand()
+        SILInstruction.operator(SILOperator.classifyBridgeObject(operand))
       }
       case "value_to_bridge_object" => {
         val operand = parseOperand()
         SILInstruction.operator(SILOperator.valueToBridgeObject(operand))
       }
       case "ref_to_bridge_object" => {
-        throw parseError("unhandled instruction") // NSIP
+        val operand1 = parseOperand()
+        take(",")
+        val operand2 = parseOperand()
+        SILInstruction.operator(SILOperator.refToBridgeObject(operand1, operand2))
       }
       case "bridge_object_to_ref" => {
         val operand = parseOperand()
@@ -1326,7 +1327,10 @@ class SILParser extends SILPrinter {
         SILInstruction.operator(SILOperator.bridgeObjectToRef(operand, tpe))
       }
       case "bridge_object_to_word" => {
-        throw parseError("unhandled instruction") // NSIP
+        val operand = parseOperand()
+        take("to")
+        val tpe = parseType()
+        SILInstruction.operator(SILOperator.bridgeObjectToWord(operand, tpe))
       }
       case "thin_to_thick_function" => {
         val operand = parseOperand()
@@ -1449,7 +1453,7 @@ class SILParser extends SILPrinter {
         take(",")
         val falseLabel = parseIdentifier()
         val fo : Option[ArrayBuffer[SILOperand]] = parseNilOrMany("(",",",")", parseOperand)
-        val falseOperands = if (fo.nonEmpty) to.get else ArrayBuffer.empty[SILOperand]
+        val falseOperands = if (fo.nonEmpty) fo.get else ArrayBuffer.empty[SILOperand]
         SILInstruction.terminator(SILTerminator.condBr(cond, trueLabel, trueOperands, falseLabel, falseOperands))
       }
       case "switch_value" => {
@@ -1458,7 +1462,11 @@ class SILParser extends SILPrinter {
         SILInstruction.terminator(SILTerminator.switchValue(operand, cases))
       }
       case "select_value" => {
-        throw parseError("unhandled instruction") // NSIP
+        val operand = parseOperand()
+        val cases = parseUntilNil[SILSelectValueCase](() => parseSelectValueCase())
+        take(":")
+        val tpe = parseType()
+        SILInstruction.operator(SILOperator.selectValue(operand, cases, tpe))
       }
       case "switch_enum" => {
         val operand = parseOperand()
@@ -1613,6 +1621,25 @@ class SILParser extends SILPrinter {
     } else if (skip("default")) {
       val label = parseElement()
       Some(SILSwitchValueCase.default(label))
+    } else {
+      this.cursor = c
+      None
+    }
+  }
+
+  // https://github.com/apple/swift/blob/master/docs/SIL.rst#select-value
+  @throws[Error]
+  def parseSelectValueCase(): Option[SILSelectValueCase] = {
+    val c = this.cursor
+    if(!skip(",")) return None
+    if (skip("case")) {
+      val value = parseValue()
+      take(":")
+      val select = parseValue()
+      Some(SILSelectValueCase.cs(value, select))
+    } else if (skip("default")) {
+      val select = parseValue()
+      Some(SILSelectValueCase.default(select))
     } else {
       this.cursor = c
       None
@@ -2018,7 +2045,7 @@ class SILParser extends SILPrinter {
       take(":")
       val declType = parseNakedType()
       take(":")
-      val functionName = parseMangledName()
+      val functionName = if (!skip("nil")) Some(parseMangledName()) else None
       return SILWitnessEntry.method(declRef, declType, functionName)
     }
     // NOTE: Must come before associated_type
@@ -2281,10 +2308,7 @@ class SILParser extends SILPrinter {
       val types = parseMany("(", ",", ")", parseNakedType)
       nakedStack.closeParen()
       if (skip(".Type")) {
-        if (types.length > 1) {
-          parseError("Expected one type (& type) in (<here>).Type")
-        }
-        SILType.dotType(types(0))
+        SILType.dotType(types)
       } else {
         val optional = skip("?")
         val throws = skip("throws")

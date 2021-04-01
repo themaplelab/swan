@@ -11,7 +11,7 @@
 package ca.ualberta.maple.swan.ir.canonical
 
 import ca.ualberta.maple.swan.ir.Exceptions.{IncompleteRawSWIRLException, IncorrectRawSWIRLException, UnexpectedSILFormatException}
-import ca.ualberta.maple.swan.ir.{Argument, BinaryOperation, Block, BlockRef, CanBlock, CanFunction, CanModule, CanOperator, CanOperatorDef, CanTerminator, CanTerminatorDef, Constants, Function, Literal, Module, Operator, RawOperatorDef, RawTerminatorDef, SwitchEnumCase, Symbol, SymbolRef, SymbolTableEntry, Terminator, Type, WithResult}
+import ca.ualberta.maple.swan.ir.{Argument, BinaryOperation, Block, BlockRef, CanBlock, CanFunction, CanModule, CanOperator, CanOperatorDef, CanTerminator, CanTerminatorDef, Constants, Function, Literal, Module, Operator, RawOperatorDef, RawTerminatorDef, SwitchCase, SwitchEnumCase, Symbol, SymbolRef, SymbolTableEntry, Terminator, Type, WithResult}
 import ca.ualberta.maple.swan.utils.Logging
 import org.jgrapht.Graph
 import org.jgrapht.graph.{DefaultDirectedGraph, DefaultEdge}
@@ -111,7 +111,8 @@ class SWIRLPass {
       makeSymbolRef(ret)
     }
     // First handle operators. switch_enum_assign gets changed to switch_enum,
-    // which is also a raw-only instruction, so it must be changed first.
+    // and switch_value_assign gets changed to switch_value,
+    // which are also a raw-only instructions, so they must be changed first.
     var i: Int = 0
     while (i < f.blocks.length) {
       val b = f.blocks(i)
@@ -154,6 +155,42 @@ class SWIRLPass {
               if (default.nonEmpty) Some(blockRefs.last) else None), op.position)
             mapToSIL(op, switchEnum, module)
             b.terminator = switchEnum
+            b.operators.remove(j, continueBlock.operators.length + 1)
+          }
+          case Operator.switchValueAssign(result, switchOn, cases, default) => {
+            val blockRefs: ArrayBuffer[BlockRef] = ArrayBuffer.empty
+            val newCases: ArrayBuffer[SwitchCase] = ArrayBuffer.empty
+            cases.foreach(cse => {
+              val blockRef = generateBlockName(b.blockRef.label)
+              blockRefs.append(blockRef)
+              newCases.append(new SwitchCase(cse.value, blockRef))
+            })
+            if (default.nonEmpty) {
+              blockRefs.append(generateBlockName(b.blockRef.label))
+            }
+            val continueRef = generateBlockName(b.blockRef.label)
+            cases.zipWithIndex.foreach(cse => {
+              val br = new RawTerminatorDef(Terminator.br(continueRef, ArrayBuffer(cse._1.value)), op.position)
+              mapToSIL(op, br, module)
+              val newBlock = new Block(blockRefs(cse._2), ArrayBuffer.empty, ArrayBuffer.empty, br)
+              mapToSIL(b, newBlock, module)
+              newBlocks.append(newBlock)
+            })
+            if (default.nonEmpty) {
+              val br = new RawTerminatorDef(Terminator.br(continueRef, ArrayBuffer(default.get)), op.position)
+              mapToSIL(op, br, module)
+              val newBlock = new Block(blockRefs(blockRefs.length - 1), ArrayBuffer.empty, ArrayBuffer.empty, br)
+              mapToSIL(b, newBlock, module)
+              newBlocks.append(newBlock)
+            }
+            val continueBlock = new Block(continueRef, ArrayBuffer(new Argument(result.ref, result.tpe, None)),
+              b.operators.slice(j + 1, b.operators.length), b.terminator)
+            mapToSIL(b, continueBlock, module)
+            newBlocks.append(continueBlock)
+            val switch = new RawTerminatorDef(Terminator.switch(switchOn, newCases,
+              if (default.nonEmpty) Some(blockRefs.last) else None), op.position)
+            mapToSIL(op, switch, module)
+            b.terminator = switch
             b.operators.remove(j, continueBlock.operators.length + 1)
           }
           case Operator.pointerRead(result, pointer) => {

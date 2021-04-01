@@ -181,6 +181,8 @@ object Operator {
   case class condFail(value: SymbolRef) extends Operator with RawOperator with CanOperator
   case class switchEnumAssign(result: Symbol, switchOn: SymbolRef,
                               cases: ArrayBuffer[EnumAssignCase], default: Option[SymbolRef]) extends WithResult(result) with RawOperator
+  case class switchValueAssign(result: Symbol, switchOn: SymbolRef,
+                               cases: ArrayBuffer[ValueAssignCase], default: Option[SymbolRef]) extends WithResult(result) with RawOperator
   case class pointerRead(result: Symbol, pointer: SymbolRef) extends WithResult(result) with RawOperator
   case class pointerWrite(value: SymbolRef, pointer: SymbolRef) extends Operator with RawOperator
 }
@@ -210,6 +212,8 @@ object Terminator {
 }
 
 class EnumAssignCase(val decl: String, val value: SymbolRef)
+
+class ValueAssignCase(val value: SymbolRef, val select: SymbolRef)
 
 class SwitchCase(val value: SymbolRef, val destination: BlockRef)
 
