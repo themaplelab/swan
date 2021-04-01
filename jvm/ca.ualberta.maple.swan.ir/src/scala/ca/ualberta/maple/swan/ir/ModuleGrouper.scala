@@ -83,6 +83,7 @@ object ModuleGrouper {
               case FunctionAttribute.model => existing.attribute = Some(FunctionAttribute.modelOverride)
               case FunctionAttribute.stub => add(f, FunctionAttribute.linked)
               case FunctionAttribute.modelOverride => // ignore
+              case FunctionAttribute.linked => // ignore
               case _ => throwException("unexpected")
             }
           }

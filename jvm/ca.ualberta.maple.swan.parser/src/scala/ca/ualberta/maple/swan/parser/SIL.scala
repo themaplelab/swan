@@ -624,6 +624,7 @@ object SILTypeAttribute {
   case object autoreleased extends SILTypeAttribute
   case object blockStorage extends SILTypeAttribute
   case object escaping extends SILTypeAttribute
+  case object autoclosure extends SILTypeAttribute
   case class opened(value: String) extends SILTypeAttribute
   // type-specifier -> 'inout' | '__owned' | '__unowned'
   // Not in SIL.rst but used in naked types. e.g. "[...] -> (__owned Self) [..]"

@@ -1936,6 +1936,7 @@ class SILPrinter extends Printer {
       case SILTypeAttribute.autoreleased => print("@autoreleased")
       case SILTypeAttribute.blockStorage => print("@block_storage")
       case SILTypeAttribute.escaping => print("@escaping")
+      case SILTypeAttribute.autoclosure => print("@autoclosure")
       case SILTypeAttribute.opened(value) => {
         print("@opened")
         print("(")

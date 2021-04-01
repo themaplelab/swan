@@ -2001,7 +2001,9 @@ class SILParser extends SILPrinter {
   def parseMangledName(): SILMangledName = {
     val start = position()
     if(skip("@")) {
-      val name = take(x => x == '$' || x.isLetterOrDigit || x == '_' )
+      // Apparently these can have non ASCII characters.
+      // e.g., @SOH_fwrite (Start of Heading \u0001)
+      val name = take(x => x == '$' || x.isLetterOrDigit || x == '_' || x == '\u0001')
       if(!name.isEmpty) {
         val m = new SILMangledName(name)
         toDemangle.append(m)
@@ -2627,6 +2629,7 @@ class SILParser extends SILPrinter {
     if(skip("@dynamic_self")) return SILTypeAttribute.dynamicSelf
     if(skip("@block_storage")) return SILTypeAttribute.blockStorage
     if(skip("@escaping")) return SILTypeAttribute.escaping
+    if(skip("@autoclosure")) return SILTypeAttribute.autoclosure
     if(skip("@opened")) {
       take("(")
       val value = parseString()
