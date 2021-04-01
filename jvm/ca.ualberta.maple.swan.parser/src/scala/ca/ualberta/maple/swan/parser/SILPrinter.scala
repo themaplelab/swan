@@ -246,6 +246,12 @@ class SILPrinter extends Printer {
         print(", ")
         print(operand2)
       }
+      case SILOperator.deallocValueBuffer(tpe, operand) => {
+        print("dealloc_value_buffer ")
+        print(tpe)
+        print(" in ")
+        print(operand)
+      }
 
         // *** DEBUG INFORMATION ***
 
@@ -351,6 +357,28 @@ class SILPrinter extends Printer {
         print( "[abort] ", abort)
         print(operand)
       }
+      case SILOperator.beginUnpairedAccess(access, enforcement, noNestedConflict, builtin, operand, buffer) => {
+        print("begin_unpaired_access ")
+        print("[")
+        print(access)
+        print("] ")
+        print("[")
+        print(enforcement)
+        print("] ")
+        print("[noNestedConflict] ", noNestedConflict)
+        print("[builtin] ", builtin)
+        print(operand)
+        print(", ")
+        print(buffer)
+      }
+      case SILOperator.endUnpairedAccess(abort, enforcement, operand) => {
+        print("end_access ")
+        print( "[abort] ", when = abort)
+        print("[")
+        print(enforcement)
+        print("]")
+        print(operand)
+      }
 
       // *** REFERENCE COUNTING ***
 
@@ -362,12 +390,20 @@ class SILPrinter extends Printer {
         print("strong_release ")
         print(operand)
       }
+      case SILOperator.setDeallocating(operand) => {
+        print("set_deallocating ")
+        print(operand)
+      }
       case SILOperator.copyUnownedValue(operand) => {
         print("copy_unowned_value ")
         print(operand)
       }
       case SILOperator.strongCopyUnownedValue(operand) => {
         print("strong_copy_unowned_value ")
+        print(operand)
+      }
+      case SILOperator.strongRetainUnowned(operand) => {
+        print("strong_retain_unowned ")
         print(operand)
       }
       case SILOperator.unownedRetain(operand) => {
@@ -606,6 +642,14 @@ class SILPrinter extends Printer {
         print("retain_value ")
         print(operand)
       }
+      case SILOperator.retainValueAddr(operand) => {
+        print("retain_value_addr ")
+        print(operand)
+      }
+      case SILOperator.unmanagedRetainValue(operand) => {
+        print("unmanaged_retain_value ")
+        print(operand)
+      }
       case SILOperator.copyValue(operand) => {
         print("copy_value ")
         print(operand)
@@ -618,6 +662,10 @@ class SILPrinter extends Printer {
         print("release_value ")
         print(operand)
       }
+      case SILOperator.releaseValueAddr(operand) => {
+        print("release_value_addr ")
+        print(operand)
+      }
       case SILOperator.unmanagedReleaseValue(operand) => {
         print("unmanaged_release_value ")
         print(operand)
@@ -628,6 +676,10 @@ class SILPrinter extends Printer {
       }
       case SILOperator.autoreleaseValue(operand) => {
         print("autorelease_value ")
+        print(operand)
+      }
+      case SILOperator.unmanagedAutoreleaseValue(operand) => {
+        print("unmanaged_autorelease_value ")
         print(operand)
       }
       case SILOperator.tuple(elements) => {
@@ -858,6 +910,16 @@ class SILPrinter extends Printer {
         print(" to ")
         print(tpe)
       }
+      case SILOperator.uncheckedRefCastAddr(fromTpe, fromOperand, toTpe, toOperand) => {
+        print("unchecked_ref_cast_addr ")
+        naked(fromTpe)
+        print(" in ")
+        print(fromOperand)
+        print(" to ")
+        naked(toTpe)
+        print(" in ")
+        print(toOperand)
+      }
       case SILOperator.uncheckedAddrCast(operand, tpe) => {
         print("unchecked_addr_cast ")
         print(operand)
@@ -866,6 +928,12 @@ class SILPrinter extends Printer {
       }
       case SILOperator.uncheckedTrivialBitCast(operand, tpe) => {
         print("unchecked_trivial_bit_cast ")
+        print(operand)
+        print(" to ")
+        print(tpe)
+      }
+      case SILOperator.uncheckedBitwiseCast(operand, tpe) => {
+        print("unchecked_bitwise_cast ")
         print(operand)
         print(" to ")
         print(tpe)
@@ -892,6 +960,12 @@ class SILPrinter extends Printer {
       }
       case SILOperator.refToUnowned(operand, tpe) => {
         print("ref_to_unowned ")
+        print(operand)
+        print(" to ")
+        print(tpe)
+      }
+      case SILOperator.unownedToRef(operand, tpe) => {
+        print("unowned_to_ref ")
         print(operand)
         print(" to ")
         print(tpe)
@@ -1225,7 +1299,7 @@ class SILPrinter extends Printer {
         print(": ")
         print(declType)
         print(" : ")
-        if (functionName.nonEmpty) print(functionName) else print("nil")
+        if (functionName.nonEmpty) print(functionName.get) else print("nil")
       }
       case SILWitnessEntry.associatedType(identifier0, identifier1) => {
         print("associated_type ")

@@ -73,6 +73,8 @@ object SILOperator {
   case class projectBox(operand: SILOperand, fieldIndex: Int) extends SILOperator
   case class deallocRef(stack: Boolean, operand: SILOperand) extends SILOperator
   case class deallocPartialRef(operand1: SILOperand, operand2: SILOperand) extends SILOperator
+  case class deallocValueBuffer(tpe: SILType, operand: SILOperand) extends SILOperator
+
   // NSIP: dealloc_value_buffer
   // NSIP: project_value_buffer
 
@@ -105,18 +107,19 @@ object SILOperator {
   case class beginAccess(access: SILAccess, enforcement: SILEnforcement, noNestedConflict: Boolean,
                          builtin: Boolean, operand: SILOperand) extends SILOperator
   case class endAccess(abort: Boolean, operand: SILOperand) extends SILOperator
-  // NSIP: begin_unpaired_access
-  // NSIP: end_unpaired_access
+  case class beginUnpairedAccess(access: SILAccess, enforcement: SILEnforcement, noNestedConflict: Boolean,
+                         builtin: Boolean, operand: SILOperand, buffer: SILOperand) extends SILOperator
+  case class endUnpairedAccess(abort: Boolean, enforcement: SILEnforcement, operand: SILOperand) extends SILOperator
+
 
   /***** REFERENCE COUNTING *****/
   case class strongRetain(operand: SILOperand) extends SILOperator
   case class strongRelease(operand: SILOperand) extends SILOperator
-  // NSIP: set_deallocating
+  case class setDeallocating(operand: SILOperand) extends SILOperator
   // This is an old (outdated) instruction.
   case class copyUnownedValue(operand: SILOperand) extends SILOperator
   case class strongCopyUnownedValue(operand: SILOperand) extends SILOperator
-  // NSIP: strong_copy_unowned_value
-  // NSIP: strong_retain_unowned
+  case class strongRetainUnowned(operand: SILOperand) extends SILOperator
   case class unownedRetain(operand: SILOperand) extends SILOperator
   case class unownedRelease(operand: SILOperand) extends SILOperator
   case class loadWeak(take: Boolean, operand: SILOperand) extends SILOperator
@@ -177,15 +180,16 @@ object SILOperator {
 
   /***** AGGREGATE TYPES *****/
   case class retainValue(operand: SILOperand) extends SILOperator
-  // NSIP: retain_value_addr
-  // NSIP: unmanaged_retain_value
+  case class retainValueAddr(operand: SILOperand) extends SILOperator
+  case class unmanagedRetainValue(operand: SILOperand) extends SILOperator
   case class strongCopyUnmanagedValue(operand: SILOperand) extends SILOperator
   case class copyValue(operand: SILOperand) extends SILOperator
   case class releaseValue(operand: SILOperand) extends SILOperator
-  // NSIP: release_value_addr
+  case class releaseValueAddr(operand: SILOperand) extends SILOperator
   case class unmanagedReleaseValue(operand: SILOperand) extends SILOperator
   case class destroyValue(operand: SILOperand) extends SILOperator
   case class autoreleaseValue(operand: SILOperand) extends SILOperator
+  case class unmanagedAutoreleaseValue(operand: SILOperand) extends SILOperator
   case class tuple(elements: SILTupleElements) extends SILOperator
   case class tupleExtract(operand: SILOperand, declRef: Int) extends SILOperator
   case class tupleElementAddr(operand: SILOperand, declRef: Int) extends SILOperator
@@ -233,17 +237,18 @@ object SILOperator {
   case class addressToPointer(operand: SILOperand, tpe: SILType) extends SILOperator
   case class pointerToAddress(operand: SILOperand, strict: Boolean, tpe: SILType) extends SILOperator
   case class uncheckedRefCast(operand: SILOperand, tpe: SILType) extends SILOperator
-  // NSIP: unchecked_ref_cast_addr
+  case class uncheckedRefCastAddr(fromTpe: SILType, fromOperand: SILOperand, toTpe: SILType, toOperand: SILOperand) extends SILOperator
   case class uncheckedAddrCast(operand: SILOperand, tpe: SILType) extends SILOperator
   case class uncheckedTrivialBitCast(operand: SILOperand, tpe: SILType) extends SILOperator
-  // NSIP: unchecked_bitwise_cast
+  case class uncheckedBitwiseCast(operand: SILOperand, tpe: SILType) extends SILOperator
   case class uncheckedOwnershipConversion(operand: SILOperand, from: SILTypeAttribute, to: SILTypeAttribute) extends SILOperator
   case class refToRawPointer(operand: SILOperand, tpe: SILType) extends SILOperator
   case class rawPointerToRef(operand: SILOperand, tpe: SILType) extends SILOperator
   // SIL.rst: sil-instruction ::= 'ref_to_unowned' sil-operand
   // reality: sil-instruction ::= 'ref_to_unowned' sil-operand 'to' sil-type
+  // Same applies to similar instructions
   case class refToUnowned(operand: SILOperand, tpe: SILType) extends SILOperator
-  // NSIP: unowned_to_ref
+  case class unownedToRef(operand: SILOperand, tpe: SILType) extends SILOperator
   case class refToUnmanaged(operand: SILOperand, tpe: SILType) extends SILOperator
   case class unmanagedToRef(operand: SILOperand, tpe: SILType) extends SILOperator
   case class convertFunction(operand: SILOperand, withoutActuallyEscaping: Boolean, tpe: SILType) extends SILOperator

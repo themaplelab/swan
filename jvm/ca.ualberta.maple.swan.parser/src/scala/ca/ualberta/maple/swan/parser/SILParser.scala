@@ -257,12 +257,12 @@ class SILParser extends SILPrinter {
       } else if (peek("sil_witness_table ")) {
         witnessTables.append(parseWitnessTable())
       } else if (peek("sil_default_witness_table ")) {
-        // TODO: Has not appeared yet. Leave for now.
+        // T0D0: Has not appeared yet. Leave for now.
       } else if (peek("sil_vtable ")) {
         vTables.append(parseVTable())
       } else if (peek("sil_global ")) {
         globalVariables.append(parseGlobalVariable())
-      // } else if (peek("sil_property")) { TODO: Need to parse component
+      // } else if (peek("sil_property")) { T0D0: Need to parse component
         // properties.append(parseProperty())
       } else if (peek("import ")) {
         take("import")
@@ -518,10 +518,14 @@ class SILParser extends SILPrinter {
         SILInstruction.operator(SILOperator.deallocPartialRef(operand1, operand2))
       }
       case "dealloc_value_buffer" => {
-        throw parseError("unhandled instruction") // NSIP
+        val tpe = parseType()
+        take("in")
+        val operand = parseOperand()
+        SILInstruction.operator(SILOperator.deallocValueBuffer(tpe, operand))
       }
       case "project_value_buffer" => {
-        throw parseError("unhandled instruction") // NSIP
+        // Tricky, NSIP
+        throw parseError("unhandled instruction")
       }
 
         // *** DEBUG INFORMATION ***
@@ -642,10 +646,26 @@ class SILParser extends SILPrinter {
         SILInstruction.operator(SILOperator.endAccess(abort, operand))
       }
       case "begin_unpaired_access" => {
-        throw parseError("unhandled instruction") // NSIP
+        take("[")
+        val access = parseAccess()
+        take("]")
+        take("[")
+        val enforcement = parseEnforcement()
+        take("]")
+        val noNestedConflict = skip("[no_nested_conflict]")
+        val builtin = skip("[builtin]")
+        val operand = parseOperand()
+        take(",")
+        val buffer = parseOperand()
+        SILInstruction.operator(SILOperator.beginUnpairedAccess(access, enforcement, noNestedConflict, builtin, operand, buffer))
       }
       case "end_unpaired_access" => {
-        throw parseError("unhandled instruction") // NSIP
+        val abort = skip("[abort]")
+        take("[")
+        val enforcement = parseEnforcement()
+        take("]")
+        val operand = parseOperand()
+        SILInstruction.operator(SILOperator.endUnpairedAccess(abort, enforcement, operand))
       }
 
         // *** REFERENCE COUNTING ***
@@ -659,7 +679,8 @@ class SILParser extends SILPrinter {
         SILInstruction.operator(SILOperator.strongRelease(operand))
       }
       case "set_deallocating" => {
-        throw parseError("unhandled instruction") // NSIP
+        val operand = parseOperand()
+        SILInstruction.operator(SILOperator.setDeallocating(operand))
       }
       case "copy_unowned_value" => {
         val operand = parseOperand()
@@ -670,7 +691,8 @@ class SILParser extends SILPrinter {
         SILInstruction.operator(SILOperator.strongCopyUnownedValue(operand))
       }
       case "strong_retain_unowned" => {
-        throw parseError("unhandled instruction") // NSIP
+        val operand = parseOperand()
+        SILInstruction.operator(SILOperator.strongRetainUnowned(operand))
       }
       case "unowned_retain" => {
         val operand = parseOperand()
@@ -935,10 +957,12 @@ class SILParser extends SILPrinter {
         SILInstruction.operator(SILOperator.retainValue(operand))
       }
       case "retain_value_addr" => {
-        throw parseError("unhandled instruction") // NSIP
+        val operand = parseOperand()
+        SILInstruction.operator(SILOperator.retainValueAddr(operand))
       }
       case "unmanaged_retain_value" => {
-        throw parseError("unhandled instruction") // NSIP
+        val operand = parseOperand()
+        SILInstruction.operator(SILOperator.unmanagedRetainValue(operand))
       }
       case "copy_value" => {
         val operand = parseOperand()
@@ -954,7 +978,8 @@ class SILParser extends SILPrinter {
         SILInstruction.operator(SILOperator.releaseValue(operand))
       }
       case "release_value_addr" => {
-        throw parseError("unhandled instruction") // NSIP
+        val operand = parseOperand()
+        SILInstruction.operator(SILOperator.releaseValueAddr(operand))
       }
       case "unmanaged_release_value" => {
         val operand = parseOperand()
@@ -967,6 +992,10 @@ class SILParser extends SILPrinter {
       case "autorelease_value" => {
         val operand = parseOperand()
         SILInstruction.operator(SILOperator.autoreleaseValue(operand))
+      }
+      case "unmanaged_autorelease_value" => {
+        val operand = parseOperand()
+        SILInstruction.operator(SILOperator.unmanagedAutoreleaseValue(operand))
       }
       case "tuple" => {
         val elements = parseTupleElements()
@@ -1227,7 +1256,14 @@ class SILParser extends SILPrinter {
         SILInstruction.operator(SILOperator.uncheckedRefCast(operand, tpe))
       }
       case "unchecked_ref_cast_addr" => {
-        throw parseError("unhandled instruction") // NSIP
+        val fromTpe = parseType(naked = true)
+        take("in")
+        val fromOperand = parseOperand()
+        take("to")
+        val toTpe = parseType(naked = true)
+        take("in")
+        val toOperand = parseOperand()
+        SILInstruction.operator(SILOperator.uncheckedRefCastAddr(fromTpe, fromOperand, toTpe, toOperand))
       }
       case "unchecked_addr_cast" => {
         val operand = parseOperand()
@@ -1242,7 +1278,10 @@ class SILParser extends SILPrinter {
         SILInstruction.operator(SILOperator.uncheckedTrivialBitCast(operand, tpe))
       }
       case "unchecked_bitwise_cast" => {
-        throw parseError("unhandled instruction") // NSIP
+        val operand = parseOperand()
+        take("to")
+        val tpe = parseType()
+        SILInstruction.operator(SILOperator.uncheckedBitwiseCast(operand, tpe))
       }
       case "unchecked_ownership_conversion" => {
         val operand = parseOperand()
@@ -1271,7 +1310,10 @@ class SILParser extends SILPrinter {
         SILInstruction.operator(SILOperator.refToUnowned(operand, tpe))
       }
       case "unowned_to_ref" => {
-        throw parseError("unhandled instruction") // NSIP
+        val operand = parseOperand()
+        take("to")
+        val tpe = parseType()
+        SILInstruction.operator(SILOperator.unownedToRef(operand, tpe))
       }
       case "ref_to_unmanaged" => {
         val operand = parseOperand()
@@ -1301,10 +1343,12 @@ class SILParser extends SILPrinter {
         SILInstruction.operator(SILOperator.convertEscapeToNoescape(notGuaranteed, escaped, operand, tpe))
       }
       case "thin_function_to_pointer" => {
-        throw parseError("unhandled instruction") // NSIP
+        // NSIP, no documentation
+        throw parseError("unhandled instruction")
       }
       case "pointer_to_thin_function" => {
-        throw parseError("unhandled instruction") // NSIP
+        // NSIP, no documentation
+        throw parseError("unhandled instruction")
       }
       case "classify_bridge_object" => {
         val operand = parseOperand()

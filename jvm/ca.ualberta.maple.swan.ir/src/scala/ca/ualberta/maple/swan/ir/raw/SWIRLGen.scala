@@ -299,6 +299,7 @@ class SWIRLGen {
           case inst: SILOperator.projectBox => visitProjectBox(result, inst, ctx)
           case inst: SILOperator.deallocRef => visitDeallocRef(result, inst, ctx)
           case inst: SILOperator.deallocPartialRef => visitDeallocPartialRef(result, inst, ctx)
+          case inst: SILOperator.deallocValueBuffer => visitDeallocValueBuffer(result, inst, ctx)
           case inst: SILOperator.debugValue => visitDebugValue(result, inst, ctx)
           case inst: SILOperator.debugValueAddr => visitDebugValueAddr(result, inst, ctx)
           case inst: SILOperator.load => visitLoad(result, inst, ctx)
@@ -315,10 +316,14 @@ class SWIRLGen {
           case inst: SILOperator.bindMemory => visitBindMemory(result, inst, ctx)
           case inst: SILOperator.beginAccess => visitBeginAccess(result, inst, ctx)
           case inst: SILOperator.endAccess => visitEndAccess(result, inst, ctx)
+          case inst: SILOperator.beginUnpairedAccess => visitBeginUnpairedAccess(result, inst, ctx)
+          case inst: SILOperator.endUnpairedAccess => visitEndUnpairedAccess(result, inst, ctx)
           case inst: SILOperator.strongRetain => visitStrongRetain(result, inst, ctx)
           case inst: SILOperator.strongRelease => visitStrongRelease(result, inst, ctx)
+          case inst: SILOperator.setDeallocating => visitSetDeallocating(result, inst, ctx)
           case inst: SILOperator.copyUnownedValue => visitCopyUnownedValue(result, inst, ctx)
           case inst: SILOperator.strongCopyUnownedValue => visitStrongCopyUnownedValue(result, inst, ctx)
+          case inst: SILOperator.strongRetainUnowned => visitStrongRetainUnowned(result, inst, ctx)
           case inst: SILOperator.unownedRetain => visitUnownedRetain(result, inst, ctx)
           case inst: SILOperator.unownedRelease => visitUnownedRelease(result, inst, ctx)
           case inst: SILOperator.loadWeak => visitLoadWeak(result, inst, ctx)
@@ -353,12 +358,16 @@ class SWIRLGen {
           case inst: SILOperator.existentialMetatype => visitExistentialMetatype(result, inst, ctx)
           case inst: SILOperator.objcProtocol => visitObjCProtocol(result, inst, ctx)
           case inst: SILOperator.retainValue => visitRetainValue(result, inst, ctx)
+          case inst: SILOperator.retainValueAddr => visitRetainValueAddr(result, inst, ctx)
+          case inst: SILOperator.unmanagedRetainValue => visitUnmanagedRetainValue(result, inst, ctx)
           case inst: SILOperator.copyValue => visitCopyValue(result, inst, ctx)
           case inst: SILOperator.strongCopyUnmanagedValue => visitStrongCopyUnmanagedValue(result, inst, ctx)
           case inst: SILOperator.releaseValue => visitReleaseValue(result, inst, ctx)
+          case inst: SILOperator.releaseValueAddr => visitReleaseValueAddr(result, inst, ctx)
           case inst: SILOperator.unmanagedReleaseValue => visitUnmanagedReleaseValue(result, inst, ctx)
           case inst: SILOperator.destroyValue => visitDestroyValue(result, inst, ctx)
           case inst: SILOperator.autoreleaseValue => visitAutoreleaseValue(result, inst, ctx)
+          case inst: SILOperator.unmanagedAutoreleaseValue => visitUnmanagedAutoreleaseValue(result, inst, ctx)
           case inst: SILOperator.tuple => visitTuple(result, inst, ctx)
           case inst: SILOperator.tupleExtract => visitTupleExtract(result, inst, ctx)
           case inst: SILOperator.tupleElementAddr => visitTupleElementAddr(result, inst, ctx)
@@ -393,12 +402,15 @@ class SWIRLGen {
           case inst: SILOperator.addressToPointer => visitAddressToPointer(result, inst, ctx)
           case inst: SILOperator.pointerToAddress => visitPointerToAddress(result, inst, ctx)
           case inst: SILOperator.uncheckedRefCast => visitUncheckedRefCast(result, inst, ctx)
+          case inst: SILOperator.uncheckedRefCastAddr => visitUncheckedRefCastAddr(result, inst, ctx)
           case inst: SILOperator.uncheckedAddrCast => visitUncheckedAddrCast(result, inst, ctx)
           case inst: SILOperator.uncheckedTrivialBitCast => visitUncheckedTrivialBitCast(result, inst, ctx)
+          case inst: SILOperator.uncheckedBitwiseCast => visitUncheckedBitwiseCast(result, inst, ctx)
           case inst: SILOperator.uncheckedOwnershipConversion => visitUncheckedOwnershipConverstion(result, inst, ctx)
           case inst: SILOperator.refToRawPointer => visitRefToRawPointer(result, inst, ctx)
           case inst: SILOperator.rawPointerToRef => visitRawPointerToRef(result, inst, ctx)
           case inst: SILOperator.refToUnowned => visitRefToUnowned(result, inst, ctx)
+          case inst: SILOperator.unownedToRef => visitUnownedToRef(result, inst, ctx)
           case inst: SILOperator.refToUnmanaged => visitRefToUnmanaged(result, inst, ctx)
           case inst: SILOperator.unmanagedToRef => visitUnmanagedToRef(result, inst, ctx)
           case inst: SILOperator.convertFunction => visitConvertFunction(result, inst, ctx)
@@ -537,7 +549,10 @@ class SWIRLGen {
     NOP
   }
 
-  // def visitDeallocValueBuffer(r: Option[SILResult], I: SILOperator.deallocValueBuffer, ctx: Context): ArrayBuffer[RawInstructionDef]
+  def visitDeallocValueBuffer(r: Option[SILResult], I: SILOperator.deallocValueBuffer, ctx: Context): ArrayBuffer[RawInstructionDef] = {
+    NOP
+  }
+
   // visitProjectValueBuffer(r: Option[SILResult], I: SILOperator.projectValueBuffer, ctx: Context): ArrayBuffer[RawInstructionDef]
 
   /* DEBUG INFORMATION */
@@ -665,8 +680,14 @@ class SWIRLGen {
     NOP
   }
 
-  // def visitBeginUnpairedAccess(r: Option[SILResult], I: SILOperator.beginUnpairedAccess, ctx: Context): ArrayBuffer[RawInstructionDef]
-  // def visitEndUnpairedAccess(r: Option[SILResult], I: SILOperator.endUnpairedAccess, ctx: Context): ArrayBuffer[RawInstructionDef]
+  def visitBeginUnpairedAccess(r: Option[SILResult], I: SILOperator.beginUnpairedAccess, ctx: Context): ArrayBuffer[RawInstructionDef] = {
+    verifySILResult(r, 1)
+    copySymbol(I.operand.value, r.get.valueNames(0), ctx)
+  }
+
+  def visitEndUnpairedAccess(r: Option[SILResult], I: SILOperator.endUnpairedAccess, ctx: Context): ArrayBuffer[RawInstructionDef] = {
+    NOP // For now, but has a return.
+  }
 
   /* REFERENCE COUNTING */
 
@@ -692,8 +713,13 @@ class SWIRLGen {
     makeOperator(ctx, Operator.assign(result, makeSymbolRef(I.operand.value, ctx)))
   }
 
-  // def visitSetDeallocating(r: Option[SILResult], I: SILOperator.setDeallocating, ctx: Context): ArrayBuffer[RawInstructionDef]
-  // def visitStrongRetainUnowned(r: Option[SILResult], I: SILOperator.strongRetainUnowned, ctx: Context): ArrayBuffer[RawInstructionDef]
+  def visitSetDeallocating(r: Option[SILResult], I: SILOperator.setDeallocating, ctx: Context): ArrayBuffer[RawInstructionDef] = {
+    NOP
+  }
+
+  def visitStrongRetainUnowned(r: Option[SILResult], I: SILOperator.strongRetainUnowned, ctx: Context): ArrayBuffer[RawInstructionDef] = {
+    NOP
+  }
 
   def visitUnownedRetain(r: Option[SILResult], I: SILOperator.unownedRetain, ctx: Context): ArrayBuffer[RawInstructionDef] = {
     NOP
@@ -961,8 +987,13 @@ class SWIRLGen {
     NOP
   }
 
-  // def visitRetainValueAddr(r: Option[SILResult], I: SILOperator.retainValueAddr, ctx: Context): ArrayBuffer[RawInstructionDef]
-  // def visitUnmanagedRetainValue(r: Option[SILResult], I: SILOperator.unmanagedRetainValue, ctx: Context): ArrayBuffer[RawInstructionDef]
+  def visitRetainValueAddr(r: Option[SILResult], I: SILOperator.retainValueAddr, ctx: Context): ArrayBuffer[RawInstructionDef] = {
+    NOP
+  }
+
+  def visitUnmanagedRetainValue(r: Option[SILResult], I: SILOperator.unmanagedRetainValue, ctx: Context): ArrayBuffer[RawInstructionDef] = {
+    NOP
+  }
 
   @throws[UnexpectedSILFormatException]
   def visitCopyValue(r: Option[SILResult], I: SILOperator.copyValue, ctx: Context): ArrayBuffer[RawInstructionDef] = {
@@ -980,7 +1011,9 @@ class SWIRLGen {
     NOP
   }
 
-  // def visitReleaseValueAddr(r: Option[SILResult], I: SILOperator.releaseValueAddr, ctx: Context): ArrayBuffer[RawInstructionDef]
+  def visitReleaseValueAddr(r: Option[SILResult], I: SILOperator.releaseValueAddr, ctx: Context): ArrayBuffer[RawInstructionDef] = {
+    NOP
+  }
 
   def visitUnmanagedReleaseValue(r: Option[SILResult], I: SILOperator.unmanagedReleaseValue, ctx: Context): ArrayBuffer[RawInstructionDef] = {
     NOP
@@ -991,6 +1024,10 @@ class SWIRLGen {
   }
 
   def visitAutoreleaseValue(r: Option[SILResult], I: SILOperator.autoreleaseValue, ctx: Context): ArrayBuffer[RawInstructionDef] = {
+    NOP
+  }
+
+  def visitUnmanagedAutoreleaseValue(r: Option[SILResult], I: SILOperator.unmanagedAutoreleaseValue, ctx: Context): ArrayBuffer[RawInstructionDef] = {
     NOP
   }
 
@@ -1341,7 +1378,14 @@ class SWIRLGen {
     copySymbol(I.operand.value, r.get.valueNames(0), ctx)
   }
 
-  // def visitUncheckedRefCastAddr(r: Option[SILResult], I: SILOperator.uncheckedRefCastAddr, ctx: Context): ArrayBuffer[RawInstructionDef]
+  def visitUncheckedRefCastAddr(r: Option[SILResult], I: SILOperator.uncheckedRefCastAddr, ctx: Context): ArrayBuffer[RawInstructionDef] = {
+    val pointerReadResult = new Symbol(
+      generateSymbolName(I.fromOperand.value, ctx), Utils.SILPointerTypeToType(I.toOperand.tpe)) // $*T to $T
+    makeOperator(
+      ctx,
+      Operator.pointerRead(pointerReadResult, makeSymbolRef(I.fromOperand.value, ctx)),
+      Operator.pointerWrite(pointerReadResult.ref, makeSymbolRef(I.toOperand.value, ctx)))
+  }
 
   @throws[UnexpectedSILFormatException]
   def visitUncheckedAddrCast(r: Option[SILResult], I: SILOperator.uncheckedAddrCast, ctx: Context): ArrayBuffer[RawInstructionDef] = {
@@ -1355,8 +1399,11 @@ class SWIRLGen {
     copySymbol(I.operand.value, r.get.valueNames(0), ctx)
   }
 
-  // def visitUncheckedBitwiseCast(r: Option[SILResult], I: SILOperator.uncheckedBitwiseCast, ctx: Context): ArrayBuffer[RawInstructionDef]
-  // def visitRefToRawPointer(r: Option[SILResult], I: SILOperator.refToRawPointer, ctx: Context): ArrayBuffer[RawInstructionDef]
+  @throws[UnexpectedSILFormatException]
+  def visitUncheckedBitwiseCast(r: Option[SILResult], I: SILOperator.uncheckedBitwiseCast, ctx: Context): ArrayBuffer[RawInstructionDef] = {
+    verifySILResult(r, 1)
+    copySymbol(I.operand.value, r.get.valueNames(0), ctx)
+  }
 
   @throws[UnexpectedSILFormatException]
   def visitUncheckedOwnershipConverstion(r: Option[SILResult], I: SILOperator.uncheckedOwnershipConversion, ctx: Context): ArrayBuffer[RawInstructionDef] = {
@@ -1382,7 +1429,11 @@ class SWIRLGen {
     copySymbol(I.operand.value, r.get.valueNames(0), ctx)
   }
 
-  // def visitUnownedToRef(r: Option[SILResult], I: SILOperator.unownedToRef, ctx: Context): ArrayBuffer[RawInstructionDef]
+  @throws[UnexpectedSILFormatException]
+  def visitUnownedToRef(r: Option[SILResult], I: SILOperator.unownedToRef, ctx: Context): ArrayBuffer[RawInstructionDef] = {
+    verifySILResult(r, 1)
+    copySymbol(I.operand.value, r.get.valueNames(0), ctx)
+  }
 
   @throws[UnexpectedSILFormatException]
   def visitRefToUnmanaged(r: Option[SILResult], I: SILOperator.refToUnmanaged, ctx: Context): ArrayBuffer[RawInstructionDef] = {
