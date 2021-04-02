@@ -125,15 +125,6 @@ object SWANStatement {
       "<assign><lhs>" + getLeftOp.toString + "</lhs><rhs>" + getRightOp.toString + "</rhs></assign>"
     }
   }
-  case class ArrayLoad(opDef: CanOperatorDef, inst: Operator.arrayRead,
-                       m: SWANMethod) extends SWANStatement(CanInstructionDef.operator(opDef), m) {
-    override def getRightOp: Val = ???
-    override def isArrayLoad: Boolean = true
-    override def getArrayBase: Pair[Val,Integer] = ???
-    override def toString: String = {
-      getLeftOp.toString + " = " + getArrayBase.getX.toString + "[*]"
-    }
-  }
   case class StaticFieldLoad(opDef: CanOperatorDef, inst: Operator.singletonRead,
                              m: SWANMethod) extends SWANStatement(CanInstructionDef.operator(opDef), m) {
     override def containsStaticFieldAccess(): Boolean = true

@@ -1,54 +1,54 @@
 swirl_stage raw
 
-func [entry] @`SWAN_FAKE_MAIN_playground.sil` : $`Int32` {
+func [entry] @`SWAN_FAKE_MAIN_playground.swift.sil` : $`Int32` {
 bb0:
   g_0 = new $`Array<String>`
-  singleton_write g_0 to `playground.strings : [Swift.String]` in Globals_playground.sil
+  singleton_write g_0 to `playground.strings : [Swift.String]` in Globals_playground.swift.sil
   arg0 = new $`Int32`
   arg1 = new $`UnsafeMutablePointer<Optional<UnsafeMutablePointer<Int8>>>`
-  main_function_ref = function_ref @`main_playground.sil`, $`Any`
+  main_function_ref = function_ref @`main_playground.swift.sil`, $`Any`
   ret = apply main_function_ref(arg0, arg1), $`Int32`
   return ret
 }
 
-func @`main_playground.sil` : $`Int32` {
+func @`main_playground.swift.sil` : $`Int32` {
 bb0(%0 : $`Int32`, %1 : $`UnsafeMutablePointer<Optional<UnsafeMutablePointer<Int8>>>`):
-  %3 = singleton_read `playground.strings : [Swift.String]` from Globals_playground.sil, $`*Array<String>`, loc "-.gsil_0.sil":10:1
-  %4 = new $`@thin Array<String>.Type`, loc "-.gsil_0.sil":11:1
-  %5 = function_ref @`Swift.Array.init() -> [A]`, $`@convention(method) <τ_0_0> (@thin Array<τ_0_0>.Type) -> @owned Array<τ_0_0>`, loc "-.gsil_0.sil":12:1
-  %6 = apply %5(%4), $`@owned Array<τ_0_0>`, loc "-.gsil_0.sil":14:1
-  pointer_write %6 to %3, loc "-.gsil_0.sil":15:1
-  %8 = function_ref @`playground.source() -> Swift.String`, $`@convention(thin) () -> @owned String`, loc "-.gsil_0.sil":16:1
-  %9 = apply %8(), $`@owned String`, loc "-.gsil_0.sil":18:1
-  %10 = new $`*String`, loc "-.gsil_0.sil":19:1
-  pointer_write %9 to %10, loc "-.gsil_0.sil":20:1
-  %13 = function_ref @`Swift.Array.append(__owned A) -> ()`, $`@convention(method) <τ_0_0> (@in τ_0_0, @inout Array<τ_0_0>) -> ()`, loc "-.gsil_0.sil":22:1
-  %14 = apply %13(%10, %3), $`()`, loc "-.gsil_0.sil":24:1
-  %17 = literal [int] 0, $`Builtin.Int64`, loc "-.gsil_0.sil":27:1
-  %18 = new $`Int`, loc "-.gsil_0.sil":28:1
-  field_write %17 to %18, _value, loc "-.gsil_0.sil":28:1
-  %20 = pointer_read %3, $`Array<String>`, loc "-.gsil_0.sil":30:1
-  %21 = new $`*String`, loc "-.gsil_0.sil":31:1
-  %22 = function_ref @`Swift.Array.subscript.getter : (Swift.Int) -> A`, $`@convention(method) <τ_0_0> (Int, @guaranteed Array<τ_0_0>) -> @out τ_0_0`, loc "-.gsil_0.sil":32:1
-  %23 = apply %22(%21, %18, %20), $`@out τ_0_0`, loc "-.gsil_0.sil":34:1
-  %24 = pointer_read %21, $`String`, loc "-.gsil_0.sil":35:1
-  %26 = function_ref @`playground.sink(sunk: Swift.String) -> ()`, $`@convention(thin) (@guaranteed String) -> ()`, loc "-.gsil_0.sil":37:1
-  %27 = apply %26(%24), $`()`, loc "-.gsil_0.sil":39:1
-  %30 = literal [int] 0, $`Builtin.Int32`, loc "-.gsil_0.sil":42:1
-  %31 = new $`Int32`, loc "-.gsil_0.sil":43:1
-  field_write %30 to %31, _value, loc "-.gsil_0.sil":43:1
-  return %31, loc "-.gsil_0.sil":44:1
+  %3 = singleton_read `playground.strings : [Swift.String]` from Globals_playground.swift.sil, $`*Array<String>`
+  %4 = new $`@thin Array<String>.Type`
+  %5 = function_ref @`Swift.Array.init() -> [A]`, $`@convention(method) <τ_0_0> (@thin Array<τ_0_0>.Type) -> @owned Array<τ_0_0>`
+  %6 = apply %5(%4), $`@owned Array<τ_0_0>`
+  pointer_write %6 to %3
+  %8 = function_ref @`playground.source() -> Swift.String`, $`@convention(thin) () -> @owned String`
+  %9 = apply %8(), $`@owned String`
+  %10 = new $`*String`
+  pointer_write %9 to %10
+  %13 = function_ref @`Swift.Array.append(__owned A) -> ()`, $`@convention(method) <τ_0_0> (@in τ_0_0, @inout Array<τ_0_0>) -> ()`
+  %14 = apply %13(%10, %3), $`()`
+  %17 = literal [int] 0, $`Builtin.Int64`
+  %18 = new $`Int`
+  field_write %17 to %18, _value
+  %20 = pointer_read %3, $`Array<String>`
+  %21 = new $`*String`
+  %22 = function_ref @`Swift.Array.subscript.getter : (Swift.Int) -> A`, $`@convention(method) <τ_0_0> (Int, @guaranteed Array<τ_0_0>) -> @out τ_0_0`
+  %23 = apply %22(%21, %18, %20), $`@out τ_0_0`
+  %24 = pointer_read %21, $`String`
+  %27 = function_ref @`playground.sink(sunk: Swift.String) -> ()`, $`@convention(thin) (@guaranteed String) -> ()`
+  %28 = apply %27(%24), $`()`
+  %31 = literal [int] 0, $`Builtin.Int32`
+  %32 = new $`Int32`
+  field_write %31 to %32, _value
+  return %32
 }
 
 func @`playground.source() -> Swift.String` : $`@owned String` {
 bb0:
-  %0 = literal [string] "I'm bad", $`$Builtin.RawPointer`, loc "-.gsil_0.sil":53:1
-  %1 = literal [int] 7, $`Builtin.Word`, loc "-.gsil_0.sil":54:1
-  %2 = literal [int] -1, $`Builtin.Int1`, loc "-.gsil_0.sil":55:1
-  %3 = new $`@thin String.Type`, loc "-.gsil_0.sil":56:1
-  %4 = function_ref @`Swift.String.init(_builtinStringLiteral: Builtin.RawPointer, utf8CodeUnitCount: Builtin.Word, isASCII: Builtin.Int1) -> Swift.String`, $`@convention(method) (Builtin.RawPointer, Builtin.Word, Builtin.Int1, @thin String.Type) -> @owned String`, loc "-.gsil_0.sil":57:1
-  %5 = apply %4(%0, %1, %2, %3), $`@owned String`, loc "-.gsil_0.sil":59:1
-  return %5, loc "-.gsil_0.sil":60:1
+  %0 = literal [string] "I'm bad", $`$Builtin.RawPointer`
+  %1 = literal [int] 7, $`Builtin.Word`
+  %2 = literal [int] -1, $`Builtin.Int1`
+  %3 = new $`@thin String.Type`
+  %4 = function_ref @`Swift.String.init(_builtinStringLiteral: Builtin.RawPointer, utf8CodeUnitCount: Builtin.Word, isASCII: Builtin.Int1) -> Swift.String`, $`@convention(method) (Builtin.RawPointer, Builtin.Word, Builtin.Int1, @thin String.Type) -> @owned String`
+  %5 = apply %4(%0, %1, %2, %3), $`@owned String`
+  return %5
 }
 
 func [stub] @`Swift.String.init(_builtinStringLiteral: Builtin.RawPointer, utf8CodeUnitCount: Builtin.Word, isASCII: Builtin.Int1) -> Swift.String` : $`@owned String` {
@@ -58,21 +58,22 @@ bb0(%0 : $`Builtin.RawPointer`, %1 : $`Builtin.Word`, %2 : $`Builtin.Int1`, %3 :
 }
 
 func @`playground.sink(sunk: Swift.String) -> ()` : $`()` {
-bb0(%0 : $`String`):
-  %1 = literal [int] 1, $`Builtin.Word`, loc "-.gsil_0.sil":75:1
-  %2 = function_ref @`Swift._allocateUninitializedArray<A>(Builtin.Word) -> ([A], Builtin.RawPointer)`, $`@convention(thin) <τ_0_0> (Builtin.Word) -> (@owned Array<τ_0_0>, Builtin.RawPointer)`, loc "-.gsil_0.sil":76:1
-  %3 = apply %2(%1), $`(@owned Array<τ_0_0>, Builtin.RawPointer)`, loc "-.gsil_0.sil":78:1
-  %4 = field_read %3, 0, $`Array<Any>`, loc "-.gsil_0.sil":79:1
-  %5 = field_read %3, 1, $`Builtin.RawPointer`, loc "-.gsil_0.sil":80:1
-  pointer_write %0 to %5, loc "-.gsil_0.sil":84:1
-  %10 = function_ref @`default argument 1 of Swift.print(_: Any..., separator: Swift.String, terminator: Swift.String) -> ()`, $`@convention(thin) () -> @owned String`, loc "-.gsil_0.sil":85:1
-  %11 = apply %10(), $`@owned String`, loc "-.gsil_0.sil":87:1
-  %12 = function_ref @`default argument 2 of Swift.print(_: Any..., separator: Swift.String, terminator: Swift.String) -> ()`, $`@convention(thin) () -> @owned String`, loc "-.gsil_0.sil":88:1
-  %13 = apply %12(), $`@owned String`, loc "-.gsil_0.sil":90:1
-  %14 = function_ref @`Swift.print(_: Any..., separator: Swift.String, terminator: Swift.String) -> ()`, $`@convention(thin) (@guaranteed Array<Any>, @guaranteed String, @guaranteed String) -> ()`, loc "-.gsil_0.sil":91:1
-  %15 = apply %14(%4, %11, %13), $`()`, loc "-.gsil_0.sil":93:1
-  %19 = new $`()`, loc "-.gsil_0.sil":97:1
-  return %19, loc "-.gsil_0.sil":98:1
+bb0(sunk : $`@guaranteed $String`):
+  %2 = literal [int] 1, $`Builtin.Word`
+  %3 = function_ref @`Swift._allocateUninitializedArray<A>(Builtin.Word) -> ([A], Builtin.RawPointer)`, $`@convention(thin) <τ_0_0> (Builtin.Word) -> (@owned Array<τ_0_0>, Builtin.RawPointer)`
+  %4 = apply %3(%2), $`(@owned Array<τ_0_0>, Builtin.RawPointer)`
+  %5 = field_read %4, 0, $`Array<Any>`
+  %6 = field_read %4, 1, $`Builtin.RawPointer`
+  %8 = assign sunk, $`String`
+  pointer_write %8 to %6
+  %11 = function_ref @`default argument 1 of Swift.print(_: Any..., separator: Swift.String, terminator: Swift.String) -> ()`, $`@convention(thin) () -> @owned String`
+  %12 = apply %11(), $`@owned String`
+  %13 = function_ref @`default argument 2 of Swift.print(_: Any..., separator: Swift.String, terminator: Swift.String) -> ()`, $`@convention(thin) () -> @owned String`
+  %14 = apply %13(), $`@owned String`
+  %15 = function_ref @`Swift.print(_: Any..., separator: Swift.String, terminator: Swift.String) -> ()`, $`@convention(thin) (@guaranteed Array<Any>, @guaranteed String, @guaranteed String) -> ()`
+  %16 = apply %15(%5, %12, %14), $`()`
+  %20 = new $`()`
+  return %20
 }
 
 func [stub] @`Swift._allocateUninitializedArray<A>(Builtin.Word) -> ([A], Builtin.RawPointer)` : $`(@owned Array<τ_0_0>, Builtin.RawPointer)` {
@@ -83,24 +84,24 @@ bb0(%0 : $`Builtin.Word`):
 
 func @`default argument 1 of Swift.print(_: Any..., separator: Swift.String, terminator: Swift.String) -> ()` : $`@owned String` {
 bb0:
-  %0 = literal [string] " ", $`$Builtin.RawPointer`, loc "-.gsil_0.sil":110:1
-  %1 = literal [int] 1, $`Builtin.Word`, loc "-.gsil_0.sil":111:1
-  %2 = literal [int] -1, $`Builtin.Int1`, loc "-.gsil_0.sil":112:1
-  %3 = new $`@thin String.Type`, loc "-.gsil_0.sil":113:1
-  %4 = function_ref @`Swift.String.init(_builtinStringLiteral: Builtin.RawPointer, utf8CodeUnitCount: Builtin.Word, isASCII: Builtin.Int1) -> Swift.String`, $`@convention(method) (Builtin.RawPointer, Builtin.Word, Builtin.Int1, @thin String.Type) -> @owned String`, loc "-.gsil_0.sil":114:1
-  %5 = apply %4(%0, %1, %2, %3), $`@owned String`, loc "-.gsil_0.sil":116:1
-  return %5, loc "-.gsil_0.sil":117:1
+  %0 = literal [string] " ", $`$Builtin.RawPointer`
+  %1 = literal [int] 1, $`Builtin.Word`
+  %2 = literal [int] -1, $`Builtin.Int1`
+  %3 = new $`@thin String.Type`
+  %4 = function_ref @`Swift.String.init(_builtinStringLiteral: Builtin.RawPointer, utf8CodeUnitCount: Builtin.Word, isASCII: Builtin.Int1) -> Swift.String`, $`@convention(method) (Builtin.RawPointer, Builtin.Word, Builtin.Int1, @thin String.Type) -> @owned String`
+  %5 = apply %4(%0, %1, %2, %3), $`@owned String`
+  return %5
 }
 
 func @`default argument 2 of Swift.print(_: Any..., separator: Swift.String, terminator: Swift.String) -> ()` : $`@owned String` {
 bb0:
-  %0 = literal [string] "\n", $`$Builtin.RawPointer`, loc "-.gsil_0.sil":125:1
-  %1 = literal [int] 1, $`Builtin.Word`, loc "-.gsil_0.sil":126:1
-  %2 = literal [int] -1, $`Builtin.Int1`, loc "-.gsil_0.sil":127:1
-  %3 = new $`@thin String.Type`, loc "-.gsil_0.sil":128:1
-  %4 = function_ref @`Swift.String.init(_builtinStringLiteral: Builtin.RawPointer, utf8CodeUnitCount: Builtin.Word, isASCII: Builtin.Int1) -> Swift.String`, $`@convention(method) (Builtin.RawPointer, Builtin.Word, Builtin.Int1, @thin String.Type) -> @owned String`, loc "-.gsil_0.sil":129:1
-  %5 = apply %4(%0, %1, %2, %3), $`@owned String`, loc "-.gsil_0.sil":131:1
-  return %5, loc "-.gsil_0.sil":132:1
+  %0 = literal [string] "\n", $`$Builtin.RawPointer`
+  %1 = literal [int] 1, $`Builtin.Word`
+  %2 = literal [int] -1, $`Builtin.Int1`
+  %3 = new $`@thin String.Type`
+  %4 = function_ref @`Swift.String.init(_builtinStringLiteral: Builtin.RawPointer, utf8CodeUnitCount: Builtin.Word, isASCII: Builtin.Int1) -> Swift.String`, $`@convention(method) (Builtin.RawPointer, Builtin.Word, Builtin.Int1, @thin String.Type) -> @owned String`
+  %5 = apply %4(%0, %1, %2, %3), $`@owned String`
+  return %5
 }
 
 func [stub] @`Swift.print(_: Any..., separator: Swift.String, terminator: Swift.String) -> ()` : $`()` {
@@ -123,12 +124,13 @@ bb0(%0 : $`@in τ_0_0`, %1 : $`@inout Array<τ_0_0>`):
 
 func @`Swift.Int.init(_builtinIntegerLiteral: Builtin.IntLiteral) -> Swift.Int` : $`Int` {
 bb0(%0 : $`Builtin.IntLiteral`, %1 : $`@thin Int.Type`):
-  %2i0 = builtin_ref @`s_to_s_checked_trunc_IntLiteral_Int64`, $`Any`, loc "-.gsil_0.sil":153:1
-  %2 = apply %2i0(%0), $`(Builtin.Int64, Builtin.Int1)`, loc "-.gsil_0.sil":153:1
-  %3 = field_read %2, 0, $`Builtin.Int64`, loc "-.gsil_0.sil":154:1
-  %4 = new $`Int`, loc "-.gsil_0.sil":155:1
-  field_write %3 to %4, _value, loc "-.gsil_0.sil":155:1
-  return %4, loc "-.gsil_0.sil":156:1
+  %2i0 = builtin_ref @`s_to_s_checked_trunc_IntLiteral_Int64`, $`Any`
+  %2 = apply %2i0(%0), $`(Builtin.Int64, Builtin.Int1)`
+  %3 = field_read %2, 0, $`Builtin.Int64`
+  %4 = field_read %2, 1, $`Builtin.Int1`
+  %5 = new $`Int`
+  field_write %3 to %5, _value
+  return %5
 }
 
 func [stub] @`Swift.Array.subscript.getter : (Swift.Int) -> A` : $`@out τ_0_0` {
@@ -136,3 +138,4 @@ bb0(%0 : $`Int`, %1 : $`@guaranteed Array<τ_0_0>`):
   %ret = new $`@out τ_0_0`
   return %ret
 }
+

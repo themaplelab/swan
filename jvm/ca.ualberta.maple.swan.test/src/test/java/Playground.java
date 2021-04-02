@@ -36,19 +36,19 @@ public class Playground {
         options.addSILCallBack((SILModule module) -> {
             SILPrinterOptions opts = new SILPrinterOptions();
             String result = new SILPrinter().print(module, opts);
-            Logging.printInfo(result);
+            //Logging.printInfo(result);
             return scala.runtime.BoxedUnit.UNIT;
         });
         options.addRawSWIRLCallBack((Module module) -> {
             SWIRLPrinterOptions opts = new SWIRLPrinterOptions();
             String expected = new SWIRLPrinter().print(module, opts);
-            System.out.print(expected);
+            Logging.printInfo(expected);
             return scala.runtime.BoxedUnit.UNIT;
         });
         options.addCanSWIRLCallBack((CanModule module) -> {
             SWIRLPrinterOptions opts = new SWIRLPrinterOptions();
             String result = new SWIRLPrinter().print(module, opts);
-            System.out.print(result);
+            // Logging.printInfo(result);
             return scala.runtime.BoxedUnit.UNIT;
         });
         TestDriver.run(silFile, options);
@@ -70,16 +70,21 @@ public class Playground {
         options.addRawSWIRLCallBack((Module module) -> {
             SWIRLPrinterOptions opts = new SWIRLPrinterOptions();
             String expected = new SWIRLPrinter().print(module, opts);
-            System.out.print(expected);
+            Logging.printInfo(expected);
             return scala.runtime.BoxedUnit.UNIT;
         });
         options.addCanSWIRLCallBack((CanModule module) -> {
             SWIRLPrinterOptions opts = new SWIRLPrinterOptions();
             String result = new SWIRLPrinter().print(module, opts);
-            System.out.print(result);
+            Logging.printInfo(result);
             return scala.runtime.BoxedUnit.UNIT;
         });
-        TestDriver.run(silFile, options);
+        // Use group here because this playground in particular is useful
+        // when creating models.
+        ModuleGroup group = TestDriver.run(silFile, options);
+        SWIRLPrinterOptions opts = new SWIRLPrinterOptions();
+        String groupString = new SWIRLPrinter().print(group, opts);
+        Logging.printInfo(groupString);
     }
 
     @Test
@@ -89,6 +94,6 @@ public class Playground {
         Logging.printInfo("(Playground) testSWIRL: Testing " + swirlFile.getName());
         Module parsedModule = new SWIRLParser(swirlFile.toPath()).parseModule();
         CanModule canModule = new SWIRLPass().runPasses(parsedModule);
-        new SWIRLParser().print(canModule, new SWIRLPrinterOptions());
+        System.out.println(new SWIRLParser().print(canModule, new SWIRLPrinterOptions()));
     }
 }

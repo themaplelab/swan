@@ -109,9 +109,20 @@ class SWIRLParser extends SWIRLPrinter {
     if (Character.isWhitespace(chars(cursor))) {
       cursor += 1
       skipTrivia()
-    } else if (skipNoTrivia("//")) {
+    } else if (skipNoTrivia("//")) { // single-line comments
       while (cursor < chars.length && chars(cursor) != '\n') {
         cursor += 1
+      }
+      skipTrivia()
+    } else if (skipNoTrivia("/*")) { // multi-line comments
+      var continue = true
+      while (continue) {
+        while (cursor < chars.length && chars(cursor) != '*') {
+          cursor += 1
+        }
+        if (skip("*") && skip("/")) {
+          continue = false
+        }
       }
       skipTrivia()
     }
@@ -381,13 +392,19 @@ class SWIRLParser extends SWIRLPrinter {
         Instruction.rawOperator(Operator.singletonWrite(value, tpe, field))
       }
       case "field_write" => {
+        val attr = {
+          if (skip("[")) {
+            val a = Some(parseFieldWriteAttribute())
+            take("]")
+            a
+          } else { None }
+        }
         val value = makeSymbolRef(parseIdentifier())
         take("to")
-        val pointer = skip("[pointer]")
         val obj = makeSymbolRef(parseIdentifier())
         take(",")
         val field = parseIdentifier()
-        Instruction.rawOperator(Operator.fieldWrite(value, obj, field, pointer))
+        Instruction.rawOperator(Operator.fieldWrite(value, obj, field, attr))
       }
       case "cond_fail" => {
         val value = makeSymbolRef(parseIdentifier())
@@ -395,14 +412,22 @@ class SWIRLParser extends SWIRLPrinter {
       }
       case "pointer_write" => {
         val value = makeSymbolRef(parseIdentifier())
+        val weak = skip("[weak]")
         take("to")
         val pointer = makeSymbolRef(parseIdentifier())
-        Instruction.rawOperator(Operator.pointerWrite(value, pointer))
+        Instruction.rawOperator(Operator.pointerWrite(value, pointer, weak))
       }
       case _ : String => {
         throw parseError("unknown instruction")
       }
     }
+  }
+
+  @throws[Error]
+  def parseFieldWriteAttribute(): FieldWriteAttribute = {
+    if (skip("pointer")) return FieldWriteAttribute.pointer
+    if (skip("weak_pointer")) return FieldWriteAttribute.weakPointer
+    throw parseError("unknown field write attribute")
   }
 
   @throws[Error]
@@ -469,11 +494,6 @@ class SWIRLParser extends SWIRLPrinter {
           val arguments = parseMany("(",",",")", parseSymbolRef)
           val symbol = parseResultSymbol(result)
           Instruction.rawOperator(Operator.apply(symbol, functionRef, arguments))
-        }
-        case "array_read" => {
-          val arr = parseSymbolRef()
-          val symbol = parseResultSymbol(result)
-          Instruction.rawOperator(Operator.arrayRead(symbol, arr))
         }
         case "singleton_read" => {
           val field = parseBackTick()
@@ -543,6 +563,7 @@ class SWIRLParser extends SWIRLPrinter {
           val symbol = parseResultSymbol(result)
           Instruction.rawOperator(Operator.pointerRead(symbol, pointer))
         }
+        case _ => throw parseError("unknown instruction: " + instructionName)
       }
     } else { // Terminators
       instructionName match {
@@ -655,7 +676,7 @@ class SWIRLParser extends SWIRLPrinter {
           Instruction.rawTerminator(Terminator.yld(args, resume, unwind))
         }
         case "unwind" => Instruction.rawTerminator(Terminator.unwind)
-        case _ => throw parseError("unknown instruction")
+        case _ => throw parseError("unknown instruction: " + instructionName)
       }
     }
   }

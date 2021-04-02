@@ -1,21 +1,65 @@
 swirl_stage raw
 
-// ------------------------------------------------------------------
-// Add models in this file.
-// Use the [model] function attribute.
-// Comment model functionality.
-//
-// Do not rely on stubs for the initial signature. They are based
-// on the function type which doesn't always represent the real args.
-// ------------------------------------------------------------------
+/* ------------------------------------------------------------------
+   Add models in this file.
+   Use the [model] function attribute.
+   Comment model functionality.
 
-// Read from array %2 and write its value to pointer %0
-// %1 is the array index but it is not used
-// return value is never used in practice so its a dummy
+   Do not rely on stubs for the initial signature. They are based
+   on the function type which doesn't always represent the real args.
+
+   Return values are often not used so just use dummy values.
+
+   Types don't have to be perfectly consistent. For example,
+   attributes can be left out. This improves clarity, too.
+   ------------------------------------------------------------------ */
+
+// -------------------- Swift.Array ---------------------------------
+
+// %0 -> value to write, %1 -> index, %2 -> array
+// Write array to pointer %0. Index not used.
+// Also likely returns the element, but the return value
+// isn't used in practice.
 func [model] @`Swift.Array.subscript.getter : (Swift.Int) -> A` : $`@out τ_0_0` {
-bb0(%0 : $`*Any`, %1 : $`Int`, %2 : $`@guaranteed Array<τ_0_0>`):
-  val = array_read %2, $`Any`
+bb0(%0 : $`*Any`, %1 : $`Int`, %2 : $`Array<τ_0_0>`):
+  val = pointer_read %2, $`τ_0_0`
   pointer_write val to %0
-  ret = new $`@out τ_0_0`
+  return val
+}
+
+// %0 -> index, %1 -> array pointer to read
+// Get address of element in array, so just get the array.
+// Array<τ_0_0> == τ_0_0
+func [model] @`Swift.Array.subscript.modify : (Swift.Int) -> A` : $`@yields @inout τ_0_0` {
+bb0(%0 : $`Int`, %1 : $`*Array<τ_0_0>`):
+  ret = pointer_read %1, $`Array<τ_0_0>`
   return ret
+}
+
+// %0 -> type to instantiate
+// This loads the given type and creates a value based off it.
+// Therefore, it is dynamic behaviour. Simply return a new value.
+func [model] @`Swift.Array.init() -> [A]` : $`@owned Array<τ_0_0>` {
+bb0(%0 : $`@thin Array<τ_0_0>.Type`):
+  ret = new $`@owned Array<τ_0_0>`
+  return ret
+}
+
+// %0 -> value to append (pointer), %1 -> array pointer
+func [model] @`Swift.Array.append(__owned A) -> ()` : $`()` {
+bb0(%0 : $`*τ_0_0`, %1 : $`*Array<τ_0_0>`):
+  val = pointer_read %0, $`τ_0_0`
+  arr = pointer_read %1, $`Array<τ_0_0>`
+  pointer_write val to arr
+  ret = new $`()`
+  return ret
+}
+
+// -------------------- Swift.String --------------------------------
+
+// %0 -> string to initialize, the rest is irrelevant
+// Simply return the first argument because that is the string value.
+func [model] @`Swift.String.init(_builtinStringLiteral: Builtin.RawPointer, utf8CodeUnitCount: Builtin.Word, isASCII: Builtin.Int1) -> Swift.String` : $`@owned String` {
+bb0(%0 : $`Builtin.RawPointer`, %1 : $`Builtin.Word`, %2 : $`Builtin.Int1`, %3 : $`@thin String.Type`):
+  return %0
 }

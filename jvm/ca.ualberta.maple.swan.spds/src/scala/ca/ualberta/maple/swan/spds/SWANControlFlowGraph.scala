@@ -38,7 +38,6 @@ class SWANControlFlowGraph(val method: SWANMethod) extends ControlFlowGraph {
           case operator: Operator.builtinRef => SWANStatement.BuiltinFunctionRef(op, operator, method)
           case operator: Operator.functionRef => SWANStatement.FunctionRef(op, operator, method)
           case operator: Operator.apply => SWANStatement.ApplyFunctionRef(op, operator, method)
-          case operator: Operator.arrayRead => SWANStatement.ArrayLoad(op, operator, method)
           case operator: Operator.singletonRead => SWANStatement.StaticFieldLoad(op, operator, method)
           case operator: Operator.singletonWrite => SWANStatement.StaticFieldStore(op, operator, method)
           case operator: Operator.fieldRead => SWANStatement.FieldLoad(op, operator, method)

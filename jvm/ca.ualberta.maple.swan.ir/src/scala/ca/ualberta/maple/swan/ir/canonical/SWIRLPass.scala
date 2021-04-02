@@ -11,7 +11,7 @@
 package ca.ualberta.maple.swan.ir.canonical
 
 import ca.ualberta.maple.swan.ir.Exceptions.{IncompleteRawSWIRLException, IncorrectRawSWIRLException, UnexpectedSILFormatException}
-import ca.ualberta.maple.swan.ir.{Argument, BinaryOperation, Block, BlockRef, CanBlock, CanFunction, CanModule, CanOperator, CanOperatorDef, CanTerminator, CanTerminatorDef, Constants, Function, Literal, Module, Operator, RawOperatorDef, RawTerminatorDef, SWIRLPrinter, SwitchCase, SwitchEnumCase, Symbol, SymbolRef, SymbolTableEntry, Terminator, Type, WithResult}
+import ca.ualberta.maple.swan.ir.{Argument, BinaryOperation, Block, BlockRef, CanBlock, CanFunction, CanModule, CanOperator, CanOperatorDef, CanTerminator, CanTerminatorDef, Constants, FieldWriteAttribute, Function, Literal, Module, Operator, RawOperatorDef, RawTerminatorDef, SWIRLPrinter, SwitchCase, SwitchEnumCase, Symbol, SymbolRef, SymbolTableEntry, Terminator, Type, WithResult}
 import ca.ualberta.maple.swan.utils.Logging
 import org.jgrapht.Graph
 import org.jgrapht.graph.{DefaultDirectedGraph, DefaultEdge}
@@ -198,8 +198,10 @@ class SWIRLPass {
             mapToSIL(op, fr, module)
             b.operators(j) = fr
           }
-          case Operator.pointerWrite(value, pointer) => {
-            val fw = new RawOperatorDef(Operator.fieldWrite(value, pointer, Constants.pointerField, pointer = true), op.position)
+          case Operator.pointerWrite(value, pointer, weak) => {
+            val fw = new RawOperatorDef(Operator.fieldWrite(value, pointer, Constants.pointerField, {
+              if (weak) { Some(FieldWriteAttribute.weakPointer) } else None
+            }), op.position)
             mapToSIL(op, fw, module)
             b.operators(j) = fw
           }
@@ -451,7 +453,7 @@ class SWIRLPass {
                       case pw: Operator.pointerWrite => {
                         if ((pw.pointer == aliased) && { if (bIdx == b2Idx) operatorIdx != op2Idx - 1 else true }) {
                           val fw = new RawOperatorDef(Operator.fieldWrite(
-                            pw.value, fieldRead.obj, fieldRead.field), op2._1.position)
+                            pw.value, fieldRead.obj, fieldRead.field, None), op2._1.position)
                           b2._1.operators(op2._2) = fw
                           mapToSIL(pw, fw, module)
                         }

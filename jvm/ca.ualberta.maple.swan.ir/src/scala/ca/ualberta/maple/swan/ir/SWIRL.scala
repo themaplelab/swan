@@ -171,11 +171,10 @@ object Operator {
   case class builtinRef(result: Symbol, name: String) extends WithResult(result) with RawOperator with CanOperator
   case class functionRef(result: Symbol, var name: String) extends WithResult(result) with RawOperator with CanOperator
   case class apply(result: Symbol, functionRef: SymbolRef, arguments: ArrayBuffer[SymbolRef]) extends WithResult(result) with RawOperator with CanOperator
-  case class arrayRead(result: Symbol, arr: SymbolRef) extends WithResult(result) with RawOperator with CanOperator
   case class singletonRead(result: Symbol, tpe: String, field: String) extends WithResult(result) with RawOperator with CanOperator
   case class singletonWrite(value: SymbolRef, tpe: String, field: String) extends Operator with RawOperator with CanOperator
   case class fieldRead(result: Symbol, alias: Option[SymbolRef], obj: SymbolRef, field: String, pointer: Boolean = false) extends WithResult(result) with RawOperator with CanOperator
-  case class fieldWrite(value: SymbolRef, obj: SymbolRef, field: String, pointer: Boolean = false) extends Operator with RawOperator with CanOperator
+  case class fieldWrite(value: SymbolRef, obj: SymbolRef, field: String, attr: Option[FieldWriteAttribute]) extends Operator with RawOperator with CanOperator
   case class unaryOp(result: Symbol, operation: UnaryOperation, operand: SymbolRef) extends WithResult(result) with RawOperator with CanOperator
   case class binaryOp(result: Symbol, operation: BinaryOperation, lhs: SymbolRef, rhs: SymbolRef) extends WithResult(result) with RawOperator with CanOperator
   case class condFail(value: SymbolRef) extends Operator with RawOperator with CanOperator
@@ -184,7 +183,7 @@ object Operator {
   case class switchValueAssign(result: Symbol, switchOn: SymbolRef,
                                cases: ArrayBuffer[ValueAssignCase], default: Option[SymbolRef]) extends WithResult(result) with RawOperator
   case class pointerRead(result: Symbol, pointer: SymbolRef) extends WithResult(result) with RawOperator
-  case class pointerWrite(value: SymbolRef, pointer: SymbolRef) extends Operator with RawOperator
+  case class pointerWrite(value: SymbolRef, pointer: SymbolRef, weak: Boolean = false) extends Operator with RawOperator
 }
 
 abstract class WithResult(val value: Symbol) extends Operator
@@ -209,6 +208,12 @@ object Terminator {
   case object unreachable extends RawTerminator with CanTerminator
   case class yld(yields: ArrayBuffer[SymbolRef], resume: BlockRef, unwind: BlockRef) extends RawTerminator with CanTerminator
   case object unwind extends RawTerminator
+}
+
+sealed trait FieldWriteAttribute
+object FieldWriteAttribute {
+  case object pointer extends FieldWriteAttribute
+  case object weakPointer extends FieldWriteAttribute
 }
 
 class EnumAssignCase(val decl: String, val value: SymbolRef)

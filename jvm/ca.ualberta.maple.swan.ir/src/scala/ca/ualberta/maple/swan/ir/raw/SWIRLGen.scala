@@ -406,7 +406,7 @@ class SWIRLGen {
           case inst: SILOperator.uncheckedAddrCast => visitUncheckedAddrCast(result, inst, ctx)
           case inst: SILOperator.uncheckedTrivialBitCast => visitUncheckedTrivialBitCast(result, inst, ctx)
           case inst: SILOperator.uncheckedBitwiseCast => visitUncheckedBitwiseCast(result, inst, ctx)
-          case inst: SILOperator.uncheckedOwnershipConversion => visitUncheckedOwnershipConverstion(result, inst, ctx)
+          case inst: SILOperator.uncheckedOwnershipConversion => visitUncheckedOwnershipConversion(result, inst, ctx)
           case inst: SILOperator.refToRawPointer => visitRefToRawPointer(result, inst, ctx)
           case inst: SILOperator.rawPointerToRef => visitRawPointerToRef(result, inst, ctx)
           case inst: SILOperator.refToUnowned => visitRefToUnowned(result, inst, ctx)
@@ -653,14 +653,14 @@ class SWIRLGen {
 
   @throws[UnexpectedSILFormatException]
   def visitIndexAddr(r: Option[SILResult], I: SILOperator.indexAddr, ctx: Context): ArrayBuffer[RawInstructionDef] = {
-    val result = getSingleResult(r, Utils.SILTypeToType(I.addr.tpe), ctx)
-    makeOperator(ctx, Operator.arrayRead(result, makeSymbolRef(I.addr.value, ctx)))
+    verifySILResult(r, 1)
+    copySymbol(I.addr.value, r.get.valueNames(0), ctx)
   }
 
   @throws[UnexpectedSILFormatException]
   def visitIndexRawPointer(r: Option[SILResult], I: SILOperator.indexRawPointer, ctx: Context): ArrayBuffer[RawInstructionDef] = {
-    val result = getSingleResult(r, Utils.SILTypeToType(I.pointer.tpe), ctx)
-    makeOperator(ctx, Operator.pointerRead(result, makeSymbolRef(I.pointer.value, ctx)))
+    verifySILResult(r, 1)
+    copySymbol(I.pointer.value, r.get.valueNames(0), ctx)
   }
 
   def visitBindMemory(r: Option[SILResult], I: SILOperator.bindMemory, ctx: Context): ArrayBuffer[RawInstructionDef] = {
@@ -763,8 +763,8 @@ class SWIRLGen {
   }
 
   def visitIsUnique(r: Option[SILResult], I: SILOperator.isUnique, ctx: Context): ArrayBuffer[RawInstructionDef] = {
-    verifySILResult(r, 1)
-    copySymbol(I.operand.value, r.get.valueNames(0), ctx)
+    val result = getSingleResult(r, Utils.SILTypeToType(SILType.namedType("Builtin.Int1")), ctx)
+    makeOperator(ctx, Operator.unaryOp(result, UnaryOperation.arbitrary, makeSymbolRef(I.operand.value, ctx)))
   }
 
   @throws[UnexpectedSILFormatException]
@@ -998,6 +998,7 @@ class SWIRLGen {
 
   @throws[UnexpectedSILFormatException]
   def visitCopyValue(r: Option[SILResult], I: SILOperator.copyValue, ctx: Context): ArrayBuffer[RawInstructionDef] = {
+    // TODO: @sil_unmanaged -> @owned
     val result = getSingleResult(r, Utils.SILTypeToType(I.operand.tpe), ctx)
     makeOperator(ctx, Operator.assign(result, makeSymbolRef(I.operand.value, ctx)))
   }
@@ -1041,13 +1042,13 @@ class SWIRLGen {
       case SILTupleElements.labeled(_, values) => {
         values.zipWithIndex.foreach(value => {
           operators.append(makeOperator(ctx,
-            Operator.fieldWrite(makeSymbolRef(value._1, ctx), result.ref, value._2.toString))(0))
+            Operator.fieldWrite(makeSymbolRef(value._1, ctx), result.ref, value._2.toString, None))(0))
         })
       }
       case SILTupleElements.unlabeled(operands) => {
         operands.zipWithIndex.foreach(operand => {
           operators.append(makeOperator(ctx,
-            Operator.fieldWrite(makeSymbolRef(operand._1.value, ctx), result.ref, operand._2.toString))(0))
+            Operator.fieldWrite(makeSymbolRef(operand._1.value, ctx), result.ref, operand._2.toString, None))(0))
         })
       }
     }
@@ -1110,7 +1111,7 @@ class SWIRLGen {
       }
       I.operands.zipWithIndex.foreach(op => {
         operators.append(makeOperator(ctx,
-          Operator.fieldWrite(makeSymbolRef(op._1.value, ctx), result.ref,init.get.args(op._2)))(0))
+          Operator.fieldWrite(makeSymbolRef(op._1.value, ctx), result.ref,init.get.args(op._2), None))(0))
       })
     } else {
       val structName = Utils.print(I.tpe)
@@ -1164,8 +1165,8 @@ class SWIRLGen {
 
   @throws[UnexpectedSILFormatException]
   def visitRefTailAddr(r: Option[SILResult], I: SILOperator.refTailAddr, ctx: Context): ArrayBuffer[RawInstructionDef] = {
-    val result = getSingleResult(r, Utils.SILTypeToPointerType(I.tpe), ctx) // $*T to $T
-    makeOperator(ctx, Operator.arrayRead(result, makeSymbolRef(I.operand.value, ctx)))
+    val result = getSingleResult(r, Utils.SILTypeToPointerType(I.operand.tpe), ctx) // $T to $*T
+    makeOperator(ctx, Operator.assign(result, makeSymbolRef(I.operand.value, ctx)))
   }
 
   /* ENUMS */
@@ -1177,9 +1178,9 @@ class SWIRLGen {
     var instructions = makeOperator(ctx,
       Operator.neww(result),
       Operator.literal(typeString, Literal.string(Utils.print(I.declRef))),
-      Operator.fieldWrite(typeString.ref, result.ref, "type"))
+      Operator.fieldWrite(typeString.ref, result.ref, "type", None))
     if (I.operand.nonEmpty) {
-      instructions :+= makeOperator(ctx, Operator.fieldWrite(makeSymbolRef(I.operand.get.value, ctx), result.ref, "data"))(0)
+      instructions :+= makeOperator(ctx, Operator.fieldWrite(makeSymbolRef(I.operand.get.value, ctx), result.ref, "data", None))(0)
     }
     instructions
   }
@@ -1206,7 +1207,7 @@ class SWIRLGen {
     val typeString = new Symbol(generateSymbolName(I.operand.value, ctx), new Type("Builtin.RawPointer"))
     makeOperator(ctx,
       Operator.literal(typeString, Literal.string(Utils.print(I.declRef))),
-      Operator.fieldWrite(typeString.ref, makeSymbolRef(I.operand.value, ctx), "type"))
+      Operator.fieldWrite(typeString.ref, makeSymbolRef(I.operand.value, ctx), "type", None))
   }
 
   @throws[UnexpectedSILFormatException]
@@ -1407,7 +1408,7 @@ class SWIRLGen {
   }
 
   @throws[UnexpectedSILFormatException]
-  def visitUncheckedOwnershipConverstion(r: Option[SILResult], I: SILOperator.uncheckedOwnershipConversion, ctx: Context): ArrayBuffer[RawInstructionDef] = {
+  def visitUncheckedOwnershipConversion(r: Option[SILResult], I: SILOperator.uncheckedOwnershipConversion, ctx: Context): ArrayBuffer[RawInstructionDef] = {
     verifySILResult(r, 1)
     copySymbol(I.operand.value, r.get.valueNames(0), ctx)
   }

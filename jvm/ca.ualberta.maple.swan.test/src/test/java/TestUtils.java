@@ -158,7 +158,7 @@ public class TestUtils {
 
     static File dumpSILForSwiftFile(File swift) throws URISyntaxException {
         File swiftc = new File(Objects.requireNonNull(TestUtils.class.getClassLoader()
-                .getResource("symlink-utils/swan-swiftc")).toURI());
+                .getResource("utils/swan-swiftc")).toURI());
         Assertions.assertTrue(swiftc.exists());
         // Generate SIL
         ProcessBuilder pb = new ProcessBuilder("python",

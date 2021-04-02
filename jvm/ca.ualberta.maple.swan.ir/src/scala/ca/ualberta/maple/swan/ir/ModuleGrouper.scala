@@ -20,30 +20,40 @@ object ModuleGrouper {
   // Would be also good to check that the implementations are equal
   def merge(toMerge: ArrayBuffer[CanFunction],
             existingFunctions: mutable.HashMap[String, CanFunction],
-            entries: ArrayBuffer[CanFunction], models: ArrayBuffer[CanFunction],
-            others: ArrayBuffer[CanFunction], stubs: ArrayBuffer[CanFunction],
-            linked: ArrayBuffer[CanFunction]): Unit = {
+            entries: mutable.HashMap[String, CanFunction], models: mutable.HashMap[String, CanFunction],
+            mains: mutable.HashMap[String, CanFunction], others: mutable.HashMap[String, CanFunction],
+            stubs: mutable.HashMap[String, CanFunction], linked: mutable.HashMap[String, CanFunction]): Unit = {
     def add(f: CanFunction, attr: FunctionAttribute = null): Unit = {
       // Ordering for convenience
       if (attr != null) {
         f.attribute = Some(attr)
       }
+      if (entries.contains(f.name)) models.remove(f.name)
+      if (models.contains(f.name)) models.remove(f.name)
+      if (mains.contains(f.name)) mains.remove(f.name)
+      if (others.contains(f.name)) others.remove(f.name)
+      if (stubs.contains(f.name)) stubs.remove(f.name)
+      if (linked.contains(f.name)) linked.remove(f.name)
       if (f.name.startsWith("main_")) {
-        others.insert(0, f)
+        mains.put(f.name, f)
       } else {
         if (f.attribute.nonEmpty) {
           f.attribute.get match {
-            case FunctionAttribute.entry => entries.append(f)
-            case FunctionAttribute.model => models.append(f)
-            case FunctionAttribute.stub => stubs.append(f)
-            case FunctionAttribute.linked => linked.append(f)
-            case _ => others.append(f)
+            case FunctionAttribute.entry => entries.put(f.name, f)
+            case FunctionAttribute.model => models.put(f.name, f)
+            case FunctionAttribute.stub => stubs.put(f.name, f)
+            case FunctionAttribute.linked => linked.put(f.name, f)
+            case _ => others.put(f.name, f)
           }
         } else {
-          others.append(f)
+          others.put(f.name, f)
         }
       }
-      existingFunctions.put(f.name, f)
+      if (existingFunctions.contains(f.name)) {
+        existingFunctions(f.name) = f
+      } else {
+        existingFunctions.put(f.name, f)
+      }
     }
     toMerge.foreach(f => {
       if (existingFunctions.contains(f.name)) {
@@ -114,28 +124,30 @@ object ModuleGrouper {
     })
     Logging.printInfo(sb.toString())
     val functions = ArrayBuffer.empty[CanFunction]
-    val entries = ArrayBuffer.empty[CanFunction]
-    val models = ArrayBuffer.empty[CanFunction]
-    val others = ArrayBuffer.empty[CanFunction]
-    val stubs = ArrayBuffer.empty[CanFunction]
-    val linked = ArrayBuffer.empty[CanFunction]
+    val entries = mutable.HashMap.empty[String, CanFunction]
+    val models = mutable.HashMap.empty[String, CanFunction]
+    val mains = mutable.HashMap.empty[String, CanFunction]
+    val others = mutable.HashMap.empty[String, CanFunction]
+    val stubs = mutable.HashMap.empty[String, CanFunction]
+    val linked = mutable.HashMap.empty[String, CanFunction]
     val existingFunctions = new mutable.HashMap[String, CanFunction]()
     val ddgs = ArrayBuffer.empty[DynamicDispatchGraph]
     val silMap = new SILMap
     val metas = ArrayBuffer.empty[ModuleMetadata]
     modules.foreach(module => {
-      merge(module.functions, existingFunctions, entries, models, others, stubs, linked)
+      merge(module.functions, existingFunctions, entries, models, mains, others, stubs, linked)
       if (module.ddg.nonEmpty) {
         ddgs.append(module.ddg.get)
       }
       silMap.combine(module.silMap)
       metas.append(module.meta)
     })
-    functions.appendAll(entries)
-    functions.appendAll(models)
-    functions.appendAll(linked)
-    functions.appendAll(others)
-    functions.appendAll(stubs)
-    new ModuleGroup(functions, entries.to(immutable.HashSet), ddgs, silMap, metas)
+    functions.appendAll(entries.values)
+    functions.appendAll(mains.values)
+    functions.appendAll(models.values)
+    functions.appendAll(linked.values)
+    functions.appendAll(others.values)
+    functions.appendAll(stubs.values)
+    new ModuleGroup(functions, entries.values.to(immutable.HashSet), ddgs, silMap, metas)
   }
 }

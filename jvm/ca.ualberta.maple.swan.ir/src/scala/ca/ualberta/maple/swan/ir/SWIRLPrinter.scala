@@ -16,9 +16,8 @@ import org.jgrapht.graph.DefaultEdge
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
 
-// Tests are not guaranteed to pass if these options are changed from their defaults.
 class SWIRLPrinterOptions {
-  var printLocation = true
+  var printLocation = false
   var useArbitraryTypeNames = false
   var printCFG = true
   var genLocationMap = false // expensive
@@ -261,10 +260,6 @@ class SWIRLPrinter extends Printer {
         print(functionRef)
         print(whenEmpty = true, "(", arguments, ", ", ")", (arg: SymbolRef) => print(arg))
       }
-      case Operator.arrayRead(_, arr) => {
-        print("array_read ")
-        print(arr)
-      }
       case Operator.singletonRead(_, tpe, field) => {
         print("singleton_read `")
         print(field)
@@ -290,11 +285,11 @@ class SWIRLPrinter extends Printer {
         print(obj)
         print(", ")
         print(field)
-      case Operator.fieldWrite(value, obj, field, pointer) =>
+      case Operator.fieldWrite(value, obj, field, attr) =>
         print("field_write ")
+        if (attr.nonEmpty) print(attr.get)
         print(value)
         print(" to ")
-        print("[pointer] ", when = pointer)
         print(obj)
         print(", ")
         print(field)
@@ -331,8 +326,9 @@ class SWIRLPrinter extends Printer {
         print("pointer_read ")
         print(pointer)
       }
-      case Operator.pointerWrite(value, pointer) => {
+      case Operator.pointerWrite(value, pointer, weak) => {
         print("pointer_write ")
+        print("[weak] ", when = weak)
         print(value)
         print(" to ")
         print(pointer)
@@ -428,6 +424,15 @@ class SWIRLPrinter extends Printer {
       }
       case Terminator.unwind => print("unwind")
     }
+  }
+
+  def print(attr: FieldWriteAttribute): Unit = {
+    print("[")
+    attr match {
+      case FieldWriteAttribute.pointer => print("pointer")
+      case FieldWriteAttribute.weakPointer => print("weak_pointer")
+    }
+    print("]")
   }
 
   def print(cse: EnumAssignCase): Unit = {
