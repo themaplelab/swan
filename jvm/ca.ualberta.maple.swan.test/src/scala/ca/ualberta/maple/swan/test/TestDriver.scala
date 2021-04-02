@@ -43,7 +43,7 @@ object TestDriver {
   }
 
   private def getModelModule(): CanModule = {
-    val in = DefaultDriver.getClass.getClassLoader.getResourceAsStream("models.swanir")
+    val in = DefaultDriver.getClass.getClassLoader.getResourceAsStream("models.swirl")
     val modelsContent = IOUtils.toString(in, StandardCharsets.UTF_8)
     val swirlModule = new SWIRLParser(modelsContent, model = true).parseModule()
     val canSwirlModule = new SWIRLPass().runPasses(swirlModule)

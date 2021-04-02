@@ -95,7 +95,7 @@ object DefaultDriver {
       t.start()
     })
     // Single file for now, iterating files is tricky with JAR resources)
-    val in = DefaultDriver.getClass.getClassLoader.getResourceAsStream("models.swanir")
+    val in = DefaultDriver.getClass.getClassLoader.getResourceAsStream("models.swirl")
     val modelsContent = IOUtils.toString(in, StandardCharsets.UTF_8)
     val t = new Thread {
       override def run(): Unit = {
