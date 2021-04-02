@@ -36,6 +36,8 @@ Install the Scala plugin (*Preferences -> Plugins*, Search for *Scala*).
 
 Run the *General Tests* configuration to test everything works.
 
+See [IDE Configuration](https://github.com/themaplelab/swan/wiki/IDE-Configuration) if you would like to configure syntax highlighting for SWIRL and SIL.
+
 ## Toolchain Usage
 
 ### Dump SIL using either `swan-swiftc` or `swan-xcodebuild`
