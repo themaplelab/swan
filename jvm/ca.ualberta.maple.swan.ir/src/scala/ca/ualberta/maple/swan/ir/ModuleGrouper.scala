@@ -15,6 +15,7 @@ import ca.ualberta.maple.swan.utils.Logging
 import scala.collection.mutable.ArrayBuffer
 import scala.collection.{immutable, mutable}
 
+// TODO: The current merging is likely inefficient.
 object ModuleGrouper {
 
   // Would be also good to check that the implementations are equal
@@ -69,6 +70,7 @@ object ModuleGrouper {
               case FunctionAttribute.model => {
                 f.attribute.get match {
                   case FunctionAttribute.stub => // ignore
+                  case FunctionAttribute.coroutine => add(f)
                   case _ => throwException("unexpected")
                 }
               }
