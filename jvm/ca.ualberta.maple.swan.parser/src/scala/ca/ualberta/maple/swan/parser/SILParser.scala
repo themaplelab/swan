@@ -1433,37 +1433,15 @@ class SILParser extends SILPrinter {
 
         // *** OTHER (e.g., undocumented) ***
 
-      // This parsing is not complete but it handles the only case we've seen in practice
       case "keypath" => {
         val tpe = parseType()
         take(",")
         take("(")
-        take("objc")
-        val objc = parseString()
-        take(";")
-        take("root")
-        val root = parseType()
-        take(";")
-        take("settable_property")
-        val settableProperty = parseType()
-        take(",")
-        take("id")
-        val id = parseDeclRef()
-        take(":")
-        val idTpe = parseNakedType()
-        take(",")
-        take("getter")
-        val getter = parseMangledName()
-        take(":")
-        val getterTpe = parseType()
-        take(",")
-        take("setter")
-        val setter = parseMangledName()
-        take(":")
-        val setterTpe = parseType()
-        take(")")
-        SILInstruction.operator(SILOperator.keypath(
-          tpe, objc, root, settableProperty, id, idTpe, getter, getterTpe, setter, setterTpe))
+        val elements = ArrayBuffer.empty[SILKeypathElement]
+        while (!skip(")")) {
+          elements.append(parseKeypathElement())
+        }
+        SILInstruction.operator(SILOperator.keypath(tpe, elements))
       }
 
         // *** RUNTIME FAILURES ***
@@ -1666,6 +1644,60 @@ class SILParser extends SILPrinter {
       }
     }
     new SILArgument(valueName, tpe)
+  }
+
+  @throws[Error]
+  def parseKeypathElement(): SILKeypathElement = {
+    if (skip("objc")) {
+      val value = parseString()
+      skip(",");skip(";")
+      SILKeypathElement.objc(value)
+    } else if (skip("root")) {
+      val tpe = parseType()
+      skip(",");skip(";")
+      SILKeypathElement.root(tpe)
+    } else if (skip("gettable_property")) {
+      val tpe = parseType()
+      skip(",");skip(";")
+      SILKeypathElement.gettableProperty(tpe)
+    } else if (skip("settable_property")) {
+      val tpe = parseType()
+      skip(",");skip(";")
+      SILKeypathElement.settableProperty(tpe)
+    } else if (skip("stored_property")) {
+      val decl = parseDeclRef()
+      take(":")
+      val tpe = parseType()
+      skip(",");skip(";")
+      SILKeypathElement.storedProperty(decl, tpe)
+    } else if (skip("id")) {
+      val name = if (peek("@")) Some(parseMangledName()) else None
+      val decl = if (name.isEmpty) Some(parseDeclRef()) else None
+      take(":")
+      skip("$")
+      val tpe = parseNakedType()
+      skip(",");skip(";")
+      SILKeypathElement.id(name, decl, tpe)
+    } else if (skip("getter")) {
+      val name = parseMangledName()
+      take(":")
+      val tpe = parseType()
+      skip(",");skip(";")
+      SILKeypathElement.getter(name, tpe)
+    } else if (skip("setter")) {
+      val name = parseMangledName()
+      take(":")
+      val tpe = parseType()
+      skip(",");skip(";")
+      SILKeypathElement.setter(name, tpe)
+    } else if (skip("optional_force")) {
+      take(":")
+      val tpe = parseType()
+      skip(",");skip(";")
+      SILKeypathElement.optionalForce(tpe)
+    } else {
+      throw parseError("unknown keypath element")
+    }
   }
 
   // https://github.com/apple/swift/blob/master/docs/SIL.rst#switch-enum

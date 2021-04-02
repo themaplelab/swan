@@ -998,8 +998,8 @@ class SWIRLGen {
 
   @throws[UnexpectedSILFormatException]
   def visitCopyValue(r: Option[SILResult], I: SILOperator.copyValue, ctx: Context): ArrayBuffer[RawInstructionDef] = {
-    verifySILResult(r, 1)
-    copySymbol(I.operand.value, r.get.valueNames(0), ctx)
+    val result = getSingleResult(r, Utils.SILTypeToType(I.operand.tpe), ctx)
+    makeOperator(ctx, Operator.assign(result, makeSymbolRef(I.operand.value, ctx)))
   }
 
   @throws[UnexpectedSILFormatException]

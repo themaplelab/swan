@@ -276,8 +276,7 @@ object SILOperator {
   /***** OTHER *****/
 
   // Weird undocumented instruction
-  case class keypath(tpe: SILType, objc: String, root: SILType, settableProperty: SILType, id: SILDeclRef, idTpe: SILType,
-                     getter: SILMangledName, getterTpe: SILType, setter: SILMangledName, setterTpe: SILType) extends SILOperator
+  case class keypath(tpe: SILType, elements: ArrayBuffer[SILKeypathElement]) extends SILOperator
 
   /***** RUNTIME FAILURES *****/
   case class condFail(operand: SILOperand, message: Option[String]) extends SILOperator
@@ -340,6 +339,19 @@ object SILCastConsumptionKind {
 }
 
 class SILArgument(val valueName: String, val tpe: SILType)
+
+sealed trait SILKeypathElement
+object SILKeypathElement {
+  case class objc(value: String) extends SILKeypathElement
+  case class root(tpe: SILType) extends SILKeypathElement
+  case class gettableProperty(tpe: SILType) extends SILKeypathElement
+  case class storedProperty(decl: SILDeclRef, tpe: SILType) extends SILKeypathElement
+  case class settableProperty(tpe: SILType) extends SILKeypathElement
+  case class id(name: Option[SILMangledName], decl: Option[SILDeclRef], tpe: SILType) extends SILKeypathElement
+  case class getter(name: SILMangledName, tpe: SILType) extends SILKeypathElement
+  case class setter(name: SILMangledName, tpe: SILType) extends SILKeypathElement
+  case class optionalForce(tpe: SILType) extends SILKeypathElement
+}
 
 sealed trait SILSwitchEnumCase
 object SILSwitchEnumCase {

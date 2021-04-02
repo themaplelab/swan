@@ -1082,27 +1082,11 @@ class SILPrinter extends Printer {
 
         // *** OTHER ***
 
-      case SILOperator.keypath(tpe, objc, root, settableProperty, id, idTpe, getter, getterTpe, setter, setterTpe) => {
+      case SILOperator.keypath(tpe, elements) => {
         print("keypath ")
         print(tpe)
-        print(", (objc \"")
-        print(objc)
-        print("\"; root ")
-        print(root)
-        print("; settable_property ")
-        print(settableProperty)
-        print(", id ")
-        print(id)
-        print(" : ")
-        print(idTpe)
-        print(", getter ")
-        print(getter)
-        print(" : ")
-        print(getterTpe)
-        print(", setter ")
-        print(setter)
-        print(" : ")
-        print(setterTpe)
+        print(", (")
+        // TODO print elements
         print(")")
       }
 
@@ -1424,6 +1408,20 @@ class SILPrinter extends Printer {
     print(argument.valueName)
     print(" : ")
     print(argument.tpe)
+  }
+
+  def print(element: SILKeypathElement): Unit = {
+    element match {
+      case SILKeypathElement.objc(value) =>
+      case SILKeypathElement.root(tpe) =>
+      case SILKeypathElement.gettableProperty(tpe) =>
+      case SILKeypathElement.storedProperty(decl, tpe) =>
+      case SILKeypathElement.settableProperty(tpe) =>
+      case SILKeypathElement.id(name, decl, tpe) =>
+      case SILKeypathElement.getter(name, tpe) =>
+      case SILKeypathElement.setter(name, tpe) =>
+      case SILKeypathElement.optionalForce(tpe) =>
+    }
   }
 
   def print(cse: SILSwitchEnumCase): Unit = {
