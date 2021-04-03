@@ -39,7 +39,7 @@ object Main {
     silResultFile.write(silPrintedText)
     silResultFile.close()
 
-    val swirlModule = new SWIRLGen().translateSILModule(silModule)
+    val swirlModule = new SWIRLGen().translateSILModule(silModule, populateSILMap = true)
     val canSwirlModule = new SWIRLPass().runPasses(swirlModule)
     val swirlPrinter = new SWIRLPrinter()
     val swirlPrintedText = swirlPrinter.print(canSwirlModule,

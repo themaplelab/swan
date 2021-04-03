@@ -40,6 +40,8 @@ class SILPrinter extends Printer {
 
   var options = new SILPrinterOptions()
 
+  def clear(): Unit = { description.clear() }
+
   def print(module: SILModule, opts: SILPrinterOptions): String = {
 
     options = opts
@@ -120,7 +122,7 @@ class SILPrinter extends Printer {
 
   def print(operatorDef: SILOperatorDef): String = {
     if (options.genLocationMap) silLocMap.put(operatorDef, (this.line, this.getCol))
-    print(operatorDef.result, " = ", (r: SILResult) => {
+    print(operatorDef.res, " = ", (r: SILResult) => {
       print(r)
     })
     print(operatorDef.operator)
@@ -1569,11 +1571,16 @@ class SILPrinter extends Printer {
     }
   }
 
-  def print(declRef: SILDeclRef): String = {
+  def clearPrint(declRef: SILDeclRef): String = {
+    clear()
+    print(declRef)
+    this.toString
+  }
+
+  def print(declRef: SILDeclRef): Unit = {
     print("#")
     print(declRef.name.mkString("."))
     if (declRef.subRef.nonEmpty) print(declRef.subRef.get)
-    this.toString
   }
 
   def print(encoding: SILEncoding): Unit = {
@@ -1786,7 +1793,20 @@ class SILPrinter extends Printer {
     print(name.mangled)
   }
 
-  def print(tpe: SILType): String = {
+  def clearPrint(tpe: SILType): String = {
+    clear()
+    print(tpe)
+    this.toString
+  }
+
+  def clearNakedPrint(tpe: SILType): String = {
+    clear()
+    naked(tpe)
+    this.toString
+  }
+
+
+  def print(tpe: SILType): Unit = {
     tpe match {
       case SILType.withOwnership(attribute, subtype) => {
         print(attribute)
@@ -1801,10 +1821,9 @@ class SILPrinter extends Printer {
         naked(tpe)
       }
     }
-    this.toString
   }
 
-  def naked(nakedTpe: SILType): String = {
+  def naked(nakedTpe: SILType): Unit = {
     nakedTpe match {
       case SILType.addressType(tpe) => {
         print("*")
@@ -1900,7 +1919,6 @@ class SILPrinter extends Printer {
         print(whenEmpty = true, "(", tpes, ", ", ").Type", (t: SILType) => naked(t))
       }
     }
-    this.toString
   }
 
   def print(attribute: SILTypeAttribute): Unit = {

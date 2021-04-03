@@ -20,22 +20,20 @@ object Utils {
 
   // Type conversions should remove conventions.
 
-  def printer: SILPrinter = {
-    new SILPrinter()
-  }
+  val printer: SILPrinter = new SILPrinter()
 
   // SIL $T to SWIRL $T
   def SILTypeToType(rootTpe: SILType): Type = {
     if (rootTpe.isInstanceOf[SILType.withOwnership]) {
-      new Type(printer.print(rootTpe))
+      new Type(printer.clearPrint(rootTpe))
     } else {
-      new Type(printer.naked(rootTpe))
+      new Type(printer.clearNakedPrint(rootTpe))
     }
   }
 
   // SIL $T to SWIRL $*T
   def SILTypeToPointerType(rootTpe: SILType): Type = {
-    new Type(printer.naked(SILType.addressType(rootTpe)))
+    new Type(printer.clearNakedPrint(SILType.addressType(rootTpe)))
   }
 
   def getFunctionTypeFromType(rootTpe: SILType): SILType.functionType = {
@@ -110,7 +108,7 @@ object Utils {
     if (!tpe.isInstanceOf[SILType.addressType]) {
       throw new UnexpectedSILTypeBehaviourException("Expected pointer type: " + print(tpe))
     }
-    new Type(printer.naked(tpe.asInstanceOf[SILType.addressType].tpe))
+    new Type(printer.clearNakedPrint(tpe.asInstanceOf[SILType.addressType].tpe))
   }
 
   // SIL "0x3F800000" to double
@@ -136,9 +134,9 @@ object Utils {
       val param = parameters(index)
       def makeType(tpe: SILType, pointer: Boolean): Type = {
         if (pointer) {
-          new Type(printer.naked(SILType.addressType(tpe)))
+          new Type(printer.clearNakedPrint(SILType.addressType(tpe)))
         } else {
-          new Type(printer.naked(parameters(index)))
+          new Type(printer.clearNakedPrint(parameters(index)))
         }
       }
 
@@ -177,7 +175,7 @@ object Utils {
         val stringBuilder = new StringBuilder()
         stringBuilder.append("(")
         operands.foreach(operand => {
-          stringBuilder.append(printer.naked(operand.tpe))
+          stringBuilder.append(printer.clearNakedPrint(operand.tpe))
           if (operand != operands.last) {
             stringBuilder.append(", ")
           }
@@ -202,10 +200,10 @@ object Utils {
   }
 
   def print(tpe: SILType): String = {
-    printer.naked(tpe)
+    printer.clearNakedPrint(tpe)
   }
 
   def print(declRef: SILDeclRef): String = {
-    printer.print(declRef)
+    printer.clearPrint(declRef)
   }
 }

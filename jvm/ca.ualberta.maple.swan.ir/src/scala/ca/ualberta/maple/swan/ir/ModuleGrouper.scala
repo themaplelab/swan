@@ -88,6 +88,12 @@ object ModuleGrouper {
                   case _ => throwException("unexpected")
                 }
               }
+              case FunctionAttribute.linked => {
+                f.attribute.get match {
+                  case FunctionAttribute.stub => // ignore
+                  case _ => throwException("unexpected")
+                }
+              }
               case _ => throwException("unexpected")
             }
           } else { // to add has no attribute
@@ -117,14 +123,6 @@ object ModuleGrouper {
   }
 
   def group(modules: ArrayBuffer[CanModule]): ModuleGroup = {
-    val sb = new StringBuilder()
-    sb.append("Grouping \n")
-    modules.foreach(m => {
-      sb.append("  ")
-      sb.append(m)
-      sb.append("\n")
-    })
-    Logging.printInfo(sb.toString())
     val functions = ArrayBuffer.empty[CanFunction]
     val entries = mutable.HashMap.empty[String, CanFunction]
     val models = mutable.HashMap.empty[String, CanFunction]

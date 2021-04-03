@@ -32,19 +32,55 @@ class SILModule(val functions: ArrayBuffer[SILFunction], val witnessTables: Arra
 }
 
 class SILFunction(val linkage: SILLinkage, val attributes: ArrayBuffer[SILFunctionAttribute],
-                  val name: SILMangledName, val tpe: SILType, val blocks: ArrayBuffer[SILBlock])
-
-class SILBlock(val identifier: String, val arguments: ArrayBuffer[SILArgument],
-               val operatorDefs: ArrayBuffer[SILOperatorDef], val terminatorDef: SILTerminatorDef) {
-
-  def ==(that: SILBlock): Boolean = {
-    (identifier, arguments, operatorDefs, terminatorDef) == (that.identifier, that.arguments, that.operatorDefs, that.terminatorDef)
+                  val name: SILMangledName, val tpe: SILType, val blocks: ArrayBuffer[SILBlock]) {
+  override def hashCode(): Int = {
+    val prime = 31
+    var result = 1
+    result = prime * result + linkage.hashCode
+    attributes.foreach(a => result = prime * result + a.hashCode)
+    result = prime * result + name.hashCode
+    result = prime * result + tpe.hashCode
+    blocks.foreach(b => result = prime * result + b.hashCode)
+    result
   }
 }
 
-class SILOperatorDef(val result: Option[SILResult], val operator: SILOperator, val sourceInfo: Option[SILSourceInfo])
+class SILBlock(val identifier: String, val arguments: ArrayBuffer[SILArgument],
+               val operatorDefs: ArrayBuffer[SILOperatorDef], val terminatorDef: SILTerminatorDef) {
+  def ==(that: SILBlock): Boolean = {
+    (identifier, arguments, operatorDefs, terminatorDef) == (that.identifier, that.arguments, that.operatorDefs, that.terminatorDef)
+  }
+  override def hashCode(): Int = {
+    val prime = 31
+    var result = 1
+    result = prime * result + identifier.hashCode
+    arguments.foreach( a => result = prime * result + a.hashCode)
+    operatorDefs.foreach( o => result = prime * result + o.hashCode)
+    result = prime * result + terminatorDef.hashCode
+    result
+  }
+}
 
-class SILTerminatorDef(val terminator: SILTerminator, val sourceInfo: Option[SILSourceInfo])
+class SILOperatorDef(val res: Option[SILResult], val operator: SILOperator, val sourceInfo: Option[SILSourceInfo]) {
+  override def hashCode(): Int = {
+    val prime = 31
+    var result = 1
+    if (res.nonEmpty) result = prime * result + res.get.hashCode
+    result = prime * result + operator.hashCode
+    if (sourceInfo.nonEmpty) result = prime * result + sourceInfo.get.hashCode
+    result
+  }
+}
+
+class SILTerminatorDef(val terminator: SILTerminator, val sourceInfo: Option[SILSourceInfo]) {
+  override def hashCode(): Int = {
+    val prime = 31
+    var result = 1
+    result = prime * result + terminator.hashCode
+    if (sourceInfo.nonEmpty) result = prime * result + sourceInfo.get.hashCode
+    result
+  }
+}
 
 sealed trait SILInstructionDef {
   val instruction : SILInstruction
@@ -338,7 +374,15 @@ object SILCastConsumptionKind {
   case object copyOnSuccess extends SILCastConsumptionKind
 }
 
-class SILArgument(val valueName: String, val tpe: SILType)
+class SILArgument(val valueName: String, val tpe: SILType) {
+  override def hashCode(): Int = {
+    val prime = 31
+    var result = 1
+    result = prime * result + valueName.hashCode
+    result = prime * result + tpe.hashCode
+    result
+  }
+}
 
 sealed trait SILKeypathElement
 object SILKeypathElement {
@@ -404,7 +448,14 @@ object SILAccessorKind {
 
 // I think that a type can come after, too. Leave for now.
 // e.g. #Super.genericMethod!jvp.SUU.<T where T : Differentiable>: <T> (Super) -> (T, T) -> T : @[...]
-class SILAutoDiff(val paramIndices: String)
+class SILAutoDiff(val paramIndices: String) {
+  override def hashCode(): Int = {
+    val prime = 31
+    var result = 1
+    result = prime * result + paramIndices.hashCode
+    result
+  }
+}
 object SILAutoDiff {
   case class jvp(pi: String) extends SILAutoDiff(pi)
   case class vjp(pi: String) extends SILAutoDiff(pi)
@@ -436,7 +487,15 @@ object SILDeclSubRef {
   case class level(level: Int, foreign: Boolean) extends SILDeclSubRef
 }
 
-class SILDeclRef(val name: ArrayBuffer[String], val subRef: Option[SILDeclSubRef])
+class SILDeclRef(val name: ArrayBuffer[String], val subRef: Option[SILDeclSubRef]) {
+  override def hashCode(): Int = {
+    val prime = 31
+    var result = 1
+    name.foreach(s => result = prime * result + s.hashCode)
+    if (subRef.nonEmpty) result = prime * result + subRef.get.hashCode
+    result
+  }
+}
 
 sealed trait SILEncoding
 object SILEncoding {
@@ -453,9 +512,26 @@ object SILEnforcement {
   case object unsafe extends SILEnforcement
 }
 
-class SILMangledName(val mangled: String, var demangled: String = "")
+class SILMangledName(val mangled: String, var demangled: String = "") {
+  override def hashCode(): Int = {
+    val prime = 31
+    var result = 1
+    result = prime * result + mangled.hashCode
+    result = prime * result + demangled.hashCode
+    result
+  }
+}
 
-class StructInit(val name: String, val args: ArrayBuffer[String], val tpe: InitType)
+class StructInit(val name: String, val args: ArrayBuffer[String], val tpe: InitType) {
+  override def hashCode(): Int = {
+    val prime = 31
+    var result = 1
+    result = prime * result + name.hashCode
+    args.foreach( a => result = prime * result + a.hashCode)
+    result = prime * result + tpe.hashCode
+    result
+  }
+}
 object StructInit {
   // Add non-user struct init definitions here
   def populateInits(): ArrayBuffer[StructInit] = {
@@ -554,11 +630,38 @@ object SILLinkage {
   case object sharedExternal extends SILLinkage
 }
 
-class SILScope(val num: Int, val loc: Option[SILLoc], val parent: SILScopeParent, val inlinedAt: Option[SILScopeRef])
+class SILScope(val num: Int, val loc: Option[SILLoc], val parent: SILScopeParent, val inlinedAt: Option[SILScopeRef]) {
+  override def hashCode(): Int = {
+    val prime = 31
+    var result = 1
+    result = prime * result + num.hashCode
+    if (loc.nonEmpty) result = prime * result + loc.get.hashCode
+    result = prime * result + parent.hashCode
+    if (inlinedAt.nonEmpty) result = prime * result + inlinedAt.get.hashCode
+    result
+  }
+}
 
-class SILLoc(val path: String, val line: Int, val column: Int)
+class SILLoc(val path: String, val line: Int, val column: Int) {
+  override def hashCode(): Int = {
+    val prime = 31
+    var result = 1
+    result = prime * result + path.hashCode
+    result = prime * result + line.hashCode
+    result = prime * result + column.hashCode
+    result
+  }
+}
 
-class SILSourceInfo(val scopeRef: Option[SILScopeRef], val loc: Option[SILLoc])
+class SILSourceInfo(val scopeRef: Option[SILScopeRef], val loc: Option[SILLoc]) {
+  override def hashCode(): Int = {
+    val prime = 31
+    var result = 1
+    if (scopeRef.nonEmpty) result = prime * result + scopeRef.get.hashCode
+    if (loc.nonEmpty) result = prime * result + loc.get.hashCode
+    result
+  }
+}
 
 sealed trait SILScopeParent
 object SILScopeParent {
@@ -566,11 +669,33 @@ object SILScopeParent {
   case class ref(ref: Int) extends SILScopeParent
 }
 
-class SILScopeRef(val num: Int)
+class SILScopeRef(val num: Int) {
+  override def hashCode(): Int = {
+    val prime = 31
+    var result = 1
+    result = prime * result + num.hashCode
+    result
+  }
+}
 
-class SILOperand(val value: String, val tpe: SILType)
+class SILOperand(val value: String, val tpe: SILType) {
+  override def hashCode(): Int = {
+    val prime = 31
+    var result = 1
+    result = prime * result + value.hashCode
+    result = prime * result + tpe.hashCode
+    result
+  }
+}
 
-class SILResult(val valueNames: ArrayBuffer[String])
+class SILResult(val valueNames: ArrayBuffer[String]) {
+  override def hashCode(): Int = {
+    val prime = 31
+    var result = 1
+    valueNames.foreach(v => result = prime * result + v.hashCode)
+    result
+  }
+}
 
 sealed trait SILTupleElements
 object SILTupleElements {
@@ -685,14 +810,56 @@ object SILStoreOwnership {
 
 class SILGlobalVariable(val linkage: SILLinkage, val serialized: Boolean,
                         val let: Boolean, val globalName: SILMangledName,
-                        val tpe: SILType, val instructions: Option[ArrayBuffer[SILOperatorDef]])
+                        val tpe: SILType, val instructions: Option[ArrayBuffer[SILOperatorDef]]) {
+  override def hashCode(): Int = {
+    val prime = 31
+    var result = 1
+    result = prime * result + linkage.hashCode
+    result = prime * result + serialized.hashCode
+    result = prime * result + let.hashCode
+    result = prime * result + globalName.hashCode
+    result = prime * result + tpe.hashCode
+    if (instructions.nonEmpty) {
+      instructions.get.foreach(op => result = prime * result + op.hashCode)
+    }
+    result
+  }
+}
 
 class SILWitnessTable(val linkage: SILLinkage, val attribute: Option[SILFunctionAttribute],
-                      val normalProtocolConformance: SILNormalProtocolConformance, val entries: ArrayBuffer[SILWitnessEntry])
+                      val normalProtocolConformance: SILNormalProtocolConformance, val entries: ArrayBuffer[SILWitnessEntry]) {
+  override def hashCode(): Int = {
+    val prime = 31
+    var result = 1
+    result = prime * result + linkage.hashCode
+    if (attribute.nonEmpty) result = prime * result + attribute.get.hashCode
+    result = prime * result + normalProtocolConformance.hashCode
+    entries.foreach(e => result = prime * result + e.hashCode)
+    result
+  }
+}
 
-class SILProperty(val serialized: Boolean, val decl: SILDeclRef, val component: SILType)
+class SILProperty(val serialized: Boolean, val decl: SILDeclRef, val component: SILType) {
+  override def hashCode(): Int = {
+    val prime = 31
+    var result = 1
+    result = prime * result + serialized.hashCode
+    result = prime * result + decl.hashCode
+    result = prime * result + component.hashCode
+    result
+  }
+}
 
-class SILVTable(val name: String, val serialized: Boolean, val entries: ArrayBuffer[SILVEntry])
+class SILVTable(val name: String, val serialized: Boolean, val entries: ArrayBuffer[SILVEntry]) {
+  override def hashCode(): Int = {
+    val prime = 31
+    var result = 1
+    result = prime * result + name.hashCode
+    result = prime * result + serialized.hashCode
+    entries.foreach(e => result = prime * result + e.hashCode)
+    result
+  }
+}
 
 sealed trait SILVTableEntryKind
 object SILVTableEntryKind {
@@ -702,7 +869,19 @@ object SILVTableEntryKind {
 }
 
 class SILVEntry(val declRef: SILDeclRef, val tpe: Option[SILType], val kind: SILVTableEntryKind,
-                val nonoverridden: Boolean, val linkage: Option[SILLinkage], val functionName: SILMangledName)
+                val nonoverridden: Boolean, val linkage: Option[SILLinkage], val functionName: SILMangledName) {
+  override def hashCode(): Int = {
+    val prime = 31
+    var result = 1
+    result = prime * result + declRef.hashCode
+    if (tpe.nonEmpty) result = prime * result + tpe.get.hashCode
+    result = prime * result + kind.hashCode
+    result = prime * result + nonoverridden.hashCode
+    if (linkage.nonEmpty) result = prime * result + linkage.get.hashCode
+    result = prime * result + functionName.hashCode
+    result
+  }
+}
 
 sealed trait SILWitnessEntry
 object SILWitnessEntry {
@@ -714,7 +893,16 @@ object SILWitnessEntry {
   case class conditionalConformance(identifier: String) extends SILWitnessEntry
 }
 
-class SILNormalProtocolConformance(val tpe: SILType, val protocol: String, val module: String)
+class SILNormalProtocolConformance(val tpe: SILType, val protocol: String, val module: String) {
+  override def hashCode(): Int = {
+    val prime = 31
+    var result = 1
+    result = prime * result + tpe.hashCode
+    result = prime * result + protocol.hashCode
+    result = prime * result + module.hashCode
+    result
+  }
+}
 
 sealed trait SILProtocolConformance
 object SILProtocolConformance {

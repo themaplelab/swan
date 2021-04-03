@@ -100,7 +100,9 @@ public class Tests {
         File fileDir = new File(Objects.requireNonNull(getClass().getClassLoader()
                 .getResource("example-swan-dir/")).toURI());
         Logging.printInfo("(Tests) testDefaultDriver: Testing " + fileDir.getName());
-        ModuleGroup group = DefaultDriver.run(fileDir, new DefaultDriver.DriverOptions());
+        ModuleGroup group = new DefaultDriver().runActual(
+                new DefaultDriver.Options()
+                        .printSwirl(false), fileDir);
         String result = new SWIRLPrinter().print(group, new SWIRLPrinterOptions());
         // System.out.println(result);
         Assertions.assertTrue(result.contains("func [model] @`Swift.Array.subscript.getter"));

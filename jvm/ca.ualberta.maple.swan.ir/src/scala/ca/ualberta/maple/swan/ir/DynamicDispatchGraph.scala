@@ -10,6 +10,7 @@
 
 package ca.ualberta.maple.swan.ir
 
+import ca.ualberta.maple.swan.ir.raw.Utils
 import ca.ualberta.maple.swan.parser.{SILModule, SILPrinter, SILWitnessEntry}
 import org.jgrapht._
 import org.jgrapht.alg.shortestpath.BellmanFordShortestPath
@@ -114,7 +115,7 @@ class DynamicDispatchGraph(module: SILModule) {
 
     // Handle witness tables.
     module.witnessTables.foreach(table => {
-      val cls = makeNode(new SILPrinter().naked(table.normalProtocolConformance.tpe), "Class")
+      val cls = makeNode(Utils.printer.clearNakedPrint(table.normalProtocolConformance.tpe), "Class")
       val protocol = makeNode(table.normalProtocolConformance.protocol, "Protocol")
       graph.addEdge(cls, protocol)
       table.entries.foreach {
