@@ -29,6 +29,9 @@ struct SWANXcodebuild: ParsableCommand {
   // Ignore the warning generated from this.
   @Option(default: Constants.defaultSwanDir, help: "Output directory for SIL.")
   var silDir: String?
+
+  @Flag(help: "Attempt to parse the build output even if xcodebuild fails.")
+  var allowFailure: Bool
   
   @Argument(help: "Prefix these arguments with --")
   var xcodebuildArgs: [String]
@@ -105,7 +108,11 @@ struct SWANXcodebuild: ParsableCommand {
     
     if (task.terminationStatus != 0) {
       printWarning("\nxcodebuild failed. Please see \(xcodebuildLog.relativeString)\n")
-      return
+      if (allowFailure) {
+        printStatus("--allow-failure enabled, continuing")
+      } else {
+        return
+      }
     }
     
     print("")
@@ -114,7 +121,7 @@ struct SWANXcodebuild: ParsableCommand {
     roughSections.removeFirst()
     var sections = [Section]()
     
-    for s in roughSections {
+    for (idx, s) in roughSections.enumerated() {
       // Quick and dirty parsing
       let chars: [Character] = Array(s[s.startIndex...s.firstIndex(of: "\n")!])
       var cursor: Int = 0
@@ -125,13 +132,13 @@ struct SWANXcodebuild: ParsableCommand {
       // Some sources have a Swift file path.
       if (chars[cursor] != "(") {
         let path = String(chars.suffix(from: cursor).prefix(while: { (character) -> Bool in
-          return character != " "
+          return character != "("
         }))
-        cursor += path.count + 1
+        cursor += path.count
       }
       var expected = "(in target '"
       if (!chars.suffix(from: cursor).starts(with: expected)) {
-        throw "parsing error: target expected\n\(String(chars))"
+        throw "parsing error: section: \(idx), target expected\n\(String(chars))"
       }
       cursor += expected.count
       let target = String(chars.suffix(from: cursor).prefix(while: { (character) -> Bool in
@@ -140,7 +147,7 @@ struct SWANXcodebuild: ParsableCommand {
       cursor += target.count
       expected = "' from project '"
       if (!chars.suffix(from: cursor).starts(with: expected)) {
-        throw "parsing error: project expected\n\(String(chars))"
+        throw "parsing error: section: \(idx), project expected\n\(String(chars))"
       }
       cursor += expected.count
       let project = String(chars.suffix(from: cursor).prefix(while: { (character) -> Bool in
