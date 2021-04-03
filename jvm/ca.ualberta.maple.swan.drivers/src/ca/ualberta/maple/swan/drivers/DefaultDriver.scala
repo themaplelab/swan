@@ -62,7 +62,7 @@ class DefaultDriver extends Runnable {
   private val invalidateCache = new Array[Boolean](0)
 
   @Option(names = Array("-p", "--persistence"),
-    description = Array("Turn on persistence (cache). This is experimental and slow on large projects."))
+    description = Array("Turn on persistence (cache). This is experimental, slow, and incomplete."))
   private val persistence = new Array[Boolean](0)
 
   import picocli.CommandLine.Parameters

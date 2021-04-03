@@ -79,7 +79,7 @@ class CanFunction(var attribute: Option[FunctionAttribute], val name: String, va
                   val arguments: ArrayBuffer[Argument], val blocks: ArrayBuffer[CanBlock],
                   val refTable: RefTable, val instantiatedTypes: immutable.HashSet[String],
                   val symbolTable: mutable.HashMap[String, SymbolTableEntry],
-                  val cfg: Graph[CanBlock, DefaultEdge]) extends Serializable {
+                  var cfg: Graph[CanBlock, DefaultEdge]) extends Serializable {
   def getSymbol(name: String): Symbol = {
     symbolTable(name) match {
       case SymbolTableEntry.operator(symbol, _) => symbol

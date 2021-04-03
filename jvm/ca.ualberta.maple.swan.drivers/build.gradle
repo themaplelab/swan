@@ -33,6 +33,7 @@ dependencies {
 
     compile group: 'com.google.guava', name: 'guava', version: '30.1.1-jre'
 
+    compile group: 'com.twitter', name: 'chill_2.13', version:'0.9.5'
 
     implementation 'org.scala-lang:scala-library:'+project.property("SCALA_VERSION")
 }

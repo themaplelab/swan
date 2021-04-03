@@ -15,8 +15,11 @@ import java.nio.file.Paths
 
 import ca.ualberta.maple.swan.ir.ModuleGroup
 import ca.ualberta.maple.swan.parser.{SILFunction, SILModule}
+import ca.ualberta.maple.swan.utils.Logging
 import com.google.common.hash.Hashing
 import com.google.common.io.Files
+import com.twitter.chill.ScalaKryoInstantiator
+import org.apache.commons.io.IOUtils
 
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
@@ -38,6 +41,8 @@ class Persistence(val swanDir: File, val invalidate: Boolean = false) {
 
   def cacheFile: File = Paths.get(swanDir.getPath, "cache.swan").toFile
 
+  val pool = ScalaKryoInstantiator.defaultPool
+
   var cache: Cache = _
 
   val changedSILFiles: ArrayBuffer[File] = ArrayBuffer.empty[File]
@@ -51,11 +56,11 @@ class Persistence(val swanDir: File, val invalidate: Boolean = false) {
       cacheFile.delete()
     }
     if (cacheFile.exists()) {
+      val startTime = System.nanoTime()
       val fileIn = new FileInputStream(cacheFile)
-      val in = new ObjectInputStream(fileIn)
-      this.cache = in.readObject().asInstanceOf[Cache]
-      in.close()
+      this.cache = pool.fromBytes(IOUtils.toByteArray(cacheFile.toURI), classOf[Cache])
       fileIn.close()
+      Logging.printTimeStamp(0, startTime, "reading cache", cache.group.functions.length, "functions")
     }
     new DirProcessor(swanDir.toPath).process().foreach(f => {
       val checksum = getChecksum(f)
@@ -74,11 +79,14 @@ class Persistence(val swanDir: File, val invalidate: Boolean = false) {
   }
 
   def writeCache(): Unit = {
+    val startTime = System.nanoTime()
+    // TODO: Find way to serialize these
+    cache.group.ddgs.clear()
+    cache.group.functions.foreach(f => f.cfg = null)
     val fileOut = new FileOutputStream(cacheFile)
-    val out = new ObjectOutputStream(fileOut)
-    out.writeObject(cache)
-    out.close()
+    fileOut.write(pool.toBytesWithoutClass(cache))
     fileOut.close()
+    Logging.printTimeStamp(0, startTime, "writing cache", cache.group.functions.length, "functions")
   }
 
   def checkFunctionParity(f: SILFunction, m: SILModule): Boolean = {
