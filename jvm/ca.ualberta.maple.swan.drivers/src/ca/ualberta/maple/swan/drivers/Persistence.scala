@@ -13,6 +13,7 @@ package ca.ualberta.maple.swan.drivers
 import java.io._
 import java.nio.file.Paths
 
+import ca.ualberta.maple.swan.ir.ModuleGroup
 import ca.ualberta.maple.swan.parser.{SILFunction, SILModule}
 import com.google.common.hash.Hashing
 import com.google.common.io.Files
@@ -21,12 +22,15 @@ import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
 
 class Cache(val silFileChecksums: mutable.HashMap[String, String],
-            val functionChecksums: mutable.HashMap[String, mutable.HashMap[String, Int]]) extends Serializable
+            val functionChecksums: mutable.HashMap[String, mutable.HashMap[String, Int]],
+            var group: ModuleGroup) extends Serializable
 
 object Cache {
   def createEmpty(): Cache = {
-    new Cache(new mutable.HashMap[String, String],
-      new mutable.HashMap[String, mutable.HashMap[String, Int]]())
+    new Cache(
+      new mutable.HashMap[String, String],
+      new mutable.HashMap[String, mutable.HashMap[String, Int]](),
+      null)
   }
 }
 
@@ -89,14 +93,16 @@ class Persistence(val swanDir: File, val invalidate: Boolean = false) {
     false
   }
 
-  def updateSILModules(modules: ArrayBuffer[SILModule]): Unit = {
-    modules.foreach(m => {
-      val map = new mutable.HashMap[String, Int]()
-      m.functions.foreach(f => {
-        map.put(f.name.mangled, f.hashCode())
-      })
-      cache.functionChecksums.put(m.toString, map)
+  def updateSILModule(m: SILModule): Unit = {
+    val map = new mutable.HashMap[String, Int]()
+    m.functions.foreach(f => {
+      map.put(f.name.mangled, f.hashCode())
     })
+    cache.functionChecksums.put(m.toString, map)
+  }
+
+  def updateGroup(group: ModuleGroup): Unit = {
+    cache.group = group
   }
 
   override def toString: String = {

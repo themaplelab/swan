@@ -27,7 +27,7 @@ import scala.collection.{immutable, mutable}
 class ModuleGroup(val functions: ArrayBuffer[CanFunction],
                   val entries: immutable.HashSet[CanFunction],
                   val ddgs: ArrayBuffer[DynamicDispatchGraph],
-                  val silMap: SILMap, val metas: ArrayBuffer[ModuleMetadata]) {
+                  val silMap: SILMap, val metas: ArrayBuffer[ModuleMetadata]) extends Serializable {
   override def toString: String = {
     val sb = new StringBuilder
     sb.append("Module group\n")
@@ -41,7 +41,7 @@ class ModuleGroup(val functions: ArrayBuffer[CanFunction],
 }
 
 class ModuleMetadata(val file: Option[File],
-                     val silSource: Option[File]) {
+                     val silSource: Option[File]) extends Serializable {
   override def toString: String = {
     if (file.nonEmpty) {
       file.get.getName
@@ -79,7 +79,7 @@ class CanFunction(var attribute: Option[FunctionAttribute], val name: String, va
                   val arguments: ArrayBuffer[Argument], val blocks: ArrayBuffer[CanBlock],
                   val refTable: RefTable, val instantiatedTypes: immutable.HashSet[String],
                   val symbolTable: mutable.HashMap[String, SymbolTableEntry],
-                  val cfg: Graph[CanBlock, DefaultEdge]) {
+                  val cfg: Graph[CanBlock, DefaultEdge]) extends Serializable {
   def getSymbol(name: String): Symbol = {
     symbolTable(name) match {
       case SymbolTableEntry.operator(symbol, _) => symbol
@@ -92,9 +92,9 @@ class Block(val blockRef: BlockRef, val arguments: ArrayBuffer[Argument],
             val operators: ArrayBuffer[RawOperatorDef], var terminator: RawTerminatorDef)
 
 class CanBlock(val blockRef: BlockRef, val operators: ArrayBuffer[CanOperatorDef],
-               val terminator: CanTerminatorDef)
+               val terminator: CanTerminatorDef) extends Serializable
 
-sealed trait FunctionAttribute
+sealed trait FunctionAttribute extends Serializable
 object FunctionAttribute {
   case object coroutine extends FunctionAttribute
   case object stub extends FunctionAttribute
@@ -104,7 +104,7 @@ object FunctionAttribute {
   case object linked extends FunctionAttribute
 }
 
-class Type(val name: String = "Any") {
+class Type(val name: String = "Any") extends Serializable {
   override def hashCode: Int = {
     val prime = 31
     var result = 1
@@ -119,7 +119,7 @@ class Type(val name: String = "Any") {
   }
 }
 
-class Position(val path: String, val line: Int, val col: Int)
+class Position(val path: String, val line: Int, val col: Int) extends Serializable
 
 sealed trait RawInstructionDef {
   val instruction: Instruction
@@ -146,10 +146,10 @@ object CanInstructionDef {
 }
 
 class RawOperatorDef(val operator: RawOperator, val position: Option[Position])
-class CanOperatorDef(val operator: CanOperator, val position: Option[Position])
+class CanOperatorDef(val operator: CanOperator, val position: Option[Position]) extends Serializable
 
 class RawTerminatorDef(val terminator: RawTerminator, val position: Option[Position])
-class CanTerminatorDef(val terminator: CanTerminator, val position: Option[Position])
+class CanTerminatorDef(val terminator: CanTerminator, val position: Option[Position]) extends Serializable
 
 sealed trait Instruction
 object Instruction {
@@ -159,7 +159,7 @@ object Instruction {
   case class canTerminator(t: CanTerminator) extends Instruction
 }
 
-abstract class Operator
+abstract class Operator extends Serializable
 sealed trait RawOperator extends Operator
 sealed trait CanOperator extends Operator
 
@@ -188,7 +188,7 @@ object Operator {
 
 abstract class WithResult(val value: Symbol) extends Operator
 
-abstract class Terminator
+abstract class Terminator extends Serializable
 sealed trait RawTerminator extends Terminator
 sealed trait CanTerminator extends Terminator
 
@@ -210,39 +210,39 @@ object Terminator {
   case object unwind extends RawTerminator
 }
 
-sealed trait FieldWriteAttribute
+sealed trait FieldWriteAttribute extends Serializable
 object FieldWriteAttribute {
   case object pointer extends FieldWriteAttribute
   case object weakPointer extends FieldWriteAttribute
 }
 
-class EnumAssignCase(val decl: String, val value: SymbolRef)
+class EnumAssignCase(val decl: String, val value: SymbolRef) extends Serializable
 
-class ValueAssignCase(val value: SymbolRef, val select: SymbolRef)
+class ValueAssignCase(val value: SymbolRef, val select: SymbolRef) extends Serializable
 
-class SwitchCase(val value: SymbolRef, val destination: BlockRef)
+class SwitchCase(val value: SymbolRef, val destination: BlockRef) extends Serializable
 
-class SwitchEnumCase(val decl: String, val destination: BlockRef)
+class SwitchEnumCase(val decl: String, val destination: BlockRef) extends Serializable
 
-sealed trait UnaryOperation
+sealed trait UnaryOperation extends Serializable
 object UnaryOperation {
   case object arbitrary extends UnaryOperation
 }
 
-sealed trait BinaryOperation
+sealed trait BinaryOperation extends Serializable
 object BinaryOperation {
   case object arbitrary extends BinaryOperation
   case object equals extends BinaryOperation
 }
 
-sealed trait Literal
+sealed trait Literal extends Serializable
 object Literal {
   case class string(value: String) extends Literal
   case class int(value: BigInt) extends Literal
   case class float(value: Double) extends Literal
 }
 
-class Symbol(val ref: SymbolRef, val tpe: Type) {
+class Symbol(val ref: SymbolRef, val tpe: Type) extends Serializable {
   override def hashCode: Int = {
     val prime = 31
     var result = 1
@@ -261,11 +261,11 @@ class Symbol(val ref: SymbolRef, val tpe: Type) {
 }
 
 // `pos` can be changed by debug_value and debug_value_addr.
-class Argument(ref: SymbolRef, tpe: Type, var pos: Option[Position] = None) extends Symbol(ref, tpe)
+class Argument(ref: SymbolRef, tpe: Type, var pos: Option[Position] = None) extends Symbol(ref, tpe) with Serializable
 
 // This is so that we can change symbol names throughout the program
 // for things like symbol_copy folding.
-class SymbolRef(var name: String) {
+class SymbolRef(var name: String) extends Serializable {
   override def hashCode: Int = {
     val prime = 31
     var result = 1
@@ -279,7 +279,7 @@ class SymbolRef(var name: String) {
     }
   }
 }
-class BlockRef(var label: String) {
+class BlockRef(var label: String) extends Serializable {
   override def hashCode: Int = {
     val prime = 31
     var result = 1
@@ -294,7 +294,7 @@ class BlockRef(var label: String) {
   }
 }
 
-class RefTable {
+class RefTable extends Serializable {
   val symbols = new mutable.HashMap[String, SymbolRef]()
   val blocks = new mutable.HashMap[String, BlockRef]()
   // Eliminate any args that are not used later
@@ -307,13 +307,13 @@ class RefTable {
   }
 }
 
-sealed trait SymbolTableEntry
+sealed trait SymbolTableEntry extends Serializable
 object SymbolTableEntry {
   case class operator(symbol: Symbol, var operator: CanOperator) extends SymbolTableEntry
   case class argument(argument: Argument) extends SymbolTableEntry
 }
 
-class SILMap {
+class SILMap extends Serializable {
   val silToSWIRL: mutable.HashMap[Object, Object] = new mutable.HashMap[Object, Object]()
   val swirlToSIL: mutable.HashMap[Object, Object] = new mutable.HashMap[Object, Object]()
   def map(sil: Object, swirl: Object): Unit = {

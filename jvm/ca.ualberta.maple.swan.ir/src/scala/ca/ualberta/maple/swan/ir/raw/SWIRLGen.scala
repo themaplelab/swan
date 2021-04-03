@@ -219,7 +219,11 @@ class SWIRLGen {
       functions.insert(0, fmFunction.get)
     }
     Logging.printTimeStamp(1, startTime, "translating", silModule.functions.length, "functions")
-    new Module(functions, Some(new DynamicDispatchGraph(silModule)), silMap, new ModuleMetadata(None, Some(silModule.meta.file)))
+    new Module(functions, Some({
+      val ddg = new DynamicDispatchGraph()
+      ddg.generate(silModule)
+      ddg
+    }), silMap, new ModuleMetadata(None, Some(silModule.meta.file)))
   }
 
   private def getFunctionAttribute(silFunction: SILFunction): Option[FunctionAttribute] = {

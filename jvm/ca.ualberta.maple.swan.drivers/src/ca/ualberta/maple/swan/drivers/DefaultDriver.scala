@@ -23,6 +23,7 @@ import org.apache.commons.io.{FileUtils, IOUtils}
 import picocli.CommandLine
 import picocli.CommandLine.{Command, Option}
 
+import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
 
 object DefaultDriver {
@@ -61,7 +62,7 @@ class DefaultDriver extends Runnable {
   private val invalidateCache = new Array[Boolean](0)
 
   @Option(names = Array("-p", "--persistence"),
-    description = Array("Turn on persistence (cache)."))
+    description = Array("Turn on persistence (cache). This is experimental and slow on large projects."))
   private val persistence = new Array[Boolean](0)
 
   import picocli.CommandLine.Parameters
@@ -94,14 +95,25 @@ class DefaultDriver extends Runnable {
   def runner(debugDir: File, file: File, options: DefaultDriver.Options, p: Persistence): (SILModule, Module, CanModule) = {
     val silParser = new SILParser(file.toPath)
     val silModule = silParser.parseModule()
-    if (options.persistence && !p.createdNewCache) {
-      silModule.functions.foreach(f => {
-        if (!p.checkFunctionParity(f, silModule)) {
-          Logging.printInfo("Detected change: " + f.name.mangled + "\n  (" + f.name.demangled + ")")
-        }
-      })
+    val changedFunctions = new mutable.HashSet[String]()
+    if (options.persistence) {
+      if (!p.createdNewCache) {
+        silModule.functions.foreach(f => {
+          if (!p.checkFunctionParity(f, silModule)) {
+            Logging.printInfo("Detected change: " + f.name.mangled + "\n  (" + f.name.demangled + ")")
+            changedFunctions.add(f.name.mangled)
+          }
+        })
+      }
+      p.updateSILModule(silModule)
+      if (!p.createdNewCache) {
+        silModule.functions.filterInPlace(p => changedFunctions.contains(p.name.mangled))
+      }
     }
     val swirlModule = new SWIRLGen().translateSILModule(silModule)
+    if (options.persistence && !p.createdNewCache && changedFunctions.nonEmpty) {
+      swirlModule.functions.remove(0) // SWAN_FAKE_MAIN*
+    }
     if (options.printSwirl) writeFile(swirlModule, debugDir, file.getName + ".raw")
     val canSwirlModule = new SWIRLPass().runPasses(swirlModule)
     if (options.printSwirl) writeFile(canSwirlModule, debugDir, file.getName)
@@ -125,7 +137,7 @@ class DefaultDriver extends Runnable {
 
   def runActual(options: DefaultDriver.Options, swanDir: File = inputFile): ModuleGroup = {
     val p = if (options.persistence) new Persistence(swanDir, invalidateCache.nonEmpty) else null
-    if (options.persistence) Logging.printInfo(p.toString)
+    if (options.persistence && !p.createdNewCache) Logging.printInfo(p.toString)
     val dirProcessor = new DirProcessor(swanDir.toPath)
     val silFiles = if (options.persistence) p.changedSILFiles else dirProcessor.process()
     val threads = new ArrayBuffer[Thread]()
@@ -155,29 +167,37 @@ class DefaultDriver extends Runnable {
       }
     })
     if (silFiles.nonEmpty) {
-      // Single file for now, iterating files is tricky with JAR resources)
-      val in = this.getClass.getClassLoader.getResourceAsStream("models.swirl")
-      val modelsContent = IOUtils.toString(in, StandardCharsets.UTF_8)
-      if (single.nonEmpty) {
-        val res = modelRunner(debugDir, modelsContent, options)
-        rawModules.append(res._1)
-        canModules.append(res._2)
-      } else {
-        val t = new Thread {
-          override def run(): Unit = {
-            val res = modelRunner(debugDir, modelsContent, options)
-            rawModules.append(res._1)
-            canModules.append(res._2)
+      if (!options.persistence || p.createdNewCache) {
+        // Single file for now, iterating files is tricky with JAR resources)
+        val in = this.getClass.getClassLoader.getResourceAsStream("models.swirl")
+        val modelsContent = IOUtils.toString(in, StandardCharsets.UTF_8)
+        if (single.nonEmpty) {
+          val res = modelRunner(debugDir, modelsContent, options)
+          rawModules.append(res._1)
+          canModules.append(res._2)
+        } else {
+          val t = new Thread {
+            override def run(): Unit = {
+              val res = modelRunner(debugDir, modelsContent, options)
+              rawModules.append(res._1)
+              canModules.append(res._2)
+            }
           }
+          threads.append(t)
+          t.start()
         }
-        threads.append(t)
-        t.start()
       }
       if (!single.nonEmpty) threads.foreach(f => f.join())
-      if (options.persistence) p.updateSILModules(silModules)
-      if (options.persistence) p.writeCache()
-      val group = ModuleGrouper.group(canModules)
+      val group = {
+        if (options.persistence && !p.createdNewCache) {
+          ModuleGrouper.group(canModules, p.cache.group)
+        } else {
+          ModuleGrouper.group(canModules)
+        }
+      }
       Logging.printInfo("Group ready:\n"+group.toString+group.functions.length+" functions")
+      if (options.persistence) p.updateGroup(group)
+      if (options.persistence) p.writeCache()
       if (options.printSwirl) writeFile(group, debugDir, "grouped")
       group
     } else {

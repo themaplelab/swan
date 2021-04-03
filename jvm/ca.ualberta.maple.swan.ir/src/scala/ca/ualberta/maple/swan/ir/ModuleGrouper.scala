@@ -23,13 +23,15 @@ object ModuleGrouper {
             existingFunctions: mutable.HashMap[String, CanFunction],
             entries: mutable.HashMap[String, CanFunction], models: mutable.HashMap[String, CanFunction],
             mains: mutable.HashMap[String, CanFunction], others: mutable.HashMap[String, CanFunction],
-            stubs: mutable.HashMap[String, CanFunction], linked: mutable.HashMap[String, CanFunction]): Unit = {
+            stubs: mutable.HashMap[String, CanFunction], linked: mutable.HashMap[String, CanFunction],
+            persistentAdd: Boolean = false): Unit = {
     def add(f: CanFunction, attr: FunctionAttribute = null): Unit = {
       // Ordering for convenience
       if (attr != null) {
         f.attribute = Some(attr)
       }
       if (entries.contains(f.name)) models.remove(f.name)
+      if (mains.contains(f.name)) mains.remove(f.name)
       if (models.contains(f.name)) models.remove(f.name)
       if (mains.contains(f.name)) mains.remove(f.name)
       if (others.contains(f.name)) others.remove(f.name)
@@ -114,6 +116,7 @@ object ModuleGrouper {
             }
           } else { // to add also has no attribute
             // Duplicates are expected due to inlining, builtin implementations, etc
+            if (persistentAdd) add(f)
           }
         }
       } else {
@@ -122,7 +125,7 @@ object ModuleGrouper {
     })
   }
 
-  def group(modules: ArrayBuffer[CanModule]): ModuleGroup = {
+  def group(modules: ArrayBuffer[CanModule], existingGroup: ModuleGroup = null): ModuleGroup = {
     val functions = ArrayBuffer.empty[CanFunction]
     val entries = mutable.HashMap.empty[String, CanFunction]
     val models = mutable.HashMap.empty[String, CanFunction]
@@ -134,13 +137,22 @@ object ModuleGrouper {
     val ddgs = ArrayBuffer.empty[DynamicDispatchGraph]
     val silMap = new SILMap
     val metas = ArrayBuffer.empty[ModuleMetadata]
+    if (existingGroup != null) {
+      merge(existingGroup.functions, existingFunctions, entries, models, mains, others, stubs, linked)
+      ddgs.appendAll(existingGroup.ddgs)
+      silMap.combine(existingGroup.silMap)
+      metas.appendAll(existingGroup.metas)
+    }
     modules.foreach(module => {
-      merge(module.functions, existingFunctions, entries, models, mains, others, stubs, linked)
+      if (existingGroup != null) {
+        Logging.printInfo("Merging " + module.functions.length + " function(s) into existing group")
+      }
+      merge(module.functions, existingFunctions, entries, models, mains, others, stubs, linked, existingGroup != null)
       if (module.ddg.nonEmpty) {
         ddgs.append(module.ddg.get)
       }
       silMap.combine(module.silMap)
-      metas.append(module.meta)
+      if (existingGroup == null) metas.append(module.meta)
     })
     functions.appendAll(entries.values)
     functions.appendAll(mains.values)

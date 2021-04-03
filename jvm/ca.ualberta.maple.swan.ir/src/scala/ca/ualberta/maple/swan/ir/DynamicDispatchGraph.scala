@@ -11,7 +11,7 @@
 package ca.ualberta.maple.swan.ir
 
 import ca.ualberta.maple.swan.ir.raw.Utils
-import ca.ualberta.maple.swan.parser.{SILModule, SILPrinter, SILWitnessEntry}
+import ca.ualberta.maple.swan.parser.{SILModule, SILWitnessEntry}
 import org.jgrapht._
 import org.jgrapht.alg.shortestpath.BellmanFordShortestPath
 import org.jgrapht.graph._
@@ -23,14 +23,13 @@ import scala.jdk.CollectionConverters.CollectionHasAsScala
 import scala.reflect.ClassTag
 import scala.util.control.Breaks.{break, breakable}
 
-class DynamicDispatchGraph(module: SILModule) {
+class DynamicDispatchGraph extends Serializable {
 
   private val graph: Graph[Node, DefaultEdge] = new SimpleGraph(classOf[DefaultEdge])
   private val nodes: mutable.HashMap[String, Node] = new mutable.HashMap[String, Node]()
-  generate()
-  val paths = new BellmanFordShortestPath(graph)
 
   def query(index: String, types: Option[Array[String]]): Array[String] = {
+    val paths = new BellmanFordShortestPath(graph)
     val functions = ArrayBuffer[String]()
     val startNode = nodes(index)
     val classNodes: Option[Array[Node]] = {
@@ -69,7 +68,7 @@ class DynamicDispatchGraph(module: SILModule) {
     functions.toArray
   }
 
-  sealed class Node(val name: String) {
+  sealed class Node(val name: String) extends Serializable {
     override def hashCode(): Int = {
       this.name.hashCode()
     }
@@ -93,7 +92,7 @@ class DynamicDispatchGraph(module: SILModule) {
     case class Method(s: String) extends Node(name = s)
   }
   
-  private def generate(): Unit = {
+  def generate(module: SILModule): Unit = {
     def makeNode[T <: Node](name: String, tpe: String)(implicit tag: ClassTag[T]): Node = {
       if (nodes.contains(name)) {
         nodes(name)
