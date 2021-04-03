@@ -325,6 +325,7 @@ class SILMap extends Serializable {
       val sil = swirlToSIL(oldSWIRL)
       // silToSWIRL for sil becomes many-to-one, so only map swirlToSIL.
       swirlToSIL.put(newSWIRL, sil)
+      silToSWIRL.put(sil, newSWIRL)
     }
   }
   def combine(other: SILMap): Unit = {

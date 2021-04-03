@@ -32,6 +32,20 @@ struct SWANEditorTheme: SourceCodeTheme {
 }
 
 struct Constants {
+  static let defaultText = """
+        func source() -> String {
+            return "I'm bad";
+        }
+
+        func sink(sunk: String) {
+            print(sunk);
+        }
+
+        var strings = [String]();
+        strings.append(source());
+        sink(sunk : strings[0]);
+
+        """
   static let swiftFile = "\(NSTemporaryDirectory())test.swift"
   static let silFile = "\(swiftFile).sil"
   static let swirlFile = "\(silFile).swirl"
@@ -74,6 +88,7 @@ class ViewController: NSViewController {
     swiftTextView.controller = self
     swiftTextView.type = EditorType.Swift
     swiftTextView.delegate = self
+    swiftTextView.text = Constants.defaultText
     
     silTextView.theme = SWANEditorTheme()
     silTextView.contentTextView.isEditable = false
