@@ -147,23 +147,32 @@ class DefaultDriver extends Runnable {
     val debugDir = Files.createDirectories(
       Paths.get(swanDir.getPath, "debug-dir")).toFile
     FileUtils.cleanDirectory(debugDir)
-    silFiles.foreach(f => {
+    // Large files go first so we can immediately thread them
+    silFiles.sortWith(_.length() > _.length()).foreach(f => {
       if (single.nonEmpty) {
         val res = runner(debugDir, f, options, p)
         silModules.append(res._1)
         rawModules.append(res._2)
         canModules.append(res._3)
       } else {
-        val t = new Thread {
-          override def run(): Unit = {
-            val res = runner(debugDir, f, options, p)
-            silModules.append(res._1)
-            rawModules.append(res._2)
-            canModules.append(res._3)
+        // Don't bother threading for <10MB
+        if (f.length() > 10485760) {
+          val t = new Thread {
+            override def run(): Unit = {
+              val res = runner(debugDir, f, options, p)
+              silModules.append(res._1)
+              rawModules.append(res._2)
+              canModules.append(res._3)
+            }
           }
+          threads.append(t)
+          t.start()
+        } else {
+          val res = runner(debugDir, f, options, p)
+          silModules.append(res._1)
+          rawModules.append(res._2)
+          canModules.append(res._3)
         }
-        threads.append(t)
-        t.start()
       }
     })
     if (silFiles.nonEmpty) {
@@ -171,21 +180,9 @@ class DefaultDriver extends Runnable {
         // Single file for now, iterating files is tricky with JAR resources)
         val in = this.getClass.getClassLoader.getResourceAsStream("models.swirl")
         val modelsContent = IOUtils.toString(in, StandardCharsets.UTF_8)
-        if (single.nonEmpty) {
-          val res = modelRunner(debugDir, modelsContent, options)
-          rawModules.append(res._1)
-          canModules.append(res._2)
-        } else {
-          val t = new Thread {
-            override def run(): Unit = {
-              val res = modelRunner(debugDir, modelsContent, options)
-              rawModules.append(res._1)
-              canModules.append(res._2)
-            }
-          }
-          threads.append(t)
-          t.start()
-        }
+        val res = modelRunner(debugDir, modelsContent, options)
+        rawModules.append(res._1)
+        canModules.append(res._2)
       }
       if (!single.nonEmpty) threads.foreach(f => f.join())
       val group = {
