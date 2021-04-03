@@ -396,6 +396,8 @@ object SILKeypathElement {
   case class setter(name: SILMangledName, tpe: SILType) extends SILKeypathElement
   case class optionalForce(tpe: SILType) extends SILKeypathElement
   case class tupleElement(decl: SILDeclRef, tpe: SILType) extends SILKeypathElement
+  case class external(decl: SILDeclRef) extends SILKeypathElement
+  case class optionalChain(tpe: SILType) extends SILKeypathElement
 }
 
 sealed trait SILSwitchEnumCase

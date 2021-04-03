@@ -1420,6 +1420,8 @@ class SILPrinter extends Printer {
       case SILKeypathElement.setter(name, tpe) =>
       case SILKeypathElement.optionalForce(tpe) =>
       case SILKeypathElement.tupleElement(decl, tpe) =>
+      case SILKeypathElement.external(decl) =>
+      case SILKeypathElement.optionalChain(tpe) =>
     }
   }
 

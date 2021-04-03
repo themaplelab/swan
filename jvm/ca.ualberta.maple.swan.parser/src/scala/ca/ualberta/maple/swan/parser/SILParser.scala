@@ -1696,6 +1696,15 @@ class SILParser extends SILPrinter {
       val tpe = parseType()
       skip(",");skip(";")
       SILKeypathElement.tupleElement(decl, tpe)
+    } else if (skip("external")) {
+      val decl = parseDeclRef()
+      skip(",");skip(";")
+      SILKeypathElement.external(decl)
+    } else if (skip("optional_chain")) {
+      take(":")
+      val tpe = parseType()
+      skip(",");skip(";")
+      SILKeypathElement.optionalChain(tpe)
     } else {
       throw parseError("unknown keypath element")
     }
@@ -1908,7 +1917,7 @@ class SILParser extends SILPrinter {
     take("#")
     var break = false
     while (!break) {
-      val identifier = parseIdentifier()
+      val identifier = parseDeclIdentifier()
       name.append(identifier)
       if (!skip(".")) {
         break = true
@@ -2056,6 +2065,27 @@ class SILParser extends SILPrinter {
     } else {
       val start = position()
       val identifier = take(x => x.isLetterOrDigit || x == '_' || x == '`' || x == '$')
+      if (!identifier.isEmpty) return identifier
+      throw parseError("identifier expected", Some(start))
+    }
+  }
+
+  @throws[Error]
+  def parseDeclIdentifier(): String = {
+    if(peek("\"")) {
+      // https://github.com/scala/bug/issues/6476
+      // https://stackoverflow.com/questions/21086263/how-to-insert-double-quotes-into-string-with-interpolation-in-scala
+      s""""${parseString()}""""
+    } else {
+      val start = position()
+      // #<abstract function>KeyValue.key
+      var inArrows = false
+      val identifier = take(x => {
+        if (x == '<') inArrows = true
+        else if ( x == '>') inArrows = false
+        x.isLetterOrDigit || x == '_' || x == '`' || x == '$' ||
+          x == '<' || x == '>' || (inArrows && x == ' ')
+      } )
       if (!identifier.isEmpty) return identifier
       throw parseError("identifier expected", Some(start))
     }
@@ -2351,7 +2381,7 @@ class SILParser extends SILPrinter {
         val growType = {
           tpe match {
             case namedType: SILType.namedType if namedType.name == "Array" =>
-              SILType.arrayType(types, nakedStyle = false, optional = false)
+              SILType.arrayType(types, nakedStyle = false, optional = skip("?"))
             case _ =>
               SILType.specializedType(tpe, types, optional = skip("?"))
           }
