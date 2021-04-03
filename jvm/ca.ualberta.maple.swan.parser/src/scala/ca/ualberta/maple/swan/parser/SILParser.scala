@@ -23,7 +23,6 @@ import scala.annotation.tailrec
 import scala.collection.mutable.ArrayBuffer
 import scala.reflect.ClassTag
 import scala.util.control.Breaks
-import scala.util.control.Breaks.{break, breakable}
 
 // Canonical SIL Parser. Most of it is reverse engineered. It does not
 // necessarily follow the naming or store properties in the same
@@ -1691,6 +1690,12 @@ class SILParser extends SILPrinter {
       val tpe = parseType()
       skip(",");skip(";")
       SILKeypathElement.optionalForce(tpe)
+    } else if (skip("tuple_element")) {
+      val decl = parseDeclRef()
+      take(":")
+      val tpe = parseType()
+      skip(",");skip(";")
+      SILKeypathElement.tupleElement(decl, tpe)
     } else {
       throw parseError("unknown keypath element")
     }
@@ -2652,6 +2657,15 @@ class SILParser extends SILPrinter {
     if(skip("@block_storage")) return SILTypeAttribute.blockStorage
     if(skip("@escaping")) return SILTypeAttribute.escaping
     if(skip("@autoclosure")) return SILTypeAttribute.autoclosure
+    if(skip("@_opaqueReturnTypeOf")) {
+      take("(")
+      // This actually looks to be a mangled name in a string
+      val value = parseString()
+      take(",")
+      val num = parseInt()
+      take(")")
+      return SILTypeAttribute.opaqueReturnTypeOf(value, num)
+    }
     if(skip("@opened")) {
       take("(")
       val value = parseString()

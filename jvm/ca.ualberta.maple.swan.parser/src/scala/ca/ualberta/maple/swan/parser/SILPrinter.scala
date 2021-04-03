@@ -82,7 +82,7 @@ class SILPrinter extends Printer {
     this.toString
   }
 
-  def print(function: SILFunction): String = {
+  def print(function: SILFunction): Unit = {
     if (options.genLocationMap) silLocMap.put(function, (this.line, this.getCol))
     print("sil ")
     print(function.linkage)
@@ -92,10 +92,9 @@ class SILPrinter extends Printer {
     print(function.tpe)
     print(whenEmpty = false, " {\n", function.blocks, "\n", "}", (block: SILBlock) => print(block))
     printNewline()
-    this.toString
   }
 
-  def print(block: SILBlock): String = {
+  def print(block: SILBlock): Unit = {
     if (options.genLocationMap) silLocMap.put(block, (this.line, this.getCol))
     print(block.identifier)
     print(whenEmpty = false, "(", block.arguments, ", ", ")", (arg: SILArgument) => print(arg))
@@ -109,44 +108,44 @@ class SILPrinter extends Printer {
     print(block.terminatorDef)
     printNewline()
     unindent()
-    this.toString
   }
 
-  def print(instructionDef: SILInstructionDef): String = {
+  def print(instructionDef: SILInstructionDef): Unit = {
     instructionDef match {
       case SILInstructionDef.operator(operatorDef) => print(operatorDef)
       case SILInstructionDef.terminator(terminatorDef) => print(terminatorDef)
     }
-    this.toString
   }
 
-  def print(operatorDef: SILOperatorDef): String = {
-    if (options.genLocationMap) silLocMap.put(operatorDef, (this.line, this.getCol))
+  def print(operatorDef: SILOperatorDef): Unit = {
     print(operatorDef.res, " = ", (r: SILResult) => {
       print(r)
     })
     print(operatorDef.operator)
-    if (operatorDef.sourceInfo.nonEmpty) {
-      val loc = operatorDef.sourceInfo.get.loc
-      if (loc.nonEmpty) {
-        if (options.genLocationMap) swiftLocMap.put(operatorDef, (loc.get.line, loc.get.column))
+    if (options.genLocationMap) {
+      silLocMap.put(operatorDef, (this.line, this.getCol))
+      if (operatorDef.sourceInfo.nonEmpty) {
+        val loc = operatorDef.sourceInfo.get.loc
+        if (loc.nonEmpty) {
+          swiftLocMap.put(operatorDef, (loc.get.line, loc.get.column))
+        }
       }
     }
     print(operatorDef.sourceInfo, (si: SILSourceInfo) => print(si))
-    this.toString
   }
 
-  def print(terminatorDef: SILTerminatorDef): String = {
-    if (options.genLocationMap) silLocMap.put(terminatorDef, (this.line, this.getCol))
+  def print(terminatorDef: SILTerminatorDef): Unit = {
     print(terminatorDef.terminator)
-    if (terminatorDef.sourceInfo.nonEmpty) {
-      val loc = terminatorDef.sourceInfo.get.loc
-      if (loc.nonEmpty) {
-        if (options.genLocationMap) swiftLocMap.put(terminatorDef, (loc.get.line, loc.get.column))
+    if (options.genLocationMap) {
+      silLocMap.put(terminatorDef, (this.line, this.getCol))
+      if (terminatorDef.sourceInfo.nonEmpty) {
+        val loc = terminatorDef.sourceInfo.get.loc
+        if (loc.nonEmpty) {
+          swiftLocMap.put(terminatorDef, (loc.get.line, loc.get.column))
+        }
       }
     }
     print(terminatorDef.sourceInfo, (si: SILSourceInfo) => print(si))
-    this.toString
   }
 
   def print(op: SILOperator): Unit = {
@@ -1217,7 +1216,7 @@ class SILPrinter extends Printer {
     }
   }
 
-  def print(globalVariable: SILGlobalVariable): String = {
+  def print(globalVariable: SILGlobalVariable): Unit = {
     print("sil_global ")
     print(globalVariable.linkage)
     print("[serialized] ", when = globalVariable.serialized)
@@ -1236,10 +1235,9 @@ class SILPrinter extends Printer {
       print("}")
     }
     printNewline();printNewline()
-    this.toString
   }
 
-  def print(vTable: SILVTable): String = {
+  def print(vTable: SILVTable): Unit = {
     print("sil_vtable ")
     print("[serialized] ", when = vTable.serialized)
     print(vTable.name)
@@ -1255,7 +1253,6 @@ class SILPrinter extends Printer {
     }
     print("}")
     printNewline()
-    this.toString
   }
 
   def print(vEntry: SILVEntry): Unit = {
@@ -1278,7 +1275,7 @@ class SILPrinter extends Printer {
     }
   }
 
-  def print(witnessTable: SILWitnessTable): String = {
+  def print(witnessTable: SILWitnessTable): Unit = {
     print("sil_witness_table ")
     print(witnessTable.linkage)
     if(witnessTable.attribute.nonEmpty) {
@@ -1294,7 +1291,6 @@ class SILPrinter extends Printer {
     })
     unindent()
     print("}\n")
-    this.toString
   }
 
   def print(witnessEntry: SILWitnessEntry): Unit = {
@@ -1423,6 +1419,7 @@ class SILPrinter extends Printer {
       case SILKeypathElement.getter(name, tpe) =>
       case SILKeypathElement.setter(name, tpe) =>
       case SILKeypathElement.optionalForce(tpe) =>
+      case SILKeypathElement.tupleElement(decl, tpe) =>
     }
   }
 
@@ -1953,6 +1950,13 @@ class SILPrinter extends Printer {
       case SILTypeAttribute.blockStorage => print("@block_storage")
       case SILTypeAttribute.escaping => print("@escaping")
       case SILTypeAttribute.autoclosure => print("@autoclosure")
+      case SILTypeAttribute.opaqueReturnTypeOf(value, num) => {
+        print("@_opaqueReturnTypeOf(\"")
+        print(value)
+        print("\", ")
+        print(num)
+        print(")")
+      }
       case SILTypeAttribute.opened(value) => {
         print("@opened")
         print("(")
