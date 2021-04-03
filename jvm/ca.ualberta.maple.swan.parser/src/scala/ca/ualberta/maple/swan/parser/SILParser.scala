@@ -2413,7 +2413,31 @@ class SILParser extends SILPrinter {
       SILType.addressType(tpe)
     } else if (skip("[")) {
       nakedStack.openSquare()
-      val subtype = parseNakedType()
+      val subtype = {
+        val t = parseNakedType()
+        t match {
+          // e.g., [Map<String, String> : ...]
+          // Basically convert type to string because we use
+          // named type for direct string comparisons later, as opposed
+          // to keeping it as a SILType
+          case st: SILType.specializedType => {
+            val sb = new StringBuilder()
+            sb.append(st.tpe.asInstanceOf[SILType.namedType].name)
+            sb.append("<")
+            st.arguments.zipWithIndex.foreach(a => {
+              sb.append(a._1.asInstanceOf[SILType.namedType].name)
+              if (a._2 < st.arguments.length - 1) sb.append(", ")
+            })
+            sb.append(">")
+            if (skip(":")) {
+              SILType.namedArgType(sb.toString(), parseNakedType(), squareBrackets = true)
+            } else {
+              SILType.namedType(sb.toString())
+            }
+          }
+          case _ => t
+        }
+      }
       take("]")
       nakedStack.closeSquare()
       SILType.arrayType(ArrayBuffer(subtype), nakedStyle = true, optional = skip("?"))
@@ -2691,8 +2715,9 @@ class SILParser extends SILPrinter {
   @throws[Error]
   def parseTypeName(allowOther: Boolean = false): String = {
     val start = position()
+    // Apparently there's an emoji type 🦸
     var name: String = take(x => x.isLetter || Character.isDigit(x)
-      || x == '_' || x == '?' || x == '.' || (allowOther && (x != '\n')))
+      || x == '_' || x == '?' || x == '.' || (allowOther && (x != '\n')) || x == '\uD83E' || x == '\uDDB8')
     if(skip("...")) {
       name += "..."
     }
