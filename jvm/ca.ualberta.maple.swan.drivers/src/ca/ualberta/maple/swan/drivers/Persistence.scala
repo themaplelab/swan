@@ -18,7 +18,7 @@ import ca.ualberta.maple.swan.parser.{SILFunction, SILModule}
 import ca.ualberta.maple.swan.utils.Logging
 import com.google.common.hash.Hashing
 import com.google.common.io.Files
-import com.twitter.chill.ScalaKryoInstantiator
+import com.twitter.chill.{KryoPool, ScalaKryoInstantiator}
 import org.apache.commons.io.IOUtils
 
 import scala.collection.mutable
@@ -41,13 +41,13 @@ class Persistence(val swanDir: File, val invalidate: Boolean = false) {
 
   def cacheFile: File = Paths.get(swanDir.getPath, "cache.swan").toFile
 
-  val pool = ScalaKryoInstantiator.defaultPool
+  val pool: KryoPool = ScalaKryoInstantiator.defaultPool
 
   var cache: Cache = _
 
   val changedSILFiles: ArrayBuffer[File] = ArrayBuffer.empty[File]
 
-  var createdNewCache = false
+  var createdNewCache: Boolean = invalidate
 
   init()
 

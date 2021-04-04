@@ -88,6 +88,7 @@ object ModuleGrouper {
                 f.attribute.get match {
                   case FunctionAttribute.stub => // ignore
                   case FunctionAttribute.coroutine => add(f)
+                  case FunctionAttribute.model => add(f)
                   case _ => throwException("unexpected")
                 }
               }

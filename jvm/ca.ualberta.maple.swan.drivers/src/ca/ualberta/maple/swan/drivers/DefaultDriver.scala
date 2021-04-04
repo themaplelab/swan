@@ -140,6 +140,7 @@ class DefaultDriver extends Runnable {
     if (options.persistence && !p.createdNewCache) Logging.printInfo(p.toString)
     val dirProcessor = new DirProcessor(swanDir.toPath)
     val silFiles = if (options.persistence) p.changedSILFiles else dirProcessor.process()
+    if (silFiles.isEmpty) return null
     val threads = new ArrayBuffer[Thread]()
     val silModules = new ArrayBuffer[SILModule]()
     val rawModules = new ArrayBuffer[Module]()
