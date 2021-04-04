@@ -283,7 +283,7 @@ class SILParser extends SILPrinter {
     // The swift-demangle I/O operation is expensive
     // Demangling the strings all at once at the end is significantly quicker
     // swift-demangle can only take a certain amount at a time, so batches are used
-    // Actual length limit is character based, not count based, and seems to
+    // Actual length limit is likely character based, not count based, and seems to
     // vary from system to system.
     val swiftDemangle = "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swift-demangle -compact "
     val batches = new ArrayBuffer[ArrayBuffer[SILMangledName]]()
@@ -291,7 +291,7 @@ class SILParser extends SILPrinter {
     batches.append(currBatch)
     toDemangle.foreach(m => {
       currBatch.append(m)
-      if (currBatch.length > 1000) {
+      if (currBatch.length > 500) {
         currBatch = new ArrayBuffer[SILMangledName]()
         batches.append(currBatch)
       }
@@ -1668,9 +1668,12 @@ class SILParser extends SILPrinter {
     } else if (skip("id")) {
       val name = if (peek("@")) Some(parseMangledName()) else None
       val decl = if (name.isEmpty) Some(parseDeclRef()) else None
-      take(":")
-      skip("$")
-      val tpe = parseNakedType()
+      val tpe = {
+        if (skip(":")) {
+          skip("$")
+          Some(parseNakedType())
+        } else { None }
+      }
       skip(",");skip(";")
       SILKeypathElement.id(name, decl, tpe)
     } else if (skip("getter")) {
@@ -1697,9 +1700,10 @@ class SILParser extends SILPrinter {
       skip(",");skip(";")
       SILKeypathElement.tupleElement(decl, tpe)
     } else if (skip("external")) {
-      val decl = parseDeclRef()
+      take("#")
+      val declTpe = parseNakedType()
       skip(",");skip(";")
-      SILKeypathElement.external(decl)
+      SILKeypathElement.external(declTpe)
     } else if (skip("optional_chain")) {
       take(":")
       val tpe = parseType()
@@ -2072,20 +2076,23 @@ class SILParser extends SILPrinter {
 
   @throws[Error]
   def parseDeclIdentifier(): String = {
+    // Rare cases:
+    // seen in keypath:
+    //   ##AddNewCardViewController.delegate
+    // #<abstract function>KeyValue.key
     if(peek("\"")) {
       // https://github.com/scala/bug/issues/6476
       // https://stackoverflow.com/questions/21086263/how-to-insert-double-quotes-into-string-with-interpolation-in-scala
       s""""${parseString()}""""
     } else {
       val start = position()
-      // #<abstract function>KeyValue.key
       var inArrows = false
       val identifier = take(x => {
         if (x == '<') inArrows = true
-        else if ( x == '>') inArrows = false
+        else if (x == '>') inArrows = false
         x.isLetterOrDigit || x == '_' || x == '`' || x == '$' ||
-          x == '<' || x == '>' || (inArrows && x == ' ')
-      } )
+          x == '<' || x == '>' || (inArrows && x == ' ') || x == '#'
+      })
       if (!identifier.isEmpty) return identifier
       throw parseError("identifier expected", Some(start))
     }
@@ -2381,9 +2388,9 @@ class SILParser extends SILPrinter {
         val growType = {
           tpe match {
             case namedType: SILType.namedType if namedType.name == "Array" =>
-              SILType.arrayType(types, nakedStyle = false, optional = skip("?"))
+              SILType.arrayType(types, nakedStyle = false, optional = take(_ == '?').length)
             case _ =>
-              SILType.specializedType(tpe, types, optional = skip("?"))
+              SILType.specializedType(tpe, types, optional = take(_ == '?').length)
           }
         }
         grow(growType)
@@ -2455,7 +2462,7 @@ class SILParser extends SILPrinter {
             sb.append(st.tpe.asInstanceOf[SILType.namedType].name)
             sb.append("<")
             st.arguments.zipWithIndex.foreach(a => {
-              sb.append(a._1.asInstanceOf[SILType.namedType].name)
+              sb.append(this.clearPrint(a._1))
               if (a._2 < st.arguments.length - 1) sb.append(", ")
             })
             sb.append(">")
@@ -2470,7 +2477,7 @@ class SILParser extends SILPrinter {
       }
       take("]")
       nakedStack.closeSquare()
-      SILType.arrayType(ArrayBuffer(subtype), nakedStyle = true, optional = skip("?"))
+      SILType.arrayType(ArrayBuffer(subtype), nakedStyle = true, optional = take(_ == '?').length)
     } else if (peek("(")) {
       nakedStack.openParen()
       val types = parseMany("(", ",", ")", parseNakedType)

@@ -1880,12 +1880,12 @@ class SILPrinter extends Printer {
           print(" ")
         }
         print(whenEmpty = true, "<", args, ", ", ">", (t: SILType) => naked(t))
-        print("?", when = optional)
+        print("?" * optional)
       }
       case SILType.arrayType(arguments, nakedStyle, optional) => {
         if (nakedStyle) {
           print(whenEmpty = true, "[", arguments, ", ", "]", (t: SILType) => naked(t))
-          print("?", when = optional)
+          print("?" * optional)
         } else {
           print("Array")
           print(whenEmpty = true, "<", arguments, ", ", ">", (t: SILType) => naked(t))

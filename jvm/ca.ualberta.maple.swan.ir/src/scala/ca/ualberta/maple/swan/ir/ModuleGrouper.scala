@@ -30,7 +30,7 @@ object ModuleGrouper {
       if (attr != null) {
         f.attribute = Some(attr)
       }
-      if (entries.contains(f.name)) models.remove(f.name)
+      if (entries.contains(f.name)) entries.remove(f.name)
       if (mains.contains(f.name)) mains.remove(f.name)
       if (models.contains(f.name)) models.remove(f.name)
       if (mains.contains(f.name)) mains.remove(f.name)
@@ -80,13 +80,14 @@ object ModuleGrouper {
                 f.attribute.get match {
                   case FunctionAttribute.stub => // ignore
                   case FunctionAttribute.model => add(f)
-                  case FunctionAttribute.coroutine => add(f)
+                  // Hides coroutine attribute, maybe we should use multiple attributes
+                  case FunctionAttribute.coroutine => add(f, FunctionAttribute.linked)
                   case _ => throwException("unexpected")
                 }
               }
               case FunctionAttribute.coroutine => {
                 f.attribute.get match {
-                  case FunctionAttribute.stub => // ignore
+                  case FunctionAttribute.stub => existing.attribute = Some(FunctionAttribute.linked)
                   case FunctionAttribute.coroutine => add(f)
                   case FunctionAttribute.model => add(f)
                   case _ => throwException("unexpected")
@@ -113,7 +114,7 @@ object ModuleGrouper {
           if (f.attribute.nonEmpty) { // to add has an attribute
             f.attribute.get match {
               case FunctionAttribute.model => add(f, FunctionAttribute.modelOverride)
-              case FunctionAttribute.stub => // ignore
+              case FunctionAttribute.stub => existing.attribute = Some(FunctionAttribute.linked)
               case _ => throwException("unexpected")
             }
           } else { // to add also has no attribute

@@ -391,12 +391,12 @@ object SILKeypathElement {
   case class gettableProperty(tpe: SILType) extends SILKeypathElement
   case class storedProperty(decl: SILDeclRef, tpe: SILType) extends SILKeypathElement
   case class settableProperty(tpe: SILType) extends SILKeypathElement
-  case class id(name: Option[SILMangledName], decl: Option[SILDeclRef], tpe: SILType) extends SILKeypathElement
+  case class id(name: Option[SILMangledName], decl: Option[SILDeclRef], tpe: Option[SILType]) extends SILKeypathElement
   case class getter(name: SILMangledName, tpe: SILType) extends SILKeypathElement
   case class setter(name: SILMangledName, tpe: SILType) extends SILKeypathElement
   case class optionalForce(tpe: SILType) extends SILKeypathElement
   case class tupleElement(decl: SILDeclRef, tpe: SILType) extends SILKeypathElement
-  case class external(decl: SILDeclRef) extends SILKeypathElement
+  case class external(decl: SILType) extends SILKeypathElement
   case class optionalChain(tpe: SILType) extends SILKeypathElement
 }
 
@@ -719,8 +719,8 @@ object SILType {
   case class namedArgType(name: String, tpe: SILType, squareBrackets: Boolean) extends SILType
   case object selfType extends SILType
   case object selfTypeOptional extends SILType
-  case class specializedType(tpe: SILType, arguments: ArrayBuffer[SILType], optional: Boolean) extends SILType
-  case class arrayType(arguments: ArrayBuffer[SILType], nakedStyle: Boolean, optional: Boolean) extends SILType
+  case class specializedType(tpe: SILType, arguments: ArrayBuffer[SILType], optional: Int) extends SILType
+  case class arrayType(arguments: ArrayBuffer[SILType], nakedStyle: Boolean, optional: Int) extends SILType
   case class tupleType(parameters: ArrayBuffer[SILType], optional: Boolean, dots: Boolean) extends SILType
   case class withOwnership(attribute: SILTypeAttribute, tpe: SILType) extends SILType
   case class varType(tpe: SILType) extends SILType
