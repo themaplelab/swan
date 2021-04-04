@@ -105,7 +105,7 @@ object SILOperator {
   case class allocValueBuffer(tpe: SILType, operand: SILOperand) extends SILOperator
   case class allocGlobal(name: SILMangledName) extends SILOperator
   case class deallocStack(operand: SILOperand) extends SILOperator
-  case class deallocBox(operand: SILOperand, tpe: SILType) extends SILOperator
+  case class deallocBox(operand: SILOperand) extends SILOperator
   case class projectBox(operand: SILOperand, fieldIndex: Int) extends SILOperator
   case class deallocRef(stack: Boolean, operand: SILOperand) extends SILOperator
   case class deallocPartialRef(operand1: SILOperand, operand2: SILOperand) extends SILOperator
@@ -190,7 +190,7 @@ object SILOperator {
   //       It is unclear what this attribute is. I've never seen it used.
   case class classMethod(operand: SILOperand, declRef: SILDeclRef, declType: SILType, tpe: SILType) extends SILOperator
   case class objcMethod(operand: SILOperand, declRef: SILDeclRef, declType: SILType, tpe: SILType) extends SILOperator
-  // NSIP: super_method
+  case class superMethod(operand: SILOperand, declRef: SILDeclRef, declType: SILType, tpe: SILType) extends SILOperator
   case class objcSuperMethod(operand: SILOperand, declRef: SILDeclRef, declType: SILType, tpe: SILType) extends SILOperator
   case class witnessMethod(archetype: SILType, declRef: SILDeclRef,
                            declType: SILType, value: Option[SILOperand], tpe: SILType) extends SILOperator

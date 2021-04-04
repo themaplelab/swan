@@ -41,6 +41,19 @@ class SWIRLGen {
                 val refTable: RefTable, val instantiatedTypes: mutable.HashSet[String],
                 val arguments: ArrayBuffer[Argument], val silMap: SILMap) {
     def globalsSingletonName: String = Constants.globalsSingleton + silModule.toString
+    override def toString: String = {
+      val sb = new StringBuilder
+      sb.append("Context: ")
+      sb.append(", module: ")
+      sb.append(silModule.toString)
+      sb.append(", function: ")
+      sb.append(silFunction.name.mangled)
+      sb.append(",\ndemangled: ")
+      sb.append(silFunction.name.demangled)
+      sb.append("\nblock: ")
+      sb.append(silBlock.identifier)
+      sb.toString()
+    }
   }
 
   object Context {
@@ -352,6 +365,7 @@ class SWIRLGen {
           case inst: SILOperator.stringLiteral => visitStringLiteral(result, inst, ctx)
           case inst: SILOperator.classMethod => visitClassMethod(result, inst, ctx)
           case inst: SILOperator.objcMethod => visitObjCMethod(result, inst, ctx)
+          case inst: SILOperator.superMethod => visitSuperMethod(result, inst, ctx)
           case inst: SILOperator.objcSuperMethod => visitObjCSuperMethod(result, inst, ctx)
           case inst: SILOperator.witnessMethod => visitWitnessMethod(result, inst, ctx)
           case inst: SILOperator.apply => visitApply(result, inst, ctx)
@@ -852,7 +866,10 @@ class SWIRLGen {
     makeOperator(ctx, Operator.builtinRef(result, Utils.print(I.declRef)))
   }
 
-  // def visitSuperMethod(r: Option[SILResult], I: SILOperator.superMethod, ctx: Context): ArrayBuffer[RawInstructionDef]
+  def visitSuperMethod(r: Option[SILResult], I: SILOperator.superMethod, ctx: Context): ArrayBuffer[RawInstructionDef] = {
+    val result = getSingleResult(r, Utils.SILTypeToType(I.tpe), ctx)
+    makeOperator(ctx, Operator.dynamicRef(result, Utils.print(I.declRef)))
+  }
 
   @throws[UnexpectedSILFormatException]
   def visitObjCSuperMethod(r: Option[SILResult], I: SILOperator.objcSuperMethod, ctx: Context): ArrayBuffer[RawInstructionDef] = {
@@ -1114,7 +1131,7 @@ class SWIRLGen {
     operators.append(makeOperator(ctx, Operator.neww(result)).head)
     if (init.nonEmpty) {
       if (init.get.args.length < I.operands.length) {
-        throw new ExperimentalException("IMPORTANT: Init comment must have not included all arguments. Odd.")
+        throw new ExperimentalException("IMPORTANT: Init comment must have not included all arguments.\n" + ctx.toString)
       }
       I.operands.view.zipWithIndex.foreach(op => {
         operators.append(makeOperator(ctx,

@@ -217,15 +217,12 @@ class SILPrinter extends Printer {
         print("dealloc_stack ")
         print(operand)
       }
-      case SILOperator.deallocBox(operand, tpe) => {
+      case SILOperator.deallocBox(operand) => {
         print("dealloc_box ")
         print(operand.value)
         print(" : ")
         print("$") // unusual case where generic type needs "$"
         print(operand.tpe)
-        print(" <")
-        naked(tpe)
-        print(">")
       }
       case SILOperator.projectBox(operand, fieldIndex) => {
         print("project_box ")
@@ -527,6 +524,16 @@ class SILPrinter extends Printer {
       }
       case SILOperator.objcMethod(operand, declRef, declType, tpe) => {
         print("objc_method ")
+        print(operand)
+        print(", ")
+        print(declRef)
+        print(" : ")
+        naked(declType)
+        print(", ")
+        print(tpe)
+      }
+      case SILOperator.superMethod(operand, declRef, declType, tpe) => {
+        print("super_method ")
         print(operand)
         print(", ")
         print(declRef)

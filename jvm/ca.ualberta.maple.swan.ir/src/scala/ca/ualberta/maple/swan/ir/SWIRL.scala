@@ -30,7 +30,9 @@ class ModuleGroup(val functions: ArrayBuffer[CanFunction],
                   val silMap: SILMap, val metas: ArrayBuffer[ModuleMetadata]) extends Serializable {
   override def toString: String = {
     val sb = new StringBuilder
-    sb.append("Module group\n")
+    sb.append("Module group: ")
+    sb.append(metas.length)
+    sb.append(" source modules\n")
     metas.foreach(m => {
       sb.append("  ")
       sb.append(m.toString)

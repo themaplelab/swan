@@ -490,10 +490,7 @@ class SILParser extends SILPrinter {
       case "dealloc_box" => {
         varGrowOverride = true
         val operand = parseOperand()
-        take("<")
-        val tpe = parseNakedType()
-        take(">")
-        SILInstruction.operator(SILOperator.deallocBox(operand, tpe))
+        SILInstruction.operator(SILOperator.deallocBox(operand))
       }
       case "project_box" => {
         val operand = parseOperand()
@@ -823,7 +820,14 @@ class SILParser extends SILPrinter {
         SILInstruction.operator(SILOperator.objcMethod(operand, declRef, declType, tpe))
       }
       case "super_method" => {
-        throw parseError("unhandled instruction") // NSIP
+        val operand = parseOperand()
+        take(",")
+        val declRef = parseDeclRef()
+        take(":")
+        val declType = parseNakedType()
+        take(",")
+        val tpe = parseType()
+        SILInstruction.operator(SILOperator.superMethod(operand, declRef, declType, tpe))
       }
       case "objc_super_method" => {
         val operand = parseOperand()
