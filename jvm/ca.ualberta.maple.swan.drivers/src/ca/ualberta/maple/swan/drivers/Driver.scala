@@ -165,7 +165,7 @@ class Driver extends Runnable {
       if (treatRegular) {
         ModuleGrouper.group(canModules)
       } else {
-        ModuleGrouper.group(canModules, proc.cachedGroup)
+        ModuleGrouper.group(canModules, proc.cachedGroup, proc.changedFiles)
       }
     }
     Logging.printTimeStampSimple(0, runStartTime, "(group ready for analysis)")
@@ -174,7 +174,6 @@ class Driver extends Runnable {
       group.entries.size+" entries")
     if (options.debug) writeFile(group, debugDir, "grouped")
     if (options.cache) proc.writeCache(group)
-    proc.cleanup()
     group
   }
 

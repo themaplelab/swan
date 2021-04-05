@@ -168,13 +168,6 @@ struct SWANXcodebuild: ParsableCommand {
     for section in sections {
       let filename = outputDir.appendingPathComponent("\(section.target).\(section.project).sil")
       do {
-        if FileManager.default.fileExists(atPath: filename.path) {
-          let existing = try String(contentsOf: filename)
-          // Write and compares files instead. This is temporary because comparing strings does not work reliably.
-          if (existing.components(separatedBy: "\n").count != section.sil.components(separatedBy: "\n").count) {
-            printStatus("Detected change: \(section.target).\(section.project)")
-          }
-        }
         try section.sil.write(to: filename, atomically: true, encoding: String.Encoding.utf8)
       } catch {
         printFailure("Could not write SIL to \(filename)\nReason: \(error.localizedDescription)")

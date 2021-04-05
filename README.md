@@ -53,10 +53,10 @@ If you can build your project with `xcodebuild`, you can build your project with
 
 #### Dump SIL using either `swan-swiftc` or `swan-xcodebuild`
 
-You can dump SIL for Xcode projects with `swan-xcodebuild`. Give it the same arguments you give `xcodebuild`, but put them after `--`. e.g.,
+You can dump SIL for Xcode projects with `swan-xcodebuild`. Give it the same arguments you give `xcodebuild`, but put them after `--`. If you specify a single architecture with `-arch`, the build time will be faster, and `swan-xcodebuild` will have less output to parse.
 
 ```
-swan-xcodebuild -- -project MyProject.xcodeproj -scheme MyScheme
+swan-xcodebuild -- -project MyProject.xcodeproj -scheme MyScheme -arch arm64
 ```
 
 It will build your project and then dump the SIL to the `swan-dir/` directory. You can optionally specify an alternative directory with `--swan-dir`.

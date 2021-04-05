@@ -10,6 +10,8 @@
 
 package ca.ualberta.maple.swan.ir
 
+import java.io.File
+
 import ca.ualberta.maple.swan.utils.Logging
 
 import scala.collection.mutable.ArrayBuffer
@@ -102,6 +104,12 @@ object ModuleGrouper {
                   case _ => throwException("unexpected")
                 }
               }
+              case FunctionAttribute.entry => {
+                f.attribute.get match {
+                  case FunctionAttribute.entry => if (forceAdd) add(f) else throwException("unexpected")
+                  case _ => throwException("unexpected")
+                }
+              }
               case _ => throwException("unexpected")
             }
           } else { // to add has no attribute
@@ -131,7 +139,7 @@ object ModuleGrouper {
     })
   }
 
-  def group(modules: ArrayBuffer[CanModule], existingGroup: ModuleGroup = null): ModuleGroup = {
+  def group(modules: ArrayBuffer[CanModule], existingGroup: ModuleGroup = null, changedFiles: ArrayBuffer[File] = null): ModuleGroup = {
     val functions = ArrayBuffer.empty[CanFunction]
     val entries = mutable.HashMap.empty[String, CanFunction]
     val models = mutable.HashMap.empty[String, CanFunction]
@@ -140,29 +148,35 @@ object ModuleGrouper {
     val stubs = mutable.HashMap.empty[String, CanFunction]
     val linked = mutable.HashMap.empty[String, CanFunction]
     val existingFunctions = new mutable.HashMap[String, CanFunction]()
-    val ddgs = ArrayBuffer.empty[DynamicDispatchGraph]
+    var ddgs = new mutable.HashMap[String, DynamicDispatchGraph]
     val silMap = new SILMap
     val metas = ArrayBuffer.empty[ModuleMetadata]
     if (existingGroup != null) {
       merge(existingGroup.functions, existingFunctions, entries, models, mains, others, stubs, linked)
-      ddgs.appendAll(existingGroup.ddgs)
+      ddgs = existingGroup.ddgs
       silMap.combine(existingGroup.silMap)
       metas.appendAll(existingGroup.metas)
     }
     modules.foreach(module => {
-      val partial = module.meta.silSource.nonEmpty && module.meta.silSource.get.getName.endsWith(".changed")
-      if (partial) {
-        Logging.printInfo("Merging " + module.functions.length + " function(s) into existing group")
+      val changed = if (changedFiles != null) changedFiles.exists(f => f.getName == module.toString) else false
+      if (changed) {
+        Logging.printInfo("Merging " + module.functions.length + " functions into existing group")
       }
-      merge(module.functions, existingFunctions, entries, models, mains, others, stubs, linked, partial)
-      if (module.ddg.nonEmpty && !partial) {
-        ddgs.append(module.ddg.get)
+      merge(module.functions, existingFunctions, entries, models, mains, others, stubs, linked, changed)
+      if (module.ddg.nonEmpty && !changed) {
+        val name = module.toString
+        if (ddgs.contains(name)) {
+          ddgs.remove(name)
+        }
+        ddgs.put(name, module.ddg.get)
       }
+      if (!changed) {
+        // This will need to be updated if metadata contains more information
+        // that can change base don module content
+        if (!metas.exists(m => m.toString == module.meta.toString)) metas.append(module.meta)
+      }
+      // TODO: see if this even works after serialization
       silMap.combine(module.silMap)
-      if (!partial) {
-        val existingMeta = metas.filter(m => m.toString == module.meta.toString)
-        if (existingMeta.isEmpty) metas.append(module.meta)
-      }
     })
     functions.appendAll(entries.values)
     functions.appendAll(mains.values)

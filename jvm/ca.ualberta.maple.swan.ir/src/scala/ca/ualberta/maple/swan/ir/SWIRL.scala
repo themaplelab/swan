@@ -26,7 +26,7 @@ import scala.collection.{immutable, mutable}
 
 class ModuleGroup(val functions: ArrayBuffer[CanFunction],
                   val entries: immutable.HashSet[CanFunction],
-                  val ddgs: ArrayBuffer[DynamicDispatchGraph],
+                  val ddgs: mutable.HashMap[String, DynamicDispatchGraph],
                   val silMap: SILMap, val metas: ArrayBuffer[ModuleMetadata]) extends Serializable {
   override def toString: String = {
     val sb = new StringBuilder

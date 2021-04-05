@@ -11,14 +11,12 @@
 package ca.ualberta.maple.swan.drivers
 
 import java.io.{File, FileInputStream, FileOutputStream, FileReader, FileWriter}
-import java.nio.file.{Files, Paths}
+import java.nio.file.Paths
 
 import ca.ualberta.maple.swan.ir.ModuleGroup
 import ca.ualberta.maple.swan.parser.SILModuleMetadata
 import ca.ualberta.maple.swan.utils.Logging
-import com.github.difflib.DiffUtils
 import com.google.common.hash.Hashing
-import org.apache.commons.io.FileUtils
 import java.nio.file.Files
 
 import com.google.gson.JsonParser
@@ -27,17 +25,17 @@ import com.twitter.chill.{KryoPool, ScalaKryoInstantiator}
 import org.apache.commons.io.{FileUtils, IOUtils}
 import org.jgrapht.graph.{DefaultEdge, SimpleGraph}
 
-import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
 
+// TODO: Have separate checksum cache to save space and not have
+//  to copy SIL files
 class SwanDirProcessor(swanDir: File, options: Driver.Options, clear: Boolean = false) {
 
   private val cacheDir: File = Paths.get(swanDir.getPath, "cache").toFile
   private val cacheFile: File = Paths.get(cacheDir.getPath, "cache.swan").toFile
-  private val debugDir: File = Paths.get(swanDir.getPath, "debug-dir").toFile
 
   var files: ArrayBuffer[File] = _
-  private val changedFiles = new ArrayBuffer[File]()
+  val changedFiles = new ArrayBuffer[File]()
   var hadExistingCache: Boolean = false
   var cachedGroup: ModuleGroup = _
   private var silFilesInSwanDir: ArrayBuffer[File] = _
@@ -82,51 +80,9 @@ class SwanDirProcessor(swanDir: File, options: Driver.Options, clear: Boolean = 
           if (getChecksum(original) == getChecksum(revised)) {
             null
           } else {
-            val originalContent = Files.readAllLines(original.toPath)
-            val revisedContent = Files.readAllLines(revised.toPath)
-            val patch = DiffUtils.diff(originalContent, revisedContent)
-            // Get all changes lines
-            val processed = new mutable.HashSet[Int]()
-            val changedLines = new mutable.Stack[Int]
-            patch.getDeltas.forEach(delta => {
-              // The goal here is just to get every line involved
-              // in the difference. Note that pos is line index (starts at 0).
-              val srcPos = delta.getSource.getPosition
-              val tgtPos = delta.getSource.getPosition
-              changedLines.push(srcPos)
-              if (srcPos != tgtPos) changedLines.push(tgtPos)
-              for ( _ <- Range(1, delta.getTarget.getLines.size())) {
-                changedLines.push(tgtPos + 1)
-              }
-              for ( _ <- Range(1, delta.getSource.getLines.size())) {
-                changedLines.push(srcPos + 1)
-              }
-            })
-            if (changedLines.nonEmpty) {
-              val sb = new StringBuilder
-              while (changedLines.nonEmpty) {
-                val line = changedLines.pop()
-                if (!processed.contains(line)) {
-                  sb.append(processLine(line, revisedContent, processed, revisedContent.size()))
-                }
-              }
-              if (sb.nonEmpty) {
-                sb.insert(0, "sil_stage canonical\n\n")
-                val changedFile = Paths.get(swanDir.getPath, revised.getName + ".changed").toFile
-                val fw = new FileWriter(changedFile)
-                fw.write(sb.toString())
-                fw.close()
-                if (options.debug) {
-                  val savedChangedFile = Paths.get(debugDir.getPath, revised.getName + ".changed").toFile
-                  val fw = new FileWriter(savedChangedFile)
-                  fw.write(sb.toString())
-                  fw.close()
-                }
-                changeDetected = true
-                changedFiles.append(changedFile)
-                changedFile
-              } else { null }
-            } else { null }
+            changedFiles.append(revised)
+            changeDetected = true
+            revised
           }
         } else {
           revised
@@ -137,47 +93,6 @@ class SwanDirProcessor(swanDir: File, options: Driver.Options, clear: Boolean = 
       }
     })
     comparedFiles
-  }
-
-  // TODO: Add complete re-parse triggers for witness tables, globals, etc.
-  //   Gets even trickier for deletions. e.g., global deleted.
-  private def processLine(lineIdx: Int, content: java.util.List[String], processed: mutable.HashSet[Int], len: Int): String = {
-    if (processed.contains(lineIdx)) return ""
-    def goUp(i: Int): String = {
-      processed.add(i-1)
-      content.get(i-1)
-    }
-    def goDown(i: Int): String = {
-      processed.add(i+1)
-      content.get(i+1)
-    }
-    var currIdx = lineIdx
-    processed.add(currIdx)
-    val sb = new StringBuilder()
-    def append(s: String): Unit = { sb.append(s); sb.append("\n") }
-    // Need to be at ^sil. Go down, and get init above.
-    def grabFunctionBody(): Unit = {
-      append(goUp(currIdx))
-      append(content.get(currIdx))
-      while(!{val s = goDown(currIdx); append(s); s}.startsWith("}")) { currIdx = currIdx + 1}
-    }
-    var continue = true
-    while (continue && currIdx > 0) {
-      val str = content.get(currIdx)
-      if (str.startsWith("sil ") && str.endsWith("{")) {
-        grabFunctionBody()
-        continue = false
-      } else if (str.startsWith("}")) {
-        continue = false
-      }
-      currIdx = currIdx - 1
-    }
-    sb.toString()
-  }
-
-  def cleanup(): Unit = {
-    // Use the debug option if you want to see these after
-    changedFiles.foreach(f => f.delete())
   }
 
   def writeCache(group: ModuleGroup): Unit = {
