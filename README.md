@@ -6,7 +6,7 @@
 
 This branch contains the new generation of the SWAN framework.
 
-The SWAN version described in our ESEC/FSE 2020 [paper](https://karimali.ca/resources/papers/swan.pdf) is located on [this](https://github.com/themaplelab/swan/tree/master) branch.
+The SWAN version described in our ESEC/FSE 2020 [paper](https://karimali.ca/resources/papers/swan.pdf) is located on [this](https://github.com/themaplelab/swan/tree/2020) branch.
 
 ###  Summary
 
