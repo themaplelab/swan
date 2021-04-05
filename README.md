@@ -53,7 +53,7 @@ If you can build your project with `xcodebuild`, you can build your project with
 
 #### Dump SIL using either `swan-swiftc` or `swan-xcodebuild`
 
-Use `swan-xcodebuild` for building and dumping SIL for Xcode projects. Give it the same arguments you give `xcodebuild`, but put them after `--`. e.g.,
+You can dump SIL for Xcode projects with `swan-xcodebuild`. Give it the same arguments you give `xcodebuild`, but put them after `--`. e.g.,
 
 ```
 swan-xcodebuild -- -project MyProject.xcodeproj -scheme MyScheme
@@ -65,7 +65,7 @@ It will build your project and then dump the SIL to the `swan-dir/` directory. Y
 swan-xcodebuild --swan-dir custom-dir -- [...]
 ```
 
-The same idea applies for `swan-swiftc`, which dumps SIL for single `.swift` files, but you only need to specify the Swift file you want to dump the SIL for. This tool wraps `swiftc` so any arguments you give it will go to `swiftc`.
+The same idea applies for `swan-swiftc`, which dumps SIL for single `.swift` files, but you simply specify the Swift file.
 
 ```
 swan-swiftc -- MyFile.swift
@@ -73,13 +73,13 @@ swan-swiftc -- MyFile.swift
 
 ### Client
 
-There is currently no ready dataflow client for SWAN. However, you can use `driver.jar` to parse, translate, and combine the dumped SIL modules.
+There is currently no ready dataflow client for SWAN. However, you can use `driver.jar` to parse, translate, and combine the modules.
 
 ```
 java -jar driver.jar swan-dir/
 ```
 
-You can use `-h` to view driver options. You can use `-d` and view the generated IRs inside of `swan-dir/debug/`. The caching (`-c`) option is currently experimental. We are investigating ways of making subsequent SIL consumption faster.
+You can use `-h` to view driver options. You can use `-d` and view the generated IRs inside of `swan-dir/debug/`. The caching option `-c` is currently experimental. We are investigating ways of making subsequent SIL consumption faster.
 
 ## Developing
 
@@ -103,4 +103,4 @@ Run the *General Tests* configuration to test everything works.
 
 See [IDE Configuration](https://github.com/themaplelab/swan/wiki/IDE-Configuration) if you would like to configure syntax highlighting for SWIRL and SIL.
 
-You can use the *Playground* run configurations to debug Swift, SIL, and SWIRL code. Just paste the code in question to the appropriate `playground.*` in `resources/`.
+You can use the *Playground* run configurations to debug specific Swift, SIL, and SWIRL cases. Just paste the code in question to the appropriate `playground.*` in `resources/`.
