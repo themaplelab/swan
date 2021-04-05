@@ -62,10 +62,10 @@ object Driver {
 @Command(name = "SWAN Driver", mixinStandardHelpOptions = true, header = Array(
   "@|fg(208)" +
   "    WNW                                                                   WWW \n" +
-  "  WOdkXW                                                              WNKOOXW\n" +
-  "  Xd:clx0XWW                                                      WWNK0kxxx0W\n" +
-  " WOl::cccoxOXNW                                               WNXK0OkxxddddON\n" +
-  " WOc:::cccccldk0KNNWW                 WWWWk             WNNXK0Okxdddddxdddx0N\n" +
+  "  WOdkXW                                                              WNKOOOXW\n" +
+  "  Xd:clx0XWW                                                      WWNK0kxxxx0WW\n" +
+  " WOl::cccoxOXNW                                               WNXK0OkxxdddddONW\n" +
+  " WOc:::cccccldk0KNNWW                 WWWWk             WNNXK0Okxdddddxddddx0NW\n" +
   " W0l:::::ccccccclodxkOO00KNW        WKkxxOXW           WXOxddooodddddddddxxkXW\n" +
   "  Xd::::::ccccccccccccclllx0N      WOlcccl0         WXkoooooooooodddddddxOXW \n" +
   "  WKo::::::ccccccccccccclllokXW    Nxo   xK       NKkolllllooooooooddxO0XW   \n" +
