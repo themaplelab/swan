@@ -69,13 +69,13 @@ object Driver {
   " W0l:::::ccccccclodxkOO00KNW        WKkxxOX           WXOxddooodddddddddxxkXW\n" +
   "  Xd::::::ccccccccccccclllx0N      WOlcccl0W        WXkoooooooooodddddddxOXW \n" +
   "  WKo::::::ccccccccccccclllokXW    Nxo   xK       NKkolllllooooooooddxO0XW   \n" +
-  "   WXxl::::::cccccccccccccllldONW  NxkN        WN0dlccclllllooooooooxKW      \n" +
-  "     WX0dc:::::cccccccccccccllldOXWW0xOXNN   WXkocccccccclllllloooookN       \n" +
-  "       WKo::::::cccccccccccccllllok0XKkxxxxkO00kdcccccccccllllllooxOXW       \n" +
-  "        WOo::::::ccccccccccclccllllodOXNXKOdlldOKOl:cccccccloddkOKNW         \n" +
-  "         WXOdlc:::cccccccccccccclldxOKN   WNklco0Nkc::ccccd0XNWW             \n" +
-  "            WX0OkkOkdlcccccccccldOXW       W0lcl0WOlccloxOXW                 \n" +
-  "                   WN0xdolllloodOX WNNNNNXKkoclkNWWXKKXNW                    \n" +
+  "   WXxl::::::cccccccccccccllldONW   xkN        WN0dlccclllllooooooooxKW      \n" +
+  "     WX0dc:::::cccccccccccccllldOXW  xOXN    WXkocccccccclllllloooookN       \n" +
+  "       WKo::::::cccccccccccccllllok0  kxxxxk   WcccccccccllllllooxOXW        \n" +
+  "        WOo::::::ccccccccccclccllllod   XKOdlk   WkcccccccloddkOKNW          \n" +
+  "         WXOdlc:::cccccccccccccclldxOKN   WNklck  Wkccccd0XNWW               \n" +
+  "            WX0OkkOkdlcccccccccldOXW       W0lclk  WccloxOXW                 \n" +
+  "                   WN0xdolllloodOX        dWXKKXN                            \n" +
   "                      WWNXKKKXNWW  WX0OkxxddxkKN                             \n" +
   "                                      WNNNNWW                                 |@"))
 class Driver extends Runnable {
