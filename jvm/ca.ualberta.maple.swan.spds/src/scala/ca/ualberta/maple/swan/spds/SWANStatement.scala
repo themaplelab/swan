@@ -60,7 +60,7 @@ abstract class SWANStatement(val delegate: CanInstructionDef, m: SWANMethod) ext
     delegate.asInstanceOf[CanInstructionDef.operator].operatorDef.operator.asInstanceOf[WithResult].value
   }
   override def getLeftOp: Val = {
-    m.newValues(getResult.ref.name)
+    m.allValues(getResult.ref.name)
   }
   final override def isStringAllocation: Boolean = false
   final override def isArrayStore: Boolean = false
@@ -93,6 +93,7 @@ abstract class SWANStatement(val delegate: CanInstructionDef, m: SWANMethod) ext
 
 object SWANStatement {
   // *** OPERATORS ***
+  // TODO: Weak write case
   case class FieldWrite(opDef: CanOperatorDef, inst: Operator.fieldWrite,
                         m: SWANMethod) extends SWANStatement(CanInstructionDef.operator(opDef), m) {
     override def getWrittenField: Field = new SWANField(inst.field)
@@ -120,7 +121,7 @@ object SWANStatement {
   case class Assign(opDef: CanOperatorDef, inst: Operator.assign,
                     m: SWANMethod) extends SWANStatement(CanInstructionDef.operator(opDef), m) {
     override def getRightOp: Val = m.allValues(inst.from.name)
-    override def isIdentityStmt: Boolean = true
+    override def isIdentityStmt: Boolean = false // ?
     override def toString: String = {
       "<assign><lhs>" + getLeftOp.toString + "</lhs><rhs>" + getRightOp.toString + "</rhs></assign>"
     }
@@ -149,38 +150,37 @@ object SWANStatement {
   }
   case class Allocation(opDef: CanOperatorDef, inst: Operator.neww,
                         m: SWANMethod) extends SWANStatement(CanInstructionDef.operator(opDef), m) {
-    override def getLeftOp: Val = SWANVal.Simple(inst.result, m)
-    override def getRightOp: Val = SWANVal.NewExpr(inst.result, m)
+    override def getRightOp: Val = m.newValues(inst.result.ref.name)
     override def toString: String = {
-      "<alloc><lhs>" + getLeftOp.toString + "</lhs><rhs>" + getRightOp.toString + "</rhs></alloc>"
+      "<alloc hash=" + hashCode  + "><lhs>" + getLeftOp.toString + "</lhs><rhs>" + getRightOp.toString + "</rhs></alloc>"
     }
   }
   case class Literal(opDef: CanOperatorDef, inst: Operator.literal,
                      m: SWANMethod) extends SWANStatement(CanInstructionDef.operator(opDef), m) {
-    override def getRightOp: Val = SWANVal.Constant(inst.result, inst.literal, m)
+    override def getRightOp: Val = m.addVal(SWANVal.Constant(inst.result, inst.literal, m))
     override def toString: String = {
       getLeftOp.toString + " = " + getRightOp.toString
     }
   }
   case class DynamicFunctionRef(opDef: CanOperatorDef, inst: Operator.dynamicRef,
                                 m: SWANMethod) extends SWANStatement(CanInstructionDef.operator(opDef), m) {
-    override def getRightOp: Val = SWANVal.DynamicFunctionRef(inst.result, inst.index, m)
+    override def getRightOp: Val = m.addVal(SWANVal.DynamicFunctionRef(inst.result, inst.index, m))
     override def toString: String = {
       getLeftOp.toString + " = " + getRightOp.toString
     }
   }
   case class BuiltinFunctionRef(opDef: CanOperatorDef, inst: Operator.builtinRef,
                                 m: SWANMethod) extends SWANStatement(CanInstructionDef.operator(opDef), m) {
-    override def getRightOp: Val = SWANVal.BuiltinFunctionRef(inst.result, inst.name, m)
+    override def getRightOp: Val = m.addVal(SWANVal.BuiltinFunctionRef(inst.result, inst.name, m))
     override def toString: String = {
       getLeftOp.toString + " = " + getRightOp.toString
     }
   }
   case class FunctionRef(opDef: CanOperatorDef, inst: Operator.functionRef,
                          m: SWANMethod) extends SWANStatement(CanInstructionDef.operator(opDef), m) {
-    override def getRightOp: Val = SWANVal.FunctionRef(inst.result, inst.name, m)
+    override def getRightOp: Val = m.addVal(SWANVal.FunctionRef(inst.result, inst.name, m))
     override def toString: String = {
-      "<func_ref><lhs>" + getLeftOp.toString + "</lhs><rhs>" + getRightOp.toString + "</rhs></func_ref>"
+      "<func_ref hash=" + hashCode  + "><lhs>" + getLeftOp.toString + "</lhs><rhs>" + getRightOp.toString + "</rhs></func_ref>"
     }
   }
   case class ApplyFunctionRef(opDef: CanOperatorDef, inst: Operator.apply,
@@ -190,7 +190,7 @@ object SWANStatement {
     override def getInvokeExpr: InvokeExpr = new SWANInvokeExpr(this, m)
     def getFunctionRef: Val = m.allValues(inst.functionRef.name)
     override def toString: String = {
-      "<apply><lhs>" + getLeftOp.toString + "</lhs>" + getInvokeExpr.toString + "</apply>"
+      "<apply hash=" + hashCode  + "><lhs>" + getLeftOp.toString + "</lhs>" + getInvokeExpr.toString + "</apply>"
     }
   }
   case class BinaryOperation(opDef: CanOperatorDef, inst: Operator.binaryOp,
@@ -198,13 +198,13 @@ object SWANStatement {
     override def getRightOp: Val = {
       inst.operation match {
         case ca.ualberta.maple.swan.ir.BinaryOperation.arbitrary =>
-          SWANVal.BinaryExpr(inst.result.tpe,
-            m.delegate.getSymbol(inst.lhs.name), m.delegate.getSymbol(inst.rhs.name), inst.operation, m)
+          m.addVal(SWANVal.BinaryExpr(inst.result.tpe,
+            m.delegate.getSymbol(inst.lhs.name), m.delegate.getSymbol(inst.rhs.name), inst.operation, m))
         case ca.ualberta.maple.swan.ir.BinaryOperation.equals =>
-          SWANVal.BinaryExpr(inst.result.tpe,
-            m.delegate.getSymbol(inst.lhs.name), m.delegate.getSymbol(inst.rhs.name), inst.operation, m)
+          m.addVal(SWANVal.BinaryExpr(inst.result.tpe,
+            m.delegate.getSymbol(inst.lhs.name), m.delegate.getSymbol(inst.rhs.name), inst.operation, m))
         // case operator that transfers operand properties =>
-          // TODO ?
+        // TODO ?
       }
 
     }
@@ -217,9 +217,9 @@ object SWANStatement {
     override def getRightOp: Val = {
       inst.operation match {
         case ca.ualberta.maple.swan.ir.UnaryOperation.arbitrary =>
-          SWANVal.UnaryExpr(inst.result.tpe, m.delegate.getSymbol(inst.operand.name), inst.operation, m)
+          m.addVal(SWANVal.UnaryExpr(inst.result.tpe, m.delegate.getSymbol(inst.operand.name), inst.operation, m))
         // case operator that transfers operand properties =>
-          // SWANVal.Simple(inst.result, m)
+        // SWANVal.Simple(inst.result, m)
       }
     }
     override def toString: String = {
@@ -242,7 +242,7 @@ object SWANStatement {
     }
   }
   case class ConditionalBranch(termDef: CanTerminatorDef, inst: Terminator.brIf_can,
-                    m: SWANMethod) extends SWANStatement(CanInstructionDef.terminator(termDef), m) {
+                               m: SWANMethod) extends SWANStatement(CanInstructionDef.terminator(termDef), m) {
     val ifStmt = new SWANIfStatement(this)
     override def getRightOp: Val = m.allValues(inst.cond.name)
     override def isIfStmt: Boolean = true
@@ -258,7 +258,7 @@ object SWANStatement {
     override def isReturnStmt: Boolean = true
     override def getReturnOp: Val = m.allValues(inst.value.name)
     override def toString: String = {
-      "<return>" + getReturnOp.toString + "</return>"
+      "<return hash=" + hashCode  + ">" + getReturnOp.toString + "</return>"
     }
   }
   case class Throw(termDef: CanTerminatorDef, inst: Terminator.thro,

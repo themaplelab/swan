@@ -19,8 +19,8 @@ class SWANInvokeExpr(val stmt: ApplyFunctionRef, val method: SWANMethod) extends
 
   val args: util.List[Val] = new util.ArrayList[Val]()
 
-  stmt.inst.arguments.foreach(arg => {
-    args.add(method.allValues(arg.name))
+  stmt.inst.arguments.zipWithIndex.foreach(arg => {
+    args.add(method.addVal(SWANVal.Argument(method.delegate.getSymbol(arg._1.name), arg._2, method)))
   })
 
   def getFunctionRef: Val = stmt.getFunctionRef

@@ -11,7 +11,7 @@
 package ca.ualberta.maple.swan.spds
 
 import boomerang.scene.ControlFlowGraph.Edge
-import boomerang.scene.{Method, Pair, Type, Val}
+import boomerang.scene.{AllocVal, Method, Pair, Type, Val}
 import ca.ualberta.maple.swan.ir.{BinaryOperation, Literal, Symbol, UnaryOperation}
 
 abstract class SWANVal(mthd: Method, unbalanced: Edge) extends Val(mthd, unbalanced) {
@@ -63,9 +63,8 @@ object SWANVal {
       obj match {
         case other: Simple =>
           delegate.equals(other.delegate) && method.equals(other.m)
-        case _ =>
+        case _ => false
       }
-      false
     }
     override def toString: String = {
       "<var name=" + getVariableName + " type=" + getType.toString + " hash=" + hashCode + " />"
@@ -87,12 +86,11 @@ object SWANVal {
       obj match {
         case other: Argument =>
           delegate.equals(other.delegate) && method.equals(other.m)
-        case _ =>
+        case _ => false
       }
-      false
     }
     override def toString: String = {
-      getVariableName
+      "<arg name=" + getVariableName + " type=" + this.getType.toString + " hash=" + hashCode + " />"
     }
   }
   case class NewExpr(delegate: Symbol, method: Method, unbalanced: Edge = null) extends SWANVal(method, unbalanced) {
@@ -107,16 +105,16 @@ object SWANVal {
       val prime = 31
       var result = 1
       result = prime * result + delegate.hashCode
+      result = prime * result + tpe.hashCode()
       result = prime * result + method.hashCode
       result
     }
     override def equals(obj: Any): Boolean = {
       obj match {
         case other: NewExpr =>
-          delegate.equals(other.delegate) && method.equals(other.m)
-        case _ =>
+          delegate.equals(other.delegate) && tpe.equals(other.tpe) && method.equals(other.m)
+        case _ => false
       }
-      false
     }
     override def toString: String = {
       "<new_var name=" + getVariableName + " type=" + this.getType.toString + " hash=" + hashCode + " />"
@@ -146,9 +144,8 @@ object SWANVal {
       obj match {
         case other: Constant =>
           delegate.equals(other.delegate) && method.equals(other.m)
-        case _ =>
+        case _ => false
       }
-      false
     }
     override def toString: String = {
       getVariableName + ": " + literal
@@ -175,9 +172,8 @@ object SWANVal {
         case other: BinaryExpr =>
           resultType.equals(other.resultType) && lhs.equals(other.lhs) && rhs.equals(other.rhs) && operator == other.operator &&
             method.equals(other.m)
-        case _ =>
+        case _ => false
       }
-      false
     }
     override def toString: String = {
       lhs.ref.name + " " + operator + " " + rhs.ref.name
@@ -203,9 +199,8 @@ object SWANVal {
         case other: UnaryExpr =>
           resultType.equals(other.resultType) && operator == other.operator && delegate.equals(other.delegate) &&
             method.equals(other.m)
-        case _ =>
+        case _ => false
       }
-      false
     }
     override def toString: String = {
       operator.toString + " " + delegate.ref.name
@@ -229,9 +224,8 @@ object SWANVal {
       obj match {
         case other: FunctionRef =>
           delegate.equals(other.delegate) && method.equals(other.m)
-        case _ =>
+        case _ => false
       }
-      false
     }
     override def toString: String = {
       "<func_ref_var name=" + getVariableName + " type=" + getType.toString + " func=" + ref + " hash=" + hashCode + " />"
@@ -255,9 +249,8 @@ object SWANVal {
       obj match {
         case other: BuiltinFunctionRef =>
           delegate.equals(other.delegate) && method.equals(other.m)
-        case _ =>
+        case _ => false
       }
-      false
     }
     override def toString: String = {
       delegate.ref.name + ": @" + ref
@@ -281,9 +274,8 @@ object SWANVal {
       obj match {
         case other: DynamicFunctionRef =>
           delegate.equals(other.delegate) && method.equals(other.m)
-        case _ =>
+        case _ => false
       }
-      false
     }
     override def toString: String = {
       delegate.ref.name + ": @" + index

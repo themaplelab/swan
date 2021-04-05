@@ -13,7 +13,7 @@ package ca.ualberta.maple.swan.spds
 import java.util
 
 import boomerang.scene._
-import ca.ualberta.maple.swan.ir.{CanFunction, SymbolTableEntry}
+import ca.ualberta.maple.swan.ir.{CanFunction, SymbolRef, SymbolTableEntry}
 import com.google.common.collect.{Lists, Sets}
 
 import scala.collection.mutable
@@ -26,8 +26,13 @@ class SWANMethod(val delegate: CanFunction) extends Method {
   val newValues: mutable.HashMap[String, Val] = new mutable.HashMap[String, Val]()
 
   private val localParams: util.List[Val] = Lists.newArrayList
-  private val localValues: util.Set[Val] = Sets.newHashSet
+  private val localValues: util.HashSet[Val] = Sets.newHashSet
   private val cfg: SWANControlFlowGraph = new SWANControlFlowGraph(this)
+
+  def addVal[T<:SWANVal](v: T): T = {
+    localValues.add(v)
+    v
+  }
 
   delegate.symbolTable.foreach(sym => {
     sym._2 match {
@@ -40,12 +45,20 @@ class SWANMethod(val delegate: CanFunction) extends Method {
         newValues.put(symbol.ref.name, n)
       }
       case SymbolTableEntry.argument(argument) => {
-        val v = SWANVal.Argument(argument, localParams.size(), this)
+        val v = SWANVal.Simple(argument, this)
         localParams.add(v)
         allValues.put(argument.ref.name, v)
       }
     }
   })
+
+  def getSymbol(ref: SymbolRef): ca.ualberta.maple.swan.ir.Symbol = {
+    delegate.getSymbol(ref.name)
+  }
+
+  def getSymbol(name: String): ca.ualberta.maple.swan.ir.Symbol = {
+    delegate.getSymbol(name)
+  }
 
   override def isStaticInitializer: Boolean = false
 
@@ -53,7 +66,7 @@ class SWANMethod(val delegate: CanFunction) extends Method {
     localParams.contains(v)
   }
 
-  override def isThisLocal(v: Val): Boolean = false
+  override def isThisLocal(v: Val): Boolean = false // localValues.contains(v)
 
   override def getLocals: java.util.Set[Val] = localValues
 
@@ -85,7 +98,9 @@ class SWANMethod(val delegate: CanFunction) extends Method {
     sb.append(getName)
     sb.append(">\n")
     getStatements.forEach(s => {
+      sb.append("<pred hash=" + cfg.getPredsOf(s).hashCode() + " />")
       sb.append(s.toString)
+      sb.append("<succ hash=" + cfg.getSuccsOf(s).hashCode() + " />")
       sb.append("\n")
     })
     sb.append("</method>\n")

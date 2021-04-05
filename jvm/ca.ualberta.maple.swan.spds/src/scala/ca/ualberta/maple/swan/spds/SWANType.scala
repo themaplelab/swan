@@ -31,6 +31,13 @@ class SWANType(val tpe: ca.ualberta.maple.swan.ir.Type) extends Type {
   override def isBooleanType: Boolean = false
 
   override def toString: String = tpe.name
+
+  override def equals(obj: Any): Boolean = {
+    obj match {
+      case t: SWANType => tpe.equals(t.tpe)
+      case _ => false
+    }
+  }
 }
 
 class SWANNullType(tpe: ca.ualberta.maple.swan.ir.Type) extends SWANType(tpe) {
