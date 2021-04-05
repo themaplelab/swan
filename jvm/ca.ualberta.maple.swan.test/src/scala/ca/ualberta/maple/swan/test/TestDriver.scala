@@ -13,7 +13,6 @@ package ca.ualberta.maple.swan.test
 import java.io.File
 import java.nio.charset.StandardCharsets
 
-import ca.ualberta.maple.swan.drivers.DefaultDriver
 import ca.ualberta.maple.swan.ir.canonical.SWIRLPass
 import ca.ualberta.maple.swan.ir.raw.SWIRLGen
 import ca.ualberta.maple.swan.ir.{CanModule, Module, ModuleGroup, ModuleGrouper, SWIRLParser}

@@ -123,15 +123,18 @@ class SWIRLPrinter extends Printer {
 
   def print(function: CanFunction, cfg: Graph[CanBlock, DefaultEdge]): Unit = {
     function.blocks.foreach(b => {
-      print(b.blockRef.label + " -> ")
-      val it = cfg.outgoingEdgesOf(b).iterator()
-      while (it.hasNext) {
-        print(cfg.getEdgeTarget(it.next()).blockRef.label)
-        if (it.hasNext) {
-          print(", ")
+      // TODO: Remove check when DDG and CFG is serialized
+      if (cfg.containsVertex(b)) {
+        print(b.blockRef.label + " -> ")
+        val it = cfg.outgoingEdgesOf(b).iterator()
+        while (it.hasNext) {
+          print(cfg.getEdgeTarget(it.next()).blockRef.label)
+          if (it.hasNext) {
+            print(", ")
+          }
         }
+        printNewline()
       }
-      printNewline()
     })
   }
 

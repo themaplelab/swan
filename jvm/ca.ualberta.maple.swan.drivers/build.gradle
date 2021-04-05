@@ -22,7 +22,7 @@ sourceCompatibility = 1.8
 sourceSets.main.scala.srcDirs = ['src/']
 sourceSets.main.resources.srcDirs = ['src/resources']
 
-mainClassName = "ca.ualberta.maple.swan.drivers.DefaultDriver"
+mainClassName = "ca.ualberta.maple.swan.drivers.Driver"
 
 dependencies {
     implementation project(":ca.ualberta.maple.swan.parser")
@@ -30,9 +30,8 @@ dependencies {
     implementation project(":ca.ualberta.maple.swan.utils")
 
     implementation 'info.picocli:picocli:4.6.1'
-
     compile group: 'com.google.guava', name: 'guava', version: '30.1.1-jre'
-
+    compile 'io.github.java-diff-utils:java-diff-utils:4.9'
     compile group: 'com.twitter', name: 'chill_2.13', version:'0.9.5'
 
     implementation 'org.scala-lang:scala-library:'+project.property("SCALA_VERSION")
@@ -47,7 +46,7 @@ run {
 jar {
     manifest {
         attributes (
-                'Main-Class': 'ca.ualberta.maple.swan.drivers.DefaultDriver'
+                'Main-Class': 'ca.ualberta.maple.swan.drivers.Driver'
         )
     }
 }

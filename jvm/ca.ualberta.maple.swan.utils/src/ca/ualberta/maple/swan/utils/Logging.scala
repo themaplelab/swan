@@ -25,4 +25,22 @@ object Logging {
     }
   }
 
+  def printTimeStampNoRate(min: Int, startTime: Long, action: String, value: Long, unit: String): Unit = {
+    val millis = (System.nanoTime() - startTime) / 1000000
+    val seconds: Double = millis.toDouble / 1000
+    if (seconds >= min) {
+      Logging.printInfo(String.format("Done %s %d %s in %d.%03ds",
+        action, value, unit, millis / 1000, millis % 1000))
+    }
+  }
+
+  def printTimeStampSimple(min: Int, startTime: Long, action: String): Unit = {
+    val millis = (System.nanoTime() - startTime) / 1000000
+    val seconds: Double = millis.toDouble / 1000
+    if (seconds >= min) {
+      Logging.printInfo(String.format("Done %s in %d.%03ds",
+        action, millis / 1000, millis % 1000))
+    }
+  }
+
 }

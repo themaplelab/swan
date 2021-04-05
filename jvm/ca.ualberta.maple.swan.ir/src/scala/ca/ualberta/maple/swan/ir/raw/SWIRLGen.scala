@@ -192,7 +192,8 @@ class SWIRLGen {
     val mainFunction = functions.find(f => f.name == "main")
     var fmFunction: Option[Function] = None
     if (mainFunction.nonEmpty) {
-      val newMainFunctionName = "main_" + silModule.toString
+      // ignore ".changed" to merge correctly
+      val newMainFunctionName = "main_" + silModule.toString.stripSuffix(".changed")
       val fakeMainFunctionName = Constants.fakeMain + silModule.toString
       mainFunction.get.name = newMainFunctionName
       intermediateSymbols.clear()
@@ -1131,7 +1132,9 @@ class SWIRLGen {
     operators.append(makeOperator(ctx, Operator.neww(result)).head)
     if (init.nonEmpty) {
       if (init.get.args.length < I.operands.length) {
-        throw new ExperimentalException("IMPORTANT: Init comment must have not included all arguments.\n" + ctx.toString)
+        // TODO: This seems to get thrown every now and then.
+        //   maybe something isn't thread safe.
+        throw new ExperimentalException("Init comment must have not included all arguments.\n" + ctx.toString)
       }
       I.operands.view.zipWithIndex.foreach(op => {
         operators.append(makeOperator(ctx,

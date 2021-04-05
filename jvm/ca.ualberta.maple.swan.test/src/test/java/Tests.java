@@ -8,7 +8,7 @@
  *
  */
 
-import ca.ualberta.maple.swan.drivers.DefaultDriver;
+import ca.ualberta.maple.swan.drivers.Driver;
 import ca.ualberta.maple.swan.ir.Error;
 import ca.ualberta.maple.swan.ir.*;
 import ca.ualberta.maple.swan.test.TestDriver;
@@ -96,13 +96,11 @@ public class Tests {
     // INPUT: swan-dir
     // Smoke test and also lightly verify that functions got merged
     @Test
-    void testDefaultDriver() throws URISyntaxException {
+    void testDriver() throws URISyntaxException {
         File fileDir = new File(Objects.requireNonNull(getClass().getClassLoader()
                 .getResource("example-swan-dir/")).toURI());
-        Logging.printInfo("(Tests) testDefaultDriver: Testing " + fileDir.getName());
-        ModuleGroup group = new DefaultDriver().runActual(
-                new DefaultDriver.Options()
-                        .printSwirl(false), fileDir);
+        Logging.printInfo("(Tests) testDriver: Testing " + fileDir.getName());
+        ModuleGroup group = new Driver().runActual(new Driver.Options(), fileDir);
         String result = new SWIRLPrinter().print(group, new SWIRLPrinterOptions());
         // System.out.println(result);
         Assertions.assertTrue(result.contains("func [model] @`Swift.Array.subscript.getter"));

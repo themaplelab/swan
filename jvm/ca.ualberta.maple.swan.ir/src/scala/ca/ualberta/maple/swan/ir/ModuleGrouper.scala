@@ -15,16 +15,19 @@ import ca.ualberta.maple.swan.utils.Logging
 import scala.collection.mutable.ArrayBuffer
 import scala.collection.{immutable, mutable}
 
-// TODO: The current merging is likely inefficient.
+// TODO: The current function merging is likely inefficient.
 object ModuleGrouper {
 
+  // We throw exceptions for unexpected merging behaviour, but really
+  // it is difficult to detect when user functions conflict because
+  // modules often have implementations for the same builtins.
   // Would be also good to check that the implementations are equal
   def merge(toMerge: ArrayBuffer[CanFunction],
             existingFunctions: mutable.HashMap[String, CanFunction],
             entries: mutable.HashMap[String, CanFunction], models: mutable.HashMap[String, CanFunction],
             mains: mutable.HashMap[String, CanFunction], others: mutable.HashMap[String, CanFunction],
             stubs: mutable.HashMap[String, CanFunction], linked: mutable.HashMap[String, CanFunction],
-            persistentAdd: Boolean = false): Unit = {
+            forceAdd: Boolean = false): Unit = {
     def add(f: CanFunction, attr: FunctionAttribute = null): Unit = {
       // Ordering for convenience
       if (attr != null) {
@@ -119,7 +122,7 @@ object ModuleGrouper {
             }
           } else { // to add also has no attribute
             // Duplicates are expected due to inlining, builtin implementations, etc
-            if (persistentAdd) add(f)
+            if (forceAdd) add(f)
           }
         }
       } else {
@@ -147,15 +150,19 @@ object ModuleGrouper {
       metas.appendAll(existingGroup.metas)
     }
     modules.foreach(module => {
-      if (existingGroup != null) {
+      val partial = module.meta.silSource.nonEmpty && module.meta.silSource.get.getName.endsWith(".changed")
+      if (partial) {
         Logging.printInfo("Merging " + module.functions.length + " function(s) into existing group")
       }
-      merge(module.functions, existingFunctions, entries, models, mains, others, stubs, linked, existingGroup != null)
-      if (module.ddg.nonEmpty) {
+      merge(module.functions, existingFunctions, entries, models, mains, others, stubs, linked, partial)
+      if (module.ddg.nonEmpty && !partial) {
         ddgs.append(module.ddg.get)
       }
       silMap.combine(module.silMap)
-      if (existingGroup == null) metas.append(module.meta)
+      if (!partial) {
+        val existingMeta = metas.filter(m => m.toString == module.meta.toString)
+        if (existingMeta.isEmpty) metas.append(module.meta)
+      }
     })
     functions.appendAll(entries.values)
     functions.appendAll(mains.values)

@@ -31,14 +31,14 @@ class SILParser extends SILPrinter {
 
   // Default constructor should not be called.
 
-  private[parser] var path: String = _
-  private[parser] var chars: Array[Char] = _
-  private[parser] var cursor: Int = 0
+  private var path: String = _
+  private var chars: Array[Char] = _
+  private var cursor: Int = 0
   def position(): Int = { cursor }
 
-  private[parser] val toDemangle: ArrayBuffer[SILMangledName] = new ArrayBuffer[SILMangledName]
+  private val toDemangle: ArrayBuffer[SILMangledName] = new ArrayBuffer[SILMangledName]
 
-  private[parser] val inits: ArrayBuffer[StructInit] = StructInit.populateInits()
+  private val inits: ArrayBuffer[StructInit] = StructInit.populateInits()
 
   def this(path: Path) = {
     this()
@@ -2815,16 +2815,19 @@ class Error(path : String, message : String, val chars: Array[Char]) extends Exc
   }
 
   override def getMessage: String = {
+    val issueMessage = "\nPlease create a new issue with this exception at https://github.com/themaplelab/swan/issues/new."
     if (line.isEmpty) {
-      return path + ": " + message
+      return path + ": " + message + issueMessage
     }
     if (column.isEmpty) {
-      return path + ":" + line.get + ": " + message
+      return path + ":" + line.get + ": " + message + issueMessage
     }
     if (chars != null) {
-      path + ":" + line.get + ":" + column.get + ": " + message + System.lineSeparator() + chars.mkString("") + System.lineSeparator() + (" " * column.get) + "^"
+      path + ":" + line.get + ":" + column.get + ": " + message +
+        System.lineSeparator() + chars.mkString("") + System.lineSeparator() + (" " * column.get) + "^" + issueMessage
     } else {
-      path + ":" + line.get + ":" + column.get + ": " + message
+      path + ":" + line.get + ":" + column.get + ": " + message + issueMessage
     }
+
   }
 }
