@@ -34,18 +34,6 @@ sourceSets {
 
 repositories {
     mavenCentral()
-    maven {
-        name = "github"
-        url = uri("https://maven.pkg.github.com/CodeShield-Security/SPDS/")
-        credentials {
-            username = project.property("USERNAME")
-            password = project.property("PASSWORD")
-        }
-    }
-    maven {
-        name = "soot"
-        url = uri("https://soot-build.cs.uni-paderborn.de/nexus/repository/soot-release/")
-    }
 }
 
 group 'ca.ualberta.maple.swan'
@@ -55,7 +43,6 @@ sourceCompatibility = 1.8
 dependencies {
     implementation project(":ca.ualberta.maple.swan.parser")
     implementation project(":ca.ualberta.maple.swan.ir")
-    implementation project(":ca.ualberta.maple.swan.test")
     implementation project(":ca.ualberta.maple.swan.utils")
 
     compile 'org.jsoup:jsoup:1.12.1' // pretty print html

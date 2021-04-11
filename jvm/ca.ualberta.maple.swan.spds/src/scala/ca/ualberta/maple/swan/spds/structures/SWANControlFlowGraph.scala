@@ -13,7 +13,8 @@ package ca.ualberta.maple.swan.spds.structures
 import java.util
 
 import boomerang.scene.{ControlFlowGraph, Statement}
-import ca.ualberta.maple.swan.ir.{Constants, Operator, Terminator}
+import ca.ualberta.maple.swan.ir
+import ca.ualberta.maple.swan.ir.{CanOperatorDef, Constants, Operator, SymbolRef, Terminator, Type}
 import com.google.common.collect.{HashMultimap, Lists, Maps, Multimap}
 
 class SWANControlFlowGraph(val method: SWANMethod) extends ControlFlowGraph {
@@ -26,6 +27,13 @@ class SWANControlFlowGraph(val method: SWANMethod) extends ControlFlowGraph {
   private val succsOfCache: Multimap[Statement, Statement] = HashMultimap.create
   private val predsOfCache: Multimap[Statement, Statement] = HashMultimap.create
   private val statements: java.util.List[Statement] = Lists.newArrayList
+
+  // TODO: dedicated NOP instruction?
+  private val nopSymbol = new ir.Symbol(new SymbolRef("nop"), new Type("Any"))
+  method.delegate.blocks(0).operators.insert(0,
+    new CanOperatorDef(Operator.neww(nopSymbol), None))
+  method.allValues.put("nop", SWANVal.Simple(nopSymbol, method))
+  method.newValues.put("nop", SWANVal.NewExpr(nopSymbol, method))
 
   method.delegate.blocks.foreach(b => {
     b.operators.foreach(op => {

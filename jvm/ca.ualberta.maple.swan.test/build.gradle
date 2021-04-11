@@ -41,6 +41,7 @@ dependencies {
     implementation project(":ca.ualberta.maple.swan.parser")
     implementation project(":ca.ualberta.maple.swan.drivers")
     implementation project(":ca.ualberta.maple.swan.utils")
+    implementation project(":ca.ualberta.maple.swan.spds")
 
     implementation 'org.scala-lang:scala-library:'+project.property("SCALA_VERSION")
 

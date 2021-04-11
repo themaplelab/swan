@@ -13,6 +13,7 @@ package ca.ualberta.maple.swan.spds.structures
 import java.util
 
 import boomerang.scene.{DeclaredMethod, InvokeExpr, Val, WrappedClass}
+import ca.ualberta.maple.swan.spds.structures.SWANStatement.ApplyFunctionRef
 
 class SWANInvokeExpr(val stmt: ApplyFunctionRef, val method: SWANMethod) extends InvokeExpr {
 

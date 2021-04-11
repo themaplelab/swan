@@ -1,0 +1,3 @@
+swirl_stage raw
+
+// dynamic_ref will not work here because there is no DDG from SIL

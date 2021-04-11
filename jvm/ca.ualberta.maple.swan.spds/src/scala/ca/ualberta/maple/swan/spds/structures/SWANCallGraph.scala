@@ -15,13 +15,14 @@ import java.util.Collections
 
 import boomerang.scene._
 import boomerang.{BackwardQuery, Boomerang, DefaultBoomerangOptions, Query}
-import ca.ualberta.maple.swan.ir.{CanFunction, CanModule, Constants, SWIRLPrinter}
+import ca.ualberta.maple.swan.ir.{CanFunction, CanModule, Constants, ModuleGroup, SWIRLPrinter}
 import com.google.common.collect.Maps
 
 import scala.collection.mutable
+import scala.collection.mutable.ArrayBuffer
 
 // TODO: iOS lifecycle
-class SWANCallGraph(val module: CanModule) extends CallGraph {
+class SWANCallGraph(val module: ModuleGroup) extends CallGraph {
 
   val methods: util.HashMap[String, SWANMethod] = Maps.newHashMap[String, SWANMethod]
   val methodEdges = new mutable.HashMap[SWANMethod, mutable.Set[SWANMethod]] with mutable.MultiMap[SWANMethod, SWANMethod]
@@ -51,6 +52,7 @@ class SWANCallGraph(val module: CanModule) extends CallGraph {
   def constructStaticCG(): Unit = {
 
     val visited = new util.HashSet[SWANStatement]()
+    val rtaTypes = new mutable.HashSet[String]
 
     val options = new DefaultBoomerangOptions {
       override def allowMultipleQueries(): Boolean = true
@@ -81,6 +83,7 @@ class SWANCallGraph(val module: CanModule) extends CallGraph {
                 val target = this.methods.get(v.ref)
                 addSWANEdge(v.method, target, applyStmt)
                 visited.add(applyStmt)
+                rtaTypes.addAll(v.method.delegate.instantiatedTypes)
                 changed = true
               }
               case v: SWANVal.BuiltinFunctionRef => {
@@ -88,10 +91,25 @@ class SWANCallGraph(val module: CanModule) extends CallGraph {
                   val target = this.methods.get(v.ref)
                   addSWANEdge(v.method, target, applyStmt)
                   visited.add(applyStmt)
+                  rtaTypes.addAll(v.method.delegate.instantiatedTypes)
                   changed = true
                 }
               }
-              case v: SWANVal.DynamicFunctionRef => // TODO, RTA
+              case v: SWANVal.DynamicFunctionRef => {
+                module.ddgs.foreach(ddg => {
+                  val functionNames = ddg._2.query(v.index, Some(rtaTypes))
+                  // System.out.println(ddg._2.printToDot())
+                  functionNames.foreach(name => {
+                    if (this.methods.containsKey(name)) {
+                      val target = this.methods.get(name)
+                      addSWANEdge(v.method, target, applyStmt)
+                      visited.add(applyStmt)
+                      rtaTypes.addAll(v.method.delegate.instantiatedTypes)
+                      changed = true
+                    }
+                  })
+                })
+              }
               case _ => // never happens
             }
           })

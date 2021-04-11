@@ -112,7 +112,7 @@ public class TestUtils {
         return result.toString();
     }
 
-    static void silFileTestPipeline(File sil) {
+    static ModuleGroup silFileTestPipeline(File sil) {
         TestDriver.TestDriverOptions options = new TestDriver.TestDriverOptions();
         options.addSILCallBack((SILModule module) -> {
             SILPrinterOptions opts = new SILPrinterOptions();
@@ -152,7 +152,7 @@ public class TestUtils {
             // Logging.printInfo(result);
             return scala.runtime.BoxedUnit.UNIT;
         });
-        TestDriver.run(sil, options);
+        return TestDriver.run(sil, options);
         // Didn't fail or blow up, good.
     }
 

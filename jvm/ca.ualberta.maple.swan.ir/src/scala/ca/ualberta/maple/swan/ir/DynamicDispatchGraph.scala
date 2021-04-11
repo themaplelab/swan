@@ -11,7 +11,7 @@
 package ca.ualberta.maple.swan.ir
 
 import ca.ualberta.maple.swan.ir.raw.Utils
-import ca.ualberta.maple.swan.parser.{SILModule, SILWitnessEntry}
+import ca.ualberta.maple.swan.parser.{SILDeclRef, SILModule, SILWitnessEntry}
 import org.jgrapht._
 import org.jgrapht.alg.shortestpath.BellmanFordShortestPath
 import org.jgrapht.graph._
@@ -28,13 +28,14 @@ class DynamicDispatchGraph extends Serializable {
   private val graph: Graph[Node, DefaultEdge] = new SimpleGraph(classOf[DefaultEdge])
   private val nodes: mutable.HashMap[String, Node] = new mutable.HashMap[String, Node]()
 
-  def query(index: String, types: Option[Array[String]]): Array[String] = {
+  def query(index: String, types: Option[mutable.HashSet[String]]): Array[String] = {
     val paths = new BellmanFordShortestPath(graph)
     val functions = ArrayBuffer[String]()
     val startNode = nodes(index)
     val classNodes: Option[Array[Node]] = {
       if (types.nonEmpty) {
-        Some(types.get.map((s: String) => nodes(s)))
+        // TODO: .toArray not efficient
+        Some(types.get.toArray.map((s: String) => nodes(s)))
       } else {
         None
       }
@@ -125,7 +126,7 @@ class DynamicDispatchGraph extends Serializable {
           if (functionName.nonEmpty) {
             val method = makeNode(functionName.get.demangled, "Method") // MethodType.implements
             graph.addEdge(makeNode(declRef.name(0), "Protocol"), method) // MethodType.virtual
-            graph.addEdge(makeNode(declRefToString(declRef.name), "Index"), method)
+            graph.addEdge(makeNode(declRefToString(declRef), "Index"), method)
           }
         }
         // TODO: investigate
@@ -146,13 +147,13 @@ class DynamicDispatchGraph extends Serializable {
         }
         val method = makeNode(entry.functionName.demangled, "Method")
         graph.addEdge(method, cls)
-        graph.addEdge(makeNode(declRefToString(entry.declRef.name), "Index"), method)
+        graph.addEdge(makeNode(declRefToString(entry.declRef), "Index"), method)
       })
     })
   }
 
-  private def declRefToString(decl: ArrayBuffer[String]): String = {
-    decl.slice(0, 2).mkString(".")
+  private def declRefToString(decl: SILDeclRef): String = {
+    Utils.printer.clearPrint(decl)
   }
 
   def printToDot(): String = {

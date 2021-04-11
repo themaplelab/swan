@@ -121,7 +121,14 @@ class Type(val name: String = "Any") extends Serializable {
   }
 }
 
-class Position(val path: String, val line: Int, val col: Int) extends Serializable
+class Position(val path: String, val line: Int, val col: Int) extends Serializable {
+  override def toString: String = {
+    path + ":" + line.toString + ":" + col.toString
+  }
+  def sameLine(other: Position): Boolean = {
+    path == other.path && line == other.line
+  }
+}
 
 sealed trait RawInstructionDef {
   val instruction: Instruction

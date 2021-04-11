@@ -49,12 +49,6 @@ abstract class SWANStatement(val delegate: CanInstructionDef, m: SWANMethod) ext
     }
   }
   // Shared
-  private def getPosition: Option[Position] = {
-    delegate match {
-      case CanInstructionDef.operator(operatorDef) => operatorDef.position
-      case CanInstructionDef.terminator(terminatorDef) => terminatorDef.position
-    }
-  }
   private def getResult: Symbol = {
     delegate.asInstanceOf[CanInstructionDef.operator].operatorDef.operator.asInstanceOf[WithResult].value
   }
@@ -87,6 +81,20 @@ abstract class SWANStatement(val delegate: CanInstructionDef, m: SWANMethod) ext
     obj match {
       case s: SWANStatement => s.delegate.equals(this.delegate) && s.method.equals(this.method)
       case _ => false
+    }
+  }
+  def getPosition: Option[Position] = {
+    delegate match {
+      case CanInstructionDef.operator(operatorDef) => operatorDef.position
+      case CanInstructionDef.terminator(terminatorDef) => terminatorDef.position
+    }
+  }
+  def getPositionString: String = {
+    val pos = getPosition
+    if (pos.nonEmpty) {
+      pos.get.toString
+    } else {
+      ""
     }
   }
 }
