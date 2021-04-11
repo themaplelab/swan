@@ -29,7 +29,7 @@ import scala.collection.mutable.ArrayBuffer
 
 // TODO: Have separate checksum cache to save space and not have
 //  to copy SIL files
-class SwanDirProcessor(swanDir: File, options: Driver.Options, clear: Boolean = false) {
+class SwanDirProcessor(swanDir: File, options: Driver.Options, clear: Boolean = false, forceRead: Boolean = false) {
 
   private val cacheDir: File = Paths.get(swanDir.getPath, "cache").toFile
   private val cacheFile: File = Paths.get(cacheDir.getPath, "cache.swan").toFile
@@ -62,7 +62,7 @@ class SwanDirProcessor(swanDir: File, options: Driver.Options, clear: Boolean = 
         silFilesInSwanDir
       }
     }
-    if (changeDetected && options.cache && cacheFile.exists()) {
+    if ((changeDetected && options.cache && cacheFile.exists()) || (cacheFile.exists() && forceRead)) {
       this.cachedGroup = readCache
     }
   }

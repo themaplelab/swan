@@ -92,6 +92,10 @@ class Driver extends Runnable {
     description = Array("Invalidate cache."))
   private val invalidateCache = new Array[Boolean](0)
 
+  @Option(names = Array("-f", "--force-cache-read"),
+    description = Array("Force reading the cache, regardless of changed files."))
+  private val forceRead = new Array[Boolean](0)
+
   @Option(names = Array("-c", "--cache"),
     description = Array("Cache SIL and SWIRL group module. This is experimental, slow, and incomplete (DDGs and CFGs not serialized)."))
   private val useCache = new Array[Boolean](0)
@@ -112,7 +116,7 @@ class Driver extends Runnable {
   // Can return null
   def runActual(options: Driver.Options, swanDir: File): ModuleGroup = {
     val runStartTime = System.nanoTime()
-    val proc = new SwanDirProcessor(swanDir, options, invalidateCache.nonEmpty)
+    val proc = new SwanDirProcessor(swanDir, options, invalidateCache.nonEmpty, forceRead.nonEmpty)
     val treatRegular = !options.cache || invalidateCache.nonEmpty || !proc.hadExistingCache
     if (!treatRegular) Logging.printInfo(proc.toString)
     if (proc.files.isEmpty || (options.cache && !proc.changeDetected)) return null
