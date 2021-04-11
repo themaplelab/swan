@@ -8,7 +8,7 @@
  *
  */
 
-package ca.ualberta.maple.swan.spds
+package ca.ualberta.maple.swan.spds.structures
 
 import java.util
 

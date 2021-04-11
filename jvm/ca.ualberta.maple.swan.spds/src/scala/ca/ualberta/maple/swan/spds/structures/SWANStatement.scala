@@ -8,13 +8,12 @@
  *
  */
 
-package ca.ualberta.maple.swan.spds
+package ca.ualberta.maple.swan.spds.structures
 
 import java.util
 
 import boomerang.scene._
-import ca.ualberta.maple.swan.ir
-import ca.ualberta.maple.swan.ir.{CanInstructionDef, CanOperatorDef, CanTerminatorDef, FieldWriteAttribute, Literal, Operator, Position, Symbol, Terminator, WithResult}
+import ca.ualberta.maple.swan.ir.{CanInstructionDef, CanOperatorDef, CanTerminatorDef, Operator, Position, Symbol, Terminator, WithResult}
 
 // toString implementations are not necessarily accurate
 abstract class SWANStatement(val delegate: CanInstructionDef, m: SWANMethod) extends Statement(m) {

@@ -8,12 +8,12 @@
  *
  */
 
-package ca.ualberta.maple.swan.spds
+package ca.ualberta.maple.swan.spds.structures
 
 import java.util
 import java.util.Collections
 
-import boomerang.scene.{AllocVal, AnalysisScope, CallGraph, ControlFlowGraph, DataFlowScope}
+import boomerang.scene._
 import boomerang.{BackwardQuery, Boomerang, DefaultBoomerangOptions, Query}
 import ca.ualberta.maple.swan.ir.{CanFunction, CanModule, Constants, SWIRLPrinter}
 import com.google.common.collect.Maps
