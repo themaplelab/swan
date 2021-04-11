@@ -435,7 +435,7 @@ class SWIRLPrinter extends Printer {
       case FieldWriteAttribute.pointer => print("pointer")
       case FieldWriteAttribute.weakPointer => print("weak_pointer")
     }
-    print("]")
+    print("] ")
   }
 
   def print(cse: EnumAssignCase): Unit = {

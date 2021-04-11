@@ -411,8 +411,8 @@ class SWIRLParser extends SWIRLPrinter {
         Instruction.rawOperator(Operator.condFail(value))
       }
       case "pointer_write" => {
-        val value = makeSymbolRef(parseIdentifier())
         val weak = skip("[weak]")
+        val value = makeSymbolRef(parseIdentifier())
         take("to")
         val pointer = makeSymbolRef(parseIdentifier())
         Instruction.rawOperator(Operator.pointerWrite(value, pointer, weak))
