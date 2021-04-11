@@ -29,7 +29,7 @@ class SWANMethod(val delegate: CanFunction) extends Method {
   private val localValues: util.HashSet[Val] = Sets.newHashSet
   private val cfg: SWANControlFlowGraph = new SWANControlFlowGraph(this)
 
-  def addVal[T<:SWANVal](v: T): T = {
+  def addVal[T<:Val](v: T): T = {
     localValues.add(v)
     v
   }
@@ -47,6 +47,7 @@ class SWANMethod(val delegate: CanFunction) extends Method {
       case SymbolTableEntry.argument(argument) => {
         val v = SWANVal.Simple(argument, this)
         localParams.add(v)
+        localValues.add(v)
         allValues.put(argument.ref.name, v)
       }
     }
@@ -66,7 +67,7 @@ class SWANMethod(val delegate: CanFunction) extends Method {
     localParams.contains(v)
   }
 
-  override def isThisLocal(v: Val): Boolean = false // localValues.contains(v)
+  override def isThisLocal(v: Val): Boolean = false
 
   override def getLocals: java.util.Set[Val] = localValues
 
@@ -74,13 +75,22 @@ class SWANMethod(val delegate: CanFunction) extends Method {
 
   override def getParameterLocals: util.List[Val] = localParams
 
-  override def isStatic: Boolean = false
+  override def isStatic: Boolean = true
 
   override def isNative: Boolean = false
 
   override def getStatements: util.List[Statement] = cfg.getStatements
 
-  override def getDeclaringClass: WrappedClass = null
+  override def getDeclaringClass: WrappedClass = new WrappedClass {
+    override def getMethods: util.Set[Method] = ???
+    override def hasSuperclass: Boolean = ???
+    override def getSuperclass: WrappedClass = ???
+    override def getType: Type = ???
+    override def isApplicationClass: Boolean = true
+    override def getFullyQualifiedName: String = ???
+    override def getName: String = ???
+    override def getDelegate: AnyRef = ???
+  }
 
   override def getControlFlowGraph: ControlFlowGraph = cfg
 
@@ -98,9 +108,7 @@ class SWANMethod(val delegate: CanFunction) extends Method {
     sb.append(getName)
     sb.append(">\n")
     getStatements.forEach(s => {
-      sb.append("<pred hash=" + cfg.getPredsOf(s).hashCode() + " />")
       sb.append(s.toString)
-      sb.append("<succ hash=" + cfg.getSuccsOf(s).hashCode() + " />")
       sb.append("\n")
     })
     sb.append("</method>\n")

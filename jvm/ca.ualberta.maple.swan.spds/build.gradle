@@ -63,6 +63,7 @@ dependencies {
     implementation 'de.fraunhofer.iem:WPDS:3.1.1'
     implementation 'de.fraunhofer.iem:boomerangScope:3.1.1'
     implementation 'de.fraunhofer.iem:boomerangPDS:3.1.1'
+    implementation 'de.fraunhofer.iem:idealPDS:3.1.1'
 
     implementation 'org.scala-lang:scala-library:'+project.property("SCALA_VERSION")
 

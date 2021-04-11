@@ -13,20 +13,23 @@ package ca.ualberta.maple.swan.spds
 import java.util
 import java.util.Collections
 
-import boomerang.scene.{AnalysisScope, CallGraph, ControlFlowGraph, DataFlowScope}
+import boomerang.scene.{AllocVal, AnalysisScope, CallGraph, ControlFlowGraph, DataFlowScope}
 import boomerang.{BackwardQuery, Boomerang, DefaultBoomerangOptions, Query}
-import ca.ualberta.maple.swan.ir.{CanFunction, CanModule, Constants}
+import ca.ualberta.maple.swan.ir.{CanFunction, CanModule, Constants, SWIRLPrinter}
 import com.google.common.collect.Maps
+
+import scala.collection.mutable
 
 // TODO: iOS lifecycle
 class SWANCallGraph(val module: CanModule) extends CallGraph {
 
   val methods: util.HashMap[String, SWANMethod] = Maps.newHashMap[String, SWANMethod]
+  val methodEdges = new mutable.HashMap[SWANMethod, mutable.Set[SWANMethod]] with mutable.MultiMap[SWANMethod, SWANMethod]
 
   module.functions.foreach(f => {
+    val m = makeMethod(f)
     if (f.name.startsWith(Constants.fakeMain)) {
-      val m = makeMethod(f) // ++
-      this.getEntryPoints.add(m)
+      this.addEntryPoint(m)
     }
   })
 
@@ -36,54 +39,84 @@ class SWANCallGraph(val module: CanModule) extends CallGraph {
     m
   }
 
+  def addSWANEdge(from: SWANMethod, to: SWANMethod, stmt: SWANStatement.ApplyFunctionRef): Unit = {
+    val edge = new CallGraph.Edge(stmt, to)
+    this.methodEdges.addBinding(from, to)
+    this.addEdge(edge)
+  }
+
+  // TODO: using multiple queries, even with unregisterAllListeners doesn't work
+  // Start at the entry points, find apply instructions, query the
+  // function references, add edge to CG (if possible), repeat until no change.
   def constructStaticCG(): Unit = {
 
     val visited = new util.HashSet[SWANStatement]()
-
-    val scope = new AnalysisScope(this) {
-      override protected def generate(edge: ControlFlowGraph.Edge): util.Collection[_ <: Query] = {
-        val statement = edge.getTarget
-        if (statement.containsInvokeExpr && !visited.contains(statement)) {
-          val ref = statement.getInvokeExpr.asInstanceOf[SWANInvokeExpr].getFunctionRef
-          return Collections.singleton(BackwardQuery.make(edge, ref))
-        }
-        Collections.emptySet
-      }
-    }
 
     val options = new DefaultBoomerangOptions {
       override def allowMultipleQueries(): Boolean = true
     }
 
-    val solver = new Boomerang(this, DataFlowScope.INCLUDE_ALL, options)
-
     var changed = true
-
     while (changed) {
       changed = false
-      solver.unregisterAllListeners()
-      val seeds = scope.computeSeeds
-
-      seeds.forEach(query => {
-        val backwardQueryResults = solver.solve(query.asInstanceOf[BackwardQuery])
-        backwardQueryResults.getAllocationSites.forEach((forwardQuery, _) => {
-          // Probably wrong
-          val applyStmt = query.asNode().stmt().getStart.asInstanceOf[SWANStatement.ApplyFunctionRef]
-          forwardQuery.`var`() match {
-            case v: SWANVal.FunctionRef => {
-              val target = this.methods.get(v.ref)
-              val edge = new CallGraph.Edge(applyStmt, target)
-              this.addEdge(edge)
-              visited.add(applyStmt)
-              changed = true
-            }
-            case v: SWANVal.BuiltinFunctionRef => // TODO
-            case v: SWANVal.DynamicFunctionRef => // TODO, RTA
-            case _ => // never happens
+      val scope = new AnalysisScope(this) {
+        override protected def generate(edge: ControlFlowGraph.Edge): util.Collection[_ <: Query] = {
+          val statement = edge.getTarget
+          if (statement.containsInvokeExpr && !visited.contains(statement)) {
+            val ref = statement.getInvokeExpr.asInstanceOf[SWANInvokeExpr].getFunctionRef
+            return Collections.singleton(BackwardQuery.make(edge, ref))
           }
+          Collections.emptySet
+        }
+      }
+      val seeds = scope.computeSeeds
+      if (!seeds.isEmpty) {
+        seeds.forEach(query => {
+          val solver = new Boomerang(this, DataFlowScope.INCLUDE_ALL, options)
+          val backwardQueryResults = solver.solve(query.asInstanceOf[BackwardQuery])
+          backwardQueryResults.getAllocationSites.forEach((forwardQuery, _) => {
+            val applyStmt = query.asNode().stmt().getTarget.asInstanceOf[SWANStatement.ApplyFunctionRef]
+            forwardQuery.`var`().asInstanceOf[AllocVal].getAllocVal match {
+              case v: SWANVal.FunctionRef => {
+                val target = this.methods.get(v.ref)
+                addSWANEdge(v.method, target, applyStmt)
+                visited.add(applyStmt)
+                changed = true
+              }
+              case v: SWANVal.BuiltinFunctionRef => {
+                if (this.methods.containsKey(v.ref)) {
+                  val target = this.methods.get(v.ref)
+                  addSWANEdge(v.method, target, applyStmt)
+                  visited.add(applyStmt)
+                  changed = true
+                }
+              }
+              case v: SWANVal.DynamicFunctionRef => // TODO, RTA
+              case _ => // never happens
+            }
+          })
         })
-      })
+      }
     }
+  }
+
+  override def toString: String = {
+    val sb = new StringBuilder
+    sb.append("CG edges (")
+    sb.append(getEdges.size())
+    sb.append("): \n")
+    getEdges.forEach((e: CallGraph.Edge) => {
+      def foo(e: CallGraph.Edge) = {
+        val sp = new SWIRLPrinter
+        sp.print(e.src.asInstanceOf[SWANStatement].delegate)
+        sb.append(sp)
+        sb.append(" -> ")
+        sb.append(e.tgt.getName)
+        sb.append("\n")
+      }
+      foo(e)
+    })
+    sb.toString()
   }
 
 }

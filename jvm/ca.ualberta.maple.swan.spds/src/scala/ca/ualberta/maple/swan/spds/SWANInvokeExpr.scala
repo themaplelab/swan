@@ -12,7 +12,7 @@ package ca.ualberta.maple.swan.spds
 
 import java.util
 
-import boomerang.scene.{DeclaredMethod, InvokeExpr, Val}
+import boomerang.scene.{DeclaredMethod, InvokeExpr, Val, WrappedClass}
 import ca.ualberta.maple.swan.spds.SWANStatement.ApplyFunctionRef
 
 class SWANInvokeExpr(val stmt: ApplyFunctionRef, val method: SWANMethod) extends InvokeExpr {
@@ -33,11 +33,19 @@ class SWANInvokeExpr(val stmt: ApplyFunctionRef, val method: SWANMethod) extends
 
   override def getBase: Val = ???
 
-  override def getMethod: DeclaredMethod = null
+  override def getMethod: DeclaredMethod = new DeclaredMethod(this) {
+    override def isNative: Boolean = ???
+    override def getSubSignature: String = ???
+    override def getName: String = "" // Boomerang checks this against Java method names -.-
+    override def isStatic: Boolean = ???
+    override def isConstructor: Boolean = ???
+    override def getSignature: String = ???
+    override def getDeclaringClass: WrappedClass = ???
+  }
 
   override def isSpecialInvokeExpr: Boolean = false
 
-  override def isStaticInvokeExpr: Boolean = false
+  override def isStaticInvokeExpr: Boolean = true
 
   override def toString: String = {
     val sb = new StringBuilder()

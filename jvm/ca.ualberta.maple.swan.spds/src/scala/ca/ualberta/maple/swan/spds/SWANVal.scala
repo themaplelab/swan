@@ -12,6 +12,7 @@ package ca.ualberta.maple.swan.spds
 
 import boomerang.scene.ControlFlowGraph.Edge
 import boomerang.scene.{AllocVal, Method, Pair, Type, Val}
+import ca.ualberta.maple.swan.ir
 import ca.ualberta.maple.swan.ir.{BinaryOperation, Literal, Symbol, UnaryOperation}
 
 abstract class SWANVal(mthd: Method, unbalanced: Edge) extends Val(mthd, unbalanced) {
@@ -30,9 +31,9 @@ abstract class SWANVal(mthd: Method, unbalanced: Edge) extends Val(mthd, unbalan
   override def getArrayBase: Pair[boomerang.scene.Val,Integer] = null
   override def isThrowableAllocationType: Boolean = false
   override def isArrayRef: Boolean = false
+  override def isStatic: Boolean = false
 
-  // Shared
-  final override def isStatic: Boolean = false
+  // Fixed
   final override def isLocal: Boolean = true
   final override def isStringBufferOrBuilder: Boolean = false
   final override def isCast: Boolean = false
@@ -47,11 +48,11 @@ abstract class SWANVal(mthd: Method, unbalanced: Edge) extends Val(mthd, unbalan
 }
 
 object SWANVal {
-  case class Simple(delegate: Symbol, method: Method, unbalanced: Edge = null) extends SWANVal(method, unbalanced) {
+  case class Simple(delegate: Symbol, method: SWANMethod, unbalanced: Edge = null) extends SWANVal(method, unbalanced) {
     private val tpe = SWANType.create(delegate.tpe)
     override def getType: Type = tpe
     override def getVariableName: String = delegate.ref.name
-    override def asUnbalanced(edge: Edge): Val = Simple(delegate, method, edge)
+    override def asUnbalanced(edge: Edge): Val = method.addVal(Simple(delegate, method, edge))
     override def hashCode: Int = {
       val prime = 31
       var result = 1
@@ -62,19 +63,27 @@ object SWANVal {
     override def equals(obj: Any): Boolean = {
       obj match {
         case other: Simple =>
-          delegate.equals(other.delegate) && method.equals(other.m)
-        case _ => false
+          delegate.equals(other.delegate) && method.equals(other.m) &&
+            { if (other.unbalanced != null) other.unbalanced.equals(unbalanced) else true }
+        case other: Argument =>
+          delegate.equals(other.delegate) && method.equals(other.m) &&
+            { if (other.unbalanced != null) other.unbalanced.equals(unbalanced) else true }
+        case other: Constant =>
+          delegate.equals(other.delegate) && method.equals(other.m) &&
+            { if (other.unbalanced != null) other.unbalanced.equals(unbalanced) else true }
+        case _: AllocVal => false
+        case _ => throw new RuntimeException("unexpected")
       }
     }
     override def toString: String = {
-      "<var name=" + getVariableName + " type=" + getType.toString + " hash=" + hashCode + " />"
+      "<v " + getVariableName + " " + getType.toString + " " + hashCode + " />"
     }
   }
-  case class Argument(delegate: Symbol, index: Int, method: Method, unbalanced: Edge = null) extends SWANVal(method, unbalanced) {
+  case class Argument(delegate: Symbol, index: Int, method: SWANMethod, unbalanced: Edge = null) extends SWANVal(method, unbalanced) {
     private val tpe = SWANType.create(delegate.tpe)
     override def getType: Type = tpe
     override def getVariableName: String = delegate.ref.name
-    override def asUnbalanced(edge: Edge): Val = Argument(delegate, index, method, edge)
+    override def asUnbalanced(edge: Edge): Val = method.addVal(Argument(delegate, index, method, edge))
     override def hashCode: Int = {
       val prime = 31
       var result = 1
@@ -85,22 +94,30 @@ object SWANVal {
     override def equals(obj: Any): Boolean = {
       obj match {
         case other: Argument =>
-          delegate.equals(other.delegate) && method.equals(other.m)
-        case _ => false
+          delegate.equals(other.delegate) && method.equals(other.m) &&
+            { if (other.unbalanced != null) other.unbalanced.equals(unbalanced) else true }
+        case other: Simple =>
+          delegate.equals(other.delegate) && method.equals(other.m) &&
+            { if (other.unbalanced != null) other.unbalanced.equals(unbalanced) else true }
+        case other: Constant =>
+          delegate.equals(other.delegate) && method.equals(other.m) &&
+            { if (other.unbalanced != null) other.unbalanced.equals(unbalanced) else true }
+        case _: AllocVal => false
+        case _ => throw new RuntimeException("unexpected")
       }
     }
     override def toString: String = {
-      "<arg name=" + getVariableName + " type=" + this.getType.toString + " hash=" + hashCode + " />"
+      "<a " + getVariableName + " " + this.getType.toString + " " + hashCode + " />"
     }
   }
-  case class NewExpr(delegate: Symbol, method: Method, unbalanced: Edge = null) extends SWANVal(method, unbalanced) {
+  case class NewExpr(delegate: Symbol, method: SWANMethod, unbalanced: Edge = null) extends SWANVal(method, unbalanced) {
     val tpe: SWANType = SWANType.create(delegate.tpe)
     override def getType: Type = tpe
     override def isNewExpr: Boolean = true
     override def getNewExprType: Type = tpe
     override def isArrayAllocationVal: Boolean = tpe.isArrayType
     override def getVariableName: String = delegate.ref.name
-    override def asUnbalanced(edge: Edge): Val = NewExpr(delegate, method, edge)
+    override def asUnbalanced(edge: Edge): Val = method.addVal(NewExpr(delegate, method, edge))
     override def hashCode: Int = {
       val prime = 31
       var result = 1
@@ -112,27 +129,27 @@ object SWANVal {
     override def equals(obj: Any): Boolean = {
       obj match {
         case other: NewExpr =>
-          delegate.equals(other.delegate) && tpe.equals(other.tpe) && method.equals(other.m)
+          delegate.equals(other.delegate) && tpe.equals(other.tpe) && method.equals(other.m) &&
+            { if (other.unbalanced != null) other.unbalanced.equals(unbalanced) else true }
         case _ => false
       }
     }
     override def toString: String = {
-      "<new_var name=" + getVariableName + " type=" + this.getType.toString + " hash=" + hashCode + " />"
+      "<nv " + getVariableName + " " + this.getType.toString + " " + hashCode + " />"
     }
   }
-  case class Constant(delegate: Symbol, literal: Literal, method: Method, unbalanced: Edge = null) extends SWANVal(method, unbalanced) {
+  case class Constant(delegate: Symbol, literal: Literal, method: SWANMethod, unbalanced: Edge = null) extends SWANVal(method, unbalanced) {
     private val tpe = SWANType.create(delegate.tpe)
     override def getType: Type = tpe
     override def isNewExpr: Boolean = true
     override def getNewExprType: Type = tpe
     override def isStringConstant: Boolean = literal.isInstanceOf[Literal.string]
     override def getStringValue: String = literal.asInstanceOf[Literal.string].value
-    override def isIntConstant: Boolean = literal.isInstanceOf[Literal.string]
-    // For now, just cast BigInt to Int, maybe long later if needed
+    override def isIntConstant: Boolean = literal.isInstanceOf[Literal.int]
+    // TODO: float case
     override def getIntValue: Int = literal.asInstanceOf[Literal.int].value.toInt
     override def getVariableName: String = delegate.ref.name
-    // TODO: float case
-    override def asUnbalanced(edge: Edge): Val = Constant(delegate, literal, method, edge)
+    override def asUnbalanced(edge: Edge): Val = method.addVal(Constant(delegate, literal, method, edge))
     override def hashCode: Int = {
       val prime = 31
       var result = 1
@@ -143,20 +160,29 @@ object SWANVal {
     override def equals(obj: Any): Boolean = {
       obj match {
         case other: Constant =>
-          delegate.equals(other.delegate) && method.equals(other.m)
+          delegate.equals(other.delegate) && method.equals(other.m) &&
+            { if (other.unbalanced != null) other.unbalanced.equals(unbalanced) else true }
         case _ => false
       }
     }
     override def toString: String = {
-      getVariableName + ": " + literal
+      "<nlv " + getVariableName + " " + {
+        literal match {
+          case Literal.string(value) => value
+          case Literal.int(value) => value
+          case Literal.float(value) => value
+        }
+      } + " " + this.getType.toString + " " + hashCode + " />"
+
     }
   }
+  // TODO
   case class BinaryExpr(resultType: ca.ualberta.maple.swan.ir.Type, lhs: Symbol, rhs: Symbol,
-                       operator: BinaryOperation, method: Method, unbalanced: Edge = null) extends SWANVal(method, unbalanced) {
+                       operator: BinaryOperation, method: SWANMethod, unbalanced: Edge = null) extends SWANVal(method, unbalanced) {
     private val tpe = SWANType.create(resultType)
     override def getType: Type = tpe
-    override def getVariableName: String = null // TODO
-    override def asUnbalanced(edge: Edge): Val = BinaryExpr(resultType, lhs, rhs, operator, method, edge)
+    override def getVariableName: String = null
+    override def asUnbalanced(edge: Edge): Val = method.addVal(BinaryExpr(resultType, lhs, rhs, operator, method, edge))
     override def hashCode: Int = {
       val prime = 31
       var result = 1
@@ -171,7 +197,8 @@ object SWANVal {
       obj match {
         case other: BinaryExpr =>
           resultType.equals(other.resultType) && lhs.equals(other.lhs) && rhs.equals(other.rhs) && operator == other.operator &&
-            method.equals(other.m)
+            method.equals(other.m) &&
+            { if (other.unbalanced != null) other.unbalanced.equals(unbalanced) else true }
         case _ => false
       }
     }
@@ -179,12 +206,13 @@ object SWANVal {
       lhs.ref.name + " " + operator + " " + rhs.ref.name
     }
   }
+  // TODO
   case class UnaryExpr(resultType: ca.ualberta.maple.swan.ir.Type, delegate: Symbol,
-                       operator: UnaryOperation, method: Method, unbalanced: Edge = null) extends SWANVal(method, unbalanced) {
+                       operator: UnaryOperation, method: SWANMethod, unbalanced: Edge = null) extends SWANVal(method, unbalanced) {
     private val tpe = SWANType.create(resultType)
     override def getType: Type = tpe
-    override def getVariableName: String = null // TODO
-    override def asUnbalanced(edge: Edge): Val = UnaryExpr(resultType, delegate, operator, method, edge)
+    override def getVariableName: String = null
+    override def asUnbalanced(edge: Edge): Val = method.addVal(UnaryExpr(resultType, delegate, operator, method, edge))
     override def hashCode: Int = {
       val prime = 31
       var result = 1
@@ -198,7 +226,8 @@ object SWANVal {
       obj match {
         case other: UnaryExpr =>
           resultType.equals(other.resultType) && operator == other.operator && delegate.equals(other.delegate) &&
-            method.equals(other.m)
+            method.equals(other.m) &&
+            { if (other.unbalanced != null) other.unbalanced.equals(unbalanced) else true }
         case _ => false
       }
     }
@@ -206,13 +235,13 @@ object SWANVal {
       operator.toString + " " + delegate.ref.name
     }
   }
-  case class FunctionRef(delegate: Symbol, ref: String, method: Method, unbalanced: Edge = null) extends SWANVal(method, unbalanced) {
+  case class FunctionRef(delegate: Symbol, ref: String, method: SWANMethod, unbalanced: Edge = null) extends SWANVal(method, unbalanced) {
     private val tpe = SWANType.create(delegate.tpe)
     override def getType: Type = tpe
     override def isNewExpr: Boolean = true
     override def getNewExprType: Type = tpe
     override def getVariableName: String = delegate.ref.name
-    override def asUnbalanced(edge: Edge): Val = FunctionRef(delegate, ref, method, edge)
+    override def asUnbalanced(edge: Edge): Val = method.addVal(FunctionRef(delegate, ref, method, edge))
     override def hashCode: Int = {
       val prime = 31
       var result = 1
@@ -223,21 +252,22 @@ object SWANVal {
     override def equals(obj: Any): Boolean = {
       obj match {
         case other: FunctionRef =>
-          delegate.equals(other.delegate) && method.equals(other.m)
+          delegate.equals(other.delegate) && method.equals(other.m) &&
+            { if (other.unbalanced != null) other.unbalanced.equals(unbalanced) else true }
         case _ => false
       }
     }
     override def toString: String = {
-      "<func_ref_var name=" + getVariableName + " type=" + getType.toString + " func=" + ref + " hash=" + hashCode + " />"
+      "<frv " + getVariableName + " " + getType.toString + " f=" + ref + " " + hashCode + " />"
     }
   }
-  case class BuiltinFunctionRef(delegate: Symbol, ref: String, method: Method, unbalanced: Edge = null) extends SWANVal(method, unbalanced) {
+  case class BuiltinFunctionRef(delegate: Symbol, ref: String, method: SWANMethod, unbalanced: Edge = null) extends SWANVal(method, unbalanced) {
     private val tpe = SWANType.create(delegate.tpe)
     override def getType: Type = tpe
     override def isNewExpr: Boolean = true
     override def getNewExprType: Type = tpe
     override def getVariableName: String = delegate.ref.name
-    override def asUnbalanced(edge: Edge): Val = BuiltinFunctionRef(delegate, ref, method, edge)
+    override def asUnbalanced(edge: Edge): Val = method.addVal(BuiltinFunctionRef(delegate, ref, method, edge))
     override def hashCode: Int = {
       val prime = 31
       var result = 1
@@ -248,21 +278,22 @@ object SWANVal {
     override def equals(obj: Any): Boolean = {
       obj match {
         case other: BuiltinFunctionRef =>
-          delegate.equals(other.delegate) && method.equals(other.m)
+          delegate.equals(other.delegate) && method.equals(other.m) &&
+            { if (other.unbalanced != null) other.unbalanced.equals(unbalanced) else true }
         case _ => false
       }
     }
     override def toString: String = {
-      delegate.ref.name + ": @" + ref
+      "<bfrv " + getVariableName + " " + getType.toString + " f=" + ref + " " + hashCode + " />"
     }
   }
-  case class DynamicFunctionRef(delegate: Symbol, index: String, method: Method, unbalanced: Edge = null) extends SWANVal(method, unbalanced) {
+  case class DynamicFunctionRef(delegate: Symbol, index: String, method: SWANMethod, unbalanced: Edge = null) extends SWANVal(method, unbalanced) {
     private val tpe = SWANType.create(delegate.tpe)
     override def getType: Type = tpe
     override def isNewExpr: Boolean = true
     override def getNewExprType: Type = tpe
     override def getVariableName: String = delegate.ref.name
-    override def asUnbalanced(edge: Edge): Val = DynamicFunctionRef(delegate, index, method, edge)
+    override def asUnbalanced(edge: Edge): Val = method.addVal(DynamicFunctionRef(delegate, index, method, edge))
     override def hashCode: Int = {
       val prime = 31
       var result = 1
@@ -273,12 +304,13 @@ object SWANVal {
     override def equals(obj: Any): Boolean = {
       obj match {
         case other: DynamicFunctionRef =>
-          delegate.equals(other.delegate) && method.equals(other.m)
+          delegate.equals(other.delegate) && method.equals(other.m) &&
+            { if (other.unbalanced != null) other.unbalanced.equals(unbalanced) else true }
         case _ => false
       }
     }
     override def toString: String = {
-      delegate.ref.name + ": @" + index
+      "<dfrv " + getVariableName + " " + getType.toString + " i=" + index + " " + hashCode + " />"
     }
   }
 }

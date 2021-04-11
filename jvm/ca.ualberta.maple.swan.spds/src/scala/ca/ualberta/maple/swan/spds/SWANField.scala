@@ -13,9 +13,6 @@ package ca.ualberta.maple.swan.spds
 import boomerang.scene.Field
 
 class SWANField(val name: String) extends Field {
-  override def toString: String = {
-    name
-  }
   override def hashCode: Int = {
     val prime = 31
     var result = 1
@@ -29,4 +26,6 @@ class SWANField(val name: String) extends Field {
       case _ => false
     }
   }
+
+  override def toString: String = name
 }

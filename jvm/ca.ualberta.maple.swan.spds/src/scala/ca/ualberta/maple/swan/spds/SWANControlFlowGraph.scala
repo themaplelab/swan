@@ -65,8 +65,13 @@ class SWANControlFlowGraph(val method: SWANMethod) extends ControlFlowGraph {
     statements.add(termStatement)
   })
 
-  startPointCache.add(
-    mappedStatements.get(method.delegate.blocks(0).operators(0)))
+  if (method.delegate.blocks(0).operators.nonEmpty){
+    startPointCache.add(
+      mappedStatements.get(method.delegate.blocks(0).operators(0)))
+  } else {
+    startPointCache.add(
+      mappedStatements.get(method.delegate.blocks(0).terminator))
+  }
 
   method.delegate.blocks.foreach(b => {
     var prev: Statement = null

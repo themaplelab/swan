@@ -17,4 +17,5 @@ class SWANIfStatement(val stmt: SWANStatement.ConditionalBranch) extends IfState
   override def getTarget: Statement = null
   override def evaluate(v: Val): IfStatement.Evaluation = null
   override def uses(v: Val): Boolean = stmt.getRightOp.equals(v)
+  override def toString: String = "<if_stmt>" + stmt + "</if_stmt>"
 }
