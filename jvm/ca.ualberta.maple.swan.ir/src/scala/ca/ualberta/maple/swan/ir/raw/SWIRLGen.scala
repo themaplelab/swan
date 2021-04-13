@@ -15,7 +15,6 @@ import ca.ualberta.maple.swan.ir.{Argument, BinaryOperation, Block, BlockRef, Co
 import ca.ualberta.maple.swan.parser._
 import ca.ualberta.maple.swan.utils.Logging
 
-import scala.collection.IterableOnce.iterableOnceExtensionMethods
 import scala.collection.mutable.ArrayBuffer
 import scala.collection.{immutable, mutable}
 import scala.util.control.Breaks.{break, breakable}

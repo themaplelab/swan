@@ -10,8 +10,8 @@
 
 package ca.ualberta.maple.swan.parser
 
-import ca.ualberta.maple.swan.parser.SILFunctionAttribute.specialize.Kind
 import ca.ualberta.maple.swan.parser.SILFunctionAttribute._
+import ca.ualberta.maple.swan.parser.SILFunctionAttribute.specialize.Kind
 
 import scala.collection.mutable
 

@@ -8,8 +8,8 @@
  *
  */
 
-import ca.ualberta.maple.swan.ir.*;
 import ca.ualberta.maple.swan.ir.Error;
+import ca.ualberta.maple.swan.ir.*;
 import ca.ualberta.maple.swan.ir.canonical.SWIRLPass;
 import ca.ualberta.maple.swan.parser.SILModule;
 import ca.ualberta.maple.swan.parser.SILPrinter;
@@ -18,9 +18,10 @@ import ca.ualberta.maple.swan.spds.analysis.TaintAnalysis;
 import ca.ualberta.maple.swan.test.TestDriver;
 import ca.ualberta.maple.swan.utils.Logging;
 import org.junit.jupiter.api.Test;
-
 import scala.Tuple2;
-import scala.collection.mutable.*;
+import scala.collection.mutable.ArrayBuffer;
+import scala.collection.mutable.HashMap;
+import scala.collection.mutable.HashSet;
 
 import java.io.File;
 import java.net.URISyntaxException;

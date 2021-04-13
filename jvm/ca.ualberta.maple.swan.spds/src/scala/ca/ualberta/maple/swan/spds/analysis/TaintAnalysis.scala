@@ -16,7 +16,7 @@ import boomerang.results.ForwardBoomerangResults
 import boomerang.scene._
 import boomerang.weights.{DataFlowPathWeight, PathTrackingBoomerang}
 import boomerang.{BoomerangOptions, DefaultBoomerangOptions, ForwardQuery}
-import ca.ualberta.maple.swan.ir.{CanInstructionDef, ModuleGroup, Position, SWIRLPrinter}
+import ca.ualberta.maple.swan.ir.{CanInstructionDef, ModuleGroup, Position}
 import ca.ualberta.maple.swan.spds.structures.{SWANCallGraph, SWANMethod, SWANStatement}
 
 import scala.collection.mutable
@@ -101,14 +101,8 @@ class TaintAnalysis(val group: ModuleGroup,
               val prevPos = if (prev != null) prev.getPosition else None
               if (prevPos.nonEmpty) {
                 !pos.get.sameLine(prevPos.get)
-              } else {
-                true
-              }
-            }) {
-              pos
-            } else {
-              None
-            }
+              } else { true }
+            }) { pos } else { None }
           }
           s.getValue.getAllStatements.forEach(node => {
             val edge = node.stmt()

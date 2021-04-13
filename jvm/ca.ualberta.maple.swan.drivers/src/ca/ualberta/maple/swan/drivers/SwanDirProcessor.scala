@@ -10,15 +10,13 @@
 
 package ca.ualberta.maple.swan.drivers
 
-import java.io.{File, FileInputStream, FileOutputStream, FileReader, FileWriter}
-import java.nio.file.Paths
+import java.io.{File, FileInputStream, FileOutputStream, FileReader}
+import java.nio.file.{Files, Paths}
 
 import ca.ualberta.maple.swan.ir.ModuleGroup
 import ca.ualberta.maple.swan.parser.SILModuleMetadata
 import ca.ualberta.maple.swan.utils.Logging
 import com.google.common.hash.Hashing
-import java.nio.file.Files
-
 import com.google.gson.JsonParser
 import com.google.gson.stream.JsonReader
 import com.twitter.chill.{KryoPool, ScalaKryoInstantiator}

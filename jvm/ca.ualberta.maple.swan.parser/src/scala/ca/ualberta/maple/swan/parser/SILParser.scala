@@ -17,11 +17,10 @@ import java.util
 
 import ca.ualberta.maple.swan.utils.Logging
 
-import scala.sys.process._
-
 import scala.annotation.tailrec
 import scala.collection.mutable.ArrayBuffer
 import scala.reflect.ClassTag
+import scala.sys.process._
 import scala.util.control.Breaks
 
 // Canonical SIL Parser. Most of it is reverse engineered. It does not

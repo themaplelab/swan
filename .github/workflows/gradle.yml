@@ -29,7 +29,7 @@ jobs:
       env:
         USERNAME: ${{ secrets.USERNAME }}
         PASSWORD: ${{ secrets.PASSWORD }}
-      run: printf "SCALA_VERSION=2.13.3\nUSERNAME=$USERNAME\nPASSWORD=$PASSWORD\n" > jvm/gradle.properties
+      run: printf "SCALA_VERSION=2.13.5\nUSERNAME=$USERNAME\nPASSWORD=$PASSWORD\n" > jvm/gradle.properties
     - name: Build with Gradle
       run: cd jvm && ./gradlew build -i
 

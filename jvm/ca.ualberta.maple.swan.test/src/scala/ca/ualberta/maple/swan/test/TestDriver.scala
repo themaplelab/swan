@@ -15,7 +15,7 @@ import java.nio.charset.StandardCharsets
 
 import ca.ualberta.maple.swan.ir.canonical.SWIRLPass
 import ca.ualberta.maple.swan.ir.raw.SWIRLGen
-import ca.ualberta.maple.swan.ir.{CanModule, Module, ModuleGroup, ModuleGrouper, SWIRLParser}
+import ca.ualberta.maple.swan.ir._
 import ca.ualberta.maple.swan.parser.{SILModule, SILParser}
 import org.apache.commons.io.IOUtils
 

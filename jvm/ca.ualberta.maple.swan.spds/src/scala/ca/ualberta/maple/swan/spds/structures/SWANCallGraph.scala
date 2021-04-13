@@ -15,17 +15,16 @@ import java.util.Collections
 
 import boomerang.scene._
 import boomerang.{BackwardQuery, Boomerang, DefaultBoomerangOptions, Query}
-import ca.ualberta.maple.swan.ir.{CanFunction, CanModule, Constants, ModuleGroup, SWIRLPrinter}
+import ca.ualberta.maple.swan.ir.{CanFunction, Constants, ModuleGroup, SWIRLPrinter}
 import com.google.common.collect.Maps
 
 import scala.collection.mutable
-import scala.collection.mutable.ArrayBuffer
 
 // TODO: iOS lifecycle
 class SWANCallGraph(val module: ModuleGroup) extends CallGraph {
 
   val methods: util.HashMap[String, SWANMethod] = Maps.newHashMap[String, SWANMethod]
-  val methodEdges = new mutable.HashMap[SWANMethod, mutable.Set[SWANMethod]] with mutable.MultiMap[SWANMethod, SWANMethod]
+  final val methodEdges = new mutable.HashMap[SWANMethod, mutable.Set[SWANMethod]] with mutable.MultiMap[SWANMethod, SWANMethod]
 
   module.functions.foreach(f => {
     val m = makeMethod(f)

@@ -16,7 +16,7 @@ import java.nio.file.{Files, Paths}
 
 import ca.ualberta.maple.swan.ir.canonical.SWIRLPass
 import ca.ualberta.maple.swan.ir.raw.SWIRLGen
-import ca.ualberta.maple.swan.ir.{CanModule, Module, ModuleGroup, ModuleGrouper, SWIRLParser, SWIRLPrinter, SWIRLPrinterOptions}
+import ca.ualberta.maple.swan.ir._
 import ca.ualberta.maple.swan.parser.{SILModule, SILParser}
 import ca.ualberta.maple.swan.utils.Logging
 import org.apache.commons.io.{FileUtils, IOUtils}

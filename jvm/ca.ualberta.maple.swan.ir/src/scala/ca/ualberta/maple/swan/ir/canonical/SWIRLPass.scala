@@ -11,7 +11,7 @@
 package ca.ualberta.maple.swan.ir.canonical
 
 import ca.ualberta.maple.swan.ir.Exceptions.{IncompleteRawSWIRLException, IncorrectRawSWIRLException, UnexpectedSILFormatException}
-import ca.ualberta.maple.swan.ir.{Argument, BinaryOperation, Block, BlockRef, CanBlock, CanFunction, CanModule, CanOperator, CanOperatorDef, CanTerminator, CanTerminatorDef, Constants, FieldWriteAttribute, Function, Literal, Module, Operator, RawOperatorDef, RawTerminatorDef, SWIRLPrinter, SwitchCase, SwitchEnumCase, Symbol, SymbolRef, SymbolTableEntry, Terminator, Type, WithResult}
+import ca.ualberta.maple.swan.ir.{Argument, BinaryOperation, Block, BlockRef, CanBlock, CanFunction, CanModule, CanOperator, CanOperatorDef, CanTerminator, CanTerminatorDef, Constants, FieldWriteAttribute, Function, Literal, Module, Operator, RawOperatorDef, RawTerminatorDef, SwitchCase, SwitchEnumCase, Symbol, SymbolRef, SymbolTableEntry, Terminator, Type, WithResult}
 import ca.ualberta.maple.swan.utils.Logging
 import org.jgrapht.Graph
 import org.jgrapht.graph.{DefaultDirectedGraph, DefaultEdge}
