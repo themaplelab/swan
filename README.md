@@ -1,6 +1,6 @@
 <img src="https://karimali.ca/resources/images/projects/swan.png" width="150">
 
-[![Java CI with Gradle](https://github.com/themaplelab/swan/workflows/Java%20CI%20with%20Gradle/badge.svg?branch=spds)](https://github.com/themaplelab/swan/actions)
+[![macOS CI](https://github.com/themaplelab/swan/actions/workflows/macOS.yml/badge.svg)](https://github.com/themaplelab/swan/actions/workflows/macOS.yml) [![Ubuntu CI](https://github.com/themaplelab/swan/actions/workflows/ubuntu.yml/badge.svg)](https://github.com/themaplelab/swan/actions/workflows/ubuntu.yml)
 
 # SWAN
 

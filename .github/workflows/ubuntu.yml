@@ -15,7 +15,7 @@ jobs:
     - uses: sersoft-gmbh/SwiftyActions@v1
       with:
         release-version: 5.4
-        platform: ubuntu-latest
+        platform: ubuntu-20.04 # ubuntu-latest doesn't work
     - uses: actions/checkout@v2
     - name: Set up JDK 1.8
       uses: actions/setup-java@v1
