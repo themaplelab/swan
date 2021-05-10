@@ -31,7 +31,7 @@ jobs:
         PASSWORD: ${{ secrets.PASSWORD }}
       run: printf "SCALA_VERSION=2.13.5\nUSERNAME=$USERNAME\nPASSWORD=$PASSWORD\n" > jvm/gradle.properties
     - name: Add swift-demangle to PATH
-      run: echo "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swift-demangle" >> $GITHUB_PATH
+      run: echo "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/" >> $GITHUB_PATH
     - name: Build with Gradle
       run: cd jvm && ./gradlew build -i
 
