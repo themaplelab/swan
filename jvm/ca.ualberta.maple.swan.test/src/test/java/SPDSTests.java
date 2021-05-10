@@ -47,19 +47,19 @@ public class SPDSTests {
         options.addSILCallBack((SILModule module) -> {
             SILPrinterOptions opts = new SILPrinterOptions();
             String result = new SILPrinter().print(module, opts);
-            //Logging.printInfo(result);
+            // Logging.printInfo(result);
             return scala.runtime.BoxedUnit.UNIT;
         });
         options.addRawSWIRLCallBack((Module module) -> {
             SWIRLPrinterOptions opts = new SWIRLPrinterOptions();
             String expected = new SWIRLPrinter().print(module, opts);
-            //Logging.printInfo(expected);
+            // Logging.printInfo(expected);
             return scala.runtime.BoxedUnit.UNIT;
         });
         options.addCanSWIRLCallBack((CanModule module) -> {
             SWIRLPrinterOptions opts = new SWIRLPrinterOptions();
             String result = new SWIRLPrinter().print(module, opts);
-            //Logging.printInfo(result);
+            // Logging.printInfo(result);
             return scala.runtime.BoxedUnit.UNIT;
         });
         ModuleGroup group = TestDriver.run(silFile, options);
@@ -77,19 +77,19 @@ public class SPDSTests {
         options.addSILCallBack((SILModule module) -> {
             SILPrinterOptions opts = new SILPrinterOptions();
             String result = new SILPrinter().print(module, opts);
-            //Logging.printInfo(result);
+            // Logging.printInfo(result);
             return scala.runtime.BoxedUnit.UNIT;
         });
         options.addRawSWIRLCallBack((Module module) -> {
             SWIRLPrinterOptions opts = new SWIRLPrinterOptions();
             String expected = new SWIRLPrinter().print(module, opts);
-            Logging.printInfo(expected);
+            // Logging.printInfo(expected);
             return scala.runtime.BoxedUnit.UNIT;
         });
         options.addCanSWIRLCallBack((CanModule module) -> {
             SWIRLPrinterOptions opts = new SWIRLPrinterOptions();
             String result = new SWIRLPrinter().print(module, opts);
-            //Logging.printInfo(result);
+            // Logging.printInfo(result);
             return scala.runtime.BoxedUnit.UNIT;
         });
         ModuleGroup group = TestDriver.run(silFile, options);

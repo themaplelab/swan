@@ -34,6 +34,7 @@ class DynamicDispatchGraph extends Serializable {
     val startNode = nodes(index)
     val classNodes: Option[Array[Node]] = {
       if (types.nonEmpty) {
+        types.get.clear() // RTA not working/tested yet
         // TODO: .toArray not efficient
         Some(types.get.toArray.map((s: String) => nodes(s)))
       } else {
