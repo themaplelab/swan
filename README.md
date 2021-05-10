@@ -89,6 +89,13 @@ git clone git@github.com:themaplelab/swan.git -b spds
 
 Add your GitHub username and [personal access token](https://docs.github.com/en/github/authenticating-to-github/creating-a-personal-access-token) (with read:packages) to `jvm/gradle.properties`. The SPDS dependency requires this. Do **not** push these credentials.
 
+Copy `swift-demangle` to `/usr/local/bin` or add it to `PATH`. On Linux, `swift-demangle` is distributed alongside `swiftc`, so you should not need to do this step.
+
+```
+sudo cp /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swift-demangle /usr/local/bin/
+```
+
+
 Run `./build.sh` in the repo root. You can also run nested `build.sh` scripts **from root** to build separate toolchain components.
 
 All toolchain executables should now be available in `lib/`.

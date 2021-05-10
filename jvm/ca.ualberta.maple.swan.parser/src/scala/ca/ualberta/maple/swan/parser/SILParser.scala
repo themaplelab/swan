@@ -284,7 +284,7 @@ class SILParser extends SILPrinter {
     // swift-demangle can only take a certain amount at a time, so batches are used
     // Actual length limit is likely character based, not count based, and seems to
     // vary from system to system.
-    val swiftDemangle = "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swift-demangle -compact "
+    val swiftDemangle = "swift-demangle -compact "
     val batches = new ArrayBuffer[ArrayBuffer[SILMangledName]]()
     var currBatch = new ArrayBuffer[SILMangledName]()
     batches.append(currBatch)
