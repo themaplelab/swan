@@ -449,6 +449,16 @@ class SILPrinter extends Printer {
         print("is_unique ")
         print(operand)
       }
+      case SILOperator.beginCowMutation(operand, native) => {
+        print("begin_cow_mutation ")
+        print("[native] ", when = native)
+        print(operand)
+      }
+      case SILOperator.endCowMutation(operand, keepUnique) => {
+        print("end_cow_mutation ")
+        print("[keep_unique] ", when = keepUnique)
+        print(operand)
+      }
       case SILOperator.isEscapingClosure(operand, objc) => {
         print("is_escaping_closure ")
         print("[objc] ", when = objc)

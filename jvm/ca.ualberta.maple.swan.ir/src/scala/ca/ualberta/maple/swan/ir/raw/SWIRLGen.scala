@@ -353,6 +353,8 @@ class SWIRLGen {
           case inst: SILOperator.fixLifetime => visitFixLifetime(result, inst, ctx)
           case inst: SILOperator.markDependence => visitMarkDependence(result, inst, ctx)
           case inst: SILOperator.isUnique => visitIsUnique(result, inst, ctx)
+          case inst: SILOperator.beginCowMutation => visitBeginCowMutation(result, inst, ctx)
+          case inst: SILOperator.endCowMutation => visitEndCowMutation(result, inst, ctx)
           case inst: SILOperator.isEscapingClosure => visitIsEscapingClosure(result, inst, ctx)
           case inst: SILOperator.copyBlock => visitCopyBlock(result, inst, ctx)
           case inst: SILOperator.copyBlockWithoutEscaping => visitCopyBlockWithoutEscaping(result, inst, ctx)
@@ -786,6 +788,15 @@ class SWIRLGen {
   def visitIsUnique(r: Option[SILResult], I: SILOperator.isUnique, ctx: Context): ArrayBuffer[RawInstructionDef] = {
     val result = getSingleResult(r, Utils.SILTypeToType(SILType.namedType("Builtin.Int1")), ctx)
     makeOperator(ctx, Operator.unaryOp(result, UnaryOperation.arbitrary, makeSymbolRef(I.operand.value, ctx)))
+  }
+
+  def visitBeginCowMutation(r: Option[SILResult], I: SILOperator.beginCowMutation, ctx: Context): ArrayBuffer[RawInstructionDef] = {
+    verifySILResult(r, 2)
+    copySymbol(I.operand.value, r.get.valueNames.last, ctx)
+  }
+
+  def visitEndCowMutation(r: Option[SILResult], I: SILOperator.endCowMutation, ctx: Context): ArrayBuffer[RawInstructionDef] = {
+    NOP
   }
 
   @throws[UnexpectedSILFormatException]

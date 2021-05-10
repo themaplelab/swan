@@ -167,7 +167,8 @@ object SILOperator {
   case class markDependence(operand: SILOperand, on: SILOperand) extends SILOperator
   case class isUnique(operand: SILOperand) extends SILOperator
 
-  // Skip begin_cow_mutation and end_cow_mutation for now (new instructions)
+  case class beginCowMutation(operand: SILOperand, native: Boolean) extends SILOperator
+  case class endCowMutation(operand: SILOperand, keepUnique: Boolean) extends SILOperator
   case class isEscapingClosure(operand: SILOperand, objc: Boolean) extends SILOperator
   case class copyBlock(operand: SILOperand) extends SILOperator
   case class copyBlockWithoutEscaping(operand1: SILOperand, operand2: SILOperand) extends SILOperator

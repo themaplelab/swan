@@ -730,6 +730,16 @@ class SILParser extends SILPrinter {
         val operand = parseOperand()
         SILInstruction.operator(SILOperator.isUnique(operand))
       }
+      case "begin_cow_mutation" => {
+        val native = skip("[native]")
+        val operand = parseOperand()
+        SILInstruction.operator(SILOperator.beginCowMutation(operand, native))
+      }
+      case "end_cow_mutation" => {
+        val keepUnique = skip("[keep_unique]")
+        val operand = parseOperand()
+        SILInstruction.operator(SILOperator.endCowMutation(operand, keepUnique))
+      }
       case "is_escaping_closure" => {
         val objc = skip("[objc]")
         val operand = parseOperand()
