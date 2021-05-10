@@ -52,7 +52,10 @@ def run_swiftc_cmd():
     sys.stderr.write(stderr)
     exit(1)
   else:
-    file = write_sil(stderr.split("\n", 1)[1])
+    try:
+      file = write_sil(stderr.split("\n", 1)[1])
+    except:
+      file = write_sil(stderr.decode().split("\n", 1)[1])
     info("SIL written to " + file)
 
 def main():
