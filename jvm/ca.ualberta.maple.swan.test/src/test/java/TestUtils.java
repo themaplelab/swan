@@ -164,7 +164,7 @@ public class TestUtils {
         ProcessBuilder pb = new ProcessBuilder("python",
                 swiftc.getAbsolutePath(),
                 swift.getAbsolutePath());
-        // pb.inheritIO();
+        pb.inheritIO();
         Process p = null;
         try {
             p = pb.start();
