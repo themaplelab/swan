@@ -63,3 +63,46 @@ func [model] @`Swift.String.init(_builtinStringLiteral: Builtin.RawPointer, utf8
 bb0(%0 : $`Builtin.RawPointer`, %1 : $`Builtin.Word`, %2 : $`Builtin.Int1`, %3 : $`@thin String.Type`):
   return %0
 }
+
+// -------------------- SIL -----------------------------------------
+// Usually low-level functions.
+
+func [model] @`Swift._allocateUninitializedArray<A>(Builtin.Word) -> ([A], Builtin.RawPointer)` : $`(@owned Array<τ_0_0>, Builtin.RawPointer)` {
+bb0(%0 : $`Builtin.Word`):
+  second = new $`Builtin.RawPointer`
+  first = assign second, $`Builtin.RawPointer`
+  %ret = new $`(@owned Array<τ_0_0>, Builtin.RawPointer)`
+  field_write first to %ret, 0
+  field_write second to %ret, 1
+  return %ret
+}
+
+// -------------------- Operators -----------------------------------
+
+func [model] @`static Swift.String.+ infix(Swift.String, Swift.String) -> Swift.String` : $`@owned String` {
+bb0(%0 : $`@guaranteed String`, %1 : $`@guaranteed String`, %2 : $`@thin String.Type`):
+  %ret = binary_op %0 [reg] %1, $`@owned String`
+  return %ret
+}
+
+// -------------------- Model Stubs ---------------------------------
+// Intentional stubs for functions that we don't care about.
+// No comments needed.
+
+func [model] @`Swift.print(_: Any..., separator: Swift.String, terminator: Swift.String) -> ()` : $`()` {
+bb0(%0 : $`@guaranteed Array<Any>`, %1 : $`@guaranteed String`, %2 : $`@guaranteed String`):
+  %ret = new $`()`
+  return %ret
+}
+
+func [model] @`default argument 1 of Swift.print(_: Any..., separator: Swift.String, terminator: Swift.String) -> ()` : $`@owned String` {
+bb0:
+  %ret = new $`@owned String`
+  return %ret
+}
+
+func [model] @`default argument 2 of Swift.print(_: Any..., separator: Swift.String, terminator: Swift.String) -> ()` : $`@owned String` {
+bb0:
+  %ret = new $`@owned String`
+  return %ret
+}

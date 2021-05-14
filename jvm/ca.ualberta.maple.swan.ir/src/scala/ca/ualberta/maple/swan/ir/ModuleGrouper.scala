@@ -23,7 +23,8 @@ object ModuleGrouper {
   // We throw exceptions for unexpected merging behaviour, but really
   // it is difficult to detect when user functions conflict because
   // modules often have implementations for the same builtins.
-  // Would be also good to check that the implementations are equal
+  // Would be also good to check that the implementations are equal.
+  // The model module must be merged last.
   def merge(toMerge: ArrayBuffer[CanFunction],
             existingFunctions: mutable.HashMap[String, CanFunction],
             entries: mutable.HashMap[String, CanFunction], models: mutable.HashMap[String, CanFunction],
@@ -74,13 +75,6 @@ object ModuleGrouper {
         if (existing.attribute.nonEmpty) { // Existing has an attribute
           if (f.attribute.nonEmpty) { // to add also has an attribute
             existing.attribute.get match {
-              case FunctionAttribute.model => {
-                f.attribute.get match {
-                  case FunctionAttribute.stub => // ignore
-                  case FunctionAttribute.coroutine => add(f)
-                  case _ => throwException("unexpected")
-                }
-              }
               case FunctionAttribute.stub => {
                 f.attribute.get match {
                   case FunctionAttribute.stub => // ignore
@@ -114,7 +108,6 @@ object ModuleGrouper {
             }
           } else { // to add has no attribute
             existing.attribute.get match {
-              case FunctionAttribute.model => existing.attribute = Some(FunctionAttribute.modelOverride)
               case FunctionAttribute.stub => add(f, FunctionAttribute.linked)
               case FunctionAttribute.modelOverride => // ignore
               case FunctionAttribute.linked => // ignore
@@ -134,7 +127,14 @@ object ModuleGrouper {
           }
         }
       } else {
-        add(f)
+        if (f.attribute.nonEmpty) {
+          f.attribute.get match {
+            case FunctionAttribute.model => // Don't add unneeded models
+            case _ => add(f)
+          }
+        } else {
+          add(f)
+        }
       }
     })
   }
@@ -159,6 +159,9 @@ object ModuleGrouper {
       }
       metas.appendAll(existingGroup.metas)
     }
+    // Move model module to end
+    val modelModule = modules.remove(modules.indexWhere(m => m.toString == "models"))
+    modules.append(modelModule)
     modules.foreach(module => {
       val changed = if (changedFiles != null) changedFiles.exists(f => f.getName == module.toString) else false
       if (changed) {

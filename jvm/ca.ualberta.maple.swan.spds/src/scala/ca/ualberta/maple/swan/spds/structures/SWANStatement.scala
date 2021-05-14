@@ -256,41 +256,6 @@ object SWANStatement {
     }
   }
   // TODO
-  case class BinaryOperation(opDef: CanOperatorDef, inst: Operator.binaryOp,
-                             m: SWANMethod) extends SWANStatement(CanInstructionDef.operator(opDef), m) {
-    override def getRightOp: Val = {
-      inst.operation match {
-        case ca.ualberta.maple.swan.ir.BinaryOperation.arbitrary =>
-          m.addVal(SWANVal.BinaryExpr(inst.result.tpe,
-            m.delegate.getSymbol(inst.lhs.name), m.delegate.getSymbol(inst.rhs.name), inst.operation, m))
-        case ca.ualberta.maple.swan.ir.BinaryOperation.equals =>
-          m.addVal(SWANVal.BinaryExpr(inst.result.tpe,
-            m.delegate.getSymbol(inst.lhs.name), m.delegate.getSymbol(inst.rhs.name), inst.operation, m))
-        // case operator that transfers operand properties =>
-        // TODO ?
-      }
-
-    }
-    override def toString: String = {
-      getLeftOp.toString + " = " + getRightOp.toString
-    }
-  }
-  // TODO
-  case class UnaryOperation(opDef: CanOperatorDef, inst: Operator.unaryOp,
-                            m: SWANMethod) extends SWANStatement(CanInstructionDef.operator(opDef), m) {
-    override def getRightOp: Val = {
-      inst.operation match {
-        case ca.ualberta.maple.swan.ir.UnaryOperation.arbitrary =>
-          m.addVal(SWANVal.UnaryExpr(inst.result.tpe, m.delegate.getSymbol(inst.operand.name), inst.operation, m))
-        // case operator that transfers operand properties =>
-        // SWANVal.Simple(inst.result, m)
-      }
-    }
-    override def toString: String = {
-      getLeftOp.toString + " = " + getRightOp.toString
-    }
-  }
-  // TODO
   case class ConditionalFatalError(opDef: CanOperatorDef, inst: Operator.condFail,
                                    m: SWANMethod) extends SWANStatement(CanInstructionDef.operator(opDef), m) {
     override def getLeftOp: Val = ???

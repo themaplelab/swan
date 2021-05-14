@@ -185,8 +185,8 @@ object Operator {
   case class singletonWrite(value: SymbolRef, tpe: String, field: String) extends Operator with RawOperator with CanOperator
   case class fieldRead(result: Symbol, alias: Option[SymbolRef], obj: SymbolRef, field: String, pointer: Boolean = false) extends WithResult(result) with RawOperator with CanOperator
   case class fieldWrite(value: SymbolRef, obj: SymbolRef, field: String, attr: Option[FieldWriteAttribute]) extends Operator with RawOperator with CanOperator
-  case class unaryOp(result: Symbol, operation: UnaryOperation, operand: SymbolRef) extends WithResult(result) with RawOperator with CanOperator
-  case class binaryOp(result: Symbol, operation: BinaryOperation, lhs: SymbolRef, rhs: SymbolRef) extends WithResult(result) with RawOperator with CanOperator
+  case class unaryOp(result: Symbol, operation: UnaryOperation, operand: SymbolRef) extends WithResult(result) with RawOperator
+  case class binaryOp(result: Symbol, operation: BinaryOperation, lhs: SymbolRef, rhs: SymbolRef) extends WithResult(result) with RawOperator
   case class condFail(value: SymbolRef) extends Operator with RawOperator with CanOperator
   case class switchEnumAssign(result: Symbol, switchOn: SymbolRef,
                               cases: ArrayBuffer[EnumAssignCase], default: Option[SymbolRef]) extends WithResult(result) with RawOperator
@@ -241,6 +241,7 @@ object UnaryOperation {
 
 sealed trait BinaryOperation extends Serializable
 object BinaryOperation {
+  case object regular extends BinaryOperation
   case object arbitrary extends BinaryOperation
   case object equals extends BinaryOperation
 }

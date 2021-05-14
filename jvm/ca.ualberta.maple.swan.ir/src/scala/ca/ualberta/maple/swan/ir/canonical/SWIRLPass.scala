@@ -11,7 +11,7 @@
 package ca.ualberta.maple.swan.ir.canonical
 
 import ca.ualberta.maple.swan.ir.Exceptions.{IncompleteRawSWIRLException, IncorrectRawSWIRLException, UnexpectedSILFormatException}
-import ca.ualberta.maple.swan.ir.{Argument, BinaryOperation, Block, BlockRef, CanBlock, CanFunction, CanModule, CanOperator, CanOperatorDef, CanTerminator, CanTerminatorDef, Constants, FieldWriteAttribute, Function, Literal, Module, Operator, RawOperatorDef, RawTerminatorDef, SwitchCase, SwitchEnumCase, Symbol, SymbolRef, SymbolTableEntry, Terminator, Type, WithResult}
+import ca.ualberta.maple.swan.ir.{Argument, BinaryOperation, Block, BlockRef, CanBlock, CanFunction, CanModule, CanOperator, CanOperatorDef, CanTerminator, CanTerminatorDef, Constants, FieldWriteAttribute, Function, Literal, Module, Operator, RawOperatorDef, RawTerminatorDef, SwitchCase, SwitchEnumCase, Symbol, SymbolRef, SymbolTableEntry, Terminator, Type, UnaryOperation, WithResult}
 import ca.ualberta.maple.swan.utils.Logging
 import org.jgrapht.Graph
 import org.jgrapht.graph.{DefaultDirectedGraph, DefaultEdge}
@@ -348,6 +348,42 @@ class SWIRLPass {
       f.blocks.insertAll(i + 1, newBlocks)
       i = i + newBlocks.length + 1
     }
+    // Take care of operators last because terminators can generate them
+    f.blocks.foreach(b => {
+      b.operators.zipWithIndex.foreach(opDef => {
+        val op = opDef._1
+        val idx = opDef._2
+        op.operator match {
+          case Operator.binaryOp(result, operation, lhs, rhs) => {
+            operation match {
+              case BinaryOperation.regular => {
+                val a1 = new RawOperatorDef(Operator.assign(result, lhs), op.position)
+                val a2 = new RawOperatorDef(Operator.assign(result, rhs), op.position)
+                mapToSIL(op, a1, module)
+                mapToSIL(op, a2, module)
+                b.operators(idx) = a2
+                b.operators.insert(idx, a1)
+              }
+              case BinaryOperation.arbitrary | BinaryOperation.equals => {
+                val ni = new RawOperatorDef(Operator.neww(result), op.position)
+                mapToSIL(op, ni, module)
+                b.operators(idx) = ni
+              }
+            }
+          }
+          case Operator.unaryOp(result, operation, operand) => {
+            operation match {
+              case UnaryOperation.arbitrary => {
+                val ni = new RawOperatorDef(Operator.neww(result), op.position)
+                mapToSIL(op, ni, module)
+                b.operators(idx) = ni
+              }
+            }
+          }
+          case _ =>
+        }
+      })
+    })
   }
 
   def resolveBasicBlockArguments(f: Function, module: Module): ArrayBuffer[Argument] = {

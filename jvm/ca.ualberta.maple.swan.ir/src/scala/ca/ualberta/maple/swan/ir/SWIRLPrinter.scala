@@ -511,6 +511,7 @@ class SWIRLPrinter extends Printer {
 
   def print(binaryOperation: BinaryOperation): Unit = {
     binaryOperation match {
+      case BinaryOperation.regular => print("[reg]")
       case BinaryOperation.arbitrary => print("[arb]")
       case BinaryOperation.equals => print("[eq]")
     }

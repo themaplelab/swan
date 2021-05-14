@@ -50,8 +50,6 @@ class SWANControlFlowGraph(val method: SWANMethod) extends ControlFlowGraph {
           case operator: Operator.singletonWrite => SWANStatement.StaticFieldStore(op, operator, method)
           case operator: Operator.fieldRead => SWANStatement.FieldLoad(op, operator, method)
           case operator: Operator.fieldWrite => SWANStatement.FieldWrite(op, operator, method)
-          case operator: Operator.unaryOp =>  SWANStatement.UnaryOperation(op, operator, method)
-          case operator: Operator.binaryOp => SWANStatement.BinaryOperation(op, operator, method)
           case operator: Operator.condFail => SWANStatement.ConditionalFatalError(op, operator, method)
         }
       }

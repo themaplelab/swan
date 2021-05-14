@@ -678,6 +678,7 @@ class SWIRLParser extends SWIRLPrinter {
 
   @throws[Error]
   def parseBinaryOperation(): BinaryOperation = {
+    if(skip("[reg]")) return BinaryOperation.regular
     if(skip("[arb]")) return BinaryOperation.arbitrary
     if(skip("[eq]")) return BinaryOperation.equals
     throw parseError("unknown unary operation")
