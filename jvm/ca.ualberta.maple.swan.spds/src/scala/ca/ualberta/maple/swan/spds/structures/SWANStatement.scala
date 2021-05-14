@@ -149,7 +149,7 @@ object SWANStatement {
   // TODO
   case class StaticFieldLoad(opDef: CanOperatorDef, inst: Operator.singletonRead,
                              m: SWANMethod) extends SWANStatement(CanInstructionDef.operator(opDef), m) {
-    val staticField = new SWANStaticFieldVal(new SWANField(inst.field), m)
+    val staticField = new SWANStaticFieldVal(new SWANField(inst.tpe + "." + inst.field), m)
     override def containsStaticFieldAccess(): Boolean = true
     override def getRightOp: Val = staticField
     override def isStaticFieldLoad: Boolean = true
@@ -165,7 +165,7 @@ object SWANStatement {
   // TODO
   case class StaticFieldStore(opDef: CanOperatorDef, inst: Operator.singletonWrite,
                               m: SWANMethod) extends SWANStatement(CanInstructionDef.operator(opDef), m) {
-    val staticField = new SWANStaticFieldVal(new SWANField(inst.field), m)
+    val staticField = new SWANStaticFieldVal(new SWANField(inst.tpe + "." + inst.field), m)
     override def containsStaticFieldAccess(): Boolean = true
     override def getLeftOp: Val = staticField
     override def getRightOp: Val = m.allValues(inst.value.name)
