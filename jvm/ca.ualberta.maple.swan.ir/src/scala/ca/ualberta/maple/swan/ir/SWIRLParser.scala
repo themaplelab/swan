@@ -270,7 +270,7 @@ class SWIRLParser extends SWIRLPrinter {
         case _ => new ModuleMetadata(Some(new File(path)), None)
       }
     }
-    new Module(functions, None, new SILMap, metadata)
+    new Module(functions, None, None, metadata)
   }
 
   // https://github.com/apple/swift/blob/master/docs/SIL.rst#functions

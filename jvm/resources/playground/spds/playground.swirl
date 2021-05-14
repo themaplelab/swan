@@ -1,3 +1,24 @@
 swirl_stage raw
 
-// dynamic_ref will not work here because there is no DDG from SIL
+func [entry] @`SWAN_FAKE_MAIN_playground.swift.sil` : $`Int32` {
+bb0:
+  a = new $`A`
+  %0 = function_ref @`playground.source() -> Swift.String`, $`@convention(thin) () -> @owned String`
+  src = apply %0(), $`String`
+  %3 = function_ref @`playground.sink(sunk: Swift.String) -> ()`, $`@convention(thin) (@guaranteed String) -> ()`
+  %4 = apply %3(src), $`()`
+  ret = new $`Int32`
+  return ret
+}
+
+func @`playground.source() -> Swift.String` : $`@owned String` {
+bb0:
+  %13 = literal [string] "I'm bad", $`$Builtin.RawPointer`
+  return %13
+}
+
+func @`playground.sink(sunk: Swift.String) -> ()` : $`()` {
+bb0(sunk : $`@guaranteed $String`):
+  %14 = new $`()`
+  return %14
+}

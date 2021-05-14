@@ -27,7 +27,8 @@ import scala.collection.{immutable, mutable}
 class ModuleGroup(val functions: ArrayBuffer[CanFunction],
                   val entries: immutable.HashSet[CanFunction],
                   val ddgs: mutable.HashMap[String, DynamicDispatchGraph],
-                  val silMap: SILMap, val metas: ArrayBuffer[ModuleMetadata]) extends Serializable {
+                  val silMap: Option[SILMap], var swirlSourceMap: Option[mutable.HashMap[Object, (Int, Int)]],
+                  val metas: ArrayBuffer[ModuleMetadata]) extends Serializable {
   override def toString: String = {
     val sb = new StringBuilder
     sb.append("Module group: ")
@@ -58,7 +59,7 @@ class ModuleMetadata(val file: Option[File],
 // Imports might be useful for modelling later, but probably not.
 class Module(val functions: ArrayBuffer[Function],
              val ddg: Option[DynamicDispatchGraph],
-             val silMap: SILMap, val meta: ModuleMetadata) {
+             val silMap: Option[SILMap], val meta: ModuleMetadata) {
   // Also used as unique identifier
   override def toString: String = {
     meta.toString
@@ -67,7 +68,7 @@ class Module(val functions: ArrayBuffer[Function],
 
 class CanModule(val functions: ArrayBuffer[CanFunction],
                 val ddg: Option[DynamicDispatchGraph],
-                val silMap: SILMap, val meta: ModuleMetadata) {
+                val silMap: Option[SILMap], val meta: ModuleMetadata) {
   override def toString: String = {
     meta.toString
   }
@@ -340,6 +341,9 @@ class SILMap extends Serializable {
   def combine(other: SILMap): Unit = {
     silToSWIRL.addAll(other.silToSWIRL)
     swirlToSIL.addAll(other.swirlToSIL)
+  }
+  def nonEmpty(): Boolean = {
+    silToSWIRL.nonEmpty || swirlToSIL.nonEmpty
   }
 }
 

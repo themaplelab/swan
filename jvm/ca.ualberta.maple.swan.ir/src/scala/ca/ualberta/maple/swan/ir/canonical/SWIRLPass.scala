@@ -426,7 +426,9 @@ class SWIRLPass {
 
   // TODO: Add wrappers that automatically call this
   def mapToSIL(old: Object, added: Object, module: Module): Unit = {
-    module.silMap.tryMapNew(old, added)
+    if (module.silMap.nonEmpty) {
+      module.silMap.get.tryMapNew(old, added)
+    }
   }
 
   def resolveAliases(module: Module): Unit = {

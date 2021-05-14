@@ -37,6 +37,10 @@ class Printer {
     indented = false
   }
 
+  def printLineNumber(): Unit = {
+    print(line.toString + ": ")
+  }
+
   def print[T](i: T, when: Boolean = true): Unit = {
     if (!when) return
     val s = i.toString

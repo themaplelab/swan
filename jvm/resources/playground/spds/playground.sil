@@ -2,7 +2,7 @@ sil_stage canonical
 
 sil @main : $@convention(c) (Int32, UnsafeMutablePointer<Optional<UnsafeMutablePointer<Int8>>>) -> Int32 {
 bb0(%0 : $Int32, %1 : $UnsafeMutablePointer<Optional<UnsafeMutablePointer<Int8>>>):
-  // Put problematic SIL here
+  // SIL here
   %30 = integer_literal $Builtin.Int32, 0
   %31 = struct $Int32 (%30 : $Builtin.Int32)
   return %31 : $Int32

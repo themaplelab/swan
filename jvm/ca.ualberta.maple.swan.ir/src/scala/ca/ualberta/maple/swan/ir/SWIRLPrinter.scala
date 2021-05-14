@@ -21,6 +21,7 @@ class SWIRLPrinterOptions {
   var useArbitraryTypeNames = false
   var printCFG = true
   var genLocationMap = false // expensive
+  var printLineNumber = false // only for canonical (meant for SPDS debugging)
   def printLocation(b: Boolean): SWIRLPrinterOptions = {
     printLocation = b
     this
@@ -35,6 +36,10 @@ class SWIRLPrinterOptions {
   }
   def genLocationMap(b: Boolean): SWIRLPrinterOptions = {
     genLocationMap = b
+    this
+  }
+  def printLineNumber(b: Boolean): SWIRLPrinterOptions = {
+    printLineNumber = b
     this
   }
 }
@@ -63,6 +68,7 @@ class SWIRLPrinter extends Printer {
       print(function)
       printNewline()
     })
+    if (options.genLocationMap) mg.swirlSourceMap = Some(locMap)
     this.toString
   }
 
@@ -109,16 +115,28 @@ class SWIRLPrinter extends Printer {
       print(function, cfg)
     }
     if (options.genLocationMap) locMap.put(function, (line, getCol))
+    if (options.printLineNumber) printLineNumber()
     print("func ")
     if (function.attribute.nonEmpty) print(function.attribute.get)
     print("@`")
     print(function.name)
     print("`")
-    print(whenEmpty = false, "(", function.arguments, ", ", ")", (arg: Argument) => print(arg))
+    print(whenEmpty = false, "(", function.arguments, ", ", ")", (arg: Argument) => {
+      if (options.genLocationMap) locMap.put(arg, (line, getCol))
+      print(arg)
+    })
     print(" : ")
     print(function.tpe)
     print(whenEmpty = false, " {\n", function.blocks, "\n", "}", (block: CanBlock) => print(block))
     printNewline()
+    if (options.genLocationMap) {
+      function.symbolTable.foreach(entry => {
+        entry._2 match {
+          case SymbolTableEntry.operator(symbol, operator) => locMap.put(symbol, locMap(operator))
+          case _ =>
+        }
+      })
+    }
   }
 
   def print(function: CanFunction, cfg: Graph[CanBlock, DefaultEdge]): Unit = {
@@ -198,7 +216,11 @@ class SWIRLPrinter extends Printer {
   }
 
   def print(op: CanOperatorDef): Unit = {
-    if (options.genLocationMap) locMap.put(op, (line, getCol))
+    if (options.genLocationMap) {
+      locMap.put(op, (line, getCol))
+      locMap.put(op.operator, locMap(op))
+    }
+    if (options.printLineNumber) printLineNumber()
     print(op.operator.asInstanceOf[Operator])
     print(op.position, (pos: Position) => print(pos))
   }
@@ -210,7 +232,11 @@ class SWIRLPrinter extends Printer {
   }
 
   def print(term: CanTerminatorDef): Unit = {
-    if (options.genLocationMap) locMap.put(term, (line, getCol))
+    if (options.genLocationMap) {
+      locMap.put(term, (line, getCol))
+      locMap.put(term.terminator, locMap(term))
+    }
+    if (options.printLineNumber) printLineNumber()
     print(term.terminator.asInstanceOf[Terminator])
     print(term.position, (pos: Position) => print(pos))
   }

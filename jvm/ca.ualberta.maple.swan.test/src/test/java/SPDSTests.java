@@ -63,8 +63,11 @@ public class SPDSTests {
             return scala.runtime.BoxedUnit.UNIT;
         });
         ModuleGroup group = TestDriver.run(silFile, options);
+        SWIRLPrinterOptions opts = new SWIRLPrinterOptions().genLocationMap(true).printLineNumber(true);
+        String result = new SWIRLPrinter().print(group, opts);
+        Logging.printInfo(result);
         TaintAnalysis analysis = new TaintAnalysis(group, spec);
-        analysis.run();
+        analysis.run(false);
     }
 
     @Test
@@ -93,11 +96,11 @@ public class SPDSTests {
             return scala.runtime.BoxedUnit.UNIT;
         });
         ModuleGroup group = TestDriver.run(silFile, options);
-        SWIRLPrinterOptions opts = new SWIRLPrinterOptions();
+        SWIRLPrinterOptions opts = new SWIRLPrinterOptions().genLocationMap(true).printLineNumber(true);
         String result = new SWIRLPrinter().print(group, opts);
-        // Logging.printInfo(result);
+        Logging.printInfo(result);
         TaintAnalysis analysis = new TaintAnalysis(group, spec);
-        analysis.run();
+        analysis.run(false);
     }
 
     @Test
@@ -111,10 +114,10 @@ public class SPDSTests {
         modules.append(canModule);
         modules.append(TestDriver.getModelModule());
         ModuleGroup group = ModuleGrouper.group(modules, null, null);
-        SWIRLPrinterOptions opts = new SWIRLPrinterOptions();
+        SWIRLPrinterOptions opts = new SWIRLPrinterOptions().genLocationMap(true).printLineNumber(true);
         String result = new SWIRLPrinter().print(group, opts);
-        // Logging.printInfo(result);
+        Logging.printInfo(result);
         TaintAnalysis analysis = new TaintAnalysis(group, spec);
-        analysis.run();
+        analysis.run(false);
     }
 }

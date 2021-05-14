@@ -13,12 +13,12 @@ package ca.ualberta.maple.swan.spds.structures
 import java.util
 
 import boomerang.scene._
-import ca.ualberta.maple.swan.ir.{CanFunction, SymbolRef, SymbolTableEntry}
+import ca.ualberta.maple.swan.ir.{CanFunction, ModuleGroup, SymbolRef, SymbolTableEntry}
 import com.google.common.collect.{Lists, Sets}
 
 import scala.collection.mutable
 
-class SWANMethod(val delegate: CanFunction) extends Method {
+class SWANMethod(val delegate: CanFunction, val moduleGroup: ModuleGroup) extends Method {
 
   // Use allValues instead of create new Vals, when possible
   // Only use for non allocation (simple value references).
@@ -28,6 +28,10 @@ class SWANMethod(val delegate: CanFunction) extends Method {
   private val localParams: util.List[Val] = Lists.newArrayList
   private val localValues: util.HashSet[Val] = Sets.newHashSet
   private val cfg: SWANControlFlowGraph = new SWANControlFlowGraph(this)
+
+  def hasSwirlSource: Boolean = moduleGroup.swirlSourceMap.nonEmpty
+
+  def swirlLineNum(o: Object): Int = moduleGroup.swirlSourceMap.get(o)._1
 
   def addVal[T<:Val](v: T): T = {
     localValues.add(v)
@@ -44,13 +48,15 @@ class SWANMethod(val delegate: CanFunction) extends Method {
         localValues.add(n)
         newValues.put(symbol.ref.name, n)
       }
-      case SymbolTableEntry.argument(argument) => {
-        val v = SWANVal.Simple(argument, this)
-        localParams.add(v)
-        localValues.add(v)
-        allValues.put(argument.ref.name, v)
-      }
+      case _ =>
     }
+  })
+
+  delegate.arguments.foreach(argument => {
+    val v = SWANVal.Simple(argument, this)
+    localParams.add(v)
+    localValues.add(v)
+    allValues.put(argument.ref.name, v)
   })
 
   def getSymbol(ref: SymbolRef): ca.ualberta.maple.swan.ir.Symbol = {

@@ -75,7 +75,7 @@ class SWIRLGen {
     Logging.printInfo("Translating " + silModule.meta.file.getName + " to SWIRL")
     val startTime = System.nanoTime()
     val functions = new ArrayBuffer[Function]
-    val silMap = new SILMap
+    val silMap: SILMap = if (populateSILMap) new SILMap else null
     silModule.functions.view.zipWithIndex.foreach(zippedFunction => {
       val silFunction = zippedFunction._1
       val instantiatedTypes = new mutable.HashSet[String]()
@@ -236,7 +236,7 @@ class SWIRLGen {
       val ddg = new DynamicDispatchGraph()
       ddg.generate(silModule)
       ddg
-    }), silMap, new ModuleMetadata(None, Some(silModule.meta.file)))
+    }), Option(silMap), new ModuleMetadata(None, Some(silModule.meta.file)))
   }
 
   private def getFunctionAttribute(silFunction: SILFunction): Option[FunctionAttribute] = {

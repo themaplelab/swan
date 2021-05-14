@@ -154,7 +154,9 @@ object ModuleGrouper {
     if (existingGroup != null) {
       merge(existingGroup.functions, existingFunctions, entries, models, mains, others, stubs, linked)
       ddgs = existingGroup.ddgs
-      silMap.combine(existingGroup.silMap)
+      if (existingGroup.silMap.nonEmpty) {
+        silMap.combine(existingGroup.silMap.get)
+      }
       metas.appendAll(existingGroup.metas)
     }
     modules.foreach(module => {
@@ -176,7 +178,9 @@ object ModuleGrouper {
         if (!metas.exists(m => m.toString == module.meta.toString)) metas.append(module.meta)
       }
       // TODO: see if this even works after serialization
-      silMap.combine(module.silMap)
+      if (module.silMap.nonEmpty) {
+        silMap.combine(module.silMap.get)
+      }
     })
     functions.appendAll(entries.values)
     functions.appendAll(mains.values)
@@ -184,6 +188,7 @@ object ModuleGrouper {
     functions.appendAll(linked.values)
     functions.appendAll(others.values)
     functions.appendAll(stubs.values)
-    new ModuleGroup(functions, entries.values.to(immutable.HashSet), ddgs, silMap, metas)
+    new ModuleGroup(functions, entries.values.to(immutable.HashSet), ddgs,
+      if (silMap.nonEmpty()) Some(silMap) else None, None, metas)
   }
 }

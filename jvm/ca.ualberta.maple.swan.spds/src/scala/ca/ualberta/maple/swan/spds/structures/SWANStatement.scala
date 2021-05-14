@@ -101,7 +101,7 @@ abstract class SWANStatement(val delegate: CanInstructionDef, m: SWANMethod) ext
 
 object SWANStatement {
   // *** OPERATORS ***
-  // TODO: Weak write handling
+  // TODO: Strong write handling
   case class FieldWrite(opDef: CanOperatorDef, inst: Operator.fieldWrite,
                         m: SWANMethod) extends SWANStatement(CanInstructionDef.operator(opDef), m) {
     override def getWrittenField: Field = new SWANField(inst.field)
@@ -112,7 +112,11 @@ object SWANStatement {
     override def isFieldStore: Boolean = true
     override def getFieldStore: Pair[Val, Field] = new Pair[Val, Field](m.allValues(inst.obj.name), getWrittenField)
     override def toString: String = {
-      "<fwi><l>" + getFieldStore.getX.toString + "." + getFieldStore.getY.toString + "</l><r>" + getRightOp.toString + "</r></fwi>"
+      if (m.hasSwirlSource) {
+        "i" + m.swirlLineNum(opDef).toString
+      } else {
+        "<fwi><l>" + getFieldStore.getX.toString + "." + getFieldStore.getY.toString + "</l><r>" + getRightOp.toString + "</r></fwi>"
+      }
     }
   }
   case class FieldLoad(opDef: CanOperatorDef, inst: Operator.fieldRead,
@@ -123,7 +127,11 @@ object SWANStatement {
     override def isFieldLoad: Boolean = true
     override def getFieldLoad: Pair[Val, Field] = new Pair[Val, Field](m.allValues(inst.obj.name), getLoadedField)
     override def toString: String = {
-      "<fli><l>" + getLeftOp.toString + "</l><r>" + getFieldLoad.getX.toString + "." + getFieldLoad.getY.toString + "</r></fli>"
+      if (m.hasSwirlSource) {
+        "i" + m.swirlLineNum(opDef).toString
+      } else {
+        "<fli><l>" + getLeftOp.toString + "</l><r>" + getFieldLoad.getX.toString + "." + getFieldLoad.getY.toString + "</r></fli>"
+      }
     }
   }
   case class Assign(opDef: CanOperatorDef, inst: Operator.assign,
@@ -131,7 +139,11 @@ object SWANStatement {
     override def getRightOp: Val = m.allValues(inst.from.name)
     override def isIdentityStmt: Boolean = false // ?
     override def toString: String = {
-      "<asi><l>" + getLeftOp.toString + "</l><r>" + getRightOp.toString + "</r></asi>"
+      if (m.hasSwirlSource) {
+        "i" + m.swirlLineNum(opDef).toString
+      } else {
+        "<asi><l>" + getLeftOp.toString + "</l><r>" + getRightOp.toString + "</r></asi>"
+      }
     }
   }
   // TODO
@@ -143,7 +155,11 @@ object SWANStatement {
     override def isStaticFieldLoad: Boolean = true
     override def getStaticField: StaticFieldVal = staticField
     override def toString: String = {
-      "<sfli><l>" + getLeftOp.toString + "</l><r>" + getRightOp.toString + "</r></sfli>"
+      if (m.hasSwirlSource) {
+        "i" + m.swirlLineNum(opDef).toString
+      } else {
+        "<sfli><l>" + getLeftOp.toString + "</l><r>" + getRightOp.toString + "</r></sfli>"
+      }
     }
   }
   // TODO
@@ -157,14 +173,24 @@ object SWANStatement {
     override def isStaticFieldStore: Boolean = true
     override def getStaticField: StaticFieldVal = staticField
     override def toString: String = {
-      "<sfsi><l>" + getLeftOp.toString + "</l><r>" + getRightOp.toString + "</r></sfsi>"
+      if (m.hasSwirlSource) {
+        "i" + m.swirlLineNum(opDef).toString
+      } else {
+        "<sfsi><l>" + getLeftOp.toString + "</l><r>" + getRightOp.toString + "</r></sfsi>"
+      }
     }
   }
   case class Allocation(opDef: CanOperatorDef, inst: Operator.neww,
                         m: SWANMethod) extends SWANStatement(CanInstructionDef.operator(opDef), m) {
     override def getRightOp: Val = m.newValues(inst.result.ref.name)
     override def toString: String = {
-      "<ali><l>" + getLeftOp.toString + "</l><r>" + getRightOp.toString + "</r></ali>"
+      if (inst.result.ref.name == "nop") {
+        "f" + m.swirlLineNum(m.delegate)
+      } else if (m.hasSwirlSource) {
+        "i" + m.swirlLineNum(opDef).toString
+      } else {
+        "<ali><l>" + getLeftOp.toString + "</l><r>" + getRightOp.toString + "</r></ali>"
+      }
     }
   }
   case class Literal(opDef: CanOperatorDef, inst: Operator.literal,
@@ -175,28 +201,44 @@ object SWANStatement {
     }
     override def getRightOp: Val = m.addVal(SWANVal.Constant(inst.result, inst.literal, m))
     override def toString: String = {
-      "<lii><l>" + getLeftOp.toString + "</l><r>" + getRightOp.toString + "</r></lii>"
+      if (m.hasSwirlSource) {
+        "i" + m.swirlLineNum(opDef).toString
+      } else {
+        "<lii><l>" + getLeftOp.toString + "</l><r>" + getRightOp.toString + "</r></lii>"
+      }
     }
   }
   case class DynamicFunctionRef(opDef: CanOperatorDef, inst: Operator.dynamicRef,
                                 m: SWANMethod) extends SWANStatement(CanInstructionDef.operator(opDef), m) {
     override def getRightOp: Val = m.addVal(SWANVal.DynamicFunctionRef(inst.result, inst.index, m))
     override def toString: String = {
-      "<dfri><l>" + getLeftOp.toString + "</l><r>" + getRightOp.toString + "</r></dfri>"
+      if (m.hasSwirlSource) {
+        "i" + m.swirlLineNum(opDef).toString
+      } else {
+        "<dfri><l>" + getLeftOp.toString + "</l><r>" + getRightOp.toString + "</r></dfri>"
+      }
     }
   }
   case class BuiltinFunctionRef(opDef: CanOperatorDef, inst: Operator.builtinRef,
                                 m: SWANMethod) extends SWANStatement(CanInstructionDef.operator(opDef), m) {
     override def getRightOp: Val = m.addVal(SWANVal.BuiltinFunctionRef(inst.result, inst.name, m))
     override def toString: String = {
-      "<bfri><l>" + getLeftOp.toString + "</l><r>" + getRightOp.toString + "</r></bfri>"
+      if (m.hasSwirlSource) {
+        "i" + m.swirlLineNum(opDef).toString
+      } else {
+        "<bfri><l>" + getLeftOp.toString + "</l><r>" + getRightOp.toString + "</r></bfri>"
+      }
     }
   }
   case class FunctionRef(opDef: CanOperatorDef, inst: Operator.functionRef,
                          m: SWANMethod) extends SWANStatement(CanInstructionDef.operator(opDef), m) {
     override def getRightOp: Val = m.addVal(SWANVal.FunctionRef(inst.result, inst.name, m))
     override def toString: String = {
-      "<fri><l>" + getLeftOp.toString + "</l><r>" + getRightOp.toString + "</r></fri>"
+      if (m.hasSwirlSource) {
+        "i" + m.swirlLineNum(opDef).toString
+      } else {
+        "<fri><l>" + getLeftOp.toString + "</l><r>" + getRightOp.toString + "</r></fri>"
+      }
     }
   }
   case class ApplyFunctionRef(opDef: CanOperatorDef, inst: Operator.apply,
@@ -206,7 +248,11 @@ object SWANStatement {
     override def getInvokeExpr: InvokeExpr = new SWANInvokeExpr(this, m)
     def getFunctionRef: Val = m.allValues(inst.functionRef.name)
     override def toString: String = {
-      "<api><l>" + getLeftOp.toString + "</l><ie>" + getInvokeExpr.toString + "</ie></api>"
+      if (m.hasSwirlSource) {
+        "i" + m.swirlLineNum(opDef).toString
+      } else {
+        "<api><l>" + getLeftOp.toString + "</l><ie>" + getInvokeExpr.toString + "</ie></api>"
+      }
     }
   }
   // TODO
@@ -250,14 +296,22 @@ object SWANStatement {
     override def getLeftOp: Val = ???
     override def getRightOp: Val = ??? // T0D0
     override def toString: String = {
-      "<cfaili></<cfaili>"
+      if (m.hasSwirlSource) {
+        "i" + m.swirlLineNum(opDef).toString
+      } else {
+        "<cfaili></<cfaili>"
+      }
     }
   }
   // *** TERMINATORS ***
   case class Branch(termDef: CanTerminatorDef, inst: Terminator.br_can,
                     m: SWANMethod) extends SWANStatement(CanInstructionDef.terminator(termDef), m) {
     override def toString: String = {
-      "<bri>" + m.getControlFlowGraph.getSuccsOf(this).toString + "</bri>"
+      if (m.hasSwirlSource) {
+        "i" + m.swirlLineNum(termDef).toString
+      } else {
+        "<bri>" + m.getControlFlowGraph.getSuccsOf(this).toString + "</bri>"
+      }
     }
   }
   case class ConditionalBranch(termDef: CanTerminatorDef, inst: Terminator.brIf_can,
@@ -267,7 +321,11 @@ object SWANStatement {
     override def isIfStmt: Boolean = true
     override def getIfStmt: IfStatement = ifStmt
     override def toString: String = {
-      "<cbri><if>" + getRightOp.toString + "</if>" + m.getControlFlowGraph.getSuccsOf(this).toString + "</cbri>"
+      if (m.hasSwirlSource) {
+        "i" + m.swirlLineNum(termDef).toString
+      } else {
+        "<cbri><if>" + getRightOp.toString + "</if>" + m.getControlFlowGraph.getSuccsOf(this).toString + "</cbri>"
+      }
     }
   }
   case class Return(termDef: CanTerminatorDef, inst: Terminator.ret,
@@ -277,7 +335,11 @@ object SWANStatement {
     override def isReturnStmt: Boolean = true
     override def getReturnOp: Val = m.allValues(inst.value.name)
     override def toString: String = {
-      "<reti>" + getReturnOp.toString + "</reti>"
+      if (m.hasSwirlSource) {
+        "i" + m.swirlLineNum(termDef).toString
+      } else {
+        "<reti>" + getReturnOp.toString + "</reti>"
+      }
     }
   }
   case class Throw(termDef: CanTerminatorDef, inst: Terminator.thro,
@@ -286,7 +348,11 @@ object SWANStatement {
     override def getRightOp: Val = m.allValues(inst.value.name)
     override def isThrowStmt: Boolean = true
     override def toString: String = {
-      "<throwi>" + getRightOp.toString + "</throwi>"
+      if (m.hasSwirlSource) {
+        "i" + m.swirlLineNum(termDef).toString
+      } else {
+        "<throwi>" + getRightOp.toString + "</throwi>"
+      }
     }
   }
   case class Unreachable(termDef: CanTerminatorDef,
@@ -294,7 +360,11 @@ object SWANStatement {
     override def getLeftOp: Val = ???
     override def getRightOp: Val = ???
     override def toString: String = {
-      "<unri></unri>"
+      if (m.hasSwirlSource) {
+        "i" + m.swirlLineNum(termDef).toString
+      } else {
+        "<unri></unri>"
+      }
     }
   }
   case class Yield(termDef: CanTerminatorDef, inst: Terminator.yld,
@@ -304,7 +374,11 @@ object SWANStatement {
     override def isReturnStmt: Boolean = true
     override def getReturnOp: Val = m.allValues(inst.yields(0).name)
     override def toString: String = {
-      "<yi>" + getReturnOp.toString + "</yi>"
+      if (m.hasSwirlSource) {
+        "i" + m.swirlLineNum(termDef).toString
+      } else {
+        "<yi>" + getReturnOp.toString + "</yi>"
+      }
     }
   }
 }

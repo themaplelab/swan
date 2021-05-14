@@ -15,9 +15,10 @@ import java.util
 import boomerang.results.ForwardBoomerangResults
 import boomerang.scene._
 import boomerang.weights.{DataFlowPathWeight, PathTrackingBoomerang}
-import boomerang.{BoomerangOptions, DefaultBoomerangOptions, ForwardQuery}
+import boomerang.{Boomerang, BoomerangOptions, DefaultBoomerangOptions, ForwardQuery}
 import ca.ualberta.maple.swan.ir.{CanInstructionDef, ModuleGroup, Position}
 import ca.ualberta.maple.swan.spds.structures.{SWANCallGraph, SWANMethod, SWANStatement}
+import wpds.impl.Weight
 
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
@@ -32,17 +33,20 @@ class TaintAnalysis(val group: ModuleGroup,
   class TaintAnalysisResults(val nodes: ArrayBuffer[(CanInstructionDef, Option[Position])],
                              val source: SWANMethod, val sink: SWANMethod)
 
-  def run(): Unit = {
+  def run(pathTracking: Boolean): Unit = {
     val cg = new SWANCallGraph(group)
     cg.constructStaticCG()
     // System.out.println(cg)
     val options = getOptions
-    val solver = new PathTrackingBoomerang(cg, DataFlowScope.INCLUDE_ALL, options) {}
     val seeds = generateSeeds(cg, spec)
     seeds.forEach(query => {
       System.out.println("Solving query: " + query)
+      val solver = if (pathTracking) new PathTrackingBoomerang(cg, DataFlowScope.INCLUDE_ALL, options) {}
+                    else new Boomerang(cg, DataFlowScope.INCLUDE_ALL, options)
       val queryResults = solver.solve(query.asInstanceOf[ForwardQuery])
-      val taintAnalysisResults = processResults(query, queryResults)
+      val taintAnalysisResults = if (pathTracking)
+        processResults(query, queryResults.asInstanceOf[ForwardBoomerangResults[DataFlowPathWeight]])
+        else processResultsVanilla(query, queryResults.asInstanceOf[ForwardBoomerangResults[Weight.NoWeight]])
       taintAnalysisResults.foreach(r => {
         System.out.println("Path detected from\n    `" + r.source.getName + "`\n--> `" + r.sink.getName + "`")
         r.nodes.foreach(n => {
@@ -54,10 +58,9 @@ class TaintAnalysis(val group: ModuleGroup,
           }
         })
       })
+      // solver.printAllAutomata()
     })
-
   }
-
 
   private def generateSeeds(cg: SWANCallGraph,
                             spec: mutable.HashMap[String, mutable.HashSet[String]]): util.Collection[ForwardMethodTaintQuery] = {
@@ -79,11 +82,12 @@ class TaintAnalysis(val group: ModuleGroup,
 
   private def getOptions: BoomerangOptions = {
     new DefaultBoomerangOptions() {
-
+      override def analysisTimeoutMS(): Int = 100000000
     }
   }
 
-  private def processResults(query: ForwardMethodTaintQuery, queryResults: ForwardBoomerangResults[DataFlowPathWeight]): ArrayBuffer[TaintAnalysisResults] = {
+  private def processResults(query: ForwardMethodTaintQuery,
+                             queryResults: ForwardBoomerangResults[DataFlowPathWeight]): ArrayBuffer[TaintAnalysisResults] = {
     val results = queryResults.asStatementValWeightTable
     val processed = new mutable.HashSet[Method]()
     val analysisResults = new ArrayBuffer[TaintAnalysisResults]()
@@ -120,6 +124,24 @@ class TaintAnalysis(val group: ModuleGroup,
           analysisResults.append(new TaintAnalysisResults(nodes,
             query.edge.getMethod.asInstanceOf[SWANMethod],
             s.getRowKey.getMethod.asInstanceOf[SWANMethod]))
+          processed.add(m)
+        }
+      }
+    })
+    analysisResults
+  }
+
+  private def processResultsVanilla(query: ForwardMethodTaintQuery,
+                             queryResults: ForwardBoomerangResults[Weight.NoWeight]): ArrayBuffer[TaintAnalysisResults] = {
+    val results = queryResults.asStatementValWeightTable
+    val processed = new mutable.HashSet[Method]()
+    val analysisResults = new ArrayBuffer[TaintAnalysisResults]()
+    results.cellSet().forEach(s => {
+      val m = s.getRowKey.getMethod.asInstanceOf[SWANMethod]
+      if (!processed.contains(m) && query.sinks.contains(m)) {
+        if (m.getParameterLocals.contains(s.getColumnKey)) {
+          System.out.println(query.asNode.fact.asInstanceOf[AllocVal].getAllocVal.toString
+            + " reaches " + m.getName)
           processed.add(m)
         }
       }

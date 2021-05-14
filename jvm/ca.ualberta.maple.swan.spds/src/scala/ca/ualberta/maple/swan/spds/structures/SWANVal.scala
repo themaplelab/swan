@@ -16,6 +16,8 @@ import ca.ualberta.maple.swan.ir.{BinaryOperation, Literal, Symbol, UnaryOperati
 
 abstract class SWANVal(mthd: Method, unbalanced: Edge) extends Val(mthd, unbalanced) {
 
+  protected val simplified: Boolean = false
+
   // Modifiable
   override def isNewExpr: Boolean = false
   override def getNewExprType: Type = null
@@ -75,7 +77,8 @@ object SWANVal {
       }
     }
     override def toString: String = {
-      "<v " + getVariableName + " " + getType.toString + " " + hashCode + " />"
+      if (method.hasSwirlSource) getVariableName + " v" + method.swirlLineNum(delegate) else
+      "<v " + getVariableName + " " + getType.toString + " />"
     }
   }
   case class Argument(delegate: Symbol, index: Int, method: SWANMethod, unbalanced: Edge = null) extends SWANVal(method, unbalanced) {
@@ -106,7 +109,8 @@ object SWANVal {
       }
     }
     override def toString: String = {
-      "<a " + getVariableName + " " + this.getType.toString + " " + hashCode + " />"
+      if (method.hasSwirlSource) getVariableName + " v" + method.swirlLineNum(delegate) else
+      "<a " + getVariableName + " " + this.getType.toString + " />"
     }
   }
   case class NewExpr(delegate: Symbol, method: SWANMethod, unbalanced: Edge = null) extends SWANVal(method, unbalanced) {
@@ -134,7 +138,8 @@ object SWANVal {
       }
     }
     override def toString: String = {
-      "<nv " + getVariableName + " " + this.getType.toString + " " + hashCode + " />"
+      if (method.hasSwirlSource) getVariableName + " v" + method.swirlLineNum(delegate) else
+      "<nv " + getVariableName + " " + this.getType.toString + " />"
     }
   }
   case class Constant(delegate: Symbol, literal: Literal, method: SWANMethod, unbalanced: Edge = null) extends SWANVal(method, unbalanced) {
@@ -171,7 +176,7 @@ object SWANVal {
           case Literal.int(value) => value
           case Literal.float(value) => value
         }
-      } + " " + this.getType.toString + " " + hashCode + " />"
+      } + " " + this.getType.toString + " />"
 
     }
   }
@@ -257,7 +262,8 @@ object SWANVal {
       }
     }
     override def toString: String = {
-      "<frv " + getVariableName + " " + getType.toString + " f=" + ref + " " + hashCode + " />"
+      if (method.hasSwirlSource) getVariableName + " v" + method.swirlLineNum(delegate) else
+      "<frv " + getVariableName + " " + getType.toString + " f=" + ref + " />"
     }
   }
   case class BuiltinFunctionRef(delegate: Symbol, ref: String, method: SWANMethod, unbalanced: Edge = null) extends SWANVal(method, unbalanced) {
@@ -283,7 +289,8 @@ object SWANVal {
       }
     }
     override def toString: String = {
-      "<bfrv " + getVariableName + " " + getType.toString + " f=" + ref + " " + hashCode + " />"
+      if (method.hasSwirlSource) getVariableName + " v" + method.swirlLineNum(delegate) else
+      "<bfrv " + getVariableName + " " + getType.toString + " f=" + ref + " />"
     }
   }
   case class DynamicFunctionRef(delegate: Symbol, index: String, method: SWANMethod, unbalanced: Edge = null) extends SWANVal(method, unbalanced) {
@@ -309,7 +316,8 @@ object SWANVal {
       }
     }
     override def toString: String = {
-      "<dfrv " + getVariableName + " " + getType.toString + " i=" + index + " " + hashCode + " />"
+      if (method.hasSwirlSource) getVariableName + " v" + method.swirlLineNum(delegate) else
+      "<dfrv " + getVariableName + " " + getType.toString + " i=" + index + " />"
     }
   }
 }

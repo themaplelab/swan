@@ -34,7 +34,7 @@ class SWANCallGraph(val module: ModuleGroup) extends CallGraph {
   })
 
   def makeMethod(f: CanFunction): SWANMethod = {
-    val m = new SWANMethod(f)
+    val m = new SWANMethod(f, module)
     methods.put(f.name, m)
     m
   }
