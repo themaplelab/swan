@@ -59,8 +59,6 @@ class SWIRLParser extends SWIRLPrinter {
     skipTrivia()
   }
 
-  // ***** Token level *****
-
   protected def peek(query: String): Boolean = {
     if (query.isEmpty) throw parseError("query is empty")
     util.Arrays.equals(
@@ -127,8 +125,6 @@ class SWIRLParser extends SWIRLPrinter {
       skipTrivia()
     }
   }
-
-  // ***** Tree level *****
 
   @throws[Error]
   // Really expensive call.
@@ -211,8 +207,6 @@ class SWIRLParser extends SWIRLPrinter {
     result
   }
 
-  // ***** Error reporting *****
-
   protected def parseError(message: String, at: Option[Int] = None): Error = {
     val position = if (at.isDefined) at.get else cursor
     val newlines: ArrayBuffer[Int] = new ArrayBuffer(0)
@@ -230,7 +224,6 @@ class SWIRLParser extends SWIRLPrinter {
     new Error(path, line, column, message, singleLine)
   }
 
-  // https://github.com/apple/swift/blob/master/docs/SIL.rst#syntax
   @throws[Error]
   def parseModule(): Module = {
     Logging.printInfo("Parsing " +
@@ -273,7 +266,6 @@ class SWIRLParser extends SWIRLPrinter {
     new Module(functions, None, None, metadata)
   }
 
-  // https://github.com/apple/swift/blob/master/docs/SIL.rst#functions
   @throws[Error]
   def parseFunction(): Function = {
     refTable = new RefTable()
@@ -305,7 +297,6 @@ class SWIRLParser extends SWIRLPrinter {
   }
 
 
-  // https://github.com/apple/swift/blob/master/docs/SIL.rst#basic-blocks
   @throws[Error]
   def parseBlock(): Block = {
     val blockRef = parseBlockRef()
@@ -315,7 +306,6 @@ class SWIRLParser extends SWIRLPrinter {
     new Block(blockRef, arguments, operatorDefs.to(ArrayBuffer), terminatorDef)
   }
 
-  // https://github.com/apple/swift/blob/master/docs/SIL.rst#basic-blocks
   @throws[Error]
   def parseInstructionDefs(): (ArrayBuffer[RawOperatorDef], RawTerminatorDef) = {
     val operatorDefs = ArrayBuffer[RawOperatorDef]()
@@ -354,7 +344,6 @@ class SWIRLParser extends SWIRLPrinter {
     }
   }
 
-  // https://github.com/apple/swift/blob/master/docs/SIL.rst#basic-blocks
   @throws[Error]
   def parseInstructionDef(): RawInstructionDef = {
     // Operators do not necessarily need results
@@ -713,12 +702,9 @@ class SWIRLParser extends SWIRLPrinter {
     None
   }
 
-  // https://github.com/apple/swift/blob/master/docs/SIL.rst#values-and-operands
   @throws[Error]
   def parseIdentifier(): String = {
     if(peek("\"")) {
-      // https://github.com/scala/bug/issues/6476
-      // https://stackoverflow.com/questions/21086263/how-to-insert-double-quotes-into-string-with-interpolation-in-scala
       s""""${parseString()}""""
     } else {
       val start = position()
@@ -775,7 +761,6 @@ class SWIRLParser extends SWIRLPrinter {
     }
   }
 
-  // https://github.com/apple/swift/blob/master/docs/SIL.rst#basic-blocks
   @throws[Error]
   def parseSourceInfo(): Option[Position] = {
     if(!skip(",")) return None
@@ -790,8 +775,6 @@ class SWIRLParser extends SWIRLPrinter {
 
   @throws[Error]
   def parseString(): String = {
-    // T0D0: Parse string literals with control characters.
-    //  - Already jankily handle escaped " character
     take("\"", skip = false)
     var s = ""
     def continue(): Boolean = {
