@@ -23,3 +23,5 @@ cp lib/viewer.jar dev/SwanViewer/viewer.jar
 cp "${scriptdir}"/ca.ualberta.maple.swan.testclient/build/libs/ca.ualberta.maple.swan.testclient-all.jar lib/testclient.jar
 
 cp "${scriptdir}"/ca.ualberta.maple.swan.drivers/build/libs/ca.ualberta.maple.swan.drivers-all.jar lib/driver.jar
+
+cp "${scriptdir}"/ca.ualberta.maple.swan.test/build/libs/ca.ualberta.maple.swan.test-all.jar lib/annotation.jar

@@ -1,0 +1,13 @@
+{
+  "specs": [
+    {
+      "name": "testing",
+      "sources": [
+        "playground.source() -> Swift.String"
+      ],
+      "sinks": [
+        "playground.sink(sunk: Swift.String) -> ()"
+      ]
+    }
+  ]
+}

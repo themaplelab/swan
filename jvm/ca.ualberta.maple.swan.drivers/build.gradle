@@ -28,6 +28,7 @@ dependencies {
     implementation project(":ca.ualberta.maple.swan.parser")
     implementation project(":ca.ualberta.maple.swan.ir")
     implementation project(":ca.ualberta.maple.swan.utils")
+    implementation project(":ca.ualberta.maple.swan.spds")
 
     implementation 'info.picocli:picocli:4.6.1'
     compile group: 'com.google.guava', name: 'guava', version: '30.1.1-jre'

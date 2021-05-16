@@ -14,12 +14,13 @@ import java.io.{File, FileWriter}
 import java.nio.charset.StandardCharsets
 import java.nio.file.{Files, Paths}
 
+import ca.ualberta.maple.swan.ir._
 import ca.ualberta.maple.swan.ir.canonical.SWIRLPass
 import ca.ualberta.maple.swan.ir.raw.SWIRLGen
-import ca.ualberta.maple.swan.ir._
 import ca.ualberta.maple.swan.parser.{SILModule, SILParser}
+import ca.ualberta.maple.swan.spds.analysis.TaintAnalysis
 import ca.ualberta.maple.swan.utils.Logging
-import org.apache.commons.io.{FileUtils, IOUtils}
+import org.apache.commons.io.{FileExistsException, FileUtils, IOUtils}
 import picocli.CommandLine
 import picocli.CommandLine.{Command, Option, Parameters}
 
@@ -30,6 +31,9 @@ object Driver {
     var debug = false
     var single = false
     var cache = false
+    var dumpFunctionNames = false
+    var spec: scala.Option[File] = None
+    var pathTracking = false
     var silModuleCB: SILModule => Unit = _
     var rawSwirlModuleCB: Module => Unit = _
     var canSwirlModuleCB: CanModule => Unit = _
@@ -41,6 +45,15 @@ object Driver {
     }
     def single(v: Boolean): Options = {
       this.single = v; this
+    }
+    def dumpFunctionNames(v: Boolean): Options = {
+      this.dumpFunctionNames = v; this
+    }
+    def spec(v: File): Options = {
+      this.spec = scala.Option(v); this
+    }
+    def pathTracking(v: Boolean): Options = {
+      this.pathTracking = v; this
     }
     def addSILCallBack(cb: SILModule => Unit): Options = {
       silModuleCB = cb; this
@@ -88,6 +101,18 @@ class Driver extends Runnable {
     description = Array("Dump IRs and changed partial files to debug directory."))
   private val debugPrinting = new Array[Boolean](0)
 
+  @Option(names = Array("-n", "--names"),
+    description = Array("Dump functions names to file in debug directory (e.g., for finding sources/sinks)."))
+  private val dumpFunctionNames = new Array[Boolean](0)
+
+  @Option(names = Array("-j", "--json-spec"),
+    description = Array("JSON specification file for analysis (necessary for analysis)."))
+  private val spec: File = null
+
+  @Option(names = Array("-p", "--path-tracking"),
+    description = Array("Enable path tracking for taint analysis."))
+  private val pathTracking = new Array[Boolean](0)
+
   @Option(names = Array("-i", "--invalidate-cache"),
     description = Array("Invalidate cache."))
   private val invalidateCache = new Array[Boolean](0)
@@ -110,11 +135,17 @@ class Driver extends Runnable {
       .debug(debugPrinting.nonEmpty)
       .cache(useCache.nonEmpty)
       .single(singleThreaded.nonEmpty)
+      .dumpFunctionNames(dumpFunctionNames.nonEmpty)
+      .spec(spec)
+      .pathTracking(pathTracking.nonEmpty)
     runActual(options, inputFile)
   }
 
   // Can return null
   def runActual(options: Driver.Options, swanDir: File): ModuleGroup = {
+    if (!swanDir.exists()) {
+      throw new FileExistsException("swan-dir does not exist")
+    }
     val runStartTime = System.nanoTime()
     val proc = new SwanDirProcessor(swanDir, options, invalidateCache.nonEmpty, forceRead.nonEmpty)
     val treatRegular = !options.cache || invalidateCache.nonEmpty || !proc.hadExistingCache
@@ -178,6 +209,41 @@ class Driver extends Runnable {
       group.entries.size+" entries")
     if (options.debug) writeFile(group, debugDir, "grouped")
     if (options.cache) proc.writeCache(group)
+    if (options.dumpFunctionNames) {
+      val f = Paths.get(swanDir.getPath, "function-names.txt").toFile
+      val fw = new FileWriter(f)
+      group.functions.foreach(f => {
+        fw.write(f.name + "\n")
+      })
+      fw.close()
+    }
+    if (options.spec.nonEmpty) {
+      val f = Paths.get(swanDir.getPath, "results.json").toFile
+      val fw = new FileWriter(f)
+      try {
+        val specs = TaintAnalysis.Specification.parse(options.spec.get)
+        val r = new ArrayBuffer[ujson.Obj]
+        specs.foreach(spec => {
+          val analysis = new TaintAnalysis(group, spec)
+          val results = analysis.run(options.pathTracking)
+          Logging.printInfo(results.toString)
+          val json = ujson.Obj("name" -> spec.name)
+          val paths = new ArrayBuffer[ujson.Value]
+          results.paths.foreach(path => {
+            val jsonPath = ujson.Obj("source" -> path.source)
+            jsonPath("sink") = path.sink
+            jsonPath("path") = path.nodes.filter(_._2.nonEmpty).map(_._2.get.toString)
+            paths.append(jsonPath)
+          })
+          json("paths") = paths
+          r.append(json)
+        })
+        val finalJson = ujson.Value(r)
+        fw.write(finalJson.render(2))
+      } finally {
+        fw.close()
+      }
+    }
     group
   }
 

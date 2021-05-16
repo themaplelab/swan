@@ -63,16 +63,56 @@ struct SWANXcodebuild: ParsableCommand {
   func run() throws {
 
     let outputDir = URL(fileURLWithPath: self.silDir!)
+    let srcCopyDir = outputDir.appendingPathComponent("src")
     
     let xcodebuildLog = outputDir.appendingPathComponent(Constants.xcodebuildLog)
         
     do {
       try FileManager.default.createDirectory(at: outputDir, withIntermediateDirectories: true)
     } catch {
-      printFailure("The output directory could not be created at " + outputDir.absoluteString
+      printFailure("The output directory could not be created at " + outputDir.path
                     + ".\nReason: " + error.localizedDescription)
       throw ExitCode.failure
     }
+    
+    if (FileManager().fileExists(atPath: srcCopyDir.path)) {
+      try FileManager().removeItem(atPath: srcCopyDir.path)
+    }
+    
+    do {
+      try FileManager.default.createDirectory(at: srcCopyDir, withIntermediateDirectories: true)
+    } catch {
+      printFailure("The src directory could not be created at " + srcCopyDir.path
+                    + ".\nReason: " + error.localizedDescription)
+      throw ExitCode.failure
+    }
+    
+    try self.xcodebuildArgs.forEach { (str) in
+      if (str.contains(".xcodeproj") || str.contains(".xcworkspace")) {
+        let searchPath = URL(fileURLWithPath: str).appendingPathComponent("..")
+        if let e = FileManager().enumerator(at: searchPath, includingPropertiesForKeys: [.isRegularFileKey], options: [.skipsHiddenFiles, .skipsPackageDescendants]) {
+          for case let fileURL as URL in e {
+            if (fileURL.pathComponents.contains("swan-dir")) { continue }
+            do {
+              let fileAttributes = try fileURL.resourceValues(forKeys:[.isRegularFileKey])
+              if fileAttributes.isRegularFile! && fileURL.path.hasSuffix(".swift") {
+                var strippedPath = String(fileURL.path)
+                strippedPath.removeFirst(searchPath.path.count)
+                let destinationDir = srcCopyDir.appendingPathComponent(strippedPath).appendingPathComponent("..")
+                do {
+                  try FileManager.default.createDirectory(at: destinationDir, withIntermediateDirectories: true)
+                } catch {
+                  printFailure("A src directory could not be created.\nReason: " + error.localizedDescription)
+                  throw ExitCode.failure
+                }
+                try FileManager().copyItem(atPath: fileURL.path, toPath: srcCopyDir.appendingPathComponent(strippedPath).path)
+              }
+            }
+          }
+        }
+      }
+    }
+    
     
     let args = generateXcodebuildArgs()
     printStatus("Running xcodebuild " + args.joined(separator: " "))

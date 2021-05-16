@@ -29,13 +29,14 @@ import java.util.Objects;
 
 public class SPDSTests {
 
-    static HashMap<String, HashSet<String>> spec = new HashMap<>();
+    static TaintAnalysis.Specification spec;
 
     static {
+        HashSet<String> sources = new HashSet<>();
         HashSet<String> sinks = new HashSet<>();
-        String source = "playground.source() -> Swift.String";
+        sources.add("playground.source() -> Swift.String");
         sinks.add("playground.sink(sunk: Swift.String) -> ()");
-        spec.addOne(Tuple2.apply(source, sinks));
+        spec = new TaintAnalysis.Specification("Testing", sources, sinks, new HashSet<>());
     }
 
     @Test
@@ -67,7 +68,8 @@ public class SPDSTests {
         String result = new SWIRLPrinter().print(group, opts);
         Logging.printInfo(result);
         TaintAnalysis analysis = new TaintAnalysis(group, spec);
-        analysis.run(false);
+        TaintAnalysis.TaintAnalysisResults results = analysis.run(false);
+        Logging.printInfo(results.toString());
     }
 
     @Test
@@ -100,7 +102,8 @@ public class SPDSTests {
         String result = new SWIRLPrinter().print(group, opts);
         Logging.printInfo(result);
         TaintAnalysis analysis = new TaintAnalysis(group, spec);
-        analysis.run(false);
+        TaintAnalysis.TaintAnalysisResults results = analysis.run(false);
+        Logging.printInfo(results.toString());
     }
 
     @Test
@@ -118,6 +121,7 @@ public class SPDSTests {
         String result = new SWIRLPrinter().print(group, opts);
         Logging.printInfo(result);
         TaintAnalysis analysis = new TaintAnalysis(group, spec);
-        analysis.run(false);
+        TaintAnalysis.TaintAnalysisResults results = analysis.run(false);
+        Logging.printInfo(results.toString());
     }
 }

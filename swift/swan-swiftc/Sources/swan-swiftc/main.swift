@@ -62,15 +62,30 @@ struct SWANSwiftcBuild: ParsableCommand {
   func run() throws {
 
     let outputDir = URL(fileURLWithPath: self.swanDir!)
+    let srcCopyDir = outputDir.appendingPathComponent("src")
     
     let swiftcLog = outputDir.appendingPathComponent(Constants.swiftcLog)
         
     do {
       try FileManager.default.createDirectory(at: outputDir, withIntermediateDirectories: true)
     } catch {
-      printFailure("The output directory could not be created at " + outputDir.absoluteString
+      printFailure("The output directory could not be created at " + outputDir.path
                     + ".\nReason: " + error.localizedDescription)
       throw ExitCode.failure
+    }
+    
+    do {
+      try FileManager.default.createDirectory(at: srcCopyDir, withIntermediateDirectories: true)
+    } catch {
+      printFailure("The src directory could not be created at " + srcCopyDir.path
+                    + ".\nReason: " + error.localizedDescription)
+      throw ExitCode.failure
+    }
+    
+    try self.swiftcArgs.forEach { (str) in
+      if (str.hasSuffix(".swift")) {
+        try FileManager().copyItem(atPath: URL(fileURLWithPath: str).path, toPath: srcCopyDir.appendingPathComponent(str).path)
+      }
     }
     
     let args = generateSwiftcArgs()
