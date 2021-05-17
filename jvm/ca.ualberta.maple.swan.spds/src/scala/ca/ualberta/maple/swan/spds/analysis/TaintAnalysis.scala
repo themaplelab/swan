@@ -79,7 +79,8 @@ class TaintAnalysis(val group: ModuleGroup,
 
   private def getOptions: BoomerangOptions = {
     new DefaultBoomerangOptions() {
-      override def analysisTimeoutMS(): Int = 100000000
+      // For debugging
+      // override def analysisTimeoutMS(): Int = 100000000
     }
   }
 
@@ -122,7 +123,6 @@ class TaintAnalysis(val group: ModuleGroup,
           // Remove last node because it is not really part of the path
           nodes.remove(nodes.length - 1)
           if (!sanitized) {
-            // TODO: verify if this will be the actual sink
             paths.append(new Path(nodes, source, s.getRowKey.getMethod.asInstanceOf[SWANMethod].getName))
           }
           processed.add(m)
@@ -142,7 +142,8 @@ class TaintAnalysis(val group: ModuleGroup,
       val m = s.getRowKey.getMethod.asInstanceOf[SWANMethod]
       if (!processed.contains(m) && query.sinks.contains(m)) {
         if (m.getParameterLocals.contains(s.getColumnKey)) {
-          paths.append(new Path(ArrayBuffer.empty, source, m.getName))
+          val nodes = new ArrayBuffer[(CanInstructionDef, Option[Position])]
+          paths.append(new Path(nodes, source, m.getName))
           processed.add(m)
         }
       }

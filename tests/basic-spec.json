@@ -1,0 +1,13 @@
+{
+  "specs": [
+    {
+      "name": "testing",
+      "sources": [
+        "test.source() -> Swift.String"
+      ],
+      "sinks": [
+        "test.sink(sunk: Swift.String) -> ()"
+      ]
+    }
+  ]
+}

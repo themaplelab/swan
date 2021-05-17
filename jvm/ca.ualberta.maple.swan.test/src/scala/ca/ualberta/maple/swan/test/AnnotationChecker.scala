@@ -67,7 +67,7 @@ class AnnotationChecker extends Runnable {
             if (c.startsWith("!")) {
               val components = c.split("!")
               val name = components(1)
-              val tpe = components(2)
+              val tpe = components(2).split(" ")(0)
               if (tpe != "sink" && tpe != "source") {
                 System.err.println("invalid annotation type: " + tpe + " at line " + idx + " in\n  " + f.getName)
                 System.exit(1)

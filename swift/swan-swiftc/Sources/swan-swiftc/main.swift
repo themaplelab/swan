@@ -122,8 +122,8 @@ struct SWANSwiftcBuild: ParsableCommand {
     }
     
     if (task.terminationStatus != 0) {
-      printWarning("\nswiftc failed. Please see \(swiftcLog.relativeString)\n")
-      return
+      printFailure("\nswiftc failed. Please see \(swiftcLog.relativeString)\n")
+      throw ExitCode.failure
     }
     
     print("")
