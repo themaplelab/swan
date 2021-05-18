@@ -21,11 +21,10 @@ import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
 import scala.jdk.CollectionConverters.CollectionHasAsScala
 import scala.reflect.ClassTag
-import scala.util.control.Breaks.{break, breakable}
 
 class DynamicDispatchGraph extends Serializable {
 
-  private val graph: Graph[Node, DefaultEdge] = new SimpleGraph(classOf[DefaultEdge])
+  private val graph: Graph[Node, DefaultEdge] = new SimpleDirectedGraph(classOf[DefaultEdge])
   private val nodes: mutable.HashMap[String, Node] = new mutable.HashMap[String, Node]()
 
   def query(index: String, types: Option[mutable.HashSet[String]]): Array[String] = {
@@ -33,37 +32,34 @@ class DynamicDispatchGraph extends Serializable {
     val functions = ArrayBuffer[String]()
     val startNode = nodes(index)
     val classNodes: Option[Array[Node]] = {
-      if (types.nonEmpty && false) { // RTA not working/tested yet
+      if (types.nonEmpty) {
         // TODO: .toArray not efficient
-        Some(types.get.toArray.map((s: String) => nodes(s)))
+        Some(types.get.toArray.filter(s => nodes(s).isInstanceOf[Node.Class]).map(s => nodes(s)))
       } else {
         None
       }
     }
     val iterator = new BreadthFirstIterator(graph, startNode)
-    breakable {
-      while (iterator.hasNext) {
-        val cur = iterator.next()
-        if (iterator.getDepth(cur) > 1) {
-          break()
-        }
+    var done = false
+    while (iterator.hasNext && !done) {
+      val cur = iterator.next()
+      if (iterator.getDepth(cur) < 2) {
         cur match {
           case Node.Method(s) => {
             if (classNodes.nonEmpty) {
-              breakable {
-                classNodes.get.foreach(cls => {
-                  if (paths.getPath(cls, cur) != null) {
-                    functions.append(s)
-                    break()
-                  }
-                })
-              }
+              classNodes.get.foreach(cls => {
+                if (paths.getPath(cur, cls) != null) {
+                  functions.append(s)
+                }
+              })
             } else {
               functions.append(s)
             }
           }
           case _ =>
         }
+      } else {
+        done = true
       }
     }
     functions.toArray
@@ -87,7 +83,7 @@ class DynamicDispatchGraph extends Serializable {
   }
 
   object Node {
-    case class Class(s: String) extends Node(name = s) {}
+    case class Class(s: String) extends Node(name = s)
     case class Protocol(s: String) extends Node(name = s)
     case class Index(s: String) extends Node(name = s)
     case class Method(s: String) extends Node(name = s)
@@ -119,14 +115,14 @@ class DynamicDispatchGraph extends Serializable {
       val protocol = makeNode(table.normalProtocolConformance.protocol, "Protocol")
       graph.addEdge(cls, protocol)
       table.entries.foreach {
-        case SILWitnessEntry.baseProtocol(identifier, pc) => {
+        case SILWitnessEntry.baseProtocol(identifier, _) => {
           graph.addEdge(cls, makeNode(identifier, "Protocol"))
         }
-        case SILWitnessEntry.method(declRef, declType, functionName) => {
+        case SILWitnessEntry.method(declRef, _, functionName) => {
           if (functionName.nonEmpty) {
             val method = makeNode(functionName.get.demangled, "Method") // MethodType.implements
-            graph.addEdge(makeNode(declRef.name(0), "Protocol"), method) // MethodType.virtual
             graph.addEdge(makeNode(declRefToString(declRef), "Index"), method)
+            graph.addEdge(method, cls)
           }
         }
         // TODO: investigate
@@ -150,6 +146,7 @@ class DynamicDispatchGraph extends Serializable {
         graph.addEdge(makeNode(declRefToString(entry.declRef), "Index"), method)
       })
     })
+    // System.out.println(printToDot())
   }
 
   private def declRefToString(decl: SILDeclRef): String = {
