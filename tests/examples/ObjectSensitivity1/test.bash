@@ -1,4 +1,4 @@
 #!/usr/bin/env bash
 
-source ../../helper.bash
+source ../../tester.bash
 test_directory

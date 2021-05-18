@@ -14,14 +14,37 @@ GREEN="\033[32m"
 ENDCOLOR="\033[0m"
 BOLD="\033[1m"
 
+if [ -z $LEVEL ]; then
+  export LEVEL=0
+fi
+
 test_directories() {
+  failed=false
   trap 'exit 130' INT
   for dir in */ ; do
     [[ -d ${dir} ]] || continue
     cd ${dir}
-    bash test.bash
+    LEVEL=$((LEVEL + 1))
+    if [ -f $TEST_FILE ]; then
+      test_directory
+    else
+      test_directories
+    fi
+    if [ $? -ne 0 ]; then
+      failed=true
+    fi
+    LEVEL=$((LEVEL - 1))
     cd ..
   done
+  if [ $failed = true ]; then
+    if [ $LEVEL = 0 ]; then
+      echo -e "\n${RED} \xE2\x9D\x8C TESTS FAILED${ENDCOLOR}"
+    fi
+    exit 1
+  fi
+  if [ $LEVEL = 0 ]; then
+    echo -e "\n${GREEN} \xE2\x9C\x94 ALL TESTS PASSED${ENDCOLOR}"
+  fi
 }
 
 # assume already in the directory
