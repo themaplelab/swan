@@ -5,20 +5,20 @@
 If you want to add a new group (directory) of tests:
 
 1. Create a new directory in a fitting spot with a good name that justifies having a separate directory for the tests
-2. Create a `test.bash` in the new directory with the following contents (replace `<relative_path_to_helper.bash>` and make sure it is executable)
+2. Create a `test.bash` in the new directory with the following contents (replace `<relative_path_to_tester.bash>` and make sure it is executable)
 ```
 #!/usr/bin/env bash
-source <relative_path_to_helper.bash>
+source <relative_path_to_tester.bash>
 test_directories
 ```
 
 If you want to add a new test to an existing group
 
 1. Create a new directory with a descriptive name under the appropriate directory
-2. Add a `test.bash` with the following contents (replace `<relative_path_to_helper.bash>`, and make sure it is executable
+2. Add a `test.bash` with the following contents (replace `<relative_path_to_tester.bash>`, and make sure it is executable
 ```
 #!/usr/bin/env bash
-source <relative_path_to_helper.bash>
+source <relative_path_to_tester.bash>
 test_directory
 ```
 3. Add your test code under `test.swift` (you must use this name)
