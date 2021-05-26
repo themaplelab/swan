@@ -22,6 +22,6 @@ func sink(sunk: String) {
 let p = Data();
 let p2 = Data();
 taintIt(in1: source(), out1: p); //!testing!source
-sink(sunk: p.f);
+sink(sunk: p.f); //!testing!sink
 taintIt(in1: "public", out1: p2);
-sink(sunk: p2.f); //!testing!sink
+sink(sunk: p2.f); 

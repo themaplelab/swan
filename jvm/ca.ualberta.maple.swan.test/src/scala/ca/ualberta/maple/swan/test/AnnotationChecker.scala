@@ -41,7 +41,7 @@ object AnnotationChecker {
     System.exit(exitCode);
   }
 
-  private class Annotation(val name: String, val tpe: String)
+  private class Annotation(val name: String, val tpe: String, val line: Int)
 }
 
 @Command(name = "SWAN Annotation Checker", mixinStandardHelpOptions = true)
@@ -82,7 +82,7 @@ class AnnotationChecker extends Runnable {
                 System.exit(1)
               }
               if (!annotations.contains(idx)) { annotations.put(idx, new ArrayBuffer[Annotation]())}
-              annotations(idx).append(new Annotation(name, tpe))
+              annotations(idx).append(new Annotation(name, tpe, idx))
             }
           })
         }
@@ -115,12 +115,11 @@ class AnnotationChecker extends Runnable {
       })
       if (annotations.nonEmpty) {
         failure = true
-        System.err.println("Missing annotations in " + f.getName)
       }
       annotations.foreach(v => {
         v._2.foreach(a => {
           failure = true
-          System.err.println("No matching path node for annotation: //!" + a.name + "!" + a.tpe)
+          System.err.println("No matching path node for annotation: //!" + a.name + "!" + a.tpe + " on line " + a.line)
         })
       })
     })
