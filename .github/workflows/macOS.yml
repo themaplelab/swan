@@ -32,7 +32,9 @@ jobs:
         mkdir -p $GITHUB_WORKSPACE/bin
         cp /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swift-demangle $GITHUB_WORKSPACE/bin/
         echo "$GITHUB_WORKSPACE/bin" >> $GITHUB_PATH
-    - name: Build and test with Gradle
+    - name: Build and test jvm/ with Gradle
       run: cd jvm && ./gradlew build -i
+    - name: Build everything
+      run: ./build.sh
     - name: Analysis regression tests
       run: cd tests && ./test.bash
