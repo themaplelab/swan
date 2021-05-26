@@ -68,14 +68,6 @@ class SWANMethod(val delegate: CanFunction, val moduleGroup: ModuleGroup) extend
     allValues.put(argument.ref.name, v)
   })
 
-  def getSymbol(ref: SymbolRef): ca.ualberta.maple.swan.ir.Symbol = {
-    delegate.getSymbol(ref.name)
-  }
-
-  def getSymbol(name: String): ca.ualberta.maple.swan.ir.Symbol = {
-    delegate.getSymbol(name)
-  }
-
   override def isStaticInitializer: Boolean = false
 
   override def isParameterLocal(v: Val): Boolean = {

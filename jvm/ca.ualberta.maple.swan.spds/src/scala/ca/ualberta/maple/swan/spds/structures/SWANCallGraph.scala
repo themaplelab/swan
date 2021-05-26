@@ -57,6 +57,8 @@ class SWANCallGraph(val module: ModuleGroup) extends CallGraph {
   // TODO: using multiple queries, even with unregisterAllListeners doesn't work
   // Start at the entry points, find apply instructions, query the
   // function references, add edge to CG (if possible), repeat until no change.
+  // TODO: First, take care of trivial intra-procedural cases without queries
+  //   nuance: RTA order
   def constructStaticCG(): Unit = {
 
     val visited = new util.HashSet[SWANStatement]()

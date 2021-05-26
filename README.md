@@ -21,12 +21,15 @@ We aim to provide developers and researchers with an easy-to-use and well-docume
 ### Features
 
 - SIL parser (99% coverage, up to 100k lines/second)
-- Well documented intermediate representation (IR) is easy to convert to other IRs (includes parser)
+- Well documented intermediate representation, called SWIRL, that is easy to convert to other IRs
+- Ability to write models for black box functions with SWIRL
 - Wrappers for `xcodebuild` and `swiftc` that build and dump SIL
 - Modular IR translation pipeline (for integration with other engines)
 - Optimizations: multi-threaded module processing, caching, selective parsing
+- Cross-module analysis support
 - Development tool for viewing Swift, SIL, and SWIRL side-by-side
-- SPDS integration (:construction: WIP)
+- SPDS integration
+- Configurable taint analysis with annotation checker for regression testing
 
 ### Relevant Wiki pages
 

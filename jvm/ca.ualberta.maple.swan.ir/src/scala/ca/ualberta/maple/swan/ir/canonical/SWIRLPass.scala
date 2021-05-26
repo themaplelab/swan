@@ -20,7 +20,7 @@
 package ca.ualberta.maple.swan.ir.canonical
 
 import ca.ualberta.maple.swan.ir.Exceptions.{IncompleteRawSWIRLException, IncorrectRawSWIRLException, UnexpectedSILFormatException}
-import ca.ualberta.maple.swan.ir.{Argument, BinaryOperation, Block, BlockRef, CanBlock, CanFunction, CanModule, CanOperator, CanOperatorDef, CanTerminator, CanTerminatorDef, Constants, FieldWriteAttribute, Function, Literal, Module, Operator, RawOperatorDef, RawTerminatorDef, SwitchCase, SwitchEnumCase, Symbol, SymbolRef, SymbolTableEntry, Terminator, Type, UnaryOperation, WithResult}
+import ca.ualberta.maple.swan.ir.{Argument, BinaryOperation, Block, BlockRef, CanBlock, CanFunction, CanModule, CanOperator, CanOperatorDef, CanTerminator, CanTerminatorDef, Constants, FieldWriteAttribute, Function, Literal, Module, Operator, RawOperatorDef, RawTerminatorDef, SwitchCase, SwitchEnumCase, Symbol, SymbolRef, SymbolTable, Terminator, Type, UnaryOperation, WithResult}
 import ca.ualberta.maple.swan.utils.Logging
 import org.jgrapht.Graph
 import org.jgrapht.graph.{DefaultDirectedGraph, DefaultEdge}
@@ -45,7 +45,7 @@ class SWIRLPass {
       val blocks = convertToCanonical(f, module)
       val cfg = generateCFG(blocks)
       val canFunction = new CanFunction(f.attribute, f.name, f.tpe, args, blocks, f.refTable,
-        f.instantiatedTypes, new mutable.HashMap[String, SymbolTableEntry](), cfg)
+        f.instantiatedTypes, new SymbolTable(), cfg)
       generateSymbolTable(canFunction)
       functions.append(canFunction)
     })
@@ -58,14 +58,14 @@ class SWIRLPass {
     // Create symbol table.
     // Mapping of result values to their creating operator.
     val table = function.symbolTable
+    function.arguments.foreach(argument => {
+      table.putArg(argument.ref.name, argument)
+    })
     function.blocks.foreach(block => {
-      function.arguments.foreach(argument => {
-        table.put(argument.ref.name, SymbolTableEntry.argument(argument))
-      })
       block.operators.foreach(op => {
         op.operator match {
           case inst: WithResult =>
-            table.put(inst.value.ref.name, SymbolTableEntry.operator(inst.value, op.operator))
+            table.putOp(inst.value, op.operator)
           case _ =>
         }
       })
@@ -330,7 +330,7 @@ class SWIRLPass {
           }
         }
         case Terminator.unwind => {
-          val dummyValue = new Symbol(makeSymbolRef("unwind_dummy"), f.tpe)
+          val dummyValue = new Symbol(generateSymbolName("unwind_dummy"), f.tpe)
           val newRet = new RawOperatorDef(Operator.neww(dummyValue), position)
           val ret = new RawTerminatorDef(Terminator.ret(dummyValue.ref), position)
           mapToSIL(b.terminator, newRet, module)
@@ -339,7 +339,7 @@ class SWIRLPass {
           b.terminator = ret
         }
         case Terminator.tryApply(functionRef, args, normal, normalType, error, errorType) => {
-          val retValue = new Symbol(makeSymbolRef(functionRef.name), normalType)
+          val retValue = new Symbol(generateSymbolName(functionRef.name), normalType)
           // T0DO: SLOW
           val targetErrorBlock = f.blocks.find(p => p.blockRef.equals(error)).get
           if (targetErrorBlock.arguments.isEmpty) {
@@ -554,9 +554,6 @@ class SWIRLPass {
         }
         case Terminator.brIf_can(_, target) => {
           graph.addEdge(b, getTarget(target))
-          if (bit._2 + 1 > blocks.length - 1) {
-            System.out.println()
-          }
           graph.addVertex(blocks(bit._2 + 1))
           graph.addEdge(b, blocks(bit._2 + 1))
         }

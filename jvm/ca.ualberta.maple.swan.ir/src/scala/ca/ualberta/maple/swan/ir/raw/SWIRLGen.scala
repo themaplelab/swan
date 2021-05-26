@@ -95,6 +95,7 @@ class SWIRLGen {
       val instantiatedTypes = new mutable.HashSet[String]()
       functions.append({
         intermediateSymbols.clear()
+        debugNames.clear()
         val refTable = new RefTable()
         val blocks = new ArrayBuffer[Block]
         var attribute = getFunctionAttribute(silFunction)
@@ -269,6 +270,7 @@ class SWIRLGen {
 
   // Needs to be cleared for every function.
   private val intermediateSymbols: mutable.HashMap[String, Integer] = new mutable.HashMap()
+  private val debugNames: mutable.HashSet[String] = new mutable.HashSet[String]()
 
   // We make it explicit that the value generated is an intermediate value
   // for the given value.
@@ -605,7 +607,10 @@ class SWIRLGen {
           }
         }
         case SILDebugAttribute.name(name) => {
-          makeSymbolRef(I.operand.value, ctx).name = name
+          if (!debugNames.contains(name)) {
+            makeSymbolRef(I.operand.value, ctx).name = name
+            debugNames.add(name)
+          }
         }
         case SILDebugAttribute.let =>
         case SILDebugAttribute.variable =>
@@ -622,7 +627,10 @@ class SWIRLGen {
         }
       }
       case SILDebugAttribute.name(name) => {
-        makeSymbolRef(I.operand.value, ctx).name = name
+        if (!debugNames.contains(name)) {
+          makeSymbolRef(I.operand.value, ctx).name = name
+          debugNames.add(name)
+        }
       }
       case SILDebugAttribute.let =>
       case SILDebugAttribute.variable =>

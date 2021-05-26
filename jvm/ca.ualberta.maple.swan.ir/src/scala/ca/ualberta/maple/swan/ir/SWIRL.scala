@@ -91,12 +91,12 @@ class Function(val attribute: Option[FunctionAttribute], var name: String, val t
 class CanFunction(var attribute: Option[FunctionAttribute], val name: String, val tpe: Type,
                   val arguments: ArrayBuffer[Argument], val blocks: ArrayBuffer[CanBlock],
                   val refTable: RefTable, val instantiatedTypes: immutable.HashSet[String],
-                  val symbolTable: mutable.HashMap[String, SymbolTableEntry],
-                  var cfg: Graph[CanBlock, DefaultEdge]) extends Serializable {
+                  val symbolTable: SymbolTable, var cfg: Graph[CanBlock, DefaultEdge]) extends Serializable {
   def getSymbol(name: String): Symbol = {
     symbolTable(name) match {
       case SymbolTableEntry.operator(symbol, _) => symbol
       case SymbolTableEntry.argument(argument) => argument
+      case SymbolTableEntry.multiple(symbol, _) => symbol
     }
   }
 }
@@ -279,6 +279,7 @@ class Symbol(val ref: SymbolRef, val tpe: Type) extends Serializable {
         false
     }
   }
+  override def toString: String = ref.name
 }
 
 // `pos` can be changed by debug_value and debug_value_addr.
@@ -328,10 +329,40 @@ class RefTable extends Serializable {
   }
 }
 
+class SymbolTable extends mutable.HashMap[String, SymbolTableEntry] {
+  override def put(key: String, value: SymbolTableEntry): Option[SymbolTableEntry] = {
+    throw new RuntimeException("Do not use put() directly")
+  }
+  def putArg(key: String, arg: Argument): Unit = {
+    if (this.contains(key)) {
+      throw new RuntimeException("Attempted to add argument entry to symbol table when key already in table")
+    }
+    super.put(key, SymbolTableEntry.argument(arg))
+  }
+  def putOp(value: Symbol, operator: CanOperator): Unit = {
+    val key = value.ref.name
+    if (this.contains(key)) {
+      this(key) match {
+        case SymbolTableEntry.operator(symbol, op) => {
+          val arr = new ArrayBuffer[CanOperator]()
+          arr.append(operator)
+          arr.append(op)
+          super.put(key, SymbolTableEntry.multiple(symbol, arr))
+        }
+        case SymbolTableEntry.multiple(_, operators) => operators.append(operator)
+        case SymbolTableEntry.argument(_) => System.out.println(value.ref.name); throw new RuntimeException()
+      }
+    } else {
+      super.put(key, SymbolTableEntry.operator(value, operator))
+    }
+  }
+}
+
 sealed trait SymbolTableEntry extends Serializable
 object SymbolTableEntry {
   case class operator(symbol: Symbol, var operator: CanOperator) extends SymbolTableEntry
   case class argument(argument: Argument) extends SymbolTableEntry
+  case class multiple(symbol: Symbol, var operators: ArrayBuffer[CanOperator]) extends SymbolTableEntry
 }
 
 class SILMap extends Serializable {
