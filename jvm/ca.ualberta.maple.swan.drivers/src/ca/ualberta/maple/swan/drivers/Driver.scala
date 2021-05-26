@@ -1,11 +1,20 @@
 /*
- * This source file is part fo the SWAN open-source project.
+ * Copyright (c) 2021 the SWAN project authors. All rights reserved.
  *
- * Copyright (c) 2021 the SWAN project authors.
- * Licensed under Apache License v2.0
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- * See https://github.com/themaplelab/swan/LICENSE.txt for license information.
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ * This software has dependencies with other licenses.
+ * See https://github.com/themaplelab/swan/doc/LICENSE.md.
  */
 
 package ca.ualberta.maple.swan.drivers
@@ -18,7 +27,7 @@ import ca.ualberta.maple.swan.ir._
 import ca.ualberta.maple.swan.ir.canonical.SWIRLPass
 import ca.ualberta.maple.swan.ir.raw.SWIRLGen
 import ca.ualberta.maple.swan.parser.{SILModule, SILParser}
-import ca.ualberta.maple.swan.spds.analysis.TaintAnalysis
+import ca.ualberta.maple.swan.spds.analysis.{AnalysisType, TaintAnalysis, TaintAnalysisOptions}
 import ca.ualberta.maple.swan.utils.Logging
 import org.apache.commons.io.{FileExistsException, FileUtils, IOUtils}
 import picocli.CommandLine
@@ -27,6 +36,9 @@ import picocli.CommandLine.{Command, Option, Parameters}
 import scala.collection.mutable.ArrayBuffer
 
 object Driver {
+  /* Because this driver can be invoked programmatically, most picocli options
+   * (@Option) should have a matching field in Driver.Options.
+   */
   class Options {
     var debug = false
     var single = false
@@ -72,25 +84,34 @@ object Driver {
   }
 }
 
+/**
+ * This is the main driver for SWAN. The driver can either be invoked from the
+ * command line or programmatically (e.g., with a test driver) using runActual().
+ */
 @Command(name = "SWAN Driver", mixinStandardHelpOptions = true, header = Array(
   "@|fg(208)" +
   "    WNW                                                                   WWW \n" +
   "  WOdkXW                                                              WNKOOOXW\n" +
-  "  Xd:clx0XWW                                                      WWNK0kxxxx0WW\n" +
-  " WOl::cccoxOXNW                                               WNXK0OkxxdddddONW\n" +
-  " WOc:::cccccldk0KNNWW                 WWWWk             WNNXK0Okxdddddxddddx0NW\n" +
+  "  Xd:clx0XWW                                                      WWNK0kxxxx0WW\n"+
+  " WOl::cccoxOXNW                                               WNXK0OkxxdddddONW\n"+
+  " WOc:::cccccldk0KNNWW                 WWWWk             WNNXK0Okxdddddxddddx0NW\n"+
   " W0l:::::ccccccclodxkOO00KNW        WKkxxOXW           WXOxddooodddddddddxxkXW\n" +
-  "  Xd::::::ccccccccccccclllx0N      WOlcccl0         WXkoooooooooodddddddxOXW \n" +
-  "  WKo::::::ccccccccccccclllokXW    Nxo   xK       NKkolllllooooooooddxO0XW   \n" +
-  "   WXxl::::::cccccccccccccllldONW   xkN        WN0dlccclllllooooooooxKW      \n" +
-  "     WX0dc:::::cccccccccccccllldOXW  xOXN    WXkocccccccclllllloooookN       \n" +
-  "       WKo::::::cccccccccccccllllok0  kxxxxk   WcccccccccllllllooxOXW        \n" +
-  "        WOo::::::ccccccccccclccllllod   XKOdlk   WkcccccccloddkOKNW          \n" +
-  "         WXOdlc:::cccccccccccccclldxOKN   WNklck  Wkccccd0XNWW               \n" +
-  "            WX0OkkOkdlcccccccccldOXW       W0lclk  WccloxOXW                 \n" +
-  "                   WN0xdolllloodOX        dWXKKXN                            \n" +
-  "                      WWNXKKKXNWW  WX0OkxxddxkKN                             \n" +
-  "                                      WNNNNWW                                 |@"))
+  "  Xd::::::ccccccccccccclllx0N      WOlcccl0         WXkoooooooooodddddddxOXW \n"  +
+  "  WKo::::::ccccccccccccclllokXW    Nxo   xK       NKkolllllooooooooddxO0XW   \n"  +
+  "   WXxl::::::cccccccccccccllldONW   xkN        WN0dlccclllllooooooooxKW      \n"  +
+  "     WX0dc:::::cccccccccccccllldOXW  xOXN    WXkocccccccclllllloooookN       \n"  +
+  "       WKo::::::cccccccccccccllllok0  kxxxxk   WcccccccccllllllooxOXW        \n"  +
+  "        WOo::::::ccccccccccclccllllod   XKOdlk   WkcccccccloddkOKNW          \n"  +
+  "         WXOdlc:::cccccccccccccclldxOKN   WNklck  Wkccccd0XNWW               \n"  +
+  "            WX0OkkOkdlcccccccccldOXW       W0lclk  WccloxOXW                 \n"  +
+  "                   WN0xdolllloodOX        dWXKKXN                            \n"  +
+  "                      WWNXKKKXNWW  WX0OkxxddxkKN                             \n"  +
+  "                                      WNNNNWW                                 |@" +
+  "\n\n Copyright (c) 2021 the SWAN project authors. All rights reserved.\n"         +
+  " Licensed under the Apache License, Version 2.0, available at\n"                  +
+  " http://www.apache.org/licenses/LICENSE-2.0\n"                                    +
+  " This software has dependencies with other licenses.\n"                           +
+  " See https://github.com/themaplelab/swan/doc/LICENSE.md.\n"))
 class Driver extends Runnable {
 
   @Option(names = Array("-s", "--single"),
@@ -130,6 +151,9 @@ class Driver extends Runnable {
 
   var options: Driver.Options = _
 
+  /**
+   * Convert picocli options to Driver.Options and call runActual.
+   */
   override def run(): Unit = {
     options = new Driver.Options()
       .debug(debugPrinting.nonEmpty)
@@ -141,7 +165,11 @@ class Driver extends Runnable {
     runActual(options, inputFile)
   }
 
-  // Can return null
+  /**
+   * Processes the given swanDir (translation and analysis) and returns
+   * the module group. Can return null if the given directory is empty or
+   * if a cache exists and there is no change.
+   */
   def runActual(options: Driver.Options, swanDir: File): ModuleGroup = {
     if (!swanDir.exists()) {
       throw new FileExistsException("swan-dir does not exist")
@@ -150,6 +178,7 @@ class Driver extends Runnable {
     val proc = new SwanDirProcessor(swanDir, options, invalidateCache.nonEmpty, forceRead.nonEmpty)
     val treatRegular = !options.cache || invalidateCache.nonEmpty || !proc.hadExistingCache
     if (!treatRegular) Logging.printInfo(proc.toString)
+    // Check early exit conditions
     if (proc.files.isEmpty || (options.cache && !proc.changeDetected)) return null
     val debugDir: File = {
       if (options.debug) {
@@ -166,7 +195,6 @@ class Driver extends Runnable {
     val rawModules = new ArrayBuffer[Module]()
     val canModules = new ArrayBuffer[CanModule]()
     // Large files go first so we can immediately thread them
-
     proc.files.sortWith(_.length() > _.length()).foreach(f => {
       def go(): Unit = {
         val res = runner(debugDir, f, options)
@@ -224,8 +252,11 @@ class Driver extends Runnable {
         val specs = TaintAnalysis.Specification.parse(options.spec.get)
         val r = new ArrayBuffer[ujson.Obj]
         specs.foreach(spec => {
-          val analysis = new TaintAnalysis(group, spec)
-          val results = analysis.run(options.pathTracking)
+          val analysisOptions = new TaintAnalysisOptions(
+            if (options.pathTracking) AnalysisType.ForwardPathTracking
+            else AnalysisType.Forward)
+          val analysis = new TaintAnalysis(group, spec, analysisOptions)
+          val results = analysis.run()
           Logging.printInfo(results.toString)
           val json = ujson.Obj("name" -> spec.name)
           val paths = new ArrayBuffer[ujson.Value]
@@ -247,6 +278,7 @@ class Driver extends Runnable {
     group
   }
 
+  /** Processes a SIL file. */
   def runner(debugDir: File, file: File, options: Driver.Options): (SILModule, Module, CanModule) = {
     val partial = file.getName.endsWith(".changed")
     val silParser = new SILParser(file.toPath)
@@ -262,6 +294,7 @@ class Driver extends Runnable {
     (silModule, rawSwirlModule, canSwirlModule)
   }
 
+  /** Processes a SWIRL model file. */
   def modelRunner(debugDir: File, modelsContent: String, options: Driver.Options): (Module, CanModule) = {
     val swirlModule = new SWIRLParser(modelsContent, model = true).parseModule()
     if (options.debug) writeFile(swirlModule, debugDir, "models.raw")
@@ -270,6 +303,7 @@ class Driver extends Runnable {
     (swirlModule, canSwirlModule)
   }
 
+  /** Write a module to the debug directory. */
   def writeFile(module: Object, debugDir: File, prefix: String): Unit = {
     val printedSwirlModule = {
       module match {

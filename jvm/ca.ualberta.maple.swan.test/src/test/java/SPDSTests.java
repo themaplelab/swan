@@ -1,11 +1,20 @@
 /*
- * This source file is part fo the SWAN open-source project.
+ * Copyright (c) 2021 the SWAN project authors. All rights reserved.
  *
- * Copyright (c) 2021 the SWAN project authors.
- * Licensed under Apache License v2.0
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- * See https://github.com/themaplelab/swan/LICENSE.txt for license information.
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ * This software has dependencies with other licenses.
+ * See https://github.com/themaplelab/swan/doc/LICENSE.md.
  */
 
 import ca.ualberta.maple.swan.ir.Error;
@@ -14,7 +23,9 @@ import ca.ualberta.maple.swan.ir.canonical.SWIRLPass;
 import ca.ualberta.maple.swan.parser.SILModule;
 import ca.ualberta.maple.swan.parser.SILPrinter;
 import ca.ualberta.maple.swan.parser.SILPrinterOptions;
+import ca.ualberta.maple.swan.spds.analysis.AnalysisType;
 import ca.ualberta.maple.swan.spds.analysis.TaintAnalysis;
+import ca.ualberta.maple.swan.spds.analysis.TaintAnalysisOptions;
 import ca.ualberta.maple.swan.test.TestDriver;
 import ca.ualberta.maple.swan.utils.Logging;
 import org.junit.jupiter.api.Test;
@@ -67,8 +78,10 @@ public class SPDSTests {
         SWIRLPrinterOptions opts = new SWIRLPrinterOptions().genLocationMap(true).printLineNumber(true);
         String result = new SWIRLPrinter().print(group, opts);
         Logging.printInfo(result);
-        TaintAnalysis analysis = new TaintAnalysis(group, spec);
-        TaintAnalysis.TaintAnalysisResults results = analysis.run(false);
+        TaintAnalysisOptions analysisOptions =
+                new TaintAnalysisOptions(AnalysisType.Forward$.MODULE$);
+        TaintAnalysis analysis = new TaintAnalysis(group, spec, analysisOptions);
+        TaintAnalysis.TaintAnalysisResults results = analysis.run();
         Logging.printInfo(results.toString());
     }
 
@@ -101,8 +114,10 @@ public class SPDSTests {
         SWIRLPrinterOptions opts = new SWIRLPrinterOptions().genLocationMap(true).printLineNumber(true);
         String result = new SWIRLPrinter().print(group, opts);
         Logging.printInfo(result);
-        TaintAnalysis analysis = new TaintAnalysis(group, spec);
-        TaintAnalysis.TaintAnalysisResults results = analysis.run(false);
+        TaintAnalysisOptions analysisOptions =
+                new TaintAnalysisOptions(AnalysisType.Forward$.MODULE$);
+        TaintAnalysis analysis = new TaintAnalysis(group, spec, analysisOptions);
+        TaintAnalysis.TaintAnalysisResults results = analysis.run();
         Logging.printInfo(results.toString());
     }
 
@@ -120,8 +135,10 @@ public class SPDSTests {
         SWIRLPrinterOptions opts = new SWIRLPrinterOptions().genLocationMap(true).printLineNumber(true);
         String result = new SWIRLPrinter().print(group, opts);
         Logging.printInfo(result);
-        TaintAnalysis analysis = new TaintAnalysis(group, spec);
-        TaintAnalysis.TaintAnalysisResults results = analysis.run(false);
+        TaintAnalysisOptions analysisOptions =
+                new TaintAnalysisOptions(AnalysisType.Backward$.MODULE$);
+        TaintAnalysis analysis = new TaintAnalysis(group, spec, analysisOptions);
+        TaintAnalysis.TaintAnalysisResults results = analysis.run();
         Logging.printInfo(results.toString());
     }
 }

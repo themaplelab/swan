@@ -1,11 +1,20 @@
 /*
- * This source file is part fo the SWAN open-source project.
+ * Copyright (c) 2021 the SWAN project authors. All rights reserved.
  *
- * Copyright (c) 2020 the SWAN project authors.
- * Licensed under Apache License v2.0
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- * See https://github.com/themaplelab/swan/LICENSE.txt for license information.
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ * This software has dependencies with other licenses.
+ * See https://github.com/themaplelab/swan/doc/LICENSE.md.
  */
 
 package ca.ualberta.maple.swan.ir.canonical
@@ -19,8 +28,12 @@ import org.jgrapht.graph.{DefaultDirectedGraph, DefaultEdge}
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
 
+/** Converts raw SWIRL to canonical SWIRL in a series of passes. */
 class SWIRLPass {
 
+  // https://github.com/themaplelab/swan/wiki/SWIRL#swirlpass-and-canonical-swirl
+
+  /** Convert a raw module to a canonical module. */
   def runPasses(module: Module): CanModule = {
     Logging.printInfo("Running SWIRL canonical passes on " + module)
     val startTime = System.nanoTime()
@@ -58,8 +71,6 @@ class SWIRLPass {
       })
     })
     // Verify that all values referenced are either block arguments or created with an operator.
-    // This is NOT part of the guarantees! This is just here in case the initial program
-    // is missing some values.
     function.refTable.symbols.foreach(ref => {
       // Use the value (not the key) due to COPY operations.
       // Keys are effectively non-concrete aliases for the actual values.
@@ -71,6 +82,10 @@ class SWIRLPass {
     })
   }
 
+  /**
+   * Converts all raw-only instructions in the given module to
+   * canonical instructions (in-place transformation).
+   */
   def simplify(f: Function, module: Module): Unit = {
     val intermediateBlocks: mutable.HashMap[String, Integer] = new mutable.HashMap()
     val intermediateSymbols: mutable.HashMap[String, Integer] = new mutable.HashMap()
@@ -112,9 +127,7 @@ class SWIRLPass {
       intermediateSymbols(value) = intermediateSymbols(value) + 1
       makeSymbolRef(ret)
     }
-    // First handle operators. switch_enum_assign gets changed to switch_enum,
-    // and switch_value_assign gets changed to switch_value,
-    // which are also a raw-only instructions, so they must be changed first.
+    // First handle operators because some them generate terminators.
     var i: Int = 0
     while (i < f.blocks.length) {
       val b = f.blocks(i)
@@ -137,7 +150,7 @@ class SWIRLPass {
             val continueRef = generateBlockName(b.blockRef.label)
             cases.zipWithIndex.foreach(cse => {
               val br = new RawTerminatorDef(Terminator.br(continueRef, ArrayBuffer(cse._1.value)), op.position)
-              mapToSIL(op, br, module) // Kind of weird to map a terminator to operator
+              mapToSIL(op, br, module)
               val newBlock = new Block(blockRefs(cse._2), new ArrayBuffer, new ArrayBuffer, br)
               mapToSIL(b, newBlock, module)
               newBlocks.append(newBlock)
@@ -214,6 +227,7 @@ class SWIRLPass {
       f.blocks.insertAll(i + 1, newBlocks)
       i = i + /* newBlocks.length + */ 1
     }
+    // Handle terminators.
     i = 0
     while (i < f.blocks.length) {
       val b = f.blocks(i)
@@ -266,7 +280,6 @@ class SWIRLPass {
           }
         }
         case Terminator.switchEnum(switchOn, cases, default) => {
-          // $Any because underlying data type unknown.
           val dataSymbol = new Symbol(generateSymbolName(switchOn.name), new Type())
           val frData = new RawOperatorDef(Operator.fieldRead(dataSymbol, None, switchOn, "data"), position)
           val typeSymbol = new Symbol(generateSymbolName(switchOn.name), new Type("Builtin.RawPointer"))
@@ -386,6 +399,10 @@ class SWIRLPass {
     })
   }
 
+  /**
+   * Converts basic block arguments (phi-nodes) to assignments before
+   * branch instructions.
+   */
   def resolveBasicBlockArguments(f: Function, module: Module): ArrayBuffer[Argument] = {
     f.blocks.zipWithIndex.foreach(bIdx => {
       val block = bIdx._1
@@ -420,6 +437,7 @@ class SWIRLPass {
     f.blocks(0).arguments
   }
 
+  /** Converts a given function to canonical form. */
   def convertToCanonical(function: Function, module: Module): ArrayBuffer[CanBlock] = {
     val blocks: ArrayBuffer[CanBlock] = new ArrayBuffer
     function.blocks.foreach(b => {
@@ -467,6 +485,7 @@ class SWIRLPass {
     }
   }
 
+  /** Resolve all field aliases. */
   def resolveAliases(module: Module): Unit = {
     // For every function F,
     //   For every block B,
@@ -511,13 +530,14 @@ class SWIRLPass {
     })
   }
 
+  /** Generate a control flow graph for the given blocks. */
   @throws[IncompleteRawSWIRLException]
   def generateCFG(blocks: ArrayBuffer[CanBlock]): Graph[CanBlock, DefaultEdge] = {
     val graph: Graph[CanBlock, DefaultEdge] = new DefaultDirectedGraph(classOf[DefaultEdge])
     val exitBlock = new CanBlock(new BlockRef(Constants.exitBlock), null, null)
     graph.addVertex(exitBlock)
     def getTarget(ref: BlockRef): CanBlock = {
-      // Not really efficient
+      // T0D0: Not really efficient
       val to = blocks.find(p => p.blockRef.equals(ref))
       if (to.isEmpty) {
         throw new IncompleteRawSWIRLException("control flow instruction 'to' block does not exist: " + ref.label)

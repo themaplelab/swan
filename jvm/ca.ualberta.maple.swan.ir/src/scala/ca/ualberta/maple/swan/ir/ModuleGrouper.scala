@@ -1,11 +1,20 @@
 /*
- * This source file is part fo the SWAN open-source project.
+ * Copyright (c) 2021 the SWAN project authors. All rights reserved.
  *
- * Copyright (c) 2021 the SWAN project authors.
- * Licensed under Apache License v2.0
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- * See https://github.com/themaplelab/swan/LICENSE.txt for license information.
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ * This software has dependencies with other licenses.
+ * See https://github.com/themaplelab/swan/doc/LICENSE.md.
  */
 
 package ca.ualberta.maple.swan.ir
@@ -17,7 +26,6 @@ import ca.ualberta.maple.swan.utils.Logging
 import scala.collection.mutable.ArrayBuffer
 import scala.collection.{immutable, mutable}
 
-// TODO: The current function merging is likely inefficient.
 object ModuleGrouper {
 
   // We throw exceptions for unexpected merging behaviour, but really
@@ -25,6 +33,7 @@ object ModuleGrouper {
   // modules often have implementations for the same builtins.
   // Would be also good to check that the implementations are equal.
   // The model module must be merged last.
+  // TODO: The current function merging is likely inefficient.
   def merge(toMerge: ArrayBuffer[CanFunction],
             existingFunctions: mutable.HashMap[String, CanFunction],
             entries: mutable.HashMap[String, CanFunction], models: mutable.HashMap[String, CanFunction],

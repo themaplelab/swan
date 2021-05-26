@@ -1,11 +1,20 @@
 /*
- * This source file is part fo the SWAN open-source project.
+ * Copyright (c) 2021 the SWAN project authors. All rights reserved.
  *
- * Copyright (c) 2021 the SWAN project authors.
- * Licensed under Apache License v2.0
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- * See https://github.com/themaplelab/swan/LICENSE.txt for license information.
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ * This software has dependencies with other licenses.
+ * See https://github.com/themaplelab/swan/doc/LICENSE.md.
  */
 
 package ca.ualberta.maple.swan.drivers
@@ -27,6 +36,8 @@ import scala.collection.mutable.ArrayBuffer
 
 // TODO: Have separate checksum cache to save space and not have
 //  to copy SIL files
+
+/** Processes a swan-dir by reading its SIL files. Caching is experimental. */
 class SwanDirProcessor(swanDir: File, options: Driver.Options, clear: Boolean = false, forceRead: Boolean = false) {
 
   private val cacheDir: File = Paths.get(swanDir.getPath, "cache").toFile
@@ -93,17 +104,18 @@ class SwanDirProcessor(swanDir: File, options: Driver.Options, clear: Boolean = 
     comparedFiles
   }
 
+  // TODO: custom serialization
+
+  /** Writes a module group to the cache in the swan-dir. */
   def writeCache(group: ModuleGroup): Unit = {
     val startTime = System.nanoTime()
     if (!cacheDir.exists()) Files.createDirectories(cacheDir.toPath)
     FileUtils.cleanDirectory(cacheDir)
-    // TODO: Find way to serialize these graphs
     group.ddgs.clear()
     group.functions.foreach(f => f.cfg = null)
     val fileOut = new FileOutputStream(cacheFile)
     fileOut.write(pool.toBytesWithoutClass(group))
     fileOut.close()
-    // Include copying the files in the timer interval because this should be really quick
     silFilesInSwanDir.foreach(f => {
       val copyPath = Paths.get(cacheDir.getPath, f.getName)
       Files.copy(f.toPath, copyPath)
@@ -111,6 +123,7 @@ class SwanDirProcessor(swanDir: File, options: Driver.Options, clear: Boolean = 
     Logging.printTimeStampNoRate(0, startTime, "writing cache", group.functions.length, "functions")
   }
 
+  /** Reads the cache from the swan-dir. Assumes a cache exists. */
   private def readCache: ModuleGroup = {
     val startTime = System.nanoTime()
     val fileIn = new FileInputStream(cacheFile)
@@ -121,6 +134,7 @@ class SwanDirProcessor(swanDir: File, options: Driver.Options, clear: Boolean = 
     group
   }
 
+  /** Returns all files inside of the swan-dir. */
   private def getFilesFromDir: ArrayBuffer[File] = {
     if (swanDir.exists() && swanDir.isDirectory) {
       // val metadataFile = new File(swanDir, "sil-metadata.json")
@@ -163,6 +177,7 @@ class SwanDirProcessor(swanDir: File, options: Driver.Options, clear: Boolean = 
     sb.toString()
   }
 
+  /** Returns the checksum of a file. */
   private def getChecksum(file: File): String = {
     com.google.common.io.Files.asByteSource(file).hash(Hashing.crc32()).toString
   }

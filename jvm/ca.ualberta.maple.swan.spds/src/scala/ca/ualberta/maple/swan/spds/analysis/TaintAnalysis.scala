@@ -1,11 +1,20 @@
 /*
- * This source file is part fo the SWAN open-source project.
+ * Copyright (c) 2021 the SWAN project authors. All rights reserved.
  *
- * Copyright (c) 2021 the SWAN project authors.
- * Licensed under Apache License v2.0
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- * See https://github.com/themaplelab/swan/LICENSE.txt for license information.
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ * This software has dependencies with other licenses.
+ * See https://github.com/themaplelab/swan/doc/LICENSE.md.
  */
 
 package ca.ualberta.maple.swan.spds.analysis
@@ -16,7 +25,7 @@ import java.util
 import boomerang.results.ForwardBoomerangResults
 import boomerang.scene._
 import boomerang.weights.{DataFlowPathWeight, PathTrackingBoomerang}
-import boomerang.{Boomerang, BoomerangOptions, DefaultBoomerangOptions, ForwardQuery}
+import boomerang.{BackwardQuery, Boomerang, BoomerangOptions, DefaultBoomerangOptions, ForwardQuery}
 import ca.ualberta.maple.swan.ir.{CanInstructionDef, ModuleGroup, Position}
 import ca.ualberta.maple.swan.spds.analysis.TaintAnalysis.{Path, Specification, TaintAnalysisResults}
 import ca.ualberta.maple.swan.spds.structures.{SWANCallGraph, SWANMethod, SWANStatement}
@@ -28,37 +37,68 @@ import scala.io.Source
 import scala.util.Try
 
 class TaintAnalysis(val group: ModuleGroup,
-                    val spec: Specification) {
+                    val spec: Specification, val opts: TaintAnalysisOptions) {
 
   class ForwardMethodTaintQuery(val edge: ControlFlowGraph.Edge,
                                 val variable: Val, val source: Method,
                                 val sinks: mutable.HashSet[SWANMethod]) extends ForwardQuery(edge, variable)
 
-  def run(pathTracking: Boolean): TaintAnalysisResults = {
+  class BackwardMethodTaintQuery(val edge: ControlFlowGraph.Edge,
+                                 val variable: Val, val sources: mutable.HashSet[SWANMethod],
+                                 val sink: SWANMethod) extends BackwardQuery(edge, variable)
+
+  def run(): TaintAnalysisResults = {
     val cg = new SWANCallGraph(group)
     cg.constructStaticCG()
     // System.out.println(cg)
-    val options = getOptions
-    val seedsArray = generateSeeds(cg, spec)
+    val options = getBoomerangOptions
     val allPaths = new ArrayBuffer[Path]
-    seedsArray.foreach(i => {
-      val seeds = i._1
-      val source = i._2
-      seeds.forEach(query => {
-        // System.out.println("Solving query: " + query)
-        val solver = if (pathTracking) new PathTrackingBoomerang(cg, DataFlowScope.INCLUDE_ALL, options) {}
-        else new Boomerang(cg, DataFlowScope.INCLUDE_ALL, options)
-        val queryResults = solver.solve(query.asInstanceOf[ForwardQuery])
-        val paths = if (pathTracking)
-          processResults(query, queryResults.asInstanceOf[ForwardBoomerangResults[DataFlowPathWeight]], source)
-        else processResultsVanilla(query, queryResults.asInstanceOf[ForwardBoomerangResults[Weight.NoWeight]], source)
-        allPaths.appendAll(paths)
-      })
-    })
+    opts.tpe match {
+      case AnalysisType.Backward => {
+        val seedsArray = generateBackwardSeeds(cg, spec)
+        seedsArray.foreach(i => {
+          val seeds = i._1
+          val sink = i._2
+          seeds.forEach(query => {
+            val solver = new Boomerang(cg, DataFlowScope.INCLUDE_ALL, options)
+            val queryResults = solver.solve(query)
+            queryResults.getAllocationSites.forEach((forwardQuery, _) => {
+              System.out.println(forwardQuery.`var`().asInstanceOf[AllocVal].getAllocVal.toString)
+            })
+          })
+        })
+      }
+      case AnalysisType.Forward => {
+        val seedsArray = generateForwardSeeds(cg, spec)
+        seedsArray.foreach(i => {
+          val seeds = i._1
+          val source = i._2
+          seeds.forEach(query => {
+            val solver = new Boomerang(cg, DataFlowScope.INCLUDE_ALL, options)
+            val queryResults = solver.solve(query)
+            val paths = processResultsForward(query, queryResults, source)
+            allPaths.appendAll(paths)
+          })
+        })
+      }
+      case AnalysisType.ForwardPathTracking => {
+        val seedsArray = generateForwardSeeds(cg, spec)
+        seedsArray.foreach(i => {
+          val seeds = i._1
+          val source = i._2
+          seeds.forEach(query => {
+            val solver = new PathTrackingBoomerang(cg, DataFlowScope.INCLUDE_ALL, options) {}
+            val queryResults = solver.solve(query)
+            val paths = processResultsForwardPathTracking(query, queryResults, source)
+            allPaths.appendAll(paths)
+          })
+        })
+      }
+    }
     new TaintAnalysisResults(allPaths, spec)
   }
 
-  private def generateSeeds(cg: SWANCallGraph,
+  private def generateForwardSeeds(cg: SWANCallGraph,
                             spec: Specification): ArrayBuffer[(util.Collection[ForwardMethodTaintQuery], String)] = {
     val seedArray = new ArrayBuffer[(util.Collection[ForwardMethodTaintQuery], String)]
     spec.sources.foreach(src => {
@@ -77,14 +117,38 @@ class TaintAnalysis(val group: ModuleGroup,
     seedArray
   }
 
-  private def getOptions: BoomerangOptions = {
+  private def generateBackwardSeeds(cg: SWANCallGraph,
+                                    spec: Specification): ArrayBuffer[(util.Collection[BackwardMethodTaintQuery], String)] = {
+    val seedArray = new ArrayBuffer[(util.Collection[BackwardMethodTaintQuery], String)]
+    spec.sinks.foreach(s => {
+      val seeds = new util.HashSet[BackwardMethodTaintQuery]()
+      val sink = cg.methods.get(s)
+      val sources = spec.sources.map(s => cg.methods.get(s))
+      sink.getParameterLocals.forEach(param => {
+        sink.getControlFlowGraph.getStartPoints.forEach(start => {
+          seeds.add(new BackwardMethodTaintQuery(
+            new ControlFlowGraph.Edge(start, sink.getControlFlowGraph.getSuccsOf(start).iterator().next()),
+            param, sources, sink))
+        })
+      })
+      seedArray.append((seeds, s))
+    })
+    seedArray
+  }
+
+  private def getBoomerangOptions: BoomerangOptions = {
     new DefaultBoomerangOptions() {
       // For debugging
-      // override def analysisTimeoutMS(): Int = 100000000
+      override def analysisTimeoutMS(): Int = 100000000
+
+      // Broken in 3.1.1
+      /* override def getStaticFieldStrategy: BoomerangOptions.StaticFieldStrategy = {
+        BoomerangOptions.StaticFieldStrategy.FLOW_SENSITIVE
+      } */
     }
   }
 
-  private def processResults(query: ForwardMethodTaintQuery,
+  private def processResultsForwardPathTracking(query: ForwardMethodTaintQuery,
                              queryResults: ForwardBoomerangResults[DataFlowPathWeight],
                              source: String): ArrayBuffer[Path] = {
     val results = queryResults.asStatementValWeightTable
@@ -132,7 +196,7 @@ class TaintAnalysis(val group: ModuleGroup,
     paths
   }
 
-  private def processResultsVanilla(query: ForwardMethodTaintQuery,
+  private def processResultsForward(query: ForwardMethodTaintQuery,
                                     queryResults: ForwardBoomerangResults[Weight.NoWeight],
                                     source: String): ArrayBuffer[Path] = {
     val results = queryResults.asStatementValWeightTable
@@ -152,11 +216,22 @@ class TaintAnalysis(val group: ModuleGroup,
   }
 }
 
+trait AnalysisType
+object AnalysisType {
+  case object Forward extends AnalysisType
+  case object ForwardPathTracking extends AnalysisType
+  case object Backward extends AnalysisType
+}
+
+class TaintAnalysisOptions(val tpe: AnalysisType)
+
 object TaintAnalysis {
   class Specification(val name: String,
                       val sources: mutable.HashSet[String],
                       val sinks: mutable.HashSet[String],
                       val sanitizers: mutable.HashSet[String])
+
+  class Path(val nodes: ArrayBuffer[(CanInstructionDef, Option[Position])], val source: String, val sink: String)
 
   object Specification {
     def parse(file: File): ArrayBuffer[Specification] = {
@@ -228,6 +303,4 @@ object TaintAnalysis {
       sb.toString()
     }
   }
-
-  class Path(val nodes: ArrayBuffer[(CanInstructionDef, Option[Position])], val source: String, val sink: String)
 }

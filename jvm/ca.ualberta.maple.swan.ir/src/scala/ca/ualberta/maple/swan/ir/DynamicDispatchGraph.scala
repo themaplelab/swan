@@ -1,11 +1,20 @@
 /*
- * This source file is part fo the SWAN open-source project.
+ * Copyright (c) 2021 the SWAN project authors. All rights reserved.
  *
- * Copyright (c) 2020 the SWAN project authors.
- * Licensed under Apache License v2.0
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- * See https://github.com/themaplelab/swan/LICENSE.txt for license information.
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ * This software has dependencies with other licenses.
+ * See https://github.com/themaplelab/swan/doc/LICENSE.md.
  */
 
 package ca.ualberta.maple.swan.ir
@@ -22,11 +31,15 @@ import scala.collection.mutable.ArrayBuffer
 import scala.jdk.CollectionConverters.CollectionHasAsScala
 import scala.reflect.ClassTag
 
+/** Creates a DDG from a SIL Module's witness and value tables. */
 class DynamicDispatchGraph extends Serializable {
 
   private val graph: Graph[Node, DefaultEdge] = new SimpleDirectedGraph(classOf[DefaultEdge])
   private val nodes: mutable.HashMap[String, Node] = new mutable.HashMap[String, Node]()
 
+  /**
+   * Query the graph with an index. Optionally, specify RTA types.
+   */
   def query(index: String, types: Option[mutable.HashSet[String]]): Array[String] = {
     val paths = new BellmanFordShortestPath(graph)
     val functions = ArrayBuffer[String]()
@@ -34,7 +47,7 @@ class DynamicDispatchGraph extends Serializable {
     val classNodes: Option[Array[Node]] = {
       if (types.nonEmpty) {
         // TODO: .toArray not efficient
-        Some(types.get.toArray.filter(s => nodes(s).isInstanceOf[Node.Class]).map(s => nodes(s)))
+        Some(types.get.toArray.filter(s => nodes.contains(s) && nodes(s).isInstanceOf[Node.Class]).map(s => nodes(s)))
       } else {
         None
       }
@@ -65,6 +78,7 @@ class DynamicDispatchGraph extends Serializable {
     functions.toArray
   }
 
+  /** A node in the DDG. */
   sealed class Node(val name: String) extends Serializable {
     override def hashCode(): Int = {
       this.name.hashCode()
@@ -81,14 +95,14 @@ class DynamicDispatchGraph extends Serializable {
       this.name
     }
   }
-
   object Node {
     case class Class(s: String) extends Node(name = s)
     case class Protocol(s: String) extends Node(name = s)
     case class Index(s: String) extends Node(name = s)
     case class Method(s: String) extends Node(name = s)
   }
-  
+
+  /** Generate and populate `graph`. */
   def generate(module: SILModule): Unit = {
     def makeNode[T <: Node](name: String, tpe: String)(implicit tag: ClassTag[T]): Node = {
       if (nodes.contains(name)) {
@@ -146,7 +160,7 @@ class DynamicDispatchGraph extends Serializable {
         graph.addEdge(makeNode(declRefToString(entry.declRef), "Index"), method)
       })
     })
-    // System.out.println(printToDot())
+    // System.out.println(printToDot()) // For debugging
   }
 
   private def declRefToString(decl: SILDeclRef): String = {
@@ -158,10 +172,10 @@ class DynamicDispatchGraph extends Serializable {
     def printNode(node: Node): String = {
       val base = {
         node match {
-          case Node.Class(s) => "CLASS "
-          case Node.Protocol(s) => "PROTOCOL "
-          case Node.Index(s) => "INDEX "
-          case Node.Method(s) => "METHOD "
+          case _: Node.Class => "CLASS "
+          case _: Node.Protocol => "PROTOCOL "
+          case _: Node.Index => "INDEX "
+          case _: Node.Method => "METHOD "
           case _ => "Node "
         }
       }

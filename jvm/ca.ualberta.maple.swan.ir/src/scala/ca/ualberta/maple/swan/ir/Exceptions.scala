@@ -1,24 +1,33 @@
 /*
- * This source file is part fo the SWAN open-source project.
+ * Copyright (c) 2021 the SWAN project authors. All rights reserved.
  *
- * Copyright (c) 2020 the SWAN project authors.
- * Licensed under Apache License v2.0
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- * See https://github.com/themaplelab/swan/LICENSE.txt for license information.
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ * This software has dependencies with other licenses.
+ * See https://github.com/themaplelab/swan/doc/LICENSE.md.
  */
 
 package ca.ualberta.maple.swan.ir
 
 // https://stackoverflow.com/questions/38243530/custom-exception-in-scala
 //
-// Dumb thing about Scala is there are no checked exceptions.
+// Dumb thing (arguably) about Scala is there are no checked exceptions.
 // Just try to annotate as best as possible. We want interoperability
 // with Java. Annoyingly, also need to annotate callers if they don't
 // catch callee exceptions. TODO: Find a better way to handle exceptions.
 object Exceptions {
 
-  // Deeper (dataflow semantic) problems such as value never allocated.
+  /** Deeper (dataflow semantic) problems such as value never allocated. */
   class IncompleteRawSWIRLException(message: String) extends Exception(message) {
     def this(message: String, cause: Throwable) = {
       this(message)
@@ -49,7 +58,7 @@ object Exceptions {
     }
   }
 
-  // Fault of the parsed plain text
+  /** Fault of the parsed plain text */
   class UnexpectedSILFormatException(message: String) extends Exception(message) {
     def this(message: String, cause: Throwable) = {
       this(message)
@@ -65,7 +74,7 @@ object Exceptions {
     }
   }
 
-  // Incorrect SWIRL data structure construction
+  /** Incorrect SWIRL data structure construction */
   class IncorrectSWIRLStructureException(message: String) extends Exception(message) {
     def this(message: String, cause: Throwable) = {
       this(message)
@@ -81,7 +90,7 @@ object Exceptions {
     }
   }
 
-  // Failures that are not surprising, usually in experimental code.
+  /** Failures that are not surprising, usually in experimental code. */
   class ExperimentalException(message: String) extends Exception(message) {
     def this(message: String, cause: Throwable) = {
       this(message)

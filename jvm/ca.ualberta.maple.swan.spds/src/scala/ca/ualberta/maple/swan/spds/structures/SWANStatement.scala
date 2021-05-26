@@ -1,11 +1,20 @@
 /*
- * This source file is part fo the SWAN open-source project.
+ * Copyright (c) 2021 the SWAN project authors. All rights reserved.
  *
- * Copyright (c) 2021 the SWAN project authors.
- * Licensed under Apache License v2.0
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- * See https://github.com/themaplelab/swan/LICENSE.txt for license information.
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ * This software has dependencies with other licenses.
+ * See https://github.com/themaplelab/swan/doc/LICENSE.md.
  */
 
 package ca.ualberta.maple.swan.spds.structures
@@ -20,26 +29,26 @@ abstract class SWANStatement(val delegate: CanInstructionDef, m: SWANMethod) ext
   // Modifiable
   override def containsStaticFieldAccess(): Boolean = false
   override def containsInvokeExpr(): Boolean = false
-  override def getWrittenField: Field = null
+  override def getWrittenField: Field = ???
   override def isFieldWriteWithBase(base: Val): Boolean = false
-  override def getLoadedField: Field = null
+  override def getLoadedField: Field = ???
   override def isFieldLoadWithBase(base: Val): Boolean = false
-  override def getRightOp: Val = null
-  override def getInvokeExpr: InvokeExpr = null
+  override def getRightOp: Val = ???
+  override def getInvokeExpr: InvokeExpr = ???
   override def isReturnStmt: Boolean = false
   override def isThrowStmt: Boolean = false
   override def isIfStmt: Boolean = false
-  override def getIfStmt: IfStatement = null
-  override def getReturnOp: Val = null
+  override def getIfStmt: IfStatement = ???
+  override def getReturnOp: Val = ???
   override def isFieldStore: Boolean = false
   override def isFieldLoad: Boolean = false
   override def isIdentityStmt: Boolean = false
-  override def getFieldStore: Pair[Val, Field] = null
-  override def getFieldLoad: Pair[Val, Field] = null
+  override def getFieldStore: Pair[Val, Field] = ???
+  override def getFieldLoad: Pair[Val, Field] = ???
   override def isStaticFieldLoad: Boolean = false
   override def isStaticFieldStore: Boolean = false
-  override def getStaticField: StaticFieldVal = null
-  override def getArrayBase: Pair[boomerang.scene.Val,Integer] = null
+  override def getStaticField: StaticFieldVal = ???
+  override def getArrayBase: Pair[boomerang.scene.Val,Integer] = ???
   // Not limited to WithResult, but this takes care of most cases.
   override def isAssign: Boolean = {
     delegate match {

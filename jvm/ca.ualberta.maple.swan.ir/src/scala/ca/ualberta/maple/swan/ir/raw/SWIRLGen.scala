@@ -1,11 +1,20 @@
 /*
- * This source file is part fo the SWAN open-source project.
+ * Copyright (c) 2021 the SWAN project authors. All rights reserved.
  *
- * Copyright (c) 2020 the SWAN project authors.
- * Licensed under Apache License v2.0
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- * See https://github.com/themaplelab/swan/LICENSE.txt for license information.
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ * This software has dependencies with other licenses.
+ * See https://github.com/themaplelab/swan/doc/LICENSE.md.
  */
 
 package ca.ualberta.maple.swan.ir.raw
@@ -26,11 +35,16 @@ import scala.util.control.Breaks.{break, breakable}
  * generating stubs later. However, it gets complicated for dynamic dispatch
  * so leave it for now.
  *
- * See SWIRL documentation in Wiki for more info.
- *
- * TODO: Recovery options.
- * TODO: Manually "checked" exceptions are gross.
+ * https://github.com/themaplelab/swan/wiki/SWIRL
+ * https://github.com/themaplelab/swan/wiki/SIL-To-SWIRL-Spec
  */
+
+// TODO: Manually "checked" exceptions are gross.
+// TODO: Recovery (for production)
+// TODO: Handle closures
+// TODO: Check type conversions (e.g., annotations are removed when needed)
+
+/** Handles translation SIL to Raw SWIRL. */
 class SWIRLGen {
 
   // This isn't true dynamic context. It's just a container to hold
@@ -54,7 +68,6 @@ class SWIRLGen {
       sb.toString()
     }
   }
-
   object Context {
     def dummy(silModule: SILModule, refTable: RefTable): Context = {
       new Context(silModule, null, null, null, refTable, null, null, null)
@@ -68,6 +81,7 @@ class SWIRLGen {
 
   protected val missingStructs: mutable.Set[String] = mutable.Set[String]()
 
+  /** Translates SIL to Raw SWIRL. */
   @throws[IncorrectSWIRLStructureException]
   @throws[UnexpectedSILFormatException]
   @throws[UnexpectedSILTypeBehaviourException]

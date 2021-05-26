@@ -1,11 +1,20 @@
 /*
- * This source file is part fo the SWAN open-source project.
+ * Copyright (c) 2021 the SWAN project authors. All rights reserved.
  *
- * Copyright (c) 2020 the SWAN project authors.
- * Licensed under Apache License v2.0
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- * See https://github.com/themaplelab/swan/LICENSE.txt for license information.
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ * This software has dependencies with other licenses.
+ * See https://github.com/themaplelab/swan/doc/LICENSE.md.
  */
 
 package ca.ualberta.maple.swan.ir.raw
@@ -16,13 +25,14 @@ import ca.ualberta.maple.swan.parser._
 
 import scala.collection.mutable.ArrayBuffer
 
+/** Utility helper functions for SWIRLGen. */
 object Utils {
 
   // Type conversions should remove conventions.
 
   val printer: SILPrinter = new SILPrinter()
 
-  // SIL $T to SWIRL $T
+  /** SIL $T to SWIRL $T */
   def SILTypeToType(rootTpe: SILType): Type = {
     if (rootTpe.isInstanceOf[SILType.withOwnership]) {
       new Type(printer.clearPrint(rootTpe))
@@ -31,7 +41,7 @@ object Utils {
     }
   }
 
-  // SIL $T to SWIRL $*T
+  /** SIL $T to SWIRL $*T */
   def SILTypeToPointerType(rootTpe: SILType): Type = {
     new Type(printer.clearNakedPrint(SILType.addressType(rootTpe)))
   }
@@ -65,6 +75,7 @@ object Utils {
     curType.asInstanceOf[SILType.functionType]
   }
 
+  /** $(A, B) -> C to C */
   def SILFunctionTypeToReturnType(rootTpe: SILType): Type = {
     val tpe = getFunctionTypeFromType(rootTpe)
     SILTypeToType(tpe.result)
@@ -102,7 +113,7 @@ object Utils {
     params
   }
 
-  // SIL $*T to SWIRL $T
+  /** SIL $*T to SWIRL $T */
   @throws[UnexpectedSILTypeBehaviourException]
   def SILPointerTypeToType(tpe: SILType): Type = {
     if (!tpe.isInstanceOf[SILType.addressType]) {
@@ -111,7 +122,7 @@ object Utils {
     new Type(printer.clearNakedPrint(tpe.asInstanceOf[SILType.addressType].tpe))
   }
 
-  // SIL "0x3F800000" to double
+  /** SIL "0x3F800000" to double */
   def SILFloatStringToDouble(float: String): Double = {
     try { // TODO: Handle problematic cases. e.g., 0xC05C606583E8576D
       val i = java.lang.Long.parseLong(float, 16)
@@ -121,8 +132,10 @@ object Utils {
     }
   }
 
-  // SIL $(T...), 123 to SWIRL type of the selected element using "123"
-  // pointer specifies whether the type is a pointer (tuple_element_addr case)
+  /**
+   * SIL $(T...), 123 to SWIRL type of the selected element using "123"
+   * pointer specifies whether the type is a pointer (tuple_element_addr case)
+   */
   @throws[UnexpectedSILTypeBehaviourException]
   @throws[UnexpectedSILFormatException]
   def SILTupleTypeToType(tpe: SILType, index: Int, pointer: Boolean): Type = {
@@ -142,7 +155,6 @@ object Utils {
 
       makeType(param, pointer)
     }
-
     tpe match {
       case SILType.addressType(tpe) => {
         tpe match {
@@ -155,6 +167,7 @@ object Utils {
     }
   }
 
+  /** #T.field to "field" */
   @throws[UnexpectedSILFormatException]
   def SILStructFieldDeclRefToString(declRef: SILDeclRef): String = {
     if (declRef.name.length < 2) { // #T.field[...]

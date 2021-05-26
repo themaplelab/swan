@@ -1,11 +1,20 @@
 /*
- * This source file is part fo the SWAN open-source project.
+ * Copyright (c) 2021 the SWAN project authors. All rights reserved.
  *
- * Copyright (c) 2021 the SWAN project authors.
- * Licensed under Apache License v2.0
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- * See https://github.com/themaplelab/swan/LICENSE.txt for license information.
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ * This software has dependencies with other licenses.
+ * See https://github.com/themaplelab/swan/doc/LICENSE.md.
  */
 
 package ca.ualberta.maple.swan.spds.structures
@@ -97,15 +106,12 @@ class SWANCallGraph(val module: ModuleGroup) extends CallGraph {
               case v: SWANVal.DynamicFunctionRef => {
                 module.ddgs.foreach(ddg => {
                   val functionNames = ddg._2.query(v.index, Some(rtaTypes))
-                  // System.out.println(ddg._2.printToDot())
                   functionNames.foreach(name => {
-                    if (this.methods.containsKey(name)) {
-                      val target = this.methods.get(name)
-                      addSWANEdge(v.method, target, applyStmt)
-                      visited.add(applyStmt)
-                      rtaTypes.addAll(v.method.delegate.instantiatedTypes)
-                      changed = true
-                    }
+                    val target = this.methods.get(name)
+                    addSWANEdge(v.method, target, applyStmt)
+                    visited.add(applyStmt)
+                    rtaTypes.addAll(v.method.delegate.instantiatedTypes)
+                    changed = true
                   })
                 })
               }
