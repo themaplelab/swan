@@ -57,6 +57,14 @@ class SWANMethod(val delegate: CanFunction, val moduleGroup: ModuleGroup) extend
         localValues.add(n)
         newValues.put(symbol.ref.name, n)
       }
+      case SymbolTableEntry.multiple(symbol, operators) => {
+        val v = SWANVal.Simple(symbol, this)
+        localValues.add(v)
+        allValues.put(symbol.ref.name, v)
+        val n = SWANVal.NewExpr(symbol, this)
+        localValues.add(n)
+        newValues.put(symbol.ref.name, n)
+      }
       case _ =>
     }
   })
