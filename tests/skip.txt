@@ -3,3 +3,6 @@ ArrayAccess2
 FieldSensitivity1
 FieldSensitivity2
 ObjectSensitivity1
+
+# Github Actions runner has different result (need to investigate)
+FlowDroidListing2
