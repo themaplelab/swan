@@ -24,7 +24,7 @@ import java.util.Collections
 
 import boomerang.scene._
 import boomerang.{BackwardQuery, Boomerang, DefaultBoomerangOptions, Query}
-import ca.ualberta.maple.swan.ir.{CanFunction, Constants, ModuleGroup, SWIRLPrinter}
+import ca.ualberta.maple.swan.ir.{CanFunction, Constants, Instruction, ModuleGroup, Operator, SWIRLPrinter, SymbolTableEntry}
 import com.google.common.collect.Maps
 
 import scala.collection.mutable
@@ -68,6 +68,36 @@ class SWANCallGraph(val module: ModuleGroup) extends CallGraph {
       override def allowMultipleQueries(): Boolean = true
     }
 
+    def resolveTrivialEdges(m: SWANMethod): Unit = {
+      rtaTypes.addAll(m.delegate.instantiatedTypes)
+      m.getStatements.forEach(statement => {
+        if (!visited.contains(statement)) {
+          statement.asInstanceOf[SWANStatement].delegate.instruction match {
+            case Instruction.canOperator(op) => {
+              op match {
+                case Operator.apply(_, functionRef, _) => {
+                  m.delegate.symbolTable(functionRef.name) match {
+                    case SymbolTableEntry.operator(_, operator) => {
+                      operator match {
+                        case Operator.functionRef(_, name) => {
+                          val target = this.methods.get(name)
+                          visited.add(statement.asInstanceOf[SWANStatement])
+                          addSWANEdge(m, target, statement.asInstanceOf[SWANStatement.ApplyFunctionRef])
+                          resolveTrivialEdges(target)
+                        } case _ =>
+                      }
+                    } case _ =>
+                  }
+                } case _ =>
+              }
+            } case _ =>
+          }
+        }
+      })
+    }
+
+    this.getEntryPoints.forEach(entryPoint => resolveTrivialEdges(entryPoint.asInstanceOf[SWANMethod]))
+
     var changed = true
     while (changed) {
       changed = false
@@ -89,11 +119,11 @@ class SWANCallGraph(val module: ModuleGroup) extends CallGraph {
           backwardQueryResults.getAllocationSites.forEach((forwardQuery, _) => {
             val applyStmt = query.asNode().stmt().getTarget.asInstanceOf[SWANStatement.ApplyFunctionRef]
             forwardQuery.`var`().asInstanceOf[AllocVal].getAllocVal match {
-              case v: SWANVal.FunctionRef => {
+              case v: SWANVal.FunctionRef => { // inter-procedural case
                 val target = this.methods.get(v.ref)
                 addSWANEdge(v.method, target, applyStmt)
                 visited.add(applyStmt)
-                rtaTypes.addAll(v.method.delegate.instantiatedTypes)
+                resolveTrivialEdges(target)
                 changed = true
               }
               case v: SWANVal.BuiltinFunctionRef => {
@@ -101,7 +131,7 @@ class SWANCallGraph(val module: ModuleGroup) extends CallGraph {
                   val target = this.methods.get(v.ref)
                   addSWANEdge(v.method, target, applyStmt)
                   visited.add(applyStmt)
-                  rtaTypes.addAll(v.method.delegate.instantiatedTypes)
+                  resolveTrivialEdges(target)
                   changed = true
                 }
               }
@@ -112,7 +142,7 @@ class SWANCallGraph(val module: ModuleGroup) extends CallGraph {
                     val target = this.methods.get(name)
                     addSWANEdge(v.method, target, applyStmt)
                     visited.add(applyStmt)
-                    rtaTypes.addAll(v.method.delegate.instantiatedTypes)
+                    resolveTrivialEdges(target)
                     changed = true
                   })
                 })
