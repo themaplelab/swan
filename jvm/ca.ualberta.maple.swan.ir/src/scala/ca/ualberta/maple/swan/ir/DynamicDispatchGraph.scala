@@ -41,6 +41,7 @@ class DynamicDispatchGraph extends Serializable {
    * Query the graph with an index. Optionally, specify RTA types.
    */
   def query(index: String, types: Option[mutable.HashSet[String]]): Array[String] = {
+    if (!nodes.contains(index)) return Array.empty // rare case
     val paths = new BellmanFordShortestPath(graph)
     val functions = ArrayBuffer[String]()
     val startNode = nodes(index)
