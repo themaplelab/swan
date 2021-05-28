@@ -91,7 +91,8 @@ test_directory() {
     rm ${ERROR_MESSAGE_FILE}
     # run analysis
     java -jar ${LIB_DIR}/driver.jar -j ${HELPER_DIR}/basic-spec.json -p swan-dir/ > ${ERROR_MESSAGE_FILE}
-    rm ${ERROR_MESSAGE_FILE}
+    mv ${ERROR_MESSAGE_FILE} driver_log.txt
+
     # check annotations
     java -jar ${LIB_DIR}/annotation.jar swan-dir/ > ${ERROR_MESSAGE_FILE}
     rm ${ERROR_MESSAGE_FILE}
