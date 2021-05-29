@@ -108,6 +108,7 @@ class SWANMethod(val delegate: CanFunction, val moduleGroup: ModuleGroup) extend
   }
 
   override def getControlFlowGraph: ControlFlowGraph = cfg
+  def getCFG: SWANControlFlowGraph = cfg
 
   override def getSubSignature: String = delegate.name
 

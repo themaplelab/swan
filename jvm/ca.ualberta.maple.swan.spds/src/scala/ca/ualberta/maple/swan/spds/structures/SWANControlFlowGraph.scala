@@ -26,6 +26,9 @@ import ca.ualberta.maple.swan.ir
 import ca.ualberta.maple.swan.ir.{CanOperatorDef, Constants, Operator, SymbolRef, Terminator, Type}
 import com.google.common.collect.{HashMultimap, Lists, Maps, Multimap}
 
+import scala.collection.mutable
+import scala.collection.mutable.ArrayBuffer
+
 class SWANControlFlowGraph(val method: SWANMethod) extends ControlFlowGraph {
 
   // Map from OperatorDef or TerminatorDef to Statement
@@ -37,14 +40,26 @@ class SWANControlFlowGraph(val method: SWANMethod) extends ControlFlowGraph {
   private val predsOfCache: Multimap[Statement, Statement] = HashMultimap.create
   private val statements: java.util.List[Statement] = Lists.newArrayList
 
-  // TODO: dedicated NOP instruction?
-  private val nopSymbol = new ir.Symbol(new SymbolRef("nop"), new Type("Any"))
-  method.delegate.blocks(0).operators.insert(0,
-    new CanOperatorDef(Operator.neww(nopSymbol), None))
-  method.allValues.put("nop", SWANVal.Simple(nopSymbol, method))
-  method.newValues.put("nop", SWANVal.NewExpr(nopSymbol, method))
+  val blocks = new mutable.HashMap[SWANStatement, (ArrayBuffer[SWANStatement], String)]
+
+  {
+    // TOD0: dedicated NOP instruction?
+    val nopSymbol = new ir.Symbol(new SymbolRef("nop"), new Type("Any"))
+    val opDef = new CanOperatorDef(Operator.neww(nopSymbol), None)
+    val firstBlock = method.delegate.blocks(0)
+    val startInst = if (firstBlock.operators.isEmpty) firstBlock.terminator else firstBlock.operators(0)
+    val srcMap = method.moduleGroup.swirlSourceMap
+    if (srcMap.nonEmpty) {
+      srcMap.get.put(opDef, srcMap.get(startInst))
+    }
+    firstBlock.operators.insert(0, opDef)
+    method.allValues.put("nop", SWANVal.Simple(nopSymbol, method))
+    method.newValues.put("nop", SWANVal.NewExpr(nopSymbol, method))
+  }
 
   method.delegate.blocks.foreach(b => {
+    var startStatement: SWANStatement = null
+    val blockStatements = new ArrayBuffer[SWANStatement]()
     b.operators.foreach(op => {
       val statement: SWANStatement = {
         op.operator match {
@@ -62,12 +77,14 @@ class SWANControlFlowGraph(val method: SWANMethod) extends ControlFlowGraph {
           case operator: Operator.condFail => SWANStatement.ConditionalFatalError(op, operator, method)
         }
       }
+      if (startStatement == null) startStatement = statement
+      blockStatements.append(statement)
       mappedStatements.put(op, statement)
       statements.add(statement)
     })
     val termStatement: SWANStatement = {
       val term = b.terminator
-      b.terminator.terminator match {
+      val statement = b.terminator.terminator match {
         case terminator: Terminator.br_can => SWANStatement.Branch(term, terminator, method)
         case terminator: Terminator.brIf_can => SWANStatement.ConditionalBranch(term, terminator, method)
         case terminator: Terminator.ret => SWANStatement.Return(term, terminator, method)
@@ -75,7 +92,11 @@ class SWANControlFlowGraph(val method: SWANMethod) extends ControlFlowGraph {
         case Terminator.unreachable => SWANStatement.Unreachable(term, method)
         case terminator: Terminator.yld => SWANStatement.Yield(term, terminator, method)
       }
+      if (startStatement == null) startStatement = statement
+      blockStatements.append(statement)
+      statement
     }
+    blocks.put(startStatement, (blockStatements, b.blockRef.label))
     mappedStatements.put(b.terminator, termStatement)
     statements.add(termStatement)
   })

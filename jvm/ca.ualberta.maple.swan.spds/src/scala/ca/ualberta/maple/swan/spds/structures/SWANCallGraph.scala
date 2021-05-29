@@ -27,15 +27,26 @@ import ca.ualberta.maple.swan.ir._
 import ca.ualberta.maple.swan.utils.Logging
 import com.google.common.collect.Maps
 
+import scala.collection.convert.ImplicitConversions.`map AsScala`
 import scala.collection.mutable
+import scala.collection.mutable.ArrayBuffer
 
 // TODO: iOS lifecycle
-// can also likely axe all *.__deallocating_deinit and *.deinit functions
+// TODO: Do separate RTA pass because it is not deterministic currently due
+//  to not only starting at entry point (fake main)
+// can also likely axe all *.__deallocating_deinit, *.deinit functions, and *.modify
 
 class SWANCallGraph(val module: ModuleGroup) extends CallGraph {
 
   val methods: util.HashMap[String, SWANMethod] = Maps.newHashMap[String, SWANMethod]
 
+  private final val uninterestingEntryPoints = Array(
+    ".__deallocating_deinit",
+    ".deinit",
+    ".modify"
+  )
+
+  // TODO: verify if deterministic (usage of HashSets)
   def constructStaticCG(): Unit = {
     Logging.printInfo("Constructing Call Graph")
     val startTime = System.nanoTime()
@@ -46,126 +57,172 @@ class SWANCallGraph(val module: ModuleGroup) extends CallGraph {
       m
     }
 
-    val otherMethods = new mutable.HashSet[SWANMethod]
-    otherMethods.addAll(module.functions.filter(f => !f.name.startsWith(Constants.fakeMain)).map(f => makeMethod(f)))
-    val entryMethod = makeMethod(module.functions.find(f => f.name.startsWith(Constants.fakeMain)).get)
-    this.addEntryPoint(entryMethod)
-
-    var trivialEdges = 0
-    var virtualEdges = 0
-    // edges that require dataflow queries, not necessarily inter-procedural
-    var dynamicEdges = 0
-
-    val visited = new mutable.HashSet[SWANMethod]()
-    val rtaTypes = new mutable.HashSet[String]
-
-    def addSWANEdge(from: SWANMethod, to: SWANMethod, stmt: SWANStatement.ApplyFunctionRef): Unit = {
-      val edge = new CallGraph.Edge(stmt, to)
-      this.addEdge(edge)
-      otherMethods.remove(to)
-      if (!visited.contains(to)) {
-        resolveEdges(to)
-      }
-    }
-
-    def queryRef(stmt: SWANStatement.ApplyFunctionRef, m: SWANMethod): Unit = {
-      val ref = stmt.getInvokeExpr.asInstanceOf[SWANInvokeExpr].getFunctionRef
-      val query = BackwardQuery.make(
-        new ControlFlowGraph.Edge(m.getControlFlowGraph.getPredsOf(stmt).iterator().next(), stmt), ref)
-      val solver = new Boomerang(this, DataFlowScope.INCLUDE_ALL, new DefaultBoomerangOptions)
-      val backwardQueryResults = solver.solve(query.asInstanceOf[BackwardQuery])
-      backwardQueryResults.getAllocationSites.forEach((forwardQuery, _) => {
-        val applyStmt = query.asNode().stmt().getTarget.asInstanceOf[SWANStatement.ApplyFunctionRef]
-        forwardQuery.`var`().asInstanceOf[AllocVal].getAllocVal match {
-          case v: SWANVal.FunctionRef => {
-            val target = this.methods.get(v.ref)
-            addSWANEdge(v.method, target, applyStmt)
-            dynamicEdges += 1
-          }
-          case v: SWANVal.DynamicFunctionRef => {
-            module.ddgs.foreach(ddg => {
-              val functionNames = ddg._2.query(v.index, Some(rtaTypes))
-              functionNames.foreach(name => {
-                val target = this.methods.get(name)
-                addSWANEdge(v.method, target, applyStmt)
-                dynamicEdges += 1
+    // Populate entry points
+    val mainEntryPoint = makeMethod(module.entries.find(f => f.name.startsWith(Constants.fakeMain)).get)
+    val otherEntryPoints = new mutable.HashSet[SWANMethod]
+    otherEntryPoints.addAll(module.functions.filter(f => !f.name.startsWith(Constants.fakeMain)).map(f => makeMethod(f)))
+    // Eliminate functions that get called (referenced)
+    this.methods.foreach(m => {
+      val f = m._2.delegate
+      f.blocks.foreach(b => {
+        b.operators.foreach(opDef => {
+          opDef.operator match {
+            case Operator.dynamicRef(_, index) => {
+              module.ddgs.foreach(ddg => {
+                ddg._2.query(index, None).foreach(functionName => {
+                  otherEntryPoints.remove(this.methods.get(functionName))
+                })
               })
-            })
-          }
-          case v: SWANVal.BuiltinFunctionRef => {
-            if (this.methods.containsKey(v.ref)) {
-              val target = this.methods.get(v.ref)
-              addSWANEdge(v.method, target, applyStmt)
-              dynamicEdges += 1
             }
-          }
-          case _ => // likely result of partial_apply (ignore for now)
-        }
-      })
-    }
-
-    def resolveEdges(m: SWANMethod): Unit = {
-      rtaTypes.addAll(m.delegate.instantiatedTypes)
-      visited.add(m)
-      m.getStatements().forEach {
-        case applyStmt: SWANStatement.ApplyFunctionRef => {
-          m.delegate.symbolTable(applyStmt.inst.functionRef.name) match {
-            case SymbolTableEntry.operator(_, operator) => {
-              operator match {
-                case Operator.functionRef(_, name) => {
-                  val target = this.methods.get(name)
-                  addSWANEdge(m, target, applyStmt)
-                  trivialEdges += 1
-                }
-                case Operator.dynamicRef(_, index) => {
-                  module.ddgs.foreach(ddg => {
-                    val functionNames = ddg._2.query(index, Some(rtaTypes))
-                    functionNames.foreach(name => {
-                      val target = this.methods.get(name)
-                      addSWANEdge(m, target, applyStmt)
-                      virtualEdges += 1
-                    })
-                  })
-                }
-                case Operator.builtinRef(_, name) => {
-                  if (this.methods.containsKey(name)) {
-                    val target = this.methods.get(name)
-                    addSWANEdge(m, target, applyStmt)
-                    trivialEdges += 1
-                  }
-                }
-                case _ => queryRef(applyStmt, m)
+            case Operator.builtinRef(_, name) => {
+              if (this.methods.containsKey(name)) {
+                otherEntryPoints.remove(this.methods.get(name))
               }
             }
-            case _: SymbolTableEntry.argument => queryRef(applyStmt, m)
-            case _: SymbolTableEntry.multiple => {
-              throw new RuntimeException("Unexpected application of multiple function references")
-            }
+            case Operator.functionRef(_, name) => otherEntryPoints.remove(this.methods.get(name))
+            case _ =>
           }
-        }
-        case _ =>
-      }
-    }
-
-    // 1. First resolve CG starting from entry point
-    resolveEdges(entryMethod)
-    // 2. Resolve remaining disjoint functions
-    val iterator = otherMethods.iterator
+        })
+      })
+    })
+    // TODO: This creates a problem if the entry points call something
+    // Eliminate uninteresting functions
+    /*val iterator = otherEntryPoints.iterator
     while (iterator.hasNext) {
       val m = iterator.next()
-      if (!visited.contains(m)) {
-        resolveEdges(m)
+      uninterestingEntryPoints.foreach(s => {
+        if (m.getName.endsWith(s)) {
+          otherEntryPoints.remove(m)
+          this.methods.remove(m.getName)
+        }
+      })
+    }*/
+    // Combine entry points, with the first being the main entry point
+    val allEntryPoints = new ArrayBuffer[SWANMethod]
+    allEntryPoints.append(mainEntryPoint)
+    allEntryPoints.appendAll(otherEntryPoints)
+    allEntryPoints.foreach(e => this.addEntryPoint(e))
+    // Build CG for every entry point
+    var trivialEdges = 0
+    var virtualEdges = 0
+    var queriedEdges = 0
+    allEntryPoints.foreach(entryPoint => {
+      val instantiatedTypes = new mutable.HashSet[String]()
+      // Mapping of methods to (# of total edges, # of instantiated types)
+      // BEFORE the method is handled
+      val methodCount = new mutable.HashMap[SWANMethod, (Int, Int)]
+      var edgeCount = 0
+      def addCGEdge(from: SWANMethod, to: SWANMethod, stmt: SWANStatement.ApplyFunctionRef): Boolean = {
+        val edge = new CallGraph.Edge(stmt, to)
+        val ret = this.addEdge(edge)
+        if (ret) edgeCount += 1
+        ret
       }
-    }
-    // 3. Add remaining functions with no incoming edge as entry points
-    otherMethods.foreach(m => this.addEntryPoint(m))
-
+      def queryRef(stmt: SWANStatement.ApplyFunctionRef, m: SWANMethod): Unit = {
+        val ref = stmt.getInvokeExpr.asInstanceOf[SWANInvokeExpr].getFunctionRef
+        val query = BackwardQuery.make(
+          new ControlFlowGraph.Edge(m.getControlFlowGraph.getPredsOf(stmt).iterator().next(), stmt), ref)
+        val solver = new Boomerang(this, DataFlowScope.INCLUDE_ALL, new DefaultBoomerangOptions)
+        val backwardQueryResults = solver.solve(query.asInstanceOf[BackwardQuery])
+        backwardQueryResults.getAllocationSites.forEach((forwardQuery, _) => {
+          val applyStmt = query.asNode().stmt().getTarget.asInstanceOf[SWANStatement.ApplyFunctionRef]
+          forwardQuery.`var`().asInstanceOf[AllocVal].getAllocVal match {
+            case v: SWANVal.FunctionRef => {
+              val target = this.methods.get(v.ref)
+              if (addCGEdge(m, target, applyStmt)) queriedEdges += 1
+              traverseMethod(target)
+            }
+            case v: SWANVal.DynamicFunctionRef => {
+              module.ddgs.foreach(ddg => {
+                val functionNames = ddg._2.query(v.index, Some(instantiatedTypes))
+                functionNames.foreach(name => {
+                  val target = this.methods.get(name)
+                  if (addCGEdge(m, target, applyStmt)) queriedEdges += 1
+                  traverseMethod(target)
+                })
+              })
+            }
+            case v: SWANVal.BuiltinFunctionRef => {
+              if (this.methods.containsKey(v.ref)) {
+                val target = this.methods.get(v.ref)
+                if (addCGEdge(m, target, applyStmt)) queriedEdges += 1
+                traverseMethod(target)
+              }
+            }
+            case _ => // likely result of partial_apply (ignore for now)
+          }
+        })
+      }
+      def traverseMethod(m: SWANMethod): Unit = {
+        if (methodCount.contains(m)) {
+          if (methodCount(m)._1 == edgeCount && methodCount(m)._2 == instantiatedTypes.size) {
+            return
+          }
+        }
+        methodCount.put(m, (edgeCount, instantiatedTypes.size))
+        instantiatedTypes.addAll(m.delegate.instantiatedTypes)
+        // Mapping of block start stmts to (# of total edges, # of instantiated types)
+        // BEFORE the block is handled
+        val blockCount = new mutable.HashMap[Statement, (Int, Int)]
+        def traverseBlock(b: ArrayBuffer[SWANStatement]): Unit = {
+          if (blockCount.contains(b(0))) {
+            if (blockCount(b(0))._1 == edgeCount && blockCount(b(0))._2 == instantiatedTypes.size) {
+              return
+            }
+          }
+          blockCount.put(b(0), (edgeCount, instantiatedTypes.size))
+          b.foreach {
+            case applyStmt: SWANStatement.ApplyFunctionRef => {
+              m.delegate.symbolTable(applyStmt.inst.functionRef.name) match {
+                case SymbolTableEntry.operator(_, operator) => {
+                  operator match {
+                    case Operator.functionRef(_, name) => {
+                      val target = this.methods.get(name)
+                      if (addCGEdge(m, target, applyStmt)) trivialEdges += 1
+                      traverseMethod(target)
+                    }
+                    case Operator.dynamicRef(_, index) => {
+                      module.ddgs.foreach(ddg => {
+                        val functionNames = ddg._2.query(index, Some(instantiatedTypes))
+                        functionNames.foreach(name => {
+                          val target = this.methods.get(name)
+                          if (addCGEdge(m, target, applyStmt)) virtualEdges += 1
+                          traverseMethod(target)
+                        })
+                      })
+                    }
+                    case Operator.builtinRef(_, name) => {
+                      if (this.methods.containsKey(name)) {
+                        val target = this.methods.get(name)
+                        if (addCGEdge(m, target, applyStmt)) trivialEdges += 1
+                        traverseMethod(target)
+                      }
+                    }
+                    case _ => queryRef(applyStmt, m)
+                  }
+                }
+                case _: SymbolTableEntry.argument => queryRef(applyStmt, m)
+                case _: SymbolTableEntry.multiple => {
+                  throw new RuntimeException("Unexpected application of multiple function references")
+                }
+              }
+            } case _ =>
+          }
+          m.getControlFlowGraph.getSuccsOf(b.last).forEach(nextBlock => {
+            traverseBlock(m.getCFG.blocks(nextBlock.asInstanceOf[SWANStatement])._1)
+          })
+        }
+        val startStatement = m.getControlFlowGraph.getStartPoints.iterator().next()
+        traverseBlock(m.getCFG.blocks(startStatement.asInstanceOf[SWANStatement])._1)
+        methodCount.put(m, (edgeCount, instantiatedTypes.size))
+      }
+      traverseMethod(entryPoint)
+    })
     Logging.printInfo("  Entry Points:  " + this.getEntryPoints.size().toString)
     Logging.printInfo("  Trivial Edges: " + trivialEdges.toString)
     Logging.printInfo("  Virtual Edges: " + virtualEdges.toString)
-    Logging.printInfo("  Dynamic Edges: " + dynamicEdges.toString)
+    Logging.printInfo("  Queried Edges: " + queriedEdges.toString)
     Logging.printTimeStampSimple(1, startTime, "constructing")
-    // System.out.println(this.toDot)
   }
 
   override def toString: String = {

@@ -447,6 +447,7 @@ class SWIRLParser extends SWIRLPrinter {
       instructionName match {
         case "new" => {
           val symbol = makeSymbol(result, parseType())
+          instantiatedTypes.add(symbol.tpe.name)
           Instruction.rawOperator(Operator.neww(symbol))
         }
         case "assign" => {
