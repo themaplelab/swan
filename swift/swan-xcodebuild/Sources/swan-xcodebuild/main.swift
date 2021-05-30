@@ -23,7 +23,6 @@ import Foundation
 
 struct Constants {
   static let defaultSwanDir = "swan-dir/"
-  static let xcodebuildFile = "/usr/bin/xcodebuild"
   static let xcodebuildLog  = "xcodebuild.log"
 }
 
@@ -58,7 +57,7 @@ struct SWANXcodebuild: ParsableCommand {
   init() { }
   
   func generateXcodebuildArgs() -> [String] {
-    return self.xcodebuildArgs + [
+    return ["xcodebuild"] + self.xcodebuildArgs + [
       "SWIFT_COMPILATION_MODE=wholemodule",
       "CODE_SIGN_IDENTITY=\"\"",
       "CODE_SIGNING_REQUIRED=NO",
@@ -139,7 +138,7 @@ struct SWANXcodebuild: ParsableCommand {
     let task = Process()
     let pipe = Pipe()
     
-    task.launchPath = URL(string: Constants.xcodebuildFile)?.absoluteString
+    task.launchPath = URL(string: "/usr/bin/env")?.absoluteString
     task.arguments = args
     task.standardInput = FileHandle.nullDevice
     task.standardOutput = pipe

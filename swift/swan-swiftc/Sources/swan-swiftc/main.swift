@@ -23,7 +23,6 @@ import Foundation
 
 struct Constants {
   static let defaultSwanDir = "swan-dir/"
-  static let swiftcFile = "/usr/bin/swiftc"
   static let swiftcLog  = "swiftc.log"
 }
 
@@ -55,7 +54,7 @@ struct SWANSwiftcBuild: ParsableCommand {
   init() { }
   
   func generateSwiftcArgs() -> [String] {
-    return self.swiftcArgs + [
+    return ["swiftc"] + self.swiftcArgs + [
       "-emit-sil",
       "-Xfrontend",
       "-gsil",
@@ -113,7 +112,7 @@ struct SWANSwiftcBuild: ParsableCommand {
     let task = Process()
     let pipe = Pipe()
     
-    task.launchPath = URL(string: Constants.swiftcFile)?.absoluteString
+    task.launchPath = URL(string: "/usr/bin/env")?.absoluteString
     task.arguments = args
     task.standardInput = FileHandle.nullDevice
     task.standardOutput = pipe
