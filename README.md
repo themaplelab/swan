@@ -16,7 +16,7 @@ SWAN is a static program analysis framework that enables deep dataflow analysis 
 
 We aim to provide developers and researchers with an easy-to-use and well-documented platform for analyzing Swift applications. SWAN will enable many analysis possibilities, such as defining sources and sinks for taint analysis, API dataflow and security modelling, and API misuse schemes.
 
-:construction: **It is still WIP and not ready for use. We have developed the language frontend and are working on the analysis.**
+:construction: **It is still very much WIP. However, we are working on a pre-release to get the community involved. We will release an extensive video playlist along with it explaining how SWAN works, and that should enable you to experiment with SWAN.**
 
 ### Features
 
