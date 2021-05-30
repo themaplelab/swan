@@ -7,6 +7,9 @@
       ],
       "sinks": [
         "test.sink(sunk: Swift.String) -> ()"
+      ],
+      "sanitizers": [
+        "test.sanitizer(v: Swift.String) -> Swift.String"
       ]
     }
   ]
