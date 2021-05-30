@@ -106,20 +106,16 @@ java -jar driver.jar -j basic-spec.json swan-dir/
 
 If you would like to run taint analysis, you must use the `-j` option and provide a taint analysis JSON specification file like the following:
 ```
-{
-  "specs": [
-    {
-      "name": "testing",
-      "sources": [
-        "test.source() -> Swift.String"
-      ],
-      "sinks": [
-        "test.sink(sunk: Swift.String) -> ()"
-      ],
-      "sanitizers": [] // optional
-    }
-  ]
-}
+[{
+  "name": "testing",
+  "sources": [
+    "test.source() -> Swift.String"
+  ],
+  "sinks": [
+    "test.sink(sunk: Swift.String) -> ()"
+  ],
+  "sanitizers": [] // optional
+}]
 ```
 
 ### 3. Processing analysis results

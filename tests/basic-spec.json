@@ -1,16 +1,14 @@
-{
-  "specs": [
-    {
-      "name": "testing",
-      "sources": [
-        "test.source() -> Swift.String"
-      ],
-      "sinks": [
-        "test.sink(sunk: Swift.String) -> ()"
-      ],
-      "sanitizers": [
-        "test.sanitizer(v: Swift.String) -> Swift.String"
-      ]
-    }
-  ]
-}
+[
+  {
+    "name": "testing",
+    "sources": [
+      "test.source() -> Swift.String"
+    ],
+    "sinks": [
+      "test.sink(sunk: Swift.String) -> ()"
+    ],
+    "sanitizers": [
+      "test.sanitizer(tainted: Swift.String) -> Swift.String"
+    ]
+  }
+]

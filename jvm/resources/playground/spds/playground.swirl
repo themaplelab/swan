@@ -22,3 +22,9 @@ bb0(sunk : $`@guaranteed $String`):
   %14 = new $`()`
   return %14
 }
+
+func @`playground.sanitizer(tainted: Swift.String) -> ()` : $`@owned String` {
+bb0(tainted : $`@guaranteed $String`):
+  return tainted
+}
+

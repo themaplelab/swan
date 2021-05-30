@@ -6,10 +6,10 @@ func sink(sunk: String) {
     print(sunk);
 }
 
-func sanitizer(v: String) -> String {
-    return v;
+func sanitizer(tainted: String) -> String {
+    return tainted;
 }
 
 let sourced = source();
-let sanitized = sanitizer(v: sourced);
+let sanitized = sanitizer(tainted: sourced);
 sink(sunk: sanitized);

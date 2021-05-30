@@ -1,13 +1,14 @@
-{
-  "specs": [
-    {
-      "name": "testing",
-      "sources": [
-        "playground.source() -> Swift.String"
-      ],
-      "sinks": [
-        "playground.sink(sunk: Swift.String) -> ()"
-      ]
-    }
-  ]
-}
+[
+  {
+    "name": "testing",
+    "sources": [
+      "playground.source() -> Swift.String"
+    ],
+    "sinks": [
+      "playground.sink(sunk: Swift.String) -> ()"
+    ],
+    "sanitizers": [
+      "playground.sanitizer(tainted: Swift.String) -> Swift.String"
+    ]
+  }
+]

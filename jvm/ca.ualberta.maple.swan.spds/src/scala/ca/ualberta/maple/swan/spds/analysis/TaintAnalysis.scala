@@ -240,7 +240,7 @@ object TaintAnalysis {
       buffer.close()
       val data = ujson.read(jsonString)
       val specs = new ArrayBuffer[Specification]
-      data("specs").arr.foreach(v => {
+      data.arr.foreach(v => {
         val name = v("name")
         val sources = mutable.HashSet.from(v("sources").arr.map(_.str))
         val sinks = mutable.HashSet.from(v("sinks").arr.map(_.str))

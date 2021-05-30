@@ -29,9 +29,7 @@ import ca.ualberta.maple.swan.spds.analysis.TaintAnalysisOptions;
 import ca.ualberta.maple.swan.test.TestDriver;
 import ca.ualberta.maple.swan.utils.Logging;
 import org.junit.jupiter.api.Test;
-import scala.Tuple2;
 import scala.collection.mutable.ArrayBuffer;
-import scala.collection.mutable.HashMap;
 import scala.collection.mutable.HashSet;
 
 import java.io.File;
@@ -45,9 +43,11 @@ public class SPDSTests {
     static {
         HashSet<String> sources = new HashSet<>();
         HashSet<String> sinks = new HashSet<>();
+        HashSet<String> sanitizers = new HashSet<>();
         sources.add("playground.source() -> Swift.String");
         sinks.add("playground.sink(sunk: Swift.String) -> ()");
-        spec = new TaintAnalysis.Specification("Testing", sources, sinks, new HashSet<>());
+        sanitizers.add("playground.sanitizer(tainted: Swift.String) -> Swift.String");
+        spec = new TaintAnalysis.Specification("Testing", sources, sinks, sanitizers);
     }
 
     @Test
@@ -136,7 +136,7 @@ public class SPDSTests {
         String result = new SWIRLPrinter().print(group, opts);
         Logging.printInfo(result);
         TaintAnalysisOptions analysisOptions =
-                new TaintAnalysisOptions(AnalysisType.Backward$.MODULE$);
+                new TaintAnalysisOptions(AnalysisType.Forward$.MODULE$);
         TaintAnalysis analysis = new TaintAnalysis(group, spec, analysisOptions);
         TaintAnalysis.TaintAnalysisResults results = analysis.run();
         Logging.printInfo(results.toString());
