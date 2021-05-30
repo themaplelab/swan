@@ -12,9 +12,9 @@ The SWAN version described in our ESEC/FSE 2020 [paper](https://karimali.ca/reso
 
 SWAN is a static program analysis framework that enables deep dataflow analysis for Swift applications (incl. iOS/macOS). We are developing it for various analysis applications, such as finding API misuses and detecting security vulnerabilities using taint analysis.
 
-:new: We have redesigned SWAN entirely. It now parses plain-text Swift Intermediate Language (SIL) that our wrappers for `xcodebuild` and `swiftc` can dump for Xcode projects and single Swift files. Previously, we hooked into the Swift compiler, which created many build problems and added complexity. We have developed a new IR, called *SWIRL*, that is simple, well documented, and easy to understand. Any analysis engine should be able to analyze SWIRL without having to handle complex semantics. We are currently working on integrating SWIRL into [Synchronized Pushdown Systems (SPDS)](https://github.com/CodeShield-Security/SPDS).
+:new: We have redesigned SWAN entirely. It now parses plain-text Swift Intermediate Language (SIL) that our wrappers for `xcodebuild` and `swiftc` can dump for Xcode projects and single Swift files. Previously, we hooked into the Swift compiler, which created many build problems and added complexity. We have developed a new IR, called *SWIRL*, that is simple, well documented, and easy to understand. Any analysis engine should be able to analyze SWIRL without having to handle complex semantics.
 
-We aim to provide developers and researchers with an easy-to-use and well-documented platform for analyzing Swift applications. SWAN will enable many analysis possibilities, such as defining sources and sinks for taint analysis, API dataflow and security modelling, and API misuse schemes.
+We aim to provide developers and researchers with an easy-to-use and well-documented platform for analyzing Swift applications. SWAN will enable many analysis possibilities, such as taint analysis, API dataflow and security modeling, and API misuse detection.
 
 :construction: **It is still very much WIP. However, we are working on a pre-release to get the community involved. We will release an extensive video playlist along with it explaining how SWAN works, and that should enable you to experiment with SWAN.**
 
@@ -28,63 +28,27 @@ We aim to provide developers and researchers with an easy-to-use and well-docume
 - Optimizations: multi-threaded module processing, caching, selective parsing
 - Cross-module analysis support
 - Development tool for viewing Swift, SIL, and SWIRL side-by-side
-- SPDS integration
+- [Synchronized Pushdown Systems (SPDS)](https://github.com/CodeShield-Security/SPDS) integration
 - Configurable taint analysis with annotation checker for regression testing
+
+### Currently working on
+
+- typestate analysis with the eventual goal of integrating [CogniCrypt](https://github.com/CROSSINGTUD/CryptoAnalysis) into SWAN
+- Swift Standard Library modeling
+- iOS lifecycle support
+- ... and much more!
 
 ### Relevant Wiki pages
 
 - [SWIRL](https://github.com/themaplelab/swan/wiki/SWIRL)
 - [SIL To SWIRL Spec](https://github.com/themaplelab/swan/wiki/SIL-To-SWIRL-Spec)
+- [IDE Configuration](https://github.com/themaplelab/swan/wiki/IDE-Configuration)
 
-## Toolchain Usage
+## Get started
 
-SWAN's toolchain uses a two-step process: 1) build and dump SIL, 2) analyze SIL.
+For now, you will need to build the framework to use SWAN, but soon we will make a release available. You can play around much more with SWAN via the IDE configurations (see *IDE* section below).
 
-#### Build systems
-
-You need to build your project with `xcodebuild`, and therefore you need an `.xcodeproj`.
-
-If your project uses the **Swift Package Manager**, you will need to generate a `.xcodeproj` for your project, which you can do with `swift package generate-xcodeproj`.
-
-If you use **CocoaPods**, make sure to use `-workspace` instead of `-project`. 
-
-You can also look into adding [XcodeGen](https://github.com/yonaskolb/XcodeGen) to your project to generate the `.xcodeproj`.
-
-If you are unsure what schemes or targets you can build, you can use `-list` with `xcodebuild`.
-
-If you can build your project with `xcodebuild`, you can build your project with `swan-xcodebuild`.
-
-#### Dump SIL using either `swan-swiftc` or `swan-xcodebuild`
-
-You can dump SIL for Xcode projects with `swan-xcodebuild`. Give it the same arguments you give `xcodebuild`, but put them after `--`. If you specify a single architecture with `-arch`, the build time will be faster, and `swan-xcodebuild` will have less output to parse.
-
-```
-swan-xcodebuild -- -project MyProject.xcodeproj -scheme MyScheme -arch arm64
-```
-
-It will build your project and then dump the SIL to the `swan-dir/` directory. You can optionally specify an alternative directory with `--swan-dir`.
-
-```
-swan-xcodebuild --swan-dir custom-dir -- [...]
-```
-
-The same idea applies for `swan-swiftc`, which dumps SIL for single `.swift` files, but you simply specify the Swift file.
-
-```
-swan-swiftc -- MyFile.swift
-```
-
-### Client
-
-There is currently no ready dataflow client for SWAN. However, you can use `driver.jar` to parse, translate, and combine the modules.
-
-```
-java -jar driver.jar swan-dir/
-```
-
-You can use `-h` to view driver options. You can use `-d` and view the generated IRs inside of `swan-dir/debug/`. The caching option `-c` is currently experimental. We are investigating ways of making subsequent SIL consumption faster.
-
-## Developing
+We've tested SWAN on macOS Big Sur Xcode 12 and Ubuntu 20.04. You need Xcode Command Line Tools installed if you are on macOS, or the latest Swift release if you are on Linux (see [this](https://linuxconfig.org/how-to-install-swift-on-ubuntu-20-04)). Anything involving "Xcode" will not work on Linux, but you should be able to build Swift Package Manager projects.
 
 ```
 git clone git@github.com:themaplelab/swan.git -b spds
@@ -92,7 +56,7 @@ git clone git@github.com:themaplelab/swan.git -b spds
 
 Add your GitHub username and [personal access token](https://docs.github.com/en/github/authenticating-to-github/creating-a-personal-access-token) (with read:packages) to `jvm/gradle.properties`. The SPDS dependency requires this. Do **not** push these credentials.
 
-Copy `swift-demangle` to `/usr/local/bin` or add it to `PATH`. On Linux, `swift-demangle` is distributed alongside `swiftc`, so you should not need to do this step.
+Copy `swift-demangle` to `/usr/local/bin` or add it to `PATH`. On Linux, `swift-demangle` is distributed alongside `swiftc`, so you do not need to do this step. You need `swiftc` and `xcodebuild` to be on `PATH`.
 
 ```
 sudo cp /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swift-demangle /usr/local/bin/
@@ -101,7 +65,88 @@ sudo cp /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoo
 
 Run `./build.sh` in the repo root. You can also run nested `build.sh` scripts **from root** to build separate toolchain components.
 
-All toolchain executables should now be available in `lib/`.
+All toolchain executables should now be available in `lib/`. If you want to make sure everything works, you can run run `./gradlew build` in `jvm/` and `./test.bash` in `tests/`.
+
+-------
+
+SWAN's toolchain uses a three-step process:
+1. Build the Swift application and dump SIL to a directory
+2. Analyze the SIL in the directory
+3. Process analysis results
+
+### 1. Dump SIL using either `swan-swiftc` or `swan-xcodebuild`
+
+You can dump SIL for Xcode projects with `swan-xcodebuild`. Give it the same arguments you give `xcodebuild`, but put them after `--`. If you specify a single architecture with `-arch`, the build time will be faster and `swan-xcodebuild` will have less output to parse. See below for information on how to build with `xcodebuild`.
+
+```
+swan-xcodebuild -- -project MyProject.xcodeproj -scheme MyScheme -arch arm64
+```
+
+It will build your project and then dump the SIL to the `swan-dir/` directory. You can optionally specify an alternative directory name with `--swan-dir`.
+
+The same idea applies for `swan-swiftc`, which dumps SIL for single `.swift` files, but you simply specify the Swift file.
+
+```
+swan-swiftc -- MyFile.swift
+```
+#### Generating Xcode projects
+
+To build your project with `(swan-)xcodebuild` you need an `.xcodeproj`. If your project uses the **Swift Package Manager (SPM)**, you will need to generate a `.xcodeproj` for your project, which you can do with `swift package generate-xcodeproj`. If you use **CocoaPods**, make sure to use `-workspace` instead of `-project`. You can also look into adding [XcodeGen](https://github.com/yonaskolb/XcodeGen) to your project to generate the `.xcodeproj`. If you are unsure what schemes or targets you can build, you can use `-list` with `xcodebuild`. If you can build your project with `xcodebuild`, you can build your project with `swan-xcodebuild`.
+
+### 2. Analysis
+
+The analysis is work in progress and has no default sources/sinks. You can use the `driver.jar` to analyze the SIL in the `swan-dir/`. You can use `-h` to view driver options.
+
+```
+java -jar driver.jar -j basic-spec.json swan-dir/
+```
+
+If you would like to run taint analysis, you must use the `-j` option and provide a taint analysis JSON specification file like the following:
+```
+{
+  "specs": [
+    {
+      "name": "testing",
+      "sources": [
+        "test.source() -> Swift.String"
+      ],
+      "sinks": [
+        "test.sink(sunk: Swift.String) -> ()"
+      ],
+      "sanitizers": [] // optional
+    }
+  ]
+}
+```
+
+### 3. Processing analysis results
+Currently, we only have one consumer of analysis results. The driver writes the taint analysis results to `swan-dir/results.json`.
+
+```
+[{
+  "name": "testing",
+  "paths": [
+    {
+      "source": "test.source() -> Swift.String",
+      "sink": "test.sink(sunk: Swift.String) -> ()",
+      "path": [
+        "test.swift:9:15",
+        "test.swift:10:12"
+      ]
+    }
+  ]
+}]
+```
+You can annotate the source code and verify the results are correct automatically with `annotation.jar`.
+```
+ 9: let sourced = source(); //!testing!source
+10: sink(sunk: sourced); //!testing!sink
+```
+Once you run the driver, you can run the following to check the annotations against the results.
+```
+java -jar annotation.jar swan-dir/
+```
+This is meant for automatic regression testing. You can take a look inside `tests/` to get a good idea of how annotation testing works.
 
 ### IDE
 
@@ -109,8 +154,6 @@ Open `jvm/` in IntelliJ. Be sure to select *Import as Gradle Project*.
 
 Install the Scala plugin (*Preferences -> Plugins*, Search for *Scala*).
 
-Run the *General Tests* configuration to test everything works.
-
 See [IDE Configuration](https://github.com/themaplelab/swan/wiki/IDE-Configuration) if you would like to configure syntax highlighting for SWIRL and SIL.
 
-You can use the *Playground* run configurations to debug specific Swift, SIL, and SWIRL cases. Just paste the code in question to the appropriate `playground.*` in `resources/`.
+You can use the *Playground* run configurations to debug specific Swift, SIL, and SWIRL cases. Just paste the code in question to the appropriate `playground.*` in `jvm/resources/playground/`. 

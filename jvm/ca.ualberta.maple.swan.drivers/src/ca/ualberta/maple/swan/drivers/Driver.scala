@@ -131,7 +131,7 @@ class Driver extends Runnable {
   private val spec: File = null
 
   @Option(names = Array("-p", "--path-tracking"),
-    description = Array("Enable path tracking for taint analysis."))
+    description = Array("Enable path tracking for taint analysis (experimental and is known to hang)."))
   private val pathTracking = new Array[Boolean](0)
 
   @Option(names = Array("-i", "--invalidate-cache"),
