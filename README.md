@@ -1,4 +1,7 @@
-<img src="https://karimali.ca/resources/images/projects/swan.png" width="150">
+
+<p align="center">
+<img src="https://karimali.ca/resources/images/projects/swan.png" width="300">
+</p>
 
 [![macOS CI](https://github.com/themaplelab/swan/actions/workflows/macOS.yml/badge.svg)](https://github.com/themaplelab/swan/actions/workflows/macOS.yml) [![Ubuntu CI](https://github.com/themaplelab/swan/actions/workflows/ubuntu.yml/badge.svg)](https://github.com/themaplelab/swan/actions/workflows/ubuntu.yml)
 
@@ -6,17 +9,17 @@
 
 This branch contains the new generation of the SWAN framework.
 
-The SWAN version described in our ESEC/FSE 2020 [paper](https://karimali.ca/resources/papers/swan.pdf) is located on [this](https://github.com/themaplelab/swan/tree/2020) branch.
+The SWAN version described in our ESEC/FSE 2020 [paper](https://karimali.ca/resources/papers/swan.pdf) is located on [this](https://github.com/themaplelab/swan/tree/2020) branch. The paper no longer represents the current state of SWAN because we have redesigned it entirely.
 
 ###  Summary
 
 SWAN is a static program analysis framework that enables deep dataflow analysis for Swift applications (incl. iOS/macOS). We are developing it for various analysis applications, such as finding API misuses and detecting security vulnerabilities using taint analysis.
 
-:new: We have redesigned SWAN entirely. It now parses plain-text Swift Intermediate Language (SIL) that our wrappers for `xcodebuild` and `swiftc` can dump for Xcode projects and single Swift files. Previously, we hooked into the Swift compiler, which created many build problems and added complexity. We have developed a new IR, called *SWIRL*, that is simple, well documented, and easy to understand. Any analysis engine should be able to analyze SWIRL without having to handle complex semantics.
+SWAN parses plain-text Swift Intermediate Language (SIL) that our wrappers for `xcodebuild` and `swiftc` dump for Xcode projects and single Swift files. We have developed an IR, called *SWIRL*, that is simple, well documented, and easy to understand. Any analysis engine should be able to analyze SWIRL without having to handle complex semantics.
 
 We aim to provide developers and researchers with an easy-to-use and well-documented platform for analyzing Swift applications. SWAN will enable many analysis possibilities, such as taint analysis, API dataflow and security modeling, and API misuse detection.
 
-:construction: **It is still very much WIP. However, we are working on a pre-release to get the community involved. We will release an extensive video playlist along with it explaining how SWAN works, and that should enable you to experiment with SWAN.**
+:construction: **SWAN is still very much WIP. However, we are working on a pre-release to get the community involved. We will release an extensive video playlist along with it explaining how SWAN works, and that should enable you to experiment with SWAN.**
 
 ### Features
 
@@ -95,7 +98,7 @@ To build your project with `(swan-)xcodebuild` you need an `.xcodeproj`. If your
 
 ### 2. Analysis
 
-The analysis is work in progress and has no default sources/sinks. You can use the `driver.jar` to analyze the SIL in the `swan-dir/`. You can use `-h` to view driver options.
+The analysis is work in progress and has no default sources/sinks. You can use the `driver.jar` to analyze the SIL in the `swan-dir/`. You can use `-h` to view the driver options.
 
 ```
 java -jar driver.jar -j basic-spec.json swan-dir/
@@ -146,7 +149,7 @@ Once you run the driver, you can run the following to check the annotations agai
 ```
 java -jar annotation.jar swan-dir/
 ```
-This is meant for automatic regression testing. You can take a look inside `tests/` to get a good idea of how annotation testing works.
+This is intended for automatic regression testing. You can take a look inside `tests/` to get a good idea of how annotation testing works.
 
 ### IDE
 
