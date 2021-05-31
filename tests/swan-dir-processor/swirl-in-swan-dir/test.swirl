@@ -1,0 +1,7 @@
+swirl_stage raw
+
+func [model] @`test.foo() -> ()` : $`()` {
+bb0:
+  %0 = new $`()`
+  return %0
+}

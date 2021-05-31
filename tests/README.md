@@ -29,4 +29,4 @@ You can skip tests by adding their name to `skip.txt`. Currently, you need to sp
 
 ### Future plans
 
-This testing infrastructure is WIP and volatile. We plan to add the ability for tests to override settings such as the analysis specification and SWAN options.
+This testing infrastructure is WIP. We plan to add the ability for tests to override settings such as the analysis specification and SWAN options.

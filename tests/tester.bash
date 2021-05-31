@@ -79,18 +79,27 @@ test_directory() {
       TEST_TMPDIR=${OUTPUT_DIR}
     fi
 
-    # copy the test file
+    # copy the test file and any *.swirl
     curr=${PWD}
     cp ${TEST_FILE} ${TEST_TMPDIR}
+    count=`ls -1 *.swirl 2>/dev/null | wc -l`
+    if [ $count != 0 ]; then 
+      cp *.swirl ${TEST_TMPDIR}
+    fi 
     cd ${TEST_TMPDIR}
-
-    # do the SWAN steps
 
     # dump the SIL
     ${SWAN_SWIFTC} -- ${TEST_FILE} > ${ERROR_MESSAGE_FILE}
     rm ${ERROR_MESSAGE_FILE}
+
+    # copy any .swirl to swan-dir
+    count=`ls -1 *.swirl 2>/dev/null | wc -l`
+    if [ $count != 0 ]; then 
+      cp *.swirl swan-dir/
+    fi 
+    
     # run analysis
-    java -jar ${LIB_DIR}/driver.jar -j ${HELPER_DIR}/basic-spec.json -p swan-dir/ > ${ERROR_MESSAGE_FILE}
+    java -jar ${LIB_DIR}/driver.jar -j ${HELPER_DIR}/basic-spec.json -p swan-dir/ ${DRIVER_OPTIONS} > ${ERROR_MESSAGE_FILE}
     mv ${ERROR_MESSAGE_FILE} driver_log.txt
 
     # check annotations

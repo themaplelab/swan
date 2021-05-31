@@ -44,6 +44,7 @@ class SwanDirProcessor(swanDir: File, options: Driver.Options, clear: Boolean = 
   private val cacheFile: File = Paths.get(cacheDir.getPath, "cache.swan").toFile
 
   var files: ArrayBuffer[File] = _
+  val swirlFiles = new ArrayBuffer[File]()
   val changedFiles = new ArrayBuffer[File]()
   var hadExistingCache: Boolean = false
   var cachedGroup: ModuleGroup = _
@@ -134,7 +135,7 @@ class SwanDirProcessor(swanDir: File, options: Driver.Options, clear: Boolean = 
     group
   }
 
-  /** Returns all files inside of the swan-dir. */
+  /** Returns all SIL files inside of the swan-dir. */
   private def getFilesFromDir: ArrayBuffer[File] = {
     if (swanDir.exists() && swanDir.isDirectory) {
       // val metadataFile = new File(swanDir, "sil-metadata.json")
@@ -145,6 +146,8 @@ class SwanDirProcessor(swanDir: File, options: Driver.Options, clear: Boolean = 
         swanDir.listFiles().foreach(f => {
           if (f.getName.endsWith(".sil")) {
             silFiles.append(f)
+          } else if (f.getName.endsWith(".swirl")) {
+            swirlFiles.append(f)
           }
         })
         silFiles

@@ -216,12 +216,19 @@ class Driver extends Runnable {
       }
     })
     if (treatRegular) {
-      // Single file for now, iterating files is tricky with JAR resources)
+      // Single model file for now, iterating files is tricky with JAR resources)
       val in = this.getClass.getClassLoader.getResourceAsStream("models.swirl")
       val modelsContent = IOUtils.toString(in, StandardCharsets.UTF_8)
-      val res = modelRunner(debugDir, modelsContent, options)
+      val res = swirlRunner(debugDir, modelsContent, options, "models")
       rawModules.append(res._1)
       canModules.append(res._2)
+      // Also add any .swirl files in swan-dir (for testing, mostly)
+      proc.swirlFiles.foreach(f => {
+        val swirlContent = IOUtils.toString(f.toURI, StandardCharsets.UTF_8)
+        val res = swirlRunner(debugDir, swirlContent, options, f.getName.substring(0, f.getName.lastIndexOf(".")))
+        rawModules.append(res._1)
+        canModules.append(res._2)
+      })
     }
     threads.foreach(t => t.join())
     val group = {
@@ -294,12 +301,12 @@ class Driver extends Runnable {
     (silModule, rawSwirlModule, canSwirlModule)
   }
 
-  /** Processes a SWIRL model file. */
-  def modelRunner(debugDir: File, modelsContent: String, options: Driver.Options): (Module, CanModule) = {
+  /** Processes a SWIRL file. */
+  def swirlRunner(debugDir: File, modelsContent: String, options: Driver.Options, name: String): (Module, CanModule) = {
     val swirlModule = new SWIRLParser(modelsContent, model = true).parseModule()
-    if (options.debug) writeFile(swirlModule, debugDir, "models.raw")
+    if (options.debug) writeFile(swirlModule, debugDir, name + ".raw")
     val canSwirlModule = new SWIRLPass().runPasses(swirlModule)
-    if (options.debug) writeFile(canSwirlModule, debugDir, "models")
+    if (options.debug) writeFile(canSwirlModule, debugDir, name)
     (swirlModule, canSwirlModule)
   }
 
