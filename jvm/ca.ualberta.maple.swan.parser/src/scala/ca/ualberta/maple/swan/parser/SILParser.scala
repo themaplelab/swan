@@ -44,7 +44,7 @@ class SILParser extends SILPrinter {
   private var cursor: Int = 0
   def position(): Int = { cursor }
 
-  var swiftDemangleCommand = "swift-demangle -compact"
+  var swiftDemangleCommand = "swift-demangle -compact "
 
   private val toDemangle: ArrayBuffer[SILMangledName] = new ArrayBuffer[SILMangledName]
 
