@@ -108,15 +108,12 @@ class SWANCallGraph(val module: ModuleGroup) extends CallGraph {
     var queriedEdges = 0
     allEntryPoints.foreach(entryPoint => {
       val instantiatedTypes = new mutable.HashSet[String]()
-      // Mapping of methods to (# of total edges, # of instantiated types)
+      // Mapping of methods to # of instantiated types
       // BEFORE the method is handled
-      val methodCount = new mutable.HashMap[SWANMethod, (Int, Int)]
-      var edgeCount = 0
+      val methodCount = new mutable.HashMap[SWANMethod, Int]
       def addCGEdge(from: SWANMethod, to: SWANMethod, stmt: SWANStatement.ApplyFunctionRef): Boolean = {
         val edge = new CallGraph.Edge(stmt, to)
-        val ret = this.addEdge(edge)
-        if (ret) edgeCount += 1
-        ret
+        this.addEdge(edge)
       }
       def queryRef(stmt: SWANStatement.ApplyFunctionRef, m: SWANMethod): Unit = {
         val ref = stmt.getInvokeExpr.asInstanceOf[SWANInvokeExpr].getFunctionRef
@@ -155,22 +152,22 @@ class SWANCallGraph(val module: ModuleGroup) extends CallGraph {
       }
       def traverseMethod(m: SWANMethod): Unit = {
         if (methodCount.contains(m)) {
-          if (methodCount(m)._1 == edgeCount && methodCount(m)._2 == instantiatedTypes.size) {
+          if (methodCount(m) == instantiatedTypes.size) {
             return
           }
         }
-        methodCount.put(m, (edgeCount, instantiatedTypes.size))
+        methodCount.put(m, instantiatedTypes.size)
         instantiatedTypes.addAll(m.delegate.instantiatedTypes)
-        // Mapping of block start stmts to (# of total edges, # of instantiated types)
+        // Mapping of block start stmts to # of instantiated types
         // BEFORE the block is handled
-        val blockCount = new mutable.HashMap[Statement, (Int, Int)]
+        val blockCount = new mutable.HashMap[Statement, Int]
         def traverseBlock(b: ArrayBuffer[SWANStatement]): Unit = {
           if (blockCount.contains(b(0))) {
-            if (blockCount(b(0))._1 == edgeCount && blockCount(b(0))._2 == instantiatedTypes.size) {
+            if (blockCount(b(0)) == instantiatedTypes.size) {
               return
             }
           }
-          blockCount.put(b(0), (edgeCount, instantiatedTypes.size))
+          blockCount.put(b(0), instantiatedTypes.size)
           b.foreach {
             case applyStmt: SWANStatement.ApplyFunctionRef => {
               m.delegate.symbolTable(applyStmt.inst.functionRef.name) match {
@@ -214,7 +211,7 @@ class SWANCallGraph(val module: ModuleGroup) extends CallGraph {
         }
         val startStatement = m.getControlFlowGraph.getStartPoints.iterator().next()
         traverseBlock(m.getCFG.blocks(startStatement.asInstanceOf[SWANStatement])._1)
-        methodCount.put(m, (edgeCount, instantiatedTypes.size))
+        methodCount.put(m, instantiatedTypes.size)
       }
       traverseMethod(entryPoint)
     })
