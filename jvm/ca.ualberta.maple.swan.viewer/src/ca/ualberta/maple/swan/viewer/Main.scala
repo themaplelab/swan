@@ -39,6 +39,8 @@ object Main {
     }
 
     val silParser = new SILParser(silFile.toPath)
+    // For some reason this can't be relative when viewer.jar is used by the viewer app
+    silParser.swiftDemangleCommand = "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swift-demangle --compact "
     val silModule = silParser.parseModule()
     val silPrintedText = silParser.print(silModule,
       new SILPrinterOptions().printLocation(false).genLocationMap(true))

@@ -44,6 +44,8 @@ class SILParser extends SILPrinter {
   private var cursor: Int = 0
   def position(): Int = { cursor }
 
+  var swiftDemangleCommand = "swift-demangle -compact"
+
   private val toDemangle: ArrayBuffer[SILMangledName] = new ArrayBuffer[SILMangledName]
 
   private val inits: ArrayBuffer[StructInit] = StructInit.populateInits()
@@ -293,7 +295,6 @@ class SILParser extends SILPrinter {
     // swift-demangle can only take a certain amount at a time, so batches are used
     // Actual length limit is likely character based, not count based, and seems to
     // vary from system to system.
-    val swiftDemangle = "swift-demangle -compact "
     val batches = new ArrayBuffer[ArrayBuffer[SILMangledName]]()
     var currBatch = new ArrayBuffer[SILMangledName]()
     batches.append(currBatch)
@@ -309,7 +310,7 @@ class SILParser extends SILPrinter {
       batch.foreach(m => {
         strings.append("\'" + m.mangled + "\'")
       })
-      val demangled = (swiftDemangle + strings.mkString(" ")).!!.split(System.lineSeparator())
+      val demangled = (swiftDemangleCommand + strings.mkString(" ")).!!.split(System.lineSeparator())
       batch.view.zipWithIndex.foreach(m => m._1.demangled = demangled(m._2))
     })
   }
