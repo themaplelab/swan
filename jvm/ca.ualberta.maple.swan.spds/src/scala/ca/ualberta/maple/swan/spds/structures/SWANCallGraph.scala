@@ -58,7 +58,8 @@ class SWANCallGraph(val module: ModuleGroup) extends CallGraph {
     }
 
     // Populate entry points
-    val mainEntryPoint = makeMethod(module.entries.find(f => f.name.startsWith(Constants.fakeMain)).get)
+    val mainEntryPoints = new mutable.HashSet[SWANMethod]
+    mainEntryPoints.addAll(module.functions.filter(f => f.name.startsWith(Constants.fakeMain)).map(f => makeMethod(f)))
     val otherEntryPoints = new mutable.HashSet[SWANMethod]
     otherEntryPoints.addAll(module.functions.filter(f => !f.name.startsWith(Constants.fakeMain)).map(f => makeMethod(f)))
     // Eliminate functions that get called (referenced)
@@ -99,7 +100,7 @@ class SWANCallGraph(val module: ModuleGroup) extends CallGraph {
     }*/
     // Combine entry points, with the first being the main entry point
     val allEntryPoints = new ArrayBuffer[SWANMethod]
-    allEntryPoints.append(mainEntryPoint)
+    allEntryPoints.appendAll(mainEntryPoints)
     allEntryPoints.appendAll(otherEntryPoints)
     allEntryPoints.foreach(e => this.addEntryPoint(e))
     // Build CG for every entry point
