@@ -83,6 +83,8 @@ struct SWANSwiftcBuild: ParsableCommand {
     let srcCopyDir = outputDir.appendingPathComponent("src")
     
     let swiftcLog = outputDir.appendingPathComponent(Constants.swiftcLog)
+
+    var outputSilFileName = "out.sil"
         
     do {
       try FileManager.default.createDirectory(at: outputDir, withIntermediateDirectories: true)
@@ -100,8 +102,11 @@ struct SWANSwiftcBuild: ParsableCommand {
       throw ExitCode.failure
     }
     
+    // swan-swiftc doesn't actually expect multiple source files
+    // I'm not sure what the output would look like for that
     try self.swiftcArgs.forEach { (str) in
       if (str.hasSuffix(".swift")) {
+        outputSilFileName = str + ".sil"
         try FileManager().copyItem(atPath: URL(fileURLWithPath: str).path, toPath: srcCopyDir.appendingPathComponent(str).path)
       }
     }
@@ -149,7 +154,7 @@ struct SWANSwiftcBuild: ParsableCommand {
     var sil = output.components(separatedBy: "\nsil_stage canonical")[1]
     sil = "sil_stage canonical\(sil)\n\n"
     
-    let filename = outputDir.appendingPathComponent("out.sil")
+    let filename = outputDir.appendingPathComponent(outputSilFileName)
     do {
       try sil.write(to: filename, atomically: true, encoding: String.Encoding.utf8)
     } catch {

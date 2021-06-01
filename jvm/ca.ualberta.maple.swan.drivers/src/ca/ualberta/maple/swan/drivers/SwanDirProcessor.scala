@@ -43,6 +43,9 @@ class SwanDirProcessor(swanDir: File, options: Driver.Options, clear: Boolean = 
   private val cacheDir: File = Paths.get(swanDir.getPath, "cache").toFile
   private val cacheFile: File = Paths.get(cacheDir.getPath, "cache.swan").toFile
 
+  // For now, the driver requires at least one SIL file.
+  // However, we should support just having SWIRL, too (TOD0).
+
   var files: ArrayBuffer[File] = _
   val swirlFiles = new ArrayBuffer[File]()
   val changedFiles = new ArrayBuffer[File]()

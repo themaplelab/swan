@@ -23,6 +23,7 @@ test_directories() {
   trap 'exit 130' INT
   for dir in */ ; do
     [[ -d ${dir} ]] || continue
+    [[ -f "${dir}/test.bash" ]] || continue
     cd ${dir}
     LEVEL=$((LEVEL + 1))
     if [ -f $TEST_FILE ]; then
