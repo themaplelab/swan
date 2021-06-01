@@ -211,7 +211,6 @@ class SWANCallGraph(val module: ModuleGroup) extends CallGraph {
         }
         val startStatement = m.getControlFlowGraph.getStartPoints.iterator().next()
         traverseBlock(m.getCFG.blocks(startStatement.asInstanceOf[SWANStatement])._1)
-        methodCount.put(m, instantiatedTypes.size)
       }
       traverseMethod(entryPoint)
     })
