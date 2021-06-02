@@ -245,12 +245,7 @@ class SWIRLParser extends SWIRLPrinter {
     var done = false
     while(!done) {
       if(peek("func ")) {
-        val function = parseFunction()
-        if (function.name == "main") {
-          functions.insert(0, function)
-        } else {
-          functions.append(function)
-        }
+        functions.append(parseFunction())
       } else {
         Breaks.breakable {
           if(skip(_ != '\n')) Breaks.break()
@@ -285,7 +280,7 @@ class SWIRLParser extends SWIRLPrinter {
     take(":")
     val tpe = parseType()
     val blocks = { parseNilOrMany("{", "", "}", parseBlock) }.getOrElse(ArrayBuffer.empty[Block])
-    new Function(attr, name, tpe, blocks.to(ArrayBuffer), refTable, instantiatedTypes.to(immutable.HashSet))
+    new Function(attr, name, tpe, blocks.to(ArrayBuffer), refTable, mutable.HashSet.from(instantiatedTypes))
   }
 
 

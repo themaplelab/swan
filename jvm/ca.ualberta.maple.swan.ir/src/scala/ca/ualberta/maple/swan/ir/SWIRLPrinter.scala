@@ -31,6 +31,7 @@ class SWIRLPrinterOptions {
   var printCFG = false
   var genLocationMap = false // expensive
   var printLineNumber = false // only for canonical (meant for SPDS debugging)
+  var printInstantiatedTypes = false
   def printLocation(b: Boolean): SWIRLPrinterOptions = {
     printLocation = b
     this
@@ -49,6 +50,10 @@ class SWIRLPrinterOptions {
   }
   def printLineNumber(b: Boolean): SWIRLPrinterOptions = {
     printLineNumber = b
+    this
+  }
+  def printInstantiatedTypes(b: Boolean): SWIRLPrinterOptions = {
+    printInstantiatedTypes = b
     this
   }
 }
@@ -122,6 +127,20 @@ class SWIRLPrinter extends Printer {
       // T0D0: slow?
       val cfg = canModule.functions.find(p => p == function).get.cfg
       print(function, cfg)
+    }
+    if (options.printInstantiatedTypes) {
+      val types = function.instantiatedTypes
+      if (types.nonEmpty) {
+        print("// types: {")
+        types.zipWithIndex.foreach(tpe => {
+          print("`")
+          print(tpe._1)
+          print("`")
+          if (tpe._2 != types.size - 1) print(",")
+        })
+        print("}")
+        printNewline()
+      }
     }
     if (options.genLocationMap) locMap.put(function, (line, getCol))
     if (options.printLineNumber) printLineNumber()

@@ -86,11 +86,11 @@ class CanModule(val functions: ArrayBuffer[CanFunction],
 
 class Function(val attribute: Option[FunctionAttribute], var name: String, val tpe: Type,
                val blocks: ArrayBuffer[Block], val refTable: RefTable,
-               val instantiatedTypes: immutable.HashSet[String])
+               val instantiatedTypes: mutable.HashSet[String])
 
 class CanFunction(var attribute: Option[FunctionAttribute], val name: String, val tpe: Type,
                   val arguments: ArrayBuffer[Argument], val blocks: ArrayBuffer[CanBlock],
-                  val refTable: RefTable, val instantiatedTypes: immutable.HashSet[String],
+                  val refTable: RefTable, val instantiatedTypes: mutable.HashSet[String],
                   val symbolTable: SymbolTable, var cfg: Graph[CanBlock, DefaultEdge]) extends Serializable {
   def getSymbol(name: String): Symbol = {
     symbolTable(name) match {
