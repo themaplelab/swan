@@ -110,8 +110,9 @@ class SWANCallGraph(val module: ModuleGroup) extends CallGraph {
     allEntryPoints.foreach(entryPoint => {
       val instantiatedTypes = new mutable.HashSet[String]()
       // Mapping of methods to # of instantiated types
-      // BEFORE the method is handled
       val methodCount = new mutable.HashMap[SWANMethod, Int]
+      // Mapping of block start stmts to # of instantiated types
+      val blockCount = new mutable.HashMap[Statement, Int]
       def addCGEdge(from: SWANMethod, to: SWANMethod, stmt: SWANStatement.ApplyFunctionRef): Boolean = {
         val edge = new CallGraph.Edge(stmt, to)
         this.addEdge(edge)
@@ -159,9 +160,6 @@ class SWANCallGraph(val module: ModuleGroup) extends CallGraph {
         }
         methodCount.put(m, instantiatedTypes.size)
         instantiatedTypes.addAll(m.delegate.instantiatedTypes)
-        // Mapping of block start stmts to # of instantiated types
-        // BEFORE the block is handled
-        val blockCount = new mutable.HashMap[Statement, Int]
         def traverseBlock(b: ArrayBuffer[SWANStatement]): Unit = {
           if (blockCount.contains(b(0))) {
             if (blockCount(b(0)) == instantiatedTypes.size) {
