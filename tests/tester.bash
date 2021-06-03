@@ -72,6 +72,11 @@ test_directory() {
       echo -e "${BOLD}Skipping ${test_name}${ENDCOLOR}"
       return
     else
+      # unsafeFlags doesn't work on Linux :(
+      if [[ `uname` == 'Linux' ]]; then 
+        echo -e "${BOLD}Skipping ${test_name}${ENDCOLOR}"
+        return
+      fi
       echo -e "${BOLD}Testing ${test_name}${ENDCOLOR}"
     fi
 

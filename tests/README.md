@@ -1,6 +1,8 @@
 ## Testing
 
-These tests must be able to run on macOS **and** Linux. The testing scripts are WIP and we are adding features as we need them.
+The testing scripts are WIP and we are adding features as we need them.
+
+Unfortunately, only single-file tests work on Linux because `unsafeFlags` has no effect on Linux.
 ### Adding tests
 
 If you want to add a new set of tests:
