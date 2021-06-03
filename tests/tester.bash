@@ -1,13 +1,17 @@
 #!/usr/bin/env bash
 
-HELPER_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
+TESTS_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
 
-LIB_DIR=$(cd ${HELPER_DIR}"/../lib/"; pwd)
+LIB_DIR=$(cd ${TESTS_DIR}"/../lib/"; pwd)
 SWAN_SWIFTC=${LIB_DIR}/swan-swiftc
+SIL_PACKAGES=()
 
 TEST_FILE=test.swift
+SPM_FILE=Package.swift
 
-ERROR_MESSAGE_FILE=/tmp/helper_error_message.out
+SPEC=${TESTS_DIR}/basic-spec.json
+
+ERROR_MESSAGE_FILE=/tmp/tests_error_message.txt
 
 RED="\033[31m"
 GREEN="\033[32m"
@@ -26,8 +30,8 @@ test_directories() {
     [[ -f "${dir}/test.bash" ]] || continue
     cd ${dir}
     LEVEL=$((LEVEL + 1))
-    if [ -f $TEST_FILE ]; then
-      test_directory
+    if [ -f $TEST_FILE ] || [ -f $SPM_FILE ]; then
+      ./test.bash
     else
       test_directories
     fi
@@ -50,7 +54,6 @@ test_directories() {
 
 # assume already in the directory
 test_directory() {
-
   (
     set -Ee
     function _catch {
@@ -64,8 +67,8 @@ test_directory() {
     trap _catch ERR
 
     test_name=$(basename $PWD)
-    # TODO: use relative path (HELPER_DIR and PWD) to support non-unique names
-    if grep -Fxq ${test_name} ${HELPER_DIR}/skip.txt ; then
+    # TODO: use relative path (TESTS_DIR and PWD) to support non-unique names
+    if grep -Fxq ${test_name} ${TESTS_DIR}/skip.txt ; then
       echo -e "${BOLD}Skipping ${test_name}${ENDCOLOR}"
       return
     else
@@ -80,27 +83,50 @@ test_directory() {
       TEST_TMPDIR=${OUTPUT_DIR}
     fi
 
-    # copy the test file and any *.swirl
-    curr=${PWD}
-    cp ${TEST_FILE} ${TEST_TMPDIR}
+    # copy everything to the tmp dir
+    count=`ls -1 *.swift 2>/dev/null | wc -l`
+    if [ $count != 0 ]; then 
+      cp *.swift ${TEST_TMPDIR}
+    fi
     count=`ls -1 *.swirl 2>/dev/null | wc -l`
     if [ $count != 0 ]; then 
       cp *.swirl ${TEST_TMPDIR}
-    fi 
+    fi
+    if [ -f ${SPM_FILE} ]; then
+      mkdir ${TEST_TMPDIR}/Sources/
+      cp -r Sources/ ${TEST_TMPDIR}/Sources/
+      cp ${SPM_FILE} ${TEST_TMPDIR}
+    fi
+    if [[ ! -z ${CUSTOM_SPEC} ]]; then
+      SPEC=${CUSTOM_SPEC}
+      cp ${CUSTOM_SPEC} ${TEST_TMPDIR}
+    fi
+
+    curr=${PWD}
     cd ${TEST_TMPDIR}
 
     # dump the SIL
-    ${SWAN_SWIFTC} -- ${TEST_FILE} > ${ERROR_MESSAGE_FILE}
+    if [ -f $TEST_FILE ]; then
+      ${SWAN_SWIFTC} -- ${TEST_FILE} > ${ERROR_MESSAGE_FILE}
+    else
+      swift package clean
+      python3 ${TESTS_DIR}/swan-spm.py > ${ERROR_MESSAGE_FILE} 
+    fi
     rm ${ERROR_MESSAGE_FILE}
 
     # copy any .swirl to swan-dir
     count=`ls -1 *.swirl 2>/dev/null | wc -l`
     if [ $count != 0 ]; then 
       cp *.swirl swan-dir/
-    fi 
+    fi
+
+    # copy any imported files to swan-dir
+    for f in ${SIL_PACKAGES}; do
+      cp ${TESTS_DIR}/sil-packages/${f} swan-dir/
+    done
     
     # run analysis
-    java -jar ${LIB_DIR}/driver.jar -j ${HELPER_DIR}/basic-spec.json -p swan-dir/ ${DRIVER_OPTIONS} > ${ERROR_MESSAGE_FILE}
+    java -jar ${LIB_DIR}/driver.jar -j ${SPEC} -p swan-dir/ ${DRIVER_OPTIONS} > ${ERROR_MESSAGE_FILE}
     mv ${ERROR_MESSAGE_FILE} driver_log.txt
 
     # check annotations
@@ -115,4 +141,8 @@ test_directory() {
 
     echo -e "${GREEN} \xE2\x9C\x94 PASSED${ENDCOLOR}"
   )
+}
+
+import() {
+  SIL_PACKAGES+=$1
 }

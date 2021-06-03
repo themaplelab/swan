@@ -1,8 +1,9 @@
 ## Testing
 
+These tests must be able to run on macOS **and** Linux. The testing scripts are WIP and we are adding features as we need them.
 ### Adding tests
 
-If you want to add a new group (directory) of tests:
+If you want to add a new set of tests:
 
 1. Create a new directory in a fitting spot with a good name that justifies having a separate directory for the tests
 2. Create a `test.bash` in the new directory with the following contents (replace `<relative_path_to_tester.bash>` and make sure it is executable)
@@ -21,12 +22,51 @@ If you want to add a new test to an existing group
 source <relative_path_to_tester.bash>
 test_directory
 ```
-3. Add your test code under `test.swift` (you must use this name)
+3. Add your test. Choose from the following test styles.
+- `test.swift`
+- Swift Package Manager with `Sources/main.swift` (single source file only) and `Package.swift`. You must configure Package.swift to have the following target options.
+```
+swiftSettings: [
+  .unsafeFlags([
+    "-Xfrontend",
+    "-gsil",
+    "-Xllvm",
+    "-sil-print-debuginfo",
+    "-Xllvm",
+    "-sil-print-before=SerializeSILPass"
+    ])
+]
+```
+
+The `swan-spm.py` script will only dump SIL for the source file (not dependencies). Therefore, if you need a dependency, use `import "<your dependency>"` in `test.bash`. If the dependency does not already exist in `tests/sil-packages/`, build an app that uses the dependency with `swan-xcodebuild` and copy the SIL file from `swan-dir/` to `tests/sil-packages/` and rename it. If you don't have macOS, request someone who does to add the dependency for you.
+
+```
+source ../../tester.bash
+import "ColorizeSwift.sil"
+test_directory
+```
+
+### Using a custom specification
+
+If you want to use a custom taint analysis specification, add it to the test file and set `CUSTOM_SPEC` in `test.bash`.
+```
+source ../../tester.bash
+CUSTOM_SPEC=custom-spec.json
+test_directory
+```
 
 ### Skipping tests
 
 You can skip tests by adding their name to `skip.txt`. Currently, you need to specify just the atomic directory, not the relative path (ideally it would be relative path to have non-unique atomic test names). Add a comment, prefixed with `#`, to describe why that test is skipped.
 
-### Future plans
+### Options
 
-This testing infrastructure is WIP. We plan to add the ability for tests to override settings such as the analysis specification and SWAN options.
+You can set environment variables to modify the test behavior. e.g.,
+
+```
+OUTPUT_DIR=out ./test.bash
+```
+
+Variables:
+- `OUTPUT_DIR`: Set test directory. This is normally inside of a temporary directory and is immediately deleted after the test completes. Useful for debugging.
+- `DRIVER_OPTIONS`: Specifies **additional** options to the driver.

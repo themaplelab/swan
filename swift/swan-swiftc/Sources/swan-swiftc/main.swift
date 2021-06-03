@@ -26,19 +26,7 @@ struct Constants {
   static let swiftcLog  = "swiftc.log"
 }
 
-struct Section {
-  let platform: String
-  let target: String
-  let project: String
-  let sil: String
-}
-
 extension String: Error {}
-
-func ==(lhs: Section, rhs: Section) -> Bool {
-  // Do NOT include platform. Might not be necesssary to compare SIL.
-  return ((lhs.target == rhs.target) && (lhs.project == rhs.project) && (lhs.sil == rhs.sil))
-}
 
 struct SWANSwiftcBuild: ParsableCommand {
   static let configuration = CommandConfiguration(
@@ -92,6 +80,10 @@ struct SWANSwiftcBuild: ParsableCommand {
       printFailure("The output directory could not be created at " + outputDir.path
                     + ".\nReason: " + error.localizedDescription)
       throw ExitCode.failure
+    }
+
+    if (FileManager().fileExists(atPath: srcCopyDir.path)) {
+      try FileManager().removeItem(atPath: srcCopyDir.path)
     }
     
     do {
