@@ -31,6 +31,6 @@ func sink(sunk: String) {
 
 let d1 = Datacontainer();
 d1.setDescription(description: "abc");
-d1.setSecret(secret: source());
-sink(sunk: d1.getSecret());
+d1.setSecret(secret: source()); //!testing!source
+sink(sunk: d1.getSecret()); //!testing!sink
 sink(sunk: d1.getDescription());

@@ -25,12 +25,18 @@ func test_init2() {
 
 // ------- Accessing -------
 
-// subscript already tested above
+// basic subscript already tested above
 
 func test_first() {
   let src = source();
   let arr = [src]; //!testing!source
   sink(sunk : arr.first!); //!testing!sink
+}
+
+func test_last() {
+  let src = source();
+  let arr = [src]; //!testing!source
+  sink(sunk : arr.last!); //!testing!sink
 }
 
 // ...

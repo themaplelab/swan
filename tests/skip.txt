@@ -1,11 +1,9 @@
 # SPDS solver with path tracking is very slow for these for some reason (SWAN-23).
 ArrayAccess2
-FieldSensitivity1
-FieldSensitivity2
 ObjectSensitivity1
 
 # Github Actions runner has different result (SWAN-22)
 FlowDroidListing2
 
-# swan-swiftc hangs on Linux
-array
+# FNs
+FieldSensitivity2

@@ -104,7 +104,7 @@ struct SWANSwiftcBuild: ParsableCommand {
     }
     
     let args = generateSwiftcArgs()
-    printStatus("Running swiftc " + args.joined(separator: " "))
+    printStatus("Running " + args.joined(separator: " "))
     
     let task = Process()
     let pipe = Pipe()
@@ -114,13 +114,16 @@ struct SWANSwiftcBuild: ParsableCommand {
     task.standardInput = FileHandle.nullDevice
     task.standardOutput = pipe
     task.standardError = pipe
-    
+
     let start = DispatchTime.now()
     task.launch()
+
+    let data = pipe.fileHandleForReading.readDataToEndOfFile()
+
     task.waitUntilExit()
     
-    let data = pipe.fileHandleForReading.readDataToEndOfFile()
     let output: String = String(data: data, encoding: String.Encoding.utf8)!
+
     
     let end = DispatchTime.now()
     let nanoTime = (end.uptimeNanoseconds - start.uptimeNanoseconds)

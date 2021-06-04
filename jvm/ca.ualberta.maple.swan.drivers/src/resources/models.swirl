@@ -79,6 +79,19 @@ bb0(%0 : $`*Optional<τ_0_0>`, %1: $`*Array<τ_0_0>`):
   return elem
 }
 
+// %0 -> ptr to populate with first element, %1 -> array
+// Get the last element of the array
+// Just read from it and populate %0 (same as .first)
+func [model] @`(extension in Swift):Swift.BidirectionalCollection.last.getter : A.Element?` : $`@out Optional<τ_0_0.Element>` {
+bb0(%0 : $`*Optional<τ_0_0>`, %1: $`*Array<τ_0_0>`):
+  elem = new $`Optional<τ_0_0>`
+  arr = pointer_read %1, $`Array<τ_0_0>`
+  val = pointer_read arr, $`τ_0_0`
+  field_write val to elem, data // must write to data field because it is Optional
+  pointer_write elem to %0
+  return elem
+}
+
 
 // -------------------- Swift.String --------------------------------
 

@@ -133,7 +133,7 @@ struct SWANXcodebuild: ParsableCommand {
     
     
     let args = generateXcodebuildArgs()
-    printStatus("Running xcodebuild " + args.joined(separator: " "))
+    printStatus("Running " + args.joined(separator: " "))
     
     let task = Process()
     let pipe = Pipe()
