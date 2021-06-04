@@ -6,3 +6,6 @@ ObjectSensitivity1
 
 # Github Actions runner has different result (SWAN-22)
 FlowDroidListing2
+
+# swan-swiftc hangs on Linux
+array
