@@ -55,6 +55,31 @@ bb0(%0 : $`*τ_0_0`, %1 : $`*Array<τ_0_0>`):
   return ret
 }
 
+// %0 -> value to add to array, %1 -> count, %2 -> array type
+// Create array and write value to array 'count' times.
+// Simply write the value to the array, ignore the count and type.
+func [model] @`Swift.Array.init(repeating: A, count: Swift.Int) -> [A]` : $`@owned Array<τ_0_0>` {
+bb0(%0 : $`*τ_0_0`, %1 : $`Int`, %2 : $`@thin Array<τ_0_0>.Type`):
+  arr = new $`@owned Array<τ_0_0>`
+  val = pointer_read %0, $`τ_0_0`
+  pointer_write val to arr
+  return arr
+}
+
+// %0 -> ptr to populate with first element, %1 -> array
+// Get the first element of the array
+// Just read from it and populate %0
+func [model] @`(extension in Swift):Swift.Collection.first.getter : A.Element?` : $`@out Optional<τ_0_0.Element>` {
+bb0(%0 : $`*Optional<τ_0_0>`, %1: $`*Array<τ_0_0>`):
+  elem = new $`Optional<τ_0_0>`
+  arr = pointer_read %1, $`Array<τ_0_0>`
+  val = pointer_read arr, $`τ_0_0`
+  field_write val to elem, data // must write to data field because it is Optional
+  pointer_write elem to %0
+  return elem
+}
+
+
 // -------------------- Swift.String --------------------------------
 
 // %0 -> string to initialize, the rest is irrelevant
