@@ -11,7 +11,7 @@ func sink(sunk: String) {
 // ------- Creating -------
 
 func test_init1() {
-  // Slightly incorrect path
+  // Slightly incorrect path (SWAN-30)
   let src = source();
   let arr = [src]; //!testing!source
   sink(sunk : arr[0]); //!testing!sink
