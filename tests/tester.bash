@@ -73,8 +73,8 @@ test_directory() {
       return
     else
       # unsafeFlags doesn't work on Linux :(
-      if [[ `uname` == 'Linux' ]]; then 
-        echo -e "${BOLD}Skipping ${test_name}${ENDCOLOR}"
+      if [[ -f $SPM_FILE ]] && [[ `uname` == 'Linux' ]]; then 
+        echo -e "${BOLD}Skipping ${test_name} (Linux)${ENDCOLOR}"
         return
       fi
       echo -e "${BOLD}Testing ${test_name}${ENDCOLOR}"
