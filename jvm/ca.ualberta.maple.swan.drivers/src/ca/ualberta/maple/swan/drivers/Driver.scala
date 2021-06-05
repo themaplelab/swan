@@ -242,7 +242,27 @@ class Driver extends Runnable {
     Logging.printInfo(
       group.toString+group.functions.length+" functions\n"+
       group.entries.size+" entries")
-    if (options.debug) writeFile(group, debugDir, "grouped")
+    if (options.debug) {
+      writeFile(group, debugDir, "grouped")
+      val f = Paths.get(debugDir.getPath, "missing-models.txt").toFile
+      var nonEmpty = false
+      val fw = new FileWriter(f)
+      group.functions.foreach(f => {
+        if (f.attribute.nonEmpty) {
+          f.attribute.get match {
+            case FunctionAttribute.stub => {
+              val sp = new SWIRLPrinter()
+              sp.print(f)
+              fw.write(sp.toString + "\n")
+              nonEmpty = true
+            }
+            case _ =>
+          }
+        }
+      })
+      fw.close()
+      if (!nonEmpty) Files.delete(f.toPath)
+    }
     if (options.cache) proc.writeCache(group)
     if (options.dumpFunctionNames) {
       val f = Paths.get(swanDir.getPath, "function-names.txt").toFile

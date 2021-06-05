@@ -14,6 +14,59 @@ swirl_stage raw
    attributes can be left out. This improves clarity, too.
    ------------------------------------------------------------------ */
 
+// -------------------- Swift.Collection ----------------------------
+
+
+// %0 -> ptr to populate with first element, %1 -> collection
+// Get the first element of the collection
+// Just read from it and populate %0
+func [model] @`(extension in Swift):Swift.Collection.first.getter : A.Element?` : $`@out Optional<τ_0_0.Element>` {
+bb0(%0 : $`*Optional<τ_0_0>`, %1: $`*Collection<τ_0_0>`):
+  elem = new $`Optional<τ_0_0>`
+  arr = pointer_read %1, $`Collection<τ_0_0>`
+  val = pointer_read arr, $`τ_0_0`
+  field_write val to elem, data // must write to data field because it is Optional
+  pointer_write elem to %0
+  return elem
+}
+
+// %0 -> ptr to populate with first element, %1 -> collection
+// Get random element from collection
+// Just read from it and populate %0
+func [model] @`(extension in Swift):Swift.Collection.randomElement() -> A.Element?` : $`@out Optional<τ_0_0.Element>` {
+bb0(%0 : $`*Optional<τ_0_0>`, %1: $`*Collection<τ_0_0>`):
+  elem = new $`Optional<τ_0_0>`
+  arr = pointer_read %1, $`Collection<τ_0_0>`
+  val = pointer_read arr, $`τ_0_0`
+  field_write val to elem, data // must write to data field because it is Optional
+  pointer_write elem to %0
+  return elem
+}
+
+// %0 -> collection to add, %1 -> index, %2 -> collection to add to
+// Take data from %0 and write it to %2
+func [model] @`(extension in Swift):Swift.RangeReplaceableCollection.insert<A where A1: Swift.Collection, A.Element == A1.Element>(contentsOf: __owned A1, at: A.Index) -> ()` : $`()` {
+bb0(%0 : $`*Collection<τ_0_0>`, %1 : $`*Int`, %2 : $`*Collection<τ_0_0>`):
+  from_collection = pointer_read %0, $`Collection<τ_0_0>`
+  from_val = pointer_read from_collection, $`τ_0_0`
+  to_collection = pointer_read %2, $`Collection<τ_0_0>`
+  pointer_write from_val to to_collection
+  %ret = new $`()`
+  return %ret
+}
+
+// %0 -> range, %1 -> collection to add, %2 -> collection to add to
+// Replace  collection subrange with another collection
+func [model] @`(extension in Swift):Swift.RangeReplaceableCollection.replaceSubrange<A, B where A1: Swift.Collection, B1: Swift.RangeExpression, A.Element == A1.Element, A.Index == B1.Bound>(_: B1, with: __owned A1) -> ()` : $`()` {
+bb0(%0 : $`*ClosedRange<Int>`, %1 : $`*Collection<τ_0_0>`, %2 : $`*Collection<τ_0_0>`):
+  from_collection = pointer_read %1, $`Collection<τ_0_0>`
+  from_val = pointer_read from_collection, $`τ_0_0`
+  to_collection = pointer_read %2, $`Collection<τ_0_0>`
+  pointer_write from_val to to_collection
+  %ret = new $`()`
+  return %ret
+}
+
 // -------------------- Swift.Array ---------------------------------
 
 // %0 -> value to write, %1 -> index, %2 -> array
@@ -21,10 +74,16 @@ swirl_stage raw
 // Also likely returns the element, but the return value
 // isn't used in practice.
 func [model] @`Swift.Array.subscript.getter : (Swift.Int) -> A` : $`@out τ_0_0` {
-bb0(%0 : $`*Any`, %1 : $`Int`, %2 : $`Array<τ_0_0>`):
+bb0(%0 : $`*τ_0_0`, %1 : $`Int`, %2 : $`Array<τ_0_0>`):
   val = pointer_read %2, $`τ_0_0`
   pointer_write val to %0
   return val
+}
+
+// Get slice of array, so just return the array argument.
+func [model] @`Swift.Array.subscript.getter : (Swift.Range<Swift.Int>) -> Swift.ArraySlice<A>` : $`@owned ArraySlice<τ_0_0>` {
+bb0(%0 : $`Range<Int>`, %1 : $`@guaranteed Array<τ_0_0>`):
+  return %1
 }
 
 // %0 -> index, %1 -> array pointer to read
@@ -67,19 +126,6 @@ bb0(%0 : $`*τ_0_0`, %1 : $`Int`, %2 : $`@thin Array<τ_0_0>.Type`):
 }
 
 // %0 -> ptr to populate with first element, %1 -> array
-// Get the first element of the array
-// Just read from it and populate %0
-func [model] @`(extension in Swift):Swift.Collection.first.getter : A.Element?` : $`@out Optional<τ_0_0.Element>` {
-bb0(%0 : $`*Optional<τ_0_0>`, %1: $`*Array<τ_0_0>`):
-  elem = new $`Optional<τ_0_0>`
-  arr = pointer_read %1, $`Array<τ_0_0>`
-  val = pointer_read arr, $`τ_0_0`
-  field_write val to elem, data // must write to data field because it is Optional
-  pointer_write elem to %0
-  return elem
-}
-
-// %0 -> ptr to populate with first element, %1 -> array
 // Get the last element of the array
 // Just read from it and populate %0 (same as .first)
 func [model] @`(extension in Swift):Swift.BidirectionalCollection.last.getter : A.Element?` : $`@out Optional<τ_0_0.Element>` {
@@ -105,6 +151,42 @@ bb0(%0 : $`*Array<Element>`):
   return %10
 }
 
+// %0 -> ptr of element to add, %1 -> index, %2 -> array
+// Insert element into an array
+func [model] @`Swift.Array.insert(_: __owned A, at: Swift.Int) -> ()` : $`()` {
+bb0(%0 : $`*τ_0_0`, %1 : $`Int`, %2 : $`*Array<τ_0_0>`):
+  val = pointer_read %0, $`τ_0_0`
+  arr = pointer_read %2, $`Array<τ_0_0>`
+  pointer_write val to arr
+  %ret = new $`()`
+  return %ret
+}
+
+// %0 -> array to append, %1 -> array to append to
+// Write data from %0 to %1
+func [model] @`Swift.Array.append<A where A == A1.Element, A1: Swift.Sequence>(contentsOf: __owned A1) -> ()` : $`()` {
+bb0(%0 : $`*Array<τ_0_0>`, %1 : $`*Array<τ_0_0>`):
+  from_array = pointer_read %0, $`Array<τ_0_0>`
+  from_val = pointer_read from_array, $`τ_0_0`
+  to_array = pointer_read %1, $`Array<τ_0_0>`
+  pointer_write from_val to to_array
+  %ret = new $`()`
+  return %ret
+}
+
+
+// -------------------- Swift.ArraySlice ----------------------------
+
+// %0 -> value to write, %1 -> index, %2 -> array
+// Write array to pointer %0. Index not used.
+// Also likely returns the element, but the return value
+// isn't used in practice.
+func [model] @`Swift.ArraySlice.subscript.getter : (Swift.Int) -> A` : $`@out τ_0_0` {
+bb0(%0 : $`*τ_0_0`, %1 : $`Int`, %2: $`ArraySlice<τ_0_0>`):
+  val = pointer_read %2, $`τ_0_0`
+  pointer_write val to %0
+  return val
+}
 
 // -------------------- Swift.String --------------------------------
 
@@ -155,5 +237,23 @@ bb0:
 func [model] @`default argument 2 of Swift.print(_: Any..., separator: Swift.String, terminator: Swift.String) -> ()` : $`@owned String` {
 bb0:
   %ret = new $`@owned String`
+  return %ret
+}
+
+func [model] @`Swift._assertionFailure(_: Swift.StaticString, _: Swift.StaticString, file: Swift.StaticString, line: Swift.UInt, flags: Swift.UInt32) -> Swift.Never` : $`Never` {
+bb0(%0 : $`StaticString`, %1 : $`StaticString`, %2 : $`StaticString`, %3 : $`UInt`, %4 : $`UInt32`):
+  %ret = new $`Never`
+  return %ret
+}
+
+func [model] @`Swift.Array.endIndex.getter : Swift.Int` : $`Int` {
+bb0(%0 : $`@guaranteed Array<τ_0_0>`):
+  %ret = new $`Int`
+  return %ret
+}
+
+func [model] @`Swift.Array.firstIndex.getter : Swift.Int` : $`Int` {
+bb0(%0 : $`@guaranteed Array<τ_0_0>`):
+  %ret = new $`Int`
   return %ret
 }
