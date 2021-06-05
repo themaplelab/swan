@@ -488,6 +488,7 @@ class SWIRLPrinter extends Printer {
     attr match {
       case FieldWriteAttribute.pointer => print("pointer")
       case FieldWriteAttribute.weakPointer => print("weak_pointer")
+      case FieldWriteAttribute.weak => print("weak")
     }
     print("] ")
   }

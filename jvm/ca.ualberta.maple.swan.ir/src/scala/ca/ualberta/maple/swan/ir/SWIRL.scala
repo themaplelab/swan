@@ -234,6 +234,7 @@ sealed trait FieldWriteAttribute extends Serializable
 object FieldWriteAttribute {
   case object pointer extends FieldWriteAttribute
   case object weakPointer extends FieldWriteAttribute
+  case object weak extends FieldWriteAttribute
 }
 
 class EnumAssignCase(val decl: String, val value: SymbolRef) extends Serializable

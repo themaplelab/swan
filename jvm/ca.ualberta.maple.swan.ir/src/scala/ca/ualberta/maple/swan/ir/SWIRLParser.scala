@@ -420,6 +420,7 @@ class SWIRLParser extends SWIRLPrinter {
   def parseFieldWriteAttribute(): FieldWriteAttribute = {
     if (skip("pointer")) return FieldWriteAttribute.pointer
     if (skip("weak_pointer")) return FieldWriteAttribute.weakPointer
+    if (skip("weak")) return FieldWriteAttribute.weak
     throw parseError("unknown field write attribute")
   }
 
