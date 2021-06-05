@@ -55,7 +55,7 @@ For now, you will need to build the framework to use SWAN, but soon we will make
 We have tested SWAN on macOS Big Sur Xcode 12 and Ubuntu 20.04. You need Xcode Command Line Tools installed for macOS, or the latest Swift release for Linux (see [this](https://linuxconfig.org/how-to-install-swift-on-ubuntu-20-04)). Anything involving "Xcode" will not work on Linux, but you should be able to build Swift Package Manager projects.
 
 ```
-git clone git@github.com:themaplelab/swan.git -b spds
+git clone https://github.com/themaplelab/swan.git -b spds
 ```
 
 Add your GitHub username and [personal access token](https://docs.github.com/en/github/authenticating-to-github/creating-a-personal-access-token) (with read:packages) to `jvm/gradle.properties`. The SPDS dependency requires this. Do **not** push these credentials.
