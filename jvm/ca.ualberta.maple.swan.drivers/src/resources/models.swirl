@@ -92,6 +92,19 @@ bb0(%0 : $`*Optional<τ_0_0>`, %1: $`*Array<τ_0_0>`):
   return elem
 }
 
+// These functions are problematic because endMutation overwrites
+// the array with another one using unhandled structures. See SWAN-31.
+// (finalizeUninitializedArray calls endMutation)
+func [model] @`Swift._finalizeUninitializedArray<A>(__owned [A]) -> [A]` : $`@owned Array<Element>` {
+bb0(%0 : $`Array<Element>`):
+  return %0
+}
+func [model] @`Swift.Array._endMutation() -> ()` : $`()` {
+bb0(%0 : $`*Array<Element>`):
+  %10 = new $`()`
+  return %10
+}
+
 
 // -------------------- Swift.String --------------------------------
 
