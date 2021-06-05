@@ -5,5 +5,5 @@ ObjectSensitivity1
 # Github Actions runner has different result (SWAN-22)
 FlowDroidListing2
 
-# FNs
+# SWAN-32
 FieldSensitivity2
