@@ -1053,7 +1053,8 @@ class SILParser extends SILPrinter {
         SILInstruction.operator(SILOperator.structElementAddr(operand, declRef))
       }
       case "destructure_struct" => {
-        throw parseError("unhandled instruction") // NSIP
+        val operand = parseOperand()
+        SILInstruction.operator(SILOperator.destructureStruct(operand))
       }
       case "object" => {
         val tpe = parseType()

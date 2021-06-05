@@ -746,12 +746,16 @@ class SILPrinter extends Printer {
         print(", ")
         print(declRef)
       }
+      case SILOperator.destructureStruct(operand) => {
+        print("destructure_struct ")
+        print(operand)
+      }
       case SILOperator.objct(tpe, operands, tailElems) => {
         print("object ")
         print(tpe)
         print(whenEmpty = true, " (", operands, ", ", "", (o: SILOperand) => print(o))
-        if (tailElems.length > 0) {
-          if (operands.length > 0) {
+        if (tailElems.nonEmpty) {
+          if (operands.nonEmpty) {
             print(", ")
           }
           print("[tail_elems] ")

@@ -419,6 +419,7 @@ class SWIRLGen {
           case inst: SILOperator.struct => visitStruct(result, inst, ctx)
           case inst: SILOperator.structExtract => visitStructExtract(result, inst, ctx)
           case inst: SILOperator.structElementAddr => visitStructElementAddr(result, inst, ctx)
+          case inst: SILOperator.destructureStruct => visitDestructureStruct(result, inst, ctx)
           case inst: SILOperator.objct => visitObject(result, inst, ctx)
           case inst: SILOperator.refElementAddr => visitRefElementAddr(result, inst, ctx)
           case inst: SILOperator.refTailAddr => visitRefTailAddr(result, inst, ctx)
@@ -1157,8 +1158,9 @@ class SWIRLGen {
   def visitStruct(r: Option[SILResult], I: SILOperator.struct, ctx: Context): ArrayBuffer[RawInstructionDef] = {
     val init: Option[StructInit] = {
       var ret: Option[StructInit] = None
+      val tpeName = Utils.print(I.tpe)
       ctx.silModule.inits.foreach(init => {
-        if (init.name == Utils.print(I.tpe)) {
+        if (init.name == tpeName) {
           ret = Some(init)
         }
       })
@@ -1168,11 +1170,7 @@ class SWIRLGen {
     val operators = ArrayBuffer[RawInstructionDef]()
     operators.append(makeOperator(ctx, makeNewOperator(result, ctx)).head)
     if (init.nonEmpty) {
-      if (init.get.args.length < I.operands.length) {
-        // TODO: This seems to get thrown every now and then.
-        //   maybe something isn't thread safe.
-        throw new ExperimentalException("Init comment must have not included all arguments.\n" + ctx.toString)
-      }
+      verifySILResult(r, init.get.args.length)
       I.operands.view.zipWithIndex.foreach(op => {
         operators.append(makeOperator(ctx,
           Operator.fieldWrite(makeSymbolRef(op._1.value, ctx), result.ref,init.get.args(op._2), None)).head)
@@ -1206,7 +1204,30 @@ class SWIRLGen {
       Operator.pointerWrite(aliasResult.ref, result.ref))
   }
 
-  // def visitDestructureStruct(r: Option[SILResult], I: SILOperator.destructureStruct, ctx: Context): ArrayBuffer[RawInstructionDef]
+  def visitDestructureStruct(r: Option[SILResult], I: SILOperator.destructureStruct, ctx: Context): ArrayBuffer[RawInstructionDef] = {
+    // If we have the init comment, read the fields into the results,
+    // otherwise copy operand to results as a fallback
+    val operators = ArrayBuffer[RawInstructionDef]()
+    val tpeName = Utils.print(I.operand.tpe)
+    ctx.silModule.inits.foreach(init => {
+      if (init.name == tpeName) {
+        verifySILResult(r, init.args.length)
+        r.get.valueNames.zipWithIndex.foreach(retIdx => {
+          val resultSymbol = new Symbol(makeSymbolRef(retIdx._1, ctx), new Type("Any"))
+          val fieldRead = Operator.fieldRead(resultSymbol, None, makeSymbolRef(I.operand.value, ctx), init.args(retIdx._2))
+          operators.append(makeOperator(ctx, fieldRead).head)
+        })
+      }
+    })
+    if (operators.isEmpty) {
+      r.get.valueNames.foreach(ret => {
+        val resultSymbol = new Symbol(makeSymbolRef(ret, ctx), new Type("Any"))
+        val fieldRead = Operator.assign(resultSymbol,makeSymbolRef(I.operand.value, ctx))
+        operators.append(makeOperator(ctx, fieldRead).head)
+      })
+    }
+    operators
+  }
 
   @throws[UnexpectedSILFormatException]
   def visitObject(r: Option[SILResult], I: SILOperator.objct, ctx: Context): ArrayBuffer[RawInstructionDef] = {

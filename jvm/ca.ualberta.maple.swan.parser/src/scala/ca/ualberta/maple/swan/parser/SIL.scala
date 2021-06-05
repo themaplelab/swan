@@ -243,7 +243,7 @@ object SILOperator {
   case class struct(tpe: SILType, operands: ArrayBuffer[SILOperand]) extends SILOperator
   case class structExtract(operand: SILOperand, declRef: SILDeclRef) extends SILOperator
   case class structElementAddr(operand: SILOperand, declRef: SILDeclRef) extends SILOperator
-  // NSIP: destructure_struct
+  case class destructureStruct(operand: SILOperand) extends SILOperator
   case class objct(tpe: SILType, operands: ArrayBuffer[SILOperand], tailElems: ArrayBuffer[SILOperand]) extends SILOperator
   case class refElementAddr(immutable: Boolean, operand: SILOperand, declRef: SILDeclRef) extends SILOperator
   case class refTailAddr(immutable: Boolean, operand: SILOperand, tpe: SILType) extends SILOperator
