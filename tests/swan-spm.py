@@ -7,13 +7,17 @@ import shutil
 import time
 import re
 import subprocess
+import platform
 
 SWAN_DIR="swan-dir/"
 SRC_DIR=SWAN_DIR + "src/"
 SOURCES_DIR="Sources/"
 SPM_LOG=SWAN_DIR + "spm.log"
 OUTPUT_SIL=SWAN_DIR + "test.sil"
-COMMAND=["swift", "build", "--use-integrated-swift-driver"]
+COMMAND=["swift", "build"]
+
+if platform.system() == "Darwin":
+  COMMAND.append("--use-integrated-swift-driver")
 
 with open("Package.swift") as f:
   if "unsafeFlags" not in f.read():
