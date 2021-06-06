@@ -16,8 +16,13 @@ SPM_LOG=SWAN_DIR + "spm.log"
 OUTPUT_SIL=SWAN_DIR + "test.sil"
 COMMAND=["swift", "build"]
 
+# As of Xcode 12.5, dumping SIL with unsafeFlags requires using --use-integrated-swift-driver
 if platform.system() == "Darwin":
-  COMMAND.append("--use-integrated-swift-driver")
+  xcode_version = subprocess.check_output(["/usr/bin/xcodebuild", "-version"])
+  version_search = re.search("Xcode 12\.([0-9]+)", xcode_version.decode())
+  if version_search:
+    if int(version_search.group(1)) > 4:
+      COMMAND.append("--use-integrated-swift-driver")
 
 with open("Package.swift") as f:
   if "unsafeFlags" not in f.read():
