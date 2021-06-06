@@ -5,7 +5,8 @@ protocol Parent {
 class Child1 : Parent {
 
     func doSomething(s : String) {
-        sink(sunk: s); //!testing!sink//!testing!sink//!testing!sink (1 of these is FP)
+        // one of these is an FP, but that's expected because instantiatedTypes = {Child1, Child2}
+        sink(sunk: s); //!testing!sink//!testing!sink//!testing!sink 
     }
 }
 
@@ -34,4 +35,4 @@ child1.doSomething(s: source()); //!testing!source
 child2.doSomething(s: source());
 
 testSomething(p: child1, s: source()); //!testing!source
-testSomething(p: child2, s: source()); //!testing!source causes FP
+testSomething(p: child2, s: source()); //!testing!source

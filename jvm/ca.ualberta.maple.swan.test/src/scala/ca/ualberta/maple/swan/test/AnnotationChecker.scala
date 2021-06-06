@@ -41,7 +41,7 @@ object AnnotationChecker {
     System.exit(exitCode);
   }
 
-  private class Annotation(val name: String, val tpe: String, val line: Int)
+  private class Annotation(val name: String, val tpe: String, val status: Option[String], val line: Int)
 }
 
 @Command(name = "SWAN Annotation Checker", mixinStandardHelpOptions = true)
@@ -74,15 +74,23 @@ class AnnotationChecker extends Runnable {
         if (line.contains("//")) {
             line.split("//").foreach(c => {
             if (c.startsWith("!")) {
-              val components = c.split("!")
+              val components = c.trim.split(" ")(0).split("!")
               val name = components(1)
-              val tpe = components(2).split(" ")(0)
+              val tpe = components(2)
               if (tpe != "sink" && tpe != "source") {
                 System.err.println("invalid annotation type: " + tpe + " at line " + idx + " in\n  " + f.getName)
                 System.exit(1)
               }
               if (!annotations.contains(idx)) { annotations.put(idx, new ArrayBuffer[Annotation]())}
-              annotations(idx).append(new Annotation(name, tpe, idx))
+              var status: Option[String] = None
+              if (components.length > 3) {
+                status = Some(components(3))
+                if (status.get != "fn" && status.get != "fp") {
+                  System.err.println("invalid status type: " + status + " at line " + idx + " in\n  " + f.getName)
+                  System.exit(1)
+                }
+              }
+              annotations(idx).append(new Annotation(name, tpe, status, idx))
             }
           })
         }
@@ -113,13 +121,12 @@ class AnnotationChecker extends Runnable {
           handle(p.nodes.last._2.get, "sink")
         })
       })
-      if (annotations.nonEmpty) {
-        failure = true
-      }
       annotations.foreach(v => {
         v._2.foreach(a => {
-          failure = true
-          System.err.println("No matching path node for annotation: //!" + a.name + "!" + a.tpe + " on line " + a.line)
+          if (a.status.isEmpty || a.status.get != "fn") {
+            failure = true
+            System.err.println("No matching path node for annotation: //!" + a.name + "!" + a.tpe + " on line " + a.line)
+          }
         })
       })
     })

@@ -13,6 +13,7 @@ SRC_DIR=SWAN_DIR + "src/"
 SOURCES_DIR="Sources/"
 SPM_LOG=SWAN_DIR + "spm.log"
 OUTPUT_SIL=SWAN_DIR + "test.sil"
+COMMAND=["swift", "build", "--use-integrated-swift-driver"]
 
 with open("Package.swift") as f:
   if "unsafeFlags" not in f.read():
@@ -42,9 +43,9 @@ for i in file_set:
     shutil.copy(SOURCES_DIR+i, SRC_DIR+SOURCES_DIR+i)
     found = True
 
-print("Running swift build")
+print("Running " + " ".join(COMMAND))
 start_time = time.time()
-output = subprocess.run(["swift", "build"], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+output = subprocess.run(COMMAND, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 txt = output.stdout.decode('utf-8')
 
 print("swift build finished in %ds" % (time.time() - start_time))

@@ -12,6 +12,8 @@ swirl_stage raw
 
    Types don't have to be perfectly consistent. For example,
    attributes can be left out. This improves clarity, too.
+
+   Remember to use [weak] where necessary.
    ------------------------------------------------------------------ */
 
 // -------------------- Swift.Collection ----------------------------
@@ -50,7 +52,7 @@ bb0(%0 : $`*Collection<τ_0_0>`, %1 : $`*Int`, %2 : $`*Collection<τ_0_0>`):
   from_collection = pointer_read %0, $`Collection<τ_0_0>`
   from_val = pointer_read from_collection, $`τ_0_0`
   to_collection = pointer_read %2, $`Collection<τ_0_0>`
-  pointer_write from_val to to_collection
+  pointer_write [weak] from_val to to_collection
   %ret = new $`()`
   return %ret
 }
@@ -62,7 +64,7 @@ bb0(%0 : $`*ClosedRange<Int>`, %1 : $`*Collection<τ_0_0>`, %2 : $`*Collection<�
   from_collection = pointer_read %1, $`Collection<τ_0_0>`
   from_val = pointer_read from_collection, $`τ_0_0`
   to_collection = pointer_read %2, $`Collection<τ_0_0>`
-  pointer_write from_val to to_collection
+  pointer_write [weak] from_val to to_collection
   %ret = new $`()`
   return %ret
 }
@@ -109,7 +111,7 @@ func [model] @`Swift.Array.append(__owned A) -> ()` : $`()` {
 bb0(%0 : $`*τ_0_0`, %1 : $`*Array<τ_0_0>`):
   val = pointer_read %0, $`τ_0_0`
   arr = pointer_read %1, $`Array<τ_0_0>`
-  pointer_write val to arr
+  pointer_write [weak] val to arr
   ret = new $`()`
   return ret
 }
@@ -121,7 +123,7 @@ func [model] @`Swift.Array.init(repeating: A, count: Swift.Int) -> [A]` : $`@own
 bb0(%0 : $`*τ_0_0`, %1 : $`Int`, %2 : $`@thin Array<τ_0_0>.Type`):
   arr = new $`@owned Array<τ_0_0>`
   val = pointer_read %0, $`τ_0_0`
-  pointer_write val to arr
+  pointer_write [weak] val to arr
   return arr
 }
 
@@ -157,7 +159,7 @@ func [model] @`Swift.Array.insert(_: __owned A, at: Swift.Int) -> ()` : $`()` {
 bb0(%0 : $`*τ_0_0`, %1 : $`Int`, %2 : $`*Array<τ_0_0>`):
   val = pointer_read %0, $`τ_0_0`
   arr = pointer_read %2, $`Array<τ_0_0>`
-  pointer_write val to arr
+  pointer_write [weak] val to arr
   %ret = new $`()`
   return %ret
 }
@@ -169,11 +171,33 @@ bb0(%0 : $`*Array<τ_0_0>`, %1 : $`*Array<τ_0_0>`):
   from_array = pointer_read %0, $`Array<τ_0_0>`
   from_val = pointer_read from_array, $`τ_0_0`
   to_array = pointer_read %1, $`Array<τ_0_0>`
-  pointer_write from_val to to_array
+  pointer_write [weak] from_val to to_array
   %ret = new $`()`
   return %ret
 }
 
+// %0 -> first array, %1 -> second array, %2 -> array type
+// Create new array and write data from %0 and %1 to it
+func [model] @`static Swift.Array.+ infix([A], [A]) -> [A]` : $`@owned Array<τ_0_0>` {
+bb0(%0 : $`Array<τ_0_0>`, %1 : $`Array<τ_0_0>`, %2 : $`@thin Array<τ_0_0>.Type`):
+  new_arr = new $`@owned Array<τ_0_0>`
+  first_val = pointer_read %0, $`τ_0_0`
+  second_val = pointer_read %1, $`τ_0_0`
+  pointer_write [weak] first_val to new_arr
+  pointer_write [weak] second_val to new_arr
+  return new_arr
+}
+
+// %0 -> array to add to, %1 -> array to add, %2 -> array type
+// Write data from %1 to %0
+func [model] @`static Swift.Array.+= infix(inout [A], [A]) -> ()` : $`()` {
+bb0(%0 : $`*Array<τ_0_0>`, %1 : $`Array<τ_0_0>`, %2 : $`@thin Array<τ_0_0>.Type`):
+  to_arr = pointer_read %0, $`Array<τ_0_0>`
+  val = pointer_read %1, $`τ_0_0`
+  pointer_write [weak] val to to_arr
+  %ret = new $`()`
+  return %ret
+}
 
 // -------------------- Swift.ArraySlice ----------------------------
 
@@ -181,12 +205,47 @@ bb0(%0 : $`*Array<τ_0_0>`, %1 : $`*Array<τ_0_0>`):
 // Write array to pointer %0. Index not used.
 // Also likely returns the element, but the return value
 // isn't used in practice.
-func [model] @`Swift.ArraySlice.subscript.getter : (Swift.Int) -> A` : $`@out τ_0_0` {
+func [model] @`Swift.ArraySlice.subscript.getter : (Swift.Int) -> A` : $`τ_0_0` {
 bb0(%0 : $`*τ_0_0`, %1 : $`Int`, %2: $`ArraySlice<τ_0_0>`):
   val = pointer_read %2, $`τ_0_0`
   pointer_write val to %0
   return val
 }
+
+// -------------------- Swift.Dictionary ----------------------------
+
+// %0 -> initial values for dictionary, %2 -> dictionary type
+// Write second value of given array element to dictionary
+func [model] @`Swift.Dictionary.init(dictionaryLiteral: (A, B)...) -> [A : B]` : $`Dictionary<τ_0_0, τ_0_1>` {
+bb0(%0 : $`Array<(τ_0_0, τ_0_1)>`, %1 : $`@thin Dictionary<τ_0_0, τ_0_1>.Type`):
+  val = field_read %0, 1, $`τ_0_1`
+  dict = new $`Dictionary<τ_0_0, τ_0_1>`
+  pointer_write [weak] val to dict
+  return dict
+}
+
+// %0 -> value to write to, %1 -> key, %2 -> dictionary
+// Write data from dictionary to %0 and return it
+func [model] @`Swift.Dictionary.subscript.getter : (A) -> B?` : $`Optional<τ_0_1>` {
+bb0(%0 : $`*Optional<τ_0_1>`, %1 : $`*τ_0_0`, %2 : $`Dictionary<τ_0_0, τ_0_1>`):
+  elem = new $`Optional<τ_0_1>`
+  val = pointer_read %2, $`τ_0_1`
+  field_write val to elem, data // must write to data field because it is Optional
+  pointer_write elem to %0
+  return elem
+}
+
+// %0 -> value to write to, %1 ->key, %2 -> default value, %3 -> dictionary
+// Write dictionary data and default value to %0
+func [model] @`Swift.Dictionary.subscript.getter : (_: A, default: @autoclosure () -> B) -> B` : $`τ_0_1` {
+bb0(%0 : $`*τ_0_1`, %1 : $`*τ_0_0`, %2 : $`τ_0_1`, %3 : $`Dictionary<τ_0_0, τ_0_1>`):
+  val = field_read %3, 1, $`τ_0_1`
+  pointer_write [weak] val to %0
+  pointer_write [weak] %2 to %0
+  ret = pointer_read %0, $`τ_0_1`
+  return ret
+}
+
 
 // -------------------- Swift.String --------------------------------
 

@@ -72,3 +72,16 @@ OUTPUT_DIR=out ./test.bash
 Variables:
 - `OUTPUT_DIR`: Set test directory. This is normally inside of a temporary directory and is immediately deleted after the test completes. Useful for debugging.
 - `DRIVER_OPTIONS`: Specifies **additional** options to the driver.
+
+### Annotations
+
+Annotation format:
+```
+'//!' name '!' 'source' or 'sink' ( '!' 'fn' or 'fp' )?
+
+//!testing!source
+//!testing!sink
+//!testing!source!fn
+//!testing!sink!fp
+```
+Add Jira bug numbers for FNs and FPs.

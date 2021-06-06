@@ -3,11 +3,11 @@
 // SWAN treats arrays as just an object with a single field.
 
 func source() -> String {
-    return "I'm bad";
+  return "I'm bad";
 }
 
 func sink(sunk: String) {
-    print(sunk);
+  print(sunk);
 }
 
 // ------- Creating -------
@@ -79,7 +79,7 @@ func test_insert() {
 
 func test_insert_contentsof() {
   let src = source();
-  var arr1 = [src]; //!testing!source
+  let arr1 = [src]; //!testing!source
   var arr2 = [String]();
   arr2.insert(contentsOf: arr1, at: 0);
   sink(sunk : arr2[0]); //!testing!sink
@@ -87,7 +87,7 @@ func test_insert_contentsof() {
 
 func test_replace_subrange() {
   let src = source();
-  var arr1 = [src]; //!testing!source
+  let arr1 = [src]; //!testing!source
   var arr2 = ["a", "b", "c"];
   arr2.replaceSubrange(1...2, with: arr1);
   sink(sunk : arr2[0]); //!testing!sink
@@ -95,9 +95,25 @@ func test_replace_subrange() {
 
 func test_append_combine() {
   let src = source();
-  var arr1 = [src]; //!testing!source
+  let arr1 = [src]; //!testing!source
   var arr2 = ["a", "b", "c"];
   arr2.append(contentsOf: arr1);
+  sink(sunk : arr2[0]); //!testing!sink
+}
+
+func test_add1() {
+  let src = source();
+  let arr1 = [src]; //!testing!source
+  var arr2 = ["a", "b", "c"];
+  arr2 = arr2 + arr1
+  sink(sunk : arr2[0]); //!testing!sink
+}
+
+func test_add2() {
+  let src = source();
+  let arr1 = [src]; //!testing!source
+  var arr2 = ["a", "b", "c"];
+  arr2 += arr1
   sink(sunk : arr2[0]); //!testing!sink
 }
 
