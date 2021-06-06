@@ -23,6 +23,7 @@ if [ -z $LEVEL ]; then
 fi
 
 test_directories() {
+  export MULTI=true
   failed=false
   trap 'exit 130' INT
   for dir in */ ; do
@@ -69,8 +70,10 @@ test_directory() {
     test_name=$(basename $PWD)
     # TODO: use relative path (TESTS_DIR and PWD) to support non-unique names
     if grep -Fxq ${test_name} ${TESTS_DIR}/skip.txt ; then
-      echo -e "${BOLD}Skipping ${test_name}${ENDCOLOR}"
-      return
+      if [[ ! -z ${MULTI} ]]; then
+        echo -e "${BOLD}Skipping ${test_name}${ENDCOLOR}"
+        return
+      fi
     else
       # unsafeFlags doesn't work on Linux :(
       if [[ -f $SPM_FILE ]] && [[ `uname` == 'Linux' ]]; then 
