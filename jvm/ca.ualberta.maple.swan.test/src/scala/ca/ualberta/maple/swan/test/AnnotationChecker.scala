@@ -102,14 +102,17 @@ class AnnotationChecker extends Runnable {
             if (pos.path.endsWith(f.getName)) { // copied file has different path than original
               if (annotations.contains(pos.line)) {
                 var idx = -1
-                annotations(pos.line).zipWithIndex.foreach(a => {
+                val annot = annotations(pos.line)
+                annot.zipWithIndex.foreach(a => {
                   if (a._1.name == r.spec.name && a._1.tpe == tpe) {
                     idx = a._2
                   }
                 })
                 if (idx > -1) {
-                  annotations(pos.line).remove(idx)
-                  if (annotations(pos.line).isEmpty) { annotations.remove(pos.line) }
+                  if (annot(idx).status.isEmpty) annot.remove(idx)
+                  if (annot.isEmpty) {
+                    annotations.remove(pos.line)
+                  }
                 }
               } else {
                 failure = true
@@ -126,6 +129,9 @@ class AnnotationChecker extends Runnable {
           if (a.status.isEmpty || a.status.get != "fn") {
             failure = true
             System.err.println("No matching path node for annotation: //!" + a.name + "!" + a.tpe + " on line " + a.line)
+          } else {
+            failure = true
+            System.err.println("Annotation is not an FN: //!" + a.name + "!" + a.tpe + "!fn" + " on line " + a.line)
           }
         })
       })

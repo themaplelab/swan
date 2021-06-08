@@ -44,6 +44,7 @@ class SWANCallGraph(val module: ModuleGroup) extends CallGraph {
     ".__deallocating_deinit",
     ".deinit",
     ".modify"
+    // reabstraction thunk helper from*
   )
 
   // TODO: verify if deterministic (usage of HashSets)

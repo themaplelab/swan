@@ -357,6 +357,9 @@ class SymbolTable extends mutable.HashMap[String, SymbolTableEntry] {
       super.put(key, SymbolTableEntry.operator(value, operator))
     }
   }
+  def replace(key: String, entry: SymbolTableEntry): Unit = {
+    super.put(key, entry)
+  }
 }
 
 sealed trait SymbolTableEntry extends Serializable

@@ -239,7 +239,7 @@ bb0(%0 : $`*Optional<τ_0_1>`, %1 : $`*τ_0_0`, %2 : $`Dictionary<τ_0_0, τ_0_1
 // Write dictionary data and default value to %0
 func [model] @`Swift.Dictionary.subscript.getter : (_: A, default: @autoclosure () -> B) -> B` : $`τ_0_1` {
 bb0(%0 : $`*τ_0_1`, %1 : $`*τ_0_0`, %2 : $`τ_0_1`, %3 : $`Dictionary<τ_0_0, τ_0_1>`):
-  val = field_read %3, 1, $`τ_0_1`
+  val = pointer_read %3, $`τ_0_1`
   pointer_write [weak] val to %0
   pointer_write [weak] %2 to %0
   ret = pointer_read %0, $`τ_0_1`

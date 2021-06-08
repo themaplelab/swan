@@ -19,8 +19,8 @@
 
 package ca.ualberta.maple.swan.ir.canonical
 
-import ca.ualberta.maple.swan.ir.Exceptions.{IncompleteRawSWIRLException, IncorrectRawSWIRLException, UnexpectedSILFormatException}
-import ca.ualberta.maple.swan.ir.{Argument, BinaryOperation, Block, BlockRef, CanBlock, CanFunction, CanModule, CanOperator, CanOperatorDef, CanTerminator, CanTerminatorDef, Constants, FieldWriteAttribute, Function, Literal, Module, Operator, RawOperatorDef, RawTerminatorDef, SwitchCase, SwitchEnumCase, Symbol, SymbolRef, SymbolTable, Terminator, Type, UnaryOperation, WithResult}
+import ca.ualberta.maple.swan.ir.Exceptions.{ExperimentalException, IncompleteRawSWIRLException, IncorrectRawSWIRLException, UnexpectedSILFormatException}
+import ca.ualberta.maple.swan.ir.{Argument, BinaryOperation, Block, BlockRef, CanBlock, CanFunction, CanModule, CanOperator, CanOperatorDef, CanTerminator, CanTerminatorDef, Constants, FieldWriteAttribute, Function, Literal, Module, Operator, RawOperatorDef, RawTerminatorDef, SwitchCase, SwitchEnumCase, Symbol, SymbolRef, SymbolTable, SymbolTableEntry, Terminator, Type, UnaryOperation, WithResult}
 import ca.ualberta.maple.swan.utils.Logging
 import org.jgrapht.Graph
 import org.jgrapht.graph.{DefaultDirectedGraph, DefaultEdge}
@@ -47,6 +47,7 @@ class SWIRLPass {
       val canFunction = new CanFunction(f.attribute, f.name, f.tpe, args, blocks, f.refTable,
         f.instantiatedTypes, new SymbolTable(), cfg)
       generateSymbolTable(canFunction)
+      removeThunkApplication(canFunction)
       functions.append(canFunction)
     })
     Logging.printTimeStamp(1, startTime, "passes", module.functions.length, "functions")
@@ -81,6 +82,69 @@ class SWIRLPass {
       }
     })
   }
+
+  /**
+   * Converts and apply statements that apply thunks into assignments.
+   * Assumes thunk function references are simple and intra-procedural,
+   * and thunk apply has one argument.
+   *
+   * This is likely a naive implementation. It also assumes that a thunk
+   * can take a closure function reference that expects no arguments as an
+   * argument (SWAN-24).
+   *
+   * TODO: Not exactly ideal to have an entire pass for this, but the symbol
+   *   table needs to be generated first.
+   */
+  def removeThunkApplication(function: CanFunction): Unit = {
+    function.blocks.foreach(b => {
+      b.operators.zipWithIndex.foreach(opDefIdx => {
+        opDefIdx._1.operator match {
+          case apply: Operator.apply => {
+            function.symbolTable(apply.functionRef.name) match {
+              case SymbolTableEntry.operator(_, operator) => {
+                operator match {
+                  case Operator.functionRef(_, name) => {
+                    if (name.startsWith("reabstraction thunk helper from ")) {
+                      val arg = apply.arguments(0)
+                      var argIsFuncRef = false
+                      function.symbolTable(arg.name) match {
+                        case SymbolTableEntry.operator(_, operator) => {
+                          operator match {
+                            case Operator.functionRef(_, name) => {
+                              if (name.startsWith("reabstraction thunk helper from ")) {
+                                throw new ExperimentalException("unexpected: thunk reference given to a thunk")
+                              }
+                              argIsFuncRef = true
+                            }
+                            case _ =>
+                          }
+                        }
+                        case _ =>
+                      }
+                      val replacement = {
+                        if (argIsFuncRef) {
+                          new CanOperatorDef(Operator.apply(apply.result, arg, new ArrayBuffer[SymbolRef]()), opDefIdx._1.position)
+                        } else {
+                          new CanOperatorDef(Operator.assign(apply.result, arg), opDefIdx._1.position)
+                        }
+                      }
+                      b.operators.remove(opDefIdx._2)
+                      b.operators.insert(opDefIdx._2, replacement)
+                      function.symbolTable.replace(apply.result.ref.name, SymbolTableEntry.operator(apply.result, replacement.operator))
+                    }
+                  }
+                  case _ =>
+                }
+              }
+              case _ =>
+            }
+          }
+          case _ =>
+        }
+      })
+    })
+  }
+
 
   /**
    * Converts all raw-only instructions in the given module to

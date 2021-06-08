@@ -994,9 +994,9 @@ class SWIRLGen {
   def visitPartialApply(r: Option[SILResult], I: SILOperator.partialApply, ctx: Context): ArrayBuffer[RawInstructionDef] = {
     // TODO: Need to first understand partial apply dataflow semantics.
     //  The return type is the partially-applied function type.
-    // For now, just create a new value
+    // For now, just treat as regular apply (special thunk case is handled in SWIRLPass)
     val result = getSingleResult(r, Utils.SILFunctionTypeToReturnType(I.tpe), ctx)
-    makeOperator(ctx, makeNewOperator(result, ctx))
+    makeOperator(ctx, Operator.apply(result, makeSymbolRef(I.value, ctx), stringArrayToSymbolRefArrayBuffer(I.arguments, ctx)))
   }
 
   @throws[UnexpectedSILFormatException]

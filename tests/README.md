@@ -85,3 +85,7 @@ Annotation format:
 //!testing!sink!fp
 ```
 Add Jira bug numbers for FNs and FPs.
+
+### Writing models
+
+It's quicker to add a `.swirl` file inside of the test case you want to write and test a new model for, than to recompile SWAN with the new `models.swirl` resource file. Once you know the model works, you can copy it to `models.swirl`.

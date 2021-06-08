@@ -48,7 +48,7 @@ We aim to provide developers and researchers with an easy-to-use and well-docume
 - [SIL To SWIRL Spec](https://github.com/themaplelab/swan/wiki/SIL-To-SWIRL-Spec)
 - [IDE Configuration](https://github.com/themaplelab/swan/wiki/IDE-Configuration)
 
-## Get started
+## Getting started
 
 For now, you will need to build the framework to use SWAN, but soon we will make a release available.
 
