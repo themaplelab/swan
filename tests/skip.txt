@@ -7,6 +7,3 @@ FlowDroidListing2
 
 # SWAN-32
 FieldSensitivity2
-
-# Fails only on Xcode 12.4
-closures

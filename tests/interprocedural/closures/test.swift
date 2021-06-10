@@ -70,15 +70,20 @@ func test_closure_autoclosure_return() {
   foo(sourced); //!testing!source!fn //SWAN-34
 }
 
+/* This test only works on Xcode 12.5 because it happens to use a thunk
+   to call the closure. However, closureArr[0]() doesn't actually call
+   the closure. See 12.4 vs. 12.5 grouped.swirl.
+   SWAN-34.
 func test_closure_array() {
-  var closureArr:[()->()] = []
+  var closureArr:[()->()] = [];
   let closure = {
     let sourced = source(); 
-    sink(sunk: sourced); //!testing!source//!testing!sink
+    sink(sunk: sourced);
   }
   closureArr.append(closure);
-  closureArr[0]()
+  closureArr[0]();
 }
+*/
 
 func test_closure_array_escaping() {
   var closureArr:[()->()] = [];
