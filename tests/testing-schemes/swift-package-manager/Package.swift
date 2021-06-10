@@ -1,4 +1,4 @@
-// swift-tools-version:5.4
+// swift-tools-version:5.1
 
 import PackageDescription
 
@@ -11,7 +11,7 @@ let package = Package(
         .package(url: "https://github.com/mtynior/ColorizeSwift.git", from: "1.5.0")
     ],
     targets: [
-        .executableTarget(
+        .target(
             name: "test",
             dependencies: ["ColorizeSwift"],
             swiftSettings: [

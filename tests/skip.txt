@@ -7,5 +7,3 @@ FlowDroidListing2
 
 # SWAN-32
 FieldSensitivity2
-
-swift-package-manager
