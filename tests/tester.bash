@@ -97,7 +97,7 @@ test_directory() {
     fi
     if [ -f ${SPM_FILE} ]; then
       mkdir ${TEST_TMPDIR}/Sources/
-      cp -r Sources/ ${TEST_TMPDIR}/Sources/
+      cp -r Sources/. ${TEST_TMPDIR}/Sources/
       cp ${SPM_FILE} ${TEST_TMPDIR}
     fi
     if [[ ! -z ${CUSTOM_SPEC} ]]; then
