@@ -23,6 +23,8 @@ if platform.system() == "Darwin":
   if version_search:
     if int(version_search.group(1)) >= 5:
       COMMAND.append("--use-integrated-swift-driver")
+else: # Linux requires this flag, too
+  COMMAND.append("--use-integrated-swift-driver")
 
 with open("Package.swift") as f:
   if "unsafeFlags" not in f.read():
