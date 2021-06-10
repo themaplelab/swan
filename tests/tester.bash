@@ -138,7 +138,7 @@ test_directory() {
     
     # cleanup
     if [[ -z ${OUTPUT_DIR} ]]; then
-      rm -rf ${TEMP_TMPDIR}
+      rm -rf ${TEST_TMPDIR}
     fi
     cd ${curr}
 

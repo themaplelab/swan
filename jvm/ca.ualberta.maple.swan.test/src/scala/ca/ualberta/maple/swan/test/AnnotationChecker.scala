@@ -109,7 +109,13 @@ class AnnotationChecker extends Runnable {
                   }
                 })
                 if (idx > -1) {
-                  if (annot(idx).status.isEmpty) annot.remove(idx)
+                  val a = annot(idx)
+                  if (a.status.isEmpty || a.status.get == "fp") {
+                    annot.remove(idx)
+                  } else if (a.status.get == "fn") {
+                    failure = true
+                    System.err.println("Annotation is not an FN: //!" + a.name + "!" + a.tpe + "!fn" + " on line " + a.line)
+                  }
                   if (annot.isEmpty) {
                     annotations.remove(pos.line)
                   }
@@ -128,10 +134,8 @@ class AnnotationChecker extends Runnable {
         v._2.foreach(a => {
           if (a.status.isEmpty || a.status.get != "fn") {
             failure = true
-            System.err.println("No matching path node for annotation: //!" + a.name + "!" + a.tpe + " on line " + a.line)
-          } else {
-            failure = true
-            System.err.println("Annotation is not an FN: //!" + a.name + "!" + a.tpe + "!fn" + " on line " + a.line)
+            System.err.println("No matching path node for annotation: //!" + a.name + "!" + a.tpe +
+              { if (a.status.nonEmpty) "!" + a.status.get else ""} + " on line " + a.line)
           }
         })
       })
