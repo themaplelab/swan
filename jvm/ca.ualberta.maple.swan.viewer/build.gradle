@@ -17,7 +17,7 @@ dependencies {
     implementation project(":ca.ualberta.maple.swan.parser")
     implementation project(":ca.ualberta.maple.swan.ir")
 
-    implementation 'org.scala-lang:scala-library:'+project.property("SCALA_VERSION")
+    implementation 'org.scala-lang:scala3-library_3:'+project.property("SCALA_VERSION")
 }
 
 run {

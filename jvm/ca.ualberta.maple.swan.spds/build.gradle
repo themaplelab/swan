@@ -44,7 +44,7 @@ dependencies {
 
     compile 'com.lihaoyi:upickle_2.13:1.3.13'
 
-    implementation 'org.scala-lang:scala-library:'+project.property("SCALA_VERSION")
+    implementation 'org.scala-lang:scala3-library_3:'+project.property("SCALA_VERSION")
 
     testImplementation('org.junit.jupiter:junit-jupiter-api:5.4.2')
     testImplementation('org.junit.jupiter:junit-jupiter-params:5.4.2')

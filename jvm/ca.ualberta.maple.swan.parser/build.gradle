@@ -33,7 +33,7 @@ sourceCompatibility = 1.8
 dependencies {
     implementation project(":ca.ualberta.maple.swan.utils")
 
-    implementation 'org.scala-lang:scala-library:'+project.property("SCALA_VERSION")
+    implementation 'org.scala-lang:scala3-library_3:'+project.property("SCALA_VERSION")
 
     testImplementation('org.junit.jupiter:junit-jupiter-api:5.4.2')
     testImplementation('org.junit.jupiter:junit-jupiter-params:5.4.2')

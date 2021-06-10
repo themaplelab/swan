@@ -35,7 +35,7 @@ dependencies {
     implementation project(":ca.ualberta.maple.swan.utils")
     implementation project(":ca.ualberta.maple.swan.spds")
 
-    implementation 'org.scala-lang:scala-library:'+project.property("SCALA_VERSION")
+    implementation 'org.scala-lang:scala3-library_3:'+project.property("SCALA_VERSION")
 
     implementation 'info.picocli:picocli:4.6.1'
 
