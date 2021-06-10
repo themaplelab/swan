@@ -57,7 +57,9 @@ for i in file_set:
 print("Running " + " ".join(COMMAND))
 start_time = time.time()
 output = subprocess.run(COMMAND, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-txt = output.stdout.decode('utf-8')
+txt = output.stderr.decode('utf-8')
+if platform.system() == "Darwin":
+  txt = output.stdout.decode('utf-8')
 
 print("swift build finished in %ds" % (time.time() - start_time))
 
