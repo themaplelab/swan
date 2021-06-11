@@ -15,8 +15,6 @@ The SWAN version described in our ESEC/FSE 2020 [paper](https://karimali.ca/reso
 
 SWAN is a static program analysis framework that enables deep dataflow analysis for Swift applications (incl. iOS/macOS). Its applications include finding API misuses using typestate analysis and detecting security vulnerabilities using taint analysis.
 
-SWAN parses plain-text Swift Intermediate Language (SIL). We have developed an intermediate representation (IR), called *SWIRL*. It is simple, well documented, and easy to understand. Any analysis engine should be able to analyze SWIRL without having to handle complex semantics.
-
 We aim to provide developers and researchers with an easy-to-use and well-documented platform for analyzing Swift applications.
 
 :construction: **SWAN is WIP. However, we are working on a pre-release to get the community involved. We will release an extensive video playlist explaining how SWAN works, which should enable you to experiment with SWAN.**
@@ -25,7 +23,7 @@ We aim to provide developers and researchers with an easy-to-use and well-docume
 
 - Wrappers for `xcodebuild` and `swiftc` that build and dump SIL
 - SIL parser (99% coverage, up to 100k lines/second)
-- Well documented intermediate representation, called SWIRL, that is easy to convert to other IRs
+- Well documented intermediate representation (IR), called *SWIRL*, that is easy to convert to other IRs
 - Ability to write models for black-box functions with SWIRL
 - Modular IR translation pipeline (for integration with other engines)
 - Development tool for viewing Swift, SIL, and SWIRL side-by-side
@@ -38,7 +36,7 @@ We aim to provide developers and researchers with an easy-to-use and well-docume
 ### Currently working on
 
 - typestate analysis with the eventual goal of integrating [CogniCrypt](https://github.com/CROSSINGTUD/CryptoAnalysis) into SWAN
-- Swift Standard Library modeling
+- Language and Swift Standard Library modeling
 - iOS lifecycle support
 - ... and much more!
 
