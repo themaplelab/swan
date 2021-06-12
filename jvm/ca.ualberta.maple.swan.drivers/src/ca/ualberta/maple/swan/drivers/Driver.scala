@@ -23,11 +23,15 @@ import java.io.{File, FileWriter}
 import java.nio.charset.StandardCharsets
 import java.nio.file.{Files, Paths}
 
+import ca.ualberta.maple.swan.drivers.Driver.{taintAnalysisResultsFileName, typeStateAnalysisResultsFileName}
 import ca.ualberta.maple.swan.ir._
 import ca.ualberta.maple.swan.ir.canonical.SWIRLPass
 import ca.ualberta.maple.swan.ir.raw.SWIRLGen
 import ca.ualberta.maple.swan.parser.{SILModule, SILParser}
-import ca.ualberta.maple.swan.spds.analysis.{AnalysisType, TaintAnalysis, TaintAnalysisOptions}
+import ca.ualberta.maple.swan.spds.analysis.TaintAnalysis.TaintAnalysisResults
+import ca.ualberta.maple.swan.spds.analysis.TypeStateAnalysis.TypeStateAnalysisResults
+import ca.ualberta.maple.swan.spds.analysis.{AnalysisType, StateMachineFactory, TaintAnalysis, TaintAnalysisOptions, TypeStateAnalysis}
+import ca.ualberta.maple.swan.spds.structures.SWANCallGraph
 import ca.ualberta.maple.swan.utils.Logging
 import org.apache.commons.io.{FileExistsException, FileUtils, IOUtils}
 import picocli.CommandLine
@@ -36,6 +40,10 @@ import picocli.CommandLine.{Command, Option, Parameters}
 import scala.collection.mutable.ArrayBuffer
 
 object Driver {
+
+  val taintAnalysisResultsFileName = "taint-results.json"
+  val typeStateAnalysisResultsFileName = "typestate-results.json"
+
   /* Because this driver can be invoked programmatically, most picocli options
    * (@Option) should have a matching field in Driver.Options.
    */
@@ -44,7 +52,8 @@ object Driver {
     var single = false
     var cache = false
     var dumpFunctionNames = false
-    var spec: scala.Option[File] = None
+    var taintAnalysisSpec: scala.Option[File] = None
+    var typeStateAnalysisSpec: scala.Option[File] = None
     var pathTracking = false
     var silModuleCB: SILModule => Unit = _
     var rawSwirlModuleCB: Module => Unit = _
@@ -61,8 +70,11 @@ object Driver {
     def dumpFunctionNames(v: Boolean): Options = {
       this.dumpFunctionNames = v; this
     }
-    def spec(v: File): Options = {
-      this.spec = scala.Option(v); this
+    def taintAnalysisSpec(v: File): Options = {
+      this.taintAnalysisSpec = scala.Option(v); this
+    }
+    def typeStateAnalysisSpec(v: File): Options = {
+      this.typeStateAnalysisSpec = scala.Option(v); this
     }
     def pathTracking(v: Boolean): Options = {
       this.pathTracking = v; this
@@ -126,9 +138,13 @@ class Driver extends Runnable {
     description = Array("Dump functions names to file in debug directory (e.g., for finding sources/sinks)."))
   private val dumpFunctionNames = new Array[Boolean](0)
 
-  @Option(names = Array("-j", "--json-spec"),
-    description = Array("JSON specification file for analysis (necessary for analysis)."))
-  private val spec: File = null
+  @Option(names = Array("-t", "--taint-analysis-spec"),
+    description = Array("JSON specification file for taint analysis."))
+  private val taintAnalysisSpec: File = null
+
+  @Option(names = Array("-e", "--typestate-analysis-spec"),
+    description = Array("JSON specification file for typestate analysis."))
+  private val typeStateAnalysisSpec: File = null
 
   @Option(names = Array("-p", "--path-tracking"),
     description = Array("Enable path tracking for taint analysis (experimental and is known to hang)."))
@@ -160,7 +176,8 @@ class Driver extends Runnable {
       .cache(useCache.nonEmpty)
       .single(singleThreaded.nonEmpty)
       .dumpFunctionNames(dumpFunctionNames.nonEmpty)
-      .spec(spec)
+      .taintAnalysisSpec(taintAnalysisSpec)
+      .typeStateAnalysisSpec(typeStateAnalysisSpec)
       .pathTracking(pathTracking.nonEmpty)
     runActual(options, inputFile)
   }
@@ -272,34 +289,35 @@ class Driver extends Runnable {
       })
       fw.close()
     }
-    if (options.spec.nonEmpty) {
-      val f = Paths.get(swanDir.getPath, "results.json").toFile
-      val fw = new FileWriter(f)
-      try {
-        val specs = TaintAnalysis.Specification.parse(options.spec.get)
-        val r = new ArrayBuffer[ujson.Obj]
+    if (options.taintAnalysisSpec.nonEmpty || options.typeStateAnalysisSpec.nonEmpty) {
+      val cg = new SWANCallGraph(group)
+      // System.out.println(cg)
+      if (options.taintAnalysisSpec.nonEmpty) {
+        val allResults = new ArrayBuffer[TaintAnalysisResults]()
+        val specs = TaintAnalysis.Specification.parse(options.taintAnalysisSpec.get)
         specs.foreach(spec => {
           val analysisOptions = new TaintAnalysisOptions(
             if (options.pathTracking) AnalysisType.ForwardPathTracking
             else AnalysisType.Forward)
           val analysis = new TaintAnalysis(group, spec, analysisOptions)
-          val results = analysis.run()
+          val results = analysis.run(cg)
           Logging.printInfo(results.toString)
-          val json = ujson.Obj("name" -> spec.name)
-          val paths = new ArrayBuffer[ujson.Value]
-          results.paths.foreach(path => {
-            val jsonPath = ujson.Obj("source" -> path.source)
-            jsonPath("sink") = path.sink
-            jsonPath("path") = path.nodes.filter(_._2.nonEmpty).map(_._2.get.toString)
-            paths.append(jsonPath)
-          })
-          json("paths") = paths
-          r.append(json)
+          allResults.append(results)
         })
-        val finalJson = ujson.Value(r)
-        fw.write(finalJson.render(2))
-      } finally {
-        fw.close()
+        val f = Paths.get(swanDir.getPath, taintAnalysisResultsFileName).toFile
+        TaintAnalysis.Specification.writeResults(f, allResults)
+      }
+      if (options.typeStateAnalysisSpec.nonEmpty) {
+        val allResults = new ArrayBuffer[TypeStateAnalysisResults]()
+        val specs = StateMachineFactory.parseSpecification(options.typeStateAnalysisSpec.get)
+        specs.foreach(spec => {
+          val analysis = new TypeStateAnalysis(cg, StateMachineFactory.make(spec))
+          val results = analysis.executeAnalysis(spec)
+          Logging.printInfo(results.toString)
+          allResults.append(results)
+        })
+        val f = Paths.get(swanDir.getPath, typeStateAnalysisResultsFileName).toFile
+        StateMachineFactory.Specification.writeResults(f, allResults)
       }
     }
     group

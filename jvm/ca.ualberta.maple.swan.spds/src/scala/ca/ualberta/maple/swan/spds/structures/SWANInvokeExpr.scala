@@ -32,7 +32,29 @@ class SWANInvokeExpr(val stmt: ApplyFunctionRef, val method: SWANMethod) extends
     args.add(method.addVal(SWANVal.Argument(method.delegate.getSymbol(arg._1.name), arg._2, method)))
   })
 
+  var declaredMethod: DeclaredMethod = new DeclaredMethod(this) {
+    override def isNative: Boolean = ???
+    override def getSubSignature: String = ""
+    override def getName: String = ""
+    override def isStatic: Boolean = ???
+    override def isConstructor: Boolean = ???
+    override def getSignature: String = ???
+    override def getDeclaringClass: WrappedClass = ???
+  }
+
   def getFunctionRef: Val = stmt.getFunctionRef
+
+  def updateDeclaredMethod(name: String): Unit = {
+    declaredMethod = new DeclaredMethod(this) {
+      override def isNative: Boolean = ???
+      override def getSubSignature: String = name
+      override def getName: String = name
+      override def isStatic: Boolean = ???
+      override def isConstructor: Boolean = ???
+      override def getSignature: String = ???
+      override def getDeclaringClass: WrappedClass = ???
+    }
+  }
 
   override def getArg(index: Int): Val = args.get(index)
 
@@ -42,15 +64,7 @@ class SWANInvokeExpr(val stmt: ApplyFunctionRef, val method: SWANMethod) extends
 
   override def getBase: Val = ???
 
-  override def getMethod: DeclaredMethod = new DeclaredMethod(this) {
-    override def isNative: Boolean = ???
-    override def getSubSignature: String = ???
-    override def getName: String = "" // Boomerang checks this against Java method names -.-
-    override def isStatic: Boolean = ???
-    override def isConstructor: Boolean = ???
-    override def getSignature: String = ???
-    override def getDeclaringClass: WrappedClass = ???
-  }
+  override def getMethod: DeclaredMethod = declaredMethod
 
   override def isSpecialInvokeExpr: Boolean = false
 

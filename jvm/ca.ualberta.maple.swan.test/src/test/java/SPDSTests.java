@@ -26,6 +26,7 @@ import ca.ualberta.maple.swan.parser.SILPrinterOptions;
 import ca.ualberta.maple.swan.spds.analysis.AnalysisType;
 import ca.ualberta.maple.swan.spds.analysis.TaintAnalysis;
 import ca.ualberta.maple.swan.spds.analysis.TaintAnalysisOptions;
+import ca.ualberta.maple.swan.spds.structures.SWANCallGraph;
 import ca.ualberta.maple.swan.test.TestDriver;
 import ca.ualberta.maple.swan.utils.Logging;
 import org.junit.jupiter.api.Test;
@@ -80,8 +81,9 @@ public class SPDSTests {
         Logging.printInfo(result);
         TaintAnalysisOptions analysisOptions =
                 new TaintAnalysisOptions(AnalysisType.Forward$.MODULE$);
+        SWANCallGraph cg = new SWANCallGraph(group);
         TaintAnalysis analysis = new TaintAnalysis(group, spec, analysisOptions);
-        TaintAnalysis.TaintAnalysisResults results = analysis.run();
+        TaintAnalysis.TaintAnalysisResults results = analysis.run(cg);
         Logging.printInfo(results.toString());
     }
 
@@ -116,8 +118,9 @@ public class SPDSTests {
         Logging.printInfo(result);
         TaintAnalysisOptions analysisOptions =
                 new TaintAnalysisOptions(AnalysisType.Forward$.MODULE$);
+        SWANCallGraph cg = new SWANCallGraph(group);
         TaintAnalysis analysis = new TaintAnalysis(group, spec, analysisOptions);
-        TaintAnalysis.TaintAnalysisResults results = analysis.run();
+        TaintAnalysis.TaintAnalysisResults results = analysis.run(cg);
         Logging.printInfo(results.toString());
     }
 
@@ -137,8 +140,9 @@ public class SPDSTests {
         Logging.printInfo(result);
         TaintAnalysisOptions analysisOptions =
                 new TaintAnalysisOptions(AnalysisType.Forward$.MODULE$);
+        SWANCallGraph cg = new SWANCallGraph(group);
         TaintAnalysis analysis = new TaintAnalysis(group, spec, analysisOptions);
-        TaintAnalysis.TaintAnalysisResults results = analysis.run();
+        TaintAnalysis.TaintAnalysisResults results = analysis.run(cg);
         Logging.printInfo(results.toString());
     }
 }

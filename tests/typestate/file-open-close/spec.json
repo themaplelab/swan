@@ -1,0 +1,49 @@
+[
+  {
+    "name": "FileOpenClose",
+    "type": "File",
+    "states": [
+      {
+        "name": "INIT",
+        "error": false,
+        "initial": true,
+        "accepting": true
+      },
+      {
+        "name": "OPENED",
+        "error": true,
+        "initial": false,
+        "accepting": false
+      },
+      {
+        "name": "CLOSED",
+        "error": false,
+        "initial": false,
+        "accepting": true
+      }
+    ],
+    "transitions": [
+      {
+        "from": "INIT",
+        "method": ".*open.*",
+        "param": "Param1",
+        "to": "OPENED",
+        "type": "OnCall"
+      },
+      {
+        "from": "INIT",
+        "method": ".*close.*",
+        "param": "Param1",
+        "to": "CLOSED",
+        "type": "OnCall"
+      },
+      {
+        "from": "OPENED",
+        "method": ".*close.*",
+        "param": "Param1",
+        "to": "CLOSED",
+        "type": "OnCall"
+      }
+    ]
+  }
+]

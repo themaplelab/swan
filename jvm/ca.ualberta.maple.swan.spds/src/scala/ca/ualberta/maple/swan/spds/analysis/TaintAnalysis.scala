@@ -19,7 +19,7 @@
 
 package ca.ualberta.maple.swan.spds.analysis
 
-import java.io.File
+import java.io.{File, FileWriter}
 import java.util
 
 import boomerang.results.ForwardBoomerangResults
@@ -47,10 +47,7 @@ class TaintAnalysis(val group: ModuleGroup,
                                  val variable: Val, val sources: mutable.HashSet[SWANMethod],
                                  val sink: SWANMethod) extends BackwardQuery(edge, variable)
 
-  def run(): TaintAnalysisResults = {
-    val cg = new SWANCallGraph(group)
-    cg.constructStaticCG()
-    // System.out.println(cg)
+  def run(cg: SWANCallGraph): TaintAnalysisResults = {
     val options = getBoomerangOptions
     val allPaths = new ArrayBuffer[Path]
     opts.tpe match {
@@ -229,7 +226,34 @@ object TaintAnalysis {
   class Specification(val name: String,
                       val sources: mutable.HashSet[String],
                       val sinks: mutable.HashSet[String],
-                      val sanitizers: mutable.HashSet[String])
+                      val sanitizers: mutable.HashSet[String]) {
+    override def toString: String = {
+      val sb = new StringBuilder()
+      sb.append("  name: ")
+      sb.append(name)
+      sb.append("\n  sources:\n")
+      sources.foreach(src => {
+        sb.append("    ")
+        sb.append(src)
+        sb.append("\n")
+      })
+      sb.append("  sinks:\n")
+      sinks.foreach(sink => {
+        sb.append("    ")
+        sb.append(sink)
+        sb.append("\n")
+      })
+      if (sanitizers.nonEmpty) {
+        sb.append("  sanitizers:\n")
+        sanitizers.foreach(san => {
+          sb.append("    ")
+          sb.append(san)
+          sb.append("\n")
+        })
+      }
+      sb.toString()
+    }
+  }
 
   class Path(val nodes: ArrayBuffer[(CanInstructionDef, Option[Position])], val source: String, val sink: String)
 
@@ -250,6 +274,28 @@ object TaintAnalysis {
       })
       specs
     }
+    def writeResults(f: File, allResults: ArrayBuffer[TaintAnalysisResults]): Unit = {
+      val fw = new FileWriter(f)
+      try {
+        val r = new ArrayBuffer[ujson.Obj]
+        allResults.foreach(results => {
+          val json = ujson.Obj("name" -> results.spec.name)
+          val paths = new ArrayBuffer[ujson.Value]
+          results.paths.foreach(path => {
+            val jsonPath = ujson.Obj("source" -> path.source)
+            jsonPath("sink") = path.sink
+            jsonPath("path") = path.nodes.filter(_._2.nonEmpty).map(_._2.get.toString)
+            paths.append(jsonPath)
+          })
+          json("paths") = paths
+          r.append(json)
+        })
+        val finalJson = ujson.Value(r)
+        fw.write(finalJson.render(2))
+      } finally {
+        fw.close()
+      }
+    }
   }
 
   class TaintAnalysisResults(val paths: ArrayBuffer[Path],
@@ -257,28 +303,7 @@ object TaintAnalysis {
     override def toString: String = {
       val sb = new StringBuilder()
       sb.append("Taint Analysis Results for specification:\n")
-      sb.append("  name: ")
-      sb.append(spec.name)
-      sb.append("\n  sources:\n")
-      spec.sources.foreach(src => {
-        sb.append("    ")
-        sb.append(src)
-        sb.append("\n")
-      })
-      sb.append("  sinks:\n")
-      spec.sinks.foreach(sink => {
-        sb.append("    ")
-        sb.append(sink)
-        sb.append("\n")
-      })
-      if (spec.sanitizers.nonEmpty) {
-        sb.append("  sanitizers:\n")
-        spec.sanitizers.foreach(san => {
-          sb.append("    ")
-          sb.append(san)
-          sb.append("\n")
-        })
-      }
+      sb.append(spec)
       sb.append("\nDetected:\n")
       paths.zipWithIndex.foreach(path => {
         sb.append("  (")

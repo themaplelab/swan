@@ -22,8 +22,11 @@ package ca.ualberta.maple.swan.test
 import java.io.File
 import java.nio.file.{Files, Paths}
 
+import ca.ualberta.maple.swan.drivers.Driver
 import ca.ualberta.maple.swan.ir.{CanInstructionDef, Position}
+import ca.ualberta.maple.swan.spds.analysis.StateMachineFactory
 import ca.ualberta.maple.swan.spds.analysis.TaintAnalysis.{Path, Specification, TaintAnalysisResults}
+import ca.ualberta.maple.swan.spds.analysis.TypeStateAnalysis.TypeStateAnalysisResults
 import ca.ualberta.maple.swan.test.AnnotationChecker.Annotation
 import org.apache.commons.io.FileExistsException
 import picocli.CommandLine
@@ -38,7 +41,7 @@ object AnnotationChecker {
 
   def main(args: Array[String]): Unit = {
     val exitCode = new CommandLine(new AnnotationChecker).execute(args:_*)
-    System.exit(exitCode);
+    System.exit(exitCode)
   }
 
   private class Annotation(val name: String, val tpe: String, val status: Option[String], val line: Int)
@@ -54,15 +57,27 @@ class AnnotationChecker extends Runnable {
     if (!inputFile.exists()) {
       throw new FileExistsException("swan-dir does not exist")
     }
-    val resultsFile = new File(Paths.get(inputFile.getPath, "results.json").toUri)
-    if (!resultsFile.exists()) {
-      throw new FileExistsException("results.json file does not exist in the swan-dir")
+    val taintResultsFile = new File(Paths.get(inputFile.getPath, Driver.taintAnalysisResultsFileName).toUri)
+    if (taintResultsFile.exists()) {
+      checkTaintAnalysisResults(taintResultsFile)
     }
+    val typeStateResultsFile = new File(Paths.get(inputFile.getPath, Driver.typeStateAnalysisResultsFileName).toUri)
+    if (typeStateResultsFile.exists()) {
+      checkTypeStateAnalysisResults(typeStateResultsFile)
+    }
+  }
+
+  private def checkTaintAnalysisResults(resultsFile: File): Unit = {
+    def printErr(s: String, exit: Boolean = false): Unit = {
+      System.err.println("[Taint] " + s)
+      if (exit) System.exit(1)
+    }
+
     val sourceDir = new File(Paths.get(inputFile.getPath, "src").toUri)
     if (!sourceDir.exists()) {
       throw new FileExistsException("src directory does not exist in swan-dir")
     }
-    val results = getResults(resultsFile)
+    val results = getTaintResults(resultsFile)
     var failure = false
     Files.walk(sourceDir.toPath).filter(Files.isRegularFile(_)).forEach(p => {
       val f = new File(p.toUri)
@@ -72,22 +87,20 @@ class AnnotationChecker extends Runnable {
         val line = l._1
         val idx = l._2 + 1
         if (line.contains("//")) {
-            line.split("//").foreach(c => {
+          line.split("//").foreach(c => {
             if (c.startsWith("!")) {
               val components = c.trim.split(" ")(0).split("!")
               val name = components(1)
               val tpe = components(2)
               if (tpe != "sink" && tpe != "source") {
-                System.err.println("invalid annotation type: " + tpe + " at line " + idx + " in\n  " + f.getName)
-                System.exit(1)
+                printErr("Invalid annotation type: " + tpe + " at line " + idx + " in\n  " + f.getName, exit = true)
               }
               if (!annotations.contains(idx)) { annotations.put(idx, new ArrayBuffer[Annotation]())}
               var status: Option[String] = None
               if (components.length > 3) {
                 status = Some(components(3))
                 if (status.get != "fn" && status.get != "fp") {
-                  System.err.println("invalid status type: " + status + " at line " + idx + " in\n  " + f.getName)
-                  System.exit(1)
+                  printErr("invalid status type: " + status + " at line " + idx + " in\n  " + f.getName, exit = true)
                 }
               }
               annotations(idx).append(new Annotation(name, tpe, status, idx))
@@ -114,7 +127,7 @@ class AnnotationChecker extends Runnable {
                     annot.remove(idx)
                   } else if (a.status.get == "fn") {
                     failure = true
-                    System.err.println("Annotation is not an FN: //!" + a.name + "!" + a.tpe + "!fn" + " on line " + a.line)
+                    printErr("Annotation is not an FN: //!" + a.name + "!" + a.tpe + "!fn" + " on line " + a.line)
                   }
                   if (annot.isEmpty) {
                     annotations.remove(pos.line)
@@ -122,7 +135,7 @@ class AnnotationChecker extends Runnable {
                 }
               } else {
                 failure = true
-                System.err.println("Missing " + tpe + " annotation for " + pos.toString)
+                printErr("Missing " + tpe + " annotation for " + pos.toString)
               }
             }
           }
@@ -143,7 +156,92 @@ class AnnotationChecker extends Runnable {
     if (failure) System.exit(1)
   }
 
-  private def getResults(resultsFile: File): ArrayBuffer[TaintAnalysisResults] = {
+  private def checkTypeStateAnalysisResults(resultsFile: File): Unit = {
+    def printErr(s: String, exit: Boolean = false): Unit = {
+      System.err.println("[TypeState] " + s)
+      if (exit) System.exit(1)
+    }
+
+    val sourceDir = new File(Paths.get(inputFile.getPath, "src").toUri)
+    if (!sourceDir.exists()) {
+      throw new FileExistsException("src directory does not exist in swan-dir")
+    }
+    val results = getTypeStateResults(resultsFile)
+    var failure = false
+    Files.walk(sourceDir.toPath).filter(Files.isRegularFile(_)).forEach(p => {
+      val f = new File(p.toUri)
+      val buffer = Source.fromFile(f)
+      val annotations = new mutable.HashMap[Int, ArrayBuffer[Annotation]]
+      buffer.getLines().zipWithIndex.foreach(l => {
+        val line = l._1
+        val idx = l._2 + 1
+        if (line.contains("//")) {
+          line.split("//").foreach(c => {
+            if (c.startsWith("?")) {
+              val components = c.trim.split(" ")(0).split("\\?")
+              val name = components(1)
+              val tpe = components(2)
+              if (tpe != "error") {
+                printErr("Invalid annotation type: " + tpe + " at line " + idx + " in\n  " + f.getName, exit = true)
+              }
+              if (!annotations.contains(idx)) { annotations.put(idx, new ArrayBuffer[Annotation]())}
+              var status: Option[String] = None
+              if (components.length > 3) {
+                status = Some(components(3))
+                if (status.get != "fn" && status.get != "fp") {
+                  printErr("Invalid status type: " + status + " at line " + idx + " in\n  " + f.getName, exit = true)
+                }
+              }
+              annotations(idx).append(new Annotation(name, tpe, status, idx))
+            }
+          })
+        }
+      })
+      buffer.close()
+      results.foreach(r => {
+        r.errors.foreach(pos => {
+          if (pos.path.endsWith(f.getName)) { // copied file has different path than original
+            if (annotations.contains(pos.line)) {
+              var idx = -1
+              val annot = annotations(pos.line)
+              annot.zipWithIndex.foreach(a => {
+                if (a._1.name == r.spec.name) {
+                  idx = a._2
+                }
+              })
+              if (idx > -1) {
+                val a = annot(idx)
+                if (a.status.isEmpty || a.status.get == "fp") {
+                  annot.remove(idx)
+                } else if (a.status.get == "fn") {
+                  failure = true
+                  printErr("Annotation is not an FN: //!" + a.name + "!" + a.tpe + "!fn" + " on line " + a.line)
+                }
+                if (annot.isEmpty) {
+                  annotations.remove(pos.line)
+                }
+              }
+            } else {
+              failure = true
+              printErr("Missing annotation for " + pos.toString)
+            }
+          }
+        })
+      })
+      annotations.foreach(v => {
+        v._2.foreach(a => {
+          if (a.status.isEmpty || a.status.get != "fn") {
+            failure = true
+            printErr("No matching path node for annotation: //!" + a.name + "!" + a.tpe +
+              { if (a.status.nonEmpty) "!" + a.status.get else ""} + " on line " + a.line)
+          }
+        })
+      })
+    })
+    if (failure) System.exit(1)
+  }
+
+  private def getTaintResults(resultsFile: File): ArrayBuffer[TaintAnalysisResults] = {
     val buffer = Source.fromFile(resultsFile)
     val jsonString = buffer.getLines().mkString
     buffer.close()
@@ -166,6 +264,25 @@ class AnnotationChecker extends Runnable {
         }
       })
       ret.append(new TaintAnalysisResults(paths, spec))
+    })
+    ret
+  }
+
+  private def getTypeStateResults(resultsFile: File): ArrayBuffer[TypeStateAnalysisResults] = {
+    val buffer = Source.fromFile(resultsFile)
+    val jsonString = buffer.getLines().mkString
+    buffer.close()
+    val ret = new ArrayBuffer[TypeStateAnalysisResults]
+    val data = ujson.read(jsonString)
+    data.arr.foreach(v => {
+      val spec = new StateMachineFactory.Specification(v("name").str, "", ArrayBuffer.empty, ArrayBuffer.empty)
+      val errors = new ArrayBuffer[Position]()
+      v("errors").arr.foreach(e => {
+        val components = e.str.split(":")
+        val p = new Position(components(0), components(1).toInt, components(2).toInt)
+        errors.append(p)
+      })
+      ret.append(new TypeStateAnalysisResults(errors, spec))
     })
     ret
   }

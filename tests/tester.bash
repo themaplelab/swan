@@ -104,6 +104,9 @@ test_directory() {
       SPEC=${CUSTOM_SPEC}
       cp ${CUSTOM_SPEC} ${TEST_TMPDIR}
     fi
+    if [[ ! -z ${TYPESTATE_SPEC} ]]; then
+      cp ${TYPESTATE_SPEC} ${TEST_TMPDIR}
+    fi
 
     curr=${PWD}
     cd ${TEST_TMPDIR}
@@ -127,10 +130,14 @@ test_directory() {
     for f in ${SIL_PACKAGES}; do
       cp ${TESTS_DIR}/sil-packages/${f} swan-dir/
     done
-    
+
     # run analysis
-    java -jar ${LIB_DIR}/driver.jar -j ${SPEC} -p swan-dir/ ${DRIVER_OPTIONS} > ${ERROR_MESSAGE_FILE}
-    mv ${ERROR_MESSAGE_FILE} driver_log.txt
+    if [[ ! -z ${TYPESTATE_SPEC} ]]; then
+      java -jar ${LIB_DIR}/driver.jar -e ${TYPESTATE_SPEC} -p swan-dir/ ${DRIVER_OPTIONS} > ${ERROR_MESSAGE_FILE}
+    else
+      java -jar ${LIB_DIR}/driver.jar -t ${SPEC} -p swan-dir/ ${DRIVER_OPTIONS} > ${ERROR_MESSAGE_FILE}
+    fi
+    mv ${ERROR_MESSAGE_FILE} driver-log.txt
 
     # check annotations
     java -jar ${LIB_DIR}/annotation.jar swan-dir/ > ${ERROR_MESSAGE_FILE}

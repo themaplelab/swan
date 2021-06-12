@@ -47,8 +47,10 @@ class SWANCallGraph(val module: ModuleGroup) extends CallGraph {
     // reabstraction thunk helper from*
   )
 
+  constructStaticCG()
+
   // TODO: verify if deterministic (usage of HashSets)
-  def constructStaticCG(): Unit = {
+  private def constructStaticCG(): Unit = {
     Logging.printInfo("Constructing Call Graph")
     val startTime = System.nanoTime()
 
@@ -116,6 +118,7 @@ class SWANCallGraph(val module: ModuleGroup) extends CallGraph {
       val blockCount = new mutable.HashMap[Statement, Int]
       def addCGEdge(from: SWANMethod, to: SWANMethod, stmt: SWANStatement.ApplyFunctionRef): Boolean = {
         val edge = new CallGraph.Edge(stmt, to)
+        stmt.invokeExpr.updateDeclaredMethod(to.getName)
         this.addEdge(edge)
       }
       def queryRef(stmt: SWANStatement.ApplyFunctionRef, m: SWANMethod): Unit = {

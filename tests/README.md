@@ -57,6 +57,13 @@ CUSTOM_SPEC=custom-spec.json
 test_directory
 ```
 
+If you want to do typestate analysis, you must provide a specification with `TYPESTATE_SPEC` in `test.bash`. This will disable taint analysis for the test.
+```
+source ../../tester.bash
+TYPESTATE_SPEC=spec.json
+test_directory
+```
+
 ### Skipping tests
 
 You can skip tests by adding their name to `skip.txt`. Currently, you need to specify just the atomic directory, not the relative path (ideally it would be relative path to have non-unique atomic test names). Add a comment, prefixed with `#`, to describe why that test is skipped.
@@ -75,7 +82,7 @@ Variables:
 
 ### Annotations
 
-Annotation format:
+Annotation format for taint analysis:
 ```
 '//!' name '!' 'source' or 'sink' ( '!' 'fn' or 'fp' )?
 
@@ -84,6 +91,16 @@ Annotation format:
 //!testing!source!fn
 //!testing!sink!fp
 ```
+
+Annotation format for typestate analysis:
+```
+'//?' name '?' 'error' ( '!' 'fn' or 'fp' )?
+
+//?FileOpenClose?error
+//?FileOpenClose?error?fn
+//?FileOpenClose?error?fp
+```
+
 Add Jira bug numbers for FNs and FPs.
 
 ### Writing models
