@@ -50,7 +50,7 @@ We aim to provide developers and researchers with an easy-to-use and well-docume
 
 ## Getting started
 
-For now, you will need to build the framework to use SWAN, but soon we will make a release available.
+For now, you will need to build the framework to use SWAN, but we will soon make a release available.
 
 We have tested SWAN on macOS Big Sur Xcode 12.5 and Ubuntu 20.04, Swift 5.4. You need Xcode Command Line Tools installed for macOS, or the latest Swift release for Linux (see [this](https://linuxconfig.org/how-to-install-swift-on-ubuntu-20-04)). Anything involving "Xcode" will not work on Linux, but you should be able to build Swift Package Manager projects. You also need Java 8.
 
@@ -129,7 +129,7 @@ Use the `-t` option and provide a taint analysis JSON specification file like th
 ```
 
 ```
-java -jar driver.jar -t spec.json swan-dir/
+java -jar driver.jar -t taint-spec.json swan-dir/
 ```
 
 ### Typestate Analysis
@@ -202,6 +202,9 @@ Use the `-e` option and provide a typestate analysis JSON specification file lik
   }
 ]
 ```
+```
+java -jar driver.jar -e typestate-spec.json swan-dir/
+```
 
 You can check out [this](https://github.com/CodeShield-Security/SPDS/blob/develop/idealPDS/src/main/java/typestate/impl/statemachines/FileMustBeClosedStateMachineCallToReturn.java) file to see the state machine on which the above specification is based. You can also look at Example 26 starting on page 94 of Johannes Späth's [dissertation](https://johspaeth.github.io/publications/Dissertation.pdf) on SPDS.
 
@@ -235,7 +238,7 @@ Typestate analysis example:
 [{
   "name": "FileOpenClose",
   "errors": [
-    "test.swift:15:5"
+    "test.swift:8:5"
   ]
 }]
 ```
