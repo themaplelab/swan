@@ -142,7 +142,7 @@ Example:
 3:   func open() {}
 4:   func close() {}
 5: }
-6: func test_simple_correct() {
+6: func foo() {
 7:   let f = File()
 8:   f.open()
 9: }
