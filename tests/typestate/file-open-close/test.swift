@@ -35,5 +35,5 @@ func test_interprocedural_incorrect() {
     f.close();
   }
   let f = File();
-  foo_open(f); //?FileOpenClose?error?fn
+  foo_open(f); //?FileOpenClose?error
 }

@@ -10,5 +10,19 @@ func sanitizer(tainted: String) -> String {
     return tainted;
 }
 
-let sourced = source();
-sink(sunk: sourced);
+func test_taint_simple() {
+  let sourced = source();
+  sink(sunk: sourced);
+}
+
+class File {
+  init() {}
+  func open() {}
+  func close() {}
+}
+
+func test_typestate_simple() {
+  let f = File();
+  f.open();
+}
+

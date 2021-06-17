@@ -23,15 +23,12 @@ import ca.ualberta.maple.swan.ir.canonical.SWIRLPass;
 import ca.ualberta.maple.swan.parser.SILModule;
 import ca.ualberta.maple.swan.parser.SILPrinter;
 import ca.ualberta.maple.swan.parser.SILPrinterOptions;
-import ca.ualberta.maple.swan.spds.analysis.AnalysisType;
-import ca.ualberta.maple.swan.spds.analysis.TaintAnalysis;
-import ca.ualberta.maple.swan.spds.analysis.TaintAnalysisOptions;
+import ca.ualberta.maple.swan.spds.analysis.*;
 import ca.ualberta.maple.swan.spds.structures.SWANCallGraph;
 import ca.ualberta.maple.swan.test.TestDriver;
 import ca.ualberta.maple.swan.utils.Logging;
 import org.junit.jupiter.api.Test;
 import scala.collection.mutable.ArrayBuffer;
-import scala.collection.mutable.HashSet;
 
 import java.io.File;
 import java.net.URISyntaxException;
@@ -39,16 +36,21 @@ import java.util.Objects;
 
 public class SPDSTests {
 
-    static TaintAnalysis.Specification spec;
+    static TaintAnalysis.Specification taintSpec;
+    static StateMachineFactory.Specification typeStateSpec;
 
     static {
-        HashSet<String> sources = new HashSet<>();
-        HashSet<String> sinks = new HashSet<>();
-        HashSet<String> sanitizers = new HashSet<>();
-        sources.add("playground.source() -> Swift.String");
-        sinks.add("playground.sink(sunk: Swift.String) -> ()");
-        sanitizers.add("playground.sanitizer(tainted: Swift.String) -> Swift.String");
-        spec = new TaintAnalysis.Specification("Testing", sources, sinks, sanitizers);
+        try {
+            taintSpec = TaintAnalysis.Specification$.MODULE$.parse(new File(Objects.requireNonNull(SPDSTests.class.getClassLoader().getResource("specs/basic-taint-spec.json")).toURI())).head();
+        } catch (URISyntaxException e) {
+            e.printStackTrace();
+        }
+
+        try {
+            typeStateSpec = StateMachineFactory.parseSpecification(new File(Objects.requireNonNull(SPDSTests.class.getClassLoader().getResource("specs/basic-typestate-spec.json")).toURI())).head();
+        } catch (URISyntaxException e) {
+            e.printStackTrace();
+        }
     }
 
     @Test
@@ -82,9 +84,13 @@ public class SPDSTests {
         TaintAnalysisOptions analysisOptions =
                 new TaintAnalysisOptions(AnalysisType.Forward$.MODULE$);
         SWANCallGraph cg = new SWANCallGraph(group);
-        TaintAnalysis analysis = new TaintAnalysis(group, spec, analysisOptions);
-        TaintAnalysis.TaintAnalysisResults results = analysis.run(cg);
-        Logging.printInfo(results.toString());
+        TaintAnalysis taintAnalysis = new TaintAnalysis(group, taintSpec, analysisOptions);
+        TaintAnalysis.TaintAnalysisResults taintResults = taintAnalysis.run(cg);
+        Logging.printInfo(taintResults.toString());
+        TypeStateAnalysis typeStateAnalysis = new TypeStateAnalysis(cg, StateMachineFactory.make(typeStateSpec));
+        TypeStateAnalysis.TypeStateAnalysisResults typeStateAnalysisResults = typeStateAnalysis.executeAnalysis(typeStateSpec);
+        Logging.printInfo(typeStateAnalysisResults.toString());
+
     }
 
     @Test
@@ -119,9 +125,12 @@ public class SPDSTests {
         TaintAnalysisOptions analysisOptions =
                 new TaintAnalysisOptions(AnalysisType.Forward$.MODULE$);
         SWANCallGraph cg = new SWANCallGraph(group);
-        TaintAnalysis analysis = new TaintAnalysis(group, spec, analysisOptions);
-        TaintAnalysis.TaintAnalysisResults results = analysis.run(cg);
-        Logging.printInfo(results.toString());
+        TaintAnalysis taintAnalysis = new TaintAnalysis(group, taintSpec, analysisOptions);
+        TaintAnalysis.TaintAnalysisResults taintResults = taintAnalysis.run(cg);
+        Logging.printInfo(taintResults.toString());
+        TypeStateAnalysis typeStateAnalysis = new TypeStateAnalysis(cg, StateMachineFactory.make(typeStateSpec));
+        TypeStateAnalysis.TypeStateAnalysisResults typeStateAnalysisResults = typeStateAnalysis.executeAnalysis(typeStateSpec);
+        Logging.printInfo(typeStateAnalysisResults.toString());
     }
 
     @Test
@@ -141,8 +150,11 @@ public class SPDSTests {
         TaintAnalysisOptions analysisOptions =
                 new TaintAnalysisOptions(AnalysisType.Forward$.MODULE$);
         SWANCallGraph cg = new SWANCallGraph(group);
-        TaintAnalysis analysis = new TaintAnalysis(group, spec, analysisOptions);
-        TaintAnalysis.TaintAnalysisResults results = analysis.run(cg);
-        Logging.printInfo(results.toString());
+        TaintAnalysis taintAnalysis = new TaintAnalysis(group, taintSpec, analysisOptions);
+        TaintAnalysis.TaintAnalysisResults taintResults = taintAnalysis.run(cg);
+        Logging.printInfo(taintResults.toString());
+        TypeStateAnalysis typeStateAnalysis = new TypeStateAnalysis(cg, StateMachineFactory.make(typeStateSpec));
+        TypeStateAnalysis.TypeStateAnalysisResults typeStateAnalysisResults = typeStateAnalysis.executeAnalysis(typeStateSpec);
+        Logging.printInfo(typeStateAnalysisResults.toString());
     }
 }
