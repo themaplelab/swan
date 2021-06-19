@@ -1640,6 +1640,7 @@ class SILPrinter extends Printer {
       case SILFunctionAttribute.dynamicallyReplacable => print("[dynamically_replacable]")
       case SILFunctionAttribute.alwaysInline => print("[always_inline]")
       case SILFunctionAttribute.noInline => print("[noinline]")
+      case SILFunctionAttribute.globalInitOnceFn => print("[global_init_once_fn]")
       case SILFunctionAttribute.ossa => print("[ossa]")
       case SILFunctionAttribute.serialized => print("[serialized]")
       case SILFunctionAttribute.serializable => print("[serializable]")

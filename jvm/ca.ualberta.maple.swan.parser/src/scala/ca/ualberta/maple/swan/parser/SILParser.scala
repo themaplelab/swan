@@ -1985,6 +1985,7 @@ class SILParser extends SILPrinter {
     if(skip("[dynamically_replacable]")) return SILFunctionAttribute.dynamicallyReplacable
     if(skip("[always_inline]")) return SILFunctionAttribute.alwaysInline
     if(skip("[noinline]")) return SILFunctionAttribute.noInline
+    if(skip("[global_init_once_fn]")) return SILFunctionAttribute.globalInitOnceFn
     if(skip("[ossa]")) return SILFunctionAttribute.ossa
     if(skip("[serialized]")) return SILFunctionAttribute.serialized
     if(skip("[serializable]")) return SILFunctionAttribute.serializable

@@ -572,6 +572,7 @@ object SILFunctionAttribute {
   case object dynamicallyReplacable extends SILFunctionAttribute
   case object alwaysInline extends SILFunctionAttribute
   case object noInline extends SILFunctionAttribute
+  case object globalInitOnceFn extends SILFunctionAttribute
   case object ossa extends SILFunctionAttribute
   case object serialized extends SILFunctionAttribute
   case object serializable extends SILFunctionAttribute
