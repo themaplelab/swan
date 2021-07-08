@@ -84,7 +84,7 @@ public class SPDSTests {
         ModuleGroup group = TestDriver.run(silFile, options);
         SWIRLPrinterOptions opts = new SWIRLPrinterOptions().genLocationMap(true).printLineNumber(true);
         String result = new SWIRLPrinter().print(group, opts);
-        Logging.printInfo(result);
+        /* Logging.printInfo(result);
         TaintAnalysisOptions analysisOptions =
                 new TaintAnalysisOptions(AnalysisType.Forward$.MODULE$);
         SWANCallGraph cg = new CallGraphConstruction(group).construct()._1();
@@ -93,7 +93,7 @@ public class SPDSTests {
         Logging.printInfo(taintResults.toString());
         TypeStateAnalysis typeStateAnalysis = new TypeStateAnalysis(cg, typeStateSpec.make(cg), typeStateSpec);
         TypeStateResults typeStateAnalysisResults = typeStateAnalysis.executeAnalysis();
-        Logging.printInfo(typeStateAnalysisResults.toString());
+        Logging.printInfo(typeStateAnalysisResults.toString()); */
     }
 
     @Test
@@ -124,16 +124,16 @@ public class SPDSTests {
         ModuleGroup group = TestDriver.run(silFile, options);
         SWIRLPrinterOptions opts = new SWIRLPrinterOptions().genLocationMap(true).printLineNumber(true);
         String result = new SWIRLPrinter().print(group, opts);
-        Logging.printInfo(result);
+        // Logging.printInfo(result);
         TaintAnalysisOptions analysisOptions =
                 new TaintAnalysisOptions(AnalysisType.Forward$.MODULE$);
         SWANCallGraph cg = new CallGraphConstruction(group).construct()._1();
         TaintAnalysis taintAnalysis = new TaintAnalysis(taintSpec, analysisOptions);
         TaintResults taintResults = taintAnalysis.run(cg);
-        Logging.printInfo(taintResults.toString());
+        // Logging.printInfo(taintResults.toString());
         TypeStateAnalysis typeStateAnalysis = new TypeStateAnalysis(cg, typeStateSpec.make(cg), typeStateSpec);
         TypeStateResults typeStateAnalysisResults = typeStateAnalysis.executeAnalysis();
-        Logging.printInfo(typeStateAnalysisResults.toString());
+        // Logging.printInfo(typeStateAnalysisResults.toString());
     }
 
     @Test
@@ -149,15 +149,15 @@ public class SPDSTests {
         ModuleGroup group = ModuleGrouper.group(modules, null, null);
         SWIRLPrinterOptions opts = new SWIRLPrinterOptions().genLocationMap(true).printLineNumber(true);
         String result = new SWIRLPrinter().print(group, opts);
-        Logging.printInfo(result);
+        // Logging.printInfo(result);
         TaintAnalysisOptions analysisOptions =
                 new TaintAnalysisOptions(AnalysisType.Forward$.MODULE$);
         SWANCallGraph cg = new CallGraphConstruction(group).construct()._1();
         TaintAnalysis taintAnalysis = new TaintAnalysis(taintSpec, analysisOptions);
         TaintResults taintResults = taintAnalysis.run(cg);
-        Logging.printInfo(taintResults.toString());
+        // Logging.printInfo(taintResults.toString());
         TypeStateAnalysis typeStateAnalysis = new TypeStateAnalysis(cg, typeStateSpec.make(cg), typeStateSpec);
         TypeStateResults typeStateAnalysisResults = typeStateAnalysis.executeAnalysis();
-        Logging.printInfo(typeStateAnalysisResults.toString());
+        // Logging.printInfo(typeStateAnalysisResults.toString());
     }
 }

@@ -1,7 +1,10 @@
 [
   {
+    "style": 0,
     "name": "FileOpenClose",
     "type": "File",
+    "description": "Not closing file resources can cause resource leaks.",
+    "advice": "Close file resources.",
     "states": [
       {
         "name": "INIT",
@@ -12,6 +15,7 @@
       {
         "name": "OPENED",
         "error": true,
+        "message": "file left open",
         "initial": false,
         "accepting": false
       },

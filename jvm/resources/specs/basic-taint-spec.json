@@ -1,14 +1,25 @@
 [
   {
     "name": "testing",
+    "description": "",
+    "advice": "",
     "sources": [
-      "playground.source() -> Swift.String"
+      {
+        "name": "playground.source() -> Swift.String",
+        "description": "generic source"
+      }
     ],
     "sinks": [
-      "playground.sink(sunk: Swift.String) -> ()"
+      {
+        "name": "playground.sink(sunk: Swift.String) -> ()",
+        "description": "generic sink"
+      }
     ],
     "sanitizers": [
-      "playground.sanitizer(tainted: Swift.String) -> Swift.String"
+      {
+        "name": "playground.sanitizer(tainted: Swift.String) -> Swift.String",
+        "description": "generic sanitizer"
+      }
     ]
   }
 ]
