@@ -1,7 +1,7 @@
-
 <p align="center">
 <img src="https://karimali.ca/resources/images/projects/swan.png" width="300">
 </p>
+
 
 [![macOS CI](https://github.com/themaplelab/swan/actions/workflows/macOS.yml/badge.svg)](https://github.com/themaplelab/swan/actions/workflows/macOS.yml) [![Ubuntu CI](https://github.com/themaplelab/swan/actions/workflows/ubuntu.yml/badge.svg)](https://github.com/themaplelab/swan/actions/workflows/ubuntu.yml)
 
@@ -23,8 +23,9 @@ We aim to provide developers and researchers with an easy-to-use and well-docume
 
 - Wrappers for `xcodebuild` and `swiftc` that build and dump SIL
 - SIL parser (99% coverage, up to 100k lines/second)
-- Well documented intermediate representation (IR), called *SWIRL*, that is easy to convert to other IRs
+- Well documented intermediate representation (IR), called *SWIRL*
 - Ability to write models for black-box functions with SWIRL
+- Partial language and Swift Standard Library models
 - Modular IR translation pipeline (for integration with other engines)
 - Development tool for viewing Swift, SIL, and SWIRL side-by-side
 - Optimizations: multi-threaded module processing, caching, selective parsing
@@ -33,13 +34,15 @@ We aim to provide developers and researchers with an easy-to-use and well-docume
 - Call graph construction
 - Configurable taint analysis
 - Configurable typestate analysis
+- Analysis for *Visits Location Service* and *Standard Location Service* for finding energy inefficient configuration
 - Annotation checker for regression testing
 
 ### Currently working on
 
 - Improving taint and typestate analysis
-- Language and Swift Standard Library modeling
+- More language and Swift Standard Library modeling
 - iOS lifecycle support
+- Crypto API misuse detection
 - ... and much more!
 
 ### Relevant Wiki pages
@@ -47,12 +50,13 @@ We aim to provide developers and researchers with an easy-to-use and well-docume
 - [SWIRL](https://github.com/themaplelab/swan/wiki/SWIRL)
 - [SIL To SWIRL Spec](https://github.com/themaplelab/swan/wiki/SIL-To-SWIRL-Spec)
 - [IDE Configuration](https://github.com/themaplelab/swan/wiki/IDE-Configuration)
+- [Writing Analysis](https://github.com/themaplelab/swan/wiki/Writing-Analysis)
 
 ## Getting started
 
 For now, you will need to build the framework to use SWAN, but we will soon make a release available.
 
-We have tested SWAN on macOS Big Sur Xcode 12.5 and Ubuntu 20.04, Swift 5.4. You need Xcode Command Line Tools installed for macOS, or the latest Swift release for Linux (see [this](https://linuxconfig.org/how-to-install-swift-on-ubuntu-20-04)). Anything involving "Xcode" will not work on Linux, but you should be able to build Swift Package Manager projects. You also need Java 8.
+We have tested SWAN on macOS Big Sur with Xcode 12.5 and Ubuntu 20.04 with Swift 5.4. You need Xcode Command Line Tools installed for macOS, or the latest Swift release for Linux (see [this](https://linuxconfig.org/how-to-install-swift-on-ubuntu-20-04)). Anything involving Xcode will not work on Linux, but you should be able to build Swift Package Manager projects. You also need Java 8.
 
 ```
 git clone https://github.com/themaplelab/swan.git -b spds
@@ -80,7 +84,7 @@ SWAN's toolchain uses a three-step process:
 
 ### 1. Dump SIL using either `swan-swiftc` or `swan-xcodebuild`
 
-You can dump SIL for Xcode projects with `swan-xcodebuild`. Give it the same arguments you give `xcodebuild`, but put them after `--` (`swan-xcodebuild` specific arguments go before). If you specify a single architecture with `-arch`, the build time will be faster, and `swan-xcodebuild` will have less output to parse.
+You can dump SIL for Xcode projects with `swan-xcodebuild`. Give it the same arguments you give `xcodebuild`, but put them after `--` (`swan-xcodebuild` specific arguments go before `--`). If you specify a single architecture with `-arch`, the build time will be faster and `swan-xcodebuild` will have less output to parse.
 
 It will build your project and then dump the SIL to the `swan-dir/` directory. You can optionally specify an alternative directory name with `--swan-dir`.
 
@@ -96,152 +100,15 @@ swan-swiftc -- MyFile.swift
 
 #### Generating Xcode projects
 
-To build your project with `(swan-)xcodebuild` you need an `.xcodeproj`. If your project uses the **Swift Package Manager (SPM)**, you will need to generate a `.xcodeproj` for your project, which you can do with `swift package generate-xcodeproj`. If you use **CocoaPods**, make sure to use `-workspace` instead of `-project`. You can also look into adding [XcodeGen](https://github.com/yonaskolb/XcodeGen) to your project to generate the `.xcodeproj`. If you are unsure what schemes or targets you can build, you can use `-list`.
+To build your project with `(swan-)xcodebuild` you need an `.xcodeproj`. If your project uses the Swift Package Manager (SPM), you will need to generate a `.xcodeproj` for your project, which you can do with `swift package generate-xcodeproj`. If you use CocoaPods, make sure to use `-workspace` instead of `-project`. You can also look into adding [XcodeGen](https://github.com/yonaskolb/XcodeGen) to your project to generate the `.xcodeproj`. If you are unsure what schemes or targets you can build, you can use `-list`.
 
-### 2. Analysis
+### 2. Run Analysis
 
-Currently, the analysis have no default specification. Use `driver.jar` to analyze the SIL in the `swan-dir/`. You can use `-h` to view the driver options.
-
-#### Taint Analysis
-
-Example:
-
-```
-1: func source() -> String { return "I'm tainted" }
-2: func sink(sunk: String) { print(sunk) }
-3: let sourced = source()
-4: sink(sunk: sourced)
-```
-
-Use the `-t` option and provide a taint analysis JSON specification file like the following:
-
-```
-[{
-  "name": "testing",
-  "sources": [
-    "test.source() -> Swift.String"
-  ],
-  "sinks": [
-    "test.sink(sunk: Swift.String) -> ()"
-  ],
-  "sanitizers": [] // optional
-}]
-```
-
-```
-java -jar driver.jar -t taint-spec.json swan-dir/
-```
-
-### Typestate Analysis
-
-Example:
-
-```
-1: class File {
-2:   init() {}
-3:   func open() {}
-4:   func close() {}
-5: }
-6: func foo() {
-7:   let f = File()
-8:   f.open()
-9: }
-```
-
-Use the `-e` option and provide a typestate analysis JSON specification file like the following:
-
-```
-// This specification checks if a file is opened but never closed
-[
-  {
-    "name": "FileOpenClose",
-    "type": "File",
-    "states": [
-      {
-        "name": "INIT",
-        "error": false,
-        "initial": true,
-        "accepting": true
-      },
-      {
-        "name": "OPENED",
-        "error": true,
-        "initial": false,
-        "accepting": false
-      },
-      {
-        "name": "CLOSED",
-        "error": false,
-        "initial": false,
-        "accepting": true
-      }
-    ],
-    "transitions": [
-      {
-        "from": "INIT",
-        "method": ".*open.*",
-        "param": "Param1",
-        "to": "OPENED",
-        "type": "OnCall"
-      },
-      {
-        "from": "INIT",
-        "method": ".*close.*",
-        "param": "Param1",
-        "to": "CLOSED",
-        "type": "OnCall"
-      },
-      {
-        "from": "OPENED",
-        "method": ".*close.*",
-        "param": "Param1",
-        "to": "CLOSED",
-        "type": "OnCall"
-      }
-    ]
-  }
-]
-```
-```
-java -jar driver.jar -e typestate-spec.json swan-dir/
-```
-
-You can check out [this](https://github.com/CodeShield-Security/SPDS/blob/develop/idealPDS/src/main/java/typestate/impl/statemachines/FileMustBeClosedStateMachineCallToReturn.java) file to see the state machine on which the above specification is based. You can also look at Example 26 starting on page 94 of Johannes Späth's [dissertation](https://johspaeth.github.io/publications/Dissertation.pdf) on SPDS.
+Use `driver.jar` to analyze the SIL in the `swan-dir/`. You can use `-h` to view the driver options. You can learn about how write analysis for SWAN [here](https://github.com/themaplelab/swan/wiki/Writing-Analysis).
 
 ### 3. Processing analysis results
 
-**Results**
-
 The driver writes analysis results to `swan-dir/*-results.json`.
-
-Taint analysis example:
-
-```
-[{
-  "name": "testing",
-  "paths": [
-    {
-      "source": "test.source() -> Swift.String",
-      "sink": "test.sink(sunk: Swift.String) -> ()",
-      "path": [
-        "test.swift:3:15",
-        "test.swift:4:12"
-      ]
-    }
-  ]
-}]
-```
-
-Typestate analysis example:
-
-```
-[{
-  "name": "FileOpenClose",
-  "errors": [
-    "test.swift:8:5"
-  ]
-}]
-```
 
 **Annotations**
 
@@ -250,15 +117,15 @@ You can annotate the source code and verify the results are correct automaticall
 Taint analysis example:
 
 ```
-3: let sourced = source(); //!testing!source
-4: sink(sunk: sourced); //!testing!sink
+let sourced = source(); //!testing!source
+sink(sunk: sourced); //!testing!sink
 ```
 
 Typestate analysis example:
 
 ```
-7: let f = File()
-8: f.open() //?FileOpenClose?error
+let f = File()
+f.open() //?FileOpenClose?error
 ```
 
 Once you run the driver, you can run the following to check the annotations against the results.

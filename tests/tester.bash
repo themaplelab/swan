@@ -77,7 +77,11 @@ test_directory() {
         return
       fi
     else
-      echo -e "${BOLD}Testing ${test_name}${ENDCOLOR}"
+      if [[ ! -z MACOS_ONLY && "$OSTYPE" != "darwin"* ]]; then
+        echo -e "${BOLD}Skipping ${test_name} (macOS only)${ENDCOLOR}"
+      else
+        echo -e "${BOLD}Testing ${test_name}${ENDCOLOR}"
+      fi
     fi
 
     # create a tmp dir
