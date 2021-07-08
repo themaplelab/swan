@@ -79,6 +79,7 @@ test_directory() {
     else
       if [[ ! -z MACOS_ONLY && "$OSTYPE" != "darwin"* ]]; then
         echo -e "${BOLD}Skipping ${test_name} (macOS only)${ENDCOLOR}"
+        return
       else
         echo -e "${BOLD}Testing ${test_name}${ENDCOLOR}"
       fi
