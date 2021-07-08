@@ -1,0 +1,21 @@
+[
+  {
+    "name": "testing",
+    "description": "",
+    "advice": "",
+    "sources": [
+      {
+        "name": ".*source.*",
+        "description": "generic source",
+        "regex": true
+      }
+    ],
+    "sinks": [
+      {
+        "name": ".*sink.*",
+        "description": "generic sink",
+        "regex": true
+      }
+    ]
+  }
+]

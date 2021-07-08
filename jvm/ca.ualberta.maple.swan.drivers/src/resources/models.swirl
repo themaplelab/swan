@@ -316,3 +316,51 @@ bb0(%0 : $`@guaranteed Array<τ_0_0>`):
   %ret = new $`Int`
   return %ret
 }
+
+// -------------------- Lifecycle ----------------------------
+
+func [model] @`NSStringFromClass` : $`@autoreleased Optional<NSString>` {
+bb0(%0 : $`@objc_metatype AnyObject.Type`):
+  return %0
+}
+
+func @`#UIResponder.init!initializer.foreign` : $`@owned UIResponder` {
+bb0(%0 : $`UIResponder`):
+  return %0
+}
+
+// -------------------- CLLocationManager ----------------------------
+
+// builtin_ref
+func @`#CLLocationManager.init!initializer.foreign` : $`@owned CLLocationManager` {
+bb0(%0 : $`@owned $CLLocationManager`):
+  return %0
+}
+
+// builtin_ref
+func @`#CLLocationManager.startMonitoringVisits!foreign` : $`()` {
+bb0(%0: $`CLLocationManager`):
+  ret = new $`()`
+  return ret
+}
+
+// analysis marker
+func @`SWAN.CLLocationManager.setActivityType` : $`()` {
+bb0(%0: $`CLLocationManager`, %1: $`Builtin.RawPointer`):
+  ret = new $`()`
+  return ret
+}
+
+// analysis marker
+func @`SWAN.CLLocationManager.setDistanceFilter` : $`()` {
+bb0(%0: $`CLLocationManager`, %1: $`Builtin.FPIEEE64`):
+  ret = new $`()`
+  return ret
+}
+
+// analysis marker
+func @`SWAN.CLLocationManager.setDesiredAccuracy` : $`()` {
+bb0(%0: $`CLLocationManager`, %1: $`Double`):
+  ret = new $`()`
+  return ret
+}

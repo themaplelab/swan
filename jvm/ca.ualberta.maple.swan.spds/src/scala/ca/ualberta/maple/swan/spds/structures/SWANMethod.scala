@@ -27,7 +27,7 @@ import com.google.common.collect.{Lists, Sets}
 
 import scala.collection.mutable
 
-class SWANMethod(val delegate: CanFunction, val moduleGroup: ModuleGroup) extends Method {
+class SWANMethod(val delegate: CanFunction, var moduleGroup: ModuleGroup) extends Method {
 
   // Use allValues instead of create new Vals, when possible
   // Only use for non allocation (simple value references).

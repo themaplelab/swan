@@ -28,10 +28,9 @@ import ca.ualberta.maple.swan.ir._
 import ca.ualberta.maple.swan.ir.canonical.SWIRLPass
 import ca.ualberta.maple.swan.ir.raw.SWIRLGen
 import ca.ualberta.maple.swan.parser.{SILModule, SILParser}
-import ca.ualberta.maple.swan.spds.analysis.TaintAnalysis.TaintAnalysisResults
-import ca.ualberta.maple.swan.spds.analysis.TypeStateAnalysis.TypeStateAnalysisResults
-import ca.ualberta.maple.swan.spds.analysis.{AnalysisType, StateMachineFactory, TaintAnalysis, TaintAnalysisOptions, TypeStateAnalysis}
-import ca.ualberta.maple.swan.spds.structures.SWANCallGraph
+import ca.ualberta.maple.swan.spds.CallGraphConstruction
+import ca.ualberta.maple.swan.spds.analysis.taint._
+import ca.ualberta.maple.swan.spds.analysis.typestate.{TypeStateAnalysis, TypeStateResults}
 import ca.ualberta.maple.swan.utils.Logging
 import org.apache.commons.io.{FileExistsException, FileUtils, IOUtils}
 import picocli.CommandLine
@@ -290,34 +289,43 @@ class Driver extends Runnable {
       fw.close()
     }
     if (options.taintAnalysisSpec.nonEmpty || options.typeStateAnalysisSpec.nonEmpty) {
-      val cg = new SWANCallGraph(group)
+      val cgResults = new CallGraphConstruction(group).construct()
+      val cg = cgResults._1
+      if (options.debug) {
+        writeFile(cgResults._3, debugDir, "grouped-cg", new SWIRLPrinterOptions().cgDebugInfo(cgResults._2))
+        if (cgResults._4.nonEmpty ) {
+          val r = cgResults._4.get
+          writeFile(r._1, debugDir, "dynamic-models.raw")
+          writeFile(r._2, debugDir, "dynamic-models")
+        }
+      }
       // System.out.println(cg)
       if (options.taintAnalysisSpec.nonEmpty) {
-        val allResults = new ArrayBuffer[TaintAnalysisResults]()
-        val specs = TaintAnalysis.Specification.parse(options.taintAnalysisSpec.get)
+        val allResults = new ArrayBuffer[TaintResults]()
+        val specs = TaintSpecification.parse(options.taintAnalysisSpec.get)
         specs.foreach(spec => {
           val analysisOptions = new TaintAnalysisOptions(
             if (options.pathTracking) AnalysisType.ForwardPathTracking
             else AnalysisType.Forward)
-          val analysis = new TaintAnalysis(group, spec, analysisOptions)
+          val analysis = new TaintAnalysis(spec, analysisOptions)
           val results = analysis.run(cg)
           Logging.printInfo(results.toString)
           allResults.append(results)
         })
         val f = Paths.get(swanDir.getPath, taintAnalysisResultsFileName).toFile
-        TaintAnalysis.Specification.writeResults(f, allResults)
+        TaintSpecification.writeResults(f, allResults)
       }
       if (options.typeStateAnalysisSpec.nonEmpty) {
-        val allResults = new ArrayBuffer[TypeStateAnalysisResults]()
-        val specs = StateMachineFactory.parseSpecification(options.typeStateAnalysisSpec.get)
+        val allResults = new ArrayBuffer[TypeStateResults]()
+        val specs = TypeStateAnalysis.parse(options.typeStateAnalysisSpec.get)
         specs.foreach(spec => {
-          val analysis = new TypeStateAnalysis(cg, StateMachineFactory.make(spec))
-          val results = analysis.executeAnalysis(spec)
+          val analysis = new TypeStateAnalysis(cg, spec.make(cg), spec)
+          val results = analysis.executeAnalysis()
           Logging.printInfo(results.toString)
           allResults.append(results)
         })
         val f = Paths.get(swanDir.getPath, typeStateAnalysisResultsFileName).toFile
-        StateMachineFactory.Specification.writeResults(f, allResults)
+        TypeStateResults.writeResults(f, allResults)
       }
     }
     group
@@ -349,22 +357,22 @@ class Driver extends Runnable {
   }
 
   /** Write a module to the debug directory. */
-  def writeFile(module: Object, debugDir: File, prefix: String): Unit = {
+  def writeFile(module: Object, debugDir: File, prefix: String, options: SWIRLPrinterOptions = new SWIRLPrinterOptions): Unit = {
     val printedSwirlModule = {
       module match {
         case canModule: CanModule =>
-          new SWIRLPrinter().print(canModule, new SWIRLPrinterOptions)
+          new SWIRLPrinter().print(canModule, options)
         case rawModule: Module =>
-          new SWIRLPrinter().print(rawModule, new SWIRLPrinterOptions)
+          new SWIRLPrinter().print(rawModule, options)
         case groupModule: ModuleGroup =>
-          new SWIRLPrinter().print(groupModule, new SWIRLPrinterOptions)
+          new SWIRLPrinter().print(groupModule, options)
         case _ =>
           throw new RuntimeException("unexpected")
       }
     }
     val f = Paths.get(debugDir.getPath, prefix + ".swirl").toFile
     val fw = new FileWriter(f)
-    Logging.printInfo("Writing " + module.toString + " to " + f.getName)
+    Logging.printInfo(s"Writing ${module.toString} to ${f.getName}")
     fw.write(printedSwirlModule)
     fw.close()
   }

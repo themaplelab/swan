@@ -1,0 +1,32 @@
+[
+  {
+    "style": 1,
+    "name": "VisitsLocationService",
+    "description": "Certain configurations of the Visits Location Service are not optimal.",
+    "advice": "Use the airborne configuration (most optimal).",
+    "states": [
+      {
+        "name": "#CLActivityType.automotiveNavigation!enumelt (active)",
+        "message": "automotiveNavigation is nonoptimal.",
+        "severity": 2
+      },
+      {
+        "name": "#CLActivityType.fitness!enumelt (active)",
+        "message": "fitness is very nonoptimal.",
+        "severity": 3
+      },
+      {
+        "name": "#CLActivityType.other!enumelt (active)",
+        "message": "other, the default Visits Location Service configuration, is nonoptimal."
+        ,
+        "severity": 2
+      },
+      {
+        "name": "#CLActivityType.otherNavigation!enumelt (active)",
+        "message": "otherNavigation is very nonoptimal, especially when used in the background."
+        ,
+        "severity": 3
+      }
+    ]
+  }
+]

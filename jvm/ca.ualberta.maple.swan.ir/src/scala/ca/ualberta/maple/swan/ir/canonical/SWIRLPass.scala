@@ -48,6 +48,8 @@ class SWIRLPass {
         f.instantiatedTypes, new SymbolTable(), cfg)
       generateSymbolTable(canFunction)
       removeThunkApplication(canFunction)
+      // Analysis specific mutations
+      new Mutations(canFunction, module).doMutations()
       functions.append(canFunction)
     })
     Logging.printTimeStamp(1, startTime, "passes", module.functions.length, "functions")
@@ -55,7 +57,7 @@ class SWIRLPass {
   }
 
   @throws[IncompleteRawSWIRLException]
-  def generateSymbolTable(function: CanFunction): Unit = {
+  private def generateSymbolTable(function: CanFunction): Unit = {
     // Create symbol table.
     // Mapping of result values to their creating operator.
     val table = function.symbolTable
@@ -95,7 +97,7 @@ class SWIRLPass {
    * TODO: Not exactly ideal to have an entire pass for this, but the symbol
    *   table needs to be generated first.
    */
-  def removeThunkApplication(function: CanFunction): Unit = {
+  private def removeThunkApplication(function: CanFunction): Unit = {
     function.blocks.foreach(b => {
       b.operators.zipWithIndex.foreach(opDefIdx => {
         opDefIdx._1.operator match {
@@ -467,7 +469,7 @@ class SWIRLPass {
    * Converts basic block arguments (phi-nodes) to assignments before
    * branch instructions.
    */
-  def resolveBasicBlockArguments(f: Function, module: Module): ArrayBuffer[Argument] = {
+  private def resolveBasicBlockArguments(f: Function, module: Module): ArrayBuffer[Argument] = {
     f.blocks.zipWithIndex.foreach(bIdx => {
       val block = bIdx._1
       val assigns: ArrayBuffer[RawOperatorDef] = new ArrayBuffer
@@ -502,7 +504,7 @@ class SWIRLPass {
   }
 
   /** Converts a given function to canonical form. */
-  def convertToCanonical(function: Function, module: Module): ArrayBuffer[CanBlock] = {
+  private def convertToCanonical(function: Function, module: Module): ArrayBuffer[CanBlock] = {
     val blocks: ArrayBuffer[CanBlock] = new ArrayBuffer
     function.blocks.foreach(b => {
       val operators: ArrayBuffer[CanOperatorDef] = new ArrayBuffer
@@ -543,14 +545,14 @@ class SWIRLPass {
   }
 
   // TODO: Add wrappers that automatically call this
-  def mapToSIL(old: Object, added: Object, module: Module): Unit = {
+  private def mapToSIL(old: Object, added: Object, module: Module): Unit = {
     if (module.silMap.nonEmpty) {
       module.silMap.get.tryMapNew(old, added)
     }
   }
 
   /** Resolve all field aliases. */
-  def resolveAliases(module: Module): Unit = {
+  private def resolveAliases(module: Module): Unit = {
     // For every function F,
     //   For every block B,
     //     For every operator O in B,
@@ -596,7 +598,7 @@ class SWIRLPass {
 
   /** Generate a control flow graph for the given blocks. */
   @throws[IncompleteRawSWIRLException]
-  def generateCFG(blocks: ArrayBuffer[CanBlock]): Graph[CanBlock, DefaultEdge] = {
+  private def generateCFG(blocks: ArrayBuffer[CanBlock]): Graph[CanBlock, DefaultEdge] = {
     val graph: Graph[CanBlock, DefaultEdge] = new DefaultDirectedGraph(classOf[DefaultEdge])
     val exitBlock = new CanBlock(new BlockRef(Constants.exitBlock), null, null)
     graph.addVertex(exitBlock)

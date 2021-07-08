@@ -23,7 +23,11 @@ import ca.ualberta.maple.swan.ir.canonical.SWIRLPass;
 import ca.ualberta.maple.swan.parser.SILModule;
 import ca.ualberta.maple.swan.parser.SILPrinter;
 import ca.ualberta.maple.swan.parser.SILPrinterOptions;
-import ca.ualberta.maple.swan.spds.analysis.*;
+import ca.ualberta.maple.swan.spds.CallGraphConstruction;
+import ca.ualberta.maple.swan.spds.analysis.taint.*;
+import ca.ualberta.maple.swan.spds.analysis.typestate.TypeStateAnalysis;
+import ca.ualberta.maple.swan.spds.analysis.typestate.TypeStateResults;
+import ca.ualberta.maple.swan.spds.analysis.typestate.TypeStateSpecification;
 import ca.ualberta.maple.swan.spds.structures.SWANCallGraph;
 import ca.ualberta.maple.swan.test.TestDriver;
 import ca.ualberta.maple.swan.utils.Logging;
@@ -36,18 +40,18 @@ import java.util.Objects;
 
 public class SPDSTests {
 
-    static TaintAnalysis.Specification taintSpec;
-    static StateMachineFactory.Specification typeStateSpec;
+    static TaintSpecification taintSpec;
+    static TypeStateSpecification typeStateSpec;
 
     static {
         try {
-            taintSpec = TaintAnalysis.Specification$.MODULE$.parse(new File(Objects.requireNonNull(SPDSTests.class.getClassLoader().getResource("specs/basic-taint-spec.json")).toURI())).head();
+            taintSpec = TaintSpecification$.MODULE$.parse(new File(Objects.requireNonNull(SPDSTests.class.getClassLoader().getResource("specs/basic-taint-spec.json")).toURI())).head();
         } catch (URISyntaxException e) {
             e.printStackTrace();
         }
 
         try {
-            typeStateSpec = StateMachineFactory.parseSpecification(new File(Objects.requireNonNull(SPDSTests.class.getClassLoader().getResource("specs/basic-typestate-spec.json")).toURI())).head();
+            typeStateSpec = TypeStateAnalysis.parse(new File(Objects.requireNonNull(SPDSTests.class.getClassLoader().getResource("specs/basic-typestate-spec.json")).toURI())).head();
         } catch (URISyntaxException e) {
             e.printStackTrace();
         }
@@ -83,14 +87,13 @@ public class SPDSTests {
         Logging.printInfo(result);
         TaintAnalysisOptions analysisOptions =
                 new TaintAnalysisOptions(AnalysisType.Forward$.MODULE$);
-        SWANCallGraph cg = new SWANCallGraph(group);
-        TaintAnalysis taintAnalysis = new TaintAnalysis(group, taintSpec, analysisOptions);
-        TaintAnalysis.TaintAnalysisResults taintResults = taintAnalysis.run(cg);
+        SWANCallGraph cg = new CallGraphConstruction(group).construct()._1();
+        TaintAnalysis taintAnalysis = new TaintAnalysis(taintSpec, analysisOptions);
+        TaintResults taintResults = taintAnalysis.run(cg);
         Logging.printInfo(taintResults.toString());
-        TypeStateAnalysis typeStateAnalysis = new TypeStateAnalysis(cg, StateMachineFactory.make(typeStateSpec));
-        TypeStateAnalysis.TypeStateAnalysisResults typeStateAnalysisResults = typeStateAnalysis.executeAnalysis(typeStateSpec);
+        TypeStateAnalysis typeStateAnalysis = new TypeStateAnalysis(cg, typeStateSpec.make(cg), typeStateSpec);
+        TypeStateResults typeStateAnalysisResults = typeStateAnalysis.executeAnalysis();
         Logging.printInfo(typeStateAnalysisResults.toString());
-
     }
 
     @Test
@@ -124,12 +127,12 @@ public class SPDSTests {
         Logging.printInfo(result);
         TaintAnalysisOptions analysisOptions =
                 new TaintAnalysisOptions(AnalysisType.Forward$.MODULE$);
-        SWANCallGraph cg = new SWANCallGraph(group);
-        TaintAnalysis taintAnalysis = new TaintAnalysis(group, taintSpec, analysisOptions);
-        TaintAnalysis.TaintAnalysisResults taintResults = taintAnalysis.run(cg);
+        SWANCallGraph cg = new CallGraphConstruction(group).construct()._1();
+        TaintAnalysis taintAnalysis = new TaintAnalysis(taintSpec, analysisOptions);
+        TaintResults taintResults = taintAnalysis.run(cg);
         Logging.printInfo(taintResults.toString());
-        TypeStateAnalysis typeStateAnalysis = new TypeStateAnalysis(cg, StateMachineFactory.make(typeStateSpec));
-        TypeStateAnalysis.TypeStateAnalysisResults typeStateAnalysisResults = typeStateAnalysis.executeAnalysis(typeStateSpec);
+        TypeStateAnalysis typeStateAnalysis = new TypeStateAnalysis(cg, typeStateSpec.make(cg), typeStateSpec);
+        TypeStateResults typeStateAnalysisResults = typeStateAnalysis.executeAnalysis();
         Logging.printInfo(typeStateAnalysisResults.toString());
     }
 
@@ -149,12 +152,12 @@ public class SPDSTests {
         Logging.printInfo(result);
         TaintAnalysisOptions analysisOptions =
                 new TaintAnalysisOptions(AnalysisType.Forward$.MODULE$);
-        SWANCallGraph cg = new SWANCallGraph(group);
-        TaintAnalysis taintAnalysis = new TaintAnalysis(group, taintSpec, analysisOptions);
-        TaintAnalysis.TaintAnalysisResults taintResults = taintAnalysis.run(cg);
+        SWANCallGraph cg = new CallGraphConstruction(group).construct()._1();
+        TaintAnalysis taintAnalysis = new TaintAnalysis(taintSpec, analysisOptions);
+        TaintResults taintResults = taintAnalysis.run(cg);
         Logging.printInfo(taintResults.toString());
-        TypeStateAnalysis typeStateAnalysis = new TypeStateAnalysis(cg, StateMachineFactory.make(typeStateSpec));
-        TypeStateAnalysis.TypeStateAnalysisResults typeStateAnalysisResults = typeStateAnalysis.executeAnalysis(typeStateSpec);
+        TypeStateAnalysis typeStateAnalysis = new TypeStateAnalysis(cg, typeStateSpec.make(cg), typeStateSpec);
+        TypeStateResults typeStateAnalysisResults = typeStateAnalysis.executeAnalysis();
         Logging.printInfo(typeStateAnalysisResults.toString());
     }
 }

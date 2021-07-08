@@ -24,13 +24,15 @@ import java.nio.file.{Files, Paths}
 
 import ca.ualberta.maple.swan.drivers.Driver
 import ca.ualberta.maple.swan.ir.{CanInstructionDef, Position}
-import ca.ualberta.maple.swan.spds.analysis.StateMachineFactory
-import ca.ualberta.maple.swan.spds.analysis.TaintAnalysis.{Path, Specification, TaintAnalysisResults}
-import ca.ualberta.maple.swan.spds.analysis.TypeStateAnalysis.TypeStateAnalysisResults
+import ca.ualberta.maple.swan.spds.analysis.taint.TaintResults.Path
+import ca.ualberta.maple.swan.spds.analysis.taint.TaintSpecification.JSONMethod
+import ca.ualberta.maple.swan.spds.analysis.taint.{TaintResults, TaintSpecification}
+import ca.ualberta.maple.swan.spds.analysis.typestate.{TypeStateJSONProgrammaticSpecification, TypeStateResults}
 import ca.ualberta.maple.swan.test.AnnotationChecker.Annotation
 import org.apache.commons.io.FileExistsException
 import picocli.CommandLine
 import picocli.CommandLine.{Command, Parameters}
+import typestate.finiteautomata.State
 
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
@@ -199,13 +201,14 @@ class AnnotationChecker extends Runnable {
       })
       buffer.close()
       results.foreach(r => {
-        r.errors.foreach(pos => {
+        r.errors.foreach(e => {
+          val pos = e._1
           if (pos.path.endsWith(f.getName)) { // copied file has different path than original
             if (annotations.contains(pos.line)) {
               var idx = -1
               val annot = annotations(pos.line)
               annot.zipWithIndex.foreach(a => {
-                if (a._1.name == r.spec.name) {
+                if (a._1.name == r.spec.getName) {
                   idx = a._2
                 }
               })
@@ -215,7 +218,7 @@ class AnnotationChecker extends Runnable {
                   annot.remove(idx)
                 } else if (a.status.get == "fn") {
                   failure = true
-                  printErr("Annotation is not an FN: //!" + a.name + "!" + a.tpe + "!fn" + " on line " + a.line)
+                  printErr("Annotation is not an FN: //?" + a.name + "?" + a.tpe + "?fn" + " on line " + a.line)
                 }
                 if (annot.isEmpty) {
                   annotations.remove(pos.line)
@@ -232,8 +235,8 @@ class AnnotationChecker extends Runnable {
         v._2.foreach(a => {
           if (a.status.isEmpty || a.status.get != "fn") {
             failure = true
-            printErr("No matching path node for annotation: //!" + a.name + "!" + a.tpe +
-              { if (a.status.nonEmpty) "!" + a.status.get else ""} + " on line " + a.line)
+            printErr("No matching path node for annotation: //?" + a.name + "?" + a.tpe +
+              { if (a.status.nonEmpty) "?" + a.status.get else ""} + " on line " + a.line)
           }
         })
       })
@@ -241,18 +244,19 @@ class AnnotationChecker extends Runnable {
     if (failure) System.exit(1)
   }
 
-  private def getTaintResults(resultsFile: File): ArrayBuffer[TaintAnalysisResults] = {
+  private def getTaintResults(resultsFile: File): ArrayBuffer[TaintResults] = {
     val buffer = Source.fromFile(resultsFile)
     val jsonString = buffer.getLines().mkString
     buffer.close()
-    val ret = new ArrayBuffer[TaintAnalysisResults]
+    val ret = new ArrayBuffer[TaintResults]
     val data = ujson.read(jsonString)
     data.arr.foreach(v => {
-      val spec = new Specification(v("name").str, new mutable.HashSet[String](), new mutable.HashSet[String](), new mutable.HashSet[String]())
+      val spec = new TaintSpecification(v("name").str, "", "",
+        new mutable.HashMap[String,JSONMethod], new mutable.HashMap[String,JSONMethod], new mutable.HashMap[String,JSONMethod])
       val paths = new ArrayBuffer[Path]
       v("paths").arr.foreach(p => {
-        val source = p("source")
-        val sink = p("sink")
+        val source = p("source")("name")
+        val sink = p("sink")("name")
         if (Try(p("path")).isSuccess) {
           val nodes = new ArrayBuffer[(CanInstructionDef, Option[Position])]
           p("path").arr.foreach(x => {
@@ -260,29 +264,29 @@ class AnnotationChecker extends Runnable {
             val p = new Position(components(0), components(1).toInt, components(2).toInt)
             nodes.append((null, Some(p)))
           })
-          paths.append(new Path(nodes, source.str, sink.str))
+          paths.append(new Path(nodes, source.str, null, sink.str, null))
         }
       })
-      ret.append(new TaintAnalysisResults(paths, spec))
+      ret.append(new TaintResults(paths, spec))
     })
     ret
   }
 
-  private def getTypeStateResults(resultsFile: File): ArrayBuffer[TypeStateAnalysisResults] = {
+  private def getTypeStateResults(resultsFile: File): ArrayBuffer[TypeStateResults] = {
     val buffer = Source.fromFile(resultsFile)
     val jsonString = buffer.getLines().mkString
     buffer.close()
-    val ret = new ArrayBuffer[TypeStateAnalysisResults]
+    val ret = new ArrayBuffer[TypeStateResults]
     val data = ujson.read(jsonString)
     data.arr.foreach(v => {
-      val spec = new StateMachineFactory.Specification(v("name").str, "", ArrayBuffer.empty, ArrayBuffer.empty)
-      val errors = new ArrayBuffer[Position]()
+      val spec = new TypeStateJSONProgrammaticSpecification(v("name").str, "", "", mutable.HashMap.empty)
+      val errors = new ArrayBuffer[(Position,State)]()
       v("errors").arr.foreach(e => {
-        val components = e.str.split(":")
+        val components = e("pos").str.split(":")
         val p = new Position(components(0), components(1).toInt, components(2).toInt)
-        errors.append(p)
+        errors.append((p, null))
       })
-      ret.append(new TypeStateAnalysisResults(errors, spec))
+      ret.append(new TypeStateResults(errors, spec))
     })
     ret
   }

@@ -29,11 +29,11 @@ func test_interprocedural_correct() {
 
 func test_interprocedural_incorrect() {
   func foo_open(_ f: File) {
-    f.open();
+    f.open(); //?FileOpenClose?error
   }
   func foo_close(_ f: File) {
     f.close();
   }
   let f = File();
-  foo_open(f); //?FileOpenClose?error
+  foo_open(f);
 }

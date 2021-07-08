@@ -1,0 +1,60 @@
+[
+  {
+    "style": 1,
+    "name": "StandardLocationService",
+    "description": "Certain configurations of the Standard Location Service are not optimal.",
+    "advice": "Use `kCLDistanceFilterNone` (default), `kCLLocationAccuracyKilometer`, or (filter: 16-256, accuracy: `kCLLocationAccuracyHundredMeters`).",
+    "states": [
+      {
+        "name": "Best_16",
+        "message": "Using `kCLLocationAccuracyBest` and a distance filter of 16 is nonoptimal.",
+        "severity": 2
+      },
+      {
+        "name": "Best_256",
+        "message": "Using `kCLLocationAccuracyBest` and a distance filter of 256 is nonoptimal.",
+        "severity": 2
+      },
+      {
+        "name": "Best_4096",
+        "message": "Using `kCLLocationAccuracyBest` and a distance filter of 4096 is very nonoptimal.",
+        "severity": 3
+      },
+      {
+        "name": "Best_65536",
+        "message": "Using `kCLLocationAccuracyBest` and a distance filter of 65536 is very nonoptimal.",
+        "severity": 3
+      },
+      {
+        "name": "Hundred_4096",
+        "message": "Using `kCLLocationAccuracyHundredMeters` and a distance filter of 4096 is nonoptimal.",
+        "severity": 2
+      },
+      {
+        "name": "Hundred_65536",
+        "message": "Using `kCLLocationAccuracyHundredMeters` and a distance filter of 65536 is nonoptimal.",
+        "severity": 2
+      },
+      {
+        "name": "Navigation_16",
+        "message": "Using `kCLLocationAccuracyBestForNavigation` and a distance filter of 16 is nonoptimal.",
+        "severity": 2
+      },
+      {
+        "name": "Navigation_256",
+        "message": "Using `kCLLocationAccuracyBestForNavigation` and a distance filter of 256 is nonoptimal.",
+        "severity": 2
+      },
+      {
+        "name": "Navigation_4096",
+        "message": "Using `kCLLocationAccuracyBestForNavigation` and a distance filter of 4096 is very nonoptimal.",
+        "severity": 3
+      },
+      {
+        "name": "Navigation_65536",
+        "message": "Using `kCLLocationAccuracyBestForNavigation` and a distance filter of 65536 is very nonoptimal.",
+        "severity": 3
+      }
+    ]
+  }
+]

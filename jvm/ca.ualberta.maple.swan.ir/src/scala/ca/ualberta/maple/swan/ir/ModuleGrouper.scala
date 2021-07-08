@@ -34,7 +34,7 @@ object ModuleGrouper {
   // Would be also good to check that the implementations are equal.
   // The model module must be merged last.
   // TODO: The current function merging is likely inefficient.
-  def merge(toMerge: ArrayBuffer[CanFunction],
+  private def merge(toMerge: ArrayBuffer[CanFunction],
             existingFunctions: mutable.HashMap[String, CanFunction],
             entries: mutable.HashMap[String, CanFunction], models: mutable.HashMap[String, CanFunction],
             mains: mutable.HashMap[String, CanFunction], others: mutable.HashMap[String, CanFunction],
@@ -168,9 +168,13 @@ object ModuleGrouper {
       }
       metas.appendAll(existingGroup.metas)
     }
+
     // Move model module to end
-    val modelModule = modules.remove(modules.indexWhere(m => m.toString == "models"))
-    modules.append(modelModule)
+    val idx = modules.indexWhere(m => m.toString == "models")
+    if (idx >= 0) {
+      val modelModule = modules.remove(idx)
+      modules.append(modelModule)
+    }
     modules.foreach(module => {
       val changed = if (changedFiles != null) changedFiles.exists(f => f.getName == module.toString) else false
       if (changed) {
@@ -194,12 +198,14 @@ object ModuleGrouper {
         silMap.combine(module.silMap.get)
       }
     })
+
     functions.appendAll(entries.values)
     functions.appendAll(mains.values)
     functions.appendAll(models.values)
     functions.appendAll(linked.values)
     functions.appendAll(others.values)
     functions.appendAll(stubs.values)
+
     new ModuleGroup(functions, entries.values.to(immutable.HashSet), ddgs,
       if (silMap.nonEmpty()) Some(silMap) else None, None, metas)
   }

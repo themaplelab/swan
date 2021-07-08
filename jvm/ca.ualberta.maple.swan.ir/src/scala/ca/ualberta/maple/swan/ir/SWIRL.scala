@@ -189,8 +189,11 @@ object Operator {
   case class literal(result: Symbol, literal: Literal) extends WithResult(result) with RawOperator with CanOperator
   case class dynamicRef(result: Symbol, index: String) extends WithResult(result) with RawOperator with CanOperator
   case class builtinRef(result: Symbol, name: String) extends WithResult(result) with RawOperator with CanOperator
-  case class functionRef(result: Symbol, var name: String) extends WithResult(result) with RawOperator with CanOperator
-  case class apply(result: Symbol, functionRef: SymbolRef, arguments: ArrayBuffer[SymbolRef]) extends WithResult(result) with RawOperator with CanOperator
+  case class functionRef(result: Symbol, name: String) extends WithResult(result) with RawOperator with CanOperator
+  case class apply(result: Symbol, functionRef: SymbolRef, arguments: ArrayBuffer[SymbolRef]) extends WithResult(result) with RawOperator with CanOperator {
+    // Used by CG debugInfo for printing
+    override def hashCode(): Int = System.identityHashCode(this)
+  }
   case class singletonRead(result: Symbol, tpe: String, field: String) extends WithResult(result) with RawOperator with CanOperator
   case class singletonWrite(value: SymbolRef, tpe: String, field: String) extends Operator with RawOperator with CanOperator
   case class fieldRead(result: Symbol, alias: Option[SymbolRef], obj: SymbolRef, field: String, pointer: Boolean = false) extends WithResult(result) with RawOperator with CanOperator
@@ -351,7 +354,11 @@ class SymbolTable extends mutable.HashMap[String, SymbolTableEntry] {
           super.put(key, SymbolTableEntry.multiple(symbol, arr))
         }
         case SymbolTableEntry.multiple(_, operators) => operators.append(operator)
-        case SymbolTableEntry.argument(_) => System.out.println(value.ref.name); throw new RuntimeException()
+        case SymbolTableEntry.argument(arg) => {
+          val arr = new ArrayBuffer[CanOperator]()
+          arr.append(operator)
+          super.put(key, SymbolTableEntry.multiple(arg, arr))
+        }
       }
     } else {
       super.put(key, SymbolTableEntry.operator(value, operator))
@@ -398,4 +405,5 @@ object Constants {
   final val globalsSingleton = "Globals_"
   final val exitBlock = "EXIT"
   final val fakeMain = "SWAN_FAKE_MAIN_"
+  final val mainPrefix = "main_"
 }

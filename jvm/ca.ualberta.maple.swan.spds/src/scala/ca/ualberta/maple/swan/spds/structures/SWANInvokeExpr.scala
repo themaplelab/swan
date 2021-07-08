@@ -21,7 +21,7 @@ package ca.ualberta.maple.swan.spds.structures
 
 import java.util
 
-import boomerang.scene.{DeclaredMethod, InvokeExpr, Val, WrappedClass}
+import boomerang.scene.{ControlFlowGraph, DeclaredMethod, InvokeExpr, Val, WrappedClass}
 import ca.ualberta.maple.swan.spds.structures.SWANStatement.ApplyFunctionRef
 
 class SWANInvokeExpr(val stmt: ApplyFunctionRef, val method: SWANMethod) extends InvokeExpr {
@@ -32,27 +32,17 @@ class SWANInvokeExpr(val stmt: ApplyFunctionRef, val method: SWANMethod) extends
     args.add(method.addVal(SWANVal.Argument(method.delegate.getSymbol(arg._1.name), arg._2, method)))
   })
 
-  var declaredMethod: DeclaredMethod = new DeclaredMethod(this) {
-    override def isNative: Boolean = ???
+  var declaredMethod: DeclaredMethod = new SWANDeclaredMethod(this, null) {
     override def getSubSignature: String = ""
     override def getName: String = ""
-    override def isStatic: Boolean = ???
-    override def isConstructor: Boolean = ???
-    override def getSignature: String = ???
-    override def getDeclaringClass: WrappedClass = ???
   }
 
   def getFunctionRef: Val = stmt.getFunctionRef
 
-  def updateDeclaredMethod(name: String): Unit = {
-    declaredMethod = new DeclaredMethod(this) {
-      override def isNative: Boolean = ???
+  def updateDeclaredMethod(name: String, edge: ControlFlowGraph.Edge): Unit = {
+    declaredMethod = new SWANDeclaredMethod(this, edge) {
       override def getSubSignature: String = name
       override def getName: String = name
-      override def isStatic: Boolean = ???
-      override def isConstructor: Boolean = ???
-      override def getSignature: String = ???
-      override def getDeclaringClass: WrappedClass = ???
     }
   }
 

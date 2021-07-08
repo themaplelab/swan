@@ -17,26 +17,26 @@
  * See https://github.com/themaplelab/swan/doc/LICENSE.md.
  */
 
-package ca.ualberta.maple.swan.spds.analysis
+package ca.ualberta.maple.swan.spds.analysis.typestate
 
+import java.io.File
 import java.util
 
-import boomerang.{BoomerangOptions, DefaultBoomerangOptions, WeightedForwardQuery}
+import boomerang.BoomerangOptions.StaticFieldStrategy
 import boomerang.debugger.Debugger
 import boomerang.scene.{CallGraph, ControlFlowGraph, DataFlowScope, Val}
+import boomerang.{BoomerangOptions, DefaultBoomerangOptions, WeightedForwardQuery}
 import ca.ualberta.maple.swan.ir.Position
-import ca.ualberta.maple.swan.spds.analysis.StateMachineFactory.Specification
-import ca.ualberta.maple.swan.spds.analysis.TypeStateAnalysis.TypeStateAnalysisResults
 import ca.ualberta.maple.swan.spds.structures.{SWANCallGraph, SWANStatement}
-import ideal.{IDEALAnalysis, IDEALAnalysisDefinition, IDEALResultHandler, IDEALSeedSolver, StoreIDEALResultHandler}
+import ideal._
 import sync.pds.solver.WeightFunctions
 import typestate.TransitionFunction
-import typestate.finiteautomata.TypeStateMachineWeightFunctions
+import typestate.finiteautomata.{State, TypeStateMachineWeightFunctions}
 import wpds.impl.Weight
 
 import scala.collection.mutable.ArrayBuffer
 
-class TypeStateAnalysis(val cg: SWANCallGraph, val fsm: TypeStateMachineWeightFunctions ) {
+class TypeStateAnalysis(val cg: SWANCallGraph, val fsm: TypeStateMachineWeightFunctions, val spec: TypeStateSpecification) {
 
   val resultHandler = new StoreIDEALResultHandler[TransitionFunction]
 
@@ -62,44 +62,43 @@ class TypeStateAnalysis(val cg: SWANCallGraph, val fsm: TypeStateMachineWeightFu
         override def boomerangOptions(): BoomerangOptions = {
           new DefaultBoomerangOptions {
             override def allowMultipleQueries(): Boolean = true
+            override def getStaticFieldStrategy: BoomerangOptions.StaticFieldStrategy = StaticFieldStrategy.SINGLETON
           }
         }
       }
     )
   }
 
-  def executeAnalysis(spec: Specification): TypeStateAnalysisResults = {
+  def executeAnalysis(): TypeStateResults = {
     this.createAnalysis().run()
-    val errors = new ArrayBuffer[Position]()
+    val errors = new ArrayBuffer[(Position, State)]()
     val seedToSolvers = resultHandler.getResults
     seedToSolvers.entrySet().forEach(e => {
-      e.getKey.weight().getLastStateChangeStatements
       e.getValue.getObjectDestructingStatements.cellSet().forEach(s => {
         s.getValue.values().forEach(v => {
           if (v.to().isErrorState) {
-            val pos = s.getRowKey.getTarget.asInstanceOf[SWANStatement].getPosition
-            if (pos.nonEmpty) errors.append(pos.get)
+            s.getValue.getLastStateChangeStatements.forEach(x => {
+              val pos = x.getStart.asInstanceOf[SWANStatement].getPosition
+              if (pos.nonEmpty) errors.append((pos.get, v.to()))
+            })
           }
         })
       })
     })
-    new TypeStateAnalysisResults(errors, spec)
+    new TypeStateResults(errors, spec)
   }
 }
 
 object TypeStateAnalysis {
 
-  class TypeStateAnalysisResults(val errors: ArrayBuffer[Position], val spec: Specification) {
-    override def toString: String = {
-      val sb = new StringBuilder()
-      sb.append("TypeState Analysis Results for specification:\n")
-      sb.append(spec)
-      sb.append("\nDetected error states on line(s):\n")
-      errors.foreach(e => {
-        sb.append(e)
-        sb.append("\n")
-      })
-      sb.toString()
-    }
+  val spdsTimeoutError = "SPDS timed out. Enable logging (remove log4j.properties) to see issue."
+  val spdsError = "SPDS error. Enable logging (remove log4j.properties) to see issue or try increasing stack size with -Xss."
+
+  def parse(file: File): ArrayBuffer[TypeStateSpecification] = {
+    val fsms = new ArrayBuffer[TypeStateSpecification]
+    TypeStateSpecification.parse(file).foreach(s => {
+      fsms.append(s)
+    })
+    fsms
   }
 }

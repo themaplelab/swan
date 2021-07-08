@@ -30,8 +30,12 @@ class SWIRLPrinterOptions {
   var useArbitraryTypeNames = false
   var printCFG = false
   var genLocationMap = false // expensive
-  var printLineNumber = false // only for canonical (meant for SPDS debugging)
   var printInstantiatedTypes = false
+
+  // only for canonical (meant for SPDS debugging)
+  var printLineNumber = false
+  var cgDebugInfo = new mutable.HashMap[CanOperator, mutable.HashSet[String]]
+
   def printLocation(b: Boolean): SWIRLPrinterOptions = {
     printLocation = b
     this
@@ -54,6 +58,10 @@ class SWIRLPrinterOptions {
   }
   def printInstantiatedTypes(b: Boolean): SWIRLPrinterOptions = {
     printInstantiatedTypes = b
+    this
+  }
+  def cgDebugInfo(info: mutable.HashMap[CanOperator, mutable.HashSet[String]]): SWIRLPrinterOptions = {
+    cgDebugInfo = info
     this
   }
 }
@@ -270,6 +278,12 @@ class SWIRLPrinter extends Printer {
   }
 
   def print(operator: Operator): Unit = {
+    if (options.cgDebugInfo.nonEmpty && options.cgDebugInfo.contains(operator.asInstanceOf[CanOperator])) {
+      options.cgDebugInfo(operator.asInstanceOf[CanOperator]).foreach(f => {
+        print("// " + f)
+        printNewline()
+      })
+    }
     operator match {
       case result: WithResult =>
         printResult(result.value)

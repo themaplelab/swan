@@ -11,8 +11,13 @@
     ],
     "sinks": [
       {
-        "name": "test.sink(sunk: Swift.String) -> ()",
+        "name": "test.sink0(Swift.String) -> ()",
         "description": "generic sink"
+      },
+      {
+        "name": "test.sink1(Swift.String, Swift.String) -> ()",
+        "description": "generic sink",
+        "args": [1]
       }
     ],
     "sanitizers": [

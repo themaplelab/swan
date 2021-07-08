@@ -18,6 +18,8 @@ GREEN="\033[32m"
 ENDCOLOR="\033[0m"
 BOLD="\033[1m"
 
+JAVA_ARGS=
+
 if [ -z $LEVEL ]; then
   export LEVEL=0
 fi
@@ -131,11 +133,15 @@ test_directory() {
       cp ${TESTS_DIR}/sil-packages/${f} swan-dir/
     done
 
+    if [[ ! -z ${ADDR} ]]; then
+      JAVA_ARGS="-Xdebug -Xrunjdwp:transport=dt_socket,server=y,suspend=y,address=${ADDR}"
+    fi
+
     # run analysis
     if [[ ! -z ${TYPESTATE_SPEC} ]]; then
-      java -jar ${LIB_DIR}/driver.jar -e ${TYPESTATE_SPEC} -p swan-dir/ ${DRIVER_OPTIONS} > ${ERROR_MESSAGE_FILE}
+      java ${JAVA_ARGS} -jar ${LIB_DIR}/driver.jar -e ${TYPESTATE_SPEC} -p swan-dir/ ${DRIVER_OPTIONS} > ${ERROR_MESSAGE_FILE}
     else
-      java -jar ${LIB_DIR}/driver.jar -t ${SPEC} -p swan-dir/ ${DRIVER_OPTIONS} > ${ERROR_MESSAGE_FILE}
+      java ${JAVA_ARGS} -jar ${LIB_DIR}/driver.jar -t ${SPEC} -p swan-dir/ ${DRIVER_OPTIONS} > ${ERROR_MESSAGE_FILE}
     fi
     mv ${ERROR_MESSAGE_FILE} driver-log.txt
 

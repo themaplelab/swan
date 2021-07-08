@@ -19,13 +19,13 @@
 
 package ca.ualberta.maple.swan.ir.raw
 
-import ca.ualberta.maple.swan.ir.Exceptions.{ExperimentalException, IncorrectSWIRLStructureException, UnexpectedSILFormatException, UnexpectedSILTypeBehaviourException}
+import ca.ualberta.maple.swan.ir.Exceptions.{IncorrectSWIRLStructureException, UnexpectedSILFormatException, UnexpectedSILTypeBehaviourException}
 import ca.ualberta.maple.swan.ir.{Argument, BinaryOperation, Block, BlockRef, Constants, DynamicDispatchGraph, EnumAssignCase, Function, FunctionAttribute, Literal, Module, ModuleMetadata, Operator, Position, RawInstructionDef, RawOperator, RawOperatorDef, RawTerminator, RawTerminatorDef, RefTable, SILMap, SwitchCase, SwitchEnumCase, Symbol, SymbolRef, Terminator, Type, UnaryOperation, ValueAssignCase}
 import ca.ualberta.maple.swan.parser._
 import ca.ualberta.maple.swan.utils.Logging
 
+import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
-import scala.collection.{immutable, mutable}
 import scala.util.control.Breaks.{break, breakable}
 
 /*
@@ -207,7 +207,7 @@ class SWIRLGen {
     var fmFunction: Option[Function] = None
     if (mainFunction.nonEmpty) {
       // ignore ".changed" to merge correctly
-      val newMainFunctionName = "main_" + silModule.toString.stripSuffix(".changed")
+      val newMainFunctionName = Constants.mainPrefix + silModule.toString.stripSuffix(".changed")
       val fakeMainFunctionName = Constants.fakeMain + silModule.toString
       mainFunction.get.name = newMainFunctionName
       intermediateSymbols.clear()
@@ -223,6 +223,8 @@ class SWIRLGen {
         ops
       }, new RawTerminatorDef(Terminator.ret(retRef), None))
       fmFunction.get.blocks.append(block)
+
+      // Create allocation sites for global values
       silModule.globalVariables.view.zipWithIndex.foreach(g => {
         val global = g._1
         val idx = g._2
@@ -232,6 +234,7 @@ class SWIRLGen {
         block.operators.append(new RawOperatorDef(
           Operator.singletonWrite(ref, dummyCtx.globalsSingletonName, global.globalName.demangled), None))
       })
+
       val functionRef = makeSymbolRef("main_function_ref", dummyCtx)
       val arg0 = makeSymbolRef("arg0", dummyCtx)
       val arg1 = makeSymbolRef("arg1", dummyCtx)
