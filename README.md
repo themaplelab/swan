@@ -104,7 +104,7 @@ To build your project with `(swan-)xcodebuild` you need an `.xcodeproj`. If your
 
 ### 2. Run Analysis
 
-Use `driver.jar` to analyze the SIL in the `swan-dir/`. You can use `-h` to view the driver options. You can learn about how write analysis for SWAN [here](https://github.com/themaplelab/swan/wiki/Writing-Analysis).
+Use `driver.jar` to analyze the SIL in the `swan-dir/`. You can use `-h` to view the driver options. You can learn about how to write analysis for SWAN [here](https://github.com/themaplelab/swan/wiki/Writing-Analysis).
 
 ### 3. Processing analysis results
 
