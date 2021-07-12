@@ -19,6 +19,8 @@
 
 package ca.ualberta.maple.swan.ir.raw
 
+import java.util.regex.Pattern
+
 import ca.ualberta.maple.swan.ir.Exceptions.{IncorrectSWIRLStructureException, UnexpectedSILFormatException, UnexpectedSILTypeBehaviourException}
 import ca.ualberta.maple.swan.ir.{Argument, BinaryOperation, Block, BlockRef, Constants, DynamicDispatchGraph, EnumAssignCase, Function, FunctionAttribute, Literal, Module, ModuleMetadata, Operator, Position, RawInstructionDef, RawOperator, RawOperatorDef, RawTerminator, RawTerminatorDef, RefTable, SILMap, SwitchCase, SwitchEnumCase, Symbol, SymbolRef, Terminator, Type, UnaryOperation, ValueAssignCase}
 import ca.ualberta.maple.swan.parser._
@@ -1163,7 +1165,9 @@ class SWIRLGen {
       var ret: Option[StructInit] = None
       val tpeName = Utils.print(I.tpe)
       ctx.silModule.inits.foreach(init => {
-        if (init.name == tpeName) {
+        if (init.regex && Pattern.matches(init.name, tpeName)) {
+          ret = Some(init)
+        } else if (init.name == tpeName) {
           ret = Some(init)
         }
       })
@@ -1173,10 +1177,9 @@ class SWIRLGen {
     val operators = ArrayBuffer[RawInstructionDef]()
     operators.append(makeOperator(ctx, makeNewOperator(result, ctx)).head)
     if (init.nonEmpty) {
-      verifySILResult(r, init.get.args.length)
       I.operands.view.zipWithIndex.foreach(op => {
         operators.append(makeOperator(ctx,
-          Operator.fieldWrite(makeSymbolRef(op._1.value, ctx), result.ref,init.get.args(op._2), None)).head)
+          Operator.fieldWrite(makeSymbolRef(op._1.value, ctx), result.ref, init.get.args(op._2), None)).head)
       })
     } else {
       val structName = Utils.print(I.tpe)
@@ -1199,11 +1202,13 @@ class SWIRLGen {
   def visitStructElementAddr(r: Option[SILResult], I: SILOperator.structElementAddr, ctx: Context): ArrayBuffer[RawInstructionDef] = {
     // Type is statically unknown, at least for now
     val result = getSingleResult(r, new Type("*Any"), ctx)
+    val pointerReadResult = new Symbol(generateSymbolName(result.ref.name, ctx), new Type("*Any"))
     val aliasResult = new Symbol(generateSymbolName(result.ref.name, ctx), new Type("Any"))
     makeOperator(ctx,
       makeNewOperator(result, ctx),
+      Operator.pointerRead(pointerReadResult, makeSymbolRef(I.operand.value, ctx)),
       Operator.fieldRead(aliasResult, Some(result.ref),
-        makeSymbolRef(I.operand.value, ctx), Utils.SILStructFieldDeclRefToString(I.declRef)),
+        pointerReadResult.ref, Utils.SILStructFieldDeclRefToString(I.declRef)),
       Operator.pointerWrite(aliasResult.ref, result.ref))
   }
 

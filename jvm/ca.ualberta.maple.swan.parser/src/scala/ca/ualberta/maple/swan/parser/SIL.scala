@@ -535,7 +535,7 @@ class SILMangledName(val mangled: String, var demangled: String = "") {
   }
 }
 
-class StructInit(val name: String, val args: ArrayBuffer[String], val tpe: InitType) {
+class StructInit(val name: String, val args: ArrayBuffer[String], val tpe: InitType, val regex: Boolean = false) {
   override def hashCode(): Int = {
     val prime = 31
     var result = 1
@@ -554,6 +554,7 @@ object StructInit {
     basicTypes.foreach(t => {
       arr.append(new StructInit(t, ArrayBuffer("_value"), InitType.normal))
     })
+    arr.append(new StructInit("IndexingIterator<Array<.*>>", ArrayBuffer("_elements", "_position"), InitType.normal, true))
     arr
   }
 }

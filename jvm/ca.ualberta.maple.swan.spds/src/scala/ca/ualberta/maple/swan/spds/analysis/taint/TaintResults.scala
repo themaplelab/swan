@@ -37,10 +37,10 @@ class TaintResults(val paths: ArrayBuffer[Path],
       sb.append("  (")
       sb.append(path._2.toString)
       sb.append(") from ")
-      sb.append(path._1.source)
+      sb.append(path._1.source.name)
       sb.append(" to \n")
       sb.append("           ")
-      sb.append(path._1.sink)
+      sb.append(path._1.sink.name)
       sb.append("\n")
       if (path._1.nodes.nonEmpty) {
         sb.append("      path:\n")
