@@ -108,6 +108,8 @@ Use `driver.jar` to analyze the SIL in the `swan-dir/`. You can use `-h` to view
 
 You can learn about how to write analysis for SWAN [here](https://github.com/themaplelab/swan/wiki/Writing-Analysis). Use `-t` to give the driver a taint analysis specification. Use `-e` to give the driver a typestate specification. You can view some example specifications in `specifications/`. Use `-p` to enable path-tracking. Note that path-tracking sometimes hangs (we are working on fixing this).
 
+Our analysis engine may run out of stack memory. Currently, it will not tell you if this has happened. You can use `-Xss` to increase the stack memory.
+
 ### 3. Processing analysis results
 
 The driver writes analysis results to `swan-dir/*-results.json`.
