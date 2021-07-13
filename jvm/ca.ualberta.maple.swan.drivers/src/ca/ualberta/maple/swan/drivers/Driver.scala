@@ -195,6 +195,7 @@ class Driver extends Runnable {
     val treatRegular = !options.cache || invalidateCache.nonEmpty || !proc.hadExistingCache
     if (!treatRegular) Logging.printInfo(proc.toString)
     // Check early exit conditions
+    if (proc.files.isEmpty) Logging.printInfo("No input files found!")
     if (proc.files.isEmpty || (options.cache && !proc.changeDetected)) return null
     val debugDir: File = {
       if (options.debug) {

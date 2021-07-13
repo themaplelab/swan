@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+# This tests providing a custom taint analysis specification.
+
 source ../../tester.bash
-CUSTOM_SPEC=custom-spec.json
+TAINT_SPEC=custom-spec.json
 test_directory

@@ -1,0 +1,20 @@
+[
+  {
+    "style": 1,
+    "name": "MyProgrammaticTypestate",
+    "description": "",
+    "advice": "",
+    "states": [
+      {
+        "name": "MyErrorState1",
+        "message": "",
+        "severity": 2
+      },
+      {
+        "name": "MyErrorState2",
+        "message": "",
+        "severity": 3
+      }
+    ]
+  }
+]

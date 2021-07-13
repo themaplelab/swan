@@ -1,8 +1,8 @@
-## Testing
+# Testing
 
 The testing scripts are WIP and we are adding features as we need them.
 
-### Adding tests
+## Adding tests
 
 If you want to add a new set of tests:
 
@@ -11,6 +11,9 @@ If you want to add a new set of tests:
 
 ```
 #!/usr/bin/env bash
+
+# describe what this set of tests is for here
+
 source <relative_path_to_tester.bash>
 test_directories
 ```
@@ -22,14 +25,32 @@ If you want to add a new test to an existing group
 
 ```
 #!/usr/bin/env bash
+
+# describe what this test is for here
+
 source <relative_path_to_tester.bash>
 test_directory
 ```
 
-Add your test. Choose from the following test styles.
+Add your test.
 
-- `test.swift`
-- Swift Package Manager with `Sources/main.swift` (single source file only) and `Package.swift`. You must configure Package.swift to have the following target options.
+### Regular Tests
+
+Put your code into `test.swift`. 
+
+**Taint Analysis**
+
+If you want to use the default taint configuration, add `TAINT_SPEC=DEFAULT` to `test.bash`. Otherwise, create a new JSON file with your spec and set `TAINT_SPEC=<my_spec_file>.json`. If you want to use one of the specifications in `specifications/` (from SWAN root), you can use `TAINT_SPEC_ROOT=<relative_path_from_specifications/>`.
+
+**Typestate Analysis**
+
+Specify `TYPESTATE_SPEC=<my_spec_file>.json`. If you want to use one of the specifications in `specifications/` (from SWAN root), you can use `TYPESTATE_SPEC_ROOT=<relative_path_from_specifications/>`.
+
+You can use taint analysis and typestate analysis simultaneously.
+
+### Swift Package Manager Tests
+
+Add your code to `Sources/main.swift` (single source file only) and `Package.swift`. You must configure Package.swift to have the following target options.
 
 ```
 swiftSettings: [
@@ -48,25 +69,8 @@ The `swan-spm.py` script will only dump SIL for the source file (not dependencie
 
 ```
 source ../../tester.bash
+TAINT_SPEC=DEFAULT
 import "ColorizeSwift.sil"
-test_directory
-```
-
-### Using a custom specification
-
-If you want to use a custom taint analysis specification, add it to the test file and set `CUSTOM_SPEC` in `test.bash`.
-
-```
-source ../../tester.bash
-CUSTOM_SPEC=custom-spec.json
-test_directory
-```
-
-If you want to do typestate analysis, you must provide a specification with `TYPESTATE_SPEC` in `test.bash`. This will disable taint analysis for the test.
-
-```
-source ../../tester.bash
-TYPESTATE_SPEC=spec.json
 test_directory
 ```
 
@@ -76,7 +80,11 @@ You can skip tests by adding their name to `skip.txt`. Currently, you need to sp
 
 You can also set tests to be macOS-only by setting `MACOS_ONLY=1` in `test.bash`.
 
-### Options
+### Intentional Failure Testing
+
+You can create tests that you expect to fail by setting the `EXPECTED_ERROR_MESSAGE="..."` in `test.bash`. This string is directly given to `grep` (against the error output), so it's somewhat limited. 
+
+### Environment Variables
 
 You can set environment variables to modify the test behavior. e.g.,
 

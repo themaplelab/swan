@@ -14,7 +14,6 @@
             <option value="$PROJECT_DIR$/ca.ualberta.maple.swan.parser" />
             <option value="$PROJECT_DIR$/ca.ualberta.maple.swan.spds" />
             <option value="$PROJECT_DIR$/ca.ualberta.maple.swan.test" />
-            <option value="$PROJECT_DIR$/ca.ualberta.maple.swan.testclient" />
             <option value="$PROJECT_DIR$/ca.ualberta.maple.swan.utils" />
             <option value="$PROJECT_DIR$/ca.ualberta.maple.swan.viewer" />
           </set>

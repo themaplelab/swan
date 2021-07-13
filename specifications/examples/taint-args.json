@@ -1,0 +1,30 @@
+[
+  {
+    "name": "testing",
+    "description": "",
+    "advice": "",
+    "sources": [
+      {
+        "name": "test.source() -> Swift.String",
+        "description": "generic source"
+      }
+    ],
+    "sinks": [
+      {
+        "name": "test.sink0(Swift.String) -> ()",
+        "description": "generic sink"
+      },
+      {
+        "name": "test.sink1(Swift.String, Swift.String) -> ()",
+        "description": "generic sink",
+        "args": [1]
+      }
+    ],
+    "sanitizers": [
+      {
+        "name": "test.sanitizer(tainted: Swift.String) -> Swift.String",
+        "description": "generic sanitizer"
+      }
+    ]
+  }
+]

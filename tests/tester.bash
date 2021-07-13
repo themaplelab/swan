@@ -9,7 +9,7 @@ SIL_PACKAGES=()
 TEST_FILE=test.swift
 SPM_FILE=Package.swift
 
-SPEC=${TESTS_DIR}/basic-spec.json
+DEFAULT_TAINT_SPEC=${TESTS_DIR}/default-taint-spec.json
 
 ERROR_MESSAGE_FILE=/tmp/tests_error_message.txt
 
@@ -60,12 +60,31 @@ test_directory() {
   (
     set -Ee
     function _catch {
-      echo -e "${RED} \xE2\x9D\x8C FAILED${ENDCOLOR}"
-      if [[ -f ${ERROR_MESSAGE_FILE} ]]; then
-        cat ${ERROR_MESSAGE_FILE}
-        rm ${ERROR_MESSAGE_FILE}
+      if [[ ! -z ${EXPECTED_ERROR_MESSAGE} ]]; then
+        if grep -q "${EXPECTED_ERROR_MESSAGE}" ${ERROR_MESSAGE_FILE} ; then
+          echo -e "${GREEN} \xE2\x9C\x94 PASSED (EXPECTED FAIL)${ENDCOLOR}"
+          exit 0
+        else 
+          echo -e "${RED} \xE2\x9D\x8C FAILED (EXPECTED FAIL)${ENDCOLOR}"
+          echo "Expected error message: ${EXPECTED_ERROR_MESSAGE}" >> ${ERROR_MESSAGE_FILE}
+          cat ${ERROR_MESSAGE_FILE}
+          if [[ ! -z ${OUTPUT_DIR} ]]; then
+            cp ${ERROR_MESSAGE_FILE} error.txt
+          fi
+          rm ${ERROR_MESSAGE_FILE}
+          exit 1
+        fi
+      else
+        echo -e "${RED} \xE2\x9D\x8C FAILED${ENDCOLOR}"
+        if [[ -f ${ERROR_MESSAGE_FILE} ]]; then
+          cat ${ERROR_MESSAGE_FILE}
+          if [[ ! -z ${OUTPUT_DIR} ]]; then
+            cp ${ERROR_MESSAGE_FILE} error.txt
+          fi
+          rm ${ERROR_MESSAGE_FILE}
+        fi
+        exit 1
       fi
-      exit 1
     }
     trap _catch ERR
 
@@ -93,6 +112,9 @@ test_directory() {
       TEST_TMPDIR=${OUTPUT_DIR}
     fi
 
+    IS_TAINT=
+    IS_TYPESTATE=
+
     # copy everything to the tmp dir
     count=`ls -1 *.swift 2>/dev/null | wc -l`
     if [ $count != 0 ]; then 
@@ -107,12 +129,33 @@ test_directory() {
       cp -r Sources/. ${TEST_TMPDIR}/Sources/
       cp ${SPM_FILE} ${TEST_TMPDIR}
     fi
-    if [[ ! -z ${CUSTOM_SPEC} ]]; then
-      SPEC=${CUSTOM_SPEC}
-      cp ${CUSTOM_SPEC} ${TEST_TMPDIR}
+
+    # Taint spec setup
+
+    if [[ ! -z ${TAINT_SPEC} ]]; then
+      if [[ ${TAINT_SPEC} != DEFAULT ]]; then
+        cp ${TAINT_SPEC} ${TEST_TMPDIR}/taint-spec.json
+      else
+        cp ${DEFAULT_TAINT_SPEC} ${TEST_TMPDIR}/taint-spec.json
+      fi
+      IS_TAINT=1
     fi
+
+    if [[ ! -z ${TAINT_SPEC_ROOT} ]]; then
+      cp ${LIB_DIR}/../specifications/${TAINT_SPEC_ROOT} ${TEST_TMPDIR}/taint-spec.json
+      IS_TAINT=1
+    fi
+
+    # Typestate spec setup
+
     if [[ ! -z ${TYPESTATE_SPEC} ]]; then
-      cp ${TYPESTATE_SPEC} ${TEST_TMPDIR}
+      cp ${TYPESTATE_SPEC} ${TEST_TMPDIR}/typestate-spec.json
+      IS_TYPESTATE=1
+    fi
+
+    if [[ ! -z ${TYPESTATE_SPEC_ROOT} ]]; then
+      cp ${LIB_DIR}/../specifications/${TYPESTATE_SPEC_ROOT} ${TEST_TMPDIR}/typestate-spec.json
+      IS_TYPESTATE=1
     fi
 
     curr=${PWD}
@@ -143,15 +186,24 @@ test_directory() {
     fi
 
     # run analysis
-    if [[ ! -z ${TYPESTATE_SPEC} ]]; then
-      java ${JAVA_ARGS} -jar ${LIB_DIR}/driver.jar -e ${TYPESTATE_SPEC} -p swan-dir/ ${DRIVER_OPTIONS} > ${ERROR_MESSAGE_FILE}
-    else
-      java ${JAVA_ARGS} -jar ${LIB_DIR}/driver.jar -t ${SPEC} -p swan-dir/ ${DRIVER_OPTIONS} > ${ERROR_MESSAGE_FILE}
+
+    if [[ -z ${IS_TAINT} && -z ${IS_TYPESTATE} ]]; then
+      echo -e "${RED} NO ANALYSIS SPEC${ENDCOLOR}" > ${ERROR_MESSAGE_FILE}
+      false
     fi
-    mv ${ERROR_MESSAGE_FILE} driver-log.txt
+
+    if [[ ! -z ${IS_TAINT} ]]; then
+      java ${JAVA_ARGS} -jar ${LIB_DIR}/driver.jar -t taint-spec.json -p swan-dir/ ${DRIVER_OPTIONS} > ${ERROR_MESSAGE_FILE} 2>&1
+      mv ${ERROR_MESSAGE_FILE} driver-log.txt
+    fi
+
+    if [[ ! -z ${IS_TYPESTATE} ]]; then
+      java ${JAVA_ARGS} -jar ${LIB_DIR}/driver.jar -e typestate-spec.json -p swan-dir/ ${DRIVER_OPTIONS} > ${ERROR_MESSAGE_FILE} 2>&1
+      mv ${ERROR_MESSAGE_FILE} driver-log.txt
+    fi
 
     # check annotations
-    java -jar ${LIB_DIR}/annotation.jar swan-dir/ > ${ERROR_MESSAGE_FILE}
+    java -jar ${LIB_DIR}/annotation.jar swan-dir/ > ${ERROR_MESSAGE_FILE} 2>&1
     rm ${ERROR_MESSAGE_FILE}
     
     # cleanup

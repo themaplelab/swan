@@ -1,5 +1,8 @@
 #!/usr/bin/env bash
 
+# This tests specifying which arguments of a sink
+# are sensitive to tainted data.
+
 source ../../tester.bash
-CUSTOM_SPEC=custom-spec.json
+TAINT_SPEC=custom-spec.json
 test_directory
