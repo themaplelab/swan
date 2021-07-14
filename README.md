@@ -51,6 +51,7 @@ We aim to provide developers and researchers with an easy-to-use and well-docume
 - [SIL To SWIRL Spec](https://github.com/themaplelab/swan/wiki/SIL-To-SWIRL-Spec)
 - [IDE Configuration](https://github.com/themaplelab/swan/wiki/IDE-Configuration)
 - [Writing Analysis](https://github.com/themaplelab/swan/wiki/Writing-Analysis)
+- [Detecting Inefficient Location API Configurations](https://github.com/themaplelab/swan/wiki/Detecting-Inefficient-Location-API-Configurations)
 
 ## Getting started
 
