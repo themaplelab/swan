@@ -77,7 +77,7 @@ func test_insert() {
   sink(sunk : arr[0]); //!testing!sink
 }
 
-func test_insert_contentsof() {
+func test_insert_contentsOf() {
   let src = source();
   let arr1 = [src]; //!testing!source
   var arr2 = [String]();
@@ -144,8 +144,7 @@ func test_removeAll(){
   let src = source();
   var arr = ["a", src, "b", "c"]; //!testing!source
   arr.removeAll();
-  arr.append("a");
-  sink(sunk : arr[0]); //!testing!sink <--- FALSE POSITIVE
+  sink(sunk : arr[0]); //!testing!sink!fp
 }
 
 func test_popLast() {
@@ -154,6 +153,7 @@ func test_popLast() {
   let removed = arr.popLast();
   sink(sunk : removed!); //!testing!sink
 }
+
 // ------- Finding -------
 
 func test_findFirst() {
@@ -229,6 +229,7 @@ func test_dropLast() {
   let arr2 = arr1.dropLast(1);
   sink(sunk : arr2[0]); //!testing!sink
 }
+
 //-------- Reordering --------
 
 func test_sorted1() {
@@ -241,7 +242,7 @@ func test_sorted1() {
 func test_sorted2() {
   let src = source();
   let arr1 = ["a", src, "b", "c", "d"]; //!testing!source
-  let arr2 = arr1.sorted(by: >);
+  let arr2 = arr1.sorted(by: <);
   sink(sunk : arr2[0]); //!testing!sink
 }
 
@@ -274,6 +275,5 @@ func test_compactMap() {
   let arr2 = arr1.compactMap { str in str }
   sink(sunk : arr2[0]); //!testing!sink
 }
-
 
 // ...

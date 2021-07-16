@@ -69,6 +69,18 @@ bb0(%0 : $`*ClosedRange<Int>`, %1 : $`*Collection<τ_0_0>`, %2 : $`*Collection<�
   return %ret
 }
 
+// %0 -> String, %1 -> ptr to Collection
+// Returns an array containing the results of mapping
+// the given closure over the sequence’s elements.
+func [model] @`(extension in Swift):Swift.Collection.map<A>((A.Element) throws -> A1) throws -> [A1]` : $`(@owned Array<τ_1_0>, @error Error)` {
+bb0(%0 : $`(@out String, @error Error)`, %1 : $`*Collection<τ_0_0>`):
+  new_arr = new $`(@owned Array<τ_1_0>, @error Error)`
+  collect = pointer_read %1, $`Collection<τ_0_0>`
+  val = pointer_read collect, $`τ_0_0`
+  pointer_write val to new_arr
+  return new_arr
+}
+
 // -------------------- Swift.Array ---------------------------------
 
 // %0 -> value to write, %1 -> index, %2 -> array
@@ -199,9 +211,7 @@ bb0(%0 : $`*Array<τ_0_0>`, %1 : $`Array<τ_0_0>`, %2 : $`@thin Array<τ_0_0>.Ty
   return %ret
 }
 
-// ------- Array (Removing) -------
-
-// %0 -> value to remove, %1 -> index, %2 -> ptr to array
+// %0 -> the removed value, %1 -> index, %2 -> ptr to array
 // get the value from %2 and write it in %0
 func [model] @`Swift.Array.remove(at: Swift.Int) -> A` : $`@out τ_0_0` {
 bb0(%0 : $`*String`, %1 : $`Int`, %2 : $`*Array<τ_0_0>`):
@@ -215,18 +225,18 @@ bb0(%0 : $`*String`, %1 : $`Int`, %2 : $`*Array<τ_0_0>`):
 // get the close range from %3 and write it into %0 for field read
 func [model] @`Swift.ClosedRange.init(uncheckedBounds: (lower: A, upper: A)) -> Swift.ClosedRange<A>` : $`@out ClosedRange<τ_0_0>` {
 bb0(%0 : $`*ClosedRange<τ_0_0>`, %1 : $`τ_0_0`, %2 : $`τ_0_0`, %3 : $`ClosedRange<τ_0_0>.Type`):
-  elem = pointer_read %3, $`ClosedRange<τ_0_0>`
-  pointer_write elem to %0
-  return elem
+  range = new $`@out ClosedRange<τ_0_0>`
+  pointer_write range to %0
+  return range
 }
 
 // %0 -> ptr to range, %1 -> lower limit, %2 ->  upper limit, %3 -> Range type
 // get the range
 func [model] @`Swift.Range.init(uncheckedBounds: (lower: A, upper: A)) -> Swift.Range<A>` : $`@out Range<τ_0_0>` {
 bb0(%0 : $`*Range<τ_0_0>`, %1 : $`τ_0_0`, %2 : $`τ_0_0`, %3 : $`Range<τ_0_0>.Type`):
-  elem = pointer_read %3, $`Range<τ_0_0>`
-  pointer_write elem to %0
-  return elem
+  range = new $`@out Range<τ_0_0>`
+  pointer_write range to %0
+  return range
 }
 
 // %0 -> value need to be read， %1 -> array
@@ -248,10 +258,14 @@ bb0(%0 : $`*τ_0_0`, %1 : $`*Array<τ_0_0>`):
   pointer_write get_val to %0
   return get_val
 }
-// %1 -> array
+
+// %0 -> bool, %1 -> array
 // remove all the elements in the array
 func [model] @`Swift.Array.removeAll(keepingCapacity: Swift.Bool) -> ()` : $`()` {
 bb0(%0 : $`Bool`, %1 : $`*Array<τ_0_0>`):
+  val = new $`τ_0_0`
+  arr = pointer_read %1, $`Array<τ_0_0>`
+  pointer_write val to arr
   %ret = new $`()`
   return %ret
 }
@@ -269,8 +283,6 @@ bb0(%0 : $`*Optional<τ_0_0>`, %1 : $`*Array<τ_0_0>`):
   return elem
 }
 
-//-----------Array (Finding)------------
-
 // %0 -> value need to be read， %2 -> ptr to array
 // return the first element in the sequence
 func [model] @`(extension in Swift):Swift.Sequence.first(where: (A.Element) throws -> Swift.Bool) throws -> A.Element?` : $`(@out Optional<τ_0_0.Element>, @error Error)` {
@@ -281,13 +293,6 @@ bb0(%0 : $`*Optional<τ_0_0>`, %1 : $`(Bool, @error Error)`, %2 : $`*Array<τ_0_
   field_write val to elem, data
   pointer_write elem to %0
   return elem
-}
-
-
-func [model] @`static Swift.String.== infix(Swift.String, Swift.String) -> Swift.Bool` : $`Bool` {
-bb0(%0 : $`@guaranteed String`, %1 : $`@guaranteed String`, %2 : $`@thin String.Type`):
-  %ret = new $`Bool`
-  return %ret
 }
 
 // %0 -> value need to be read， %2 -> ptr to array
@@ -301,8 +306,6 @@ bb0(%0 : $`*Optional<τ_0_0>`, %1 : $`(Bool, @error Error)`, %2 : $`*Array<τ_0_
   pointer_write elem to %0
   return elem
 }
-
-//-----------Array (Selecting)------------
 
 // %0 -> slice of array , %1 -> Maximum array length, %2 -> array
 // get the certain range of the elements from the array
@@ -364,8 +367,6 @@ bb0(%0 : $`*ArraySlice<τ_0_0>`, %1 : $`*τ_0_0`, %2 : $`*Array<τ_0_0>`):
   return elem
 }
 
-//---------Array (Excluding)----------------
-
 // %0 -> slice of array , %1 -> Maximum array length, %2 -> array
 //remove certain elements started from the front of the array
 func [model] @`(extension in Swift):Swift.Collection.dropFirst(Swift.Int) -> A.SubSequence`: $`@out τ_0_0.SubSequence` {
@@ -386,8 +387,7 @@ bb0(%0 : $`*ArraySlice<τ_0_0>`, %1 : $`τ_0_0`, %2 : $`*Array<τ_0_0>`) :
   return elem
 }
 
-////---------Array (Reordering)----------------
-
+// %0 -> sorted array
 // sort the array in certain order
 func [model] @`(extension in Swift):Swift.Sequence< where A.Element: Swift.Comparable>.sorted() -> [A.Element]` : $`@owned Array<τ_0_0.Element>` {
 bb0(%0 : $`*Array<τ_0_0>`):
@@ -395,6 +395,7 @@ bb0(%0 : $`*Array<τ_0_0>`):
   return arr
 }
 
+// %0 -> first String, %1 -> second String, %2 -> String type
 // compared the elements based on some conditions
 func [model] @`static (extension in Swift):Swift.Comparable.<= infix(A, A) -> Swift.Bool` : $`Bool` {
 bb0(%0 : $`*String`, %1 : $`*String`, %2 : $`@thick String.Type`):
@@ -402,13 +403,7 @@ bb0(%0 : $`*String`, %1 : $`*String`, %2 : $`@thick String.Type`):
   return %ret
 }
 
-// compared the elements based on some conditions
-func [model] @`static (extension in Swift):Swift.Comparable.> infix(A, A) -> Swift.Bool` : $`Bool` {
-bb0(%0 : $`*String`, %1 : $`*String`, %2 : $`@thick String.Type`):
-  %ret = new $`Bool`
-  return %ret
-}
-
+// %0 -> first String, %1 -> second String, %2 -> String type
 // compared the elements based on some conditions
 func [model] @`static Swift.String.< infix(Swift.String, Swift.String) -> Swift.Bool` : $`Bool` {
 bb0(%0 : $`String`, %1 : $`String`, %2 : $`String.Type`):
@@ -416,6 +411,7 @@ bb0(%0 : $`String`, %1 : $`String`, %2 : $`String.Type`):
   return %ret
 }
 
+// %0 -> first String, %1 -> second String, %2 -> String type
 // compared the elements based on some conditions
 func [model] @`static (extension in Swift):Swift.Comparable.>= infix(A, A) -> Swift.Bool` : $`Bool` {
 bb0(%0 : $`*String`, %1 : $`*String`, %2 : $`String.Type`):
@@ -427,7 +423,10 @@ bb0(%0 : $`*String`, %1 : $`*String`, %2 : $`String.Type`):
 // read array from %1
 func [model] @`(extension in Swift):Swift.Sequence.sorted(by: (A.Element, A.Element) throws -> Swift.Bool) throws -> [A.Element]` : $`(@owned Array<τ_0_0.Element>, @error Error)` {
 bb0(%0 : $`(Bool, @error Error)`, %1 : $`*Array<τ_0_0>`):
-  arr = pointer_read %1, $`Array<τ_0_0>`
+  arr = new $`(@owned Array<τ_0_0.Element>, @error Error)`
+  arr1 = pointer_read %1, $`Array<τ_0_0>`
+  val = pointer_read arr1, $`τ_0_0`
+  pointer_write val to arr
   return arr
 }
 
@@ -439,41 +438,20 @@ bb0(%0 : $`*Array<τ_0_0>`):
   return arr
 }
 
-// -------- transforming ---------
-
-// %1 -> ptr to Array
-// Returns an array containing the results of mapping
-// the given closure over the sequence’s elements.
-func [model] @`(extension in Swift):Swift.Collection.map<A>((A.Element) throws -> A1) throws -> [A1]` : $`(@owned Array<τ_1_0>, @error Error)` {
-bb0(%0 : $`(@out String, @error Error)`, %1 : $`*Array<τ_0_0>`):
-  new_arr = new $`(@owned Array<τ_1_0>, @error Error)`
-  arr = pointer_read %1, $`Array<τ_0_0>`
-  val = pointer_read arr, $`τ_0_0`
-  pointer_write val to new_arr
-  return new_arr
-}
-
-
 func [model] @`(extension in Swift):Swift.MutableCollection< where A: Swift.BidirectionalCollection>.reverse() -> ()` : $`()` {
 bb0(%0 : $`*Array<τ_0_0>`):
   %ret = new $`()`
   return %ret
 }
 
-// convert uppercase to lowercase
-func [model] @`Swift.String.lowercased() -> Swift.String`: $`@owned String` {
-bb0(%0 : $`@guaranteed String`) :
-  return %0
-}
-
-// %1 -> ptr to Array
+// %0 -> optional String, %1 -> ptr to Array
 // Returns an array containing the non-nil results of calling
 // the given transformation with each element of this sequence.
 func [model] @`(extension in Swift):Swift.Sequence.compactMap<A>((A.Element) throws -> A1?) throws -> [A1]` : $`(@owned Array<τ_1_0>, @error Error)` {
-bb0(%0 : $`(@out Optional<String>, @error Error)`, %1 : $`*Array<τ_0_0>`):
+bb0(%0 : $`(@out Optional<String>, @error Error)`, %1 : $`*Sequence<String>`):
   new_arr = new $`(@owned Array<τ_1_0>, @error Error)`
-  arr = pointer_read %1, $`Array<τ_0_0>`
-  val = pointer_read arr, $`τ_0_0`
+  arr = pointer_read %1, $`Sequence<String>`
+  val = pointer_read arr, $`String`
   pointer_write val to new_arr
   return new_arr
 }
@@ -484,17 +462,16 @@ bb0(%0 : $`(@out Optional<String>, @error Error)`, %1 : $`*Array<τ_0_0>`):
 // Write array to pointer %0. Index not used.
 // Also likely returns the element, but the return value
 // isn't used in practice.
-func [model] @`Swift.ArraySlice.subscript.getter : (Swift.Int) -> A` : $`τ_0_0` {
+    func [model] @`Swift.ArraySlice.subscript.getter : (Swift.Int) -> A` : $`τ_0_0` {
 bb0(%0 : $`*τ_0_0`, %1 : $`Int`, %2: $`ArraySlice<τ_0_0>`):
   val = pointer_read %2, $`τ_0_0`
   pointer_write val to %0
   return val
 }
-// -------------------- Swift.Set ---------------------------------
 
-//---------------initialing----------
+// -------------------- Swift.Set ----------------------------
 
-// %0 -> array that stores the elements
+// %0 -> array that stores the elements, %1 -> set type
 // initialising a set with elements
 func [model] @`Swift.Set.init(arrayLiteral: A...) -> Swift.Set<A>` : $`@owned Set<τ_0_0>` {
 bb0(%0 : $`Array<τ_0_0>`, %1 : $`@thin Set<τ_0_0>.Type`):
@@ -504,6 +481,7 @@ bb0(%0 : $`Array<τ_0_0>`, %1 : $`@thin Set<τ_0_0>.Type`):
   return set
 }
 
+// %0 -> a type of set
 // initialising a set without elements
 func [model] @`Swift.Set.init() -> Swift.Set<A>` : $`@owned Set<τ_0_0>` {
 bb0(%0 : $`@thin Set<τ_0_0>.Type`):
@@ -511,15 +489,13 @@ bb0(%0 : $`@thin Set<τ_0_0>.Type`):
   return %ret
 }
 
-//------------------adding------------
-
 // %0 -> value to write, %1 -> the element that will be inserted , %2 -> set
 // insert element in the set
 func [model] @`Swift.Set.insert(__owned A) -> (inserted: Swift.Bool, memberAfterInsert: A)` : $`(Bool, @out τ_0_0)` {
 bb0(%0 : $`*τ_0_0`, %1 : $`*τ_0_0`, %2 : $`*Set<τ_0_0>`):
   elem = pointer_read %1, $`τ_0_0`
   set = pointer_read %2, $`Set<τ_0_0>`
-  pointer_write [weak] elem to %0
+  pointer_write elem to %0
   pointer_write [weak] elem to set
   %ret = new $`(Bool, @out τ_0_0)`
   return %ret
@@ -529,29 +505,30 @@ bb0(%0 : $`*τ_0_0`, %1 : $`*τ_0_0`, %2 : $`*Set<τ_0_0>`):
 // update the value in the set
 func [model] @`Swift.Set.update(with: __owned A) -> A?` : $`@out Optional<τ_0_0>` {
 bb0(%0 : $`*Optional<τ_0_0>`, %1 : $`*τ_0_0`, %2 : $`*Set<τ_0_0>`):
+  val = pointer_read %0, $`Optional<τ_0_0>`
   elem = pointer_read %1, $`τ_0_0`
   set = pointer_read %2, $`Set<τ_0_0>`
   pointer_write [weak] elem to set
-  pointer_write [weak] elem to %0
-  return %0
+  pointer_write elem to val
+  return val
 }
-//--------------Removing----------------
 
-// %1 -> the set
+// %0 -> bool, %1 -> set
 //filter some elements by some conditions
 func [model] @`Swift.Set.filter((A) throws -> Swift.Bool) throws -> Swift.Set<A>` : $`(@owned Set<τ_0_0>, @error Error)` {
 bb0(%0 : $`(Bool, @error Error)`, %1 : $`Set<τ_0_0>`):
   return %1
 }
 
-// check each elements with conditions
+// %0 -> first String, %1 -> second String, %2 -> String type
+// compare each element by using "=="
 func [model] @`static Swift.String.== infix(Swift.String, Swift.String) -> Swift.Bool` : $`Bool` {
 bb0(%0 : $`@guaranteed String`, %1 : $`@guaranteed String`, %2 : $`@thin String.Type`):
   %ret = new $`Bool`
   return %ret
 }
 
-// %0 -> element that needs to be read, %1 -> set
+// %0 -> element that needs to be read which is removed element, %1 -> String, %2 -> set
 // get the element from set and write it in %0
 // remove element from set
 func [model] @`Swift.Set.remove(A) -> A?` : $`@out Optional<τ_0_0>` {
@@ -584,46 +561,42 @@ bb0(%0 : $`*τ_0_0`, %1 : $`@owned Set<τ_0_0>.Index`, %2 : $`*Set<τ_0_0>`):
   return elem
 }
 
-// get the start index
+// return the index
 func [model] @`Swift.Set.startIndex.getter : Swift.Set<A>.Index` : $`@owned Set<τ_0_0>.Index` {
 bb0(%0 : $`Set<τ_0_0>`):
   %ret = new $`@owned Set<τ_0_0>.Index`
   return %ret
 }
 
-//remove all the elements from the set
+// %0 -> bool, %1 -> set that needs to be remove all the elements
+// remove all the elements from the set
 func [model] @`Swift.Set.removeAll(keepingCapacity: Swift.Bool) -> ()` : $`()` {
 bb0(%0 : $`Bool`, %1 : $`*Set<τ_0_0>`):
-  new_set = new $`Set<τ_0_0>`
-  pointer_write new_set to %1
+  val = new $`τ_0_0`
+  set = pointer_read %1, $`Set<τ_0_0>`
+  pointer_write val to set
   %ret = new $`()`
   return %ret
 }
-
-
-//------------------Combining------------
 
 // %0 -> set need to be combined, %1 -> set that combine other set
 // create a new set to combine two set
 func [model] @`Swift.Set.union<A where A == A1.Element, A1: Swift.Sequence>(__owned A1) -> Swift.Set<A>` : $`@owned Set<τ_0_0>` {
 bb0(%0 : $`*Set<τ_0_0>`, %1 : $`Set<τ_0_0>`):
   new_set = new $`@owned Set<τ_0_0>`
-  set = pointer_read %0, $`Set<τ_0_0>`
-  data1 = pointer_read set, $`τ_0_0`
-  data2 = pointer_read %1, $`τ_0_0`
-  pointer_write [weak] data1 to new_set
-  pointer_write [weak] data2 to new_set
+  data = pointer_read %1, $`τ_0_0`
+  pointer_write data to new_set
   return new_set
 }
 
 // %0 -> array that contains elements for inserting, %1 -> set
 // insert the element into the set
 func [model] @`Swift.Set.formUnion<A where A == A1.Element, A1: Swift.Sequence>(__owned A1) -> ()` : $`()` {
-bb0(%0 : $`*Array<τ_0_0>`, %1 : $`*Set<τ_0_0>`):
-  arr = pointer_read %0, $`Array<τ_0_0>`
-  elem = pointer_read arr, $`τ_0_0`
-  set = pointer_read %1, $`Set<τ_0_0>`
-  pointer_write elem to set
+bb0(%0 : $`*Set<τ_0_0>`, %1 : $`*Set<τ_0_0>`):
+  set1 = pointer_read %0, $`Set<τ_0_0>`
+  elem = pointer_read set1, $`τ_0_0`
+  set2 = pointer_read %1, $`Set<τ_0_0>`
+  pointer_write [weak] elem to set2
   %ret = new $`()`
   return %ret
 }
@@ -633,10 +606,8 @@ bb0(%0 : $`*Array<τ_0_0>`, %1 : $`*Set<τ_0_0>`):
 func [model] @`Swift.Set.intersection(Swift.Set<A>) -> Swift.Set<A>` : $`@owned Set<τ_0_0>` {
 bb0(%0 : $`@owned Set<τ_0_0>`, %1 : $`Set<τ_0_0>`):
   new_set = new $`@owned Set<τ_0_0>`
-  data1 = pointer_read %0, $`τ_0_0`
-  data2 = pointer_read %1, $`τ_0_0`
-  pointer_write [weak] data1 to new_set
-  pointer_write [weak] data2 to new_set
+  data = pointer_read %1, $`τ_0_0`
+  pointer_write data to new_set
   return new_set
 }
 
@@ -645,11 +616,8 @@ bb0(%0 : $`@owned Set<τ_0_0>`, %1 : $`Set<τ_0_0>`):
 func [model] @`Swift.Set.intersection<A where A == A1.Element, A1: Swift.Sequence>(A1) -> Swift.Set<A>` : $`@owned Set<τ_0_0>` {
 bb0(%0 : $`*Array<τ_0_0>`, %1 : $`Set<τ_0_0>`):
   new_set = new $`@owned Set<τ_0_0>`
-  arr = pointer_read %0, $`Array<τ_0_0>`
-  data1 = pointer_read arr, $`τ_0_0`
-  data2 = pointer_read %1, $`τ_0_0`
-  pointer_write [weak] data1 to new_set
-  pointer_write [weak] data2 to new_set
+  data = pointer_read %1, $`τ_0_0`
+  pointer_write data to new_set
   return new_set
 }
 
@@ -659,7 +627,7 @@ func [model] @`Swift.Set.formIntersection<A where A == A1.Element, A1: Swift.Seq
 bb0(%0 : $`*Set<τ_0_0>`, %1 : $`@inout Set<τ_0_0>`):
   elem = pointer_read %0, $`τ_0_0`
   set = pointer_read %1, $`Set<τ_0_0>`
-  pointer_write elem to set
+  pointer_write [weak] elem to set
   %ret = new $`()`
   return %ret
 }
@@ -669,11 +637,8 @@ bb0(%0 : $`*Set<τ_0_0>`, %1 : $`@inout Set<τ_0_0>`):
 func [model] @`Swift.Set.symmetricDifference<A where A == A1.Element, A1: Swift.Sequence>(__owned A1) -> Swift.Set<A>` : $`@owned Set<τ_0_0>` {
 bb0(%0 : $`*Set<τ_0_0>`, %1 : $`Set<τ_0_0>`):
   new_set = new $`@owned Set<τ_0_0>`
-  set = pointer_read %0, $`Set<τ_0_0>`
-  data1 = pointer_read set, $`τ_0_0`
-  data2 = pointer_read %1, $`τ_0_0`
-  pointer_write [weak] data1 to new_set
-  pointer_write [weak] data2 to new_set
+  data = pointer_read %1, $`τ_0_0`
+  pointer_write data to new_set
   return new_set
 }
 
@@ -683,7 +648,7 @@ func [model] @`Swift.Set.formSymmetricDifference(__owned Swift.Set<A>) -> ()` : 
 bb0(%0 : $`@owned Set<τ_0_0>`, %1 : $`*Set<τ_0_0>`):
   elem = pointer_read %0, $`τ_0_0`
   set = pointer_read %1, $`Set<τ_0_0>`
-  pointer_write elem to set
+  pointer_write [weak] elem to set
   %ret = new $`()`
   return %ret
 }
@@ -695,19 +660,19 @@ bb0(%0 : $`*Array<τ_0_0>`, %1 : $`*Set<τ_0_0>`):
   arr = pointer_read %0, $`Array<τ_0_0>`
   elem = pointer_read arr, $`τ_0_0`
   set = pointer_read %1, $`Set<τ_0_0>`
-  pointer_write elem to set
+  pointer_write [weak] elem to set
   %ret = new $`()`
   return %ret
 }
 
 // %0 -> array, %1 -> set
-// remove the elements in the set by given array
+// remove the elements in the set by given sequence
 func [model] @`Swift.Set.subtract<A where A == A1.Element, A1: Swift.Sequence>(A1) -> ()` : $`()` {
 bb0(%0 : $`*Array<τ_0_0>`, %1 : $`*Set<τ_0_0>`):
   arr = pointer_read %0, $`Array<τ_0_0>`
   elem = pointer_read arr, $`τ_0_0`
   set = pointer_read %1, $`Set<τ_0_0>`
-  pointer_write elem to set
+  pointer_write [weak] elem to set
   %ret = new $`()`
   return %ret
 }
@@ -718,38 +683,33 @@ func [model] @`Swift.Set.subtract(Swift.Set<A>) -> ()` : $`()` {
 bb0(%0 : $`@owned Set<τ_0_0>`, %1 : $`*Set<τ_0_0>`):
   elem = pointer_read %0, $`τ_0_0`
   set = pointer_read %1, $`Set<τ_0_0>`
-  pointer_write elem to set
+  pointer_write [weak] elem to set
   %ret = new $`()`
   return %ret
 }
 
-// %0 -> array, %1 -> second set
+// %0 -> array, %1 -> second set (Main)
 // Returns a new set containing the elements of this set
 // that do not occur in the given array.
-
 func [model] @`Swift.Set.subtracting<A where A == A1.Element, A1: Swift.Sequence>(A1) -> Swift.Set<A>` : $`@owned Set<τ_0_0>` {
-bb0(%0 : $`*Array<τ_0_0>`, %1 : $`Set<τ_0_0>`):
+bb0(%0 : $`@guaranteed *Array<τ_0_0>`, %1 : $`@owned Set<τ_0_0>`) :
   set = new $`@owned Set<τ_0_0>`
-  arr = pointer_read %0, $`Array<τ_0_0>`
-  elem1 = pointer_read arr, $`τ_0_0`
-  elem2 = pointer_read %1, $`τ_0_0`
+  elem1 = pointer_read %1, $`τ_0_0`
   pointer_write elem1 to set
-  pointer_write elem2 to set
   return set
 }
 
-// %0 -> first set, %1 -> second set
+// %0 -> first set, %1 -> second set (Main)
 // Returns a new set containing the elements of this set
 // that do not occur in the given set.
 func [model] @`Swift.Set.subtracting(Swift.Set<A>) -> Swift.Set<A>`: $`@owned Set<τ_0_0>` {
 bb0(%0 : $`@guaranteed Set<τ_0_0>`, %1 : $`@owned Set<τ_0_0>`) :
   set = new $`@owned Set<τ_0_0>`
-  elem1 = pointer_read %0, $`τ_0_0`
-  elem2 = pointer_read %1, $`τ_0_0`
+  elem1 = pointer_read %1, $`τ_0_0`
   pointer_write elem1 to set
-  pointer_write elem2 to set
   return set
 }
+
 // -------------------- Swift.Dictionary ----------------------------
 
 // %0 -> initial values for dictionary, %2 -> dictionary type
@@ -784,8 +744,14 @@ bb0(%0 : $`*τ_0_1`, %1 : $`*τ_0_0`, %2 : $`τ_0_1`, %3 : $`Dictionary<τ_0_0, 
   return ret
 }
 
-//----------- adding -----------
+func [model] @`Swift.String.init<A where A: Swift.LosslessStringConvertible, A: Swift.Sequence, A.Swift.Sequence.Element == Swift.Character>(A) -> Swift.String` : $`@owned String` {
+bb0(%0 : $`*τ_0_0`, %1 : $`@thin String.Type`):
+  %ret = new $`@owned String`
+  return %ret
+}
 
+// %0 -> the value that need to update, %1 -> value, %2 -> key, %3 -> Dictionary
+// update the value corresponding to key
 func [model] @`Swift.Dictionary.updateValue(_: __owned B, forKey: A) -> B?` : $`@out Optional<τ_0_1>` {
 bb0(%0 : $`*Optional<τ_0_1>`, %1 : $`*τ_0_1`, %2 : $`*τ_0_0`, %3 : $`*Dictionary<τ_0_0, τ_0_1>`):
   elem = new $`@out Optional<τ_0_1>`
@@ -796,124 +762,125 @@ bb0(%0 : $`*Optional<τ_0_1>`, %1 : $`*τ_0_1`, %2 : $`*τ_0_0`, %3 : $`*Diction
   return elem
 }
 
+// %0 -> first dictionary, %2 -> second dictionary
+// merge two dictionary into one
 func [model] @`Swift.Dictionary.merge(_: __owned [A : B], uniquingKeysWith: (B, B) throws -> B) throws -> ()` : $`@error Error` {
 bb0(%0 : $`Dictionary<τ_0_0, τ_0_1>`, %1 : $`(@out String, @error Error)`, %2 : $`*Dictionary<τ_0_0, τ_0_1>`):
   dict = pointer_read %2, $`Dictionary<τ_0_0, τ_0_1>`
-  pointer_write %0 to dict
+  pointer_write [weak] %0 to dict
   %ret = new $`()`
   return %ret
 }
 
+// %0 -> first dictionary created with zip, %2 -> second dictionary
+// merge two dictionary into one
+// not sure because of zip
 func [model] @`Swift.Dictionary.merge<A where A1: Swift.Sequence, A1.Element == (A, B)>(_: __owned A1, uniquingKeysWith: (B, B) throws -> B) throws -> ()` : $`@error Error` {
 bb0(%0 : $`*Zip2Sequence<Array<τ_0_0>, Array<τ_0_1>>`, %1 : $`(@out String, @error Error)`, %2 : $`*Dictionary<τ_0_0, τ_0_1>`):
   zipSeq = pointer_read %0, $`Zip2Sequence<Array<τ_0_0>, Array<τ_0_1>>`
+  new_dict = new $`Dictionary<τ_0_0, τ_0_1>`
   Arr = pointer_read zipSeq, $`Array<τ_0_1>`
   value = pointer_read Arr, $`τ_0_1`
   dict = pointer_read %2, $`Dictionary<τ_0_0, τ_0_1>`
-  pointer_write value to dict
+  pointer_write value to new_dict
+  pointer_write [weak] new_dict to dict
   %ret = new $`@error Error`
   return %ret
 }
 
-
-func [model] @`Swift.Dictionary.merging(_: __owned [A : B], uniquingKeysWith: (B, B) throws -> B) throws -> [A : B]` : $`(@owned Dictionary<τ_0_0, τ_0_1>, @error Error)` {
-bb0(%0 : $`Dictionary<τ_0_0, τ_0_1>`, %1 : $`(@out String, @error Error)`, %2 : $`Dictionary<τ_0_0, τ_0_1>`):
-  new_dict = new $`(@owned Dictionary<τ_0_0, τ_0_1>, @error Error)`
-  elem1 = pointer_read %0, $`τ_0_1`
-  elem2 = pointer_read %2, $`τ_0_1`
-  pointer_write [weak] elem1 to %2
-  pointer_write [weak] elem2 to %1
-  return %2
-}
-
-func [model] @`Swift.Dictionary.merging<A where A1: Swift.Sequence, A1.Element == (A, B)>(_: __owned A1, uniquingKeysWith: (B, B) throws -> B) throws -> [A : B]` : $`(@owned Dictionary<τ_0_0, τ_0_1>, @error Error)` {
-bb0(%0 : $`*Zip2Sequence<Array<τ_0_0>, Array<τ_0_1>>`, %1 : $`(@out String, @error Error)`, %2 : $`Dictionary<τ_0_0, τ_0_1>`):
-  new_dict = new $`(@owned Dictionary<τ_0_0, τ_0_1>, @error Error)`
-  arr = pointer_read %0, $`Array<τ_0_1>`
-  elem1 = pointer_read arr, $`τ_0_1`
-  elem2 = pointer_read %2, $`τ_0_1`
-  pointer_write [weak] elem1 to new_dict
-  pointer_write [weak] elem2 to new_dict
-  return new_dict
-}
-
-// ------- removing ---------
-
+// %0 -> bool type, %1 -> dictionary
+// Returns a new dictionary containing the key-value pairs of the dictionary
+// that satisfy the given predicate.
 func [model] @`Swift.Dictionary.filter(((key: A, value: B)) throws -> Swift.Bool) throws -> [A : B]` : $`(@owned Dictionary<τ_0_0, τ_0_1>, @error Error)` {
 bb0(%0 : $`(Bool, @error Error)`, %1 : $`Dictionary<τ_0_0, τ_0_1>`):
   return %1
 }
 
-func [model] @`static Swift.String.== infix(Swift.String, Swift.String) -> Swift.Bool` : $`Bool` {
-bb0(%0 : $`@guaranteed String`, %1 : $`@owned String`, %2 : $`@thin String.Type`):
-  %ret = new $`Bool`
-  return %ret
-}
-
+// %0 -> dictionary that needs to be read a value
+// get the value from dictionary
 func [model] @`Swift.Dictionary.values.getter : [A : B].Values` : $`@owned Dictionary<τ_0_0, τ_0_1>.Values` {
 bb0(%0 : $`Dictionary<τ_0_0, τ_0_1>`):
-  return %0
+  elem = new $`@owned Dictionary<τ_0_0, τ_0_1>.Values`
+  val = pointer_read %0, $`τ_0_1`
+  pointer_write val to elem
+  return elem
 }
 
-
-// ------ Transforming --------
-
+// %1 -> dictionary
+// Returns a new dictionary containing the keys of this dictionary with
+// the values transformed by the given closure.
 func [model] @`Swift.Dictionary.mapValues<A>((B) throws -> A1) throws -> [A : A1]` : $`(@owned Dictionary<τ_0_0, τ_1_0>, @error Error)` {
 bb0(%0 : $`(@out String, @error Error)`, %1 : $`@owned Dictionary<τ_0_0, τ_0_1>`):
-  return %1
+  dict = new $`(@owned Dictionary<τ_0_0, τ_1_0>, @error Error)`
+  val = pointer_read %1, $`τ_0_1`
+  pointer_write val to dict
+  return dict
 }
 
+// %0 -> converted String
+// convert Uppercase letter to lowercase letter
 func [model] @`Swift.String.lowercased() -> Swift.String` : $`@owned String` {
 bb0(%0 : $`@guaranteed String`):
   return %0
 }
 
-func [model] @`(extension in Swift):Swift.Collection.map<A>((A.Element) throws -> A1) throws -> [A1]` : $`(@owned Array<τ_1_0>, @error Error)` {
-bb0(%0 : $`(@out String, @error Error)`, %1 : $`*Dictionary<τ_0_0, τ_0_1>`):
-  arr = new $`(@owned Array<τ_1_0>, @error Error)`
-  dict = pointer_read %1, $`Dictionary<τ_0_0, τ_0_1>`
-  elem = pointer_read dict, $`τ_0_1`
-  pointer_write elem to arr
-  return arr
-}
-
+// %0 -> String, %1 -> String
+// two Strings for comparison
+// compare the values
 func [model] @`static (extension in Swift):Swift.Comparable.> infix(A, A) -> Swift.Bool` : $`Bool` {
 bb0(%0 : $`*τ_0_0`, %1 : $`*τ_0_0`, %2 : $`@thick τ_0_0.Type`):
   %ret = new $`Bool`
   return %ret
 }
 
-//func [model] @`(extension in Swift):Swift.Sequence.sorted(by: (A.Element, A.Element) throws -> Swift.Bool) throws -> [A.Element]` : $`(@owned Array<τ_0_0.Element>, @error Error)` {
-//bb0(%0 : $`(Bool, @error Error)`, %1 : $`*Dictionary<τ_0_0, τ_0_1>`):
-//  arr = new $`(@owned Array<τ_0_0.Element>, @error Error)`
-//  dict = pointer_read %1, $`Dictionary<τ_0_0, τ_0_1>`
-//  elem = pointer_read dict, $`τ_0_0`
-//  pointer_write elem to arr
-//  return arr
-//}
-
-func [model] @`(extension in Swift):Swift.Sequence.compactMap<A>((A.Element) throws -> A1?) throws -> [A1]` : $`(@owned Array<τ_1_0>, @error Error)` {
-bb0(%0 : $`(@out Optional<String>, @error Error)`, %1 : $`*Dictionary<τ_0_0, τ_0_1>`):
-  arr = new $`(@owned Array<τ_1_0>, @error Error)`
-  dict = pointer_read %1, $`Dictionary<τ_0_0, τ_0_1>`
-  val = pointer_read dict, $`τ_0_0`
-  pointer_write val to arr
-  return arr
-}
-
-
-func [model] @`Swift.String.init<A where A: Swift.LosslessStringConvertible, A: Swift.Sequence, A.Swift.Sequence.Element == Swift.Character>(A) -> Swift.String` : $`@owned String` {
-bb0(%0 : $`*τ_0_0`, %1 : $`@thin String.Type`):
-  %ret = new $`@owned String`
-  return %ret
-}
-
+// %1 -> dictionary
+// Returns a new dictionary containing only the key-value pairs
+// that have non-nil values as the result of transformation by the given closure.
 func [model] @`Swift.Dictionary.compactMapValues<A>((B) throws -> A1?) throws -> [A : A1]` : $`(@owned Dictionary<τ_0_0, τ_1_0>, @error Error)` {
 bb0(%0 : $`(@out Optional<String>, @error Error)`, %1 : $`@owned Dictionary<τ_0_0, τ_0_1>`):
-  return %1
+  dict = new $`(@owned Dictionary<τ_0_0, τ_1_0>, @error Error)`
+  val = pointer_read %1, $`τ_0_1`
+  key = pointer_read %1, $`τ_0_0`
+  pointer_write [weak] val to dict
+  pointer_write [weak] key to dict
+  return dict
 }
 
+// %0 -> first dictionary, %2 -> second dictionary
+// Creates a dictionary by merging the given dictionary into this dictionary
+// using a combining closure to determine the value for duplicate keys.
+func [model] @`Swift.Dictionary.merging(_: __owned [A : B], uniquingKeysWith: (B, B) throws -> B) throws -> [A : B]` : $`(@owned Dictionary<τ_0_0, τ_0_1>, @error Error)` {
+bb0(%0 : $`Dictionary<τ_0_0, τ_0_1>`, %1 : $`(@out String, @error Error)`, %2 : $`Dictionary<τ_0_0, τ_0_1>`):
+  new_dict = new $`(@owned Dictionary<τ_0_0, τ_0_1>, @error Error)`
+  elem = pointer_read %2, $`τ_0_1`
+  pointer_write elem to new_dict
+  return new_dict
+}
 
+// %0 -> first dictionary, %2 -> second dictionary
+//Creates a dictionary by merging key-value pairs in a sequence into the dictionary
+//using a combining closure to determine the value for duplicate keys.
+// not sure because of zip
+func [model] @`Swift.Dictionary.merging<A where A1: Swift.Sequence, A1.Element == (A, B)>(_: __owned A1, uniquingKeysWith: (B, B) throws -> B) throws -> [A : B]` : $`(@owned Dictionary<τ_0_0, τ_0_1>, @error Error)` {
+bb0(%0 : $`*Zip2Sequence<Array<τ_0_0>, Array<τ_0_1>>`, %1 : $`(@out String, @error Error)`, %2 : $`Dictionary<τ_0_0, τ_0_1>`):
+  new_dict = new $`(@owned Dictionary<τ_0_0, τ_0_1>, @error Error)`
+  elem = pointer_read %2, $`τ_0_1`
+  pointer_write elem to new_dict
+  return new_dict
+}
+
+// %0 -> the zip sequence to store keys and values, %1 -> ptr to keys array, %2 -> ptr to values array
+// return the zip sequence with keys and values for generate a dictionary
+// not sure because of zip
+func [model] @`Swift.zip<A, B where A: Swift.Sequence, B: Swift.Sequence>(A, B) -> Swift.Zip2Sequence<A, B>` : $`@out Zip2Sequence<τ_0_0, τ_0_1>` {
+bb0(%0 : $`*Zip2Sequence<Array<τ_0_0>, Array<τ_0_1>>`, %1 : $`*Array<τ_0_0>`, %2 : $`*Array<τ_0_1>`):
+  zipSeq = new $`@out Zip2Sequence<τ_0_0, τ_0_1>`
+  arr = pointer_read %2, $`Array<τ_0_1>`
+  pointer_write [weak] arr to %0
+  val = pointer_read arr, $`τ_0_1`
+  pointer_write val to zipSeq
+  return zipSeq
+}
 
 // -------------------- Swift.String --------------------------------
 
