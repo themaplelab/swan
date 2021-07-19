@@ -247,7 +247,7 @@ class CallGraphConstruction(moduleGroup: ModuleGroup) {
       })
     }
 
-    Logging.printTimeStampSimple(1, startTime, "initial constructing")
+    Logging.printTimeStampSimple(1, startTime, "constructing")
     Logging.printInfo("  Entry Points:  " + cg.getEntryPoints.size().toString)
     Logging.printInfo("  Trivial Edges: " + trivialEdges.toString)
     Logging.printInfo("  Virtual Edges: " + virtualEdges.toString)
@@ -263,6 +263,9 @@ class CallGraphConstruction(moduleGroup: ModuleGroup) {
     var retModuleGroup = moduleGroup
 
     if (modified) {
+      Logging.printInfo("Constructing Call Graph with added dynamic models")
+      val startTime = System.nanoTime()
+
       val parser = new SWIRLParser(builder.toString)
       val newRawModule = parser.parseModule()
       val newCanModule = new SWIRLPass().runPasses(newRawModule)
@@ -280,13 +283,14 @@ class CallGraphConstruction(moduleGroup: ModuleGroup) {
       methods.values.foreach(m => if (toTraverse.contains(m.getName)) entryPoints.append(m))
       buildFromEntryPoints(entryPoints)
       retModuleGroup = newModuleGroup
+
+      Logging.printInfo("  Entry Points:  " + cg.getEntryPoints.size().toString)
+      Logging.printInfo("  Trivial Edges: " + trivialEdges.toString)
+      Logging.printInfo("  Virtual Edges: " + virtualEdges.toString)
+      Logging.printInfo("  Queried Edges: " + queriedEdges.toString)
+      Logging.printTimeStampSimple(1, startTime, "constructing")
     }
 
-    Logging.printInfo("  Entry Points:  " + cg.getEntryPoints.size().toString)
-    Logging.printInfo("  Trivial Edges: " + trivialEdges.toString)
-    Logging.printInfo("  Virtual Edges: " + virtualEdges.toString)
-    Logging.printInfo("  Queried Edges: " + queriedEdges.toString)
-    Logging.printTimeStampSimple(1, startTime, "constructing")
 
     (cg, debugInfo, retModuleGroup, newValues)
   }
