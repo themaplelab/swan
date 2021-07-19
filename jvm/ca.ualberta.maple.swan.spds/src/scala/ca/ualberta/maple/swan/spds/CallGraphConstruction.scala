@@ -69,7 +69,7 @@ class CallGraphConstruction(moduleGroup: ModuleGroup) {
     mainEntryPoints.addAll(moduleGroup.functions.filter(f => f.name.startsWith(Constants.fakeMain)).map(f => makeMethod(f)))
     otherEntryPoints.addAll(moduleGroup.functions.filter(f => !f.name.startsWith(Constants.fakeMain)).map(f => makeMethod(f)))
 
-    // Eliminate functions that get called (referenced)
+    // Eliminate functions that get called (referenced), except for recursive case
     methods.foreach(m => {
       val f = m._2.delegate
       f.blocks.foreach(b => {
@@ -87,7 +87,11 @@ class CallGraphConstruction(moduleGroup: ModuleGroup) {
                 otherEntryPoints.remove(methods(name))
               }
             }
-            case Operator.functionRef(_, name) => otherEntryPoints.remove(methods(name))
+            case Operator.functionRef(_, name) => {
+              if (name != m._1) {
+                otherEntryPoints.remove(methods(name))
+              }
+            }
             case _ =>
           }
         })
