@@ -140,6 +140,7 @@ func test_removeLast() {
   sink(sunk : removed); //!testing!sink
 }
 
+//SWAN-27
 func test_removeAll(){
   let src = source();
   var arr = ["a", src, "b", "c"]; //!testing!source

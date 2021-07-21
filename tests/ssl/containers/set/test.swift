@@ -25,21 +25,23 @@ func test_insert() {
   sink(sunk : aSet.first!); //!testing!sink
 }
 
-func test_update() {
-  let src = source();
-  var aSet : Set = ["a", "b", "c"];
-  aSet.update(with: src); //!testing!source
-  sink(sunk : aSet.first!); //!testing!sink
-}
+// func test_update() {
+     //SWAN-23
+//   let src = source();
+//   var aSet : Set = ["a", "b", "c"];
+//   aSet.update(with: src); !testing!source
+//   sink(sunk : aSet.first!); !testing!sink
+// }
 
 //--------------Removing----------------
 
-func test_filter() {
-  let src = source();
-  let aSet : Set = ["a", "b", "c", "b", src]; //!testing!source
-  let Set2 = aSet.filter{ $0 != "b" };
-  sink(sunk : Set2.first!); //!testing!sink
-}
+// func test_filter() {
+     //SWAN-23
+//   let src = source();
+//   let aSet : Set = ["a", "b", "c", "b", src]; !testing!source
+//   let Set2 = aSet.filter{ $0 != "b" };
+//   sink(sunk : Set2.first!); !testing!sink
+// }
 
 func test_remove() {
   let src = source();
@@ -62,26 +64,28 @@ func test_removeAt() {
   sink(sunk : removed); //!testing!sink
 }
 
-func test_removeAll() {
-  let src = source();
-  var aSet : Set = ["a", "b", "c", src]; //!testing!source
-  aSet.removeAll();
-  sink(sunk : aSet.first!); //!testing!sink!fp
-}
+// SWAN-27
+// func test_removeAll() {
+     //SWAN-23
+//   let src = source();
+//   var aSet : Set = ["a", "b", "c", src]; !testing!source
+//   aSet.removeAll();
+//   sink(sunk : aSet.first!); !testing!sink!fp
+// }
 
 //--------------Combining----------------
 
-// func test_union() {
-//   //SWAN-23
-//   let src = source();
-//   let aSet : Set = ["a", "b", "c", src]; !testing!source
-//   let aSet1 : Set = ["e", "f", "g"];
-//   let newSet = aSet.union(aSet1);
-//   sink(sunk : newSet.first!); !testing!sink
-// }
+func test_union() {
+  //weird model
+  let src = source();
+  let aSet : Set = ["a", "b", "c", src]; //!testing!source!fn
+  let aSet1 : Set = ["e", "f", "g"];
+  let newSet = aSet.union(aSet1);
+  sink(sunk : newSet.first!); //!testing!sink!fn
+}
 
 // func test_formUnion1() {
-//   //SWAN-23
+     //SWAN-23
 //   let src = source();
 //   var aSet : Set = ["a", "b", "c", src]; !testing!source
 //   let aSet1 : Set = ["a", "b", "g"];
@@ -90,7 +94,7 @@ func test_removeAll() {
 // }
 
 // func test_formUnion2() {
-//      //SWAN-23
+     //SWAN-23
 //   let src = source();
 //   var aSet : Set = ["a", "b", "c", src]; !testing!source
 //   let arr = ["a", "b", "g"];
@@ -98,8 +102,9 @@ func test_removeAll() {
 //   sink(sunk : aSet.first!); !testing!sink
 // }
 
+// weird model
+// timeout
 // func test_intersection1() {
-//      //SWAN-23
 //   let src = source();
 //   let aSet : Set = ["a", "b", "c", src]; !testing!source
 //   let aSet1 : Set = ["a", "b", "d"];
@@ -107,8 +112,9 @@ func test_removeAll() {
 //   sink(sunk : newSet.first!); !testing!sink
 // }
 
+// weird model
+// timeout
 // func test_intersection2() {
-//      //SWAN-23
 //   let src = source();
 //   let aSet : Set = ["a", "b", "c", src]; !testing!source
 //   let aSet1 = ["a", "b", "d"];
@@ -117,7 +123,7 @@ func test_removeAll() {
 // }
 
 // func test_formIntersection() {
-//      //SWAN-23
+      //SWAN-23
 //   let src = source();
 //   var aSet : Set = ["a", "b", "c", src]; !testing!source
 //   let aSet1 : Set = ["a", "b", "d"];
@@ -125,17 +131,18 @@ func test_removeAll() {
 //   sink(sunk : aSet.first!); !testing!sink
 // }
 
+// weird model
 // func test_symmetricDifference() {
-//      //SWAN-23
+     //SWAN-23
 //   let src = source();
-//   let aSet : Set = ["a", "b", "c", src]; !testing!source
+//   let aSet : Set = ["a", "b", "c", src]; !testing!source!fn
 //   let aSet1 : Set = ["a", "b", "d"];
 //   let newSet = aSet.symmetricDifference(aSet1);
-//   sink(sunk : newSet.first!); !testing!sink
+//   sink(sunk : newSet.first!); !testing!sink!fn
 // }
 
 // func test_formSymmetricDifference1() {
-//      //SWAN-23
+     //SWAN-23
 //   let src = source();
 //   var aSet : Set = ["a", "b", "c", src]; !testing!source
 //   let aSet1 : Set = ["a", "b", "d"];
@@ -144,7 +151,7 @@ func test_removeAll() {
 // }
 
 // func test_formSymmetricDifference2() {
-//      //SWAN-23
+     //SWAN-23
 //   let src = source();
 //   var aSet : Set = ["a", "b", "c", src]; !testing!source
 //   let aSet1 = ["a", "b", "d"];
@@ -153,7 +160,7 @@ func test_removeAll() {
 // }
 
 // func test_subtract1() {
-//     // SWAN-23
+     //SWAN-23
 //   let src = source();
 //   var aSet : Set = ["a", "b", "c", src]; !testing!source
 //   let aSet1 = ["a", "b", "d"];
@@ -162,7 +169,7 @@ func test_removeAll() {
 // }
 
 // func test_subtract2() {
-//      //SWAN-23
+     //SWAN-23
 //   let src = source();
 //   var aSet : Set = ["a", "b", "c", src]; !testing!source
 //   let aSet1 : Set = ["a", "b", "d"];
@@ -171,7 +178,7 @@ func test_removeAll() {
 // }
 
 // func test_subtracting1() {
-//      //SWAN-23
+     //SWAN-23
 //   let src = source();
 //   let aSet : Set = ["a", "b", "c", src]; !testing!source
 //   let arr = ["a", "b", "d"];
@@ -181,7 +188,7 @@ func test_removeAll() {
 
 // If "let" is changed to "var" for "aSet", the test is not passed
 // func test_subtracting2() {
-//      //SWAN-23
+     //SWAN-23
 //   let src = source();
 //   let aSet : Set = ["a", "b", "c", src]; !testing!source
 //   let aSet1 : Set = ["a", "b", "d"];
