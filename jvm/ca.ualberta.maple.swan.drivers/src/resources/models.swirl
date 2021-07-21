@@ -596,6 +596,7 @@ bb0(%0 : $`Bool`, %1 : $`*Set<τ_0_0>`):
 
 // %0 -> set needs to be combined, %1 -> set that combine other set
 // create a new set to combine two set
+// weird model
 func [model] @`Swift.Set.union<A where A == A1.Element, A1: Swift.Sequence>(__owned A1) -> Swift.Set<A>` : $`@owned Set<τ_0_0>` {
 bb0(%0 : $`*Set<τ_0_0>`, %1 : $`Set<τ_0_0>`):
   new_set = new $`@owned Set<τ_0_0>`
@@ -621,6 +622,7 @@ bb0(%0 : $`*Set<τ_0_0>`, %1 : $`*Set<τ_0_0>`):
 
 // %0 -> first set, %1 -> second set
 // get the intersection elements from two set and return a new set
+// weird model
 func [model] @`Swift.Set.intersection(Swift.Set<A>) -> Swift.Set<A>` : $`@owned Set<τ_0_0>` {
 bb0(%0 : $`@owned Set<τ_0_0>`, %1 : $`Set<τ_0_0>`):
   new_set = new $`@owned Set<τ_0_0>`
@@ -633,6 +635,7 @@ bb0(%0 : $`@owned Set<τ_0_0>`, %1 : $`Set<τ_0_0>`):
 
 // %0 -> array, %1 -> set
 // get the intersection elements from set and array, and return a new set
+// weird model
 func [model] @`Swift.Set.intersection<A where A == A1.Element, A1: Swift.Sequence>(A1) -> Swift.Set<A>` : $`@owned Set<τ_0_0>` {
 bb0(%0 : $`*Array<τ_0_0>`, %1 : $`Set<τ_0_0>`):
   new_set = new $`@owned Set<τ_0_0>`
@@ -658,6 +661,7 @@ bb0(%0 : $`*Set<τ_0_0>`, %1 : $`*Set<τ_0_0>`):
 
 // %0 -> first set, %1 -> second set
 // create a new set to store the different elements in two sets
+// weird model
 func [model] @`Swift.Set.symmetricDifference<A where A == A1.Element, A1: Swift.Sequence>(__owned A1) -> Swift.Set<A>` : $`@owned Set<τ_0_0>` {
 bb0(%0 : $`*Set<τ_0_0>`, %1 : $`Set<τ_0_0>`):
   new_set = new $`@owned Set<τ_0_0>`
@@ -778,6 +782,7 @@ bb0(%0 : $`*Optional<τ_0_1>`, %1 : $`*τ_0_1`, %2 : $`*τ_0_0`, %3 : $`*Diction
 
 // %0 -> first dictionary, %2 -> second dictionary
 // merge two dictionary into one
+// weird model
 func [model] @`Swift.Dictionary.merge(_: __owned [A : B], uniquingKeysWith: (B, B) throws -> B) throws -> ()` : $`@error Error` {
 bb0(%0 : $`Dictionary<τ_0_0, τ_0_1>`, %1 : $`(@out String, @error Error)`, %2 : $`*Dictionary<τ_0_0, τ_0_1>`):
   dict = pointer_read %2, $`Dictionary<τ_0_0, τ_0_1>`
@@ -847,6 +852,7 @@ bb0(%0 : $`*τ_0_0`, %1 : $`*τ_0_0`, %2 : $`@thick τ_0_0.Type`):
 // %1 -> dictionary
 // Returns a new dictionary containing only the key-value pairs
 // that have non-nil values as the result of transformation by the given closure.
+// weird model
 func [model] @`Swift.Dictionary.compactMapValues<A>((B) throws -> A1?) throws -> [A : A1]` : $`(@owned Dictionary<τ_0_0, τ_1_0>, @error Error)` {
 bb0(%0 : $`(@out Optional<String>, @error Error)`, %1 : $`@owned Dictionary<τ_0_0, τ_0_1>`):
   dict = new $`(@owned Dictionary<τ_0_0, τ_1_0>, @error Error)`
@@ -858,6 +864,7 @@ bb0(%0 : $`(@out Optional<String>, @error Error)`, %1 : $`@owned Dictionary<τ_0
 // %0 -> first dictionary, %2 -> second dictionary
 // Creates a dictionary by merging the given dictionary into this dictionary
 // using a combining closure to determine the value for duplicate keys.
+// weird model
 func [model] @`Swift.Dictionary.merging(_: __owned [A : B], uniquingKeysWith: (B, B) throws -> B) throws -> [A : B]` : $`(@owned Dictionary<τ_0_0, τ_0_1>, @error Error)` {
 bb0(%0 : $`Dictionary<τ_0_0, τ_0_1>`, %1 : $`(@out String, @error Error)`, %2 : $`Dictionary<τ_0_0, τ_0_1>`):
   new_dict = new $`(@owned Dictionary<τ_0_0, τ_0_1>, @error Error)`
