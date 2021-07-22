@@ -391,6 +391,28 @@ bb0(%0 : $`Bool`, %1 : $`*Array<τ_0_0>`):
   return %ret
 }
 
+// %0 -> reversed array
+// reverse the elements in the array
+func [model] @`(extension in Swift):Swift.MutableCollection< where A: Swift.BidirectionalCollection>.reverse() -> ()` : $`()` {
+bb0(%0 : $`*Array<τ_0_0>`):
+  %ret = new $`()`
+  return %ret
+}
+
+// -------------------- Swift.ArraySlice ----------------------------
+
+// %0 -> value to write, %1 -> index, %2 -> array
+// Write array to pointer %0. Index not used.
+// Also likely returns the element, but the return value
+// isn't used in practice.
+func [model] @`Swift.ArraySlice.subscript.getter : (Swift.Int) -> A` : $`τ_0_0` {
+bb0(%0 : $`*τ_0_0`, %1 : $`Int`, %2: $`ArraySlice<τ_0_0>`):
+  val = pointer_read %2, $`τ_0_0`
+  pointer_write val to %0
+  return val
+}
+
+// -------------------- Swift.Sequence ----------------------------
 
 // %0 -> value needs to be written to from the Sequence,  %2 -> ptr to Sequence
 // return the first element in the sequence
@@ -413,22 +435,6 @@ bb0(%0 : $`*Array<τ_0_0>`):
   val = pointer_read arr1, $`τ_0_0`
   pointer_write val to arr
   return arr
-}
-
-// %0 -> first String, %1 -> second String, %2 -> String type
-// compared the elements based on some conditions
-func [model] @`static (extension in Swift):Swift.Comparable.<= infix(A, A) -> Swift.Bool` : $`Bool` {
-bb0(%0 : $`*String`, %1 : $`*String`, %2 : $`@thick String.Type`):
-  %ret = new $`Bool`
-  return %ret
-}
-
-// %0 -> first String, %1 -> second String, %2 -> String type
-// compared the elements based on some conditions
-func [model] @`static (extension in Swift):Swift.Comparable.>= infix(A, A) -> Swift.Bool` : $`Bool` {
-bb0(%0 : $`*String`, %1 : $`*String`, %2 : $`String.Type`):
-  %ret = new $`Bool`
-  return %ret
 }
 
 // %0 -> bool from condition to reorder the array , %1 -> sorted array
@@ -455,14 +461,6 @@ bb0(%0 : $`*Array<τ_0_0>`):
   return arr
 }
 
-// %0 -> reversed array
-// reverse the elements in the array
-func [model] @`(extension in Swift):Swift.MutableCollection< where A: Swift.BidirectionalCollection>.reverse() -> ()` : $`()` {
-bb0(%0 : $`*Array<τ_0_0>`):
-  %ret = new $`()`
-  return %ret
-}
-
 // %0 -> String for compactMap , %1 -> ptr to Array
 // Returns an array containing the non-nil results of calling
 // the given transformation with each element of this sequence.
@@ -475,17 +473,22 @@ bb0(%0 : $`(@out Optional<String>, @error Error)`, %1 : $`*Sequence<String>`):
   return new_arr
 }
 
-// -------------------- Swift.ArraySlice ----------------------------
+// -------------------- Swift.Comparable ----------------------------
 
-// %0 -> value to write, %1 -> index, %2 -> array
-// Write array to pointer %0. Index not used.
-// Also likely returns the element, but the return value
-// isn't used in practice.
-func [model] @`Swift.ArraySlice.subscript.getter : (Swift.Int) -> A` : $`τ_0_0` {
-bb0(%0 : $`*τ_0_0`, %1 : $`Int`, %2: $`ArraySlice<τ_0_0>`):
-  val = pointer_read %2, $`τ_0_0`
-  pointer_write val to %0
-  return val
+// %0 -> first String, %1 -> second String, %2 -> String type
+// compared the elements based on some conditions
+func [model] @`static (extension in Swift):Swift.Comparable.>= infix(A, A) -> Swift.Bool` : $`Bool` {
+bb0(%0 : $`*String`, %1 : $`*String`, %2 : $`String.Type`):
+  %ret = new $`Bool`
+  return %ret
+}
+
+// %0 -> first String, %1 -> second String, %2 -> String type
+// compared the elements based on some conditions
+func [model] @`static (extension in Swift):Swift.Comparable.<= infix(A, A) -> Swift.Bool` : $`Bool` {
+bb0(%0 : $`*String`, %1 : $`*String`, %2 : $`@thick String.Type`):
+  %ret = new $`Bool`
+  return %ret
 }
 
 // -------------------- Swift.Set ----------------------------
