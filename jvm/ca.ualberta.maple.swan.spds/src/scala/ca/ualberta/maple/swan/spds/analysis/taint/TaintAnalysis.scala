@@ -22,12 +22,11 @@ package ca.ualberta.maple.swan.spds.analysis.taint
 import java.util
 import java.util.regex.Pattern
 
-import boomerang.results.{AbstractBoomerangResults, ForwardBoomerangResults}
+import boomerang.results.ForwardBoomerangResults
 import boomerang.scene._
 import boomerang.weights.{DataFlowPathWeight, PathTrackingBoomerang}
 import boomerang.{BackwardQuery, Boomerang, BoomerangOptions, DefaultBoomerangOptions, ForwardQuery}
 import ca.ualberta.maple.swan.ir.{CanInstructionDef, Position}
-import ca.ualberta.maple.swan.spds.analysis.pathtracking.SWANBoomerang
 import ca.ualberta.maple.swan.spds.analysis.taint.TaintResults.Path
 import ca.ualberta.maple.swan.spds.analysis.taint.TaintSpecification.JSONMethod
 import ca.ualberta.maple.swan.spds.structures.{SWANCallGraph, SWANInvokeExpr, SWANMethod, SWANStatement}
