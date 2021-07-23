@@ -9,8 +9,8 @@ func sink(sunk: String) {
 class File {
   init() {}
   func open() {
-    let sourced = source();
-    sink(sunk: sourced); //!testing!source //!testing!sink
+    let sourced = source(); //!testing!source
+    sink(sunk: sourced); //!testing!sink
   }
   func close() {}
 }

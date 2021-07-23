@@ -107,9 +107,9 @@ To build your project with `(swan-)xcodebuild` you need an `.xcodeproj`. If your
 
 Use `driver.jar` to analyze the SIL in the `swan-dir/`. You can use `-h` to view the driver options.
 
-You can learn about how to write analysis for SWAN [here](https://github.com/themaplelab/swan/wiki/Writing-Analysis). Use `-t` to give the driver a taint analysis specification. Use `-e` to give the driver a typestate specification. You can view some example specifications in `specifications/`. Use `-p` to enable path-tracking. Note that path-tracking sometimes hangs (we are working on fixing this).
+You can learn about how to write analysis for SWAN [here](https://github.com/themaplelab/swan/wiki/Writing-Analysis). Use `-t` to give the driver a taint analysis specification. Use `-e` to give the driver a typestate specification. You can view some example specifications in `specifications/`. Use `-p` to enable path-tracking. Note that path-tracking sometimes hangs (see the related [issue](https://github.com/CodeShield-Security/SPDS/issues/26#issuecomment-882852532) for details). The default analysis will still show you the source and sink callsite locations.
 
-Our analysis engine may run out of stack memory. Currently, it will not tell you if this has happened. You can use `-Xss` to increase the stack memory.
+The analysis engine (SDPS) may run out of stack memory. Currently, it will not tell you if this has happened. You can use `-Xss` to increase the stack memory.
 
 ### 3. Processing analysis results
 

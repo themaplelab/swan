@@ -8,8 +8,8 @@ func sink(sunk: String) {
 
 func test_closure_simple() {
   let closure = {
-    let sourced = source(); 
-    sink(sunk: sourced); //!testing!source//!testing!sink
+    let sourced = source(); //!testing!source
+    sink(sunk: sourced); //!testing!sink
   }
   closure();
 }
@@ -18,16 +18,16 @@ func test_closure_parameter() {
   let closure:(String) -> () = { s in
     sink(sunk: s); //!testing!sink
   }
-  let sourced = source();
-  closure(sourced); //!testing!source
+  let sourced = source(); //!testing!source
+  closure(sourced);
 }
 
 func test_closure_return() {
   let closure:(String) -> String = { s in 
     return s;
   }
-  let sourced = source();
-  let throughClosure = closure(sourced); //!testing!source
+  let sourced = source(); //!testing!source
+  let throughClosure = closure(sourced);
   sink(sunk: throughClosure); //!testing!sink
 }
 
@@ -36,8 +36,8 @@ func test_closure_function_parameter() {
     closure();
   }
   foo(closure: {
-    let sourced = source(); 
-    sink(sunk: sourced); //!testing!source//!testing!sink
+    let sourced = source(); //!testing!source
+    sink(sunk: sourced); //!testing!sink
   });
 }
 
@@ -46,10 +46,10 @@ func test_closure_trailing() {
     sink(sunk: s); //!testing!sink
     closure();
   }
-  let sourced1 = source(); 
-  foo(s: sourced1) { //!testing!source
-    let sourced2 = source(); 
-    sink(sunk: sourced2); //!testing!source//!testing!sink
+  let sourced1 = source(); //!testing!source 
+  foo(s: sourced1) {
+    let sourced2 = source(); //!testing!source
+    sink(sunk: sourced2); //!testing!sink
   };
 }
 
@@ -57,8 +57,8 @@ func test_closure_autoclosure() {
   func foo(closure: @autoclosure ()->()) {
     closure();
   }
-  let sourced = source();
-  foo(closure: (sink(sunk: sourced))); //!testing!source//!testing!sink
+  let sourced = source(); //!testing!source
+  foo(closure: (sink(sunk: sourced))); //!testing!sink
 }
 
 func test_closure_autoclosure_return() {
@@ -91,8 +91,8 @@ func test_closure_array_escaping() {
     closureArr.append(closure);
   }
   foo(closure: {
-    let sourced = source(); 
-    sink(sunk: sourced); //!testing!source!fn//!testing!sink!fn //SWAN-34
+    let sourced = source(); //!testing!source!fn //SWAN-34
+    sink(sunk: sourced); //!testing!sink!fn //SWAN-34
   });
   closureArr[0]();
 }
@@ -106,8 +106,8 @@ func test_closure_capturing() {
     }
     return foo;
   }
-  let sourced = source();
-  let foo = makeFoo(s: sourced); //!testing!source!fn //SWAN-34
+  let sourced = source(); //!testing!source!fn //SWAN-34
+  let foo = makeFoo(s: sourced); 
   sink(sunk: foo()); //!testing!sink!fn //SWAN-34
 }
 
@@ -116,6 +116,6 @@ func test_closure_currying() {
     return {s + $0}
   }
   let curriedFoo = foo("something");
-  let sourced = source();
-  sink(sunk: curriedFoo(sourced)) //!testing!source!fn//!testing!sink!fn //SWAN-34
+  let sourced = source(); //!testing!source!fn //SWAN-34
+  sink(sunk: curriedFoo(sourced)) //!testing!sink!fn //SWAN-34
 }

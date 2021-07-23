@@ -11,13 +11,13 @@ func sink1(_ nonsensitive: String, _ sensitive: String) {
 }
 
 func test_sink0() {
-  let sourced = source(); 
-  sink0(sourced); //!testing!source//!testing!sink
+  let sourced = source(); //!testing!source
+  sink0(sourced); //!testing!sink
 }
 
 func test_sink1() {
-  let sourced = source(); 
-  sink1("", sourced); //!testing!source//!testing!sink
+  let sourced = source(); //!testing!source
+  sink1("", sourced); //!testing!sink
 }
 
 func test_sink1_noerror() {

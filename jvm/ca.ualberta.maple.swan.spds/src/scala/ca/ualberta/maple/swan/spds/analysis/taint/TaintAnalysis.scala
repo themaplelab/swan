@@ -27,9 +27,10 @@ import boomerang.scene._
 import boomerang.weights.{DataFlowPathWeight, PathTrackingBoomerang}
 import boomerang.{BackwardQuery, Boomerang, BoomerangOptions, DefaultBoomerangOptions, ForwardQuery}
 import ca.ualberta.maple.swan.ir.{CanInstructionDef, Position}
+import ca.ualberta.maple.swan.spds.analysis.pathtracking.SWANBoomerang
 import ca.ualberta.maple.swan.spds.analysis.taint.TaintResults.Path
 import ca.ualberta.maple.swan.spds.analysis.taint.TaintSpecification.JSONMethod
-import ca.ualberta.maple.swan.spds.structures.{SWANCallGraph, SWANMethod, SWANStatement}
+import ca.ualberta.maple.swan.spds.structures.{SWANCallGraph, SWANInvokeExpr, SWANMethod, SWANStatement}
 import wpds.impl.Weight
 
 import scala.collection.mutable
@@ -68,13 +69,27 @@ class TaintAnalysis(val spec: TaintSpecification, val opts: TaintAnalysisOptions
           val seeds = i._1
           val sink = i._2
           seeds.forEach(query => {
-            val solver = new Boomerang(cg, DataFlowScope.INCLUDE_ALL, options)
+            val solver = new PathTrackingBoomerang(cg, DataFlowScope.INCLUDE_ALL, options) {}
             val queryResults = solver.solve(query)
             if (queryResults.isTimedout) {
               throw new RuntimeException(spdsTimeoutError)
             }
             System.out.println("VARIABLE: " + query.variable.toString)
             queryResults.getAllocationSites.forEach((forwardQuery, _) => {
+              queryResults.asStatementValWeightTable(forwardQuery).cellSet().forEach(s => {
+                if (s.getRowKey == query.edge && s.getColumnKey == query.variable) {
+                  System.out.println("PATH")
+                  var print = false
+                  s.getValue.getAllStatements.forEach(n => {
+                    if (n.stmt().getStart.containsInvokeExpr()) {
+                      if (query.sources.map(f => f.getName).contains(n.stmt().getStart.getInvokeExpr.getMethod.getName)) {
+                        print = true
+                      }
+                    }
+                    if (print) System.out.println("  " + n.stmt().getStart)
+                  })
+                }
+              })
               System.out.println(forwardQuery.`var`().asInstanceOf[AllocVal].getAllocVal.toString)
             })
           })
@@ -91,7 +106,7 @@ class TaintAnalysis(val spec: TaintSpecification, val opts: TaintAnalysisOptions
             if (queryResults.isTimedout) {
               throw new RuntimeException(spdsTimeoutError)
             }
-            val paths = processResultsForward(query, queryResults, query.source.getName, source)
+            val paths = processResultsForward(cg, query, queryResults, query.source.getName, source)
             allPaths.appendAll(paths)
           })
         })
@@ -156,16 +171,20 @@ class TaintAnalysis(val spec: TaintSpecification, val opts: TaintAnalysisOptions
       val sources = mutable.HashSet.from[SWANMethod](spec.sources.map(s => cg.methods(s._1)))
       cg.edgesInto(sink).forEach(cgEdge => {
         val cfEdge = new ControlFlowGraph.Edge(
-          cgEdge.src().getMethod.getControlFlowGraph.getPredsOf(cgEdge.src()).iterator().next(),
-          cgEdge.src())
+          cgEdge.src(),
+          cgEdge.src().getMethod.getControlFlowGraph.getSuccsOf(cgEdge.src()).iterator().next())
         val apply = cgEdge.src().asInstanceOf[SWANStatement.ApplyFunctionRef]
         apply.invokeExpr.args.forEach(v => {
           seeds.add(new BackwardMethodTaintQuery(cfEdge, v, sources, sink))
+          System.out.println("Added seed: " + cfEdge + " | " + v.toString)
         })
       })
       sink.getParameterLocals.forEach(param => {
         sink.getControlFlowGraph.getStartPoints.forEach(start => {
-
+          val edge = new ControlFlowGraph.Edge(
+            start,
+            sink.getControlFlowGraph.getSuccsOf(start).iterator().next())
+          //seeds.add(new BackwardMethodTaintQuery(edge, param, sources, sink))
         })
       })
       seedArray.append((seeds, s._1))
@@ -248,35 +267,42 @@ class TaintAnalysis(val spec: TaintSpecification, val opts: TaintAnalysisOptions
     paths
   }
 
-  private def processResultsForward(query: ForwardMethodTaintQuery,
+  private def processResultsForward(cg: SWANCallGraph, query: ForwardMethodTaintQuery,
                                     queryResults: ForwardBoomerangResults[Weight.NoWeight],
                                     sourceName: String, source: JSONMethod): ArrayBuffer[Path] = {
     val results = queryResults.asStatementValWeightTable
-    val processed = new mutable.HashSet[Method]()
     val paths = new ArrayBuffer[Path]
-    results.cellSet().forEach(s => {
-      val m = s.getRowKey.getMethod.asInstanceOf[SWANMethod]
-      if (!processed.contains(m) && query.sinks.contains(m)) {
-        if (m.getParameterLocals.contains(s.getColumnKey)) {
-          var continue = false
-          var sinkJSONMethod: JSONMethod = null
-          spec.sinks.foreach(sink => {
-            if ((sink._2.regex && Pattern.matches(sink._2.name, m.getName)) || sink._2.name == m.getName) {
-              sinkJSONMethod = sink._2
-              if (sink._2.args.nonEmpty) {
-                if (!sink._2.args.get.contains(m.getParameterLocals.indexOf(s.getColumnKey))) {
-                  continue = true
-                }
-              }
-            }
-          })
-          if (!continue) {
-            val nodes = new ArrayBuffer[(CanInstructionDef, Option[Position])]
-            paths.append(new Path(nodes, sourceName, source, m.getName, sinkJSONMethod))
-            processed.add(m)
-          }
+
+    spec.sinks.foreach(sink => {
+      val sinkMethod = {
+        if (sink._2.regex) {
+          cg.methods.find(s => Pattern.matches(sink._1, s._1)).get._2
+        } else {
+          cg.methods(sink._1)
         }
       }
+      cg.edgesInto(sinkMethod).forEach(edge => {
+        results.cellSet().forEach(cell => {
+          if (cell.getRowKey.getStart == edge.src() && edge.src().uses(cell.getColumnKey)) {
+            var skip = false
+            if (sink._2.args.nonEmpty) {
+              val invokeIdx = edge.src().getInvokeExpr.asInstanceOf[SWANInvokeExpr].getIndexOf(cell.getColumnKey)
+              if (invokeIdx.isEmpty) {
+                throw new RuntimeException("Could not find val index in invoke expr")
+              }
+              skip = !sink._2.args.get.contains(invokeIdx.get)
+            }
+            if (!skip) {
+              val srcStmt =  query.edge.getStart.asInstanceOf[SWANStatement]
+              val sinkStmt = cell.getRowKey.getStart.asInstanceOf[SWANStatement]
+              val nodes = new ArrayBuffer[(CanInstructionDef, Option[Position])]
+              nodes.append((srcStmt.delegate, srcStmt.getPosition))
+              nodes.append((sinkStmt.delegate, sinkStmt.getPosition))
+              paths.append(new Path(nodes, sourceName, source, sinkMethod.getName, sink._2))
+            }
+          }
+        })
+      })
     })
     paths
   }

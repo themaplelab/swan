@@ -1,12 +1,9 @@
-# SPDS solver with path tracking is very slow for these for some reason (SWAN-23).
-ArrayAccess2
-ObjectSensitivity1
-
-# Github Actions runner has different result (SWAN-22)
-FlowDroidListing2
-
 # SWAN-32
 FieldSensitivity2
 
 # Flow sensitive static field strategy broken in SPDS 3.1.1
 standard-location-service
+
+# SWAN-43
+FlowDroidListing2
+ObjectSensitivity1

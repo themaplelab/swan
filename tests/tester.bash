@@ -18,7 +18,7 @@ GREEN="\033[32m"
 ENDCOLOR="\033[0m"
 BOLD="\033[1m"
 
-JAVA_ARGS=
+JAVA_ARGS=-Xss10M
 
 if [ -z $LEVEL ]; then
   export LEVEL=0
@@ -193,12 +193,12 @@ test_directory() {
     fi
 
     if [[ ! -z ${IS_TAINT} ]]; then
-      java ${JAVA_ARGS} -jar ${LIB_DIR}/driver.jar -t taint-spec.json -p swan-dir/ ${DRIVER_OPTIONS} > ${ERROR_MESSAGE_FILE} 2>&1
+      java ${JAVA_ARGS} -jar ${LIB_DIR}/driver.jar -t taint-spec.json swan-dir/ ${DRIVER_OPTIONS} > ${ERROR_MESSAGE_FILE} 2>&1
       mv ${ERROR_MESSAGE_FILE} driver-log.txt
     fi
 
     if [[ ! -z ${IS_TYPESTATE} ]]; then
-      java ${JAVA_ARGS} -jar ${LIB_DIR}/driver.jar -e typestate-spec.json -p swan-dir/ ${DRIVER_OPTIONS} > ${ERROR_MESSAGE_FILE} 2>&1
+      java ${JAVA_ARGS} -jar ${LIB_DIR}/driver.jar -e typestate-spec.json swan-dir/ ${DRIVER_OPTIONS} > ${ERROR_MESSAGE_FILE} 2>&1
       mv ${ERROR_MESSAGE_FILE} driver-log.txt
     fi
 

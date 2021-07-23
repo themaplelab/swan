@@ -88,7 +88,8 @@ class AnnotationChecker extends Runnable {
       buffer.getLines().zipWithIndex.foreach(l => {
         val line = l._1
         val idx = l._2 + 1
-        if (line.contains("//")) {
+        // Ignore lines that are completely commented out (for disabled tests)
+        if (line.contains("//") && !line.startsWith("//")) {
           line.split("//").foreach(c => {
             if (c.startsWith("!")) {
               val components = c.trim.split(" ")(0).split("!")

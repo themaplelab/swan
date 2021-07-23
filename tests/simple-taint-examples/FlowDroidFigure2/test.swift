@@ -24,8 +24,8 @@ func sink(sunk: String) {
 
 func foo(z : A) {
     let x = z.g;
-    let w = source();
-    x.f = w; //!testing!source // TODO: interesting annotation
+    let w = source(); //!testing!source
+    x.f = w;
 }
 
 let a = A();

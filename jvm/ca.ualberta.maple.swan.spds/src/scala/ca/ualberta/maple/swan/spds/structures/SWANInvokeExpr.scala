@@ -46,6 +46,17 @@ class SWANInvokeExpr(val stmt: ApplyFunctionRef, val method: SWANMethod) extends
     }
   }
 
+  def getIndexOf(v: Val): Option[Int] = {
+    var idx = 0
+    args.forEach(a => {
+      if (a == v) {
+        return Some(idx)
+      }
+      idx += 1
+    })
+    None
+  }
+
   override def getArg(index: Int): Val = args.get(index)
 
   override def getArgs: util.List[Val] = args

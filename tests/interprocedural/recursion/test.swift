@@ -7,8 +7,8 @@ func sink(sunk: String) {
 }
 
 func test_recursion_simple() {
-  let sourced = source();
-  sink(sunk: sourced); //!testing!source//!testing!sink
+  let sourced = source(); //!testing!source
+  sink(sunk: sourced); //!testing!sink
   test_recursion_simple();
 }
 

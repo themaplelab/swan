@@ -2,6 +2,10 @@
 
 The testing scripts are WIP and we are adding features as we need them.
 
+**The more code you write that shares the same source function, the longer the test will take!** Boomerang will have more dataflow to traverse. If you want, you can use multiple source functions to separate dataflow.
+
+If you want to test sanitizers, you must enable path-tracking (`-p`). Note that path-tracking can be *very* slow.
+
 ## Adding tests
 
 If you want to add a new set of tests:
