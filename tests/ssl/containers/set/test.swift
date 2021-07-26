@@ -7,6 +7,53 @@ func source() -> String {
 func sink(sunk: String) {
     print(sunk);
 }
+func test_randomElement1() {
+    let src = source();
+    let names = ["Zoey", "Chloe", src, "Amani", "Amaia"]; //!testing!source
+    let randomName = names.randomElement()!
+    sink(sunk : randomName); //!testing!sink
+}
+
+// ---------- Transforming ---------
+
+func test_sorted() {
+    let src = source();
+    let students: Set = ["Kofi", "Abena", src, "Peter", "Kweku", "Akosua"]; //!testing!source
+    let sortedStudents = students.sorted();
+    sink(sunk : sortedStudents[0]); //!testing!sink
+}
+
+
+
+//----------- Transforming ------------
+
+//func test_map() {
+//    let src = source();
+//    let aSet: Set = ["Kofi", "Abena", src, "Peter"]; !testing!source
+//    let new_Set: Set = aSet.map { $0.lowercased() };
+//    sink(sunk : new_Set.first!); !testing!sink
+//}
+
+
+// ---------- iterating case ----------
+
+// func test_forLoop() {
+//    let src = source();
+//    let initials : Set = ["a", "b", src,"d"]; !testing!source
+//    for elem in initials {
+//    sink(sunk : elem); !testing!sink
+//    }
+//}
+
+//func test_forSorted() {
+//    let src = source();
+//    let initials : Set = ["a", "b", src,"d"]; !testing!source
+//    for elem in initials.sorted() {
+//    sink(sunk : elem); !testing!sink
+//    }
+//}
+
+
 
 // ------- Creating -------
 
@@ -32,7 +79,7 @@ func test_update() {
   sink(sunk : aSet.first!); //!testing!sink
 }
 
-//--------------Removing----------------
+//-------------- Removing ----------------
 
 func test_filter() {
   let src = source(); //!testing!source
