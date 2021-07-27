@@ -1043,3 +1043,4 @@ bb0(%0: $`CLLocationManager`, %1: $`Double`):
   ret = new $`()`
   return ret
 }
+

@@ -45,13 +45,13 @@ func test_sorted() {
 //    }
 //}
 
-//func test_forSorted() {
+// func test_forSorted() {
 //    let src = source();
 //    let initials : Set = ["a", "b", src,"d"]; !testing!source
 //    for elem in initials.sorted() {
 //    sink(sunk : elem); !testing!sink
 //    }
-//}
+// }
 
 
 
