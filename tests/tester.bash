@@ -96,7 +96,7 @@ test_directory() {
         return
       fi
     else
-      if [[ ! -z MACOS_ONLY && "$OSTYPE" != "darwin"* ]]; then
+      if [[ ! -z ${MACOS_ONLY} && "$OSTYPE" != "darwin"* ]]; then
         echo -e "${BOLD}Skipping ${test_name} (macOS only)${ENDCOLOR}"
         return
       else

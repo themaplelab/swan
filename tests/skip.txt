@@ -7,3 +7,7 @@ standard-location-service
 # SWAN-43
 FlowDroidListing2
 ObjectSensitivity1
+
+# SWAN-44: Boomerang queries silently crash with stack overflow
+set
+dictionary
