@@ -733,7 +733,64 @@ bb0(%0 : $`@guaranteed Set<τ_0_0>`, %1 : $`@owned Set<τ_0_0>`) :
   return set
 }
 
+
+// %0 -> Pointer to Set
+// new element array, insert element in set
+// update the value in the set
+func [model] @`(extension in Swift):Swift.Sequence< where A.Element: Swift.Comparable>.sorted() -> [A.Element]` : $`@owned Array<τ_0_0.Element>` {
+bb0 (%0 : $`*Set<τ_0_0>`):
+    elem = new $`Array<τ_0_0>`
+    set = pointer_read %0, $`Set<τ_0_0>`
+    val = pointer_read set, $`<τ_0_0>`
+    pointer_write val to elem
+    return elem
+  }
+
+// %0 -> Array,%1 -> Set of Type to instantiate
+// This loads the given type & initialising a set with elements
+// write elements to set and return set
+func [model] @`Swift.Set.init(arrayLiteral: A...) -> Swift.Set<A>` : $`@owned Set<τ_0_0>` {
+bb0 (%0 : $`@owned Array<τ_0_0>`, %1 : $`@thin Set<τ_0_0>.Type`):
+    set = new $`@owned Set<τ_0_0>`
+    elem = pointer_read %0, $`τ_0_0`
+    pointer_write elem to set
+    return set
+}
+
+
 // -------------------- Swift.Dictionary ----------------------------
+
+
+// %0 -> value to write to, %1 -> key, %2 -> pointer to dictionary
+// Write the data from dictionary to element
+// returns the value that was removed
+func [model] @`Swift.Dictionary.removeValue(forKey: A) -> B?`: $`@out Optional<τ_0_1>` {
+bb0 (%0 : $`*Optional<τ_0_1>`, %1 : $`*τ_0_1`, %2 : $`*Dictionary<τ_0_0, τ_0_1>`) :
+  elem = new $`Optional<τ_0_1>`
+  dict = pointer_read %2, $`Dictionary<τ_0_0, τ_0_1>`
+  value = pointer_read dict, $`τ_0_1`
+  field_write value to elem, data
+  pointer_write elem to %0
+  return elem
+}
+
+//.............Transforming..........
+
+// %0 -> Dictionary
+// create array and obj and read value from dict
+// write value(dictionary) to obj and object element to array
+// return array
+
+func [model] @`(extension in Swift):Swift.Sequence.shuffled() -> [A.Element]`: $`@owned Array<τ_0_0.Element>` {
+bb0 (%0 : $`*Dictionary<String, String>`) :
+  arr = new $`Array<τ_0_0.Element>`
+  obj = new $`<τ_0_0.Element>`
+  dict = pointer_read %0, $`Dictionary<τ_0_0, τ_0_1>`
+  value = pointer_read dict, $`<τ_0_1>`
+  field_write value to obj, value
+  pointer_write obj to arr
+  return arr
+}
 
 // %0 -> initial values for dictionary, %2 -> dictionary type
 // Write second value of given array element to dictionary

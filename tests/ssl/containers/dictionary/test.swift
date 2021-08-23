@@ -11,22 +11,22 @@ func sink(sunk: String) {
   print(sunk);
 }
 // ------------ Removing --------------
-func test_removeValue(){
-  let src = source();
-  var myDictionary = ["firstName" : "Sergey", "lastName" : "Karloff","key" : src, "email" : "test@test.com"]; //!testing!source
-  let removedValue = myDictionary.removeValue(forKey: "firstName");
-  sink(sunk: removedValue!); //!testing!sink
-}
+// func test_removeValue(){
+//   let src = source();
+//   var myDictionary = ["firstName" : "Sergey", "lastName" : "Karloff","key" : src, "email" : "test@test.com"];!testing!source
+//   let removedValue = myDictionary.removeValue(forKey: "firstName");
+//   sink(sunk: removedValue!); !testing!sink
+// }
 
 
 // ----------- Transforming -----------
-
-//func test_shuffled() {
+//
+// func test_shuffled() {
 //  let src = source();
 //  var myDictionary  = ["firstName" : "Sergey", "lastName" : "Karloff", "key" : src,"email" : "test@test.com"]; !testing!source
 //  let shuffledDict = myDictionary.shuffled();
 //  sink(sunk: shuffledDict[0].value); !testing!sink
-//}
+// }
 // ------- Creating -------
 
 func test_init() {

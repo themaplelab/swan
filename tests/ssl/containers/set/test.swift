@@ -7,21 +7,21 @@ func source() -> String {
 func sink(sunk: String) {
     print(sunk);
 }
-func test_randomElement1() {
-    let src = source();
-    let names = ["Zoey", "Chloe", src, "Amani", "Amaia"]; //!testing!source
-    let randomName = names.randomElement()!
-    sink(sunk : randomName); //!testing!sink
-}
+// func test_randomElement1() {
+//     let src = source();
+//     let names = ["Zoey", "Chloe", src, "Amani", "Amaia"]; !testing!source
+//     let randomName = names.randomElement()!
+//     sink(sunk : randomName); !testing!sink
+// }
 
 // ---------- Transforming ---------
 
-func test_sorted() {
-    let src = source();
-    let students: Set = ["Kofi", "Abena", src, "Peter", "Kweku", "Akosua"]; //!testing!source
-    let sortedStudents = students.sorted();
-    sink(sunk : sortedStudents[0]); //!testing!sink
-}
+// func test_sorted() {
+//     let src = source();
+//     let students: Set = ["Kofi", "Abena", src, "Peter", "Kweku", "Akosua"]; !testing!source
+//     let sortedStudents = students.sorted();
+//     sink(sunk : sortedStudents[0]); !testing!sink
+// }
 
 
 

@@ -399,41 +399,6 @@ bb0(%0 : $`*Array<τ_0_0>`):
   return %ret
 }
 
-// %0 -> value to be removed,%1 -> index,%2 -> Pointer to Array
-// getting value from %2
-// write get_val to %0
-func [model] @`Swift.Array.remove(at: Swift.Int) -> A` : $`@out τ_0_0` {
-bb0(%0 : $`*String`, %1 :  $`Int`, %2 : $`*Array<τ_0_0>`) :
-    get_Array= pointer_read %2, $`Array<τ_0_0>`
-    get_val= pointer_read get_Array, $`<τ_0_0>`
-    pointer_write get_val to %0
-    return get_val
-}
-
-//----------- Excluding Array--------------
-
-// %0 -> Slice of Array,%1 -> index,%2 -> Pointer to Array
-// Dropping(removing) elements from starting of Array
-// getting value from %2 and write to %0
-func [model] @`(extension in Swift):Swift.Collection.dropFirst(Swift.Int) -> A.SubSequence`: $`@out τ_0_0.SubSequence` {
-bb0 (%0 : $`*ArraySlice<τ_0_0>`, %1 :$`Int`, %2 :$`*Array<τ_0_0>`):
-    get_Array = pointer_read %2, $`Array<τ_0_0>`
-    get_val = pointer_read get_Array, $`<τ_0_0>`
-    pointer_write get_Array to %0
-    return get_val
-}
-
-// %0 -> Slice of Array,%1 -> index,%2 -> Pointer to Array
-// Dropping(removing) elements from ending of Array
-// getting value from %2 and write to %0
-func [model] @`(extension in Swift):Swift.BidirectionalCollection.dropLast(Swift.Int) -> A.SubSequence`: $`@out τ_0_0.SubSequence` {
-bb0 (%0 : $`*ArraySlice<τ_0_0>`, %1 : $`Int`, %2 : $`*Array<τ_0_0>`) :
-    get_Array = pointer_read %2, $`Array<τ_0_0>`
-    get_val = pointer_read get_Array, $`<τ_0_0>`
-    pointer_write get_Array to %0
-    return get_val
-}
-
 // -------------------- Swift.ArraySlice ----------------------------
 
 // %0 -> value to write, %1 -> index, %2 -> array
@@ -527,30 +492,6 @@ bb0(%0 : $`*String`, %1 : $`*String`, %2 : $`@thick String.Type`):
 }
 
 // -------------------- Swift.Set ----------------------------
-
-// %0 -> Pointer to Set
-// new element array, insert element in set
-// update the value in the set
-func [model] @`(extension in Swift):Swift.Sequence< where A.Element: Swift.Comparable>.sorted() -> [A.Element]` : $`@owned Array<τ_0_0.Element>` {
-bb0 (%0 : $`*Set<τ_0_0>`):
-    elem = new $`Array<τ_0_0>`
-    set = pointer_read %0, $`Set<τ_0_0>`
-    val = pointer_read set, $`<τ_0_0>`
-    pointer_write val to elem
-    return elem
-  }
-
-// %0 -> Array,%1 -> Set of Type to instantiate
-// This loads the given type & initialising a set with elements
-// write elements to set and return set
-func [model] @`Swift.Set.init(arrayLiteral: A...) -> Swift.Set<A>` : $`@owned Set<τ_0_0>` {
-bb0 (%0 : $`@owned Array<τ_0_0>`, %1 : $`@thin Set<τ_0_0>.Type`):
-    set = new $`@owned Set<τ_0_0>`
-    elem = pointer_read %0, $`τ_0_0`
-    pointer_write elem to set
-    return set
-}
-
 
 // %0 -> array that stores the elements, %1 -> set type
 // initialising a set with elements
@@ -794,36 +735,6 @@ bb0(%0 : $`@guaranteed Set<τ_0_0>`, %1 : $`@owned Set<τ_0_0>`) :
 
 // -------------------- Swift.Dictionary ----------------------------
 
-// %0 -> Dictionary
-// create array and obj and read value from dict
-// write value(dictionary) to obj and object element to array
-// return array
-
-func [model] @`(extension in Swift):Swift.Sequence.shuffled() -> [A.Element]`: $`@owned Array<τ_0_0.Element>` {
-bb0 (%0 : $`*Dictionary<String, String>`) :
-  arr = new $`Array<τ_0_0.Element>`
-  obj = new $`<τ_0_0.Element>`
-  dict = pointer_read %0, $`Dictionary<τ_0_0, τ_0_1>`
-  value = pointer_read dict, $`<τ_0_1>`
-  field_write value to obj, value
-  pointer_write obj to arr
-  return arr
-}
-
-
-// %0 -> value to write to, %1 -> key, %2 -> pointer to dictionary
-// Write the data from dictionary to element
-// returns the value that was removed
-func [model] @`Swift.Dictionary.removeValue(forKey: A) -> B?`: $`@out Optional<τ_0_1>` {
-bb0 (%0 : $`*Optional<τ_0_1>`, %1 : $`*τ_0_1`, %2 : $`*Dictionary<τ_0_0, τ_0_1>`) :
-  elem = new $`Optional<τ_0_1>`
-  dict = pointer_read %2, $`Dictionary<τ_0_0, τ_0_1>`
-  value = pointer_read dict, $`τ_0_1`
-  field_write value to elem, data
-  pointer_write elem to %0
-  return elem
-}
-
 // %0 -> initial values for dictionary, %2 -> dictionary type
 // Write second value of given array element to dictionary
 func [model] @`Swift.Dictionary.init(dictionaryLiteral: (A, B)...) -> [A : B]` : $`Dictionary<τ_0_0, τ_0_1>` {
@@ -853,6 +764,7 @@ bb0(%0 : $`*τ_0_1`, %1 : $`*τ_0_0`, %2 : $`τ_0_1`, %3 : $`Dictionary<τ_0_0, 
   pointer_write [weak] val to %0
   pointer_write [weak] %2 to %0
   ret = pointer_read %0, $`τ_0_1`
+  return ret
   return ret
 }
 
@@ -1132,3 +1044,4 @@ bb0(%0: $`CLLocationManager`, %1: $`Double`):
   ret = new $`()`
   return ret
 }
+

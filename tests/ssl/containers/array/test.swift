@@ -10,28 +10,7 @@ func sink(sunk: String) {
   print(sunk);
 }
 
-//---------- Removing -------------
 
-func test_removeLast() {
-  let src = source();
-  var arr = ["a"," b", src,"c","d"]; //!testing!source
-  let removed = arr.remove (at: arr.endIndex);
-  sink(sunk :removed); //!testing!sink
-}
-
-//--------- Excluding ------------
-func test_dropFirst() {
-  let src = source();
-  let arr = ["a","b","c","d", src]; //!testing!source
-  let dropped = arr.dropFirst (_: 2);
-  sink(sunk :dropped[2]); //!testing!sink
-}
-func test_dropLast() {
-  let src = source();
-  let arr = ["a","b", src,"c","d"]; //!testing!source
-  let dropped = arr.dropLast (_: 2);
-  sink(sunk :dropped[2]); //!testing!sink
-}
 
 
 // ------- Creating -------
