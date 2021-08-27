@@ -22,7 +22,7 @@ package ca.ualberta.maple.swan.spds.analysis.boomerang
 import java.util.Objects
 import java.util.concurrent.TimeUnit
 
-import ca.ualberta.maple.swan.spds.analysis.boomerang.cfg.ObservableCFG
+import ca.ualberta.maple.swan.spds.analysis.boomerang.cfg.{ObservableCFG, StaticCFG}
 import ca.ualberta.maple.swan.spds.analysis.boomerang.cg._
 import ca.ualberta.maple.swan.spds.analysis.boomerang.poi.{AbstractPOI, CopyAccessPathChain, ExecuteImportFieldStmtPOI}
 import ca.ualberta.maple.swan.spds.analysis.boomerang.results.{BackwardBoomerangResults, ForwardBoomerangResults}
@@ -44,7 +44,7 @@ import scala.collection.mutable
 abstract class WeightedBoomerang[W <: Weight](val cg: CallGraph, val scope: DataFlowScope, val options: BoomerangOptions) {
 
   val icfg: ObservableICFG[Statement, Method] = new ObservableStaticICFG(cg)
-  protected val cfg: ObservableCFG
+  protected val cfg: ObservableCFG = new StaticCFG
   protected val stats: IBoomerangStats[W] = options.statsFactory
   protected val queryGraph = new QueryGraph[W](this)
   protected val genField: mutable.HashMap[(INode[Node[Edge, Val]], Field), INode[Node[Edge, Val]]] = mutable.HashMap.empty
@@ -78,7 +78,7 @@ abstract class WeightedBoomerang[W <: Weight](val cg: CallGraph, val scope: Data
 
   protected var solving: Boolean = false
   protected val analysisWatch: Stopwatch = Stopwatch.createUnstarted()
-  protected var lastTick: Long
+  protected var lastTick: Long = 0
 
   val queryToSolvers: DefaultValueMap[ForwardQuery, ForwardBoomerangSolver[W]] = {
     new DefaultValueMap[ForwardQuery, ForwardBoomerangSolver[W]] {
