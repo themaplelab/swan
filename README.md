@@ -17,7 +17,7 @@ SWAN is a static program analysis framework that enables deep dataflow analysis 
 
 We aim to provide developers and researchers with an easy-to-use and well-documented platform for analyzing Swift applications.
 
-:construction: **SWAN is WIP. However, we are working on a pre-release to get the community involved. We will release an extensive video playlist explaining how SWAN works, which should enable you to experiment with SWAN.**
+:construction: **SWAN is very much WIP.**
 
 ### Features
 
@@ -39,11 +39,9 @@ We aim to provide developers and researchers with an easy-to-use and well-docume
 
 ### Currently working on
 
+- Porting SPDS to Scala (see [this](https://github.com/themaplelab/swan/tree/port) branch)
 - Improving taint and typestate analysis
 - More language and Swift Standard Library modeling
-- iOS lifecycle support
-- Crypto API misuse detection
-- ... and much more!
 
 ### Relevant Wiki pages
 
