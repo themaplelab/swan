@@ -21,6 +21,8 @@ package ca.ualberta.maple.swan.spds.analysis.boomerang.cg
 
 import ca.ualberta.maple.swan.spds.analysis.boomerang.scene._
 
+import scala.collection.mutable
+
 class ObservableStaticICFG(cg: CallGraph) extends ObservableICFG[Statement, Method] {
 
   override def addCalleeListener(listener: CalleeListener[Statement, Method]): Unit = {
@@ -56,9 +58,9 @@ class ObservableStaticICFG(cg: CallGraph) extends ObservableICFG[Statement, Meth
 
   override def resetCallGraph(): Unit = {}
 
-  override def getStartPointsOf(m: Method): Set[Statement] = m.getCFG.getStartPoints
+  override def getStartPointsOf(m: Method): mutable.HashSet[Statement] = m.getCFG.getStartPoints
 
-  override def getEndPointsOf(m: Method): Set[Statement] = m.getCFG.getEndPoints
+  override def getEndPointsOf(m: Method): mutable.HashSet[Statement] = m.getCFG.getEndPoints
 
   override def computeFallback(): Unit = {}
 

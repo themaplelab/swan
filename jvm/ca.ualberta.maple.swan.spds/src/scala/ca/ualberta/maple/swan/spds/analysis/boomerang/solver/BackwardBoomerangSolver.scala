@@ -21,13 +21,15 @@ package ca.ualberta.maple.swan.spds.analysis.boomerang.solver
 
 import java.util.Objects
 
-import ca.ualberta.maple.swan.spds.analysis.boomerang.{BackwardQuery, BoomerangOptions, IBackwardFlowFunction, Query}
 import ca.ualberta.maple.swan.spds.analysis.boomerang.cfg.{ObservableCFG, PredecessorListener, SuccessorListener}
 import ca.ualberta.maple.swan.spds.analysis.boomerang.cg.{CalleeListener, CallerListener, ObservableICFG}
+import ca.ualberta.maple.swan.spds.analysis.boomerang.flowfunction.IBackwardFlowFunction
+import ca.ualberta.maple.swan.spds.analysis.boomerang.scene.ControlFlowGraph.Edge
 import ca.ualberta.maple.swan.spds.analysis.boomerang.scene.Val.AllocVal
-import ca.ualberta.maple.swan.spds.analysis.boomerang.scene.{Assignment, CallSiteStatement, ControlFlowGraph, DataFlowScope, Field, Method, Statement, Type, Val}
+import ca.ualberta.maple.swan.spds.analysis.boomerang.scene._
+import ca.ualberta.maple.swan.spds.analysis.boomerang.{BackwardQuery, BoomerangOptions}
 import ca.ualberta.maple.swan.spds.analysis.pds.solver.SyncPDSSolver.PDSSystem
-import ca.ualberta.maple.swan.spds.analysis.pds.solver.nodes.{GeneratedState, INode, Node, PopNode, PushNode, SingleNode}
+import ca.ualberta.maple.swan.spds.analysis.pds.solver.nodes._
 import ca.ualberta.maple.swan.spds.analysis.wpds.impl._
 import ca.ualberta.maple.swan.spds.analysis.wpds.interfaces.State
 
@@ -35,12 +37,12 @@ import scala.collection.mutable
 
 abstract class BackwardBoomerangSolver[W <: Weight](icfg: ObservableICFG[Statement, Method],
                                                     cfg: ObservableCFG,
-                                                    genField: mutable.HashMap[(INode[Node[ControlFlowGraph.Edge, Val]], Field),
-                                                      INode[Node[ControlFlowGraph.Edge, Val]]],
+                                                    genField: mutable.HashMap[(INode[Node[Edge[Statement, Statement], Val]], Field),
+                                                      INode[Node[Edge[Statement, Statement], Val]]],
                                                     query: BackwardQuery,
                                                     options: BoomerangOptions,
-                                                    callSummaries: NestedWeightedPAutomatons[ControlFlowGraph.Edge, INode[Val], W],
-                                                    fieldSummaries: NestedWeightedPAutomatons[Field, INode[Node[ControlFlowGraph.Edge, Val]], W],
+                                                    callSummaries: NestedWeightedPAutomatons[Edge[Statement, Statement], INode[Val], W],
+                                                    fieldSummaries: NestedWeightedPAutomatons[Field, INode[Node[Edge[Statement, Statement], Val]], W],
                                                     scope: DataFlowScope, flowFunction: IBackwardFlowFunction,
                                                     fieldLoadStatements: mutable.MultiDict[Field, Statement],
                                                     fieldStoreStatements: mutable.MultiDict[Field, Statement],
@@ -49,24 +51,24 @@ abstract class BackwardBoomerangSolver[W <: Weight](icfg: ObservableICFG[Stateme
 
   this.flowFunction.setSolver(this, fieldLoadStatements, fieldStoreStatements)
 
-  override protected def propagateUnbalancedToCallSite(callSiteEdge: Statement, transInCallee: Transition[ControlFlowGraph.Edge, INode[Val]]): Unit = {
+  override protected def propagateUnbalancedToCallSite(callSiteEdge: Statement, transInCallee: Transition[Edge[Statement, Statement], INode[Val]]): Unit = {
 
     if (!callSiteEdge.isInstanceOf[CallSiteStatement]) {
       throw new RuntimeException("Invalid propagate unbalanced return")
     }
 
-    val target = transInCallee.getTarget.asInstanceOf[GeneratedState[Val, ControlFlowGraph.Edge]]
+    val target = transInCallee.getTarget.asInstanceOf[GeneratedState[Val, Edge[Statement, Statement]]]
 
     if (isMatchingCallSiteCalleePair(callSiteEdge, transInCallee.getLabel.getMethod)) {
       cfg.addSuccsOfListener(new SuccessorListener(callSiteEdge) {
         override def handleSuccessor(succ: Statement): Unit = {
           cfg.addPredsOfListener(new PredecessorListener(callSiteEdge) {
             override def handlePredecessor(pred: Statement): Unit = {
-              val curr = new Node(new ControlFlowGraph.Edge(callSiteEdge, succ), query.variable)
+              val curr = new Node(new Edge[Statement, Statement](callSiteEdge, succ), query.variable)
               val callTrans = new Transition(wrap(curr.fact), curr.stmt, generateCallState(wrap(curr.fact), curr.stmt))
               callAutomaton.addTransition(callTrans)
               callAutomaton.addUnbalancedState(generateCallState(wrap(curr.fact), curr.stmt), target)
-              val s = new PushNode(target.location, target.node.fact(), new ControlFlowGraph.Edge(pred, callSiteEdge), PDSSystem.Calls)
+              val s = new PushNode(target.location, target.node.fact, new Edge[Statement, Statement](pred, callSiteEdge), PDSSystem.Calls)
               propagate(curr, s)
             }
           })
@@ -75,7 +77,7 @@ abstract class BackwardBoomerangSolver[W <: Weight](icfg: ObservableICFG[Stateme
     }
   }
 
-  override protected def computeNormalFlow(method: Method, currEdge: ControlFlowGraph.Edge, v: Val): mutable.HashSet[State] = {
+  override protected def computeNormalFlow(method: Method, currEdge: Edge[Statement, Statement], v: Val): mutable.HashSet[State] = {
     flowFunction.normalFlow(currEdge, v)
   }
 
@@ -83,7 +85,7 @@ abstract class BackwardBoomerangSolver[W <: Weight](icfg: ObservableICFG[Stateme
     flowFunction.returnFlow(method, callerReturnStatement, value).map(x => new PopNode(x, PDSSystem.Calls))
   }
 
-  override def computeSuccessor(node: Node[ControlFlowGraph.Edge, Val]): Unit = {
+  override def computeSuccessor(node: Node[Edge[Statement, Statement], Val]): Unit = {
     val edge = node.stmt
     val value = node.fact
     if (value.isInstanceOf[AllocVal]) throw new RuntimeException("value cannot be AllocVal")
@@ -101,9 +103,9 @@ abstract class BackwardBoomerangSolver[W <: Weight](icfg: ObservableICFG[Stateme
     }
   }
 
-  override def applyCallSummary(callSiteEdge: ControlFlowGraph.Edge, factAtSpInCallee: Val,
-                                spInCallee: ControlFlowGraph.Edge, exitStmt: ControlFlowGraph.Edge, exitingFact: Val): Unit = {
-    val out = mutable.HashSet.empty[Node[ControlFlowGraph.Edge, Val]]
+  override def applyCallSummary(callSiteEdge: Edge[Statement, Statement], factAtSpInCallee: Val,
+                                spInCallee: Edge[Statement, Statement], exitStmt: Edge[Statement, Statement], exitingFact: Val): Unit = {
+    val out = mutable.HashSet.empty[Node[Edge[Statement, Statement], Val]]
     val callSite = callSiteEdge.target
     callSite match {
       case css: CallSiteStatement => {
@@ -138,47 +140,47 @@ abstract class BackwardBoomerangSolver[W <: Weight](icfg: ObservableICFG[Stateme
     !method.getLocals.contains(value)
   }
 
-  protected def callFlow(caller: Method, curr: Node[ControlFlowGraph.Edge, Val], callSite: CallSiteStatement): Unit = {
+  protected def callFlow(caller: Method, curr: Node[Edge[Statement, Statement], Val], callSite: CallSiteStatement): Unit = {
     icfg.addCalleeListener(new CallSiteCalleeListener(curr, caller))
     val invokeExpr = callSite.getInvokeExpr
-    if (dataFlowScope.isExcluded(invokeExpr.getMethod)) {
+    if (invokeExpr.getResolvedMethod.nonEmpty && dataFlowScope.isExcluded(invokeExpr.getResolvedMethod.get)) {
       bypassFlowAtCallSite(caller, curr)
     }
   }
 
-  protected def normalFlow(method: Method, currNode: Node[ControlFlowGraph.Edge, Val]): Unit = {
+  protected def normalFlow(method: Method, currNode: Node[Edge[Statement, Statement], Val]): Unit = {
     val curr = currNode.stmt
     val value = currNode.fact
     curr.start.method.getCFG.getPredsOf(curr.start).foreach(pred => {
-      val flow = computeNormalFlow(method, new ControlFlowGraph.Edge(pred, curr.start), value)
+      val flow = computeNormalFlow(method, new Edge[Statement, Statement](pred, curr.start), value)
       flow.foreach(s => propagate(currNode, s))
     })
   }
 
-  protected def returnFlow(method: Method, currNode: Node[ControlFlowGraph.Edge, Val]): Unit = {
+  protected def returnFlow(method: Method, currNode: Node[Edge[Statement, Statement], Val]): Unit = {
     val outFlow = computeReturnFlow(method, currNode.stmt.target, currNode.fact)
     outFlow.foreach(s => propagate(currNode, s))
   }
 
-  protected def bypassFlowAtCallSite(caller: Method, curr: Node[ControlFlowGraph.Edge, Val]): Unit = {
+  protected def bypassFlowAtCallSite(caller: Method, curr: Node[Edge[Statement, Statement], Val]): Unit = {
     curr.stmt.start.method.getCFG.getPredsOf(curr.stmt.start).foreach(returnSite => {
-      val res = flowFunction.callToReturnFlow(new ControlFlowGraph.Edge(returnSite, curr.stmt.start), curr.fact)
+      val res = flowFunction.callToReturnFlow(new Edge[Statement, Statement](returnSite, curr.stmt.start), curr.fact)
       res.foreach(s => propagate(curr, s))
     })
   }
 
-  protected def computeCallFlow(callSiteEdge: ControlFlowGraph.Edge,
+  protected def computeCallFlow(callSiteEdge: Edge[Statement, Statement],
                                 fact: Val, callee: Method,
-                                calleeStartEdge: ControlFlowGraph.Edge): mutable.HashSet[_ <: State] = {
+                                calleeStartEdge: Edge[Statement, Statement]): mutable.HashSet[_ <: State] = {
     val calleeSp = calleeStartEdge.target
-    flowFunction.callFlow(callSiteEdge.target, fact, callee, calleeSp).map(x => {
+    flowFunction.callFlow(callSiteEdge.target.asInstanceOf[CallSiteStatement], fact, callee, calleeSp).map(x => {
       new PushNode(calleeStartEdge, x, callSiteEdge, PDSSystem.Calls)
     })
   }
 
   override def toString: String = s"BackwardBoomerangSolver{query=$query}"
 
-  protected class CallSiteCalleeListener(val curr: Node[ControlFlowGraph.Edge, Val],
+  protected class CallSiteCalleeListener(val curr: Node[Edge[Statement, Statement], Val],
                                          protected val caller: Method) extends CalleeListener[Statement, Method] {
 
     override def getObservedCaller: Statement = curr.stmt.start
@@ -187,8 +189,8 @@ abstract class BackwardBoomerangSolver[W <: Weight](icfg: ObservableICFG[Stateme
       icfg.getStartPointsOf(callee).foreach(calleeSp => {
         callSite.method.getCFG.getPredsOf(callSite).foreach(predOfCall => {
           val res = computeCallFlow(
-            new ControlFlowGraph.Edge(predOfCall, callSite),
-            curr.fact, callee, new ControlFlowGraph.Edge(calleeSp, calleeSp))
+            new Edge[Statement, Statement](predOfCall, callSite),
+            curr.fact, callee, new Edge[Statement, Statement](calleeSp, calleeSp))
           res.foreach(o => BackwardBoomerangSolver.this.propagate(curr, o))
         })
       })

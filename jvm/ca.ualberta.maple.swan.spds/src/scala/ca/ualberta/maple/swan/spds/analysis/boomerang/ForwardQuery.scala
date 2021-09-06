@@ -19,9 +19,11 @@
 
 package ca.ualberta.maple.swan.spds.analysis.boomerang
 
+import ca.ualberta.maple.swan.spds.analysis.boomerang.scene.ControlFlowGraph.Edge
+import ca.ualberta.maple.swan.spds.analysis.boomerang.scene.Val.AllocVal
 import ca.ualberta.maple.swan.spds.analysis.boomerang.scene._
 
-class ForwardQuery(edge: ControlFlowGraph.Edge, variable: Val) extends Query(edge, variable) {
+class ForwardQuery(edge: Edge[Statement, Statement], override val variable: AllocVal) extends Query(edge, variable) {
 
   override def toString: String = s"ForwardQuery: ${super.toString}"
 }

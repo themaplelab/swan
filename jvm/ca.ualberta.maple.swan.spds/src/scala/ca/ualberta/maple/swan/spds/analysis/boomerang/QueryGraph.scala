@@ -44,7 +44,7 @@ class QueryGraph[W <: Weight](boomerang: WeightedBoomerang[W]) {
 
   def addRoot(root: Query): Unit = roots.add(root)
 
-  def addEdge(parent: Query, node: Node[Edge, Val], child: Query): Unit = {
+  def addEdge(parent: Query, node: Node[Edge[Statement, Statement], Val], child: Query): Unit = {
     val queryEdge = new QueryEdge(parent, node, child)
     sourceToQueryEdgeLookup.addOne(parent, queryEdge)
     if (!targetToQueryEdgeLookup.containsEntry(child, queryEdge)) {
@@ -113,9 +113,9 @@ class QueryGraph[W <: Weight](boomerang: WeightedBoomerang[W]) {
   class SourceListener(state: INode[Val],
                        protected val parent: Query,
                        protected val child: Query,
-                       protected val callee: Method) extends WPAStateListener[Edge, INode[Val], W](state) {
+                       protected val callee: Method) extends WPAStateListener[Edge[Statement, Statement], INode[Val], W](state) {
 
-    override def onOutTransitionAdded(t: Transition[Edge, INode[Val]], w: W, weightedPAutomaton: WeightedPAutomaton[Edge, INode[Val], W]): Unit = {
+    override def onOutTransitionAdded(t: Transition[Edge[Statement, Statement], INode[Val]], w: W, weightedPAutomaton: WeightedPAutomaton[Edge[Statement, Statement], INode[Val], W]): Unit = {
       if (t.start.isInstanceOf[GeneratedState[_, _]] && callee != null) {
         getSolver(child).allowUnbalanced(callee, if (parent.isInstanceOf[BackwardQuery]) t.label.target else t.label.start)
       }
@@ -127,7 +127,7 @@ class QueryGraph[W <: Weight](boomerang: WeightedBoomerang[W]) {
       }
     }
 
-    override def onInTransitionAdded(t: Transition[Edge, INode[Val]], w: W, weightedPAutomaton: WeightedPAutomaton[Edge, INode[Val], W]): Unit = {}
+    override def onInTransitionAdded(t: Transition[Edge[Statement, Statement], INode[Val]], w: W, weightedPAutomaton: WeightedPAutomaton[Edge[Statement, Statement], INode[Val], W]): Unit = {}
 
     def getOuterType: QueryGraph[W] = QueryGraph.this
 
@@ -144,7 +144,7 @@ class QueryGraph[W <: Weight](boomerang: WeightedBoomerang[W]) {
 
   protected class UnbalancedContextListener(protected val child: Query,
                                             protected val parent: Query,
-                                            protected val t: Transition[ControlFlowGraph.Edge, INode[Val]]) extends AddTargetEdgeListener {
+                                            protected val t: Transition[Edge[Statement, Statement], INode[Val]]) extends AddTargetEdgeListener {
 
     override def getTarget: Query = parent
 
@@ -155,7 +155,7 @@ class QueryGraph[W <: Weight](boomerang: WeightedBoomerang[W]) {
 
     override def noParentEdge(): Unit = {
       if (child.isInstanceOf[BackwardQuery]) {
-        val callee = t.target.fact().method
+        val callee = t.target.fact.method
         icfg.addCallerListener(new CallerListener[Statement, Method] {
 
           override def getObservedCallee: Method = callee

@@ -21,6 +21,8 @@ package ca.ualberta.maple.swan.spds.analysis.boomerang.cg
 
 import ca.ualberta.maple.swan.spds.analysis.boomerang.scene.{CallGraph, Method, Statement}
 
+import scala.collection.mutable
+
 class BackwardsObservableICFG(delegate: ObservableICFG[Statement, Method]) extends ObservableICFG[Statement, Method] {
 
   override def addCalleeListener(listener: CalleeListener[Statement, Method]): Unit = delegate.addCalleeListener(listener)
@@ -37,9 +39,9 @@ class BackwardsObservableICFG(delegate: ObservableICFG[Statement, Method]) exten
 
   override def resetCallGraph(): Unit = delegate.resetCallGraph()
 
-  override def getStartPointsOf(m: Method): Set[Statement] = delegate.getStartPointsOf(m)
+  override def getStartPointsOf(m: Method): mutable.HashSet[Statement] = delegate.getStartPointsOf(m)
 
-  override def getEndPointsOf(m: Method): Set[Statement] = delegate.getEndPointsOf(m)
+  override def getEndPointsOf(m: Method): mutable.HashSet[Statement] = delegate.getEndPointsOf(m)
 
   override def computeFallback(): Unit = delegate.computeFallback()
 

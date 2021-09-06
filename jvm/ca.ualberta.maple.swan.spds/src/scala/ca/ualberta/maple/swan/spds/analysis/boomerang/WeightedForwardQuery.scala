@@ -20,7 +20,8 @@
 package ca.ualberta.maple.swan.spds.analysis.boomerang
 
 import ca.ualberta.maple.swan.spds.analysis.boomerang.scene.ControlFlowGraph.Edge
-import ca.ualberta.maple.swan.spds.analysis.boomerang.scene.Val
+import ca.ualberta.maple.swan.spds.analysis.boomerang.scene.Val.AllocVal
+import ca.ualberta.maple.swan.spds.analysis.boomerang.scene.{Statement, Val}
 import ca.ualberta.maple.swan.spds.analysis.wpds.impl.Weight
 
-class WeightedForwardQuery[W <: Weight](stmt: Edge, variable: Val, val weight: W) extends ForwardQuery(stmt, variable)
+class WeightedForwardQuery[W <: Weight](stmt: Edge[Statement, Statement], variable: AllocVal, val weight: W) extends ForwardQuery(stmt, variable)

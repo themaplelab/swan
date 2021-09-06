@@ -28,9 +28,9 @@ import ca.ualberta.maple.swan.ir._
 import ca.ualberta.maple.swan.ir.canonical.SWIRLPass
 import ca.ualberta.maple.swan.ir.raw.SWIRLGen
 import ca.ualberta.maple.swan.parser.{SILModule, SILParser}
-import ca.ualberta.maple.swan.spds.CallGraphConstruction
-import ca.ualberta.maple.swan.spds.analysis.taint._
-import ca.ualberta.maple.swan.spds.analysis.typestate.{TypeStateAnalysis, TypeStateResults}
+import ca.ualberta.maple.swan.spds.swan.taint._
+import ca.ualberta.maple.swan.spds.swan.typestate.{TypeStateAnalysis, TypeStateResults}
+import ca.ualberta.maple.swan.spds.swan.CallGraphConstruction
 import ca.ualberta.maple.swan.utils.Logging
 import org.apache.commons.io.{FileExistsException, FileUtils, IOUtils}
 import picocli.CommandLine

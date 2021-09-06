@@ -19,9 +19,10 @@
 
 package ca.ualberta.maple.swan.spds.analysis.boomerang
 
-import ca.ualberta.maple.swan.spds.analysis.boomerang.scene.{ControlFlowGraph, Val}
+import ca.ualberta.maple.swan.spds.analysis.boomerang.scene.ControlFlowGraph.Edge
+import ca.ualberta.maple.swan.spds.analysis.boomerang.scene.{Statement, Val}
 
-class BackwardQuery(edge: ControlFlowGraph.Edge, variable: Val) extends Query(edge, variable) {
+class BackwardQuery(edge: Edge[Statement, Statement], variable: Val) extends Query(edge, variable) {
 
   override def toString: String = s"BackwardQuery: ${super.toString}"
 }

@@ -19,12 +19,15 @@
 
 package ca.ualberta.maple.swan.spds.analysis.boomerang
 
+import java.util.Objects
+
+import ca.ualberta.maple.swan.spds.analysis.boomerang.scene.ControlFlowGraph.Edge
 import ca.ualberta.maple.swan.spds.analysis.boomerang.scene._
 import ca.ualberta.maple.swan.spds.analysis.pds.solver.nodes._
 
-abstract class Query(val cfgEdge: ControlFlowGraph.Edge, val variable: Val) {
+abstract class Query(val cfgEdge: Edge[Statement, Statement], val variable: Val) {
 
-  def asNode: Node[ControlFlowGraph.Edge, Val] = new Node(cfgEdge, variable)
+  def asNode: Node[Edge[Statement, Statement], Val] = new Node(cfgEdge, variable)
 
   def getType: Type = {
     variable match {
@@ -35,22 +38,11 @@ abstract class Query(val cfgEdge: ControlFlowGraph.Edge, val variable: Val) {
     }
   }
 
-  override def hashCode(): Int = {
-    val prime = 31
-    var result = 1
-    result = prime * result + (if (cfgEdge == null) 0 else cfgEdge.hashCode)
-    result = prime * result + (if (variable == null) 0 else variable.hashCode)
-    result
-  }
+  override def hashCode(): Int =  Objects.hashCode(cfgEdge, variable)
 
   override def equals(obj: Any): Boolean = {
     obj match {
-      case q: Query => {
-        var equal = true
-        if (cfgEdge == null) equal = q.cfgEdge == null && equal else equal = cfgEdge.equals(q.cfgEdge) && equal
-        if (variable == null) equal = q.variable == null && equal else equal = variable.equals(q.variable) && equal
-        equal
-      }
+      case other: Query => Objects.equals(other.cfgEdge, cfgEdge) && Objects.equals(other.variable, variable)
       case _ => false
     }
   }

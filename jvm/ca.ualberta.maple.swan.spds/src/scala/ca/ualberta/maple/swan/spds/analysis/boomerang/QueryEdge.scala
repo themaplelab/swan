@@ -21,10 +21,11 @@ package ca.ualberta.maple.swan.spds.analysis.boomerang
 
 import java.util.Objects
 
+import ca.ualberta.maple.swan.spds.analysis.boomerang.scene.ControlFlowGraph.Edge
 import ca.ualberta.maple.swan.spds.analysis.boomerang.scene._
 import ca.ualberta.maple.swan.spds.analysis.pds.solver.nodes.Node
 
-class QueryEdge(val source: Query, val node: Node[ControlFlowGraph.Edge, Val], val target: Query) {
+class QueryEdge(val source: Query, val node: Node[Edge[Statement, Statement], Val], val target: Query) {
 
   override def hashCode(): Int = Objects.hashCode(source, node, target)
 

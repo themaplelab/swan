@@ -23,5 +23,5 @@ import ca.ualberta.maple.swan.spds.analysis.wpds.interfaces.State
 
 trait INode[Fact] extends State {
 
-  def fact(): Fact
+  def fact: Fact
 }

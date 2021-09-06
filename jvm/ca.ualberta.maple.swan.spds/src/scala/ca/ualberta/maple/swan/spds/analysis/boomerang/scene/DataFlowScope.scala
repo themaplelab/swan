@@ -22,15 +22,12 @@ package ca.ualberta.maple.swan.spds.analysis.boomerang.scene
 trait DataFlowScope {
 
   def isExcluded(method: Method): Boolean
-
-  def isExcluded(declaredMethod: DeclaredMethod): Boolean
 }
 
 object DataFlowScope {
   val INCLUDE_ALL: DataFlowScope = {
     new DataFlowScope {
       override def isExcluded(method: Method): Boolean = false
-      override def isExcluded(declaredMethod: DeclaredMethod): Boolean = false
     }
   }
 }

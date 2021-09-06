@@ -23,7 +23,7 @@ import java.util.Objects
 
 class GeneratedState[L, N](val node: INode[L], val location: N) extends INode[L] {
 
-  override def fact(): L = node.fact()
+  override def fact: L = node.fact
 
   override def hashCode: Int = Objects.hashCode(location, node)
 

@@ -76,6 +76,6 @@ class BackwardBoomerangResults[W <: Weight](query: BackwardQuery,
   def isEmpty: Boolean = getAllocationSites.isEmpty
 
   def getPropagationType: mutable.HashSet[Type] = {
-    backwardSolver.callAutomaton.transitions.map(x => x.getStart.fact().getType)
+    backwardSolver.callAutomaton.transitions.map(x => x.getStart.fact.getType)
   }
 }

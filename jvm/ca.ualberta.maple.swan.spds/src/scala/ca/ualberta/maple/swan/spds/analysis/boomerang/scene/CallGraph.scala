@@ -64,7 +64,7 @@ class CallGraph {
       case s: StaticFieldLoadStatement => {
         fieldLoadStatements.addOne(s.getStaticField.field, s)
       }
-      case s: StaticFieldWriteStatement => {
+      case s: StaticFieldStoreStatement => {
         fieldStoreStatements.addOne(s.getStaticField.field, s)
       }
       case _ =>
@@ -74,9 +74,7 @@ class CallGraph {
 
 object CallGraph {
 
-  class Edge(val callSite: Statement, val callee: Method) {
-
-    if (!callSite.isInstanceOf[CallSiteStatement]) throw new RuntimeException("Illegal CG edge")
+  class Edge(val callSite: CallSiteStatement, val callee: Method) {
 
     override def hashCode: Int = Objects.hashCode(callSite, callee)
 

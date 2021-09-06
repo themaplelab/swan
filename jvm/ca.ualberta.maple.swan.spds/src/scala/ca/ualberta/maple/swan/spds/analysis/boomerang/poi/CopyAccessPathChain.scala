@@ -33,11 +33,11 @@ import scala.collection.mutable
 
 class CopyAccessPathChain[W <: Weight](forwardSolver: ForwardBoomerangSolver[W],
                                        backwardSolver: BackwardBoomerangSolver[W],
-                                       fieldWriteStatement: Edge,
-                                       killedTransition: Transition[Field, INode[Node[Edge, Val]]]) {
+                                       fieldWriteStatement: Edge[Statement, Statement],
+                                       killedTransition: Transition[Field, INode[Node[Edge[Statement, Statement], Val]]]) {
 
-  protected val reachable: mutable.HashSet[INode[Node[Edge, Val]]] = mutable.HashSet.empty
-  protected val delayedTransitions: mutable.MultiDict[INode[Node[Edge, Val]], InsertFieldTransitionCallback] = mutable.MultiDict.empty
+  protected val reachable: mutable.HashSet[INode[Node[Edge[Statement, Statement], Val]]] = mutable.HashSet.empty
+  protected val delayedTransitions: mutable.MultiDict[INode[Node[Edge[Statement, Statement], Val]], InsertFieldTransitionCallback] = mutable.MultiDict.empty
 
   def exec(): Unit = {
     forwardSolver.fieldAutomaton.registerListener(
@@ -46,7 +46,7 @@ class CopyAccessPathChain[W <: Weight](forwardSolver: ForwardBoomerangSolver[W],
         new SingleNode(new Node(fieldWriteStatement, fieldWriteStatement.target.asInstanceOf[Assignment].rhs)), 0))
   }
 
-  protected def queueOrAdd(transToInsert: Transition[Field, INode[Node[Edge, Val]]]): Unit = {
+  protected def queueOrAdd(transToInsert: Transition[Field, INode[Node[Edge[Statement, Statement], Val]]]): Unit = {
     if (reachable.contains(transToInsert.target)) {
       backwardSolver.fieldAutomaton.addTransition(transToInsert)
     } else {
@@ -54,19 +54,19 @@ class CopyAccessPathChain[W <: Weight](forwardSolver: ForwardBoomerangSolver[W],
     }
   }
 
-  def addReachable(node: INode[Node[Edge, Val]]): Unit = {
+  def addReachable(node: INode[Node[Edge[Statement, Statement], Val]]): Unit = {
     if (reachable.add(node)) {
       delayedTransitions.get(node).foreach(_.trigger())
     }
   }
 
-  protected class WalkForwardSolverListener(target: INode[Node[Edge, Val]],
-                                            protected val stateInBwSolver: INode[Node[Edge, Val]], walkDepth: Int)
-    extends WPAStateListener[Field, INode[Node[Edge, Val]], W](target) {
+  protected class WalkForwardSolverListener(target: INode[Node[Edge[Statement, Statement], Val]],
+                                            protected val stateInBwSolver: INode[Node[Edge[Statement, Statement], Val]], walkDepth: Int)
+    extends WPAStateListener[Field, INode[Node[Edge[Statement, Statement], Val]], W](target) {
 
     def getOuterType: CopyAccessPathChain[W] = CopyAccessPathChain.this
 
-    override def onOutTransitionAdded(t: Transition[Field, INode[Node[Edge, Val]]], w: W, weightedPAutomaton: WeightedPAutomaton[Field, INode[Node[Edge, Val]], W]): Unit = {
+    override def onOutTransitionAdded(t: Transition[Field, INode[Node[Edge[Statement, Statement], Val]]], w: W, weightedPAutomaton: WeightedPAutomaton[Field, INode[Node[Edge[Statement, Statement], Val]], W]): Unit = {
       if (t.label.equals(Field.empty)) {
         if (forwardSolver.fieldAutomaton.isUnbalancedState(t.target)) {
           if (t.start.equals(CopyAccessPathChain.this.killedTransition.target)) {
@@ -78,14 +78,14 @@ class CopyAccessPathChain[W <: Weight](forwardSolver: ForwardBoomerangSolver[W],
         }
       } else {
         val targetState = backwardSolver.generateFieldState(
-          new SingleNode(new Node(new Edge(Statement.epsilon, Statement.epsilon), Val.zero)), t.label)
+          new SingleNode(new Node(new Edge[Statement, Statement](Statement.epsilon, Statement.epsilon), Val.zero)), t.label)
         val insert = new Transition(stateInBwSolver, t.label, targetState)
         queueOrAdd(insert)
         forwardSolver.fieldAutomaton.registerListener(new WalkForwardSolverListener(t.target, targetState, walkDepth + 1))
       }
     }
 
-    override def onInTransitionAdded(t: Transition[Field, INode[Node[Edge, Val]]], w: W, weightedPAutomaton: WeightedPAutomaton[Field, INode[Node[Edge, Val]], W]): Unit = {}
+    override def onInTransitionAdded(t: Transition[Field, INode[Node[Edge[Statement, Statement], Val]]], w: W, weightedPAutomaton: WeightedPAutomaton[Field, INode[Node[Edge[Statement, Statement], Val]], W]): Unit = {}
 
     override def hashCode: Int = Objects.hashCode(getOuterType, stateInBwSolver)
 
@@ -99,7 +99,7 @@ class CopyAccessPathChain[W <: Weight](forwardSolver: ForwardBoomerangSolver[W],
     }
   }
 
-  protected class InsertFieldTransitionCallback(protected val trans: Transition[Field, INode[Node[Edge, Val]]]) {
+  protected class InsertFieldTransitionCallback(protected val trans: Transition[Field, INode[Node[Edge[Statement, Statement], Val]]]) {
 
     def getOuterType: CopyAccessPathChain[W] = CopyAccessPathChain.this
 

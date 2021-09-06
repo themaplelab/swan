@@ -21,15 +21,17 @@ package ca.ualberta.maple.swan.spds.analysis.boomerang.scene
 
 import ca.ualberta.maple.swan.spds.analysis.wpds.interfaces.Location
 
+import scala.collection.mutable
+
 abstract class Method extends Location {
 
   def isParameterLocal(v: Val): Boolean
 
-  def getLocals: Set[Val]
+  def getLocals: mutable.HashSet[Val]
 
-  def getParameterLocals: Set[Val]
+  def getParameterLocals: mutable.ArrayBuffer[Val]
 
-  def getStatements: List[Statement]
+  def getStatements: mutable.ArrayBuffer[Statement]
 
   def getCFG: ControlFlowGraph
 
@@ -38,9 +40,9 @@ abstract class Method extends Location {
   def getParameterLocal(i: Int): Val = getParameterLocal(i)
 
   private val returnLocals = getStatements.filter(s => s.isInstanceOf[ReturnStatement])
-    .map(r => r.asInstanceOf[ReturnStatement].getReturnOp).toSet
+    .map(r => r.asInstanceOf[ReturnStatement].getReturnOp)
 
-  def getReturnLocals: Set[Val] = returnLocals
+  def getReturnLocals: mutable.HashSet[Val] = mutable.HashSet.from(returnLocals)
 
   override def accepts(other: Location): Boolean = this.equals(other)
 }
@@ -48,9 +50,9 @@ abstract class Method extends Location {
 object Method {
   val epsilon: Method = new Method {
     override def isParameterLocal(v: Val): Boolean = false
-    override def getLocals: Set[Val] = Set.empty
-    override def getParameterLocals: Set[Val] = Set.empty
-    override def getStatements: List[Statement] = List.empty
+    override def getLocals: mutable.HashSet[Val] = mutable.HashSet.empty
+    override def getParameterLocals: mutable.ArrayBuffer[Val] = mutable.ArrayBuffer.empty
+    override def getStatements: mutable.ArrayBuffer[Statement] = mutable.ArrayBuffer.empty
     override def getCFG: ControlFlowGraph = null
     override def getName: String = null
     override def toString: String = "METHOD EPS"

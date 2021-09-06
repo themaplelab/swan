@@ -21,12 +21,12 @@ package ca.ualberta.maple.swan.spds.analysis.boomerang.poi
 
 import java.util.Objects
 
-import ca.ualberta.maple.swan.spds.analysis.boomerang.scene.ControlFlowGraph
 import ca.ualberta.maple.swan.spds.analysis.boomerang.scene.ControlFlowGraph.Edge
+import ca.ualberta.maple.swan.spds.analysis.boomerang.scene.Statement
 
-abstract class AbstractPOI[S, V, F](val cfgEdge: Edge, val baseVar: V, val field: F, val storedVar: V) extends PointOfIndirection {
+abstract class AbstractPOI[S, V, F](val cfgEdge: Edge[Statement, Statement], val baseVar: V, val field: F, val storedVar: V) extends PointOfIndirection {
 
-  override def getCfgEdge: ControlFlowGraph.Edge = cfgEdge
+  override def getCfgEdge: Edge[Statement, Statement] = cfgEdge
 
   override def hashCode(): Int = Objects.hashCode(field, baseVar, storedVar, cfgEdge)
 

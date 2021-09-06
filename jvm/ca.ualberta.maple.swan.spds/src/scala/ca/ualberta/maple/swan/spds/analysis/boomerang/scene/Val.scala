@@ -19,23 +19,34 @@
 
 package ca.ualberta.maple.swan.spds.analysis.boomerang.scene
 
+import java.util.Objects
+
 import ca.ualberta.maple.swan.spds.analysis.boomerang.scene.ControlFlowGraph.Edge
 
-abstract class Val(val method: Method, val unbalancedStmt: Edge = null) {
+abstract class Val(val method: Method, val unbalancedStmt: Edge[Statement, Statement] = null) {
 
   def getType: Type
 
   def getName: String
 
-  def asUnbalanced(edge: Edge): Val
+  def asUnbalanced(edge: Edge[Statement, Statement]): Val
 
   def isReturnLocal: Boolean = method.getReturnLocals.contains(this)
 
   def isParameterLocal(i: Int): Boolean = {
-    i < method.getParameterLocals.size && method.getParameterLocals.equals(this)
+    i < method.getParameterLocals.size && method.getParameterLocal(i).equals(this)
   }
 
   def isUnbalanced: Boolean = unbalancedStmt != null
+
+  override def hashCode(): Int = Objects.hashCode(method, unbalancedStmt)
+
+  override def equals(obj: Any): Boolean = {
+    obj match {
+      case other: Val => Objects.equals(other.method, method) && Objects.equals(other.unbalancedStmt, unbalancedStmt)
+      case _ => false
+    }
+  }
 }
 
 object Val {
@@ -44,7 +55,7 @@ object Val {
     new Val(null) {
       override def getType: Type = null
       override def getName: String = toString
-      override def asUnbalanced(edge: Edge): Val = null
+      override def asUnbalanced(edge: Edge[Statement, Statement]): Val = null
     }
   }
 
@@ -54,12 +65,8 @@ object Val {
 
     override def getName: String = delegate.getName
 
-    override def asUnbalanced(edge: Edge): Val = delegate.asUnbalanced(edge)
+    override def asUnbalanced(edge: Edge[Statement, Statement]): Val = delegate.asUnbalanced(edge)
   }
 
-  abstract case class NewExpr(m: Method, u: Edge = null) extends Val(m, u)
-
-  abstract case class IntConstant(m: Method, u: Edge = null) extends Val(m, u)
-
-  abstract case class StringConstant(m: Method, u: Edge = null) extends Val(m, u)
+  trait NewExpr
 }

@@ -30,21 +30,21 @@
       {
         "from": "INIT",
         "method": ".*File.open.*",
-        "param": "Param1",
+        "param": 0,
         "to": "OPENED",
         "type": "OnCall"
       },
       {
         "from": "INIT",
         "method": ".*File.close.*",
-        "param": "Param1",
+        "param": 0,
         "to": "CLOSED",
         "type": "OnCall"
       },
       {
         "from": "OPENED",
         "method": ".*File.close.*",
-        "param": "Param1",
+        "param": 0,
         "to": "CLOSED",
         "type": "OnCall"
       }

@@ -62,7 +62,7 @@ abstract class FieldStoreStatement(m: Method) extends Statement(m) with Assignme
 
   def isFieldWriteWithBase(base: Val): Boolean
 
-  def getFieldWrite: Pair[Val, Field]
+  def getFieldStore: Pair[Val, Field]
 }
 
 abstract class FieldLoadStatement(m: Method) extends Statement(m) with Assignment {
@@ -74,7 +74,7 @@ abstract class FieldLoadStatement(m: Method) extends Statement(m) with Assignmen
   def getFieldLoad: Pair[Val, Field]
 }
 
-abstract class StaticFieldWriteStatement(m: Method) extends Statement(m) with Assignment {
+abstract class StaticFieldStoreStatement(m: Method) extends Statement(m) with Assignment {
 
   def getStaticField: StaticFieldVal
 }
@@ -88,7 +88,7 @@ abstract class NewStatement(m: Method) extends Statement(m) with Assignment
 
 abstract class AssignStatement(m: Method) extends Statement(m) with Assignment
 
-abstract class LiteralStatement(m: Method) extends Statement(m) with Assignment
+abstract class LiteralStatement(m: Method) extends NewStatement(m) with Assignment
 
 abstract class CallSiteStatement(m: Method) extends Statement(m) with Assignment {
 
@@ -101,3 +101,5 @@ abstract class ReturnStatement(m: Method) extends Statement(m) {
 
   def getReturnOp: Val
 }
+
+abstract class ThrowStatement(m: Method) extends Statement(m)

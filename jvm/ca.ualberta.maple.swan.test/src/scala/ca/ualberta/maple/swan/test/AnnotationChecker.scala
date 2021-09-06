@@ -24,10 +24,10 @@ import java.nio.file.{Files, Paths}
 
 import ca.ualberta.maple.swan.drivers.Driver
 import ca.ualberta.maple.swan.ir.{CanInstructionDef, Position}
-import ca.ualberta.maple.swan.spds.analysis.taint.TaintResults.Path
-import ca.ualberta.maple.swan.spds.analysis.taint.TaintSpecification.JSONMethod
-import ca.ualberta.maple.swan.spds.analysis.taint.{TaintResults, TaintSpecification}
-import ca.ualberta.maple.swan.spds.analysis.typestate.{TypeStateJSONProgrammaticSpecification, TypeStateResults}
+import ca.ualberta.maple.swan.spds.swan.taint.TaintResults.Path
+import ca.ualberta.maple.swan.spds.swan.taint.TaintSpecification.JSONMethod
+import ca.ualberta.maple.swan.spds.swan.taint.{TaintResults, TaintSpecification}
+import ca.ualberta.maple.swan.spds.swan.typestate.{TypeStateJSONProgrammaticSpecification, TypeStateResults}
 import ca.ualberta.maple.swan.test.AnnotationChecker.Annotation
 import org.apache.commons.io.FileExistsException
 import picocli.CommandLine

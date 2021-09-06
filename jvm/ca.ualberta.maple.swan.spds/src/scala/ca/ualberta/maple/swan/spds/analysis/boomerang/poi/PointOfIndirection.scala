@@ -19,7 +19,8 @@
 
 package ca.ualberta.maple.swan.spds.analysis.boomerang.poi
 
-import ca.ualberta.maple.swan.spds.analysis.boomerang.scene.ControlFlowGraph
+import ca.ualberta.maple.swan.spds.analysis.boomerang.scene.ControlFlowGraph.Edge
+import ca.ualberta.maple.swan.spds.analysis.boomerang.scene.{ControlFlowGraph, Statement}
 import ca.ualberta.maple.swan.spds.analysis.boomerang.{ForwardQuery, Query}
 
 import scala.collection.mutable
@@ -31,7 +32,7 @@ abstract class PointOfIndirection {
 
   def execute(baseAllocation: ForwardQuery, flowAllocation: Query): Unit
 
-  def getCfgEdge: ControlFlowGraph.Edge
+  def getCfgEdge: Edge[Statement, Statement]
 
   def addBaseAllocation(baseAllocation: ForwardQuery): Unit = {
     if (actualBaseAllocations.add(baseAllocation)) {

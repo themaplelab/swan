@@ -21,18 +21,19 @@ package ca.ualberta.maple.swan.spds.analysis.boomerang.solver
 
 import java.util.Objects
 
-import ca.ualberta.maple.swan.spds.analysis.boomerang.scene.{ControlFlowGraph, Field, Val}
+import ca.ualberta.maple.swan.spds.analysis.boomerang.scene.ControlFlowGraph.Edge
+import ca.ualberta.maple.swan.spds.analysis.boomerang.scene.{Field, Statement, Val}
 import ca.ualberta.maple.swan.spds.analysis.pds.solver.nodes.{INode, Node}
 import ca.ualberta.maple.swan.spds.analysis.wpds.impl.{Transition, Weight, WeightedPAutomaton}
 import ca.ualberta.maple.swan.spds.analysis.wpds.interfaces.WPAUpdateListener
 
-abstract class ControlFlowEdgeBasedFieldTransitionListener[W <: Weight](val cfgEdge: ControlFlowGraph.Edge) extends WPAUpdateListener[Field, INode[Node[ControlFlowGraph .Edge , Val]], W ] {
+abstract class ControlFlowEdgeBasedFieldTransitionListener[W <: Weight](val cfgEdge: Edge[Statement, Statement]) extends WPAUpdateListener[Field, INode[Node[Edge[Statement, Statement] , Val]], W ] {
 
-  override def onWeightAdded(t: Transition[Field, INode[Node[ControlFlowGraph.Edge, Val]]], w: W, aut: WeightedPAutomaton[Field, INode[Node[ControlFlowGraph.Edge, Val]], W]): Unit = {
+  override def onWeightAdded(t: Transition[Field, INode[Node[Edge[Statement, Statement], Val]]], w: W, aut: WeightedPAutomaton[Field, INode[Node[Edge[Statement, Statement], Val]], W]): Unit = {
     onAddedTransition(t)
   }
 
-  def onAddedTransition(t: Transition[Field, INode[Node[ControlFlowGraph.Edge, Val]]]): Unit
+  def onAddedTransition(t: Transition[Field, INode[Node[Edge[Statement, Statement], Val]]]): Unit
 
   override def hashCode(): Int = Objects.hashCode(cfgEdge)
 

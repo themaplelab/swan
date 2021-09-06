@@ -44,7 +44,7 @@ class ForwardBoomerangResults[W <: Weight](query: ForwardQuery,
 
   stats.terminated(query, this)
 
-  def getObjectDestructingStatements: Table[ControlFlowGraph.Edge, Val, W] = {
+  def getObjectDestructingStatements: Table[Edge[Statement, Statement], Val, W] = {
     val solver = queryToSolvers.get(query)
     if (solver.isEmpty) {
       HashBasedTable.create()
@@ -53,11 +53,11 @@ class ForwardBoomerangResults[W <: Weight](query: ForwardQuery,
       val visitedMethods = mutable.HashSet.empty[Method]
       res.rowKeySet().forEach(s => visitedMethods.add(s.getMethod))
       val forwardSolver = queryToSolvers(query)
-      val destructingStatement = HashBasedTable.create[Edge, Val, W]()
+      val destructingStatement = HashBasedTable.create[Edge[Statement, Statement], Val, W]()
       visitedMethods.foreach(flowReaches => {
         icfg.getEndPointsOf(flowReaches).foreach(exitStmt => {
           exitStmt.method.getCFG.getPredsOf(exitStmt).foreach(predOfExit => {
-            val exitEdge = new Edge(predOfExit, exitStmt)
+            val exitEdge = new Edge[Statement, Statement](predOfExit, exitStmt)
             val escapes = mutable.HashSet.empty[State]
             icfg.addCallerListener(new CallerListener[Statement, Method] {
 
@@ -81,16 +81,16 @@ class ForwardBoomerangResults[W <: Weight](query: ForwardQuery,
     }
   }
 
-  def asStatementValWeightTable: Table[ControlFlowGraph.Edge, Val, W] = {
+  def asStatementValWeightTable: Table[Edge[Statement, Statement], Val, W] = {
     queryToSolvers.getOrCreate(query).asStatementValWeightTable
   }
 
-  def findLastUsage(exitStmt: ControlFlowGraph.Edge, row: java.util.Map[Val, W],
-                    destructingStatement: Table[ControlFlowGraph.Edge, Val, W],
+  def findLastUsage(exitStmt: Edge[Statement, Statement], row: java.util.Map[Val, W],
+                    destructingStatement: Table[Edge[Statement, Statement], Val, W],
                     forwardSolver: ForwardBoomerangSolver[W]): Unit = {
-    val worklist = new mutable.Queue[Edge]()
+    val worklist = new mutable.Queue[Edge[Statement, Statement]]()
     worklist.addOne(exitStmt)
-    val visited = mutable.HashSet.empty[Edge]
+    val visited = mutable.HashSet.empty[Edge[Statement, Statement]]
     while (worklist.nonEmpty) {
       val currEdge = worklist.dequeue()
       if (!visited.contains(currEdge)) {
@@ -105,7 +105,7 @@ class ForwardBoomerangResults[W <: Weight](query: ForwardQuery,
           cfg.addPredsOfListener(new PredecessorListener(currEdge.start) {
 
             override def handlePredecessor(succ: Statement): Unit = {
-              worklist.enqueue(new Edge(succ, currEdge.start))
+              worklist.enqueue(new Edge[Statement, Statement](succ, currEdge.start))
             }
           })
         }

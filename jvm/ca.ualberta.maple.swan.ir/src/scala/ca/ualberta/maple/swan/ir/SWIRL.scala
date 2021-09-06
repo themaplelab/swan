@@ -146,6 +146,8 @@ sealed trait RawInstructionDef {
 }
 sealed trait CanInstructionDef {
   val instruction: Instruction
+
+  override def hashCode(): Int = instruction.hashCode()
 }
 
 object RawInstructionDef {

@@ -19,6 +19,18 @@
 
 package ca.ualberta.maple.swan.spds.analysis.boomerang.scene
 
-class Type {
+import java.util.Objects
 
+class Type(val name: String) {
+
+  override def hashCode(): Int = Objects.hashCode(name)
+
+  override def equals(obj: Any): Boolean = {
+    obj match {
+      case other: Type => Objects.equals(other.name, name)
+      case _ => false
+    }
+  }
+
+  override def toString: String = name
 }

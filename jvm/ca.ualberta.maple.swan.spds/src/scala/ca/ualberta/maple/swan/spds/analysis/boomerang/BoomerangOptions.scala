@@ -19,6 +19,8 @@
 
 package ca.ualberta.maple.swan.spds.analysis.boomerang
 
+import ca.ualberta.maple.swan.spds.analysis.boomerang.BoomerangOptions.StaticFieldStrategy
+import ca.ualberta.maple.swan.spds.analysis.boomerang.flowfunction.{IBackwardFlowFunction, IForwardFlowFunction}
 import ca.ualberta.maple.swan.spds.analysis.boomerang.scene.Val.AllocVal
 import ca.ualberta.maple.swan.spds.analysis.boomerang.scene.{Method, Statement, Val}
 import ca.ualberta.maple.swan.spds.analysis.boomerang.stats.IBoomerangStats
@@ -49,4 +51,14 @@ trait BoomerangOptions {
   def getBackwardFlowFunctions: IBackwardFlowFunction
 
   def getAllocationVal(m: Method, stmt: Statement, fact: Val): Option[AllocVal]
+
+  def getStaticFieldStrategy: StaticFieldStrategy
+}
+
+object BoomerangOptions {
+
+  trait StaticFieldStrategy
+  case object FLOW_SENSITIVE extends StaticFieldStrategy
+  case object SINGLETON extends StaticFieldStrategy
+  case object IGNORE extends StaticFieldStrategy
 }

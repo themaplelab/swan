@@ -20,7 +20,6 @@
 package ca.ualberta.maple.swan.spds.analysis.boomerang.results
 
 import java.util.Objects
-
 import ca.ualberta.maple.swan.spds.analysis.boomerang.ForwardQuery
 import ca.ualberta.maple.swan.spds.analysis.boomerang.scene.ControlFlowGraph.Edge
 import ca.ualberta.maple.swan.spds.analysis.boomerang.scene.{ControlFlowGraph, Statement, Val}
@@ -29,10 +28,11 @@ import ca.ualberta.maple.swan.spds.analysis.boomerang.util.DefaultValueMap
 import ca.ualberta.maple.swan.spds.analysis.pds.solver.nodes.{GeneratedState, INode, Node, SingleNode}
 import ca.ualberta.maple.swan.spds.analysis.wpds.impl.{PAutomaton, Transition, Weight, WeightedPAutomaton}
 import ca.ualberta.maple.swan.spds.analysis.wpds.interfaces.WPAStateListener
+import com.google.common.collect.Table
 
 abstract class AbstractBoomerangResults[W <: Weight](queryToSolvers: DefaultValueMap[ForwardQuery, ForwardBoomerangSolver[W]] ) {
 
-  protected def constructContextGraph(forwardQuery: ForwardQuery, targetFact: Node[Edge, Val]): Context = {
+  protected def constructContextGraph(forwardQuery: ForwardQuery, targetFact: Node[Edge[Statement, Statement], Val]): Context = {
     val context = new Context(targetFact, forwardQuery)
     val forwardSolver = queryToSolvers(forwardQuery)
     computeUnmatchedOpeningContext(context, forwardSolver, targetFact)
@@ -40,15 +40,19 @@ abstract class AbstractBoomerangResults[W <: Weight](queryToSolvers: DefaultValu
     context
   }
 
+  def asStatementValWeightTable(query: ForwardQuery): Table[Edge[Statement, Statement], Val, W] = {
+    queryToSolvers.getOrCreate(query).asStatementValWeightTable
+  }
+
   def computeUnmatchedOpeningContext(context: AbstractBoomerangResults.this.Context, forwardSolver: ForwardBoomerangSolver[W],
-                                     node: Node[ControlFlowGraph.Edge, Val]): Unit = {
+                                     node: Node[ControlFlowGraph.Edge[Statement, Statement], Val]): Unit = {
     val initialState = new SingleNode(node.fact)
     forwardSolver.callAutomaton.registerListener(new OpeningCallStackExtractor(initialState, initialState, context, forwardSolver))
   }
 
   def computeUnmatchedClosingContext(context: Context, forwardSolver: ForwardBoomerangSolver[W]): Unit = {
     forwardSolver.callAutomaton.transitions.foreach(t => {
-      if (t.target.fact().isUnbalanced) {
+      if (t.target.fact.isUnbalanced) {
         forwardSolver.callAutomaton.registerListener(new ClosingCallStackExtractor(t.target, t.target, context, forwardSolver))
       }
     })
@@ -57,9 +61,9 @@ abstract class AbstractBoomerangResults[W <: Weight](queryToSolvers: DefaultValu
   class OpeningCallStackExtractor(state: INode[Val],
                                   protected val source: INode[Val],
                                   protected val context: AbstractBoomerangResults.this.Context,
-                                  protected val solver: ForwardBoomerangSolver[W]) extends WPAStateListener[Edge, INode[Val], W](state) {
+                                  protected val solver: ForwardBoomerangSolver[W]) extends WPAStateListener[Edge[Statement, Statement], INode[Val], W](state) {
 
-    override def onOutTransitionAdded(t: Transition[Edge, INode[Val]], w: W, weightedPAutomaton: WeightedPAutomaton[Edge, INode[Val], W]): Unit = {
+    override def onOutTransitionAdded(t: Transition[Edge[Statement, Statement], INode[Val]], w: W, weightedPAutomaton: WeightedPAutomaton[Edge[Statement, Statement], INode[Val], W]): Unit = {
       if (!weightedPAutomaton.getInitialStates.contains(t.target)) {
         if (t.label.getMethod != null) {
           if (t.start.isInstanceOf[GeneratedState[_, _]]) {
@@ -73,7 +77,7 @@ abstract class AbstractBoomerangResults[W <: Weight](queryToSolvers: DefaultValu
       }
     }
 
-    override def onInTransitionAdded(t: Transition[Edge, INode[Val]], w: W, weightedPAutomaton: WeightedPAutomaton[Edge, INode[Val], W]): Unit = {}
+    override def onInTransitionAdded(t: Transition[Edge[Statement, Statement], INode[Val]], w: W, weightedPAutomaton: WeightedPAutomaton[Edge[Statement, Statement], INode[Val], W]): Unit = {}
 
     override def hashCode: Int = super.hashCode + Objects.hashCode(context, solver, source)
 
@@ -91,11 +95,11 @@ abstract class AbstractBoomerangResults[W <: Weight](queryToSolvers: DefaultValu
   class ClosingCallStackExtractor(state: INode[Val],
                                   protected val source: INode[Val],
                                   protected val context: AbstractBoomerangResults.this.Context,
-                                  protected val solver: ForwardBoomerangSolver[W]) extends WPAStateListener[Edge, INode[Val], W](state) {
+                                  protected val solver: ForwardBoomerangSolver[W]) extends WPAStateListener[Edge[Statement, Statement], INode[Val], W](state) {
 
-    override def onOutTransitionAdded(t: Transition[Edge, INode[Val]], w: W, weightedPAutomaton: WeightedPAutomaton[Edge, INode[Val], W]): Unit = {}
+    override def onOutTransitionAdded(t: Transition[Edge[Statement, Statement], INode[Val]], w: W, weightedPAutomaton: WeightedPAutomaton[Edge[Statement, Statement], INode[Val], W]): Unit = {}
 
-    override def onInTransitionAdded(t: Transition[Edge, INode[Val]], w: W, weightedPAutomaton: WeightedPAutomaton[Edge, INode[Val], W]): Unit = {}
+    override def onInTransitionAdded(t: Transition[Edge[Statement, Statement], INode[Val]], w: W, weightedPAutomaton: WeightedPAutomaton[Edge[Statement, Statement], INode[Val], W]): Unit = {}
 
     override def hashCode: Int = super.hashCode + Objects.hashCode(context, solver, source)
 
@@ -110,24 +114,24 @@ abstract class AbstractBoomerangResults[W <: Weight](queryToSolvers: DefaultValu
     }
   }
 
-  class Context(val node: Node[ControlFlowGraph.Edge, Val], val forwardQuery: ForwardQuery) {
+  class Context(val node: Node[ControlFlowGraph.Edge[Statement, Statement], Val], val forwardQuery: ForwardQuery) {
 
-    val openingContext: PAutomaton[Edge, INode[Val]] = new PAutomaton[ControlFlowGraph.Edge, INode[Val]] {
+    val openingContext: PAutomaton[Edge[Statement, Statement], INode[Val]] = new PAutomaton[ControlFlowGraph.Edge[Statement, Statement], INode[Val]] {
 
-      override def createState(d: INode[Val], loc: Edge): INode[Val] = ???
+      override def createState(d: INode[Val], loc: Edge[Statement, Statement]): INode[Val] = ???
 
       override def isGeneratedState(d: INode[Val]): Boolean = ???
 
-      override def epsilon: Edge = new Edge(Statement.epsilon, Statement.epsilon)
+      override def epsilon: Edge[Statement, Statement] = new Edge[Statement, Statement](Statement.epsilon, Statement.epsilon)
     }
 
-    val closingContext: PAutomaton[Edge, INode[Val]] = new PAutomaton[Edge, INode[Val]] {
+    val closingContext: PAutomaton[Edge[Statement, Statement], INode[Val]] = new PAutomaton[Edge[Statement, Statement], INode[Val]] {
 
-      override def createState(d: INode[Val], loc: Edge): INode[Val] = ???
+      override def createState(d: INode[Val], loc: Edge[Statement, Statement]): INode[Val] = ???
 
       override def isGeneratedState(d: INode[Val]): Boolean = ???
 
-      override def epsilon: Edge = new Edge(Statement.epsilon, Statement.epsilon)
+      override def epsilon: Edge[Statement, Statement] = new Edge[Statement, Statement](Statement.epsilon, Statement.epsilon)
     }
 
     override def hashCode(): Int = Objects.hashCode(closingContext, node, openingContext)

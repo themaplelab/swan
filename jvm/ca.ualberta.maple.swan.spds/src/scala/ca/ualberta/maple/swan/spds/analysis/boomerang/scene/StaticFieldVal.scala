@@ -21,9 +21,9 @@ package ca.ualberta.maple.swan.spds.analysis.boomerang.scene
 
 import ca.ualberta.maple.swan.spds.analysis.boomerang.scene.ControlFlowGraph.Edge
 
-abstract class StaticFieldVal(m: Method, unbalanced: Edge = null) extends Val(m, unbalanced) {
+abstract class StaticFieldVal(m: Method, unbalanced: Edge[Statement, Statement] = null) extends Val(m, unbalanced) {
 
   def field: Field
 
-  def asUnbalanced(stmt: Edge): Val
+  def asUnbalanced(stmt: Edge[Statement, Statement]): Val
 }

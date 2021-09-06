@@ -21,18 +21,20 @@ package ca.ualberta.maple.swan.spds.analysis.boomerang.scene
 
 import ca.ualberta.maple.swan.spds.analysis.wpds.interfaces.Location
 
+import scala.collection.mutable
+
 trait ControlFlowGraph {
 
-  def getStartPoints: Set[Statement]
-  def getEndPoints: Set[Statement]
-  def getSuccsOf(stmt: Statement): Set[Statement]
-  def getPredsOf(stmt: Statement): Set[Statement]
-  def getStatements: List[Statement]
+  def getStartPoints: mutable.HashSet[Statement]
+  def getEndPoints: mutable.HashSet[Statement]
+  def getSuccsOf(stmt: Statement): mutable.HashSet[Statement]
+  def getPredsOf(stmt: Statement): mutable.HashSet[Statement]
+  def getStatements: mutable.ArrayBuffer[Statement]
 }
 
 object ControlFlowGraph {
 
-  class Edge(val start: Statement, val target: Statement) extends Pair[Statement, Statement](start, target) with Location {
+  class Edge[A <: Statement, B <: Statement](val start: A, val target: B) extends Pair[A, B](start, target) with Location {
 
     if (!start.method.equals(target.method)) throw new RuntimeException("Illegal CFG edge")
 

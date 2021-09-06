@@ -27,5 +27,5 @@ trait InvokeExpr {
 
   def getArgs: ArrayBuffer[Val]
 
-  def getMethod: DeclaredMethod
+  def getResolvedMethod: Option[Method]
 }

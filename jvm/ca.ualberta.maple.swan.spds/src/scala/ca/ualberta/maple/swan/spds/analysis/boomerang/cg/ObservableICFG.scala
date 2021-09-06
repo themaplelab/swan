@@ -21,6 +21,8 @@ package ca.ualberta.maple.swan.spds.analysis.boomerang.cg
 
 import ca.ualberta.maple.swan.spds.analysis.boomerang.scene.CallGraph.Edge
 
+import scala.collection.mutable
+
 trait ObservableICFG[N, M] {
 
   def addCalleeListener(listener: CalleeListener[N, M]): Unit
@@ -37,9 +39,9 @@ trait ObservableICFG[N, M] {
 
   def resetCallGraph(): Unit
 
-  def getStartPointsOf(m: M): Set[N]
+  def getStartPointsOf(m: M): mutable.HashSet[N]
 
-  def getEndPointsOf(m: M): Set[N]
+  def getEndPointsOf(m: M): mutable.HashSet[N]
 
   def computeFallback(): Unit
 

@@ -25,7 +25,7 @@ class NodeWithLocation[Stmt, Fact, Location](val stmt: Stmt, val variable: Fact,
 
   private val f: Node[Stmt, Fact] = new Node(stmt, variable)
 
-  override def fact(): Node[Stmt, Fact] = f
+  override def fact: Node[Stmt, Fact] = f
 
   override def hashCode: Int = Objects.hashCode(f, location)
 

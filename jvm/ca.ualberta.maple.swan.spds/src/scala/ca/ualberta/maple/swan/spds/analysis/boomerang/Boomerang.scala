@@ -20,21 +20,22 @@
 package ca.ualberta.maple.swan.spds.analysis.boomerang
 
 import ca.ualberta.maple.swan.spds.analysis.boomerang.scene.ControlFlowGraph.Edge
+import ca.ualberta.maple.swan.spds.analysis.boomerang.scene.Statement
 import ca.ualberta.maple.swan.spds.analysis.boomerang.scene.{CallGraph, ControlFlowGraph, DataFlowScope, Field, Val}
 import ca.ualberta.maple.swan.spds.analysis.pds.solver.{OneWeightFunctions, WeightFunctions}
 import ca.ualberta.maple.swan.spds.analysis.wpds.impl.Weight
 
 class Boomerang(cg: CallGraph, scope: DataFlowScope, options: BoomerangOptions) extends WeightedBoomerang[Weight.NoWeight](cg, scope, options) {
 
-  protected val fieldWeights: OneWeightFunctions[Edge, Val, Field, Weight.NoWeight] = new OneWeightFunctions(Weight.NO_WEIGHT_ONE)
+  protected val fieldWeights: OneWeightFunctions[Edge[Statement, Statement], Val, Field, Weight.NoWeight] = new OneWeightFunctions(Weight.NO_WEIGHT_ONE)
 
-  protected val callWeights: OneWeightFunctions[Edge, Val, Edge, Weight.NoWeight] = new OneWeightFunctions(Weight.NO_WEIGHT_ONE)
+  protected val callWeights: OneWeightFunctions[Edge[Statement, Statement], Val, Edge[Statement, Statement], Weight.NoWeight] = new OneWeightFunctions(Weight.NO_WEIGHT_ONE)
 
-  override protected def getForwardCallWeights(sourceQuery: ForwardQuery): WeightFunctions[ControlFlowGraph.Edge, Val, ControlFlowGraph.Edge, Weight.NoWeight] = callWeights
+  override protected def getForwardCallWeights(sourceQuery: ForwardQuery): WeightFunctions[Edge[Statement, Statement], Val, Edge[Statement, Statement], Weight.NoWeight] = callWeights
 
-  override protected def getForwardFieldWeights: WeightFunctions[ControlFlowGraph.Edge, Val, Field, Weight.NoWeight] = fieldWeights
+  override protected def getForwardFieldWeights: WeightFunctions[Edge[Statement, Statement], Val, Field, Weight.NoWeight] = fieldWeights
 
-  override protected def getBackwardCallWeights: WeightFunctions[ControlFlowGraph.Edge, Val, ControlFlowGraph.Edge, Weight.NoWeight] = callWeights
+  override protected def getBackwardCallWeights: WeightFunctions[Edge[Statement, Statement], Val, Edge[Statement, Statement], Weight.NoWeight] = callWeights
 
-  override protected def getBackwardFieldWeights: WeightFunctions[ControlFlowGraph.Edge, Val, Field, Weight.NoWeight] = fieldWeights
+  override protected def getBackwardFieldWeights: WeightFunctions[Edge[Statement, Statement], Val, Field, Weight.NoWeight] = fieldWeights
 }

@@ -262,7 +262,7 @@ abstract class SyncPDSSolver[Stmt <: Location, Fact, Field <: Location, W <: Wei
           new PopRule(
             asFieldFact(curr),
             node.location,
-            asFieldFact(node.fact()),
+            asFieldFact(node.fact),
             getFieldWeights.pop(curr)))
       }
       case _ =>
@@ -302,9 +302,9 @@ abstract class SyncPDSSolver[Stmt <: Location, Fact, Field <: Location, W <: Wei
         override def addedSummary(t: Transition[Stmt, INode[Fact]]): Unit = {
           val genSt = t.getTarget.asInstanceOf[GeneratedState[Fact, Stmt]]
           val sp = genSt.location
-          val v = genSt.node.fact()
+          val v = genSt.node.fact
           val exitStmt = t.getLabel
-          val returnedFact = t.getStart.fact()
+          val returnedFact = t.getStart.fact
           if (spInCallee.equals(sp) && factInCallee == v) {
             if (summaries.add(new Summary(callSite, factInCallee, spInCallee, exitStmt, returnedFact))) {
               summaryListeners.foreach(s => s.apply(callSite, factInCallee, spInCallee, exitStmt, returnedFact))
@@ -313,6 +313,12 @@ abstract class SyncPDSSolver[Stmt <: Location, Fact, Field <: Location, W <: Wei
           }
         }
       })
+  }
+
+  def addApplySummaryListener(l: OnAddedSummaryListener): Unit = {
+    if (summaryListeners.add(l)) {
+      summaries.foreach(s => l.apply(s.callSite, s.factInCallee, s.spInCallee, s.exitStmt, s.returnedFact))
+    }
   }
 
   def generateFieldState(d: INode[Node[Stmt, Fact]], loc: Field): INode[Node[Stmt, Fact]] = {
@@ -352,11 +358,11 @@ abstract class SyncPDSSolver[Stmt <: Location, Fact, Field <: Location, W <: Wei
     def apply(callSite: Stmt, factInCallee: Fact, spInCallee: Stmt, exitStmt: Stmt, returnedFact: Fact): Unit
   }
 
-  protected class Summary(protected val callSite: Stmt,
-                          protected val factInCallee: Fact,
-                          protected val spInCallee: Stmt,
-                          protected val exitStmt: Stmt,
-                          protected val returnedFact: Fact) {
+  protected class Summary(val callSite: Stmt,
+                          val factInCallee: Fact,
+                          val spInCallee: Stmt,
+                          val exitStmt: Stmt,
+                          val returnedFact: Fact) {
 
     override def hashCode: Int = Objects.hashCode(callSite, factInCallee, spInCallee, exitStmt, returnedFact)
 
@@ -378,7 +384,7 @@ abstract class SyncPDSSolver[Stmt <: Location, Fact, Field <: Location, W <: Wei
 
     override def onWeightAdded(t: Transition[Stmt, INode[Fact]], w: W, aut: WeightedPAutomaton[Stmt, INode[Fact], W]): Unit = {
       if (!t.getStart.isInstanceOf[GeneratedState[_, _]] && !t.getLabel.equals(callAutomaton.epsilon)) {
-        val node = new Node(t.getLabel, t.getStart.fact())
+        val node = new Node(t.getLabel, t.getStart.fact)
         setCallingContextReachable(node)
       }
     }
@@ -389,7 +395,7 @@ abstract class SyncPDSSolver[Stmt <: Location, Fact, Field <: Location, W <: Wei
     override def onWeightAdded(t: Transition[Field, INode[Node[Stmt, Fact]]], w: W, aut: WeightedPAutomaton[Field, INode[Node[Stmt, Fact]], W]): Unit = {
       val n = t.getStart
       if (!n.isInstanceOf[GeneratedState[_, _]] && !t.getLabel.equals(fieldAutomaton.epsilon)) {
-        setFieldContextReachable(new Node(n.fact().stmt, n.fact().fact))
+        setFieldContextReachable(new Node(n.fact.stmt, n.fact.fact))
       }
     }
   }
@@ -431,7 +437,7 @@ abstract class SyncPDSSolver[Stmt <: Location, Fact, Field <: Location, W <: Wei
     protected def getOuterType: SyncPDSSolver[Stmt, Fact, Field, W] = SyncPDSSolver.this
 
     override def onOutTransitionAdded(t: Transition[Stmt, INode[Fact]], w: W, weightedPAutomaton: WeightedPAutomaton[Stmt, INode[Fact], W]): Unit = {
-      val returningNode = new Node(t.getLabel, trans.getStart.fact())
+      val returningNode = new Node(t.getLabel, trans.getStart.fact)
       setCallingContextReachable(returningNode)
     }
 

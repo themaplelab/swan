@@ -32,13 +32,13 @@ import scala.collection.mutable
 
 abstract class ExecuteImportFieldStmtPOI[W <: Weight](protected val baseSolver: ForwardBoomerangSolver[W],
                                              protected val flowSolver: ForwardBoomerangSolver[W],
-                                             protected val poi: AbstractPOI[Edge, Val, Field]) {
+                                             protected val poi: AbstractPOI[Edge[Statement, Statement], Val, Field]) {
 
-  protected val baseAutomaton: WeightedPAutomaton[Field, INode[Node[Edge, Val]], W] = baseSolver.fieldAutomaton
-  protected val flowAutomaton: WeightedPAutomaton[Field, INode[Node[Edge, Val]], W] = flowSolver.fieldAutomaton
-  protected val reachable: mutable.HashSet[INode[Node[Edge, Val]]] = mutable.HashSet.empty
-  protected val delayedTransitions: mutable.MultiDict[INode[Node[Edge, Val]], InsertFieldTransitionCallback] = mutable.MultiDict.empty
-  protected val curr: Edge = poi.cfgEdge
+  protected val baseAutomaton: WeightedPAutomaton[Field, INode[Node[Edge[Statement, Statement], Val]], W] = baseSolver.fieldAutomaton
+  protected val flowAutomaton: WeightedPAutomaton[Field, INode[Node[Edge[Statement, Statement], Val]], W] = flowSolver.fieldAutomaton
+  protected val reachable: mutable.HashSet[INode[Node[Edge[Statement, Statement], Val]]] = mutable.HashSet.empty
+  protected val delayedTransitions: mutable.MultiDict[INode[Node[Edge[Statement, Statement], Val]], InsertFieldTransitionCallback] = mutable.MultiDict.empty
+  protected val curr: Edge[Statement, Statement] = poi.cfgEdge
   protected val baseVar: Val = poi.baseVar
   protected val storedVar: Val = poi.storedVar
   protected val field: Field = poi.field
@@ -68,7 +68,7 @@ abstract class ExecuteImportFieldStmtPOI[W <: Weight](protected val baseSolver: 
     flowSolver.callAutomaton.registerListener(new ForAnyCallSiteOrExitStmt(this.baseSolver))
   }
 
-  protected def importFieldTransitionsStartingAt(t: Transition[Field, INode[Node[Edge, Val]]], importDepth: Int): Unit = {
+  protected def importFieldTransitionsStartingAt(t: Transition[Field, INode[Node[Edge[Statement, Statement], Val]]], importDepth: Int): Unit = {
     if (!(MAX_IMPORT_DEPTH > 0 && importDepth > MAX_IMPORT_DEPTH)) {
       if (!t.label.equals(Field.epsilon)) {
         if (t.label.equals(Field.empty)) {
@@ -81,13 +81,13 @@ abstract class ExecuteImportFieldStmtPOI[W <: Weight](protected val baseSolver: 
     }
   }
 
-  def addReachable(node: INode[Node[Edge, Val]]): Unit = {
+  def addReachable(node: INode[Node[Edge[Statement, Statement], Val]]): Unit = {
     if (reachable.add(node)) {
       delayedTransitions.get(node).foreach(callback => callback.trigger())
     }
   }
 
-  protected def queueOrAdd(t: Transition[Field, INode[Node[Edge, Val]]]): Unit = {
+  protected def queueOrAdd(t: Transition[Field, INode[Node[Edge[Statement, Statement], Val]]]): Unit = {
     if (reachable.contains(t.target)) {
       flowSolver.fieldAutomaton.addTransition(t)
       addReachable(t.start)
@@ -96,9 +96,9 @@ abstract class ExecuteImportFieldStmtPOI[W <: Weight](protected val baseSolver: 
     }
   }
 
-  def activate(start: INode[Node[Edge, Val]]): Unit
+  def activate(start: INode[Node[Edge[Statement, Statement], Val]]): Unit
 
-  def trigger(start: INode[Node[Edge, Val]]): Unit = {
+  def trigger(start: INode[Node[Edge[Statement, Statement], Val]]): Unit = {
     val intermediateState = flowSolver.fieldAutomaton.createState(new SingleNode(new Node(curr, baseVar)), field)
     val connectingTrans = new Transition(start, field, intermediateState)
     flowSolver.fieldAutomaton.addTransition(connectingTrans)
@@ -116,7 +116,7 @@ abstract class ExecuteImportFieldStmtPOI[W <: Weight](protected val baseSolver: 
     }
   }
 
-  protected class InsertFieldTransitionCallback(protected val trans: Transition[Field, INode[Node[Edge, Val]]]) {
+  protected class InsertFieldTransitionCallback(protected val trans: Transition[Field, INode[Node[Edge[Statement, Statement], Val]]]) {
 
     def trigger(): Unit = {
       flowSolver.fieldAutomaton.addTransition(trans)
@@ -133,12 +133,12 @@ abstract class ExecuteImportFieldStmtPOI[W <: Weight](protected val baseSolver: 
     }
   }
 
-  protected class BaseVarPointsTo(curr: Edge, protected val poi: ExecuteImportFieldStmtPOI[W]) extends ControlFlowEdgeBasedFieldTransitionListener[W](curr) {
+  protected class BaseVarPointsTo(curr: Edge[Statement, Statement], protected val poi: ExecuteImportFieldStmtPOI[W]) extends ControlFlowEdgeBasedFieldTransitionListener[W](curr) {
 
-    override def onAddedTransition(t: Transition[Field, INode[Node[Edge, Val]]]): Unit = {
+    override def onAddedTransition(t: Transition[Field, INode[Node[Edge[Statement, Statement], Val]]]): Unit = {
       val aliasedVariableAtStmt = t.start
       if (!active && !aliasedVariableAtStmt.isInstanceOf[GeneratedState[_, _]]) {
-        val alias = aliasedVariableAtStmt.fact().fact
+        val alias = aliasedVariableAtStmt.fact.fact
         if (alias.equals(poi.baseVar) && t.label.equals(Field.empty)) flowsTo()
       }
     }
@@ -153,11 +153,11 @@ abstract class ExecuteImportFieldStmtPOI[W <: Weight](protected val baseSolver: 
     }
   }
 
-  protected class ImportIndirectAliases(succ: Edge,
+  protected class ImportIndirectAliases(succ: Edge[Statement, Statement],
                                         protected val flowSolver: ForwardBoomerangSolver[W],
                                         protected val baseSolver: ForwardBoomerangSolver[W]) extends ControlFlowEdgeBasedFieldTransitionListener[W](succ) {
 
-    override def onAddedTransition(t: Transition[Field, INode[Node[Edge, Val]]]): Unit = {
+    override def onAddedTransition(t: Transition[Field, INode[Node[Edge[Statement, Statement], Val]]]): Unit = {
       if (!t.label.equals(Field.epsilon) && !t.start.isInstanceOf[GeneratedState[_, _]]) {
         importFieldTransitionsStartingAt(t, 0)
       }
@@ -174,10 +174,10 @@ abstract class ExecuteImportFieldStmtPOI[W <: Weight](protected val baseSolver: 
     }
   }
 
-  protected class ImportIndirectCallAliases(stmt: Edge, protected val flowSolver: AbstractBoomerangSolver[W]) extends ControlFlowEdgeBasedCallTransitionListener[W](stmt) {
+  protected class ImportIndirectCallAliases(stmt: Edge[Statement, Statement], protected val flowSolver: AbstractBoomerangSolver[W]) extends ControlFlowEdgeBasedCallTransitionListener[W](stmt) {
 
-    override def onAddedTransition(t: Transition[Edge, INode[Val]], w: W): Unit = {
-      if (t.start.fact().equals(storedVar)) {
+    override def onAddedTransition(t: Transition[Edge[Statement, Statement], INode[Val]], w: W): Unit = {
+      if (t.start.fact.equals(storedVar)) {
         baseSolver.registerStatementCallTransitionListener(new ImportIndirectCallAliasesAtSucc(curr, t.target, w))
       }
     }
@@ -191,12 +191,12 @@ abstract class ExecuteImportFieldStmtPOI[W <: Weight](protected val baseSolver: 
     }
   }
 
-  protected class ImportIndirectCallAliasesAtSucc(succ: Edge, protected val target: INode[Val],
+  protected class ImportIndirectCallAliasesAtSucc(succ: Edge[Statement, Statement], protected val target: INode[Val],
                                                   protected val w: W) extends ControlFlowEdgeBasedCallTransitionListener[W](succ) {
 
-    override def onAddedTransition(t: Transition[Edge, INode[Val]], w: W): Unit = {
+    override def onAddedTransition(t: Transition[Edge[Statement, Statement], INode[Val]], w: W): Unit = {
       cfgEdge.start match {
-        case statement: FieldStoreStatement if !statement.getFieldWrite.x.equals(t.start.fact()) =>
+        case statement: FieldStoreStatement if !statement.getFieldStore.x.equals(t.start.fact) =>
           flowSolver.callAutomaton.addWeightForTransition(new Transition(t.start, t.label, target), this.w)
         case _ =>
       }
@@ -213,15 +213,15 @@ abstract class ExecuteImportFieldStmtPOI[W <: Weight](protected val baseSolver: 
     }
   }
 
-  protected class ForAnyCallSiteOrExitStmt(protected val baseSolver: ForwardBoomerangSolver[W]) extends WPAUpdateListener[Edge, INode[Val], W] {
+  protected class ForAnyCallSiteOrExitStmt(protected val baseSolver: ForwardBoomerangSolver[W]) extends WPAUpdateListener[Edge[Statement, Statement], INode[Val], W] {
 
-    override def onWeightAdded(t: Transition[Edge, INode[Val]], w: W, aut: WeightedPAutomaton[Edge, INode[Val], W]): Unit = {
-      if (flowSolver.callAutomaton.isUnbalancedState(t.target) && !t.label.equals(new Edge(Statement.epsilon, Statement.epsilon))) {
+    override def onWeightAdded(t: Transition[Edge[Statement, Statement], INode[Val]], w: W, aut: WeightedPAutomaton[Edge[Statement, Statement], INode[Val], W]): Unit = {
+      if (flowSolver.callAutomaton.isUnbalancedState(t.target) && !t.label.equals(new Edge[Statement, Statement](Statement.epsilon, Statement.epsilon))) {
         val edge = t.label
         val callSite = edge.start
         callSite match {
           case statement: CallSiteStatement =>
-            if (!statement.lhs.equals(t.start.fact()) && callSite.uses(t.start.fact())) {
+            if (!statement.lhs.equals(t.start.fact) && callSite.uses(t.start.fact)) {
               importSolvers(edge, t.start, t.target, w)
             }
           case _ =>
@@ -229,7 +229,7 @@ abstract class ExecuteImportFieldStmtPOI[W <: Weight](protected val baseSolver: 
       }
     }
 
-    protected def importSolvers(callSiteOrExitStmt: Edge, start: INode[Val], node: INode[Val], w: W): Unit = {
+    protected def importSolvers(callSiteOrExitStmt: Edge[Statement, Statement], start: INode[Val], node: INode[Val], w: W): Unit = {
       baseSolver.registerStatementCallTransitionListener(new ImportOnReachStatement(flowSolver, callSiteOrExitStmt))
       baseSolver.registerStatementCallTransitionListener(new ImportTransitionFromCall(flowSolver, callSiteOrExitStmt, start, node, w))
     }
@@ -244,17 +244,17 @@ abstract class ExecuteImportFieldStmtPOI[W <: Weight](protected val baseSolver: 
     }
   }
 
-  protected class ImportFieldTransitionsFrom(target: INode[Node[Edge, Val]],
+  protected class ImportFieldTransitionsFrom(target: INode[Node[Edge[Statement, Statement], Val]],
                                              protected val flowSolver: ForwardBoomerangSolver[W],
-                                             importDepth: Int) extends WPAStateListener[Field, INode[Node[Edge, Val]], W](target) {
+                                             importDepth: Int) extends WPAStateListener[Field, INode[Node[Edge[Statement, Statement], Val]], W](target) {
 
-    override def onOutTransitionAdded(t: Transition[Field, INode[Node[Edge, Val]]], w: W, weightedPAutomaton: WeightedPAutomaton[Field, INode[Node[Edge, Val]], W]): Unit = {
+    override def onOutTransitionAdded(t: Transition[Field, INode[Node[Edge[Statement, Statement], Val]]], w: W, weightedPAutomaton: WeightedPAutomaton[Field, INode[Node[Edge[Statement, Statement], Val]], W]): Unit = {
       if (!t.label.equals(Field.epsilon)) {
         importFieldTransitionsStartingAt(t, importDepth)
       }
     }
 
-    override def onInTransitionAdded(t: Transition[Field, INode[Node[Edge, Val]]], w: W, weightedPAutomaton: WeightedPAutomaton[Field, INode[Node[Edge, Val]], W]): Unit = {}
+    override def onInTransitionAdded(t: Transition[Field, INode[Node[Edge[Statement, Statement], Val]]], w: W, weightedPAutomaton: WeightedPAutomaton[Field, INode[Node[Edge[Statement, Statement], Val]], W]): Unit = {}
 
     override def hashCode: Int = super.hashCode + Objects.hashCode(flowSolver)
 
@@ -267,12 +267,12 @@ abstract class ExecuteImportFieldStmtPOI[W <: Weight](protected val baseSolver: 
   }
 
   protected class ImportOnReachStatement(protected val flowSolver: ForwardBoomerangSolver[W],
-                                         callSiteOrExitStmt: Edge) extends ControlFlowEdgeBasedCallTransitionListener[W](callSiteOrExitStmt) {
+                                         callSiteOrExitStmt: Edge[Statement, Statement]) extends ControlFlowEdgeBasedCallTransitionListener[W](callSiteOrExitStmt) {
 
-    override def onAddedTransition(t: Transition[Edge, INode[Val]], w: W): Unit = {
+    override def onAddedTransition(t: Transition[Edge[Statement, Statement], INode[Val]], w: W): Unit = {
       if (!t.start.isInstanceOf[GeneratedState[_, _]] && t.label.equals(cfgEdge)) {
         baseSolver.registerStatementFieldTransitionListener(
-          new CallSiteOrExitStmtFieldImport(flowSolver, baseSolver, new Node(t.label, t.start.fact())))
+          new CallSiteOrExitStmtFieldImport(flowSolver, baseSolver, new Node(t.label, t.start.fact)))
       }
     }
 
@@ -285,12 +285,12 @@ abstract class ExecuteImportFieldStmtPOI[W <: Weight](protected val baseSolver: 
     }
   }
 
-  protected class ImportTransitionFromCall(protected val flowSolver: ForwardBoomerangSolver[W], stmt: Edge,
+  protected class ImportTransitionFromCall(protected val flowSolver: ForwardBoomerangSolver[W], stmt: Edge[Statement, Statement],
                                            start: INode[Val], protected val target: INode[Val],
                                            protected val w: W) extends ControlFlowEdgeBasedCallTransitionListener[W](stmt) {
 
-    override def onAddedTransition(t: Transition[Edge, INode[Val]], w: W): Unit = {
-      if (!t.start.isInstanceOf[GeneratedState[_, _]] && !t.start.equals(start) && t.start.fact().method.equals(t.label.start.method)) {
+    override def onAddedTransition(t: Transition[Edge[Statement, Statement], INode[Val]], w: W): Unit = {
+      if (!t.start.isInstanceOf[GeneratedState[_, _]] && !t.start.equals(start) && t.start.fact.method.equals(t.label.start.method)) {
         flowSolver.callAutomaton.addWeightForTransition(new Transition(t.start, t.label, target), this.w)
       }
     }
@@ -309,10 +309,10 @@ abstract class ExecuteImportFieldStmtPOI[W <: Weight](protected val baseSolver: 
 
   protected class CallSiteOrExitStmtFieldImport(protected val flowSolver: ForwardBoomerangSolver[W],
                                                 protected val baseSolver: ForwardBoomerangSolver[W],
-                                                protected val reachableNode: Node[Edge, Val]) extends ControlFlowEdgeBasedFieldTransitionListener[W](reachableNode.stmt) {
+                                                protected val reachableNode: Node[Edge[Statement, Statement], Val]) extends ControlFlowEdgeBasedFieldTransitionListener[W](reachableNode.stmt) {
 
-    override def onAddedTransition(t: Transition[Field, INode[Node[Edge, Val]]]): Unit = {
-      if (!t.label.equals(Field.epsilon) && !t.start.isInstanceOf[GeneratedState[_, _]] && t.start.fact().fact.equals(reachableNode.fact)) {
+    override def onAddedTransition(t: Transition[Field, INode[Node[Edge[Statement, Statement], Val]]]): Unit = {
+      if (!t.label.equals(Field.epsilon) && !t.start.isInstanceOf[GeneratedState[_, _]] && t.start.fact.fact.equals(reachableNode.fact)) {
         importFieldTransitionsStartingAt(t, 0)
       }
     }

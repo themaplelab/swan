@@ -47,21 +47,21 @@ abstract class WeightedBoomerang[W <: Weight](val cg: CallGraph, val scope: Data
   protected val cfg: ObservableCFG = new StaticCFG
   protected val stats: IBoomerangStats[W] = options.statsFactory
   protected val queryGraph = new QueryGraph[W](this)
-  protected val genField: mutable.HashMap[(INode[Node[Edge, Val]], Field), INode[Node[Edge, Val]]] = mutable.HashMap.empty
+  protected val genField: mutable.HashMap[(INode[Node[Edge[Statement, Statement], Val]], Field), INode[Node[Edge[Statement, Statement], Val]]] = mutable.HashMap.empty
 
   protected val visitedMethods: mutable.HashSet[Method] = mutable.HashSet.empty
 
-  protected val forwardCallSummaries: NestedWeightedPAutomatons[Edge, INode[Val], W] = new SummaryNestedWeightedPAutomatons
-  protected val forwardFieldSummaries: NestedWeightedPAutomatons[Field, INode[Node[Edge, Val]], W] = new SummaryNestedWeightedPAutomatons
+  protected val forwardCallSummaries: NestedWeightedPAutomatons[Edge[Statement, Statement], INode[Val], W] = new SummaryNestedWeightedPAutomatons
+  protected val forwardFieldSummaries: NestedWeightedPAutomatons[Field, INode[Node[Edge[Statement, Statement], Val]], W] = new SummaryNestedWeightedPAutomatons
 
   protected val solverCreationListeners: mutable.HashSet[SolverCreationListener[W]] = mutable.HashSet.empty
 
   protected var backwardSolverIns: BackwardBoomerangSolver[W] = _
   protected val bwicfg: ObservableICFG[Statement, Method] = new BackwardsObservableICFG(icfg)
-  protected val backwardCallSummaries: NestedWeightedPAutomatons[Edge, INode[Val], W] = new SummaryNestedWeightedPAutomatons
-  protected val backwardFieldSummaries: NestedWeightedPAutomatons[Field, INode[Node[Edge, Val]], W] = new SummaryNestedWeightedPAutomatons
+  protected val backwardCallSummaries: NestedWeightedPAutomatons[Edge[Statement, Statement], INode[Val], W] = new SummaryNestedWeightedPAutomatons
+  protected val backwardFieldSummaries: NestedWeightedPAutomatons[Field, INode[Node[Edge[Statement, Statement], Val]], W] = new SummaryNestedWeightedPAutomatons
 
-  protected val activatedPoi: mutable.MultiDict[SolverPair, INode[Node[Edge, Val]]] = mutable.MultiDict.empty
+  protected val activatedPoi: mutable.MultiDict[SolverPair, INode[Node[Edge[Statement, Statement], Val]]] = mutable.MultiDict.empty
   protected val poiListeners: mutable.MultiDict[SolverPair, ExecuteImportFieldStmtPOI[W]] = mutable.MultiDict.empty
 
   protected var rootQuery: INode[Val] = _
@@ -88,9 +88,9 @@ abstract class WeightedBoomerang[W <: Weight](val cg: CallGraph, val scope: Data
         val solver = createForwardSolver(key)
         stats.registerSolver(key, solver)
         solver.callAutomaton.registerListener(
-          (t: Transition[Edge, INode[Val]], w: W, aut: WeightedPAutomaton[Edge, INode[Val], W]) => checkTimeout())
+          (t: Transition[Edge[Statement, Statement], INode[Val]], w: W, aut: WeightedPAutomaton[Edge[Statement, Statement], INode[Val], W]) => checkTimeout())
         solver.fieldAutomaton.registerListener(
-          (t: Transition[Field, INode[Node[Edge, Val]]], w: W, aut: WeightedPAutomaton[Field, INode[Node[Edge, Val]], W]) => checkTimeout())
+          (t: Transition[Field, INode[Node[Edge[Statement, Statement], Val]]], w: W, aut: WeightedPAutomaton[Field, INode[Node[Edge[Statement, Statement], Val]], W]) => checkTimeout())
         solverCreationListeners.foreach(l => l.onCreatedSolver(key, solver))
         solver
       }
@@ -109,11 +109,11 @@ abstract class WeightedBoomerang[W <: Weight](val cg: CallGraph, val scope: Data
             WeightedBoomerang.this.scope, options.getBackwardFlowFunctions, cg.fieldLoadStatements,
             cg.fieldStoreStatements, null) {
 
-            override def getFieldWeights: WeightFunctions[Edge, Val, Field, W] = {
+            override def getFieldWeights: WeightFunctions[Edge[Statement, Statement], Val, Field, W] = {
               WeightedBoomerang.this.getBackwardFieldWeights
             }
 
-            override def getCallWeights: WeightFunctions[Edge, Val, Edge, W] = {
+            override def getCallWeights: WeightFunctions[Edge[Statement, Statement], Val, Edge[Statement, Statement], W] = {
               WeightedBoomerang.this.getBackwardCallWeights
             }
 
@@ -121,18 +121,18 @@ abstract class WeightedBoomerang[W <: Weight](val cg: CallGraph, val scope: Data
               sources.contains(rootQuery) && callAutomaton.isUnbalancedState(node)
             }
 
-            override def preventCallTransitionAdd(trans: Transition[Edge, INode[Val]], weight: W): Boolean = {
+            override def preventCallTransitionAdd(trans: Transition[Edge[Statement, Statement], INode[Val]], weight: W): Boolean = {
               checkTimeout()
               super.preventCallTransitionAdd(trans, weight)
             }
 
-            override def preventFieldTransitionAdd(trans: Transition[Field, INode[Node[Edge, Val]]], weight: W): Boolean = {
+            override def preventFieldTransitionAdd(trans: Transition[Field, INode[Node[Edge[Statement, Statement], Val]]], weight: W): Boolean = {
               checkTimeout()
               super.preventFieldTransitionAdd(trans, weight)
             }
           }
 
-          backwardSolver.registerListener((node: Node[Edge, Val]) => {
+          backwardSolver.registerListener((node: Node[Edge[Statement, Statement], Val]) => {
             val allocNode = isAllocationNode(node.stmt, node.fact)
             if (allocNode.nonEmpty || node.stmt.target.isInstanceOf[FieldLoadStatement]) {
               backwardSolver.fieldAutomaton.registerListener(new EmptyFieldListener(key, node))
@@ -147,15 +147,15 @@ abstract class WeightedBoomerang[W <: Weight](val cg: CallGraph, val scope: Data
     }
   }
 
-  protected def getForwardCallWeights(sourceQuery: ForwardQuery): WeightFunctions[Edge, Val, Edge, W]
+  protected def getForwardCallWeights(sourceQuery: ForwardQuery): WeightFunctions[Edge[Statement, Statement], Val, Edge[Statement, Statement], W]
 
-  protected def getForwardFieldWeights: WeightFunctions[Edge, Val, Field, W]
+  protected def getForwardFieldWeights: WeightFunctions[Edge[Statement, Statement], Val, Field, W]
 
-  protected def getBackwardCallWeights: WeightFunctions[Edge, Val, Edge, W]
+  protected def getBackwardCallWeights: WeightFunctions[Edge[Statement, Statement], Val, Edge[Statement, Statement], W]
 
-  protected def getBackwardFieldWeights: WeightFunctions[Edge, Val, Field, W]
+  protected def getBackwardFieldWeights: WeightFunctions[Edge[Statement, Statement], Val, Field, W]
 
-  def isAllocationNode(s: Edge, fact: Val): Option[AllocVal] = {
+  def isAllocationNode(s: Edge[Statement, Statement], fact: Val): Option[AllocVal] = {
     options.getAllocationVal(s.start.method, s.start, fact)
   }
 
@@ -218,11 +218,11 @@ abstract class WeightedBoomerang[W <: Weight](val cg: CallGraph, val scope: Data
     val callTarget = solver.generateCallState(new SingleNode(query.variable), query.cfgEdge)
     val stmt = cfgEdge.start
     val field = stmt match {
-      case statement: FieldStoreStatement => statement.getFieldWrite.y
+      case statement: FieldStoreStatement => statement.getFieldStore.y
       case _ => Field.empty
     }
     val v = stmt match {
-      case statement: FieldStoreStatement => statement.getFieldWrite.x
+      case statement: FieldStoreStatement => statement.getFieldStore.x
       case _ => query.variable.asInstanceOf[AllocVal].delegate
     }
     query match {
@@ -245,39 +245,39 @@ abstract class WeightedBoomerang[W <: Weight](val cg: CallGraph, val scope: Data
       createCallSummaries(sourceQuery, forwardCallSummaries), createFieldSummaries(sourceQuery, forwardFieldSummaries),
       scope, options.getForwardFlowFunctions, cg.fieldLoadStatements, cg.fieldStoreStatements, sourceQuery.getType) {
 
-      override protected def overwriteFieldAtStatement(fieldWriteStatementEdge: Edge, killedTransition: Transition[Field, INode[Node[Edge, Val]]]): Unit = {
-        val backwardQuery = new BackwardQuery(killedTransition.target.fact().stmt, fieldWriteStatementEdge.target.asInstanceOf[Assignment].rhs)
+      override protected def overwriteFieldAtStatement(fieldWriteStatementEdge: Edge[Statement, Statement], killedTransition: Transition[Field, INode[Node[Edge[Statement, Statement], Val]]]): Unit = {
+        val backwardQuery = new BackwardQuery(killedTransition.target.fact.stmt, fieldWriteStatementEdge.target.asInstanceOf[CallSiteStatement].rhs)
         val copyAccessPathChain = new CopyAccessPathChain[W](
           queryToSolvers(sourceQuery), queryToBackwardSolvers.getOrCreate(backwardQuery),
           fieldWriteStatementEdge, killedTransition)
         copyAccessPathChain.exec()
-        queryGraph.addEdge(sourceQuery, killedTransition.start.fact(), backwardQuery)
+        queryGraph.addEdge(sourceQuery, killedTransition.start.fact, backwardQuery)
       }
 
-      override def getFieldWeights: WeightFunctions[Edge, Val, Field, W] = WeightedBoomerang.this.getForwardFieldWeights
+      override def getFieldWeights: WeightFunctions[Edge[Statement, Statement], Val, Field, W] = WeightedBoomerang.this.getForwardFieldWeights
 
-      override def getCallWeights: WeightFunctions[Edge, Val, Edge, W] = WeightedBoomerang.this.getForwardCallWeights(sourceQuery)
+      override def getCallWeights: WeightFunctions[Edge[Statement, Statement], Val, Edge[Statement, Statement], W] = WeightedBoomerang.this.getForwardCallWeights(sourceQuery)
 
       override def forceUnbalanced(iNode: INode[Val], collection: scala.collection.Set[INode[Val]]): Boolean = {
         queryGraph.isRoot(sourceQuery)
       }
 
-      override def addCallRule(rule: Rule[Edge, INode[Val], W]): Unit = {
+      override def addCallRule(rule: Rule[Edge[Statement, Statement], INode[Val], W]): Unit = {
         if (!preventCallRuleAdd(sourceQuery, rule)) super.addCallRule(rule)
       }
 
-      override def preventCallTransitionAdd(t: Transition[Edge, INode[Val]], weight: W): Boolean = {
+      override def preventCallTransitionAdd(t: Transition[Edge[Statement, Statement], INode[Val]], weight: W): Boolean = {
         checkTimeout()
         super.preventCallTransitionAdd(t, weight)
       }
 
-      override def preventFieldTransitionAdd(t: Transition[Field, INode[Node[Edge, Val]]], weight: W): Boolean = {
+      override def preventFieldTransitionAdd(t: Transition[Field, INode[Node[Edge[Statement, Statement], Val]]], weight: W): Boolean = {
         checkTimeout()
         super.preventFieldTransitionAdd(t, weight)
       }
     }
 
-    solver.registerListener((node: Node[Edge, Val]) => {
+    solver.registerListener((node: Node[Edge[Statement, Statement], Val]) => {
       if (node.stmt.start.isInstanceOf[FieldStoreStatement]) {
         forwardHandleFieldWRite(node, createFieldStore(node.stmt), sourceQuery)
       }
@@ -286,7 +286,7 @@ abstract class WeightedBoomerang[W <: Weight](val cg: CallGraph, val scope: Data
     solver
   }
 
-  def forwardHandleFieldWRite(node: Node[Edge, Val], fieldWritePoi: WeightedBoomerang.this.FieldWritePOI, sourceQuery: ForwardQuery): Unit = {
+  def forwardHandleFieldWRite(node: Node[Edge[Statement, Statement], Val], fieldWritePoi: WeightedBoomerang.this.FieldWritePOI, sourceQuery: ForwardQuery): Unit = {
     val backwardQuery = new BackwardQuery(node.stmt, fieldWritePoi.baseVar)
     if (node.fact.equals(fieldWritePoi.storedVar)) {
       backwardSolve(backwardQuery)
@@ -300,28 +300,28 @@ abstract class WeightedBoomerang[W <: Weight](val cg: CallGraph, val scope: Data
     }
   }
 
-  def createFieldStore(edge: Edge): FieldWritePOI = {
+  def createFieldStore(edge: Edge[Statement, Statement]): FieldWritePOI = {
     val fs = edge.start.asInstanceOf[FieldStoreStatement]
-    val fw = fs.getFieldWrite
+    val fw = fs.getFieldStore
     fieldWrites.getOrCreate(new FieldWritePOI(edge, fw.x, fw.y, fs.rhs))
   }
 
-  def preventCallRuleAdd(sourceQuery: ForwardQuery, rule: Rule[ControlFlowGraph.Edge, INode[Val], W]): Boolean = {
+  def preventCallRuleAdd(sourceQuery: ForwardQuery, rule: Rule[ControlFlowGraph.Edge[Statement, Statement], INode[Val], W]): Boolean = {
     false
   }
 
   protected def createCallSummaries(sourceQuery: ForwardQuery,
-                                    summaries: NestedWeightedPAutomatons[Edge, INode[Val], W]): NestedWeightedPAutomatons[Edge, INode[Val], W] = {
-    new NestedWeightedPAutomatons[Edge, INode[Val], W] {
+                                    summaries: NestedWeightedPAutomatons[Edge[Statement, Statement], INode[Val], W]): NestedWeightedPAutomatons[Edge[Statement, Statement], INode[Val], W] = {
+    new NestedWeightedPAutomatons[Edge[Statement, Statement], INode[Val], W] {
 
-      override def putSummaryAutomaton(target: INode[Val], aut: WeightedPAutomaton[Edge, INode[Val], W]): Unit = {
+      override def putSummaryAutomaton(target: INode[Val], aut: WeightedPAutomaton[Edge[Statement, Statement], INode[Val], W]): Unit = {
         summaries.putSummaryAutomaton(target, aut)
       }
 
-      override def getSummaryAutomaton(target: INode[Val]): WeightedPAutomaton[Edge, INode[Val], W] = {
+      override def getSummaryAutomaton(target: INode[Val]): WeightedPAutomaton[Edge[Statement, Statement], INode[Val], W] = {
         sourceQuery.variable match {
           case allocVal: AllocVal =>
-            val f = if (target.fact().isUnbalanced) target.fact().asUnbalanced(null) else target.fact()
+            val f = if (target.fact.isUnbalanced) target.fact.asUnbalanced(null) else target.fact
             if (f.equals(allocVal.delegate)) {
               queryToSolvers.getOrCreate(sourceQuery).callAutomaton
             } else summaries.getSummaryAutomaton(target)
@@ -332,15 +332,15 @@ abstract class WeightedBoomerang[W <: Weight](val cg: CallGraph, val scope: Data
   }
 
   protected def createFieldSummaries(sourceQuery: ForwardQuery,
-                                     summaries: NestedWeightedPAutomatons[Field, INode[Node[Edge, Val]], W]): NestedWeightedPAutomatons[Field, INode[Node[Edge, Val]], W] = {
-    new NestedWeightedPAutomatons[Field, INode[Node[Edge, Val]], W] {
+                                     summaries: NestedWeightedPAutomatons[Field, INode[Node[Edge[Statement, Statement], Val]], W]): NestedWeightedPAutomatons[Field, INode[Node[Edge[Statement, Statement], Val]], W] = {
+    new NestedWeightedPAutomatons[Field, INode[Node[Edge[Statement, Statement], Val]], W] {
 
-      override def putSummaryAutomaton(target: INode[Node[Edge, Val]], aut: WeightedPAutomaton[Field, INode[Node[Edge, Val]], W]): Unit = {
+      override def putSummaryAutomaton(target: INode[Node[Edge[Statement, Statement], Val]], aut: WeightedPAutomaton[Field, INode[Node[Edge[Statement, Statement], Val]], W]): Unit = {
         summaries.putSummaryAutomaton(target, aut)
       }
 
-      override def getSummaryAutomaton(target: INode[Node[Edge, Val]]): WeightedPAutomaton[Field, INode[Node[Edge, Val]], W] = {
-        if (target.fact().equals(sourceQuery.asNode)) {
+      override def getSummaryAutomaton(target: INode[Node[Edge[Statement, Statement], Val]]): WeightedPAutomaton[Field, INode[Node[Edge[Statement, Statement], Val]], W] = {
+        if (target.fact.equals(sourceQuery.asNode)) {
           queryToSolvers.getOrCreate(sourceQuery).fieldAutomaton
         } else {
           summaries.getSummaryAutomaton(target)
@@ -362,7 +362,7 @@ abstract class WeightedBoomerang[W <: Weight](val cg: CallGraph, val scope: Data
     }
   }
 
-  def activateAllPois(pair: SolverPair, start: INode[Node[ControlFlowGraph.Edge, Val]]): Unit = {
+  def activateAllPois(pair: SolverPair, start: INode[Node[ControlFlowGraph.Edge[Statement, Statement], Val]]): Unit = {
     if (!activatedPoi.containsEntry(pair, start)) {
       activatedPoi.addOne(pair, start)
       poiListeners.get(pair).foreach(l => l.trigger(start))
@@ -374,20 +374,20 @@ abstract class WeightedBoomerang[W <: Weight](val cg: CallGraph, val scope: Data
     poiListeners.addOne(solverPair, exec)
   }
 
-  def getResults(seed: ForwardQuery): Table[Edge, Val, W] = {
-    val results = HashBasedTable.create[Edge, Val, W]()
+  def getResults(seed: ForwardQuery): Table[Edge[Statement, Statement], Val, W] = {
+    val results = HashBasedTable.create[Edge[Statement, Statement], Val, W]()
     val callAut = queryToSolvers.getOrCreate(seed).callAutomaton
     callAut.getTransitionsToFinalWeights.foreach(e => {
       val t = e._1
-      if (t.label.start.method.equals(t.start.fact().method)) {
-        results.put(t.label, t.start.fact(), e._2)
+      if (t.label.start.method.equals(t.start.fact.method)) {
+        results.put(t.label, t.start.fact, e._2)
       }
     })
     results
   }
 
-  class FieldWritePOI(statement: Edge, base: Val, field: Field, stored: Val)
-    extends AbstractPOI[Edge, Val, Field](statement, base, field, stored) {
+  class FieldWritePOI(statement: Edge[Statement, Statement], base: Val, field: Field, stored: Val)
+    extends AbstractPOI[Edge[Statement, Statement], Val, Field](statement, base, field, stored) {
 
     override def execute(baseAllocation: ForwardQuery, flowAllocation: Query): Unit = {
       flowAllocation match {
@@ -396,7 +396,7 @@ abstract class WeightedBoomerang[W <: Weight](val cg: CallGraph, val scope: Data
           val flowSolver = queryToSolvers(query)
           val exec = new ExecuteImportFieldStmtPOI[W](baseSolver, flowSolver, this) {
 
-            override def activate(start: INode[Node[Edge, Val]]): Unit = {
+            override def activate(start: INode[Node[Edge[Statement, Statement], Val]]): Unit = {
               activateAllPois(new SolverPair(flowSolver, baseSolver), start)
             }
           }
@@ -425,11 +425,11 @@ abstract class WeightedBoomerang[W <: Weight](val cg: CallGraph, val scope: Data
   }
 
   protected class EmptyFieldListener(key: BackwardQuery,
-                                     node: Node[ControlFlowGraph.Edge, Val]) extends WPAStateListener[Field, INode[Node[Edge, Val]], W](new SingleNode(node)) {
+                                     node: Node[ControlFlowGraph.Edge[Statement, Statement], Val]) extends WPAStateListener[Field, INode[Node[Edge[Statement, Statement], Val]], W](new SingleNode(node)) {
 
     def getOuterType: WeightedBoomerang[W] = WeightedBoomerang.this
 
-    override def onOutTransitionAdded(t: Transition[Field, INode[Node[Edge, Val]]], w: W, weightedPAutomaton: WeightedPAutomaton[Field, INode[Node[Edge, Val]], W]): Unit = {
+    override def onOutTransitionAdded(t: Transition[Field, INode[Node[Edge[Statement, Statement], Val]]], w: W, weightedPAutomaton: WeightedPAutomaton[Field, INode[Node[Edge[Statement, Statement], Val]], W]): Unit = {
       if (t.label.equals(Field.empty)) {
         val allocNode = isAllocationNode(node.stmt, node.fact)
         if (allocNode.nonEmpty) {
@@ -440,7 +440,7 @@ abstract class WeightedBoomerang[W <: Weight](val cg: CallGraph, val scope: Data
       }
     }
 
-    override def onInTransitionAdded(t: Transition[Field, INode[Node[Edge, Val]]], w: W, weightedPAutomaton: WeightedPAutomaton[Field, INode[Node[Edge, Val]], W]): Unit = {}
+    override def onInTransitionAdded(t: Transition[Field, INode[Node[Edge[Statement, Statement], Val]]], w: W, weightedPAutomaton: WeightedPAutomaton[Field, INode[Node[Edge[Statement, Statement], Val]], W]): Unit = {}
 
     override def hashCode: Int = super.hashCode + Objects.hashCode(getOuterType)
 
@@ -454,10 +454,10 @@ abstract class WeightedBoomerang[W <: Weight](val cg: CallGraph, val scope: Data
 
   protected class ForwardHandleFieldWrite(protected val sourceQuery: ForwardQuery,
                                           protected val fieldWritePoi: WeightedBoomerang.this.FieldWritePOI,
-                                          protected val statement: ControlFlowGraph.Edge) extends ControlFlowEdgeBasedFieldTransitionListener[W](statement) {
+                                          protected val statement: ControlFlowGraph.Edge[Statement, Statement]) extends ControlFlowEdgeBasedFieldTransitionListener[W](statement) {
 
-    override def onAddedTransition(t: Transition[Field, INode[Node[Edge, Val]]]): Unit = {
-      if (!t.start.isInstanceOf[GeneratedState[_, _]] && t.start.fact().stmt.equals(statement)) {
+    override def onAddedTransition(t: Transition[Field, INode[Node[Edge[Statement, Statement], Val]]]): Unit = {
+      if (!t.start.isInstanceOf[GeneratedState[_, _]] && t.start.fact.stmt.equals(statement)) {
         fieldWritePoi.addFlowAllocation(sourceQuery)
       }
     }
@@ -475,17 +475,17 @@ abstract class WeightedBoomerang[W <: Weight](val cg: CallGraph, val scope: Data
     }
   }
 
-  protected class TriggerBaseAllocationAtFieldWrite(state: SingleNode[Node[ControlFlowGraph.Edge, Val]],
+  protected class TriggerBaseAllocationAtFieldWrite(state: SingleNode[Node[ControlFlowGraph.Edge[Statement, Statement], Val]],
                                                     protected val fieldWritePoi: WeightedBoomerang.this.FieldWritePOI,
-                                                    protected val sourceQuery: ForwardQuery) extends WPAStateListener[Field, INode[Node[Edge, Val]], W](state) {
+                                                    protected val sourceQuery: ForwardQuery) extends WPAStateListener[Field, INode[Node[Edge[Statement, Statement], Val]], W](state) {
 
-    override def onOutTransitionAdded(t: Transition[Field, INode[Node[Edge, Val]]], w: W, weightedPAutomaton: WeightedPAutomaton[Field, INode[Node[Edge, Val]], W]): Unit = {
-      if (isAllocationNode(t.target.fact().fact, sourceQuery)) {
+    override def onOutTransitionAdded(t: Transition[Field, INode[Node[Edge[Statement, Statement], Val]]], w: W, weightedPAutomaton: WeightedPAutomaton[Field, INode[Node[Edge[Statement, Statement], Val]], W]): Unit = {
+      if (isAllocationNode(t.target.fact.fact, sourceQuery)) {
         fieldWritePoi.addBaseAllocation(sourceQuery)
       }
     }
 
-    override def onInTransitionAdded(t: Transition[Field, INode[Node[Edge, Val]]], w: W, weightedPAutomaton: WeightedPAutomaton[Field, INode[Node[Edge, Val]], W]): Unit = {}
+    override def onInTransitionAdded(t: Transition[Field, INode[Node[Edge[Statement, Statement], Val]]], w: W, weightedPAutomaton: WeightedPAutomaton[Field, INode[Node[Edge[Statement, Statement], Val]], W]): Unit = {}
 
     def getOuterType: WeightedBoomerang[W] = WeightedBoomerang.this
 

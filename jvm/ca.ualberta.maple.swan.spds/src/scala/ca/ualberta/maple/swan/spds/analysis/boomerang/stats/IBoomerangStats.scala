@@ -19,7 +19,7 @@
 
 package ca.ualberta.maple.swan.spds.analysis.boomerang.stats
 
-import ca.ualberta.maple.swan.spds.analysis.boomerang.scene.{Method, Val}
+import ca.ualberta.maple.swan.spds.analysis.boomerang.scene.{Method, Statement, Val}
 import ca.ualberta.maple.swan.spds.analysis.boomerang._
 import ca.ualberta.maple.swan.spds.analysis.boomerang.results.{BackwardBoomerangResults, ForwardBoomerangResults}
 import ca.ualberta.maple.swan.spds.analysis.boomerang.scene.ControlFlowGraph.Edge
@@ -37,7 +37,7 @@ trait IBoomerangStats[W <: Weight] {
 
   def getCallVisitedMethods: mutable.HashSet[Method]
 
-  def getForwardReachesNodes: mutable.HashSet[Node[Edge, Val]]
+  def getForwardReachesNodes: mutable.HashSet[Node[Edge[Statement, Statement], Val]]
 
   def terminated(query: ForwardQuery, results: ForwardBoomerangResults[W]): Unit
 

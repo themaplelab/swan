@@ -19,22 +19,23 @@
 
 package ca.ualberta.maple.swan.spds.analysis.boomerang.results
 
+import ca.ualberta.maple.swan.spds.analysis.boomerang.scene.ControlFlowGraph.Edge
 import ca.ualberta.maple.swan.spds.analysis.boomerang.{BackwardQuery, ForwardQuery}
-import ca.ualberta.maple.swan.spds.analysis.boomerang.scene.{ControlFlowGraph, Field, Val}
+import ca.ualberta.maple.swan.spds.analysis.boomerang.scene.{Field, Statement, Val}
 import ca.ualberta.maple.swan.spds.analysis.pds.solver.nodes.{INode, Node}
 import ca.ualberta.maple.swan.spds.analysis.wpds.impl.{Transition, Weight, WeightedPAutomaton}
 import ca.ualberta.maple.swan.spds.analysis.wpds.interfaces.WPAStateListener
 
-abstract class ExtractAllocationSiteStateListener[W <: Weight](state: INode[Node[ControlFlowGraph.Edge, Val]],
+abstract class ExtractAllocationSiteStateListener[W <: Weight](state: INode[Node[Edge[Statement, Statement], Val]],
                                          bwQuery: BackwardQuery, fwQuery: ForwardQuery)
-  extends WPAStateListener[Field, INode[Node[ControlFlowGraph.Edge , Val]], W](state) {
+  extends WPAStateListener[Field, INode[Node[Edge[Statement, Statement] , Val]], W](state) {
 
   protected def allocationSiteFound(allocationSite: ForwardQuery, query: BackwardQuery): Unit
 
-  override def onOutTransitionAdded(t: Transition[Field, INode[Node[ControlFlowGraph.Edge, Val]]], w: W, weightedPAutomaton: WeightedPAutomaton[Field, INode[Node[ControlFlowGraph.Edge, Val]], W]): Unit = {}
+  override def onOutTransitionAdded(t: Transition[Field, INode[Node[Edge[Statement, Statement], Val]]], w: W, weightedPAutomaton: WeightedPAutomaton[Field, INode[Node[Edge[Statement, Statement], Val]], W]): Unit = {}
 
-  override def onInTransitionAdded(t: Transition[Field, INode[Node[ControlFlowGraph.Edge, Val]]], w: W, weightedPAutomaton: WeightedPAutomaton[Field, INode[Node[ControlFlowGraph.Edge, Val]], W]): Unit = {
-    if (t.getStart.fact().equals(bwQuery.asNode) && t.getLabel.equals(Field.empty)) {
+  override def onInTransitionAdded(t: Transition[Field, INode[Node[Edge[Statement, Statement], Val]]], w: W, weightedPAutomaton: WeightedPAutomaton[Field, INode[Node[Edge[Statement, Statement], Val]], W]): Unit = {
+    if (t.getStart.fact.equals(bwQuery.asNode) && t.getLabel.equals(Field.empty)) {
       allocationSiteFound(fwQuery, bwQuery)
     }
   }
