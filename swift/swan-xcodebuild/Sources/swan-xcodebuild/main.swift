@@ -161,7 +161,7 @@ struct SWANXcodebuild: ParsableCommand {
       printStatus("xcodebuild output written to \(Constants.xcodebuildLog)")
     } catch {
       printFailure("Could not write xcodebuild output to " + Constants.xcodebuildLog + "\nReason: " + error.localizedDescription)
-      return
+      throw ExitCode.failure
     }
     
     if (task.terminationStatus != 0) {
@@ -169,7 +169,7 @@ struct SWANXcodebuild: ParsableCommand {
       if (allowFailure) {
         printStatus("--allow-failure enabled, continuing")
       } else {
-        return
+        throw ExitCode.failure
       }
     }
     
