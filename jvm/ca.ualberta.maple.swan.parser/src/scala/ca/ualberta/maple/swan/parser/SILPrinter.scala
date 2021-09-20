@@ -1452,6 +1452,7 @@ class SILPrinter extends Printer {
       case SILKeypathElement.tupleElement(decl, tpe) =>
       case SILKeypathElement.external(decl) =>
       case SILKeypathElement.optionalChain(tpe) =>
+      case SILKeypathElement.optionalWrap(tpe) =>
     }
   }
 
@@ -1953,6 +1954,7 @@ class SILPrinter extends Printer {
 
   def print(attribute: SILTypeAttribute): Unit = {
     attribute match {
+      case SILTypeAttribute.async => print("@async")
       case SILTypeAttribute.pseudoGeneric => print("@pseudogeneric")
       case SILTypeAttribute.calleeGuaranteed => print("@callee_guaranteed")
       case SILTypeAttribute.substituted => print("@substituted")

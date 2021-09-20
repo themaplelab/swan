@@ -361,6 +361,7 @@ class SILParser extends SILPrinter {
     nakedStack.clear()
     val result = parseResult()
     val body = parseInstruction()
+    if (skip(", forwarding:")) parseTypeAttribute()
     val sourceInfo = parseSourceInfo()
     body match {
       case SILInstruction.operator(op) => SILInstructionDef.operator(new SILOperatorDef(result, op, sourceInfo))
@@ -1455,12 +1456,20 @@ class SILParser extends SILPrinter {
       case "keypath" => {
         val tpe = parseType()
         take(",")
-        take("(")
         val elements = new ArrayBuffer[SILKeypathElement]
-        while (!skip(")")) {
-          elements.append(parseKeypathElement())
+        // TODO: handle , <...> (
+        //   e.g., 'keypath $ReferenceWritableKeyPath<Store<StoreState>, StoreState>, <τ_0_0 where τ_0_0 : FluxState> ([...]'
+        if (!peek("(")) {
+          // Temporary solution
+          skip(_ != '\n')
+          SILInstruction.operator(SILOperator.keypath(tpe, elements))
+        } else {
+          take("(")
+          while (!skip(")")) {
+            elements.append(parseKeypathElement())
+          }
+          SILInstruction.operator(SILOperator.keypath(tpe, elements))
         }
-        SILInstruction.operator(SILOperator.keypath(tpe, elements))
       }
 
         // *** RUNTIME FAILURES ***
@@ -1733,6 +1742,11 @@ class SILParser extends SILPrinter {
       val tpe = parseType()
       skip(",");skip(";")
       SILKeypathElement.optionalChain(tpe)
+    } else if (skip("optional_wrap")) {
+      take(":")
+      val tpe = parseType()
+      skip(",");skip(";")
+      SILKeypathElement.optionalWrap(tpe)
     } else {
       throw parseError("unknown keypath element")
     }
@@ -2713,6 +2727,7 @@ class SILParser extends SILPrinter {
   // IMPORTANT: TypeSpecifiers are handled in parseNakedType() because they
   // don't start with '@'.
   def parseTypeAttribute(): SILTypeAttribute = {
+    if(skip("@async")) return SILTypeAttribute.async
     if(skip("@pseudogeneric")) return SILTypeAttribute.pseudoGeneric
     if(skip("@callee_guaranteed")) return SILTypeAttribute.calleeGuaranteed
     if(skip("@substituted")) return SILTypeAttribute.substituted

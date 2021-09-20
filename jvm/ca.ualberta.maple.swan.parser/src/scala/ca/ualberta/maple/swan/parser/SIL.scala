@@ -408,6 +408,7 @@ object SILKeypathElement {
   case class tupleElement(decl: SILDeclRef, tpe: SILType) extends SILKeypathElement
   case class external(decl: SILType) extends SILKeypathElement
   case class optionalChain(tpe: SILType) extends SILKeypathElement
+  case class optionalWrap(tpe: SILType) extends SILKeypathElement
 }
 
 sealed trait SILSwitchEnumCase
@@ -749,6 +750,7 @@ object SILType {
 
 sealed trait SILTypeAttribute
 object SILTypeAttribute {
+  case object async extends SILTypeAttribute
   case object pseudoGeneric extends SILTypeAttribute
   case object calleeGuaranteed extends SILTypeAttribute
   case object substituted extends SILTypeAttribute
