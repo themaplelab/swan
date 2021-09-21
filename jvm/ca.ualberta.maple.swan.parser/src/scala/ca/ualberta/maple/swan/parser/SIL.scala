@@ -276,7 +276,7 @@ object SILOperator {
 
   /***** BLOCKS *****/
   case class projectBlockStorage(operand: SILOperand) extends SILOperator
-  case class initBlockStorageHeader(operand: SILOperand, invoke: SILOperand, tpe: SILType) extends SILOperator
+  case class initBlockStorageHeader(operand: SILOperand, invokeOperand: String, invokeTpe: SILType, tpe: SILType) extends SILOperator
 
   /***** UNCHECKED CONVERSIONS *****/
   case class upcast(operand: SILOperand, tpe: SILType) extends SILOperator

@@ -1241,11 +1241,18 @@ class SILParser extends SILPrinter {
         val operand = parseOperand()
         take(",")
         take("invoke")
-        val invoke = parseOperand()
+        var invokeOperand = parseValue()
+        if (peek("<")) {
+          invokeOperand += take("<")
+          invokeOperand += take(_ != '>')
+          invokeOperand += take(">")
+        }
+        take(":")
+        val invokeTpe = parseType()
         take(",")
         take("type")
         val tpe = parseType()
-        SILInstruction.operator(SILOperator.initBlockStorageHeader(operand, invoke, tpe))
+        SILInstruction.operator(SILOperator.initBlockStorageHeader(operand, invokeOperand, invokeTpe, tpe))
       }
 
         // *** UNCHECKED CONVERSIONS ***

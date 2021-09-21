@@ -826,6 +826,8 @@ class SWIRLGen {
   def visitBeginCowMutation(r: Option[SILResult], I: SILOperator.beginCowMutation, ctx: Context): ArrayBuffer[RawInstructionDef] = {
     verifySILResult(r, 2)
     copySymbol(I.operand.value, r.get.valueNames.last, ctx)
+    val result = new Symbol(makeSymbolRef(r.get.valueNames.head, ctx), Utils.SILTypeToType(SILType.namedType("Builtin.Int1")))
+    makeOperator(ctx, Operator.unaryOp(result, UnaryOperation.arbitrary, makeSymbolRef(I.operand.value, ctx)))
   }
 
   def visitEndCowMutation(r: Option[SILResult], I: SILOperator.endCowMutation, ctx: Context): ArrayBuffer[RawInstructionDef] = {
@@ -1178,6 +1180,10 @@ class SWIRLGen {
     operators.append(makeOperator(ctx, makeNewOperator(result, ctx)).head)
     if (init.nonEmpty) {
       I.operands.view.zipWithIndex.foreach(op => {
+        if (init.get.args.length <= op._2) {
+          // TODO: This appears to be non-deterministic
+          throw new UnexpectedSILFormatException("Missing init arg definition for " + result.tpe)
+        }
         operators.append(makeOperator(ctx,
           Operator.fieldWrite(makeSymbolRef(op._1.value, ctx), result.ref, init.get.args(op._2), None)).head)
       })

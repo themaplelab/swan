@@ -905,11 +905,13 @@ class SILPrinter extends Printer {
         print("project_block_storage ")
         print(operand)
       }
-      case SILOperator.initBlockStorageHeader(operand, invoke, tpe) => {
+      case SILOperator.initBlockStorageHeader(operand, invokeOperand, invokeType, tpe) => {
         print("init_block_storage_header ")
         print(operand)
         print(", invoke ")
-        print(invoke)
+        print(invokeOperand)
+        print(" : ")
+        print(invokeType)
         print(", type ")
         print(tpe)
       }
