@@ -61,7 +61,7 @@ We have tested SWAN on macOS Big Sur with Xcode 12.5 and Ubuntu 20.04 with Swift
 git clone https://github.com/themaplelab/swan.git -b spds
 ```
 
-Add your GitHub username and [personal access token](https://docs.github.com/en/github/authenticating-to-github/creating-a-personal-access-token) (with read:packages) to `jvm/gradle.properties`. The SPDS dependency requires this. Do **not** push these credentials.
+In `jvm/gradle.properties`, set `USER` to your GitHub username and `Password` to a [personal access token](https://docs.github.com/en/github/authenticating-to-github/creating-a-personal-access-token) (with read:packages). The SPDS dependency requires this. Do **not** push these credentials. Run `git update-index --assume-unchanged jvm/gradle.properties` to avoid committing these credentials.
 
 Copy `swift-demangle` to `/usr/local/bin/` or add it to `$PATH`. On Linux, `swift-demangle` is distributed alongside `swiftc`, so you do not need to do this step. You also need `swiftc` and `xcodebuild` to be on `$PATH`.
 
