@@ -470,7 +470,7 @@ class SWIRLPass {
    * branch instructions.
    */
   private def resolveBasicBlockArguments(f: Function, module: Module): ArrayBuffer[Argument] = {
-    val assignedArgs: mutable.HashSet[Symbol] = new mutable.HashSet
+    val resolvedBlocks: mutable.HashSet[Block] = new mutable.HashSet
     f.blocks.zipWithIndex.foreach(bIdx => {
       val block = bIdx._1
       val assigns: ArrayBuffer[RawOperatorDef] = new ArrayBuffer
@@ -479,8 +479,8 @@ class SWIRLPass {
           args.zipWithIndex.foreach(arg => {
             // T0DO: SLOW
             val b = f.blocks.find(b => b.blockRef.equals(to)).get
+            resolvedBlocks.add(b)
             val targetArgument = b.arguments(arg._2)
-            assignedArgs.add(targetArgument)
             val assign = new RawOperatorDef(Operator.assign(
               new Symbol(targetArgument.ref, targetArgument.tpe), arg._1, bbArg = true), block.terminator.position)
             mapToSIL(block.terminator, assign, module)
@@ -491,8 +491,8 @@ class SWIRLPass {
           args.zipWithIndex.foreach(arg => {
             // T0DO: SLOW
             val block = f.blocks.find(b => b.blockRef.equals(to)).get
+            resolvedBlocks.add(block)
             val targetArgument = block.arguments(arg._2)
-            assignedArgs.add(targetArgument)
             val assign = new RawOperatorDef(Operator.assign(
               new Symbol(targetArgument.ref, targetArgument.tpe), arg._1, bbArg = true), block.terminator.position)
             mapToSIL(block.terminator, assign, module)
@@ -506,12 +506,12 @@ class SWIRLPass {
     // Uncalled blocks can have dangling references to dissolved block arguments
     // Therefore, create a fake value to reference
     f.blocks.foreach(b => {
-      b.arguments.foreach(arg => {
-        if (!assignedArgs.contains(arg)) {
+      if (!resolvedBlocks.contains(b) && f.blocks(0) != b) {
+        b.arguments.foreach(arg => {
           val newInstr = new RawOperatorDef(Operator.neww(new Symbol(arg.ref, arg.tpe)), arg.pos)
           b.operators.insert(0, newInstr)
-        }
-      })
+        })
+      }
     })
     f.blocks(0).arguments
   }
