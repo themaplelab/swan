@@ -13,9 +13,6 @@ fi
 
 cd "${scriptdir}" && ./gradlew shadowJar && cd ..
 
-rm -rf lib
-mkdir lib
-
 cp "${scriptdir}"/ca.ualberta.maple.swan.viewer/build/libs/ca.ualberta.maple.swan.viewer-all.jar lib/viewer.jar
 
 cp lib/viewer.jar dev/SwanViewer/viewer.jar

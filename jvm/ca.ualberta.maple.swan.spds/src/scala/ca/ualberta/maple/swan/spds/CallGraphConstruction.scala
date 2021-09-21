@@ -149,37 +149,38 @@ class CallGraphConstruction(moduleGroup: ModuleGroup) {
 
         def queryRef(stmt: SWANStatement.ApplyFunctionRef, m: SWANMethod): Unit = {
           val ref = stmt.getInvokeExpr.asInstanceOf[SWANInvokeExpr].getFunctionRef
-          val query = BackwardQuery.make(
-            new ControlFlowGraph.Edge(m.getControlFlowGraph.getPredsOf(stmt).iterator().next(), stmt), ref)
-          val solver = new Boomerang(cg, DataFlowScope.INCLUDE_ALL, new DefaultBoomerangOptions)
-          val backwardQueryResults = solver.solve(query.asInstanceOf[BackwardQuery])
-          backwardQueryResults.getAllocationSites.forEach((forwardQuery, _) => {
-            val applyStmt = query.asNode().stmt().getTarget.asInstanceOf[SWANStatement.ApplyFunctionRef]
-            forwardQuery.`var`().asInstanceOf[AllocVal].getAllocVal match {
-              case v: SWANVal.FunctionRef => {
-                val target = methods(v.ref)
-                if (addCGEdge(m, target, applyStmt, query.cfgEdge())) queriedEdges += 1
-                traverseMethod(target)
-              }
-              case v: SWANVal.DynamicFunctionRef => {
-                moduleGroup.ddgs.foreach(ddg => {
-                  val functionNames = ddg._2.query(v.index, Some(instantiatedTypes))
-                  functionNames.foreach(name => {
-                    val target = methods(name)
-                    if (addCGEdge(m, target, applyStmt, query.cfgEdge())) queriedEdges += 1
-                    traverseMethod(target)
-                  })
-                })
-              }
-              case v: SWANVal.BuiltinFunctionRef => {
-                if (methods.contains(v.ref)) {
+          m.getControlFlowGraph.getPredsOf(stmt).forEach(pred => {
+            val query = BackwardQuery.make(new ControlFlowGraph.Edge(pred, stmt), ref)
+            val solver = new Boomerang(cg, DataFlowScope.INCLUDE_ALL, new DefaultBoomerangOptions)
+            val backwardQueryResults = solver.solve(query)
+            backwardQueryResults.getAllocationSites.forEach((forwardQuery, _) => {
+              val applyStmt = query.asNode().stmt().getTarget.asInstanceOf[SWANStatement.ApplyFunctionRef]
+              forwardQuery.`var`().asInstanceOf[AllocVal].getAllocVal match {
+                case v: SWANVal.FunctionRef => {
                   val target = methods(v.ref)
                   if (addCGEdge(m, target, applyStmt, query.cfgEdge())) queriedEdges += 1
                   traverseMethod(target)
                 }
+                case v: SWANVal.DynamicFunctionRef => {
+                  moduleGroup.ddgs.foreach(ddg => {
+                    val functionNames = ddg._2.query(v.index, Some(instantiatedTypes))
+                    functionNames.foreach(name => {
+                      val target = methods(name)
+                      if (addCGEdge(m, target, applyStmt, query.cfgEdge())) queriedEdges += 1
+                      traverseMethod(target)
+                    })
+                  })
+                }
+                case v: SWANVal.BuiltinFunctionRef => {
+                  if (methods.contains(v.ref)) {
+                    val target = methods(v.ref)
+                    if (addCGEdge(m, target, applyStmt, query.cfgEdge())) queriedEdges += 1
+                    traverseMethod(target)
+                  }
+                }
+                case _ => // likely result of partial_apply (ignore for now)
               }
-              case _ => // likely result of partial_apply (ignore for now)
-            }
+            })
           })
         }
 
@@ -231,8 +232,32 @@ class CallGraphConstruction(moduleGroup: ModuleGroup) {
                     }
                   }
                   case _: SymbolTableEntry.argument => queryRef(applyStmt, m)
-                  case _: SymbolTableEntry.multiple => {
-                    throw new RuntimeException("Unexpected application of multiple function references")
+                  case multiple: SymbolTableEntry.multiple => {
+                    multiple.operators.foreach {
+                      case Operator.functionRef(_, name) => {
+                        val target = methods(name)
+                        if (addCGEdge(m, target, applyStmt, edge)) trivialEdges += 1
+                        traverseMethod(target)
+                      }
+                      case Operator.dynamicRef(_, index) => {
+                        moduleGroup.ddgs.foreach(ddg => {
+                          val functionNames = ddg._2.query(index, Some(instantiatedTypes))
+                          functionNames.foreach(name => {
+                            val target = methods(name)
+                            if (addCGEdge(m, target, applyStmt, edge)) virtualEdges += 1
+                            traverseMethod(target)
+                          })
+                        })
+                      }
+                      case Operator.builtinRef(_, name) => {
+                        if (methods.contains(name)) {
+                          val target = methods(name)
+                          if (addCGEdge(m, target, applyStmt, edge)) trivialEdges += 1
+                          traverseMethod(target)
+                        }
+                      }
+                      case _ => queryRef(applyStmt, m)
+                    }
                   }
                 }
               }
@@ -311,9 +336,7 @@ class CallGraphConstruction(moduleGroup: ModuleGroup) {
       val query = BackwardQuery.make(edge, m.getParameterLocal(3))
       val solver = new Boomerang(cg, DataFlowScope.INCLUDE_ALL, new DefaultBoomerangOptions)
       val results = solver.solve(query)
-      if (results.getAllocationSites.isEmpty) {
-        throw new RuntimeException("Expected argument to have allocation sites")
-      }
+      if (results.getAllocationSites.isEmpty) return
       var allocatingInitFunction: SWANMethod = null
       var delegateType: String = null
       results.getAllocationSites.forEach((forwardQuery, _) => {
