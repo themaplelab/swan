@@ -52,7 +52,7 @@ You can use taint analysis and typestate analysis simultaneously.
 
 ### Swift Package Manager Tests
 
-Add your code to `Sources/main.swift` (single source file only) and `Package.swift`. You must configure Package.swift to have the following target options.
+Add your code to `Sources/main.swift` (single source file only) and `Package.swift`. You must configure Package.swift to have the following target options. This only works for Swift 5+.
 
 ```
 swiftSettings: [
