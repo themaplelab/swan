@@ -5,7 +5,7 @@
 
 [![macOS CI](https://github.com/themaplelab/swan/actions/workflows/macOS.yml/badge.svg)](https://github.com/themaplelab/swan/actions/workflows/macOS.yml) [![Ubuntu CI](https://github.com/themaplelab/swan/actions/workflows/ubuntu.yml/badge.svg)](https://github.com/themaplelab/swan/actions/workflows/ubuntu.yml)
 
-![Typestate Location API Example](https://github.com/themaplelab/swan/tree/spds/doc/readme/example-typestate.gif)
+![Typestate Location API Example](https://github.com/themaplelab/swan/blob/spds/doc/readme/example-typestate.gif)
 
 # SWAN
 
