@@ -22,7 +22,7 @@ package ca.ualberta.maple.swan.ir
 import ca.ualberta.maple.swan.ir.raw.Utils
 import ca.ualberta.maple.swan.parser.{SILDeclRef, SILModule, SILWitnessEntry}
 import org.jgrapht._
-import org.jgrapht.alg.shortestpath.BellmanFordShortestPath
+import org.jgrapht.alg.TransitiveClosure
 import org.jgrapht.graph._
 import org.jgrapht.traverse.BreadthFirstIterator
 
@@ -30,19 +30,20 @@ import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
 import scala.jdk.CollectionConverters.CollectionHasAsScala
 import scala.reflect.ClassTag
+import scala.util.control.Breaks.{break, breakable}
 
 /** Creates a DDG from a SIL Module's witness and value tables. */
 class DynamicDispatchGraph extends Serializable {
 
   private val graph: Graph[Node, DefaultEdge] = new SimpleDirectedGraph(classOf[DefaultEdge])
   private val nodes: mutable.HashMap[String, Node] = new mutable.HashMap[String, Node]()
+  private val reachabilityCache: SimpleDirectedGraph[Node, DefaultEdge] = new SimpleDirectedGraph(classOf[DefaultEdge])
 
   /**
    * Query the graph with an index. Optionally, specify RTA types.
    */
   def query(index: String, types: Option[mutable.HashSet[String]]): Array[String] = {
     if (!nodes.contains(index)) return Array.empty
-    val paths = new BellmanFordShortestPath(graph)
     val functions = ArrayBuffer[String]()
     val startNode = nodes(index)
     val classNodes: Option[Array[Node]] = {
@@ -61,11 +62,16 @@ class DynamicDispatchGraph extends Serializable {
         cur match {
           case Node.Method(s) => {
             if (classNodes.nonEmpty) {
-              classNodes.get.foreach(cls => {
-                if (paths.getPath(cur, cls) != null) {
-                  functions.append(s)
+              breakable {
+                // val paths = new BellmanFordShortestPath(graph)
+                for (cls <- classNodes.get) {
+                  if (reachabilityCache.containsEdge(cur,cls)) {
+                    functions.append(s)
+                    break()
+                  }
                 }
-              })
+              }
+
             } else {
               functions.append(s)
             }
@@ -77,6 +83,11 @@ class DynamicDispatchGraph extends Serializable {
       }
     }
     functions.toArray
+  }
+
+  private def addEdge(from: Node, to: Node) = {
+    graph.addEdge(from, to)
+    reachabilityCache.addEdge(from, to)
   }
 
   /** A node in the DDG. */
@@ -120,6 +131,7 @@ class DynamicDispatchGraph extends Serializable {
         }
         nodes.put(name, n)
         graph.addVertex(n)
+        reachabilityCache.addVertex(n)
         n
       }
     }
@@ -128,16 +140,16 @@ class DynamicDispatchGraph extends Serializable {
     module.witnessTables.foreach(table => {
       val cls = makeNode(Utils.printer.clearNakedPrint(table.normalProtocolConformance.tpe), "Class")
       val protocol = makeNode(table.normalProtocolConformance.protocol, "Protocol")
-      graph.addEdge(cls, protocol)
+      addEdge(cls, protocol)
       table.entries.foreach {
         case SILWitnessEntry.baseProtocol(identifier, _) => {
-          graph.addEdge(cls, makeNode(identifier, "Protocol"))
+          addEdge(cls, makeNode(identifier, "Protocol"))
         }
         case SILWitnessEntry.method(declRef, _, functionName) => {
           if (functionName.nonEmpty) {
             val method = makeNode(functionName.get.demangled, "Method") // MethodType.implements
-            graph.addEdge(makeNode(declRefToString(declRef), "Index"), method)
-            graph.addEdge(method, cls)
+            addEdge(makeNode(declRefToString(declRef), "Index"), method)
+            addEdge(method, cls)
           }
         }
         // TODO: investigate
@@ -154,14 +166,15 @@ class DynamicDispatchGraph extends Serializable {
       table.entries.foreach(entry => {
         if (entry.declRef.name(0) != table.name) {
           val to = makeNode(entry.declRef.name(0), "Class")
-          graph.addEdge(cls, to)
+          addEdge(cls, to)
         }
         val method = makeNode(entry.functionName.demangled, "Method")
-        graph.addEdge(method, cls)
-        graph.addEdge(makeNode(declRefToString(entry.declRef), "Index"), method)
+        addEdge(method, cls)
+        addEdge(makeNode(declRefToString(entry.declRef), "Index"), method)
       })
     })
     // System.out.println(printToDot()) // For debugging
+    TransitiveClosure.INSTANCE.closeSimpleDirectedGraph(reachabilityCache)
   }
 
   private def declRefToString(decl: SILDeclRef): String = {
