@@ -51,6 +51,7 @@ object Driver {
     var single = false
     var cache = false
     var dumpFunctionNames = false
+    var constructCallGraph = false
     var taintAnalysisSpec: scala.Option[File] = None
     var typeStateAnalysisSpec: scala.Option[File] = None
     var pathTracking = false
@@ -68,6 +69,9 @@ object Driver {
     }
     def dumpFunctionNames(v: Boolean): Options = {
       this.dumpFunctionNames = v; this
+    }
+    def constructCallGraph(v: Boolean): Options = {
+      this.constructCallGraph = v; this
     }
     def taintAnalysisSpec(v: File): Options = {
       this.taintAnalysisSpec = scala.Option(v); this
@@ -137,6 +141,10 @@ class Driver extends Runnable {
     description = Array("Dump functions names to file in debug directory (e.g., for finding sources/sinks)."))
   private val dumpFunctionNames = new Array[Boolean](0)
 
+  @Option(names = Array("-g", "--call-graph"),
+    description = Array("Construct the Call Graph."))
+  private val constructCallGraph = new Array[Boolean](0)
+
   @Option(names = Array("-t", "--taint-analysis-spec"),
     description = Array("JSON specification file for taint analysis."))
   private val taintAnalysisSpec: File = null
@@ -175,6 +183,7 @@ class Driver extends Runnable {
       .cache(useCache.nonEmpty)
       .single(singleThreaded.nonEmpty)
       .dumpFunctionNames(dumpFunctionNames.nonEmpty)
+      .constructCallGraph(constructCallGraph.nonEmpty)
       .taintAnalysisSpec(taintAnalysisSpec)
       .typeStateAnalysisSpec(typeStateAnalysisSpec)
       .pathTracking(pathTracking.nonEmpty)
@@ -289,7 +298,7 @@ class Driver extends Runnable {
       })
       fw.close()
     }
-    if (options.taintAnalysisSpec.nonEmpty || options.typeStateAnalysisSpec.nonEmpty) {
+    if (options.constructCallGraph || options.taintAnalysisSpec.nonEmpty || options.typeStateAnalysisSpec.nonEmpty) {
       val cgResults = new CallGraphConstruction(group).construct()
       val cg = cgResults._1
       if (options.debug) {

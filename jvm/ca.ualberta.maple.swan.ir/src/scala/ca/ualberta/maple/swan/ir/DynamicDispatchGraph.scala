@@ -30,7 +30,6 @@ import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
 import scala.jdk.CollectionConverters.CollectionHasAsScala
 import scala.reflect.ClassTag
-import scala.util.control.Breaks.{break, breakable}
 
 /** Creates a DDG from a SIL Module's witness and value tables. */
 class DynamicDispatchGraph extends Serializable {
@@ -62,16 +61,10 @@ class DynamicDispatchGraph extends Serializable {
         cur match {
           case Node.Method(s) => {
             if (classNodes.nonEmpty) {
-              breakable {
-                // val paths = new BellmanFordShortestPath(graph)
-                for (cls <- classNodes.get) {
-                  if (reachabilityCache.containsEdge(cur,cls)) {
-                    functions.append(s)
-                    break()
-                  }
-                }
+              val classes = classNodes.get
+              if (classes.find(cls => reachabilityCache.containsEdge(cur,cls)).nonEmpty) {
+                functions.append(s)
               }
-
             } else {
               functions.append(s)
             }
