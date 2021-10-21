@@ -395,33 +395,6 @@ class SWIRLPass {
             }
           }
         }
-        case Terminator.unwind => {
-          val dummyValue = new Symbol(generateSymbolName("unwind_dummy"), f.tpe)
-          val newRet = new RawOperatorDef(Operator.neww(dummyValue), position)
-          val ret = new RawTerminatorDef(Terminator.ret(dummyValue.ref), position)
-          mapToSIL(b.terminator, newRet, module)
-          mapToSIL(b.terminator, ret, module)
-          b.operators.append(newRet)
-          b.terminator = ret
-        }
-        case Terminator.tryApply(functionRef, args, normal, normalType, error, errorType) => {
-          val retValue = new Symbol(generateSymbolName(functionRef.name), normalType)
-          // T0DO: SLOW
-          val targetErrorBlock = f.blocks.find(p => p.blockRef.equals(error)).get
-          if (targetErrorBlock.arguments.isEmpty) {
-            throw new UnexpectedSILFormatException("try_apply error destination block has no arguments")
-          }
-          val errorValue = new Symbol(targetErrorBlock.arguments(0).ref, errorType)
-          val apply = new RawOperatorDef(Operator.apply(retValue, functionRef, args), position)
-          val newRet = new RawOperatorDef(Operator.neww(errorValue), position)
-          val br = new RawTerminatorDef(Terminator.br(normal, ArrayBuffer(retValue.ref)), position)
-          mapToSIL(b.terminator, apply, module)
-          mapToSIL(b.terminator, newRet, module)
-          mapToSIL(b.terminator, br, module)
-          b.operators.append(apply)
-          b.operators.append(newRet)
-          b.terminator = br
-        }
         case _ =>
       }
       f.blocks.insertAll(i + 1, newBlocks)
@@ -637,9 +610,6 @@ class SWIRLPass {
           graph.addEdge(b, blocks(bit._2 + 1))
         }
         case Terminator.ret(_) => {
-          graph.addEdge(b, exitBlock)
-        }
-        case Terminator.thro(_) => {
           graph.addEdge(b, exitBlock)
         }
         case Terminator.unreachable =>

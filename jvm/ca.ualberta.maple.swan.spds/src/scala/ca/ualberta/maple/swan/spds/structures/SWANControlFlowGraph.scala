@@ -88,7 +88,6 @@ class SWANControlFlowGraph(val method: SWANMethod) extends ControlFlowGraph {
         case terminator: Terminator.br_can => SWANStatement.Branch(term, terminator, method)
         case terminator: Terminator.brIf_can => SWANStatement.ConditionalBranch(term, terminator, method)
         case terminator: Terminator.ret => SWANStatement.Return(term, terminator, method)
-        case terminator: Terminator.thro => SWANStatement.Throw(term, terminator, method)
         case Terminator.unreachable => SWANStatement.Unreachable(term, method)
         case terminator: Terminator.yld => SWANStatement.Yield(term, terminator, method)
       }

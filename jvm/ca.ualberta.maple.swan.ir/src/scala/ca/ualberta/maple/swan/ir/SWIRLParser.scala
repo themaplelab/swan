@@ -640,25 +640,6 @@ class SWIRLParser extends SWIRLPrinter {
           val value = parseSymbolRef()
           Instruction.rawTerminator(Terminator.ret(value))
         }
-        case "throw" => {
-          val value = parseSymbolRef()
-          Instruction.rawTerminator(Terminator.thro(value))
-        }
-        case "try_apply" => {
-          val functionRef = parseSymbolRef()
-          val arguments = parseMany("(",",",")", parseSymbolRef)
-          take(",")
-          take("normal")
-          val normalBlock = parseBlockRef()
-          take(",")
-          val normalType = parseType()
-          take(",")
-          take("error")
-          val errorBlock = parseBlockRef()
-          take(",")
-          val errorType = parseType()
-          Instruction.rawTerminator(Terminator.tryApply(functionRef, arguments, normalBlock, normalType, errorBlock, errorType))
-        }
         case "unreachable" => Instruction.rawTerminator(Terminator.unreachable)
         case "yield" => {
           val args = { parseNilOrMany("(", ",", ")", parseSymbolRef) }.getOrElse(ArrayBuffer.empty[SymbolRef])
@@ -670,7 +651,6 @@ class SWIRLParser extends SWIRLPrinter {
           val unwind = parseBlockRef()
           Instruction.rawTerminator(Terminator.yld(args, resume, unwind))
         }
-        case "unwind" => Instruction.rawTerminator(Terminator.unwind)
         case _ => throw parseError("unknown instruction: " + instructionName)
       }
     }

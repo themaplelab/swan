@@ -225,12 +225,8 @@ object Terminator {
   case class switch(switchOn: SymbolRef, cases: ArrayBuffer[SwitchCase], default: Option[BlockRef]) extends RawTerminator
   case class switchEnum(switchOn: SymbolRef, cases: ArrayBuffer[SwitchEnumCase], default: Option[BlockRef]) extends RawTerminator
   case class ret(value: SymbolRef) extends RawTerminator with CanTerminator
-  case class thro(value: SymbolRef) extends RawTerminator with CanTerminator
-  case class tryApply(functionRef: SymbolRef, arguments: ArrayBuffer[SymbolRef],
-                      normal: BlockRef, normalType: Type, error: BlockRef, errorType: Type) extends RawTerminator
   case object unreachable extends RawTerminator with CanTerminator
   case class yld(yields: ArrayBuffer[SymbolRef], resume: BlockRef, unwind: BlockRef) extends RawTerminator with CanTerminator
-  case object unwind extends RawTerminator
 }
 
 sealed trait FieldWriteAttribute extends Serializable

@@ -467,23 +467,6 @@ class SWIRLPrinter extends Printer {
         print("return ")
         print(value)
       }
-      case Terminator.thro(value) => {
-        print("throw ")
-        print(value)
-      }
-      case Terminator.tryApply(functionRef, arguments, normal, normalType, error, errorType) => {
-        print("try_apply ")
-        print(functionRef)
-        print(whenEmpty = true, "(", arguments, ", ", ")", (arg: SymbolRef) => print(arg))
-        print(", normal ")
-        print(normal)
-        print(", ")
-        print(normalType)
-        print(", error ")
-        print(error)
-        print(", ")
-        print(errorType)
-      }
       case Terminator.unreachable => print("unreachable")
       case Terminator.yld(yields, resume, unwind) => {
         print("yield ")
@@ -493,7 +476,6 @@ class SWIRLPrinter extends Printer {
         print(", unwind ")
         print(unwind)
       }
-      case Terminator.unwind => print("unwind")
     }
   }
 

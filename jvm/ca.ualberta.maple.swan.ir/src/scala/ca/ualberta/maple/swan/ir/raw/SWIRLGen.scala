@@ -1691,7 +1691,7 @@ class SWIRLGen {
   }
 
   def visitThrow(I: SILTerminator.thro, ctx: Context): ArrayBuffer[RawInstructionDef] = {
-    makeTerminator(ctx, Terminator.thro(makeSymbolRef(I.operand.value, ctx)))
+    makeTerminator(ctx, Terminator.ret(makeSymbolRef(I.operand.value, ctx)))
   }
 
   def visitYield(I: SILTerminator.yld, ctx: Context): ArrayBuffer[RawInstructionDef] = {
@@ -1706,7 +1706,11 @@ class SWIRLGen {
   }
 
   def visitUnwind(ctx: Context): ArrayBuffer[RawInstructionDef] = {
-    makeTerminator(ctx, Terminator.unwind)
+    val retVal = new Symbol(generateSymbolName("%unwind", ctx), Utils.SILTypeToType(ctx.silFunction.tpe))
+    val instructions = new ArrayBuffer[RawInstructionDef]()
+    instructions.appendAll(makeOperator(ctx, makeNewOperator(retVal, ctx)))
+    instructions.appendAll(makeTerminator(ctx, Terminator.ret(retVal.ref)))
+    instructions
   }
 
   def visitBr(I: SILTerminator.br, ctx: Context): ArrayBuffer[RawInstructionDef] = {
@@ -1848,9 +1852,19 @@ class SWIRLGen {
     if (retTypes.length < 2) {
       throw new UnexpectedSILFormatException("Expected try_apply function return type to have at least two elements: \n" + Utils.print(I.tpe))
     }
-    val terminator = Terminator.tryApply(makeSymbolRef(I.value, ctx), stringArrayToSymbolRefArrayBuffer(I.arguments, ctx),
-      makeBlockRef(I.normalLabel, ctx), retTypes.head, makeBlockRef(I.errorLabel, ctx), retTypes(retTypes.length-1))
-    makeTerminator(ctx, terminator)
+    val retVal = new Symbol(generateSymbolName(I.value, ctx), retTypes(0))
+    val condVal = generateSymbolName(I.value, ctx)
+    val instructions = new ArrayBuffer[RawInstructionDef]()
+    instructions.appendAll(makeOperator(ctx,
+      Operator.apply(retVal, makeSymbolRef(I.value, ctx), stringArrayToSymbolRefArrayBuffer(I.arguments, ctx)),
+      makeNewOperator(new Symbol(condVal,  Utils.SILTypeToType(SILType.namedType("Builtin.Int1"))), ctx)))
+    instructions.appendAll(makeTerminator(ctx,
+      Terminator.condBr(
+        condVal,
+        makeBlockRef(I.normalLabel, ctx),
+        ArrayBuffer(retVal.ref),
+        makeBlockRef(I.errorLabel, ctx),
+        ArrayBuffer(retVal.ref))))
   }
 
   @throws[UnexpectedSILFormatException]

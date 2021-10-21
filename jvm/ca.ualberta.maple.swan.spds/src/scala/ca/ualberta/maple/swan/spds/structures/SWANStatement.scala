@@ -36,7 +36,6 @@ abstract class SWANStatement(val delegate: CanInstructionDef, m: SWANMethod) ext
   override def getRightOp: Val = ???
   override def getInvokeExpr: InvokeExpr = ???
   override def isReturnStmt: Boolean = false
-  override def isThrowStmt: Boolean = false
   override def isIfStmt: Boolean = false
   override def getIfStmt: IfStatement = ???
   override def getReturnOp: Val = ???
@@ -67,6 +66,7 @@ abstract class SWANStatement(val delegate: CanInstructionDef, m: SWANMethod) ext
   override def isStringAllocation: Boolean = false
   final override def isArrayLoad: Boolean = false
   final override def isArrayStore: Boolean = false
+  final override def isThrowStmt: Boolean = false
   final override def isInstanceOfStatement(fact: Val): Boolean = false
   final override def isCast: Boolean = false
   final override def isPhiStatement: Boolean = false
@@ -314,19 +314,6 @@ object SWANStatement {
         "i" + m.swirlLineNum(termDef).toString
       } else {
         "<reti>" + getReturnOp.toString + "</reti>"
-      }
-    }
-  }
-  case class Throw(termDef: CanTerminatorDef, inst: Terminator.thro,
-                   m: SWANMethod) extends SWANStatement(CanInstructionDef.terminator(termDef), m) {
-    override def getLeftOp: Val = ???
-    override def getRightOp: Val = m.allValues(inst.value.name)
-    override def isThrowStmt: Boolean = true
-    override def toString: String = {
-      if (m.hasSwirlSource) {
-        "i" + m.swirlLineNum(termDef).toString
-      } else {
-        "<throwi>" + getRightOp.toString + "</throwi>"
       }
     }
   }

@@ -325,7 +325,7 @@ bb0(self : $`SwiftyJSONError`):
 
 func @`SwiftyJSON.SwiftyJSONError.errorUserInfo.getter : [Swift.String : Any]` : $`@owned Dictionary<String, Any>` {
 bb0(self : $`SwiftyJSONError`):
-  %1 = singleton_read `NSLocalizedDescriptionKey` from Globals_playground.sil, $`*NSString`
+  %1 = singleton_read `NSLocalizedDescriptionKey` from Globals_SwiftyJSON.Pods.sil, $`*NSString`
   switch_enum self, case "#SwiftyJSONError.unsupportedType!enumelt" : bb1, case "#SwiftyJSONError.indexOutOfBounds!enumelt" : bb2, case "#SwiftyJSONError.wrongType!enumelt" : bb3, case "#SwiftyJSONError.notExist!enumelt" : bb4, case "#SwiftyJSONError.invalidJSON!enumelt" : bb5, case "#SwiftyJSONError.elementTooDeep!enumelt" : bb6
 
 bb1:
@@ -865,7 +865,7 @@ bb2:
   %61 = apply %60(%59), $`@owned Error`
   %63i0 = builtin_ref @`willThrow`, $`Any`
   %63 = apply %63i0(%61), $`()`
-  throw %61
+  return %61
 }
 
 func [stub] @`Foundation.Data._bridgeToObjectiveC() -> __C.NSData` : $`@owned NSData` {
@@ -904,8 +904,9 @@ bb0(jsonObject : $`*Any`, %1 : $`@thin JSON.Type`):
   %7 = field_read %6, 0, $`Array<Any>`
   %8 = field_read %6, 1, $`Builtin.RawPointer`
   %10 = new $`*Any`
-  %10i0 = field_read [alias %10] %2, rawArray, $`Any`
-  pointer_write %10i0 to %10
+  %10i0 = pointer_read %2, $`*Any`
+  %10i1 = field_read [alias %10] %10i0, rawArray, $`Any`
+  pointer_write %10i1 to %10
   pointer_write %7 to %10
   %12 = literal [int] 0, $`Builtin.Word`
   %13 = function_ref @`Swift._allocateUninitializedArray<A>(Builtin.Word) -> ([A], Builtin.RawPointer)`, $`@convention(thin) <τ_0_0> (Builtin.Word) -> (@owned Array<τ_0_0>, Builtin.RawPointer)`
@@ -916,8 +917,9 @@ bb0(jsonObject : $`*Any`, %1 : $`@thin JSON.Type`):
   %19 = function_ref @`Swift.Dictionary.init(dictionaryLiteral: (A, B)...) -> [A : B]`, $`@convention(method) <τ_0_0, τ_0_1 where τ_0_0 : Hashable> (@owned Array<(τ_0_0, τ_0_1)>, @thin Dictionary<τ_0_0, τ_0_1>.Type) -> @owned Dictionary<τ_0_0, τ_0_1>`
   %20 = apply %19(%15, %18), $`@owned Dictionary<τ_0_0, τ_0_1>`
   %21 = new $`*Any`
-  %21i0 = field_read [alias %21] %2, rawDictionary, $`Any`
-  pointer_write %21i0 to %21
+  %21i0 = pointer_read %2, $`*Any`
+  %21i1 = field_read [alias %21] %21i0, rawDictionary, $`Any`
+  pointer_write %21i1 to %21
   pointer_write %20 to %21
   %23 = literal [string] "", $`$Builtin.RawPointer`
   %24 = literal [int] 0, $`Builtin.Word`
@@ -926,8 +928,9 @@ bb0(jsonObject : $`*Any`, %1 : $`@thin JSON.Type`):
   %27 = function_ref @`Swift.String.init(_builtinStringLiteral: Builtin.RawPointer, utf8CodeUnitCount: Builtin.Word, isASCII: Builtin.Int1) -> Swift.String`, $`@convention(method) (Builtin.RawPointer, Builtin.Word, Builtin.Int1, @thin String.Type) -> @owned String`
   %28 = apply %27(%23, %24, %25, %26), $`@owned String`
   %29 = new $`*Any`
-  %29i0 = field_read [alias %29] %2, rawString, $`Any`
-  pointer_write %29i0 to %29
+  %29i0 = pointer_read %2, $`*Any`
+  %29i1 = field_read [alias %29] %29i0, rawString, $`Any`
+  pointer_write %29i1 to %29
   pointer_write %28 to %29
   %31 = literal [int] 0, $`Builtin.Int64`
   %32 = new $`Int`
@@ -936,36 +939,41 @@ bb0(jsonObject : $`*Any`, %1 : $`@thin JSON.Type`):
   %34 = function_ref @`(extension in Foundation):__C.NSNumber.init(integerLiteral: Swift.Int) -> __C.NSNumber`, $`@convention(method) (Int, @thick NSNumber.Type) -> @owned NSNumber`
   %35 = apply %34(%32, %33), $`@owned NSNumber`
   %36 = new $`*Any`
-  %36i0 = field_read [alias %36] %2, rawNumber, $`Any`
-  pointer_write %36i0 to %36
+  %36i0 = pointer_read %2, $`*Any`
+  %36i1 = field_read [alias %36] %36i0, rawNumber, $`Any`
+  pointer_write %36i1 to %36
   pointer_write %35 to %36
   %38 = new $`@thick NSNull.Type`
   %39 = function_ref @`__C.NSNull.__allocating_init() -> __C.NSNull`, $`@convention(method) (@thick NSNull.Type) -> @owned NSNull`
   %40 = apply %39(%38), $`@owned NSNull`
   %41 = new $`*Any`
-  %41i0 = field_read [alias %41] %2, rawNull, $`Any`
-  pointer_write %41i0 to %41
+  %41i0 = pointer_read %2, $`*Any`
+  %41i1 = field_read [alias %41] %41i0, rawNull, $`Any`
+  pointer_write %41i1 to %41
   pointer_write %40 to %41
   %43 = literal [int] 0, $`Builtin.Int1`
   %44 = new $`Bool`
   %45 = new $`*Any`
-  %45i0 = field_read [alias %45] %2, rawBool, $`Any`
-  pointer_write %45i0 to %45
+  %45i0 = pointer_read %2, $`*Any`
+  %45i1 = field_read [alias %45] %45i0, rawBool, $`Any`
+  pointer_write %45i1 to %45
   pointer_write %44 to %45
   %47 = new $`@thin Type.Type`
   %48 = new $`Type`
   %48i0 = literal [string] "#Type.null!enumelt", $`Builtin.RawPointer`
   field_write %48i0 to %48, type
   %49 = new $`*Any`
-  %49i0 = field_read [alias %49] %2, type, $`Any`
-  pointer_write %49i0 to %49
+  %49i0 = pointer_read %2, $`*Any`
+  %49i1 = field_read [alias %49] %49i0, type, $`Any`
+  pointer_write %49i1 to %49
   pointer_write %48 to %49
   %51 = new $`Optional<SwiftyJSONError>`
   %51i0 = literal [string] "#Optional.none!enumelt", $`Builtin.RawPointer`
   field_write %51i0 to %51, type
   %52 = new $`*Any`
-  %52i0 = field_read [alias %52] %2, error, $`Any`
-  pointer_write %52i0 to %52
+  %52i0 = pointer_read %2, $`*Any`
+  %52i1 = field_read [alias %52] %52i0, error, $`Any`
+  pointer_write %52i1 to %52
   pointer_write %51 to %52
   %54 = new $`*Any`
   %0i0 = pointer_read jsonObject, $`Any`
@@ -987,12 +995,14 @@ bb0(object : $`*Any`, %1 : $`@thin JSON.Type`):
   cond_br %4i0, true bb1, false bb4
 
 bb1:
-  object = pointer_read %6, $`Data`
-  %11 = assign object, $`Data`
+  %8 = pointer_read %6, $`Data`
+  %11 = assign %8, $`Data`
   %12 = function_ref @`default argument 1 of SwiftyJSON.JSON.init(data: Foundation.Data, options: __C.NSJSONReadingOptions) throws -> SwiftyJSON.JSON`, $`@convention(thin) () -> JSONSerialization.ReadingOptions`
   %13 = apply %12(), $`JSONSerialization.ReadingOptions`
   %14 = function_ref @`SwiftyJSON.JSON.init(data: Foundation.Data, options: __C.NSJSONReadingOptions) throws -> SwiftyJSON.JSON`, $`@convention(method) (@owned Data, JSONSerialization.ReadingOptions, @thin JSON.Type) -> (@owned JSON, @error Error)`
-  try_apply %14(%11, %13, %1), normal bb2, $`JSON`, error bb6, $`Error`
+  %14i0 = apply %14(%11, %13, %1), $`JSON`
+  %14i1 = new $`Builtin.Int1`
+  cond_br %14i1, true bb2(%14i0), false bb6(%14i0)
 
 bb2(%16 : $`@owned $JSON`):
   pointer_write %16 to %2
@@ -1184,8 +1194,9 @@ bb0(newValue : $`*Any`, self : $`*JSON`):
   %4i0 = literal [string] "#Optional.none!enumelt", $`Builtin.RawPointer`
   field_write %4i0 to %4, type
   %6 = new $`*Any`
-  %6i0 = field_read [alias %6] self, error, $`Any`
-  pointer_write %6i0 to %6
+  %6i0 = pointer_read self, $`*Any`
+  %6i1 = field_read [alias %6] %6i0, error, $`Any`
+  pointer_write %6i1 to %6
   pointer_write %4 to %6
   %9 = new $`*Any`
   %10 = function_ref @`SwiftyJSON.(unwrap in _4625CC38AABF536BB76490A35D7233C9)(Any) -> Any`, $`@convention(thin) (@in_guaranteed Any) -> @out Any`
@@ -1207,14 +1218,16 @@ bb2:
   %23i0 = literal [string] "#Type.bool!enumelt", $`Builtin.RawPointer`
   field_write %23i0 to %23, type
   %25 = new $`*Any`
-  %25i0 = field_read [alias %25] self, type, $`Any`
-  pointer_write %25i0 to %25
+  %25i0 = pointer_read self, $`*Any`
+  %25i1 = field_read [alias %25] %25i0, type, $`Any`
+  pointer_write %25i1 to %25
   pointer_write %23 to %25
   %29 = builtin_ref @`#NSNumber.boolValue!getter.foreign`, $`@convention(objc_method) (NSNumber) -> Bool`
   %30 = apply %29(number), $`Bool`
   %32 = new $`*Any`
-  %32i0 = field_read [alias %32] self, rawBool, $`Any`
-  pointer_write %32i0 to %32
+  %32i0 = pointer_read self, $`*Any`
+  %32i1 = field_read [alias %32] %32i0, rawBool, $`Any`
+  pointer_write %32i1 to %32
   pointer_write %30 to %32
   br bb4
 
@@ -1224,13 +1237,15 @@ bb3:
   %38i0 = literal [string] "#Type.number!enumelt", $`Builtin.RawPointer`
   field_write %38i0 to %38, type
   %40 = new $`*Any`
-  %40i0 = field_read [alias %40] self, type, $`Any`
-  pointer_write %40i0 to %40
+  %40i0 = pointer_read self, $`*Any`
+  %40i1 = field_read [alias %40] %40i0, type, $`Any`
+  pointer_write %40i1 to %40
   pointer_write %38 to %40
   %44 = assign number, $`NSNumber`
   %46 = new $`*Any`
-  %46i0 = field_read [alias %46] self, rawNumber, $`Any`
-  pointer_write %46i0 to %46
+  %46i0 = pointer_read self, $`*Any`
+  %46i1 = field_read [alias %46] %46i0, rawNumber, $`Any`
+  pointer_write %46i1 to %46
   pointer_write %44 to %46
   br bb4
 
@@ -1249,13 +1264,15 @@ bb6:
   %62i0 = literal [string] "#Type.string!enumelt", $`Builtin.RawPointer`
   field_write %62i0 to %62, type
   %64 = new $`*Any`
-  %64i0 = field_read [alias %64] self, type, $`Any`
-  pointer_write %64i0 to %64
+  %64i0 = pointer_read self, $`*Any`
+  %64i1 = field_read [alias %64] %64i0, type, $`Any`
+  pointer_write %64i1 to %64
   pointer_write %62 to %64
   %68 = assign string, $`String`
   %70 = new $`*Any`
-  %70i0 = field_read [alias %70] self, rawString, $`Any`
-  pointer_write %70i0 to %70
+  %70i0 = pointer_read self, $`*Any`
+  %70i1 = field_read [alias %70] %70i0, rawString, $`Any`
+  pointer_write %70i1 to %70
   pointer_write %68 to %70
   br bb19
 
@@ -1271,8 +1288,9 @@ bb8:
   %84i0 = literal [string] "#Type.null!enumelt", $`Builtin.RawPointer`
   field_write %84i0 to %84, type
   %86 = new $`*Any`
-  %86i0 = field_read [alias %86] self, type, $`Any`
-  pointer_write %86i0 to %86
+  %86i0 = pointer_read self, $`*Any`
+  %86i1 = field_read [alias %86] %86i0, type, $`Any`
+  pointer_write %86i1 to %86
   pointer_write %84 to %86
   br bb19
 
@@ -1318,8 +1336,9 @@ bb13:
   %123i0 = literal [string] "#Type.null!enumelt", $`Builtin.RawPointer`
   field_write %123i0 to %123, type
   %125 = new $`*Any`
-  %125i0 = field_read [alias %125] self, type, $`Any`
-  pointer_write %125i0 to %125
+  %125i0 = pointer_read self, $`*Any`
+  %125i1 = field_read [alias %125] %125i0, type, $`Any`
+  pointer_write %125i1 to %125
   pointer_write %123 to %125
   br bb19
 
@@ -1335,13 +1354,15 @@ bb15:
   %138i0 = literal [string] "#Type.array!enumelt", $`Builtin.RawPointer`
   field_write %138i0 to %138, type
   %140 = new $`*Any`
-  %140i0 = field_read [alias %140] self, type, $`Any`
-  pointer_write %140i0 to %140
+  %140i0 = pointer_read self, $`*Any`
+  %140i1 = field_read [alias %140] %140i0, type, $`Any`
+  pointer_write %140i1 to %140
   pointer_write %138 to %140
   %144 = assign array, $`Array<Any>`
   %146 = new $`*Any`
-  %146i0 = field_read [alias %146] self, rawArray, $`Any`
-  pointer_write %146i0 to %146
+  %146i0 = pointer_read self, $`*Any`
+  %146i1 = field_read [alias %146] %146i0, rawArray, $`Any`
+  pointer_write %146i1 to %146
   pointer_write %144 to %146
   br bb19
 
@@ -1357,13 +1378,15 @@ bb17:
   %161i0 = literal [string] "#Type.dictionary!enumelt", $`Builtin.RawPointer`
   field_write %161i0 to %161, type
   %163 = new $`*Any`
-  %163i0 = field_read [alias %163] self, type, $`Any`
-  pointer_write %163i0 to %163
+  %163i0 = pointer_read self, $`*Any`
+  %163i1 = field_read [alias %163] %163i0, type, $`Any`
+  pointer_write %163i1 to %163
   pointer_write %161 to %163
   %167 = assign dictionary, $`Dictionary<String, Any>`
   %169 = new $`*Any`
-  %169i0 = field_read [alias %169] self, rawDictionary, $`Any`
-  pointer_write %169i0 to %169
+  %169i0 = pointer_read self, $`*Any`
+  %169i1 = field_read [alias %169] %169i0, rawDictionary, $`Any`
+  pointer_write %169i1 to %169
   pointer_write %167 to %169
   br bb19
 
@@ -1373,8 +1396,9 @@ bb18:
   %180i0 = literal [string] "#Type.unknown!enumelt", $`Builtin.RawPointer`
   field_write %180i0 to %180, type
   %182 = new $`*Any`
-  %182i0 = field_read [alias %182] self, type, $`Any`
-  pointer_write %182i0 to %182
+  %182i0 = pointer_read self, $`*Any`
+  %182i1 = field_read [alias %182] %182i0, type, $`Any`
+  pointer_write %182i1 to %182
   pointer_write %180 to %182
   %185 = new $`@thin SwiftyJSONError.Type`
   %186 = new $`SwiftyJSONError`
@@ -1385,8 +1409,9 @@ bb18:
   field_write %187i0 to %187, type
   field_write %186 to %187, data
   %189 = new $`*Any`
-  %189i0 = field_read [alias %189] self, error, $`Any`
-  pointer_write %189i0 to %189
+  %189i0 = pointer_read self, $`*Any`
+  %189i1 = field_read [alias %189] %189i0, error, $`Any`
+  pointer_write %189i1 to %189
   pointer_write %187 to %189
   br bb19
 
@@ -1400,14 +1425,16 @@ bb0(other : $`@guaranteed $JSON`, self : $`*JSON`):
   %5 = literal [int] -1, $`Builtin.Int1`
   %6 = new $`Bool`
   %8 = function_ref @`SwiftyJSON.JSON.(merge in _4625CC38AABF536BB76490A35D7233C9)(with: SwiftyJSON.JSON, typecheck: Swift.Bool) throws -> ()`, $`@convention(method) (@guaranteed JSON, Bool, @inout JSON) -> @error Error`
-  try_apply %8(other, %6, self), normal bb1, $`()`, error bb2, $`Error`
+  %8i0 = apply %8(other, %6, self), $`()`
+  %8i1 = new $`Builtin.Int1`
+  cond_br %8i1, true bb1(%8i0), false bb2(%8i0)
 
 bb1(%10 : $`()`):
   %12 = new $`()`
   return %12
 
 bb2(%14 : $`@owned $Error`):
-  throw %14
+  return %14
 }
 
 func @`Swift.Bool.init(_builtinBooleanLiteral: Builtin.Int1) -> Swift.Bool` : $`Bool` {
@@ -1419,8 +1446,9 @@ bb0(%0 : $`Builtin.Int1`, %1 : $`@thin Bool.Type`):
 func @`SwiftyJSON.JSON.(merge in _4625CC38AABF536BB76490A35D7233C9)(with: SwiftyJSON.JSON, typecheck: Swift.Bool) throws -> ()` : $`@error Error` {
 bb0(other : $`@guaranteed $JSON`, typecheck : $`Bool`, self : $`*JSON`):
   %8 = new $`*Any`
-  %8i0 = field_read [alias %8] self, type, $`Any`
-  pointer_write %8i0 to %8
+  %8i0 = pointer_read self, $`*Any`
+  %8i1 = field_read [alias %8] %8i0, type, $`Any`
+  pointer_write %8i1 to %8
   %9 = pointer_read %8, $`Type`
   %11 = new $`*Type`
   pointer_write %9 to %11
@@ -1434,8 +1462,9 @@ bb0(other : $`@guaranteed $JSON`, typecheck : $`Bool`, self : $`*JSON`):
 
 bb1:
   %23 = new $`*Any`
-  %23i0 = field_read [alias %23] self, type, $`Any`
-  pointer_write %23i0 to %23
+  %23i0 = pointer_read self, $`*Any`
+  %23i1 = field_read [alias %23] %23i0, type, $`Any`
+  pointer_write %23i1 to %23
   %24 = pointer_read %23, $`Type`
   switch_enum %24, case "#Type.dictionary!enumelt" : bb2, case "#Type.array!enumelt" : bb7, default bb8
 
@@ -1485,7 +1514,9 @@ bb4(%45 : $`@owned $(String, JSON)`):
   %80 = apply %79(%52, %78), $`@owned JSON`
   pointer_write %80 to %77
   %83 = function_ref @`SwiftyJSON.JSON.(merge in _4625CC38AABF536BB76490A35D7233C9)(with: SwiftyJSON.JSON, typecheck: Swift.Bool) throws -> ()`, $`@convention(method) (@guaranteed JSON, Bool, @inout JSON) -> @error Error`
-  try_apply %83(%72, %74, %77), normal bb5, $`()`, error bb14, $`Error`
+  %83i0 = apply %83(%72, %74, %77), $`()`
+  %83i1 = new $`Builtin.Int1`
+  cond_br %83i1, true bb5(%83i0), false bb14(%83i0)
 
 bb5(%85 : $`()`):
   %86 = pointer_read %77, $`JSON`
@@ -1553,7 +1584,7 @@ bb14(%149 : $`@owned $Error`):
   br bb15(%149)
 
 bb15(%166 : $`@owned $Error`):
-  throw %166
+  return %166
 }
 
 func @`SwiftyJSON.JSON.merged(with: SwiftyJSON.JSON) throws -> SwiftyJSON.JSON` : $`(@owned JSON, @error Error)` {
@@ -1564,14 +1595,16 @@ bb0(other : $`@guaranteed $JSON`, self : $`@guaranteed $JSON`):
   %8 = literal [int] -1, $`Builtin.Int1`
   %9 = new $`Bool`
   %11 = function_ref @`SwiftyJSON.JSON.(merge in _4625CC38AABF536BB76490A35D7233C9)(with: SwiftyJSON.JSON, typecheck: Swift.Bool) throws -> ()`, $`@convention(method) (@guaranteed JSON, Bool, @inout JSON) -> @error Error`
-  try_apply %11(other, %9, %5), normal bb1, $`()`, error bb2, $`Error`
+  %11i0 = apply %11(other, %9, %5), $`()`
+  %11i1 = new $`Builtin.Int1`
+  cond_br %11i1, true bb1(%11i0), false bb2(%11i0)
 
 bb1(%13 : $`()`):
   %16 = pointer_read %5, $`JSON`
   return %16
 
 bb2(%21 : $`@owned $Error`):
-  throw %21
+  return %21
 }
 
 func @`SwiftyJSON.JSON.subscript.getter : (SwiftyJSON.JSONSubscriptType...) -> SwiftyJSON.JSON` : $`@owned JSON` {
@@ -1727,7 +1760,9 @@ bb3:
   %31 = function_ref @`SwiftyJSON.(unwrap in _4625CC38AABF536BB76490A35D7233C9)(Any) -> Any`, $`@convention(thin) (@in_guaranteed Any) -> @out Any`
   %34 = assign %31, $`@callee_guaranteed (@in_guaranteed Any) -> (@out Any, @error Error)`
   %38 = function_ref @`(extension in Swift):Swift.Collection.map<A>((A.Element) throws -> A1) throws -> [A1]`, $`@convention(method) <τ_0_0 where τ_0_0 : Collection><τ_1_0> (@noescape @callee_guaranteed @substituted <τ_0_0, τ_0_1> (@in_guaranteed τ_0_0) -> (@out τ_0_1, @error Error) for <τ_0_0.Element, τ_1_0>, @in_guaranteed τ_0_0) -> (@owned Array<τ_1_0>, @error Error)`
-  try_apply %38(%34, %29), normal bb4, $`Array<τ_1_0>`, error bb10, $`Error`
+  %38i0 = apply %38(%34, %29), $`Array<τ_1_0>`
+  %38i1 = new $`Builtin.Int1`
+  cond_br %38i1, true bb4(%38i0), false bb10(%38i0)
 
 bb4(%40 : $`@owned $Array<Any>`):
   pointer_write %40 to %0
@@ -1746,11 +1781,13 @@ bb6:
   %62 = new $`*Dictionary<String, Any>`
   pointer_write dictionary to %62
   %64 = function_ref @`closure #1 ((key: Swift.String, value: Any)) -> () in SwiftyJSON.(unwrap in _4625CC38AABF536BB76490A35D7233C9)(Any) -> Any`, $`@convention(thin) (@guaranteed String, @in_guaranteed Any, @inout_aliasable Dictionary<String, Any>) -> ()`
-  %65 = new $`()`
+  %65 = apply %64(%56), $`()`
   %68 = function_ref @`reabstraction thunk helper from @callee_guaranteed (@guaranteed Swift.String, @in_guaranteed Any) -> (@error @owned Swift.Error) to @escaping @callee_guaranteed (@in_guaranteed (key: Swift.String, value: Any)) -> (@error @owned Swift.Error)`, $`@convention(thin) (@in_guaranteed (key: String, value: Any), @noescape @callee_guaranteed (@guaranteed String, @in_guaranteed Any) -> @error Error) -> @error Error`
-  %69 = new $`@error Error`
+  %69 = apply %68(%65), $`@error Error`
   %71 = function_ref @`(extension in Swift):Swift.Sequence.forEach((A.Element) throws -> ()) throws -> ()`, $`@convention(method) <τ_0_0 where τ_0_0 : Sequence> (@noescape @callee_guaranteed @substituted <τ_0_0> (@in_guaranteed τ_0_0) -> @error Error for <τ_0_0.Element>, @in_guaranteed τ_0_0) -> @error Error`
-  try_apply %71(%69, %62), normal bb7, $`()`, error bb11, $`Error`
+  %71i0 = apply %71(%69, %62), $`()`
+  %71i1 = new $`Builtin.Int1`
+  cond_br %71i1, true bb7(%71i0), false bb11(%71i0)
 
 bb7(%73 : $`()`):
   %79 = pointer_read %56, $`Dictionary<String, Any>`
@@ -1932,7 +1969,8 @@ bb2:
   pointer_write %3i0 to %15
   %17 = function_ref @`SwiftyJSON.JSON.object.setter : Any`, $`@convention(method) (@in Any, @inout JSON) -> ()`
   %18 = apply %17(%15, self), $`()`
-  unwind
+  %dummy_unwindi0 = new $`@yield_once @convention(method) (@inout JSON) -> @yields @inout Any`
+  return %dummy_unwindi0
 }
 
 func @`static SwiftyJSON.JSON.nullJSON.getter : SwiftyJSON.JSON` : $`@owned JSON` {
@@ -2032,14 +2070,16 @@ bb0(%0 : $`*(key: String, value: Any)`, %1 : $`@noescape @callee_guaranteed (@gu
   %3i0 = field_read [alias %3] %0, 1, $`value: Any`
   pointer_write %3i0 to %3
   %4 = pointer_read %2, $`String`
-  try_apply %1(%4, %3), normal bb1, $`()`, error bb2, $`Error`
+  %1i0 = apply %1(%4, %3), $`()`
+  %1i1 = new $`Builtin.Int1`
+  cond_br %1i1, true bb1(%1i0), false bb2(%1i0)
 
 bb1(%6 : $`()`):
   %7 = new $`()`
   return %7
 
 bb2(%10 : $`@owned $Error`):
-  throw %10
+  return %10
 }
 
 func [stub] @`(extension in Swift):Swift.Sequence.forEach((A.Element) throws -> ()) throws -> ()` : $`@error Error` {
@@ -2077,11 +2117,11 @@ bb4(%28 : $`@guaranteed $Dictionary<String, T>.Index`):
   switch_enum %11, case "#Index.dictionary!enumelt" : bb5, default bb6
 
 bb5(%30 : $`@guaranteed $Dictionary<String, T>.Index`):
-  left = assign %28, $`Dictionary<String, T>.Index`
-  right = assign %30, $`Dictionary<String, T>.Index`
+  %31 = assign %28, $`Dictionary<String, T>.Index`
+  %33 = assign %30, $`Dictionary<String, T>.Index`
   %35 = new $`@thin Dictionary<String, T>.Index.Type`
   %38 = function_ref @`static Swift.Dictionary.Index.== infix([A : B].Index, [A : B].Index) -> Swift.Bool`, $`@convention(method) <τ_0_0, τ_0_1 where τ_0_0 : Hashable> (@guaranteed Dictionary<τ_0_0, τ_0_1>.Index, @guaranteed Dictionary<τ_0_0, τ_0_1>.Index, @thin Dictionary<τ_0_0, τ_0_1>.Index.Type) -> Bool`
-  %39 = apply %38(left, right, %35), $`Bool`
+  %39 = apply %38(%31, %33, %35), $`Bool`
   br bb11(%39)
 
 bb6(%47 : $`@guaranteed $Index<T>`):
@@ -2152,11 +2192,11 @@ bb4(%28 : $`@guaranteed $Dictionary<String, T>.Index`):
   switch_enum %11, case "#Index.dictionary!enumelt" : bb5, default bb6
 
 bb5(%30 : $`@guaranteed $Dictionary<String, T>.Index`):
-  left = assign %28, $`Dictionary<String, T>.Index`
-  right = assign %30, $`Dictionary<String, T>.Index`
+  %31 = assign %28, $`Dictionary<String, T>.Index`
+  %33 = assign %30, $`Dictionary<String, T>.Index`
   %35 = new $`@thin Dictionary<String, T>.Index.Type`
   %38 = function_ref @`static Swift.Dictionary.Index.< infix([A : B].Index, [A : B].Index) -> Swift.Bool`, $`@convention(method) <τ_0_0, τ_0_1 where τ_0_0 : Hashable> (@guaranteed Dictionary<τ_0_0, τ_0_1>.Index, @guaranteed Dictionary<τ_0_0, τ_0_1>.Index, @thin Dictionary<τ_0_0, τ_0_1>.Index.Type) -> Bool`
-  %39 = apply %38(left, right, %35), $`Bool`
+  %39 = apply %38(%31, %33, %35), $`Bool`
   br bb9(%39)
 
 bb6(%47 : $`@guaranteed $Index<T>`):
@@ -2370,12 +2410,12 @@ bb1(idx : $`Int`):
   br bb4(%13)
 
 bb2(%15 : $`@guaranteed $Dictionary<String, Any>.Index`):
-  idx = assign %15, $`Dictionary<String, Any>.Index`
+  %16 = assign %15, $`Dictionary<String, Any>.Index`
   %18 = new $`@thin Index<Any>.Type`
   %19 = field_read self, rawDictionary, $`Any`
   %20 = assign %19, $`Dictionary<String, Any>`
   %22 = function_ref @`Swift.Dictionary.index(after: [A : B].Index) -> [A : B].Index`, $`@convention(method) <τ_0_0, τ_0_1 where τ_0_0 : Hashable> (@guaranteed Dictionary<τ_0_0, τ_0_1>.Index, @guaranteed Dictionary<τ_0_0, τ_0_1>) -> @owned Dictionary<τ_0_0, τ_0_1>.Index`
-  %23 = apply %22(idx, %20), $`@owned Dictionary<τ_0_0, τ_0_1>.Index`
+  %23 = apply %22(%16, %20), $`@owned Dictionary<τ_0_0, τ_0_1>.Index`
   %26 = new $`Index<Any>`
   %26i0 = literal [string] "#Index.dictionary!enumelt", $`Builtin.RawPointer`
   field_write %26i0 to %26, type
@@ -2426,10 +2466,10 @@ bb1(idx : $`Int`):
   br bb4(%11, %23)
 
 bb2(%26 : $`@guaranteed $Dictionary<String, Any>.Index`):
-  idx = assign %26, $`Dictionary<String, Any>.Index`
+  %27 = assign %26, $`Dictionary<String, Any>.Index`
   %29 = field_read self, rawDictionary, $`Any`
   %30 = assign %29, $`Dictionary<String, Any>`
-  %32 = assign idx, $`Dictionary<String, Any>.Index`
+  %32 = assign %27, $`Dictionary<String, Any>.Index`
   %34 = new $`*String`
   %35 = new $`*Any`
   %36 = function_ref @`Swift.Dictionary.subscript.getter : ([A : B].Index) -> (key: A, value: B)`, $`@convention(method) <τ_0_0, τ_0_1 where τ_0_0 : Hashable> (@guaranteed Dictionary<τ_0_0, τ_0_1>.Index, @guaranteed Dictionary<τ_0_0, τ_0_1>) -> (@out τ_0_0, @out τ_0_1)`
@@ -2438,7 +2478,7 @@ bb2(%26 : $`@guaranteed $Dictionary<String, Any>.Index`):
   %41 = new $`@thin JSON.Type`
   %42 = field_read self, rawDictionary, $`Any`
   %43 = assign %42, $`Dictionary<String, Any>`
-  %45 = assign idx, $`Dictionary<String, Any>.Index`
+  %45 = assign %27, $`Dictionary<String, Any>.Index`
   %47 = new $`*String`
   %48 = new $`*Any`
   %49 = function_ref @`Swift.Dictionary.subscript.getter : ([A : B].Index) -> (key: A, value: B)`, $`@convention(method) <τ_0_0, τ_0_1 where τ_0_0 : Hashable> (@guaranteed Dictionary<τ_0_0, τ_0_1>.Index, @guaranteed Dictionary<τ_0_0, τ_0_1>) -> (@out τ_0_0, @out τ_0_1)`
@@ -2530,7 +2570,8 @@ bb1:
   return %19
 
 bb2:
-  unwind
+  %dummy_unwindi0 = new $`@yield_once @convention(witness_method: Collection) @substituted <τ_0_0, τ_0_1, τ_0_2> (@in_guaranteed τ_0_0, @in_guaranteed τ_0_1) -> @yields @in_guaranteed τ_0_2 for <Index<Any>, JSON, (String, JSON)>`
+  return %dummy_unwindi0
 }
 
 func [coroutine] @`SwiftyJSON.JSON.subscript.read : (SwiftyJSON.Index<Any>) -> (Swift.String, SwiftyJSON.JSON)` : $`(@yields @guaranteed String, @yields @guaranteed JSON)` {
@@ -2552,7 +2593,8 @@ bb1:
   return %17
 
 bb2:
-  unwind
+  %dummy_unwindi0 = new $`@yield_once @convention(method) (@guaranteed Index<Any>, @guaranteed JSON) -> (@yields @guaranteed String, @yields @guaranteed JSON)`
+  return %dummy_unwindi0
 }
 
 func @`protocol witness for Swift.Collection.subscript.getter : (Swift.Range<A.Index>) -> A.SubSequence in conformance SwiftyJSON.JSON : Swift.Collection in SwiftyJSON` : $`@out Slice<JSON>` {
@@ -2814,14 +2856,16 @@ bb0(%0 : $`UnsafeMutableBufferPointer<τ_0_0.Element>`, %1 : $`@in τ_0_0`):
 func @`protocol witness for Swift.Sequence.withContiguousStorageIfAvailable<A>((Swift.UnsafeBufferPointer<A.Element>) throws -> A1) throws -> A1? in conformance SwiftyJSON.JSON : Swift.Sequence in SwiftyJSON` : $`(@out Optional<τ_0_0>, @error Error)` {
 bb0(%0 : $`*Optional<τ_0_0>`, %1 : $`@noescape @callee_guaranteed @substituted <τ_0_0, τ_0_1> (UnsafeBufferPointer<τ_0_0>) -> (@out τ_0_1, @error Error) for <(String, JSON), τ_0_0>`, %2 : $`*JSON`):
   %3 = function_ref @`(extension in Swift):Swift.Sequence.withContiguousStorageIfAvailable<A>((Swift.UnsafeBufferPointer<A.Element>) throws -> A1) throws -> A1?`, $`@convention(method) <τ_0_0 where τ_0_0 : Sequence><τ_1_0> (@noescape @callee_guaranteed @substituted <τ_0_0, τ_0_1> (UnsafeBufferPointer<τ_0_0>) -> (@out τ_0_1, @error Error) for <τ_0_0.Element, τ_1_0>, @in_guaranteed τ_0_0) -> (@out Optional<τ_1_0>, @error Error)`
-  try_apply %3(%0, %1, %2), normal bb1, $`Optional<τ_1_0>`, error bb2, $`Error`
+  %3i0 = apply %3(%0, %1, %2), $`Optional<τ_1_0>`
+  %3i1 = new $`Builtin.Int1`
+  cond_br %3i1, true bb1(%3i0), false bb2(%3i0)
 
 bb1(%5 : $`()`):
   %6 = new $`()`
   return %6
 
 bb2(%8 : $`@owned $Error`):
-  throw %8
+  return %8
 }
 
 func [stub] @`(extension in Swift):Swift.Sequence.withContiguousStorageIfAvailable<A>((Swift.UnsafeBufferPointer<A.Element>) throws -> A1) throws -> A1?` : $`(@out Optional<τ_1_0>, @error Error)` {
@@ -2952,8 +2996,9 @@ bb4:
   field_write %86i0 to %86, type
   field_write %85 to %86, data
   %88 = new $`*Any`
-  %88i0 = field_read [alias %88] %20, error, $`Any`
-  pointer_write %88i0 to %88
+  %88i0 = pointer_read %20, $`*Any`
+  %88i1 = field_read [alias %88] %88i0, error, $`Any`
+  pointer_write %88i1 to %88
   pointer_write %86 to %88
   %92 = assign %29, $`Builtin.BridgeObject`
   %94 = new $`_BridgeStorage<__ContiguousArrayStorageBase>`
@@ -3051,8 +3096,9 @@ bb7:
   field_write %226i0 to %226, type
   field_write %225 to %226, data
   %228 = new $`*Any`
-  %228i0 = field_read [alias %228] %176, error, $`Any`
-  pointer_write %228i0 to %228
+  %228i0 = pointer_read %176, $`*Any`
+  %228i1 = field_read [alias %228] %228i0, error, $`Any`
+  pointer_write %228i1 to %228
   pointer_write %226 to %228
   %231 = assign %185, $`Builtin.BridgeObject`
   %233 = new $`_BridgeStorage<__ContiguousArrayStorageBase>`
@@ -3102,10 +3148,12 @@ bb0(%0 : $`*T`, %1 : $`*Optional<T>`, %2 : $`@noescape @callee_guaranteed @subst
   switch_enum %3i0, case "#Optional.some!enumelt" : bb4, case "#Optional.none!enumelt" : bb1
 
 bb1:
-  try_apply %2(%0), normal bb3, $`τ_0_0`, error bb2, $`Error`
+  %2i0 = apply %2(%0), $`τ_0_0`
+  %2i1 = new $`Builtin.Int1`
+  cond_br %2i1, true bb3(%2i0), false bb2(%2i0)
 
 bb2(%7 : $`@owned $Error`):
-  throw %7
+  return %7
 
 bb3(%10 : $`()`):
   br bb5
@@ -3138,8 +3186,9 @@ bb0(%0 : $`@in_guaranteed τ_0_0`, %1 : $`@in_guaranteed Range<τ_0_0>`):
 func @`SwiftyJSON.JSON.subscript.setter : (index: Swift.Int) -> SwiftyJSON.JSON` : $`()` {
 bb0(newValue : $`@owned $JSON`, index : $`Int`, self : $`*JSON`):
   %7 = new $`*Any`
-  %7i0 = field_read [alias %7] self, type, $`Any`
-  pointer_write %7i0 to %7
+  %7i0 = pointer_read self, $`*Any`
+  %7i1 = field_read [alias %7] %7i0, type, $`Any`
+  pointer_write %7i1 to %7
   %8 = pointer_read %7, $`Type`
   %10 = new $`*Type`
   pointer_write %8 to %10
@@ -3156,8 +3205,9 @@ bb0(newValue : $`@owned $JSON`, index : $`Int`, self : $`*JSON`):
 
 bb1:
   %23 = new $`*Any`
-  %23i0 = field_read [alias %23] self, rawArray, $`Any`
-  pointer_write %23i0 to %23
+  %23i0 = pointer_read self, $`*Any`
+  %23i1 = field_read [alias %23] %23i0, rawArray, $`Any`
+  pointer_write %23i1 to %23
   %24 = pointer_read %23, $`Array<Any>`
   %27 = new $`*Array<Any>`
   pointer_write %24 to %27
@@ -3224,8 +3274,9 @@ bb10:
   %86 = function_ref @`SwiftyJSON.JSON.object.getter : Any`, $`@convention(method) (@guaranteed JSON) -> @out Any`
   %87 = apply %86(%85, newValue), $`@out Any`
   %89 = new $`*Any`
-  %89i0 = field_read [alias %89] self, rawArray, $`Any`
-  pointer_write %89i0 to %89
+  %89i0 = pointer_read self, $`*Any`
+  %89i1 = field_read [alias %89] %89i0, rawArray, $`Any`
+  pointer_write %89i1 to %89
   %90 = function_ref @`Swift.Array.subscript.modify : (Swift.Int) -> A`, $`@yield_once @convention(method) <τ_0_0> (Int, @inout Array<τ_0_0>) -> @yields @inout τ_0_0`
   %91 = apply %90(index, %89), $`@yields @inout τ_0_0`
   %85i0 = pointer_read %85, $`Any`
@@ -3251,10 +3302,12 @@ bb1:
   br bb5(%6)
 
 bb2:
-  try_apply %1(), normal bb4, $`Bool`, error bb3, $`Error`
+  %1i0 = apply %1(), $`Bool`
+  %1i1 = new $`Builtin.Int1`
+  cond_br %1i1, true bb4(%1i0), false bb3(%1i0)
 
 bb3(%9 : $`@owned $Error`):
-  throw %9
+  return %9
 
 bb4(%11 : $`Bool`):
   br bb5(%11)
@@ -3353,8 +3406,9 @@ bb3:
   field_write %59i0 to %59, type
   field_write %58 to %59, data
   %61 = new $`*Any`
-  %61i0 = field_read [alias %61] %4, error, $`Any`
-  pointer_write %61i0 to %61
+  %61i0 = pointer_read %4, $`*Any`
+  %61i1 = field_read [alias %61] %61i0, error, $`Any`
+  pointer_write %61i1 to %61
   pointer_write %59 to %61
   br bb4
 
@@ -3394,8 +3448,9 @@ bb8:
   field_write %84i0 to %84, type
   field_write %83 to %84, data
   %86 = new $`*Any`
-  %86i0 = field_read [alias %86] %4, error, $`Any`
-  pointer_write %86i0 to %86
+  %86i0 = pointer_read %4, $`*Any`
+  %86i1 = field_read [alias %86] %86i0, error, $`Any`
+  pointer_write %86i1 to %86
   pointer_write %84 to %86
   br bb9
 
@@ -3413,8 +3468,9 @@ bb0(%0 : $`@in_guaranteed τ_0_0`, %1 : $`@guaranteed Dictionary<τ_0_0, τ_0_1>
 func @`SwiftyJSON.JSON.subscript.setter : (key: Swift.String) -> SwiftyJSON.JSON` : $`()` {
 bb0(newValue : $`@owned $JSON`, key : $`@owned $String`, self : $`*JSON`):
   %7 = new $`*Any`
-  %7i0 = field_read [alias %7] self, type, $`Any`
-  pointer_write %7i0 to %7
+  %7i0 = pointer_read self, $`*Any`
+  %7i1 = field_read [alias %7] %7i0, type, $`Any`
+  pointer_write %7i1 to %7
   %8 = pointer_read %7, $`Type`
   %10 = new $`*Type`
   pointer_write %8 to %10
@@ -3476,8 +3532,9 @@ bb7:
   %57 = new $`*String`
   pointer_write %50 to %57
   %60 = new $`*Any`
-  %60i0 = field_read [alias %60] self, rawDictionary, $`Any`
-  pointer_write %60i0 to %60
+  %60i0 = pointer_read self, $`*Any`
+  %60i1 = field_read [alias %60] %60i0, rawDictionary, $`Any`
+  pointer_write %60i1 to %60
   %61 = function_ref @`Swift.Dictionary.subscript.setter : (A) -> B?`, $`@convention(method) <τ_0_0, τ_0_1 where τ_0_0 : Hashable> (@in Optional<τ_0_1>, @in τ_0_0, @inout Dictionary<τ_0_0, τ_0_1>) -> ()`
   %62 = apply %61(%51, %57, %60), $`()`
   br bb9
@@ -3550,9 +3607,11 @@ bb0(path : $`@guaranteed $Array<JSONSubscriptType>`, self : $`@guaranteed $JSON`
   pointer_write self to %7
   %9 = function_ref @`closure #1 (SwiftyJSON.JSON, SwiftyJSON.JSONSubscriptType) -> SwiftyJSON.JSON in SwiftyJSON.JSON.subscript.getter : ([SwiftyJSON.JSONSubscriptType]) -> SwiftyJSON.JSON`, $`@convention(thin) (@guaranteed JSON, @in_guaranteed JSONSubscriptType) -> @owned JSON`
   %13 = function_ref @`reabstraction thunk helper from @callee_guaranteed (@guaranteed SwiftyJSON.JSON, @in_guaranteed SwiftyJSON.JSONSubscriptType) -> (@owned SwiftyJSON.JSON, @error @owned Swift.Error) to @escaping @callee_guaranteed (@in_guaranteed SwiftyJSON.JSON, @in_guaranteed SwiftyJSON.JSONSubscriptType) -> (@out SwiftyJSON.JSON, @error @owned Swift.Error)`, $`@convention(thin) (@in_guaranteed JSON, @in_guaranteed JSONSubscriptType, @noescape @callee_guaranteed (@guaranteed JSON, @in_guaranteed JSONSubscriptType) -> (@owned JSON, @error Error)) -> (@out JSON, @error Error)`
-  %14 = new $`(@out JSON, @error Error)`
+  %14 = apply %13(%9), $`(@out JSON, @error Error)`
   %16 = function_ref @`(extension in Swift):Swift.Sequence.reduce<A>(A1, (A1, A.Element) throws -> A1) throws -> A1`, $`@convention(method) <τ_0_0 where τ_0_0 : Sequence><τ_1_0> (@in_guaranteed τ_1_0, @noescape @callee_guaranteed @substituted <τ_0_0, τ_0_1, τ_0_2> (@in_guaranteed τ_0_0, @in_guaranteed τ_0_1) -> (@out τ_0_2, @error Error) for <τ_1_0, τ_0_0.Element, τ_1_0>, @in_guaranteed τ_0_0) -> (@out τ_1_0, @error Error)`
-  try_apply %16(%4, %7, %14, %5), normal bb1, $`τ_1_0`, error bb2, $`Error`
+  %16i0 = apply %16(%4, %7, %14, %5), $`τ_1_0`
+  %16i1 = new $`Builtin.Int1`
+  cond_br %16i1, true bb1(%16i0), false bb2(%16i0)
 
 bb1(%18 : $`()`):
   %22 = pointer_read %4, $`JSON`
@@ -3575,7 +3634,9 @@ bb0($0 : $`@guaranteed $JSON`, $1 : $`*JSONSubscriptType`):
 func @`reabstraction thunk helper from @callee_guaranteed (@guaranteed SwiftyJSON.JSON, @in_guaranteed SwiftyJSON.JSONSubscriptType) -> (@owned SwiftyJSON.JSON, @error @owned Swift.Error) to @escaping @callee_guaranteed (@in_guaranteed SwiftyJSON.JSON, @in_guaranteed SwiftyJSON.JSONSubscriptType) -> (@out SwiftyJSON.JSON, @error @owned Swift.Error)` : $`(@out JSON, @error Error)` {
 bb0(%0 : $`*JSON`, %1 : $`*JSON`, %2 : $`*JSONSubscriptType`, %3 : $`@noescape @callee_guaranteed (@guaranteed JSON, @in_guaranteed JSONSubscriptType) -> (@owned JSON, @error Error)`):
   %4 = pointer_read %1, $`JSON`
-  try_apply %3(%4, %2), normal bb1, $`JSON`, error bb2, $`Error`
+  %3i0 = apply %3(%4, %2), $`JSON`
+  %3i1 = new $`Builtin.Int1`
+  cond_br %3i1, true bb1(%3i0), false bb2(%3i0)
 
 bb1(%6 : $`@owned $JSON`):
   pointer_write %6 to %0
@@ -3583,7 +3644,7 @@ bb1(%6 : $`@owned $JSON`):
   return %8
 
 bb2(%11 : $`@owned $Error`):
-  throw %11
+  return %11
 }
 
 func [stub] @`(extension in Swift):Swift.Sequence.reduce<A>(A1, (A1, A.Element) throws -> A1) throws -> A1` : $`(@out τ_1_0, @error Error)` {
@@ -3716,7 +3777,8 @@ bb2:
   %23 = assign %6, $`Array<JSONSubscriptType>`
   %24 = function_ref @`SwiftyJSON.JSON.subscript.setter : ([SwiftyJSON.JSONSubscriptType]) -> SwiftyJSON.JSON`, $`@convention(method) (@owned JSON, @owned Array<JSONSubscriptType>, @inout JSON) -> ()`
   %25 = apply %24(%22, %23, self), $`()`
-  unwind
+  %dummy_unwindi0 = new $`@yield_once @convention(method) (@guaranteed Array<JSONSubscriptType>, @inout JSON) -> @yields @inout JSON`
+  return %dummy_unwindi0
 }
 
 func [coroutine] @`SwiftyJSON.JSON.subscript.modify : (SwiftyJSON.JSONSubscriptType...) -> SwiftyJSON.JSON` : $`@yields @inout JSON` {
@@ -3742,7 +3804,8 @@ bb2:
   %23 = assign %6, $`Array<JSONSubscriptType>`
   %24 = function_ref @`SwiftyJSON.JSON.subscript.setter : (SwiftyJSON.JSONSubscriptType...) -> SwiftyJSON.JSON`, $`@convention(method) (@owned JSON, @owned Array<JSONSubscriptType>, @inout JSON) -> ()`
   %25 = apply %24(%22, %23, self), $`()`
-  unwind
+  %dummy_unwindi0 = new $`@yield_once @convention(method) (@guaranteed Array<JSONSubscriptType>, @inout JSON) -> @yields @inout JSON`
+  return %dummy_unwindi0
 }
 
 func @`SwiftyJSON.JSON.init(stringLiteral: Swift.String) -> SwiftyJSON.JSON` : $`@owned JSON` {
@@ -3905,9 +3968,11 @@ bb0(elements : $`@owned $Array<(String, Any)>`, %1 : $`@thin JSON.Type`):
   pointer_write %10 to %11
   %13 = function_ref @`closure #1 (inout [Swift.String : Any], (Swift.String, Any)) -> () in SwiftyJSON.JSON.init(dictionaryLiteral: (Swift.String, Any)...) -> SwiftyJSON.JSON`, $`@convention(thin) (@inout Dictionary<String, Any>, @guaranteed String, @in_guaranteed Any) -> ()`
   %17 = function_ref @`reabstraction thunk helper from @callee_guaranteed (@inout [Swift.String : Any], @guaranteed Swift.String, @in_guaranteed Any) -> (@error @owned Swift.Error) to @escaping @callee_guaranteed (@inout [Swift.String : Any], @in_guaranteed (Swift.String, Any)) -> (@error @owned Swift.Error)`, $`@convention(thin) (@inout Dictionary<String, Any>, @in_guaranteed (String, Any), @noescape @callee_guaranteed (@inout Dictionary<String, Any>, @guaranteed String, @in_guaranteed Any) -> @error Error) -> @error Error`
-  %18 = new $`@error Error`
+  %18 = apply %17(%13), $`@error Error`
   %20 = function_ref @`(extension in Swift):Swift.Sequence.reduce<A>(into: __owned A1, _: (inout A1, A.Element) throws -> ()) throws -> A1`, $`@convention(method) <τ_0_0 where τ_0_0 : Sequence><τ_1_0> (@in τ_1_0, @noescape @callee_guaranteed @substituted <τ_0_0, τ_0_1> (@inout τ_0_0, @in_guaranteed τ_0_1) -> @error Error for <τ_1_0, τ_0_0.Element>, @in_guaranteed τ_0_0) -> (@out τ_1_0, @error Error)`
-  try_apply %20(%4, %11, %18, %6), normal bb1, $`τ_1_0`, error bb2, $`Error`
+  %20i0 = apply %20(%4, %11, %18, %6), $`τ_1_0`
+  %20i1 = new $`Builtin.Int1`
+  cond_br %20i1, true bb1(%20i0), false bb2(%20i0)
 
 bb1(%22 : $`()`):
   dictionary = pointer_read %4, $`Dictionary<String, Any>`
@@ -4010,14 +4075,16 @@ bb0(%0 : $`*Dictionary<String, Any>`, %1 : $`*(String, Any)`, %2 : $`@noescape @
   %4i0 = field_read [alias %4] %1, 1, $`Any`
   pointer_write %4i0 to %4
   %5 = pointer_read %3, $`String`
-  try_apply %2(%0, %5, %4), normal bb1, $`()`, error bb2, $`Error`
+  %2i0 = apply %2(%0, %5, %4), $`()`
+  %2i1 = new $`Builtin.Int1`
+  cond_br %2i1, true bb1(%2i0), false bb2(%2i0)
 
 bb1(%7 : $`()`):
   %8 = new $`()`
   return %8
 
 bb2(%11 : $`@owned $Error`):
-  throw %11
+  return %11
 }
 
 func [stub] @`(extension in Swift):Swift.Sequence.reduce<A>(into: __owned A1, _: (inout A1, A.Element) throws -> ()) throws -> A1` : $`(@out τ_1_0, @error Error)` {
@@ -4212,7 +4279,7 @@ bb4:
   br bb5(%74)
 
 bb5(%79 : $`@owned $Error`):
-  throw %79
+  return %79
 }
 
 func [stub] @`Swift._bridgeAnythingToObjectiveC<A>(A) -> Swift.AnyObject` : $`@owned AnyObject` {
@@ -4270,7 +4337,9 @@ bb0(encoding : $`*String.Encoding`, opt : $`JSONSerialization.WritingOptions`, s
   %22 = function_ref @`default argument 2 of SwiftyJSON.JSON.(_rawString in _4625CC38AABF536BB76490A35D7233C9)(_: (extension in Foundation):Swift.String.Encoding, options: [SwiftyJSON.writingOptionsKeys : Any], maxObjectDepth: Swift.Int) throws -> Swift.String?`, $`@convention(thin) () -> Int`
   %23 = apply %22(), $`Int`
   %24 = function_ref @`SwiftyJSON.JSON.(_rawString in _4625CC38AABF536BB76490A35D7233C9)(_: (extension in Foundation):Swift.String.Encoding, options: [SwiftyJSON.writingOptionsKeys : Any], maxObjectDepth: Swift.Int) throws -> Swift.String?`, $`@convention(method) (@in_guaranteed String.Encoding, @guaranteed Dictionary<writingOptionsKeys, Any>, Int, @guaranteed JSON) -> (@owned Optional<String>, @error Error)`
-  try_apply %24(encoding, %21, %23, self), normal bb1, $`Optional<String>`, error bb3, $`Error`
+  %24i0 = apply %24(encoding, %21, %23, self), $`Optional<String>`
+  %24i1 = new $`Builtin.Int1`
+  cond_br %24i1, true bb1(%24i0), false bb3(%24i0)
 
 bb1(%26 : $`@owned $Optional<String>`):
   br bb2(%26)
@@ -4466,7 +4535,9 @@ bb19:
   %99 = new $`()`
   jsonOption = pointer_read %60, $`JSONSerialization.WritingOptions`
   %103 = function_ref @`SwiftyJSON.JSON.rawData(options: __C.NSJSONWritingOptions) throws -> Foundation.Data`, $`@convention(method) (JSONSerialization.WritingOptions, @guaranteed JSON) -> (@owned Data, @error Error)`
-  try_apply %103(jsonOption, self), normal bb20, $`Data`, error bb66, $`Error`
+  %103i0 = apply %103(jsonOption, self), $`Data`
+  %103i1 = new $`Builtin.Int1`
+  cond_br %103i1, true bb20(%103i0), false bb66(%103i0)
 
 bb20(data : $`@owned $Data`):
   %107 = new $`@thin String.Type`
@@ -4525,11 +4596,13 @@ bb27(dict : $`@owned $Dictionary<String, Optional<Any>>`):
   %0i1 = pointer_read encoding, $`String.Encoding`
   pointer_write %0i1 to %149
   %151 = assign options, $`Dictionary<writingOptionsKeys, Any>`
-  %152 = new $`(@owned String, @error Error)`
+  %152 = apply %147(%148, %149, %151, maxObjectDepth), $`(@owned String, @error Error)`
   %156 = function_ref @`reabstraction thunk helper from @callee_guaranteed (@guaranteed Swift.String) -> (@owned Swift.String, @error @owned Swift.Error) to @escaping @callee_guaranteed (@in_guaranteed Swift.String) -> (@out Swift.String, @error @owned Swift.Error)`, $`@convention(thin) (@in_guaranteed String, @noescape @callee_guaranteed (@guaranteed String) -> (@owned String, @error Error)) -> (@out String, @error Error)`
-  %157 = new $`(@out String, @error Error)`
+  %157 = apply %156(%152), $`(@out String, @error Error)`
   %159 = function_ref @`(extension in Swift):Swift.Collection.map<A>((A.Element) throws -> A1) throws -> [A1]`, $`@convention(method) <τ_0_0 where τ_0_0 : Collection><τ_1_0> (@noescape @callee_guaranteed @substituted <τ_0_0, τ_0_1> (@in_guaranteed τ_0_0) -> (@out τ_0_1, @error Error) for <τ_0_0.Element, τ_1_0>, @in_guaranteed τ_0_0) -> (@owned Array<τ_1_0>, @error Error)`
-  try_apply %159(%157, %145), normal bb28, $`Array<τ_1_0>`, error bb67, $`Error`
+  %159i0 = apply %159(%157, %145), $`Array<τ_1_0>`
+  %159i1 = new $`Builtin.Int1`
+  cond_br %159i1, true bb28(%159i0), false bb67(%159i0)
 
 bb28(body : $`@owned $Array<String>`):
   %172 = new $`*DefaultStringInterpolation`
@@ -4722,17 +4795,19 @@ bb46:
 
 bb47:
   %322 = new $`()`
-  jsonOption = pointer_read %283, $`JSONSerialization.WritingOptions`
+  %323 = pointer_read %283, $`JSONSerialization.WritingOptions`
   %326 = function_ref @`SwiftyJSON.JSON.rawData(options: __C.NSJSONWritingOptions) throws -> Foundation.Data`, $`@convention(method) (JSONSerialization.WritingOptions, @guaranteed JSON) -> (@owned Data, @error Error)`
-  try_apply %326(jsonOption, self), normal bb48, $`Data`, error bb69, $`Error`
+  %326i0 = apply %326(%323, self), $`Data`
+  %326i1 = new $`Builtin.Int1`
+  cond_br %326i1, true bb48(%326i0), false bb69(%326i0)
 
-bb48(data : $`@owned $Data`):
+bb48(%328 : $`@owned $Data`):
   %330 = new $`@thin String.Type`
   %332 = new $`*String.Encoding`
   %0i2 = pointer_read encoding, $`String.Encoding`
   pointer_write %0i2 to %332
   %334 = function_ref @`(extension in Foundation):Swift.String.init(data: __shared Foundation.Data, encoding: (extension in Foundation):Swift.String.Encoding) -> Swift.String?`, $`@convention(method) (@guaranteed Data, @in String.Encoding, @thin String.Type) -> @owned Optional<String>`
-  %335 = apply %334(data, %332, %330), $`@owned Optional<String>`
+  %335 = apply %334(%328, %332, %330), $`@owned Optional<String>`
   br bb64(%335)
 
 bb49:
@@ -4780,13 +4855,15 @@ bb55(array : $`@owned $Array<Optional<Any>>`):
   %0i3 = pointer_read encoding, $`String.Encoding`
   pointer_write %0i3 to %369
   %371 = assign options, $`Dictionary<writingOptionsKeys, Any>`
-  %372 = new $`(@owned String, @error Error)`
+  %372 = apply %368(%369, %371, maxObjectDepth), $`(@owned String, @error Error)`
   %375 = function_ref @`reabstraction thunk helper from @callee_guaranteed (@in_guaranteed Any?) -> (@owned Swift.String, @error @owned Swift.Error) to @escaping @callee_guaranteed (@in_guaranteed Any?) -> (@out Swift.String, @error @owned Swift.Error)`, $`@convention(thin) (@in_guaranteed Optional<Any>, @noescape @callee_guaranteed (@in_guaranteed Optional<Any>) -> (@owned String, @error Error)) -> (@out String, @error Error)`
-  %376 = new $`(@out String, @error Error)`
+  %376 = apply %375(%372), $`(@out String, @error Error)`
   %378 = function_ref @`(extension in Swift):Swift.Collection.map<A>((A.Element) throws -> A1) throws -> [A1]`, $`@convention(method) <τ_0_0 where τ_0_0 : Collection><τ_1_0> (@noescape @callee_guaranteed @substituted <τ_0_0, τ_0_1> (@in_guaranteed τ_0_0) -> (@out τ_0_1, @error Error) for <τ_0_0.Element, τ_1_0>, @in_guaranteed τ_0_0) -> (@owned Array<τ_1_0>, @error Error)`
-  try_apply %378(%376, %366), normal bb56, $`Array<τ_1_0>`, error bb70, $`Error`
+  %378i0 = apply %378(%376, %366), $`Array<τ_1_0>`
+  %378i1 = new $`Builtin.Int1`
+  cond_br %378i1, true bb56(%378i0), false bb70(%378i0)
 
-bb56(body : $`@owned $Array<String>`):
+bb56(%380 : $`@owned $Array<String>`):
   %389 = new $`*DefaultStringInterpolation`
   %390 = literal [int] 2, $`Builtin.Int64`
   %391 = new $`Int`
@@ -4807,7 +4884,7 @@ bb56(body : $`@owned $Array<String>`):
   %405 = function_ref @`Swift.DefaultStringInterpolation.appendLiteral(Swift.String) -> ()`, $`@convention(method) (@guaranteed String, @inout DefaultStringInterpolation) -> ()`
   %406 = apply %405(%403, %389), $`()`
   %410 = new $`*Array<String>`
-  pointer_write body to %410
+  pointer_write %380 to %410
   %412 = literal [string] ",", $`$Builtin.RawPointer`
   %413 = literal [int] 1, $`Builtin.Word`
   %414 = literal [int] -1, $`Builtin.Int1`
@@ -4905,7 +4982,7 @@ bb63:
   pointer_write %489 to %490
   %493i0 = builtin_ref @`willThrow`, $`Any`
   %493 = apply %493i0(%490), $`()`
-  throw %490
+  return %490
 
 bb64(%495 : $`@owned $Optional<String>`):
   return %495
@@ -5096,7 +5173,9 @@ bb16:
   %78 = new $`()`
   maxObjectDepth = pointer_read %40, $`Int`
   %82 = function_ref @`SwiftyJSON.JSON.(_rawString in _4625CC38AABF536BB76490A35D7233C9)(_: (extension in Foundation):Swift.String.Encoding, options: [SwiftyJSON.writingOptionsKeys : Any], maxObjectDepth: Swift.Int) throws -> Swift.String?`, $`@convention(method) (@in_guaranteed String.Encoding, @guaranteed Dictionary<writingOptionsKeys, Any>, Int, @guaranteed JSON) -> (@owned Optional<String>, @error Error)`
-  try_apply %82(%4, options, maxObjectDepth, self), normal bb17, $`Optional<String>`, error bb21, $`Error`
+  %82i0 = apply %82(%4, options, maxObjectDepth, self), $`Optional<String>`
+  %82i1 = new $`Builtin.Int1`
+  cond_br %82i1, true bb17(%82i0), false bb21(%82i0)
 
 bb17(%84 : $`@owned $Optional<String>`):
   br bb20(%84)
@@ -5313,7 +5392,9 @@ bb4:
   %144 = new $`Int`
   field_write %141 to %144, _value
   %145 = function_ref @`SwiftyJSON.JSON.(_rawString in _4625CC38AABF536BB76490A35D7233C9)(_: (extension in Foundation):Swift.String.Encoding, options: [SwiftyJSON.writingOptionsKeys : Any], maxObjectDepth: Swift.Int) throws -> Swift.String?`, $`@convention(method) (@in_guaranteed String.Encoding, @guaranteed Dictionary<writingOptionsKeys, Any>, Int, @guaranteed JSON) -> (@owned Optional<String>, @error Error)`
-  try_apply %145(encoding, options, %144, nestedValue), normal bb5, $`Optional<String>`, error bb11, $`Error`
+  %145i0 = apply %145(encoding, options, %144, nestedValue), $`Optional<String>`
+  %145i1 = new $`Builtin.Int1`
+  cond_br %145i1, true bb5(%145i0), false bb11(%145i0)
 
 bb5(%147 : $`@owned $Optional<String>`):
   switch_enum %147, case "#Optional.some!enumelt" : bb7, case "#Optional.none!enumelt" : bb6
@@ -5499,7 +5580,7 @@ bb11(%383 : $`@owned $Error`):
   br bb12(%383)
 
 bb12(%391 : $`@owned $Error`):
-  throw %391
+  return %391
 }
 
 func [stub] @`Swift.DefaultStringInterpolation.init(literalCapacity: Swift.Int, interpolationCount: Swift.Int) -> Swift.DefaultStringInterpolation` : $`@owned DefaultStringInterpolation` {
@@ -5579,7 +5660,9 @@ bb0(%0 : $`@in_guaranteed τ_1_0`, %1 : $`@in_guaranteed τ_1_1`, %2 : $`NSStrin
 func @`reabstraction thunk helper from @callee_guaranteed (@guaranteed Swift.String) -> (@owned Swift.String, @error @owned Swift.Error) to @escaping @callee_guaranteed (@in_guaranteed Swift.String) -> (@out Swift.String, @error @owned Swift.Error)` : $`(@out String, @error Error)` {
 bb0(%0 : $`*String`, %1 : $`*String`, %2 : $`@noescape @callee_guaranteed (@guaranteed String) -> (@owned String, @error Error)`):
   %3 = pointer_read %1, $`String`
-  try_apply %2(%3), normal bb1, $`String`, error bb2, $`Error`
+  %2i0 = apply %2(%3), $`String`
+  %2i1 = new $`Builtin.Int1`
+  cond_br %2i1, true bb1(%2i0), false bb2(%2i0)
 
 bb1(%5 : $`@owned $String`):
   pointer_write %5 to %0
@@ -5587,7 +5670,7 @@ bb1(%5 : $`@owned $String`):
   return %7
 
 bb2(%10 : $`@owned $Error`):
-  throw %10
+  return %10
 }
 
 func [stub] @`(extension in Swift):Swift.BidirectionalCollection< where A.Element == Swift.String>.joined(separator: Swift.String) -> Swift.String` : $`@owned String` {
@@ -5637,7 +5720,9 @@ bb2:
   %41 = new $`Int`
   field_write %38 to %41, _value
   %42 = function_ref @`SwiftyJSON.JSON.(_rawString in _4625CC38AABF536BB76490A35D7233C9)(_: (extension in Foundation):Swift.String.Encoding, options: [SwiftyJSON.writingOptionsKeys : Any], maxObjectDepth: Swift.Int) throws -> Swift.String?`, $`@convention(method) (@in_guaranteed String.Encoding, @guaranteed Dictionary<writingOptionsKeys, Any>, Int, @guaranteed JSON) -> (@owned Optional<String>, @error Error)`
-  try_apply %42(encoding, options, %41, nestedValue), normal bb3, $`Optional<String>`, error bb9, $`Error`
+  %42i0 = apply %42(encoding, options, %41, nestedValue), $`Optional<String>`
+  %42i1 = new $`Builtin.Int1`
+  cond_br %42i1, true bb3(%42i0), false bb9(%42i0)
 
 bb3(%44 : $`@owned $Optional<String>`):
   switch_enum %44, case "#Optional.some!enumelt" : bb5, case "#Optional.none!enumelt" : bb4
@@ -5765,12 +5850,14 @@ bb9(%195 : $`@owned $Error`):
   br bb10(%195)
 
 bb10(%201 : $`@owned $Error`):
-  throw %201
+  return %201
 }
 
 func @`reabstraction thunk helper from @callee_guaranteed (@in_guaranteed Any?) -> (@owned Swift.String, @error @owned Swift.Error) to @escaping @callee_guaranteed (@in_guaranteed Any?) -> (@out Swift.String, @error @owned Swift.Error)` : $`(@out String, @error Error)` {
 bb0(%0 : $`*String`, %1 : $`*Optional<Any>`, %2 : $`@noescape @callee_guaranteed (@in_guaranteed Optional<Any>) -> (@owned String, @error Error)`):
-  try_apply %2(%1), normal bb1, $`String`, error bb2, $`Error`
+  %2i0 = apply %2(%1), $`String`
+  %2i1 = new $`Builtin.Int1`
+  cond_br %2i1, true bb1(%2i0), false bb2(%2i0)
 
 bb1(%4 : $`@owned $String`):
   pointer_write %4 to %0
@@ -5778,7 +5865,7 @@ bb1(%4 : $`@owned $String`):
   return %6
 
 bb2(%8 : $`@owned $Error`):
-  throw %8
+  return %8
 }
 
 func [stub] @`Swift.Bool.description.getter : Swift.String` : $`@owned String` {
@@ -5896,9 +5983,11 @@ bb1:
   pointer_write %16 to %17
   %19 = function_ref @`closure #1 (Any) -> SwiftyJSON.JSON in SwiftyJSON.JSON.array.getter : [SwiftyJSON.JSON]?`, $`@convention(thin) (@in_guaranteed Any) -> @owned JSON`
   %23 = function_ref @`reabstraction thunk helper from @callee_guaranteed (@in_guaranteed Any) -> (@owned SwiftyJSON.JSON, @error @owned Swift.Error) to @escaping @callee_guaranteed (@in_guaranteed Any) -> (@out SwiftyJSON.JSON, @error @owned Swift.Error)`, $`@convention(thin) (@in_guaranteed Any, @noescape @callee_guaranteed (@in_guaranteed Any) -> (@owned JSON, @error Error)) -> (@out JSON, @error Error)`
-  %24 = new $`(@out JSON, @error Error)`
+  %24 = apply %23(%19), $`(@out JSON, @error Error)`
   %26 = function_ref @`(extension in Swift):Swift.Collection.map<A>((A.Element) throws -> A1) throws -> [A1]`, $`@convention(method) <τ_0_0 where τ_0_0 : Collection><τ_1_0> (@noescape @callee_guaranteed @substituted <τ_0_0, τ_0_1> (@in_guaranteed τ_0_0) -> (@out τ_0_1, @error Error) for <τ_0_0.Element, τ_1_0>, @in_guaranteed τ_0_0) -> (@owned Array<τ_1_0>, @error Error)`
-  try_apply %26(%24, %17), normal bb2, $`Array<τ_1_0>`, error bb5, $`Error`
+  %26i0 = apply %26(%24, %17), $`Array<τ_1_0>`
+  %26i1 = new $`Builtin.Int1`
+  cond_br %26i1, true bb2(%26i0), false bb5(%26i0)
 
 bb2(%28 : $`@owned $Array<JSON>`):
   %32 = new $`Optional<Array<JSON>>`
@@ -5933,7 +6022,9 @@ bb0($0 : $`*Any`):
 
 func @`reabstraction thunk helper from @callee_guaranteed (@in_guaranteed Any) -> (@owned SwiftyJSON.JSON, @error @owned Swift.Error) to @escaping @callee_guaranteed (@in_guaranteed Any) -> (@out SwiftyJSON.JSON, @error @owned Swift.Error)` : $`(@out JSON, @error Error)` {
 bb0(%0 : $`*JSON`, %1 : $`*Any`, %2 : $`@noescape @callee_guaranteed (@in_guaranteed Any) -> (@owned JSON, @error Error)`):
-  try_apply %2(%1), normal bb1, $`JSON`, error bb2, $`Error`
+  %2i0 = apply %2(%1), $`JSON`
+  %2i1 = new $`Builtin.Int1`
+  cond_br %2i1, true bb1(%2i0), false bb2(%2i0)
 
 bb1(%4 : $`@owned $JSON`):
   pointer_write %4 to %0
@@ -5941,7 +6032,7 @@ bb1(%4 : $`@owned $JSON`):
   return %6
 
 bb2(%8 : $`@owned $Error`):
-  throw %8
+  return %8
 }
 
 func @`SwiftyJSON.JSON.arrayObject.getter : [Any]?` : $`@owned Optional<Array<Any>>` {
@@ -6040,7 +6131,8 @@ bb2:
   %17 = pointer_read %3, $`Optional<Array<Any>>`
   %18 = function_ref @`SwiftyJSON.JSON.arrayObject.setter : [Any]?`, $`@convention(method) (@owned Optional<Array<Any>>, @inout JSON) -> ()`
   %19 = apply %18(%17, self), $`()`
-  unwind
+  %dummy_unwindi0 = new $`@yield_once @convention(method) (@inout JSON) -> @yields @inout Optional<Array<Any>>`
+  return %dummy_unwindi0
 }
 
 func @`SwiftyJSON.JSON.dictionary.getter : [Swift.String : SwiftyJSON.JSON]?` : $`@owned Optional<Dictionary<String, JSON>>` {
@@ -6074,11 +6166,13 @@ bb1:
   %29 = new $`*Dictionary<String, Any>`
   pointer_write %28 to %29
   %31 = function_ref @`closure #1 ((key: Swift.String, value: Any)) -> () in SwiftyJSON.JSON.dictionary.getter : [Swift.String : SwiftyJSON.JSON]?`, $`@convention(thin) (@guaranteed String, @in_guaranteed Any, @inout_aliasable Dictionary<String, JSON>) -> ()`
-  %32 = new $`()`
+  %32 = apply %31(%15), $`()`
   %35 = function_ref @`reabstraction thunk helper from @callee_guaranteed (@guaranteed Swift.String, @in_guaranteed Any) -> (@error @owned Swift.Error) to @escaping @callee_guaranteed (@in_guaranteed (key: Swift.String, value: Any)) -> (@error @owned Swift.Error)`, $`@convention(thin) (@in_guaranteed (key: String, value: Any), @noescape @callee_guaranteed (@guaranteed String, @in_guaranteed Any) -> @error Error) -> @error Error`
-  %36 = new $`@error Error`
+  %36 = apply %35(%32), $`@error Error`
   %38 = function_ref @`(extension in Swift):Swift.Sequence.forEach((A.Element) throws -> ()) throws -> ()`, $`@convention(method) <τ_0_0 where τ_0_0 : Sequence> (@noescape @callee_guaranteed @substituted <τ_0_0> (@in_guaranteed τ_0_0) -> @error Error for <τ_0_0.Element>, @in_guaranteed τ_0_0) -> @error Error`
-  try_apply %38(%36, %29), normal bb2, $`()`, error bb5, $`Error`
+  %38i0 = apply %38(%36, %29), $`()`
+  %38i1 = new $`Builtin.Int1`
+  cond_br %38i1, true bb2(%38i0), false bb5(%38i0)
 
 bb2(%40 : $`()`):
   %46 = pointer_read %15, $`Dictionary<String, JSON>`
@@ -6319,7 +6413,8 @@ bb2:
   %17 = pointer_read %3, $`Optional<Dictionary<String, Any>>`
   %18 = function_ref @`SwiftyJSON.JSON.dictionaryObject.setter : [Swift.String : Any]?`, $`@convention(method) (@owned Optional<Dictionary<String, Any>>, @inout JSON) -> ()`
   %19 = apply %18(%17, self), $`()`
-  unwind
+  %dummy_unwindi0 = new $`@yield_once @convention(method) (@inout JSON) -> @yields @inout Optional<Dictionary<String, Any>>`
+  return %dummy_unwindi0
 }
 
 func @`SwiftyJSON.JSON.bool.getter : Swift.Bool?` : $`Optional<Bool>` {
@@ -6416,7 +6511,8 @@ bb2:
   %17 = pointer_read %3, $`Optional<Bool>`
   %18 = function_ref @`SwiftyJSON.JSON.bool.setter : Swift.Bool?`, $`@convention(method) (Optional<Bool>, @inout JSON) -> ()`
   %19 = apply %18(%17, self), $`()`
-  unwind
+  %dummy_unwindi0 = new $`@yield_once @convention(method) (@inout JSON) -> @yields @inout Optional<Bool>`
+  return %dummy_unwindi0
 }
 
 func @`SwiftyJSON.JSON.boolValue.getter : Swift.Bool` : $`Bool` {
@@ -6484,11 +6580,13 @@ bb3:
   pointer_write %17 to %63
   %65 = function_ref @`closure #1 (Swift.String) -> Swift.Bool in SwiftyJSON.JSON.boolValue.getter : Swift.Bool`, $`@convention(thin) (@guaranteed String, @guaranteed JSON) -> Bool`
   %66 = assign self, $`JSON`
-  %67 = new $`Bool`
+  %67 = apply %65(%66), $`Bool`
   %70 = function_ref @`reabstraction thunk helper from @callee_guaranteed (@guaranteed Swift.String) -> (@unowned Swift.Bool, @error @owned Swift.Error) to @escaping @callee_guaranteed (@in_guaranteed Swift.String) -> (@unowned Swift.Bool, @error @owned Swift.Error)`, $`@convention(thin) (@in_guaranteed String, @noescape @callee_guaranteed (@guaranteed String) -> (Bool, @error Error)) -> (Bool, @error Error)`
-  %71 = new $`(Bool, @error Error)`
+  %71 = apply %70(%67), $`(Bool, @error Error)`
   %73 = function_ref @`(extension in Swift):Swift.Sequence.contains(where: (A.Element) throws -> Swift.Bool) throws -> Swift.Bool`, $`@convention(method) <τ_0_0 where τ_0_0 : Sequence> (@noescape @callee_guaranteed @substituted <τ_0_0> (@in_guaranteed τ_0_0) -> (Bool, @error Error) for <τ_0_0.Element>, @in_guaranteed τ_0_0) -> (Bool, @error Error)`
-  try_apply %73(%71, %63), normal bb4, $`Bool`, error bb7, $`Error`
+  %73i0 = apply %73(%71, %63), $`Bool`
+  %73i1 = new $`Builtin.Int1`
+  cond_br %73i1, true bb4(%73i0), false bb7(%73i0)
 
 bb4(%75 : $`Bool`):
   br bb6(%75)
@@ -6537,13 +6635,15 @@ bb0(%0 : $`@in_guaranteed τ_1_0`, %1 : $`@in_guaranteed τ_0_0`):
 func @`reabstraction thunk helper from @callee_guaranteed (@guaranteed Swift.String) -> (@unowned Swift.Bool, @error @owned Swift.Error) to @escaping @callee_guaranteed (@in_guaranteed Swift.String) -> (@unowned Swift.Bool, @error @owned Swift.Error)` : $`(Bool, @error Error)` {
 bb0(%0 : $`*String`, %1 : $`@noescape @callee_guaranteed (@guaranteed String) -> (Bool, @error Error)`):
   %2 = pointer_read %0, $`String`
-  try_apply %1(%2), normal bb1, $`Bool`, error bb2, $`Error`
+  %1i0 = apply %1(%2), $`Bool`
+  %1i1 = new $`Builtin.Int1`
+  cond_br %1i1, true bb1(%1i0), false bb2(%1i0)
 
 bb1(%4 : $`Bool`):
   return %4
 
 bb2(%7 : $`@owned $Error`):
-  throw %7
+  return %7
 }
 
 func [stub] @`(extension in Swift):Swift.Sequence.contains(where: (A.Element) throws -> Swift.Bool) throws -> Swift.Bool` : $`(Bool, @error Error)` {
@@ -6582,7 +6682,8 @@ bb2:
   %17 = pointer_read %3, $`Bool`
   %18 = function_ref @`SwiftyJSON.JSON.boolValue.setter : Swift.Bool`, $`@convention(method) (Bool, @inout JSON) -> ()`
   %19 = apply %18(%17, self), $`()`
-  unwind
+  %dummy_unwindi0 = new $`@yield_once @convention(method) (@inout JSON) -> @yields @inout Bool`
+  return %dummy_unwindi0
 }
 
 func @`SwiftyJSON.JSON.string.getter : Swift.String?` : $`@owned Optional<String>` {
@@ -6697,7 +6798,8 @@ bb2:
   %17 = pointer_read %3, $`Optional<String>`
   %18 = function_ref @`SwiftyJSON.JSON.string.setter : Swift.String?`, $`@convention(method) (@owned Optional<String>, @inout JSON) -> ()`
   %19 = apply %18(%17, self), $`()`
-  unwind
+  %dummy_unwindi0 = new $`@yield_once @convention(method) (@inout JSON) -> @yields @inout Optional<String>`
+  return %dummy_unwindi0
 }
 
 func @`SwiftyJSON.JSON.stringValue.getter : Swift.String` : $`@owned String` {
@@ -6799,9 +6901,11 @@ bb12(%71 : $`Optional<Bool>`):
   pointer_write %71 to %72
   %74 = function_ref @`closure #1 (Swift.Bool) -> Swift.String in SwiftyJSON.JSON.stringValue.getter : Swift.String`, $`@convention(thin) (Bool) -> @owned String`
   %78 = function_ref @`reabstraction thunk helper from @callee_guaranteed (@unowned Swift.Bool) -> (@owned Swift.String, @error @owned Swift.Error) to @escaping @callee_guaranteed (@in_guaranteed Swift.Bool) -> (@out Swift.String, @error @owned Swift.Error)`, $`@convention(thin) (@in_guaranteed Bool, @noescape @callee_guaranteed (Bool) -> (@owned String, @error Error)) -> (@out String, @error Error)`
-  %79 = new $`(@out String, @error Error)`
+  %79 = apply %78(%74), $`(@out String, @error Error)`
   %81 = function_ref @`Swift.Optional.map<A>((A) throws -> A1) throws -> A1?`, $`@convention(method) <τ_0_0><τ_1_0> (@noescape @callee_guaranteed @substituted <τ_0_0, τ_0_1> (@in_guaranteed τ_0_0) -> (@out τ_0_1, @error Error) for <τ_0_0, τ_1_0>, @in_guaranteed Optional<τ_0_0>) -> (@out Optional<τ_1_0>, @error Error)`
-  try_apply %81(%58, %79, %72), normal bb13, $`Optional<τ_1_0>`, error bb19, $`Error`
+  %81i0 = apply %81(%58, %79, %72), $`Optional<τ_1_0>`
+  %81i1 = new $`Builtin.Int1`
+  cond_br %81i1, true bb13(%81i0), false bb19(%81i0)
 
 bb13(%83 : $`()`):
   %87 = pointer_read %58, $`Optional<String>`
@@ -6865,7 +6969,9 @@ bb0($0 : $`Bool`):
 func @`reabstraction thunk helper from @callee_guaranteed (@unowned Swift.Bool) -> (@owned Swift.String, @error @owned Swift.Error) to @escaping @callee_guaranteed (@in_guaranteed Swift.Bool) -> (@out Swift.String, @error @owned Swift.Error)` : $`(@out String, @error Error)` {
 bb0(%0 : $`*String`, %1 : $`*Bool`, %2 : $`@noescape @callee_guaranteed (Bool) -> (@owned String, @error Error)`):
   %3 = pointer_read %1, $`Bool`
-  try_apply %2(%3), normal bb1, $`String`, error bb2, $`Error`
+  %2i0 = apply %2(%3), $`String`
+  %2i1 = new $`Builtin.Int1`
+  cond_br %2i1, true bb1(%2i0), false bb2(%2i0)
 
 bb1(%5 : $`@owned $String`):
   pointer_write %5 to %0
@@ -6873,7 +6979,7 @@ bb1(%5 : $`@owned $String`):
   return %7
 
 bb2(%9 : $`@owned $Error`):
-  throw %9
+  return %9
 }
 
 func [stub] @`Swift.Optional.map<A>((A) throws -> A1) throws -> A1?` : $`(@out Optional<τ_1_0>, @error Error)` {
@@ -6913,7 +7019,8 @@ bb2:
   %17 = pointer_read %3, $`String`
   %18 = function_ref @`SwiftyJSON.JSON.stringValue.setter : Swift.String`, $`@convention(method) (@owned String, @inout JSON) -> ()`
   %19 = apply %18(%17, self), $`()`
-  unwind
+  %dummy_unwindi0 = new $`@yield_once @convention(method) (@inout JSON) -> @yields @inout String`
+  return %dummy_unwindi0
 }
 
 func @`SwiftyJSON.JSON.number.getter : __C.NSNumber?` : $`@owned Optional<NSNumber>` {
@@ -7049,7 +7156,8 @@ bb2:
   %17 = pointer_read %3, $`Optional<NSNumber>`
   %18 = function_ref @`SwiftyJSON.JSON.number.setter : __C.NSNumber?`, $`@convention(method) (@owned Optional<NSNumber>, @inout JSON) -> ()`
   %19 = apply %18(%17, self), $`()`
-  unwind
+  %dummy_unwindi0 = new $`@yield_once @convention(method) (@inout JSON) -> @yields @inout Optional<NSNumber>`
+  return %dummy_unwindi0
 }
 
 func @`SwiftyJSON.JSON.numberValue.getter : __C.NSNumber` : $`@owned NSNumber` {
@@ -7294,7 +7402,8 @@ bb2:
   %17 = pointer_read %3, $`NSNumber`
   %18 = function_ref @`SwiftyJSON.JSON.numberValue.setter : __C.NSNumber`, $`@convention(method) (@owned NSNumber, @inout JSON) -> ()`
   %19 = apply %18(%17, self), $`()`
-  unwind
+  %dummy_unwindi0 = new $`@yield_once @convention(method) (@inout JSON) -> @yields @inout NSNumber`
+  return %dummy_unwindi0
 }
 
 func @`SwiftyJSON.JSON.null.setter : __C.NSNull?` : $`()` {
@@ -7354,7 +7463,8 @@ bb2:
   %17 = pointer_read %3, $`Optional<NSNull>`
   %18 = function_ref @`SwiftyJSON.JSON.null.setter : __C.NSNull?`, $`@convention(method) (@owned Optional<NSNull>, @inout JSON) -> ()`
   %19 = apply %18(%17, self), $`()`
-  unwind
+  %dummy_unwindi0 = new $`@yield_once @convention(method) (@inout JSON) -> @yields @inout Optional<NSNull>`
+  return %dummy_unwindi0
 }
 
 func @`SwiftyJSON.JSON.exists() -> Swift.Bool` : $`Bool` {
@@ -7746,7 +7856,8 @@ bb2:
   pointer_write %3i0 to %15
   %17 = function_ref @`SwiftyJSON.JSON.url.setter : Foundation.URL?`, $`@convention(method) (@in Optional<URL>, @inout JSON) -> ()`
   %18 = apply %17(%15, self), $`()`
-  unwind
+  %dummy_unwindi0 = new $`@yield_once @convention(method) (@inout JSON) -> @yields @inout Optional<URL>`
+  return %dummy_unwindi0
 }
 
 func @`SwiftyJSON.JSON.double.getter : Swift.Double?` : $`Optional<Double>` {
@@ -7778,11 +7889,11 @@ func @`SwiftyJSON.JSON.double.setter : Swift.Double?` : $`()` {
 bb0(newValue : $`Optional<Double>`, self : $`*JSON`):
   switch_enum newValue, case "#Optional.some!enumelt" : bb1, case "#Optional.none!enumelt" : bb2
 
-bb1(newValue : $`Double`):
+bb1(%5 : $`Double`):
   %7 = new $`*Any`
   %8 = new $`@thick NSNumber.Type`
   %9 = function_ref @`__C.NSNumber.__allocating_init(value: Swift.Double) -> __C.NSNumber`, $`@convention(method) (Double, @thick NSNumber.Type) -> @owned NSNumber`
-  %10 = apply %9(newValue, %8), $`@owned NSNumber`
+  %10 = apply %9(%5, %8), $`@owned NSNumber`
   pointer_write %10 to %7
   %14 = function_ref @`SwiftyJSON.JSON.object.setter : Any`, $`@convention(method) (@in Any, @inout JSON) -> ()`
   %15 = apply %14(%7, self), $`()`
@@ -7823,7 +7934,8 @@ bb2:
   %17 = pointer_read %3, $`Optional<Double>`
   %18 = function_ref @`SwiftyJSON.JSON.double.setter : Swift.Double?`, $`@convention(method) (Optional<Double>, @inout JSON) -> ()`
   %19 = apply %18(%17, self), $`()`
-  unwind
+  %dummy_unwindi0 = new $`@yield_once @convention(method) (@inout JSON) -> @yields @inout Optional<Double>`
+  return %dummy_unwindi0
 }
 
 func @`SwiftyJSON.JSON.doubleValue.getter : Swift.Double` : $`Double` {
@@ -7868,7 +7980,8 @@ bb2:
   %17 = pointer_read %3, $`Double`
   %18 = function_ref @`SwiftyJSON.JSON.doubleValue.setter : Swift.Double`, $`@convention(method) (Double, @inout JSON) -> ()`
   %19 = apply %18(%17, self), $`()`
-  unwind
+  %dummy_unwindi0 = new $`@yield_once @convention(method) (@inout JSON) -> @yields @inout Double`
+  return %dummy_unwindi0
 }
 
 func @`SwiftyJSON.JSON.float.getter : Swift.Float?` : $`Optional<Float>` {
@@ -7900,11 +8013,11 @@ func @`SwiftyJSON.JSON.float.setter : Swift.Float?` : $`()` {
 bb0(newValue : $`Optional<Float>`, self : $`*JSON`):
   switch_enum newValue, case "#Optional.some!enumelt" : bb1, case "#Optional.none!enumelt" : bb2
 
-bb1(newValue : $`Float`):
+bb1(%5 : $`Float`):
   %7 = new $`*Any`
   %8 = new $`@thick NSNumber.Type`
   %9 = function_ref @`__C.NSNumber.__allocating_init(value: Swift.Float) -> __C.NSNumber`, $`@convention(method) (Float, @thick NSNumber.Type) -> @owned NSNumber`
-  %10 = apply %9(newValue, %8), $`@owned NSNumber`
+  %10 = apply %9(%5, %8), $`@owned NSNumber`
   pointer_write %10 to %7
   %14 = function_ref @`SwiftyJSON.JSON.object.setter : Any`, $`@convention(method) (@in Any, @inout JSON) -> ()`
   %15 = apply %14(%7, self), $`()`
@@ -7960,7 +8073,8 @@ bb2:
   %17 = pointer_read %3, $`Optional<Float>`
   %18 = function_ref @`SwiftyJSON.JSON.float.setter : Swift.Float?`, $`@convention(method) (Optional<Float>, @inout JSON) -> ()`
   %19 = apply %18(%17, self), $`()`
-  unwind
+  %dummy_unwindi0 = new $`@yield_once @convention(method) (@inout JSON) -> @yields @inout Optional<Float>`
+  return %dummy_unwindi0
 }
 
 func @`SwiftyJSON.JSON.floatValue.getter : Swift.Float` : $`Float` {
@@ -8005,7 +8119,8 @@ bb2:
   %17 = pointer_read %3, $`Float`
   %18 = function_ref @`SwiftyJSON.JSON.floatValue.setter : Swift.Float`, $`@convention(method) (Float, @inout JSON) -> ()`
   %19 = apply %18(%17, self), $`()`
-  unwind
+  %dummy_unwindi0 = new $`@yield_once @convention(method) (@inout JSON) -> @yields @inout Float`
+  return %dummy_unwindi0
 }
 
 func @`SwiftyJSON.JSON.int.getter : Swift.Int?` : $`Optional<Int>` {
@@ -8037,11 +8152,11 @@ func @`SwiftyJSON.JSON.int.setter : Swift.Int?` : $`()` {
 bb0(newValue : $`Optional<Int>`, self : $`*JSON`):
   switch_enum newValue, case "#Optional.some!enumelt" : bb1, case "#Optional.none!enumelt" : bb2
 
-bb1(newValue : $`Int`):
+bb1(%5 : $`Int`):
   %7 = new $`*Any`
   %8 = new $`@thick NSNumber.Type`
   %9 = function_ref @`__C.NSNumber.__allocating_init(value: Swift.Int) -> __C.NSNumber`, $`@convention(method) (Int, @thick NSNumber.Type) -> @owned NSNumber`
-  %10 = apply %9(newValue, %8), $`@owned NSNumber`
+  %10 = apply %9(%5, %8), $`@owned NSNumber`
   pointer_write %10 to %7
   %14 = function_ref @`SwiftyJSON.JSON.object.setter : Any`, $`@convention(method) (@in Any, @inout JSON) -> ()`
   %15 = apply %14(%7, self), $`()`
@@ -8082,7 +8197,8 @@ bb2:
   %17 = pointer_read %3, $`Optional<Int>`
   %18 = function_ref @`SwiftyJSON.JSON.int.setter : Swift.Int?`, $`@convention(method) (Optional<Int>, @inout JSON) -> ()`
   %19 = apply %18(%17, self), $`()`
-  unwind
+  %dummy_unwindi0 = new $`@yield_once @convention(method) (@inout JSON) -> @yields @inout Optional<Int>`
+  return %dummy_unwindi0
 }
 
 func @`SwiftyJSON.JSON.intValue.getter : Swift.Int` : $`Int` {
@@ -8127,7 +8243,8 @@ bb2:
   %17 = pointer_read %3, $`Int`
   %18 = function_ref @`SwiftyJSON.JSON.intValue.setter : Swift.Int`, $`@convention(method) (Int, @inout JSON) -> ()`
   %19 = apply %18(%17, self), $`()`
-  unwind
+  %dummy_unwindi0 = new $`@yield_once @convention(method) (@inout JSON) -> @yields @inout Int`
+  return %dummy_unwindi0
 }
 
 func @`SwiftyJSON.JSON.uInt.getter : Swift.UInt?` : $`Optional<UInt>` {
@@ -8159,11 +8276,11 @@ func @`SwiftyJSON.JSON.uInt.setter : Swift.UInt?` : $`()` {
 bb0(newValue : $`Optional<UInt>`, self : $`*JSON`):
   switch_enum newValue, case "#Optional.some!enumelt" : bb1, case "#Optional.none!enumelt" : bb2
 
-bb1(newValue : $`UInt`):
+bb1(%5 : $`UInt`):
   %7 = new $`*Any`
   %8 = new $`@thick NSNumber.Type`
   %9 = function_ref @`__C.NSNumber.__allocating_init(value: Swift.UInt) -> __C.NSNumber`, $`@convention(method) (UInt, @thick NSNumber.Type) -> @owned NSNumber`
-  %10 = apply %9(newValue, %8), $`@owned NSNumber`
+  %10 = apply %9(%5, %8), $`@owned NSNumber`
   pointer_write %10 to %7
   %14 = function_ref @`SwiftyJSON.JSON.object.setter : Any`, $`@convention(method) (@in Any, @inout JSON) -> ()`
   %15 = apply %14(%7, self), $`()`
@@ -8219,7 +8336,8 @@ bb2:
   %17 = pointer_read %3, $`Optional<UInt>`
   %18 = function_ref @`SwiftyJSON.JSON.uInt.setter : Swift.UInt?`, $`@convention(method) (Optional<UInt>, @inout JSON) -> ()`
   %19 = apply %18(%17, self), $`()`
-  unwind
+  %dummy_unwindi0 = new $`@yield_once @convention(method) (@inout JSON) -> @yields @inout Optional<UInt>`
+  return %dummy_unwindi0
 }
 
 func @`SwiftyJSON.JSON.uIntValue.getter : Swift.UInt` : $`UInt` {
@@ -8264,7 +8382,8 @@ bb2:
   %17 = pointer_read %3, $`UInt`
   %18 = function_ref @`SwiftyJSON.JSON.uIntValue.setter : Swift.UInt`, $`@convention(method) (UInt, @inout JSON) -> ()`
   %19 = apply %18(%17, self), $`()`
-  unwind
+  %dummy_unwindi0 = new $`@yield_once @convention(method) (@inout JSON) -> @yields @inout UInt`
+  return %dummy_unwindi0
 }
 
 func @`SwiftyJSON.JSON.int8.getter : Swift.Int8?` : $`Optional<Int8>` {
@@ -8296,14 +8415,14 @@ func @`SwiftyJSON.JSON.int8.setter : Swift.Int8?` : $`()` {
 bb0(newValue : $`Optional<Int8>`, self : $`*JSON`):
   switch_enum newValue, case "#Optional.some!enumelt" : bb1, case "#Optional.none!enumelt" : bb2
 
-bb1(newValue : $`Int8`):
+bb1(%5 : $`Int8`):
   %7 = new $`*Any`
   %8 = new $`@thick NSNumber.Type`
   %9 = new $`*Int`
   %10 = new $`@thin Int.Type`
   %11 = new $`@thick Int.Type`
   %12 = new $`*Int8`
-  pointer_write newValue to %12
+  pointer_write %5 to %12
   %14 = function_ref @`(extension in Swift):Swift.SignedInteger< where A: Swift.FixedWidthInteger>.init<A where A1: Swift.BinaryInteger>(A1) -> A`, $`@convention(method) <τ_0_0 where τ_0_0 : FixedWidthInteger, τ_0_0 : SignedInteger><τ_1_0 where τ_1_0 : BinaryInteger> (@in τ_1_0, @thick τ_0_0.Type) -> @out τ_0_0`
   %15 = apply %14(%9, %12, %11), $`@out τ_0_0`
   %17 = pointer_read %9, $`Int`
@@ -8355,7 +8474,8 @@ bb2:
   %17 = pointer_read %3, $`Optional<Int8>`
   %18 = function_ref @`SwiftyJSON.JSON.int8.setter : Swift.Int8?`, $`@convention(method) (Optional<Int8>, @inout JSON) -> ()`
   %19 = apply %18(%17, self), $`()`
-  unwind
+  %dummy_unwindi0 = new $`@yield_once @convention(method) (@inout JSON) -> @yields @inout Optional<Int8>`
+  return %dummy_unwindi0
 }
 
 func @`SwiftyJSON.JSON.int8Value.getter : Swift.Int8` : $`Int8` {
@@ -8408,7 +8528,8 @@ bb2:
   %17 = pointer_read %3, $`Int8`
   %18 = function_ref @`SwiftyJSON.JSON.int8Value.setter : Swift.Int8`, $`@convention(method) (Int8, @inout JSON) -> ()`
   %19 = apply %18(%17, self), $`()`
-  unwind
+  %dummy_unwindi0 = new $`@yield_once @convention(method) (@inout JSON) -> @yields @inout Int8`
+  return %dummy_unwindi0
 }
 
 func @`SwiftyJSON.JSON.uInt8.getter : Swift.UInt8?` : $`Optional<UInt8>` {
@@ -8440,11 +8561,11 @@ func @`SwiftyJSON.JSON.uInt8.setter : Swift.UInt8?` : $`()` {
 bb0(newValue : $`Optional<UInt8>`, self : $`*JSON`):
   switch_enum newValue, case "#Optional.some!enumelt" : bb1, case "#Optional.none!enumelt" : bb2
 
-bb1(newValue : $`UInt8`):
+bb1(%5 : $`UInt8`):
   %7 = new $`*Any`
   %8 = new $`@thick NSNumber.Type`
   %9 = function_ref @`__C.NSNumber.__allocating_init(value: Swift.UInt8) -> __C.NSNumber`, $`@convention(method) (UInt8, @thick NSNumber.Type) -> @owned NSNumber`
-  %10 = apply %9(newValue, %8), $`@owned NSNumber`
+  %10 = apply %9(%5, %8), $`@owned NSNumber`
   pointer_write %10 to %7
   %14 = function_ref @`SwiftyJSON.JSON.object.setter : Any`, $`@convention(method) (@in Any, @inout JSON) -> ()`
   %15 = apply %14(%7, self), $`()`
@@ -8500,7 +8621,8 @@ bb2:
   %17 = pointer_read %3, $`Optional<UInt8>`
   %18 = function_ref @`SwiftyJSON.JSON.uInt8.setter : Swift.UInt8?`, $`@convention(method) (Optional<UInt8>, @inout JSON) -> ()`
   %19 = apply %18(%17, self), $`()`
-  unwind
+  %dummy_unwindi0 = new $`@yield_once @convention(method) (@inout JSON) -> @yields @inout Optional<UInt8>`
+  return %dummy_unwindi0
 }
 
 func @`SwiftyJSON.JSON.uInt8Value.getter : Swift.UInt8` : $`UInt8` {
@@ -8545,7 +8667,8 @@ bb2:
   %17 = pointer_read %3, $`UInt8`
   %18 = function_ref @`SwiftyJSON.JSON.uInt8Value.setter : Swift.UInt8`, $`@convention(method) (UInt8, @inout JSON) -> ()`
   %19 = apply %18(%17, self), $`()`
-  unwind
+  %dummy_unwindi0 = new $`@yield_once @convention(method) (@inout JSON) -> @yields @inout UInt8`
+  return %dummy_unwindi0
 }
 
 func @`SwiftyJSON.JSON.int16.getter : Swift.Int16?` : $`Optional<Int16>` {
@@ -8577,11 +8700,11 @@ func @`SwiftyJSON.JSON.int16.setter : Swift.Int16?` : $`()` {
 bb0(newValue : $`Optional<Int16>`, self : $`*JSON`):
   switch_enum newValue, case "#Optional.some!enumelt" : bb1, case "#Optional.none!enumelt" : bb2
 
-bb1(newValue : $`Int16`):
+bb1(%5 : $`Int16`):
   %7 = new $`*Any`
   %8 = new $`@thick NSNumber.Type`
   %9 = function_ref @`__C.NSNumber.__allocating_init(value: Swift.Int16) -> __C.NSNumber`, $`@convention(method) (Int16, @thick NSNumber.Type) -> @owned NSNumber`
-  %10 = apply %9(newValue, %8), $`@owned NSNumber`
+  %10 = apply %9(%5, %8), $`@owned NSNumber`
   pointer_write %10 to %7
   %14 = function_ref @`SwiftyJSON.JSON.object.setter : Any`, $`@convention(method) (@in Any, @inout JSON) -> ()`
   %15 = apply %14(%7, self), $`()`
@@ -8637,7 +8760,8 @@ bb2:
   %17 = pointer_read %3, $`Optional<Int16>`
   %18 = function_ref @`SwiftyJSON.JSON.int16.setter : Swift.Int16?`, $`@convention(method) (Optional<Int16>, @inout JSON) -> ()`
   %19 = apply %18(%17, self), $`()`
-  unwind
+  %dummy_unwindi0 = new $`@yield_once @convention(method) (@inout JSON) -> @yields @inout Optional<Int16>`
+  return %dummy_unwindi0
 }
 
 func @`SwiftyJSON.JSON.int16Value.getter : Swift.Int16` : $`Int16` {
@@ -8682,7 +8806,8 @@ bb2:
   %17 = pointer_read %3, $`Int16`
   %18 = function_ref @`SwiftyJSON.JSON.int16Value.setter : Swift.Int16`, $`@convention(method) (Int16, @inout JSON) -> ()`
   %19 = apply %18(%17, self), $`()`
-  unwind
+  %dummy_unwindi0 = new $`@yield_once @convention(method) (@inout JSON) -> @yields @inout Int16`
+  return %dummy_unwindi0
 }
 
 func @`SwiftyJSON.JSON.uInt16.getter : Swift.UInt16?` : $`Optional<UInt16>` {
@@ -8714,11 +8839,11 @@ func @`SwiftyJSON.JSON.uInt16.setter : Swift.UInt16?` : $`()` {
 bb0(newValue : $`Optional<UInt16>`, self : $`*JSON`):
   switch_enum newValue, case "#Optional.some!enumelt" : bb1, case "#Optional.none!enumelt" : bb2
 
-bb1(newValue : $`UInt16`):
+bb1(%5 : $`UInt16`):
   %7 = new $`*Any`
   %8 = new $`@thick NSNumber.Type`
   %9 = function_ref @`__C.NSNumber.__allocating_init(value: Swift.UInt16) -> __C.NSNumber`, $`@convention(method) (UInt16, @thick NSNumber.Type) -> @owned NSNumber`
-  %10 = apply %9(newValue, %8), $`@owned NSNumber`
+  %10 = apply %9(%5, %8), $`@owned NSNumber`
   pointer_write %10 to %7
   %14 = function_ref @`SwiftyJSON.JSON.object.setter : Any`, $`@convention(method) (@in Any, @inout JSON) -> ()`
   %15 = apply %14(%7, self), $`()`
@@ -8774,7 +8899,8 @@ bb2:
   %17 = pointer_read %3, $`Optional<UInt16>`
   %18 = function_ref @`SwiftyJSON.JSON.uInt16.setter : Swift.UInt16?`, $`@convention(method) (Optional<UInt16>, @inout JSON) -> ()`
   %19 = apply %18(%17, self), $`()`
-  unwind
+  %dummy_unwindi0 = new $`@yield_once @convention(method) (@inout JSON) -> @yields @inout Optional<UInt16>`
+  return %dummy_unwindi0
 }
 
 func @`SwiftyJSON.JSON.uInt16Value.getter : Swift.UInt16` : $`UInt16` {
@@ -8819,7 +8945,8 @@ bb2:
   %17 = pointer_read %3, $`UInt16`
   %18 = function_ref @`SwiftyJSON.JSON.uInt16Value.setter : Swift.UInt16`, $`@convention(method) (UInt16, @inout JSON) -> ()`
   %19 = apply %18(%17, self), $`()`
-  unwind
+  %dummy_unwindi0 = new $`@yield_once @convention(method) (@inout JSON) -> @yields @inout UInt16`
+  return %dummy_unwindi0
 }
 
 func @`SwiftyJSON.JSON.int32.getter : Swift.Int32?` : $`Optional<Int32>` {
@@ -8851,11 +8978,11 @@ func @`SwiftyJSON.JSON.int32.setter : Swift.Int32?` : $`()` {
 bb0(newValue : $`Optional<Int32>`, self : $`*JSON`):
   switch_enum newValue, case "#Optional.some!enumelt" : bb1, case "#Optional.none!enumelt" : bb2
 
-bb1(newValue : $`Int32`):
+bb1(%5 : $`Int32`):
   %7 = new $`*Any`
   %8 = new $`@thick NSNumber.Type`
   %9 = function_ref @`__C.NSNumber.__allocating_init(value: Swift.Int32) -> __C.NSNumber`, $`@convention(method) (Int32, @thick NSNumber.Type) -> @owned NSNumber`
-  %10 = apply %9(newValue, %8), $`@owned NSNumber`
+  %10 = apply %9(%5, %8), $`@owned NSNumber`
   pointer_write %10 to %7
   %14 = function_ref @`SwiftyJSON.JSON.object.setter : Any`, $`@convention(method) (@in Any, @inout JSON) -> ()`
   %15 = apply %14(%7, self), $`()`
@@ -8911,7 +9038,8 @@ bb2:
   %17 = pointer_read %3, $`Optional<Int32>`
   %18 = function_ref @`SwiftyJSON.JSON.int32.setter : Swift.Int32?`, $`@convention(method) (Optional<Int32>, @inout JSON) -> ()`
   %19 = apply %18(%17, self), $`()`
-  unwind
+  %dummy_unwindi0 = new $`@yield_once @convention(method) (@inout JSON) -> @yields @inout Optional<Int32>`
+  return %dummy_unwindi0
 }
 
 func @`SwiftyJSON.JSON.int32Value.getter : Swift.Int32` : $`Int32` {
@@ -8956,7 +9084,8 @@ bb2:
   %17 = pointer_read %3, $`Int32`
   %18 = function_ref @`SwiftyJSON.JSON.int32Value.setter : Swift.Int32`, $`@convention(method) (Int32, @inout JSON) -> ()`
   %19 = apply %18(%17, self), $`()`
-  unwind
+  %dummy_unwindi0 = new $`@yield_once @convention(method) (@inout JSON) -> @yields @inout Int32`
+  return %dummy_unwindi0
 }
 
 func @`SwiftyJSON.JSON.uInt32.getter : Swift.UInt32?` : $`Optional<UInt32>` {
@@ -8988,11 +9117,11 @@ func @`SwiftyJSON.JSON.uInt32.setter : Swift.UInt32?` : $`()` {
 bb0(newValue : $`Optional<UInt32>`, self : $`*JSON`):
   switch_enum newValue, case "#Optional.some!enumelt" : bb1, case "#Optional.none!enumelt" : bb2
 
-bb1(newValue : $`UInt32`):
+bb1(%5 : $`UInt32`):
   %7 = new $`*Any`
   %8 = new $`@thick NSNumber.Type`
   %9 = function_ref @`__C.NSNumber.__allocating_init(value: Swift.UInt32) -> __C.NSNumber`, $`@convention(method) (UInt32, @thick NSNumber.Type) -> @owned NSNumber`
-  %10 = apply %9(newValue, %8), $`@owned NSNumber`
+  %10 = apply %9(%5, %8), $`@owned NSNumber`
   pointer_write %10 to %7
   %14 = function_ref @`SwiftyJSON.JSON.object.setter : Any`, $`@convention(method) (@in Any, @inout JSON) -> ()`
   %15 = apply %14(%7, self), $`()`
@@ -9048,7 +9177,8 @@ bb2:
   %17 = pointer_read %3, $`Optional<UInt32>`
   %18 = function_ref @`SwiftyJSON.JSON.uInt32.setter : Swift.UInt32?`, $`@convention(method) (Optional<UInt32>, @inout JSON) -> ()`
   %19 = apply %18(%17, self), $`()`
-  unwind
+  %dummy_unwindi0 = new $`@yield_once @convention(method) (@inout JSON) -> @yields @inout Optional<UInt32>`
+  return %dummy_unwindi0
 }
 
 func @`SwiftyJSON.JSON.uInt32Value.getter : Swift.UInt32` : $`UInt32` {
@@ -9093,7 +9223,8 @@ bb2:
   %17 = pointer_read %3, $`UInt32`
   %18 = function_ref @`SwiftyJSON.JSON.uInt32Value.setter : Swift.UInt32`, $`@convention(method) (UInt32, @inout JSON) -> ()`
   %19 = apply %18(%17, self), $`()`
-  unwind
+  %dummy_unwindi0 = new $`@yield_once @convention(method) (@inout JSON) -> @yields @inout UInt32`
+  return %dummy_unwindi0
 }
 
 func @`SwiftyJSON.JSON.int64.getter : Swift.Int64?` : $`Optional<Int64>` {
@@ -9125,11 +9256,11 @@ func @`SwiftyJSON.JSON.int64.setter : Swift.Int64?` : $`()` {
 bb0(newValue : $`Optional<Int64>`, self : $`*JSON`):
   switch_enum newValue, case "#Optional.some!enumelt" : bb1, case "#Optional.none!enumelt" : bb2
 
-bb1(newValue : $`Int64`):
+bb1(%5 : $`Int64`):
   %7 = new $`*Any`
   %8 = new $`@thick NSNumber.Type`
   %9 = function_ref @`__C.NSNumber.__allocating_init(value: Swift.Int64) -> __C.NSNumber`, $`@convention(method) (Int64, @thick NSNumber.Type) -> @owned NSNumber`
-  %10 = apply %9(newValue, %8), $`@owned NSNumber`
+  %10 = apply %9(%5, %8), $`@owned NSNumber`
   pointer_write %10 to %7
   %14 = function_ref @`SwiftyJSON.JSON.object.setter : Any`, $`@convention(method) (@in Any, @inout JSON) -> ()`
   %15 = apply %14(%7, self), $`()`
@@ -9185,7 +9316,8 @@ bb2:
   %17 = pointer_read %3, $`Optional<Int64>`
   %18 = function_ref @`SwiftyJSON.JSON.int64.setter : Swift.Int64?`, $`@convention(method) (Optional<Int64>, @inout JSON) -> ()`
   %19 = apply %18(%17, self), $`()`
-  unwind
+  %dummy_unwindi0 = new $`@yield_once @convention(method) (@inout JSON) -> @yields @inout Optional<Int64>`
+  return %dummy_unwindi0
 }
 
 func @`SwiftyJSON.JSON.int64Value.getter : Swift.Int64` : $`Int64` {
@@ -9230,7 +9362,8 @@ bb2:
   %17 = pointer_read %3, $`Int64`
   %18 = function_ref @`SwiftyJSON.JSON.int64Value.setter : Swift.Int64`, $`@convention(method) (Int64, @inout JSON) -> ()`
   %19 = apply %18(%17, self), $`()`
-  unwind
+  %dummy_unwindi0 = new $`@yield_once @convention(method) (@inout JSON) -> @yields @inout Int64`
+  return %dummy_unwindi0
 }
 
 func @`SwiftyJSON.JSON.uInt64.getter : Swift.UInt64?` : $`Optional<UInt64>` {
@@ -9262,11 +9395,11 @@ func @`SwiftyJSON.JSON.uInt64.setter : Swift.UInt64?` : $`()` {
 bb0(newValue : $`Optional<UInt64>`, self : $`*JSON`):
   switch_enum newValue, case "#Optional.some!enumelt" : bb1, case "#Optional.none!enumelt" : bb2
 
-bb1(newValue : $`UInt64`):
+bb1(%5 : $`UInt64`):
   %7 = new $`*Any`
   %8 = new $`@thick NSNumber.Type`
   %9 = function_ref @`__C.NSNumber.__allocating_init(value: Swift.UInt64) -> __C.NSNumber`, $`@convention(method) (UInt64, @thick NSNumber.Type) -> @owned NSNumber`
-  %10 = apply %9(newValue, %8), $`@owned NSNumber`
+  %10 = apply %9(%5, %8), $`@owned NSNumber`
   pointer_write %10 to %7
   %14 = function_ref @`SwiftyJSON.JSON.object.setter : Any`, $`@convention(method) (@in Any, @inout JSON) -> ()`
   %15 = apply %14(%7, self), $`()`
@@ -9322,7 +9455,8 @@ bb2:
   %17 = pointer_read %3, $`Optional<UInt64>`
   %18 = function_ref @`SwiftyJSON.JSON.uInt64.setter : Swift.UInt64?`, $`@convention(method) (Optional<UInt64>, @inout JSON) -> ()`
   %19 = apply %18(%17, self), $`()`
-  unwind
+  %dummy_unwindi0 = new $`@yield_once @convention(method) (@inout JSON) -> @yields @inout Optional<UInt64>`
+  return %dummy_unwindi0
 }
 
 func @`SwiftyJSON.JSON.uInt64Value.getter : Swift.UInt64` : $`UInt64` {
@@ -9367,7 +9501,8 @@ bb2:
   %17 = pointer_read %3, $`UInt64`
   %18 = function_ref @`SwiftyJSON.JSON.uInt64Value.setter : Swift.UInt64`, $`@convention(method) (UInt64, @inout JSON) -> ()`
   %19 = apply %18(%17, self), $`()`
-  unwind
+  %dummy_unwindi0 = new $`@yield_once @convention(method) (@inout JSON) -> @yields @inout UInt64`
+  return %dummy_unwindi0
 }
 
 func @`protocol witness for static Swift.Comparable.< infix(A, A) -> Swift.Bool in conformance SwiftyJSON.JSON : Swift.Comparable in SwiftyJSON` : $`Bool` {
@@ -10210,7 +10345,7 @@ bb0(%0 : $`@guaranteed String`, %1 : $`@guaranteed String`, %2 : $`@thin String.
 
 func @`globalinit_33_4625CC38AABF536BB76490A35D7233C9_func0` : $`()` {
 bb0:
-  %1 = singleton_read `SwiftyJSON.(trueNumber in _4625CC38AABF536BB76490A35D7233C9) : __C.NSNumber` from Globals_playground.sil, $`*NSNumber`
+  %1 = singleton_read `SwiftyJSON.(trueNumber in _4625CC38AABF536BB76490A35D7233C9) : __C.NSNumber` from Globals_SwiftyJSON.Pods.sil, $`*NSNumber`
   %2 = new $`@thick NSNumber.Type`
   %3 = literal [int] -1, $`Builtin.Int1`
   %4 = new $`Bool`
@@ -10238,17 +10373,17 @@ bb0(%0 : $`Bool`, %1 : $`@owned $NSNumber`):
 
 func @`SwiftyJSON.(trueNumber in _4625CC38AABF536BB76490A35D7233C9).unsafeMutableAddressor : __C.NSNumber` : $`Builtin.RawPointer` {
 bb0:
-  %0 = singleton_read `globalinit_33_4625CC38AABF536BB76490A35D7233C9_token0` from Globals_playground.sil, $`*Builtin.Word`
+  %0 = singleton_read `globalinit_33_4625CC38AABF536BB76490A35D7233C9_token0` from Globals_SwiftyJSON.Pods.sil, $`*Builtin.Word`
   %2 = function_ref @`globalinit_33_4625CC38AABF536BB76490A35D7233C9_func0`, $`@convention(c) () -> ()`
   %3i0 = builtin_ref @`once`, $`Any`
   %3 = apply %3i0(%0, %2), $`()`
-  %4 = singleton_read `SwiftyJSON.(trueNumber in _4625CC38AABF536BB76490A35D7233C9) : __C.NSNumber` from Globals_playground.sil, $`*NSNumber`
+  %4 = singleton_read `SwiftyJSON.(trueNumber in _4625CC38AABF536BB76490A35D7233C9) : __C.NSNumber` from Globals_SwiftyJSON.Pods.sil, $`*NSNumber`
   return %4
 }
 
 func @`globalinit_33_4625CC38AABF536BB76490A35D7233C9_func1` : $`()` {
 bb0:
-  %1 = singleton_read `SwiftyJSON.(falseNumber in _4625CC38AABF536BB76490A35D7233C9) : __C.NSNumber` from Globals_playground.sil, $`*NSNumber`
+  %1 = singleton_read `SwiftyJSON.(falseNumber in _4625CC38AABF536BB76490A35D7233C9) : __C.NSNumber` from Globals_SwiftyJSON.Pods.sil, $`*NSNumber`
   %2 = new $`@thick NSNumber.Type`
   %3 = literal [int] 0, $`Builtin.Int1`
   %4 = new $`Bool`
@@ -10261,17 +10396,17 @@ bb0:
 
 func @`SwiftyJSON.(falseNumber in _4625CC38AABF536BB76490A35D7233C9).unsafeMutableAddressor : __C.NSNumber` : $`Builtin.RawPointer` {
 bb0:
-  %0 = singleton_read `globalinit_33_4625CC38AABF536BB76490A35D7233C9_token1` from Globals_playground.sil, $`*Builtin.Word`
+  %0 = singleton_read `globalinit_33_4625CC38AABF536BB76490A35D7233C9_token1` from Globals_SwiftyJSON.Pods.sil, $`*Builtin.Word`
   %2 = function_ref @`globalinit_33_4625CC38AABF536BB76490A35D7233C9_func1`, $`@convention(c) () -> ()`
   %3i0 = builtin_ref @`once`, $`Any`
   %3 = apply %3i0(%0, %2), $`()`
-  %4 = singleton_read `SwiftyJSON.(falseNumber in _4625CC38AABF536BB76490A35D7233C9) : __C.NSNumber` from Globals_playground.sil, $`*NSNumber`
+  %4 = singleton_read `SwiftyJSON.(falseNumber in _4625CC38AABF536BB76490A35D7233C9) : __C.NSNumber` from Globals_SwiftyJSON.Pods.sil, $`*NSNumber`
   return %4
 }
 
 func @`globalinit_33_4625CC38AABF536BB76490A35D7233C9_func2` : $`()` {
 bb0:
-  %1 = singleton_read `SwiftyJSON.(trueObjCType in _4625CC38AABF536BB76490A35D7233C9) : Swift.String` from Globals_playground.sil, $`*String`
+  %1 = singleton_read `SwiftyJSON.(trueObjCType in _4625CC38AABF536BB76490A35D7233C9) : Swift.String` from Globals_SwiftyJSON.Pods.sil, $`*String`
   %2 = new $`@thin String.Type`
   %3 = function_ref @`SwiftyJSON.(trueNumber in _4625CC38AABF536BB76490A35D7233C9).unsafeMutableAddressor : __C.NSNumber`, $`@convention(thin) () -> Builtin.RawPointer`
   %4 = apply %3(), $`Builtin.RawPointer`
@@ -10294,17 +10429,17 @@ bb0(%0 : $`UnsafePointer<Int8>`, %1 : $`@thin String.Type`):
 
 func @`SwiftyJSON.(trueObjCType in _4625CC38AABF536BB76490A35D7233C9).unsafeMutableAddressor : Swift.String` : $`Builtin.RawPointer` {
 bb0:
-  %0 = singleton_read `globalinit_33_4625CC38AABF536BB76490A35D7233C9_token2` from Globals_playground.sil, $`*Builtin.Word`
+  %0 = singleton_read `globalinit_33_4625CC38AABF536BB76490A35D7233C9_token2` from Globals_SwiftyJSON.Pods.sil, $`*Builtin.Word`
   %2 = function_ref @`globalinit_33_4625CC38AABF536BB76490A35D7233C9_func2`, $`@convention(c) () -> ()`
   %3i0 = builtin_ref @`once`, $`Any`
   %3 = apply %3i0(%0, %2), $`()`
-  %4 = singleton_read `SwiftyJSON.(trueObjCType in _4625CC38AABF536BB76490A35D7233C9) : Swift.String` from Globals_playground.sil, $`*String`
+  %4 = singleton_read `SwiftyJSON.(trueObjCType in _4625CC38AABF536BB76490A35D7233C9) : Swift.String` from Globals_SwiftyJSON.Pods.sil, $`*String`
   return %4
 }
 
 func @`globalinit_33_4625CC38AABF536BB76490A35D7233C9_func3` : $`()` {
 bb0:
-  %1 = singleton_read `SwiftyJSON.(falseObjCType in _4625CC38AABF536BB76490A35D7233C9) : Swift.String` from Globals_playground.sil, $`*String`
+  %1 = singleton_read `SwiftyJSON.(falseObjCType in _4625CC38AABF536BB76490A35D7233C9) : Swift.String` from Globals_SwiftyJSON.Pods.sil, $`*String`
   %2 = new $`@thin String.Type`
   %3 = function_ref @`SwiftyJSON.(falseNumber in _4625CC38AABF536BB76490A35D7233C9).unsafeMutableAddressor : __C.NSNumber`, $`@convention(thin) () -> Builtin.RawPointer`
   %4 = apply %3(), $`Builtin.RawPointer`
@@ -10321,11 +10456,11 @@ bb0:
 
 func @`SwiftyJSON.(falseObjCType in _4625CC38AABF536BB76490A35D7233C9).unsafeMutableAddressor : Swift.String` : $`Builtin.RawPointer` {
 bb0:
-  %0 = singleton_read `globalinit_33_4625CC38AABF536BB76490A35D7233C9_token3` from Globals_playground.sil, $`*Builtin.Word`
+  %0 = singleton_read `globalinit_33_4625CC38AABF536BB76490A35D7233C9_token3` from Globals_SwiftyJSON.Pods.sil, $`*Builtin.Word`
   %2 = function_ref @`globalinit_33_4625CC38AABF536BB76490A35D7233C9_func3`, $`@convention(c) () -> ()`
   %3i0 = builtin_ref @`once`, $`Any`
   %3 = apply %3i0(%0, %2), $`()`
-  %4 = singleton_read `SwiftyJSON.(falseObjCType in _4625CC38AABF536BB76490A35D7233C9) : Swift.String` from Globals_playground.sil, $`*String`
+  %4 = singleton_read `SwiftyJSON.(falseObjCType in _4625CC38AABF536BB76490A35D7233C9) : Swift.String` from Globals_SwiftyJSON.Pods.sil, $`*String`
   return %4
 }
 
@@ -10335,10 +10470,12 @@ bb0(%0 : $`Bool`, %1 : $`@noescape @callee_guaranteed () -> (Bool, @error Error)
   cond_br %3, true bb4, false bb1
 
 bb1:
-  try_apply %1(), normal bb3, $`Bool`, error bb2, $`Error`
+  %1i0 = apply %1(), $`Bool`
+  %1i1 = new $`Builtin.Int1`
+  cond_br %1i1, true bb3(%1i0), false bb2(%1i0)
 
 bb2(%6 : $`@owned $Error`):
-  throw %6
+  return %6
 
 bb3(%8 : $`Bool`):
   br bb5(%8)
@@ -10625,7 +10762,9 @@ bb0(decoder : $`*Decoder`, %1 : $`@thin JSON.Type`):
   %9i0 = field_read [alias %9] %8, data, $`Any`
   pointer_write %9i0 to %9
   %11 = dynamic_ref @`#Decoder.singleValueContainer`, $`@convention(witness_method: Decoder) <τ_0_0 where τ_0_0 : Decoder> (@in_guaranteed τ_0_0) -> (@out SingleValueDecodingContainer, @error Error)`
-  try_apply %11(%9, decoder), normal bb1, $`SingleValueDecodingContainer`, error bb77, $`Error`
+  %11i0 = apply %11(%9, decoder), $`SingleValueDecodingContainer`
+  %11i1 = new $`Builtin.Int1`
+  cond_br %11i1, true bb1(%11i0), false bb77(%11i0)
 
 bb1(%13 : $`()`):
   %8i0 = literal [string] "#Optional.some!enumelt", $`Builtin.RawPointer`
@@ -10718,7 +10857,9 @@ bb14(%79 : $`@thick Bool.Type`):
   %83i0 = field_read [alias %83] %82, data, $`Any`
   pointer_write %83i0 to %83
   %85 = dynamic_ref @`#SingleValueDecodingContainer.decode`, $`@convention(witness_method: SingleValueDecodingContainer) <τ_0_0 where τ_0_0 : SingleValueDecodingContainer> (@thin Bool.Type, @in_guaranteed τ_0_0) -> (Bool, @error Error)`
-  try_apply %85(boolType, %7), normal bb15, $`Bool`, error bb78, $`Error`
+  %85i0 = apply %85(boolType, %7), $`Bool`
+  %85i1 = new $`Builtin.Int1`
+  cond_br %85i1, true bb15(%85i0), false bb78(%85i0)
 
 bb15(%87 : $`Bool`):
   pointer_write %87 to %83
@@ -10742,7 +10883,9 @@ bb18(%99 : $`@thick Int.Type`):
   %103i0 = field_read [alias %103] %102, data, $`Any`
   pointer_write %103i0 to %103
   %105 = dynamic_ref @`#SingleValueDecodingContainer.decode`, $`@convention(witness_method: SingleValueDecodingContainer) <τ_0_0 where τ_0_0 : SingleValueDecodingContainer> (@thin Int.Type, @in_guaranteed τ_0_0) -> (Int, @error Error)`
-  try_apply %105(intType, %7), normal bb19, $`Int`, error bb79, $`Error`
+  %105i0 = apply %105(intType, %7), $`Int`
+  %105i1 = new $`Builtin.Int1`
+  cond_br %105i1, true bb19(%105i0), false bb79(%105i0)
 
 bb19(%107 : $`Int`):
   pointer_write %107 to %103
@@ -10766,7 +10909,9 @@ bb22(%119 : $`@thick Int8.Type`):
   %123i0 = field_read [alias %123] %122, data, $`Any`
   pointer_write %123i0 to %123
   %125 = dynamic_ref @`#SingleValueDecodingContainer.decode`, $`@convention(witness_method: SingleValueDecodingContainer) <τ_0_0 where τ_0_0 : SingleValueDecodingContainer> (@thin Int8.Type, @in_guaranteed τ_0_0) -> (Int8, @error Error)`
-  try_apply %125(int8Type, %7), normal bb23, $`Int8`, error bb80, $`Error`
+  %125i0 = apply %125(int8Type, %7), $`Int8`
+  %125i1 = new $`Builtin.Int1`
+  cond_br %125i1, true bb23(%125i0), false bb80(%125i0)
 
 bb23(%127 : $`Int8`):
   pointer_write %127 to %123
@@ -10790,7 +10935,9 @@ bb26(%139 : $`@thick Int32.Type`):
   %143i0 = field_read [alias %143] %142, data, $`Any`
   pointer_write %143i0 to %143
   %145 = dynamic_ref @`#SingleValueDecodingContainer.decode`, $`@convention(witness_method: SingleValueDecodingContainer) <τ_0_0 where τ_0_0 : SingleValueDecodingContainer> (@thin Int32.Type, @in_guaranteed τ_0_0) -> (Int32, @error Error)`
-  try_apply %145(int32Type, %7), normal bb27, $`Int32`, error bb81, $`Error`
+  %145i0 = apply %145(int32Type, %7), $`Int32`
+  %145i1 = new $`Builtin.Int1`
+  cond_br %145i1, true bb27(%145i0), false bb81(%145i0)
 
 bb27(%147 : $`Int32`):
   pointer_write %147 to %143
@@ -10814,7 +10961,9 @@ bb30(%159 : $`@thick Int64.Type`):
   %163i0 = field_read [alias %163] %162, data, $`Any`
   pointer_write %163i0 to %163
   %165 = dynamic_ref @`#SingleValueDecodingContainer.decode`, $`@convention(witness_method: SingleValueDecodingContainer) <τ_0_0 where τ_0_0 : SingleValueDecodingContainer> (@thin Int64.Type, @in_guaranteed τ_0_0) -> (Int64, @error Error)`
-  try_apply %165(int64Type, %7), normal bb31, $`Int64`, error bb82, $`Error`
+  %165i0 = apply %165(int64Type, %7), $`Int64`
+  %165i1 = new $`Builtin.Int1`
+  cond_br %165i1, true bb31(%165i0), false bb82(%165i0)
 
 bb31(%167 : $`Int64`):
   pointer_write %167 to %163
@@ -10838,7 +10987,9 @@ bb34(%179 : $`@thick UInt.Type`):
   %183i0 = field_read [alias %183] %182, data, $`Any`
   pointer_write %183i0 to %183
   %185 = dynamic_ref @`#SingleValueDecodingContainer.decode`, $`@convention(witness_method: SingleValueDecodingContainer) <τ_0_0 where τ_0_0 : SingleValueDecodingContainer> (@thin UInt.Type, @in_guaranteed τ_0_0) -> (UInt, @error Error)`
-  try_apply %185(uintType, %7), normal bb35, $`UInt`, error bb83, $`Error`
+  %185i0 = apply %185(uintType, %7), $`UInt`
+  %185i1 = new $`Builtin.Int1`
+  cond_br %185i1, true bb35(%185i0), false bb83(%185i0)
 
 bb35(%187 : $`UInt`):
   pointer_write %187 to %183
@@ -10862,7 +11013,9 @@ bb38(%199 : $`@thick UInt8.Type`):
   %203i0 = field_read [alias %203] %202, data, $`Any`
   pointer_write %203i0 to %203
   %205 = dynamic_ref @`#SingleValueDecodingContainer.decode`, $`@convention(witness_method: SingleValueDecodingContainer) <τ_0_0 where τ_0_0 : SingleValueDecodingContainer> (@thin UInt8.Type, @in_guaranteed τ_0_0) -> (UInt8, @error Error)`
-  try_apply %205(uint8Type, %7), normal bb39, $`UInt8`, error bb84, $`Error`
+  %205i0 = apply %205(uint8Type, %7), $`UInt8`
+  %205i1 = new $`Builtin.Int1`
+  cond_br %205i1, true bb39(%205i0), false bb84(%205i0)
 
 bb39(%207 : $`UInt8`):
   pointer_write %207 to %203
@@ -10886,7 +11039,9 @@ bb42(%219 : $`@thick UInt16.Type`):
   %223i0 = field_read [alias %223] %222, data, $`Any`
   pointer_write %223i0 to %223
   %225 = dynamic_ref @`#SingleValueDecodingContainer.decode`, $`@convention(witness_method: SingleValueDecodingContainer) <τ_0_0 where τ_0_0 : SingleValueDecodingContainer> (@thin UInt16.Type, @in_guaranteed τ_0_0) -> (UInt16, @error Error)`
-  try_apply %225(uint16Type, %7), normal bb43, $`UInt16`, error bb85, $`Error`
+  %225i0 = apply %225(uint16Type, %7), $`UInt16`
+  %225i1 = new $`Builtin.Int1`
+  cond_br %225i1, true bb43(%225i0), false bb85(%225i0)
 
 bb43(%227 : $`UInt16`):
   pointer_write %227 to %223
@@ -10910,7 +11065,9 @@ bb46(%239 : $`@thick UInt32.Type`):
   %243i0 = field_read [alias %243] %242, data, $`Any`
   pointer_write %243i0 to %243
   %245 = dynamic_ref @`#SingleValueDecodingContainer.decode`, $`@convention(witness_method: SingleValueDecodingContainer) <τ_0_0 where τ_0_0 : SingleValueDecodingContainer> (@thin UInt32.Type, @in_guaranteed τ_0_0) -> (UInt32, @error Error)`
-  try_apply %245(uint32Type, %7), normal bb47, $`UInt32`, error bb86, $`Error`
+  %245i0 = apply %245(uint32Type, %7), $`UInt32`
+  %245i1 = new $`Builtin.Int1`
+  cond_br %245i1, true bb47(%245i0), false bb86(%245i0)
 
 bb47(%247 : $`UInt32`):
   pointer_write %247 to %243
@@ -10934,7 +11091,9 @@ bb50(%259 : $`@thick UInt64.Type`):
   %263i0 = field_read [alias %263] %262, data, $`Any`
   pointer_write %263i0 to %263
   %265 = dynamic_ref @`#SingleValueDecodingContainer.decode`, $`@convention(witness_method: SingleValueDecodingContainer) <τ_0_0 where τ_0_0 : SingleValueDecodingContainer> (@thin UInt64.Type, @in_guaranteed τ_0_0) -> (UInt64, @error Error)`
-  try_apply %265(uint64Type, %7), normal bb51, $`UInt64`, error bb87, $`Error`
+  %265i0 = apply %265(uint64Type, %7), $`UInt64`
+  %265i1 = new $`Builtin.Int1`
+  cond_br %265i1, true bb51(%265i0), false bb87(%265i0)
 
 bb51(%267 : $`UInt64`):
   pointer_write %267 to %263
@@ -10958,7 +11117,9 @@ bb54(%279 : $`@thick Double.Type`):
   %283i0 = field_read [alias %283] %282, data, $`Any`
   pointer_write %283i0 to %283
   %285 = dynamic_ref @`#SingleValueDecodingContainer.decode`, $`@convention(witness_method: SingleValueDecodingContainer) <τ_0_0 where τ_0_0 : SingleValueDecodingContainer> (@thin Double.Type, @in_guaranteed τ_0_0) -> (Double, @error Error)`
-  try_apply %285(doubleType, %7), normal bb55, $`Double`, error bb88, $`Error`
+  %285i0 = apply %285(doubleType, %7), $`Double`
+  %285i1 = new $`Builtin.Int1`
+  cond_br %285i1, true bb55(%285i0), false bb88(%285i0)
 
 bb55(%287 : $`Double`):
   pointer_write %287 to %283
@@ -10982,7 +11143,9 @@ bb58(%299 : $`@thick String.Type`):
   %303i0 = field_read [alias %303] %302, data, $`Any`
   pointer_write %303i0 to %303
   %305 = dynamic_ref @`#SingleValueDecodingContainer.decode`, $`@convention(witness_method: SingleValueDecodingContainer) <τ_0_0 where τ_0_0 : SingleValueDecodingContainer> (@thin String.Type, @in_guaranteed τ_0_0) -> (@owned String, @error Error)`
-  try_apply %305(stringType, %7), normal bb59, $`String`, error bb89, $`Error`
+  %305i0 = apply %305(stringType, %7), $`String`
+  %305i1 = new $`Builtin.Int1`
+  cond_br %305i1, true bb59(%305i0), false bb89(%305i0)
 
 bb59(%307 : $`@owned $String`):
   pointer_write %307 to %303
@@ -11007,7 +11170,9 @@ bb62(%319 : $`@thick Array<JSON>.Type`):
   pointer_write %323i0 to %323
   %325 = new $`@thick Array<JSON>.Type`
   %326 = dynamic_ref @`#SingleValueDecodingContainer.decode`, $`@convention(witness_method: SingleValueDecodingContainer) <τ_0_0 where τ_0_0 : SingleValueDecodingContainer><τ_1_0 where τ_1_0 : Decodable> (@thick τ_1_0.Type, @in_guaranteed τ_0_0) -> (@out τ_1_0, @error Error)`
-  try_apply %326(%323, %325, %7), normal bb63, $`τ_1_0`, error bb90, $`Error`
+  %326i0 = apply %326(%323, %325, %7), $`τ_1_0`
+  %326i1 = new $`Builtin.Int1`
+  cond_br %326i1, true bb63(%326i0), false bb90(%326i0)
 
 bb63(%329 : $`()`):
   %322i0 = literal [string] "#Optional.some!enumelt", $`Builtin.RawPointer`
@@ -11031,7 +11196,9 @@ bb66(%339 : $`@thick Dictionary<String, JSON>.Type`):
   pointer_write %343i0 to %343
   %345 = new $`@thick Dictionary<String, JSON>.Type`
   %346 = dynamic_ref @`#SingleValueDecodingContainer.decode`, $`@convention(witness_method: SingleValueDecodingContainer) <τ_0_0 where τ_0_0 : SingleValueDecodingContainer><τ_1_0 where τ_1_0 : Decodable> (@thick τ_1_0.Type, @in_guaranteed τ_0_0) -> (@out τ_1_0, @error Error)`
-  try_apply %346(%343, %345, %7), normal bb67, $`τ_1_0`, error bb91, $`Error`
+  %346i0 = apply %346(%343, %345, %7), $`τ_1_0`
+  %346i1 = new $`Builtin.Int1`
+  cond_br %346i1, true bb67(%346i0), false bb91(%346i0)
 
 bb67(%349 : $`()`):
   %342i0 = literal [string] "#Optional.some!enumelt", $`Builtin.RawPointer`
@@ -11193,7 +11360,9 @@ bb3(%24 : $`Builtin.Int1`):
 
 bb4:
   %28 = dynamic_ref @`#SingleValueEncodingContainer.encodeNil`, $`@convention(witness_method: SingleValueEncodingContainer) <τ_0_0 where τ_0_0 : SingleValueEncodingContainer> (@inout τ_0_0) -> @error Error`
-  try_apply %28(%5), normal bb5, $`()`, error bb57, $`Error`
+  %28i0 = apply %28(%5), $`()`
+  %28i1 = new $`Builtin.Int1`
+  cond_br %28i1, true bb5(%28i0), false bb57(%28i0)
 
 bb5(%30 : $`()`):
   br bb56
@@ -11209,7 +11378,9 @@ bb6:
 bb7:
   intValue = pointer_read %38, $`Int`
   %44 = dynamic_ref @`#SingleValueEncodingContainer.encode`, $`@convention(witness_method: SingleValueEncodingContainer) <τ_0_0 where τ_0_0 : SingleValueEncodingContainer> (Int, @inout τ_0_0) -> @error Error`
-  try_apply %44(intValue, %5), normal bb8, $`()`, error bb58, $`Error`
+  %44i0 = apply %44(intValue, %5), $`()`
+  %44i1 = new $`Builtin.Int1`
+  cond_br %44i1, true bb8(%44i0), false bb58(%44i0)
 
 bb8(%46 : $`()`):
   br bb55
@@ -11222,7 +11393,9 @@ bb9:
 bb10:
   int8Value = pointer_read %53, $`Int8`
   %59 = dynamic_ref @`#SingleValueEncodingContainer.encode`, $`@convention(witness_method: SingleValueEncodingContainer) <τ_0_0 where τ_0_0 : SingleValueEncodingContainer> (Int8, @inout τ_0_0) -> @error Error`
-  try_apply %59(int8Value, %5), normal bb11, $`()`, error bb59, $`Error`
+  %59i0 = apply %59(int8Value, %5), $`()`
+  %59i1 = new $`Builtin.Int1`
+  cond_br %59i1, true bb11(%59i0), false bb59(%59i0)
 
 bb11(%61 : $`()`):
   br bb55
@@ -11235,7 +11408,9 @@ bb12:
 bb13:
   int32Value = pointer_read %68, $`Int32`
   %74 = dynamic_ref @`#SingleValueEncodingContainer.encode`, $`@convention(witness_method: SingleValueEncodingContainer) <τ_0_0 where τ_0_0 : SingleValueEncodingContainer> (Int32, @inout τ_0_0) -> @error Error`
-  try_apply %74(int32Value, %5), normal bb14, $`()`, error bb60, $`Error`
+  %74i0 = apply %74(int32Value, %5), $`()`
+  %74i1 = new $`Builtin.Int1`
+  cond_br %74i1, true bb14(%74i0), false bb60(%74i0)
 
 bb14(%76 : $`()`):
   br bb55
@@ -11248,7 +11423,9 @@ bb15:
 bb16:
   int64Value = pointer_read %83, $`Int64`
   %89 = dynamic_ref @`#SingleValueEncodingContainer.encode`, $`@convention(witness_method: SingleValueEncodingContainer) <τ_0_0 where τ_0_0 : SingleValueEncodingContainer> (Int64, @inout τ_0_0) -> @error Error`
-  try_apply %89(int64Value, %5), normal bb17, $`()`, error bb61, $`Error`
+  %89i0 = apply %89(int64Value, %5), $`()`
+  %89i1 = new $`Builtin.Int1`
+  cond_br %89i1, true bb17(%89i0), false bb61(%89i0)
 
 bb17(%91 : $`()`):
   br bb55
@@ -11261,7 +11438,9 @@ bb18:
 bb19:
   uintValue = pointer_read %98, $`UInt`
   %104 = dynamic_ref @`#SingleValueEncodingContainer.encode`, $`@convention(witness_method: SingleValueEncodingContainer) <τ_0_0 where τ_0_0 : SingleValueEncodingContainer> (UInt, @inout τ_0_0) -> @error Error`
-  try_apply %104(uintValue, %5), normal bb20, $`()`, error bb62, $`Error`
+  %104i0 = apply %104(uintValue, %5), $`()`
+  %104i1 = new $`Builtin.Int1`
+  cond_br %104i1, true bb20(%104i0), false bb62(%104i0)
 
 bb20(%106 : $`()`):
   br bb55
@@ -11274,7 +11453,9 @@ bb21:
 bb22:
   uint8Value = pointer_read %113, $`UInt8`
   %119 = dynamic_ref @`#SingleValueEncodingContainer.encode`, $`@convention(witness_method: SingleValueEncodingContainer) <τ_0_0 where τ_0_0 : SingleValueEncodingContainer> (UInt8, @inout τ_0_0) -> @error Error`
-  try_apply %119(uint8Value, %5), normal bb23, $`()`, error bb63, $`Error`
+  %119i0 = apply %119(uint8Value, %5), $`()`
+  %119i1 = new $`Builtin.Int1`
+  cond_br %119i1, true bb23(%119i0), false bb63(%119i0)
 
 bb23(%121 : $`()`):
   br bb55
@@ -11287,7 +11468,9 @@ bb24:
 bb25:
   uint16Value = pointer_read %128, $`UInt16`
   %134 = dynamic_ref @`#SingleValueEncodingContainer.encode`, $`@convention(witness_method: SingleValueEncodingContainer) <τ_0_0 where τ_0_0 : SingleValueEncodingContainer> (UInt16, @inout τ_0_0) -> @error Error`
-  try_apply %134(uint16Value, %5), normal bb26, $`()`, error bb64, $`Error`
+  %134i0 = apply %134(uint16Value, %5), $`()`
+  %134i1 = new $`Builtin.Int1`
+  cond_br %134i1, true bb26(%134i0), false bb64(%134i0)
 
 bb26(%136 : $`()`):
   br bb55
@@ -11300,7 +11483,9 @@ bb27:
 bb28:
   uint32Value = pointer_read %143, $`UInt32`
   %149 = dynamic_ref @`#SingleValueEncodingContainer.encode`, $`@convention(witness_method: SingleValueEncodingContainer) <τ_0_0 where τ_0_0 : SingleValueEncodingContainer> (UInt32, @inout τ_0_0) -> @error Error`
-  try_apply %149(uint32Value, %5), normal bb29, $`()`, error bb65, $`Error`
+  %149i0 = apply %149(uint32Value, %5), $`()`
+  %149i1 = new $`Builtin.Int1`
+  cond_br %149i1, true bb29(%149i0), false bb65(%149i0)
 
 bb29(%151 : $`()`):
   br bb55
@@ -11313,7 +11498,9 @@ bb30:
 bb31:
   uint64Value = pointer_read %158, $`UInt64`
   %164 = dynamic_ref @`#SingleValueEncodingContainer.encode`, $`@convention(witness_method: SingleValueEncodingContainer) <τ_0_0 where τ_0_0 : SingleValueEncodingContainer> (UInt64, @inout τ_0_0) -> @error Error`
-  try_apply %164(uint64Value, %5), normal bb32, $`()`, error bb66, $`Error`
+  %164i0 = apply %164(uint64Value, %5), $`()`
+  %164i1 = new $`Builtin.Int1`
+  cond_br %164i1, true bb32(%164i0), false bb66(%164i0)
 
 bb32(%166 : $`()`):
   br bb55
@@ -11326,7 +11513,9 @@ bb33:
 bb34:
   doubleValue = pointer_read %173, $`Double`
   %179 = dynamic_ref @`#SingleValueEncodingContainer.encode`, $`@convention(witness_method: SingleValueEncodingContainer) <τ_0_0 where τ_0_0 : SingleValueEncodingContainer> (Double, @inout τ_0_0) -> @error Error`
-  try_apply %179(doubleValue, %5), normal bb35, $`()`, error bb67, $`Error`
+  %179i0 = apply %179(doubleValue, %5), $`()`
+  %179i1 = new $`Builtin.Int1`
+  cond_br %179i1, true bb35(%179i0), false bb67(%179i0)
 
 bb35(%181 : $`()`):
   br bb55
@@ -11339,7 +11528,9 @@ bb36:
 bb37:
   boolValue = pointer_read %188, $`Bool`
   %194 = dynamic_ref @`#SingleValueEncodingContainer.encode`, $`@convention(witness_method: SingleValueEncodingContainer) <τ_0_0 where τ_0_0 : SingleValueEncodingContainer> (Bool, @inout τ_0_0) -> @error Error`
-  try_apply %194(boolValue, %5), normal bb38, $`()`, error bb68, $`Error`
+  %194i0 = apply %194(boolValue, %5), $`()`
+  %194i1 = new $`Builtin.Int1`
+  cond_br %194i1, true bb38(%194i0), false bb68(%194i0)
 
 bb38(%196 : $`()`):
   br bb55
@@ -11352,7 +11543,9 @@ bb39:
 bb40:
   stringValue = pointer_read %203, $`String`
   %210 = dynamic_ref @`#SingleValueEncodingContainer.encode`, $`@convention(witness_method: SingleValueEncodingContainer) <τ_0_0 where τ_0_0 : SingleValueEncodingContainer> (@guaranteed String, @inout τ_0_0) -> @error Error`
-  try_apply %210(stringValue, %5), normal bb41, $`()`, error bb69, $`Error`
+  %210i0 = apply %210(stringValue, %5), $`()`
+  %210i1 = new $`Builtin.Int1`
+  cond_br %210i1, true bb41(%210i0), false bb69(%210i0)
 
 bb41(%212 : $`()`):
   br bb55
@@ -11398,7 +11591,9 @@ bb46:
   %254 = new $`*Array<JSON>`
   pointer_write jsonValueArray to %254
   %258 = dynamic_ref @`#SingleValueEncodingContainer.encode`, $`@convention(witness_method: SingleValueEncodingContainer) <τ_0_0 where τ_0_0 : SingleValueEncodingContainer><τ_1_0 where τ_1_0 : Encodable> (@in_guaranteed τ_1_0, @inout τ_0_0) -> @error Error`
-  try_apply %258(%254, %5), normal bb47, $`()`, error bb70, $`Error`
+  %258i0 = apply %258(%254, %5), $`()`
+  %258i1 = new $`Builtin.Int1`
+  cond_br %258i1, true bb47(%258i0), false bb70(%258i0)
 
 bb47(%260 : $`()`):
   br bb55
@@ -11447,7 +11642,9 @@ bb52:
   %307 = new $`*Dictionary<String, JSON>`
   pointer_write jsonValueDictValue to %307
   %311 = dynamic_ref @`#SingleValueEncodingContainer.encode`, $`@convention(witness_method: SingleValueEncodingContainer) <τ_0_0 where τ_0_0 : SingleValueEncodingContainer><τ_1_0 where τ_1_0 : Encodable> (@in_guaranteed τ_1_0, @inout τ_0_0) -> @error Error`
-  try_apply %311(%307, %5), normal bb53, $`()`, error bb71, $`Error`
+  %311i0 = apply %311(%307, %5), $`()`
+  %311i1 = new $`Builtin.Int1`
+  cond_br %311i1, true bb53(%311i0), false bb71(%311i0)
 
 bb53(%313 : $`()`):
   br bb55
@@ -11508,14 +11705,16 @@ bb71(%447 : $`@owned $Error`):
   br bb72(%447)
 
 bb72(%459 : $`@owned $Error`):
-  throw %459
+  return %459
 }
 
 func @`protocol witness for Swift.Decodable.init(from: Swift.Decoder) throws -> A in conformance SwiftyJSON.JSON : Swift.Decodable in SwiftyJSON` : $`(@out JSON, @error Error)` {
 bb0(%0 : $`*JSON`, %1 : $`*Decoder`, %2 : $`@thick JSON.Type`):
   %3 = new $`@thin JSON.Type`
   %4 = function_ref @`SwiftyJSON.JSON.init(from: Swift.Decoder) throws -> SwiftyJSON.JSON`, $`@convention(method) (@in Decoder, @thin JSON.Type) -> (@owned JSON, @error Error)`
-  try_apply %4(%1, %3), normal bb1, $`JSON`, error bb2, $`Error`
+  %4i0 = apply %4(%1, %3), $`JSON`
+  %4i1 = new $`Builtin.Int1`
+  cond_br %4i1, true bb1(%4i0), false bb2(%4i0)
 
 bb1(%6 : $`@owned $JSON`):
   pointer_write %6 to %0
@@ -11523,21 +11722,23 @@ bb1(%6 : $`@owned $JSON`):
   return %8
 
 bb2(%10 : $`@owned $Error`):
-  throw %10
+  return %10
 }
 
 func @`protocol witness for Swift.Encodable.encode(to: Swift.Encoder) throws -> () in conformance SwiftyJSON.JSON : Swift.Encodable in SwiftyJSON` : $`@error Error` {
 bb0(%0 : $`*Encoder`, %1 : $`*JSON`):
   %2 = pointer_read %1, $`JSON`
   %3 = function_ref @`SwiftyJSON.JSON.encode(to: Swift.Encoder) throws -> ()`, $`@convention(method) (@in_guaranteed Encoder, @guaranteed JSON) -> @error Error`
-  try_apply %3(%0, %2), normal bb1, $`()`, error bb2, $`Error`
+  %3i0 = apply %3(%0, %2), $`()`
+  %3i1 = new $`Builtin.Int1`
+  cond_br %3i1, true bb1(%3i0), false bb2(%3i0)
 
 bb1(%5 : $`()`):
   %6 = new $`()`
   return %6
 
 bb2(%9 : $`@owned $Error`):
-  throw %9
+  return %9
 }
 
 func @`protocol witness for Swift.SetAlgebra.init() -> A in conformance __C.NSJSONReadingOptions : Swift.SetAlgebra in __C_Synthesized` : $`@out JSONSerialization.ReadingOptions` {
@@ -11958,10 +12159,12 @@ func @`protocol witness for Swift.Sequence.withContiguousStorageIfAvailable<A>((
 bb0(%0 : $`*Optional<τ_1_0>`, %1 : $`@noescape @callee_guaranteed @substituted <τ_0_0, τ_0_1> (UnsafeBufferPointer<τ_0_0>) -> (@out τ_0_1, @error Error) for <τ_0_0, τ_1_0>`, %2 : $`*Array<τ_0_0>`):
   %3 = pointer_read %2, $`Array<τ_0_0>`
   %4 = function_ref @`Swift.Array.withContiguousStorageIfAvailable<A>((Swift.UnsafeBufferPointer<A>) throws -> A1) throws -> A1?`, $`@convention(method) <τ_0_0><τ_1_0> (@noescape @callee_guaranteed @substituted <τ_0_0, τ_0_1> (UnsafeBufferPointer<τ_0_0>) -> (@out τ_0_1, @error Error) for <τ_0_0, τ_1_0>, @guaranteed Array<τ_0_0>) -> (@out Optional<τ_1_0>, @error Error)`
-  try_apply %4(%0, %1, %3), normal bb2, $`Optional<τ_1_0>`, error bb1, $`Error`
+  %4i0 = apply %4(%0, %1, %3), $`Optional<τ_1_0>`
+  %4i1 = new $`Builtin.Int1`
+  cond_br %4i1, true bb2(%4i0), false bb1(%4i0)
 
 bb1(%6 : $`@owned $Error`):
-  throw %6
+  return %6
 
 bb2(%9 : $`()`):
   %10 = new $`()`
@@ -11971,12 +12174,14 @@ bb2(%9 : $`()`):
 func @`protocol witness for static Swift.Equatable.== infix(A, A) -> Swift.Bool in conformance Swift.Int : Swift.Equatable in Swift` : $`Bool` {
 bb0(%0 : $`*Int`, %1 : $`*Int`, %2 : $`@thick Int.Type`):
   %3 = new $`*Any`
-  %3i0 = field_read [alias %3] %0, _value, $`Any`
-  pointer_write %3i0 to %3
+  %3i0 = pointer_read %0, $`*Any`
+  %3i1 = field_read [alias %3] %3i0, _value, $`Any`
+  pointer_write %3i1 to %3
   %4 = pointer_read %3, $`Builtin.Int64`
   %5 = new $`*Any`
-  %5i0 = field_read [alias %5] %1, _value, $`Any`
-  pointer_write %5i0 to %5
+  %5i0 = pointer_read %1, $`*Any`
+  %5i1 = field_read [alias %5] %5i0, _value, $`Any`
+  pointer_write %5i1 to %5
   %6 = pointer_read %5, $`Builtin.Int64`
   %7i0 = builtin_ref @`cmp_eq_Int64`, $`Any`
   %7 = apply %7i0(%4, %6), $`Builtin.Int1`
@@ -11993,8 +12198,9 @@ bb2:
 func @`protocol witness for Swift._Pointer._rawValue.getter : Builtin.RawPointer in conformance Swift.AutoreleasingUnsafeMutablePointer<A> : Swift._Pointer in Swift` : $`Builtin.RawPointer` {
 bb0(%0 : $`*AutoreleasingUnsafeMutablePointer<τ_0_0>`):
   %1 = new $`*Any`
-  %1i0 = field_read [alias %1] %0, _rawValue, $`Any`
-  pointer_write %1i0 to %1
+  %1i0 = pointer_read %0, $`*Any`
+  %1i1 = field_read [alias %1] %1i0, _rawValue, $`Any`
+  pointer_write %1i1 to %1
   %2 = pointer_read %1, $`Builtin.RawPointer`
   br bb1
 
@@ -12034,12 +12240,14 @@ bb0(%0 : $`StaticString`, %1 : $`StaticString`, %2 : $`StaticString`, %3 : $`UIn
 func @`protocol witness for static Swift.Comparable.< infix(A, A) -> Swift.Bool in conformance Swift.Int : Swift.Comparable in Swift` : $`Bool` {
 bb0(%0 : $`*Int`, %1 : $`*Int`, %2 : $`@thick Int.Type`):
   %3 = new $`*Any`
-  %3i0 = field_read [alias %3] %0, _value, $`Any`
-  pointer_write %3i0 to %3
+  %3i0 = pointer_read %0, $`*Any`
+  %3i1 = field_read [alias %3] %3i0, _value, $`Any`
+  pointer_write %3i1 to %3
   %4 = pointer_read %3, $`Builtin.Int64`
   %5 = new $`*Any`
-  %5i0 = field_read [alias %5] %1, _value, $`Any`
-  pointer_write %5i0 to %5
+  %5i0 = pointer_read %1, $`*Any`
+  %5i1 = field_read [alias %5] %5i0, _value, $`Any`
+  pointer_write %5i1 to %5
   %6 = pointer_read %5, $`Builtin.Int64`
   %7i0 = builtin_ref @`cmp_slt_Int64`, $`Any`
   %7 = apply %7i0(%4, %6), $`Builtin.Int1`
@@ -12056,12 +12264,14 @@ bb2:
 func @`protocol witness for static Swift.Comparable.<= infix(A, A) -> Swift.Bool in conformance Swift.Int : Swift.Comparable in Swift` : $`Bool` {
 bb0(%0 : $`*Int`, %1 : $`*Int`, %2 : $`@thick Int.Type`):
   %3 = new $`*Any`
-  %3i0 = field_read [alias %3] %0, _value, $`Any`
-  pointer_write %3i0 to %3
+  %3i0 = pointer_read %0, $`*Any`
+  %3i1 = field_read [alias %3] %3i0, _value, $`Any`
+  pointer_write %3i1 to %3
   %4 = pointer_read %3, $`Builtin.Int64`
   %5 = new $`*Any`
-  %5i0 = field_read [alias %5] %1, _value, $`Any`
-  pointer_write %5i0 to %5
+  %5i0 = pointer_read %1, $`*Any`
+  %5i1 = field_read [alias %5] %5i0, _value, $`Any`
+  pointer_write %5i1 to %5
   %6 = pointer_read %5, $`Builtin.Int64`
   %7i0 = builtin_ref @`cmp_slt_Int64`, $`Any`
   %7 = apply %7i0(%6, %4), $`Builtin.Int1`
@@ -12093,12 +12303,14 @@ bb6:
 func @`protocol witness for static Swift.Comparable.>= infix(A, A) -> Swift.Bool in conformance Swift.Int : Swift.Comparable in Swift` : $`Bool` {
 bb0(%0 : $`*Int`, %1 : $`*Int`, %2 : $`@thick Int.Type`):
   %3 = new $`*Any`
-  %3i0 = field_read [alias %3] %0, _value, $`Any`
-  pointer_write %3i0 to %3
+  %3i0 = pointer_read %0, $`*Any`
+  %3i1 = field_read [alias %3] %3i0, _value, $`Any`
+  pointer_write %3i1 to %3
   %4 = pointer_read %3, $`Builtin.Int64`
   %5 = new $`*Any`
-  %5i0 = field_read [alias %5] %1, _value, $`Any`
-  pointer_write %5i0 to %5
+  %5i0 = pointer_read %1, $`*Any`
+  %5i1 = field_read [alias %5] %5i0, _value, $`Any`
+  pointer_write %5i1 to %5
   %6 = pointer_read %5, $`Builtin.Int64`
   %7i0 = builtin_ref @`cmp_slt_Int64`, $`Any`
   %7 = apply %7i0(%4, %6), $`Builtin.Int1`
@@ -12112,12 +12324,14 @@ bb0(%0 : $`*Int`, %1 : $`*Int`, %2 : $`@thick Int.Type`):
 func @`protocol witness for static Swift.Comparable.> infix(A, A) -> Swift.Bool in conformance Swift.Int : Swift.Comparable in Swift` : $`Bool` {
 bb0(%0 : $`*Int`, %1 : $`*Int`, %2 : $`@thick Int.Type`):
   %3 = new $`*Any`
-  %3i0 = field_read [alias %3] %0, _value, $`Any`
-  pointer_write %3i0 to %3
+  %3i0 = pointer_read %0, $`*Any`
+  %3i1 = field_read [alias %3] %3i0, _value, $`Any`
+  pointer_write %3i1 to %3
   %4 = pointer_read %3, $`Builtin.Int64`
   %5 = new $`*Any`
-  %5i0 = field_read [alias %5] %1, _value, $`Any`
-  pointer_write %5i0 to %5
+  %5i0 = pointer_read %1, $`*Any`
+  %5i1 = field_read [alias %5] %5i0, _value, $`Any`
+  pointer_write %5i1 to %5
   %6 = pointer_read %5, $`Builtin.Int64`
   %7i0 = builtin_ref @`cmp_slt_Int64`, $`Any`
   %7 = apply %7i0(%6, %4), $`Builtin.Int1`
@@ -12132,7 +12346,7 @@ bb0(%0 : $`Int`, %1 : $`@thin Array<NSString.CompareOptions>.Type`):
   %4i0 = builtin_ref @`cmp_slt_Int64`, $`Any`
   %4 = apply %4i0(%3, %2), $`Builtin.Int1`
   cond_fail %4
-  %6 = singleton_read `_swiftEmptyArrayStorage` from Globals_playground.sil, $`*_SwiftEmptyArrayStorage`
+  %6 = singleton_read `_swiftEmptyArrayStorage` from Globals_SwiftyJSON.Pods.sil, $`*_SwiftEmptyArrayStorage`
   %10i0 = builtin_ref @`cmp_slt_Int64`, $`Any`
   %10 = apply %10i0(%2, %3), $`Builtin.Int1`
   cond_br %10, true bb2, false bb1
@@ -12149,11 +12363,13 @@ bb2:
   %19i0 = field_read [alias %19] %17, countAndCapacity, $`Any`
   pointer_write %19i0 to %19
   %20 = new $`*Any`
-  %20i0 = field_read [alias %20] %19, _storage, $`Any`
-  pointer_write %20i0 to %20
+  %20i0 = pointer_read %19, $`*Any`
+  %20i1 = field_read [alias %20] %20i0, _storage, $`Any`
+  pointer_write %20i1 to %20
   %21 = new $`*Any`
-  %21i0 = field_read [alias %21] %20, count, $`Any`
-  pointer_write %21i0 to %21
+  %21i0 = pointer_read %20, $`*Any`
+  %21i1 = field_read [alias %21] %21i0, count, $`Any`
+  pointer_write %21i1 to %21
   pointer_write %0 to %21
   br bb3(%17)
 
@@ -12253,14 +12469,17 @@ bb0(%0 : $`Array<NSString.CompareOptions>`):
   %5i0 = field_read [alias %5] %3, countAndCapacity, $`Any`
   pointer_write %5i0 to %5
   %6 = new $`*Any`
-  %6i0 = field_read [alias %6] %5, _storage, $`Any`
-  pointer_write %6i0 to %6
+  %6i0 = pointer_read %5, $`*Any`
+  %6i1 = field_read [alias %6] %6i0, _storage, $`Any`
+  pointer_write %6i1 to %6
   %7 = new $`*Any`
-  %7i0 = field_read [alias %7] %6, count, $`Any`
-  pointer_write %7i0 to %7
+  %7i0 = pointer_read %6, $`*Any`
+  %7i1 = field_read [alias %7] %7i0, count, $`Any`
+  pointer_write %7i1 to %7
   %8 = new $`*Any`
-  %8i0 = field_read [alias %8] %7, _value, $`Any`
-  pointer_write %8i0 to %8
+  %8i0 = pointer_read %7, $`*Any`
+  %8i1 = field_read [alias %8] %8i0, _value, $`Any`
+  pointer_write %8i1 to %8
   %9 = pointer_read %8, $`Builtin.Int64`
   %10i0 = builtin_ref @`assumeNonNegative_Int64`, $`Any`
   %10 = apply %10i0(%9), $`Builtin.Int64`
@@ -12332,14 +12551,17 @@ bb0(%0 : $`Int`, %1 : $`_ArrayBuffer<NSString.CompareOptions>`):
   %9i0 = field_read [alias %9] %3, countAndCapacity, $`Any`
   pointer_write %9i0 to %9
   %10 = new $`*Any`
-  %10i0 = field_read [alias %10] %9, _storage, $`Any`
-  pointer_write %10i0 to %10
+  %10i0 = pointer_read %9, $`*Any`
+  %10i1 = field_read [alias %10] %10i0, _storage, $`Any`
+  pointer_write %10i1 to %10
   %11 = new $`*Any`
-  %11i0 = field_read [alias %11] %10, count, $`Any`
-  pointer_write %11i0 to %11
+  %11i0 = pointer_read %10, $`*Any`
+  %11i1 = field_read [alias %11] %11i0, count, $`Any`
+  pointer_write %11i1 to %11
   %12 = new $`*Any`
-  %12i0 = field_read [alias %12] %11, _value, $`Any`
-  pointer_write %12i0 to %12
+  %12i0 = pointer_read %11, $`*Any`
+  %12i1 = field_read [alias %12] %12i0, _value, $`Any`
+  pointer_write %12i1 to %12
   %13 = pointer_read %12, $`Builtin.Int64`
   %14i0 = builtin_ref @`assumeNonNegative_Int64`, $`Any`
   %14 = apply %14i0(%13), $`Builtin.Int64`
