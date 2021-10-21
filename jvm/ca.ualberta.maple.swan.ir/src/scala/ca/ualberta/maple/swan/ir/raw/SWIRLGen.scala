@@ -837,7 +837,8 @@ class SWIRLGen {
   }
 
   def visitEndCowMutation(r: Option[SILResult], I: SILOperator.endCowMutation, ctx: Context): ArrayBuffer[RawInstructionDef] = {
-    NOP
+    verifySILResult(r, 1)
+    copySymbol(I.operand.value, r.get.valueNames.head, ctx)
   }
 
   @throws[UnexpectedSILFormatException]

@@ -131,25 +131,30 @@ class DynamicDispatchGraph extends Serializable {
 
     // Handle witness tables.
     module.witnessTables.foreach(table => {
-      val cls = makeNode(Utils.printer.clearNakedPrint(table.normalProtocolConformance.tpe), "Class")
-      val protocol = makeNode(table.normalProtocolConformance.protocol, "Protocol")
-      addEdge(cls, protocol)
-      table.entries.foreach {
-        case SILWitnessEntry.baseProtocol(identifier, _) => {
-          addEdge(cls, makeNode(identifier, "Protocol"))
-        }
-        case SILWitnessEntry.method(declRef, _, functionName) => {
-          if (functionName.nonEmpty) {
-            val method = makeNode(functionName.get.demangled, "Method") // MethodType.implements
-            addEdge(makeNode(declRefToString(declRef), "Index"), method)
-            addEdge(method, cls)
+      val clsName = Utils.printer.clearNakedPrint(table.normalProtocolConformance.tpe)
+      val protocolName = table.normalProtocolConformance.protocol
+      // don't add edges when class name equals protocol name
+      if (clsName != protocolName) {
+      val cls = makeNode(clsName, "Class")
+      val protocol = makeNode(protocolName, "Protocol")
+        addEdge(cls, protocol)
+        table.entries.foreach {
+          case SILWitnessEntry.baseProtocol(identifier, _) => {
+            addEdge(cls, makeNode(identifier, "Protocol"))
           }
+          case SILWitnessEntry.method(declRef, _, functionName) => {
+            if (functionName.nonEmpty) {
+              val method = makeNode(functionName.get.demangled, "Method") // MethodType.implements
+              addEdge(makeNode(declRefToString(declRef), "Index"), method)
+              addEdge(method, cls)
+            }
+          }
+          // TODO: investigate
+          case SILWitnessEntry.associatedType(identifier0, identifier1) =>
+          case SILWitnessEntry.associatedTypeProtocol(identifier0) =>
+          //case SILWitnessEntry.associatedTypeProtocol(identifier0, identifier1, pc) =>
+          case SILWitnessEntry.conditionalConformance(identifier) =>
         }
-        // TODO: investigate
-        case SILWitnessEntry.associatedType(identifier0, identifier1) =>
-        case SILWitnessEntry.associatedTypeProtocol(identifier0) =>
-        //case SILWitnessEntry.associatedTypeProtocol(identifier0, identifier1, pc) =>
-        case SILWitnessEntry.conditionalConformance(identifier) =>
       }
     })
 
