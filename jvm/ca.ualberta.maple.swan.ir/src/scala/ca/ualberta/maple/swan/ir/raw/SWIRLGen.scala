@@ -527,7 +527,13 @@ class SWIRLGen {
   }
 
   private def copySymbol(from: String, to: String, ctx: Context): Null = {
-    ctx.refTable.symbols.put(to, makeSymbolRef(from, ctx))
+    val symbols = ctx.refTable.symbols
+    val ref = makeSymbolRef(from, ctx)
+    if (symbols.contains(to)) {
+      symbols(to).name = ref.name
+    } else {
+      symbols.put(to, ref)
+    }
     COPY
   }
 
