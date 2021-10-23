@@ -327,63 +327,81 @@ class CallGraphConstruction(moduleGroup: ModuleGroup) {
   private def dynamicIOSModels(toTraverse: mutable.HashSet[String]): Unit = {
     mainEntryPoints.foreach(f => toTraverse.add(f.getName))
 
-    if (methods.contains("UIApplicationMain")) {
-      val m = methods("UIApplicationMain")
+    // Gather all delegate types in the main functions.
+    // This is _likely_ a sound way of doing it because NSStringFromClass is
+    // seemingly always used on the delegate type before its given to
+    // UIApplicationMain as the last argument. However, the dataflow between
+    // the type creation (via metatype instruction) to the call-site gets
+    // complicated for ObjC stuff, so its tricky to use dataflow queries.
+    val appDelegateTypes = mutable.HashSet.empty[String]
+    methods.filter(_._1.startsWith("main_")).values.foreach(m => {
+      m.delegate.blocks.foreach(b => b.operators.foreach(opDef => {
+        opDef.operator match {
+          case Operator.apply(_, functionRef, arguments) => {
+            m.delegate.symbolTable(functionRef.name) match {
+              case SymbolTableEntry.operator(_, operator) => {
+                operator match {
+                  case Operator.functionRef(_, name) if name == "NSStringFromClass" => {
+                    m.delegate.symbolTable(arguments(0).name) match {
+                      case SymbolTableEntry.operator(_, operator) => {
+                        operator match {
+                          case Operator.neww(result) => {
+                            val regex = "@[^\\s]+ (.*)\\.Type".r
+                            val m = regex.findAllIn(result.tpe.name)
+                            if (m.nonEmpty) appDelegateTypes.add(m.group(1))
+                          }
+                          case _ =>
+                        }
+                      } case _ =>
+                    }
+                  } case _ =>
+                }
+              } case _ =>
+            }
+          } case _ =>
+        }
+      }))
+    })
+
+    if (appDelegateTypes.nonEmpty) {
 
       // Overwrite __allocating_init() to call init()
-      val startStmt = m.getCFG.getStartPoints.iterator().next()
-      val edge = new ControlFlowGraph.Edge(startStmt, m.getCFG.getSuccsOf(startStmt).iterator().next())
-      val query = BackwardQuery.make(edge, m.getParameterLocal(3))
-      val solver = new Boomerang(cg, DataFlowScope.INCLUDE_ALL, new DefaultBoomerangOptions)
-      val results = solver.solve(query)
-      if (results.getAllocationSites.isEmpty) return
-      val allocatingInitFunctions = ArrayBuffer.empty[SWANMethod]
       val delegateTypes = mutable.HashMap.empty[SWANMethod, String]
       val visited = mutable.HashSet.empty[String]
-      results.getAllocationSites.forEach((forwardQuery, _) => {
-        forwardQuery.`var`().asInstanceOf[AllocVal].getAllocVal match {
-          case c: SWANVal => {
-            val tpe = c.getType.asInstanceOf[SWANType].tpe
-            val regex = "@objc_metatype (.*)\\.Type".r
-            val result = regex.findAllIn(tpe.name)
-            if (result.nonEmpty) {
-              val delegateType = result.group(1)
-              if (!visited.contains(delegateType)) {
-                visited.add(delegateType)
-                allocatingInitFunctions.appendAll(methods.filter(x => x._2.getName.contains(delegateType+".__allocating_init()")).values)
-                if (allocatingInitFunctions.nonEmpty) {
-                  allocatingInitFunctions.foreach(allocatingInit => {
-                    delegateTypes.put(allocatingInit, delegateType)
-                    val modulePrefix = allocatingInit.getName.substring(0, allocatingInit.getName.indexOf(delegateType))
-                    val init = methods.find(x => ("^[^\\s]*"+modulePrefix+delegateType+"\\.init\\(\\)").r.findAllIn(x._2.getName).nonEmpty)
-                    if (init.nonEmpty) {
-                      builder.openFunction(allocatingInit.delegate, model = true)
-                      builder.addLine("%1 = new $`" + delegateType + "`")
-                      builder.addLine("%2 = function_ref @`" + init.get._2.getName + "`, $`Any`")
-                      builder.addLine("%3 = apply %2(%1), $`" + delegateType + "`")
-                      builder.addLine("return %3")
-                      builder.closeFunction()
-                    } else {
-                      throw new RuntimeException("Expected _init method of delegate type to exist")
-                    }
-                  })
-                } else {
-                  throw new RuntimeException("Expected __allocating_init method of delegate type to exist")
-                }
+      appDelegateTypes.foreach(delegateType => {
+        if (!visited.contains(delegateType)) {
+          visited.add(delegateType)
+          val allocatingInitFunctions = ArrayBuffer.empty[SWANMethod]
+          allocatingInitFunctions.appendAll(methods.filter(_._2.getName.contains(delegateType+".__allocating_init()")).values)
+          if (allocatingInitFunctions.nonEmpty) {
+            allocatingInitFunctions.foreach(allocatingInit => {
+              delegateTypes.put(allocatingInit, delegateType)
+              val modulePrefix = allocatingInit.getName.substring(0, allocatingInit.getName.indexOf(delegateType))
+              val init = methods.find(x => ("^[^\\s]*"+modulePrefix+delegateType+"\\.init\\(\\)").r.findAllIn(x._2.getName).nonEmpty)
+              if (init.nonEmpty) {
+                builder.openFunction(allocatingInit.delegate, model = true)
+                builder.addLine("%1 = new $`" + delegateType + "`")
+                builder.addLine("%2 = function_ref @`" + init.get._2.getName + "`, $`Any`")
+                builder.addLine("%3 = apply %2(%1), $`" + delegateType + "`")
+                builder.addLine("return %3")
+                builder.closeFunction()
+              } else {
+                throw new RuntimeException("Expected init method of delegate type to exist")
               }
-            } else {
-              throw new RuntimeException("Expected delegate type to match")
-            }
+            })
+          } else {
+            throw new RuntimeException("Expected __allocating_init method of delegate type to exist")
           }
-          case _ => throw new RuntimeException()
         }
       })
 
       // Overwrite UIApplicationMain stub to call allocating_init and lifecycle methods
       // Each block represents a different AppDelegate (in the case that multiple main
-      // functions call UIApplicationMain with their own AppDelegate.
+      // functions call UIApplicationMain with their own AppDelegate).
+      val m = methods.find(_._1 == "UIApplicationMain").get._2
       builder.openFunction(m.delegate, model = true)
       var i = 4
+      val allocatingInitFunctions = ArrayBuffer.from(delegateTypes.keySet)
       allocatingInitFunctions.foreach(allocatingInitFunction => {
         val delegateType = delegateTypes(allocatingInitFunction)
         val moduleName = allocatingInitFunction.getName.substring(0, allocatingInitFunction.getName.indexOf(delegateType))
