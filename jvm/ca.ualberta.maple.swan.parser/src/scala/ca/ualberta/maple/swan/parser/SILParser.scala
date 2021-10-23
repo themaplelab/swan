@@ -2828,7 +2828,7 @@ class SILParser extends SILPrinter {
     val start = position()
     // Apparently there's an emoji type 🦸
     var name: String = take(x => x.isLetter || Character.isDigit(x)
-      || x == '_' || x == '?' || x == '.' || (allowOther && (x != '\n')) || x == '\uD83E' || x == '\uDDB8')
+      || x == '_' || x == '?' || x == '.' || (allowOther && (x != '\n')) || x == '\uD83E' || x == '\uDDB8' || x == '`')
     if(skip("...")) {
       name += "..."
     }
