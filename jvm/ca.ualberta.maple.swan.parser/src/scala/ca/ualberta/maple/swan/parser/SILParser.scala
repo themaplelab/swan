@@ -1469,13 +1469,14 @@ class SILParser extends SILPrinter {
         if (!peek("(")) {
           // Temporary solution
           skip(_ != '\n')
-          SILInstruction.operator(SILOperator.keypath(tpe, elements))
+          SILInstruction.operator(SILOperator.keypath(tpe, elements, None))
         } else {
           take("(")
           while (!skip(")")) {
             elements.append(parseKeypathElement())
           }
-          SILInstruction.operator(SILOperator.keypath(tpe, elements))
+          val operands = parseNilOrMany("(", ",", ")", parseValue)
+          SILInstruction.operator(SILOperator.keypath(tpe, elements, operands))
         }
       }
 
@@ -1752,8 +1753,34 @@ class SILParser extends SILPrinter {
     } else if (skip("optional_wrap")) {
       take(":")
       val tpe = parseType()
-      skip(",");skip(";")
+      skip(",")
+      skip(";")
       SILKeypathElement.optionalWrap(tpe)
+    } else if (skip("indices_equals")) {
+      val name = parseMangledName()
+      take(":")
+      val tpe = parseType()
+      skip(",");skip(";")
+      SILKeypathElement.indicesHash(name, tpe)
+    } else if (skip("indices_hash")) {
+      val name = parseMangledName()
+      take(":")
+      val tpe = parseType()
+      skip(",");skip(";")
+      SILKeypathElement.indicesHash(name, tpe)
+    } else if (skip("indices")) {
+      def parseIndices(): (Int, SILType, SILType) = {
+        take("%$")
+        val number = parseInt()
+        take(":")
+        val tpe1 = parseType()
+        take(":")
+        val tpe2 = parseType()
+        (number, tpe1, tpe2)
+      }
+      val indices = parseMany("[", ",", "]", parseIndices)
+      skip(",");skip(";")
+      SILKeypathElement.indices(indices)
     } else {
       throw parseError("unknown keypath element")
     }

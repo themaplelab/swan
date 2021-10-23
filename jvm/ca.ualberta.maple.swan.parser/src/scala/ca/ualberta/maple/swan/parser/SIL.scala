@@ -322,7 +322,7 @@ object SILOperator {
   /***** OTHER *****/
 
   // Weird undocumented instruction
-  case class keypath(tpe: SILType, elements: ArrayBuffer[SILKeypathElement]) extends SILOperator
+  case class keypath(tpe: SILType, elements: ArrayBuffer[SILKeypathElement], operands: Option[ArrayBuffer[String]]) extends SILOperator
 
   /***** RUNTIME FAILURES *****/
   case class condFail(operand: SILOperand, message: Option[String]) extends SILOperator
@@ -409,6 +409,9 @@ object SILKeypathElement {
   case class external(decl: SILType) extends SILKeypathElement
   case class optionalChain(tpe: SILType) extends SILKeypathElement
   case class optionalWrap(tpe: SILType) extends SILKeypathElement
+  case class indices(i: ArrayBuffer[(Int, SILType, SILType)]) extends SILKeypathElement
+  case class indicesEquals(name: SILMangledName, tpe: SILType) extends SILKeypathElement
+  case class indicesHash(name: SILMangledName, tpe: SILType) extends SILKeypathElement
 }
 
 sealed trait SILSwitchEnumCase

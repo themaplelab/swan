@@ -1115,7 +1115,7 @@ class SILPrinter extends Printer {
 
         // *** OTHER ***
 
-      case SILOperator.keypath(tpe, elements) => {
+      case SILOperator.keypath(tpe, elements, operands) => {
         print("keypath ")
         print(tpe)
         print(", (")
@@ -1455,6 +1455,9 @@ class SILPrinter extends Printer {
       case SILKeypathElement.external(decl) =>
       case SILKeypathElement.optionalChain(tpe) =>
       case SILKeypathElement.optionalWrap(tpe) =>
+      case SILKeypathElement.indicesEquals(name, tpe) =>
+      case SILKeypathElement.indicesHash(name, tpe) =>
+      case SILKeypathElement.indices(i) =>
     }
   }
 
