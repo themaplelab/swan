@@ -337,8 +337,9 @@ class CallGraphConstruction(moduleGroup: ModuleGroup) {
       val solver = new Boomerang(cg, DataFlowScope.INCLUDE_ALL, new DefaultBoomerangOptions)
       val results = solver.solve(query)
       if (results.getAllocationSites.isEmpty) return
-      var allocatingInitFunction: SWANMethod = null
-      var delegateType: String = null
+      val allocatingInitFunctions = ArrayBuffer.empty[SWANMethod]
+      val delegateTypes = mutable.HashMap.empty[SWANMethod, String]
+      val visited = mutable.HashSet.empty[String]
       results.getAllocationSites.forEach((forwardQuery, _) => {
         forwardQuery.`var`().asInstanceOf[AllocVal].getAllocVal match {
           case c: SWANVal => {
@@ -346,19 +347,29 @@ class CallGraphConstruction(moduleGroup: ModuleGroup) {
             val regex = "@objc_metatype (.*)\\.Type".r
             val result = regex.findAllIn(tpe.name)
             if (result.nonEmpty) {
-              delegateType = result.group(1)
-              val allocatingInit = methods.find(x => x._2.getName.contains(delegateType+".__allocating_init()"))
-              val init = methods.find(x => ("^[^\\s]*"+delegateType+"\\.init\\(\\)").r.findAllIn(x._2.getName).nonEmpty)
-              if (allocatingInit.nonEmpty && init.nonEmpty) {
-                allocatingInitFunction = allocatingInit.get._2
-                builder.openFunction(allocatingInitFunction.delegate, model = true)
-                builder.addLine("%1 = new $`"+delegateType+"`")
-                builder.addLine("%2 = function_ref @`"+init.get._2.getName+"`, $`Any`")
-                builder.addLine("%3 = apply %2(%1), $`"+delegateType+"`")
-                builder.addLine("return %3")
-                builder.closeFunction()
-              } else {
-                throw new RuntimeException("Expected (allocating) init method of delegate type to exist")
+              val delegateType = result.group(1)
+              if (!visited.contains(delegateType)) {
+                visited.add(delegateType)
+                allocatingInitFunctions.appendAll(methods.filter(x => x._2.getName.contains(delegateType+".__allocating_init()")).values)
+                if (allocatingInitFunctions.nonEmpty) {
+                  allocatingInitFunctions.foreach(allocatingInit => {
+                    delegateTypes.put(allocatingInit, delegateType)
+                    val modulePrefix = allocatingInit.getName.substring(0, allocatingInit.getName.indexOf(delegateType))
+                    val init = methods.find(x => ("^[^\\s]*"+modulePrefix+delegateType+"\\.init\\(\\)").r.findAllIn(x._2.getName).nonEmpty)
+                    if (init.nonEmpty) {
+                      builder.openFunction(allocatingInit.delegate, model = true)
+                      builder.addLine("%1 = new $`" + delegateType + "`")
+                      builder.addLine("%2 = function_ref @`" + init.get._2.getName + "`, $`Any`")
+                      builder.addLine("%3 = apply %2(%1), $`" + delegateType + "`")
+                      builder.addLine("return %3")
+                      builder.closeFunction()
+                    } else {
+                      throw new RuntimeException("Expected _init method of delegate type to exist")
+                    }
+                  })
+                } else {
+                  throw new RuntimeException("Expected __allocating_init method of delegate type to exist")
+                }
               }
             } else {
               throw new RuntimeException("Expected delegate type to match")
@@ -369,43 +380,57 @@ class CallGraphConstruction(moduleGroup: ModuleGroup) {
       })
 
       // Overwrite UIApplicationMain stub to call allocating_init and lifecycle methods
+      // Each block represents a different AppDelegate (in the case that multiple main
+      // functions call UIApplicationMain with their own AppDelegate.
       builder.openFunction(m.delegate, model = true)
-      builder.addLine("%4 = function_ref @`"+allocatingInitFunction.getName+"`, $`Any`")
-      builder.addLine("%5 = apply %4(%3), $`"+delegateType+"`")
-      var i = 6
-      val newValues = new mutable.HashMap[String, String]()
-      val applyValues = new ArrayBuffer[(String, ArrayBuffer[String])]()
-      methods.values.foreach(m => {
-        if (m.getName.contains(delegateType)) {
-          m.getParameterLocals.forEach(arg => {
-            if (arg.getVariableName == "self" && arg.getType.toString.contains("$"+delegateType)) {
-              val args = new ArrayBuffer[String]()
-              m.getParameterLocals.forEach(a => {
-                if (a != arg) {
-                  val tpe = a.getType.asInstanceOf[SWANType].tpe.name
-                  if (!newValues.contains(tpe)) {
-                    val v = "%"+i
-                    i += 1
-                    builder.addLine(v+" = new $`"+tpe+"`")
-                    newValues.put(tpe, v)
+      var i = 4
+      allocatingInitFunctions.foreach(allocatingInitFunction => {
+        val delegateType = delegateTypes(allocatingInitFunction)
+        val moduleName = allocatingInitFunction.getName.substring(0, allocatingInitFunction.getName.indexOf(delegateType))
+        builder.addLine(s"%$i = function_ref @`"+allocatingInitFunction.getName+"`, $`Any`")
+        i += 1
+        builder.addLine(s"%$i = apply %4(%3), "+"$`"+delegateType+"`")
+        val applyVal = i
+        i += 1
+        val newValues = new mutable.HashMap[String, String]()
+        val applyValues = new ArrayBuffer[(String, ArrayBuffer[String])]()
+        methods.values.foreach(m => {
+          if (m.getName.contains(moduleName+delegateType)) {
+            m.getParameterLocals.forEach(arg => {
+              if (arg.getVariableName == "self" && arg.getType.toString.contains("$"+delegateType)) {
+                val args = new ArrayBuffer[String]()
+                m.getParameterLocals.forEach(a => {
+                  if (a != arg) {
+                    val tpe = a.getType.asInstanceOf[SWANType].tpe.name
+                    if (!newValues.contains(tpe)) {
+                      val v = "%"+i
+                      i += 1
+                      builder.addLine(v+" = new $`"+tpe+"`")
+                      newValues.put(tpe, v)
+                    }
+                    args.append(newValues(tpe))
+                  } else {
+                    args.append(s"%$applyVal")
                   }
-                  args.append(newValues(tpe))
-                } else {
-                  args.append("%5")
-                }
-              })
-              applyValues.append((m.getName, args))
-            }
-          })
+                })
+                applyValues.append((m.getName, args))
+              }
+            })
+          }
+        })
+        applyValues.foreach(v => {
+          val v1 = "%"+i
+          val v2 = "%"+(i+1)
+          i += 2
+          builder.addLine(v1+" = function_ref @`"+v._1+"`, $`Any`")
+          builder.addLine(v2+" = apply "+v1+"("+v._2.mkString(", ")+"), $`Any`")
+        })
+        if (allocatingInitFunctions.length > 1 && allocatingInitFunctions.last != allocatingInitFunction) {
+          builder.addLine("br bb" + builder.blockNo)
+          builder.newBlock()
         }
       })
-      applyValues.foreach(v => {
-        val v1 = "%"+i
-        val v2 = "%"+(i+1)
-        i += 2
-        builder.addLine(v1+" = function_ref @`"+v._1+"`, $`Any`")
-        builder.addLine(v2+" = apply "+v1+"("+v._2.mkString(", ")+"), $`Any`")
-      })
+
       builder.addLine("%"+i+" = new $`Int32`")
       builder.addLine("return %"+i)
       builder.closeFunction()

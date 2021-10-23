@@ -27,6 +27,8 @@ class SWIRLBuilder {
   private val sb = new StringBuilder
   sb.append("swirl_stage raw\n\n")
 
+  var blockNo = 0
+
   def addLine(s: String, indent: Boolean = true): Unit = {
     if (indent) sb.append("  ")
     sb.append(s)
@@ -41,7 +43,8 @@ class SWIRLBuilder {
     sb.append("` : $`")
     sb.append(function.tpe.name)
     sb.append("` {\n")
-    sb.append("bb0")
+    sb.append(s"bb$blockNo")
+    blockNo += 1
     if (function.arguments.nonEmpty) {
       sb.append("(")
       function.arguments.foreach(arg => {
@@ -60,6 +63,12 @@ class SWIRLBuilder {
 
   def closeFunction(): Unit = {
     sb.append("}\n\n")
+    blockNo = 0
+  }
+
+  def newBlock(): Unit = {
+    sb.append(s"bb$blockNo:\n")
+    blockNo += 1
   }
 
   override def toString: String = sb.toString()
