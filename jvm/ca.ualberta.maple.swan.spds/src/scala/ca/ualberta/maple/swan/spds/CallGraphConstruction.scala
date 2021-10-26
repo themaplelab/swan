@@ -147,16 +147,12 @@ class CallGraphConstruction(moduleGroup: ModuleGroup) {
           b
         }
 
-        val solver = new Boomerang(cg, DataFlowScope.INCLUDE_ALL, new DefaultBoomerangOptions {
-          override def allowMultipleQueries(): Boolean = true
-        })
-
         def queryRef(stmt: SWANStatement.ApplyFunctionRef, m: SWANMethod): Unit = {
           val ref = stmt.getInvokeExpr.asInstanceOf[SWANInvokeExpr].getFunctionRef
           m.getControlFlowGraph.getPredsOf(stmt).forEach(pred => {
             val query = BackwardQuery.make(new ControlFlowGraph.Edge(pred, stmt), ref)
+            val solver = new Boomerang(cg, DataFlowScope.INCLUDE_ALL, new DefaultBoomerangOptions)
             val backwardQueryResults = solver.solve(query)
-            solver.unregisterAllListeners()
             backwardQueryResults.getAllocationSites.forEach((forwardQuery, _) => {
               val applyStmt = query.asNode().stmt().getTarget.asInstanceOf[SWANStatement.ApplyFunctionRef]
               forwardQuery.`var`().asInstanceOf[AllocVal].getAllocVal match {
