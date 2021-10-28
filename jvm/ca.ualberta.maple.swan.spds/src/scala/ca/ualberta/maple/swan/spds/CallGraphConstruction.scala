@@ -29,15 +29,15 @@ import ca.ualberta.maple.swan.utils.Logging
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
 
-class CGAggregates {
-  type A = Int
+class CGAggregates(val cg: SWANCallGraph) {
+  type A = (Int,Int)
   val instantiatedTypes = new mutable.HashSet[String]()
   // Mapping of methods to # of instantiated types
   val methodCount = new mutable.HashMap[SWANMethod, A]
   // Mapping of block start stmts to # of instantiated types
   val blockCount = new mutable.HashMap[Statement, A]
 
-  def size: A = instantiatedTypes.size
+  def size: A = (instantiatedTypes.size, cg.size())
 }
 
 class CallGraphConstruction(moduleGroup: ModuleGroup) {
@@ -216,7 +216,7 @@ class CallGraphConstruction(moduleGroup: ModuleGroup) {
   def buildFromEntryPoints(entryPoints: ArrayBuffer[SWANMethod]): Unit = {
 
     entryPoints.foreach(entryPoint => {
-      implicit val ag: CGAggregates = new CGAggregates()
+      implicit val ag: CGAggregates = new CGAggregates(cg)
 
       traverseMethod(entryPoint)
     })
