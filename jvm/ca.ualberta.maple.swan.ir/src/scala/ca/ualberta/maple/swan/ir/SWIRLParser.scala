@@ -470,9 +470,11 @@ class SWIRLParser extends SWIRLPrinter {
           }
         }
         case "dynamic_ref" => {
+          val obj = parseSymbolRef()
+          take(",")
           val index = parseGlobalOrFunctionName()
           val symbol = parseResultSymbol(result)
-          Instruction.rawOperator(Operator.dynamicRef(symbol, index))
+          Instruction.rawOperator(Operator.dynamicRef(symbol, obj, index))
         }
         case "builtin_ref" => {
           val index = parseGlobalOrFunctionNameWithTicks()

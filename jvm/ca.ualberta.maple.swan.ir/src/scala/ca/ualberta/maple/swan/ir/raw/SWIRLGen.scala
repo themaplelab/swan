@@ -910,7 +910,7 @@ class SWIRLGen {
   @throws[UnexpectedSILFormatException]
   def visitClassMethod(r: Option[SILResult], I: SILOperator.classMethod, ctx: Context): ArrayBuffer[RawInstructionDef] = {
     val result = getSingleResult(r, Utils.SILTypeToType(I.tpe), ctx)
-    makeOperator(ctx, Operator.dynamicRef(result, Utils.print(I.declRef)))
+    makeOperator(ctx, Operator.dynamicRef(result, makeSymbolRef(I.operand.value, ctx), Utils.print(I.declRef)))
   }
 
   @throws[UnexpectedSILFormatException]
@@ -921,7 +921,7 @@ class SWIRLGen {
 
   def visitSuperMethod(r: Option[SILResult], I: SILOperator.superMethod, ctx: Context): ArrayBuffer[RawInstructionDef] = {
     val result = getSingleResult(r, Utils.SILTypeToType(I.tpe), ctx)
-    makeOperator(ctx, Operator.dynamicRef(result, Utils.print(I.declRef)))
+    makeOperator(ctx, Operator.dynamicRef(result, makeSymbolRef(I.operand.value, ctx), Utils.print(I.declRef)))
   }
 
   @throws[UnexpectedSILFormatException]
@@ -936,10 +936,13 @@ class SWIRLGen {
   @throws[UnexpectedSILFormatException]
   def visitWitnessMethod(r: Option[SILResult], I: SILOperator.witnessMethod, ctx: Context): ArrayBuffer[RawInstructionDef] = {
     val result = getSingleResult(r, Utils.SILTypeToType(I.tpe), ctx)
+    val n = new Symbol(generateSymbolName(result.ref.name, ctx), Utils.SILTypeToType(I.archetype))
     if (I.declRef.name.length < 2) { // #T.method[...]
       throw new UnexpectedSILFormatException("Expected decl ref of witness_method to have at least two components: " + Utils.print(I.declRef))
     }
-    makeOperator(ctx, Operator.dynamicRef(result, Utils.print(I.declRef)))
+    makeOperator(ctx,
+      Operator.neww(n),
+      Operator.dynamicRef(result, n.ref, Utils.print(I.declRef)))
   }
 
   /* FUNCTION APPLICATION */

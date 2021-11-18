@@ -308,8 +308,10 @@ class SWIRLPrinter extends Printer {
           case Literal.float(value) => print("[float] "); literal(value)
         }
       }
-      case Operator.dynamicRef(_, index) => {
+      case Operator.dynamicRef(_, obj, index) => {
         print("dynamic_ref ")
+        print(obj)
+        print(", ")
         print("@`")
         print(index)
         print("`")

@@ -32,7 +32,7 @@ class SWANInvokeExpr(val stmt: ApplyFunctionRef, val method: SWANMethod) extends
     args.add(method.addVal(SWANVal.Argument(method.delegate.getSymbol(arg._1.name), arg._2, method)))
   })
 
-  var declaredMethod: DeclaredMethod = new SWANDeclaredMethod(this, null) {
+  var declaredMethod: SWANDeclaredMethod = new SWANDeclaredMethod(this, null) {
     override def getSubSignature: String = ""
     override def getName: String = ""
   }
@@ -40,10 +40,10 @@ class SWANInvokeExpr(val stmt: ApplyFunctionRef, val method: SWANMethod) extends
   def getFunctionRef: Val = stmt.getFunctionRef
 
   def updateDeclaredMethod(name: String, edge: ControlFlowGraph.Edge): Unit = {
-    declaredMethod = new SWANDeclaredMethod(this, edge) {
-      override def getSubSignature: String = name
-      override def getName: String = name
+    if (declaredMethod.edge == null) {
+      declaredMethod = new SWANDeclaredMethod(this, edge) {}
     }
+    declaredMethod.names.add(name)
   }
 
   def getIndexOf(v: Val): Option[Int] = {

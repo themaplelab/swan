@@ -182,14 +182,15 @@ object Instruction {
 abstract class Operator extends Serializable
 sealed trait RawOperator extends Operator
 sealed trait CanOperator extends Operator
+sealed trait FunctionRef extends Operator
 
 object Operator {
   case class neww(result: Symbol) extends WithResult(result) with RawOperator with CanOperator
   case class assign(result: Symbol, from: SymbolRef, bbArg: Boolean = false) extends WithResult(result) with RawOperator with CanOperator
   case class literal(result: Symbol, literal: Literal) extends WithResult(result) with RawOperator with CanOperator
-  case class dynamicRef(result: Symbol, index: String) extends WithResult(result) with RawOperator with CanOperator
-  case class builtinRef(result: Symbol, name: String) extends WithResult(result) with RawOperator with CanOperator
-  case class functionRef(result: Symbol, name: String) extends WithResult(result) with RawOperator with CanOperator
+  case class dynamicRef(result: Symbol, obj: SymbolRef, index: String) extends WithResult(result) with RawOperator with CanOperator with FunctionRef
+  case class builtinRef(result: Symbol, name: String) extends WithResult(result) with RawOperator with CanOperator with FunctionRef
+  case class functionRef(result: Symbol, name: String) extends WithResult(result) with RawOperator with CanOperator with FunctionRef
   case class apply(result: Symbol, functionRef: SymbolRef, arguments: ArrayBuffer[SymbolRef]) extends WithResult(result) with RawOperator with CanOperator {
     // Used by CG debugInfo for printing
     override def hashCode(): Int = System.identityHashCode(this)

@@ -22,15 +22,15 @@ package ca.ualberta.maple.swan.drivers
 import java.io.{File, FileWriter}
 import java.nio.charset.StandardCharsets
 import java.nio.file.{Files, Paths}
-
 import ca.ualberta.maple.swan.drivers.Driver.{taintAnalysisResultsFileName, typeStateAnalysisResultsFileName}
 import ca.ualberta.maple.swan.ir._
 import ca.ualberta.maple.swan.ir.canonical.SWIRLPass
 import ca.ualberta.maple.swan.ir.raw.SWIRLGen
 import ca.ualberta.maple.swan.parser.{SILModule, SILParser}
-import ca.ualberta.maple.swan.spds.CallGraphConstruction
+import ca.ualberta.maple.swan.spds.{CallGraphConstruction, NewCallGraphConstruction}
 import ca.ualberta.maple.swan.spds.analysis.taint._
 import ca.ualberta.maple.swan.spds.analysis.typestate.{TypeStateAnalysis, TypeStateResults}
+import ca.ualberta.maple.swan.spds.cg.CallGraphBuilder
 import ca.ualberta.maple.swan.utils.Logging
 import org.apache.commons.io.{FileExistsException, FileUtils, IOUtils}
 import picocli.CommandLine
@@ -299,17 +299,16 @@ class Driver extends Runnable {
       fw.close()
     }
     if (options.constructCallGraph || options.taintAnalysisSpec.nonEmpty || options.typeStateAnalysisSpec.nonEmpty) {
-      val cgResults = new CallGraphConstruction(group).construct()
-      val cg = cgResults._1
+      val cgResults = CallGraphBuilder.createCallGraph(group, CallGraphBuilder.CallGraphStyle.CHA)
+      val cg = cgResults.cg
       if (options.debug) {
-        writeFile(cgResults._3, debugDir, "grouped-cg", new SWIRLPrinterOptions().cgDebugInfo(cgResults._2))
-        if (cgResults._4.nonEmpty ) {
-          val r = cgResults._4.get
+        writeFile(cgResults.finalModuleGroup, debugDir, "grouped-cg", new SWIRLPrinterOptions().cgDebugInfo(cgResults.debugInfo))
+        if (cgResults.dynamicModels.nonEmpty ) {
+          val r = cgResults.dynamicModels.get
           writeFile(r._1, debugDir, "dynamic-models.raw")
           writeFile(r._2, debugDir, "dynamic-models")
         }
       }
-      // System.out.println(cg)
       if (options.taintAnalysisSpec.nonEmpty) {
         val allResults = new ArrayBuffer[TaintResults]()
         val specs = TaintSpecification.parse(options.taintAnalysisSpec.get)

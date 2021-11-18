@@ -29,15 +29,15 @@ import ca.ualberta.maple.swan.utils.Logging
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
 
-class CGAggregates(val cg: SWANCallGraph) {
-  type A = (Int,Int)
+class CGAggregates(val cg: SWANCallGraph, val entryPoints: mutable.LinkedHashSet[SWANMethod], val startMethod: SWANMethod) {
+  type A = Int
   val instantiatedTypes = new mutable.HashSet[String]()
   // Mapping of methods to # of instantiated types
   val methodCount = new mutable.HashMap[SWANMethod, A]
   // Mapping of block start stmts to # of instantiated types
   val blockCount = new mutable.HashMap[Statement, A]
 
-  def size: A = (instantiatedTypes.size, cg.size())
+  def size: A = instantiatedTypes.size
 }
 
 class CallGraphConstruction(moduleGroup: ModuleGroup) {
@@ -61,6 +61,8 @@ class CallGraphConstruction(moduleGroup: ModuleGroup) {
   var trivialEdges = 0
   var virtualEdges = 0
   var queriedEdges = 0
+  var totalQueries = 0
+  var fruitlessQueries = 0
 
   val debugInfo = new mutable.HashMap[CanOperator, mutable.HashSet[String]]()
 
@@ -86,7 +88,7 @@ class CallGraphConstruction(moduleGroup: ModuleGroup) {
                 if (addCGEdge(m, target, applyStmt, edge)) trivialEdges += 1
                 traverseMethod(target)
               }
-              case Operator.dynamicRef(_, index) => {
+              case Operator.dynamicRef(_, obj, index) => {
                 moduleGroup.ddgs.foreach(ddg => {
                   val functionNames = ddg._2.query(index, Some(ag.instantiatedTypes))
                   functionNames.foreach(name => {
@@ -114,7 +116,7 @@ class CallGraphConstruction(moduleGroup: ModuleGroup) {
                 if (addCGEdge(m, target, applyStmt, edge)) trivialEdges += 1
                 traverseMethod(target)
               }
-              case Operator.dynamicRef(_, index) => {
+              case Operator.dynamicRef(_, obj, index) => {
                 moduleGroup.ddgs.foreach(ddg => {
                   val functionNames = ddg._2.query(index, Some(ag.instantiatedTypes))
                   functionNames.foreach(name => {
@@ -139,11 +141,24 @@ class CallGraphConstruction(moduleGroup: ModuleGroup) {
       case _ =>
     }
     m.getControlFlowGraph.getSuccsOf(b.last).forEach(nextBlock => {
-      traverseBlock(m.getCFG.blocks(nextBlock.asInstanceOf[SWANStatement])._1)
+      traverseBlock(m.getCFG.blocks(nextBlock.asInstanceOf[SWANStatement]).stmts)
     })
   }
 
   def traverseMethod(m: SWANMethod)(implicit ag: CGAggregates): Unit = {
+    if (m.delegate.attribute.nonEmpty && m.delegate.attribute.get == FunctionAttribute.stub) {
+      return
+    }
+
+    if (m.getName.startsWith("closure ") || m.getName.startsWith("reabstraction thunk")) {
+      return
+    }
+
+    if (ag.startMethod != m && ag.entryPoints.contains(m)) {
+      ag.entryPoints.remove(m)
+      cg.getEntryPoints.remove(m)
+    }
+
     if (ag.methodCount.contains(m)) {
       if (ag.methodCount(m) == ag.size) {
         return
@@ -152,10 +167,9 @@ class CallGraphConstruction(moduleGroup: ModuleGroup) {
     ag.methodCount.put(m, ag.size)
     ag.instantiatedTypes.addAll(m.delegate.instantiatedTypes)
 
-
     val startStatement = m.getControlFlowGraph.getStartPoints.iterator().next()
     implicit val method: SWANMethod = m
-    traverseBlock(m.getCFG.blocks(startStatement.asInstanceOf[SWANStatement])._1)
+    traverseBlock(m.getCFG.blocks(startStatement.asInstanceOf[SWANStatement]).stmts)
   }
 
   def addCGEdge(from: SWANMethod, to: SWANMethod, stmt: SWANStatement.ApplyFunctionRef, cfgEdge: ControlFlowGraph.Edge): Boolean = {
@@ -175,13 +189,16 @@ class CallGraphConstruction(moduleGroup: ModuleGroup) {
     b
   }
 
-
   def queryRef(stmt: SWANStatement.ApplyFunctionRef, m: SWANMethod)(implicit ag: CGAggregates): Unit = {
     val ref = stmt.getInvokeExpr.asInstanceOf[SWANInvokeExpr].getFunctionRef
     m.getControlFlowGraph.getPredsOf(stmt).forEach(pred => {
       val query = BackwardQuery.make(new ControlFlowGraph.Edge(pred, stmt), ref)
       val solver = new Boomerang(cg, DataFlowScope.INCLUDE_ALL, new DefaultBoomerangOptions)
       val backwardQueryResults = solver.solve(query)
+      if (backwardQueryResults.getAllocationSites.isEmpty) {
+        fruitlessQueries += 1
+      }
+      totalQueries += 1
       backwardQueryResults.getAllocationSites.forEach((forwardQuery, _) => {
         val applyStmt = query.asNode().stmt().getTarget.asInstanceOf[SWANStatement.ApplyFunctionRef]
         forwardQuery.`var`().asInstanceOf[AllocVal].getAllocVal match {
@@ -213,13 +230,13 @@ class CallGraphConstruction(moduleGroup: ModuleGroup) {
     })
   }
 
-  def buildFromEntryPoints(entryPoints: ArrayBuffer[SWANMethod]): Unit = {
-
-    entryPoints.foreach(entryPoint => {
-      implicit val ag: CGAggregates = new CGAggregates(cg)
-
-      traverseMethod(entryPoint)
-    })
+  def buildFromEntryPoints(entryPoints: mutable.LinkedHashSet[SWANMethod]): Unit = {
+    val it = entryPoints.iterator
+    while (it.hasNext) {
+      val m = it.next()
+      implicit val ag: CGAggregates = new CGAggregates(cg, entryPoints, m)
+      traverseMethod(m)
+    }
   }
 
 
@@ -243,34 +260,6 @@ class CallGraphConstruction(moduleGroup: ModuleGroup) {
     mainEntryPoints.addAll(moduleGroup.functions.filter(f => f.name.startsWith(Constants.fakeMain)).map(f => makeMethod(f)))
     otherEntryPoints.addAll(moduleGroup.functions.filter(f => !f.name.startsWith(Constants.fakeMain)).map(f => makeMethod(f)))
 
-    // Eliminate functions that get called (referenced), except for recursive case
-    methods.foreach(m => {
-      val f = m._2.delegate
-      f.blocks.foreach(b => {
-        b.operators.foreach(opDef => {
-          opDef.operator match {
-            case Operator.dynamicRef(_, index) => {
-              moduleGroup.ddgs.foreach(ddg => {
-                ddg._2.query(index, None).foreach(functionName => {
-                  otherEntryPoints.remove(methods(functionName))
-                })
-              })
-            }
-            case Operator.builtinRef(_, name) => {
-              if (methods.contains(name)) {
-                otherEntryPoints.remove(methods(name))
-              }
-            }
-            case Operator.functionRef(_, name) => {
-              if (name != m._1) {
-                otherEntryPoints.remove(methods(name))
-              }
-            }
-            case _ =>
-          }
-        })
-      })
-    })
     // TODO: cg creates a problem if the entry points call something
     // Eliminate uninteresting functions
     /*val iterator = otherEntryPoints.iterator
@@ -284,9 +273,10 @@ class CallGraphConstruction(moduleGroup: ModuleGroup) {
       })
     }*/
     // Combine entry points, with the first being the main entry point
-    val allEntryPoints = new ArrayBuffer[SWANMethod]
-    allEntryPoints.appendAll(mainEntryPoints)
-    allEntryPoints.appendAll(otherEntryPoints)
+    val allEntryPoints = new mutable.LinkedHashSet[SWANMethod]
+    allEntryPoints.addAll(mainEntryPoints)
+    allEntryPoints.addAll(otherEntryPoints)
+    allEntryPoints.filterInPlace(m => !m.getName.startsWith("closure ") && !m.getName.startsWith("reabstraction thunk"))
     allEntryPoints.foreach(e => cg.addEntryPoint(e))
     // Build CG for every entry point
     buildFromEntryPoints(allEntryPoints)
@@ -296,10 +286,12 @@ class CallGraphConstruction(moduleGroup: ModuleGroup) {
     Logging.printInfo("  Trivial Edges: " + trivialEdges.toString)
     Logging.printInfo("  Virtual Edges: " + virtualEdges.toString)
     Logging.printInfo("  Queried Edges: " + queriedEdges.toString)
+    Logging.printInfo("  Total Queries: " + totalQueries.toString)
 
     val toTraverse = new mutable.HashSet[String]
 
-    dynamicIOSModels(toTraverse)
+    dynamicUIKitModels(toTraverse)
+    // dynamicSwiftUIModels(toTraverse) (Not done)
     // Add other dynamic modifications here
 
     var newValues: Option[(Module, CanModule)] = None
@@ -323,8 +315,8 @@ class CallGraphConstruction(moduleGroup: ModuleGroup) {
       cg.moduleGroup = newModuleGroup
       methods.values.foreach(m => m.moduleGroup = newModuleGroup)
       newValues = Some((newRawModule, newCanModule))
-      val entryPoints = new ArrayBuffer[SWANMethod]()
-      methods.values.foreach(m => if (toTraverse.contains(m.getName)) entryPoints.append(m))
+      val entryPoints = new mutable.LinkedHashSet[SWANMethod]()
+      methods.values.foreach(m => if (toTraverse.contains(m.getName)) entryPoints.add(m))
       buildFromEntryPoints(entryPoints)
       retModuleGroup = newModuleGroup
 
@@ -332,14 +324,15 @@ class CallGraphConstruction(moduleGroup: ModuleGroup) {
       Logging.printInfo("  Trivial Edges: " + trivialEdges.toString)
       Logging.printInfo("  Virtual Edges: " + virtualEdges.toString)
       Logging.printInfo("  Queried Edges: " + queriedEdges.toString)
+      Logging.printInfo("  Total Queries: " + totalQueries.toString)
+      Logging.printInfo("  Fruitless Queries: " + fruitlessQueries.toString)
       Logging.printTimeStampSimple(1, startTime, "constructing")
     }
-
 
     (cg, debugInfo, retModuleGroup, newValues)
   }
 
-  private def dynamicIOSModels(toTraverse: mutable.HashSet[String]): Unit = {
+  private def dynamicUIKitModels(toTraverse: mutable.HashSet[String]): Unit = {
     mainEntryPoints.foreach(f => toTraverse.add(f.getName))
 
     // Gather all delegate types in the main functions.
@@ -418,6 +411,7 @@ class CallGraphConstruction(moduleGroup: ModuleGroup) {
       var i = 4
       val allocatingInitFunctions = ArrayBuffer.from(delegateTypes.keySet)
       allocatingInitFunctions.foreach(allocatingInitFunction => {
+        if (allocatingInitFunctions.head != allocatingInitFunction) builder.newBlock()
         val delegateType = delegateTypes(allocatingInitFunction)
         val moduleName = allocatingInitFunction.getName.substring(0, allocatingInitFunction.getName.indexOf(delegateType))
         builder.addLine(s"%$i = function_ref @`"+allocatingInitFunction.getName+"`, $`Any`")
@@ -458,17 +452,76 @@ class CallGraphConstruction(moduleGroup: ModuleGroup) {
           builder.addLine(v1+" = function_ref @`"+v._1+"`, $`Any`")
           builder.addLine(v2+" = apply "+v1+"("+v._2.mkString(", ")+"), $`Any`")
         })
-        if (allocatingInitFunctions.length > 1 && allocatingInitFunctions.last != allocatingInitFunction) {
-          builder.addLine("br bb" + builder.blockNo)
-          builder.newBlock()
-        }
+        val v = "%"+i
+        i += 1
+        builder.addLine(v+" = new $`Builtin.Int1`")
+        builder.addLine(s"cond_br %$v, true bb${builder.blockNo - 1}, false bb_return")
       })
 
+      builder.addLine("bb_return:", indent = false)
       builder.addLine("%"+i+" = new $`Int32`")
       builder.addLine("return %"+i)
       builder.closeFunction()
 
       modified = true
     }
+  }
+
+  // TODO: WIP Swift UI lifecycle handling
+  private def dynamicSwiftUIModels(toTraverse: mutable.HashSet[String]): Unit = {
+    mainEntryPoints.foreach(f => toTraverse.add(f.getName))
+
+    methods.foreach(m => {
+      if (m._1 == "static Emitron.EmitronApp.$main() -> ()") {
+        var tpe: Option[String] = None
+        m._2.delegate.blocks.foreach(b => {
+          b.operators.foreach(opDef => {
+            opDef.operator match {
+              case Operator.apply(_, functionRef, arguments) => {
+                m._2.delegate.symbolTable(functionRef.name) match {
+                  case SymbolTableEntry.operator(_, operator) => {
+                    operator match {
+                      case Operator.functionRef(_, name) if name == "static (extension in SwiftUI):SwiftUI.App.main() -> ()" => {
+                        m._2.delegate.symbolTable(arguments(0).name) match {
+                          case SymbolTableEntry.operator(_, operator) => {
+                            operator match {
+                              case Operator.neww(result) => {
+                                val regex = "@[^\\s]+ (.*)\\.Type".r
+                                val m = regex.findAllIn(result.tpe.name)
+                                if (m.nonEmpty) {
+                                  tpe = Some(m.group(1))
+                                } else {
+                                  throw new RuntimeException("Unexpected SwiftUI app type")
+                                }
+                              }
+                              case _ =>
+                            }
+                          } case _ =>
+                        }
+                      } case _ =>
+                    }
+                  } case _ =>
+                }
+              } case _ =>
+            }
+          })
+        })
+        if (tpe.isEmpty) {
+          throw new RuntimeException("Expected to find SwiftUI App type")
+        }
+        val main = methods.find(_._1 == "static (extension in SwiftUI):SwiftUI.App.main() -> ()").get
+        val init = methods.find(x => ("^[^\\s]*"+tpe.get+"\\.init\\(\\)").r.findAllIn(x._2.getName).nonEmpty)
+
+        if (init.nonEmpty) {
+          builder.openFunction(main._2.delegate, model = true)
+          builder.addLine("%1 = function_ref @`" + init.get._2.getName + "`, $`Any`")
+          //builder.addLine("%2 = apply %1(...), $`" + ... + "`")
+          //builder.addLine("return %...")
+          builder.closeFunction()
+        } else {
+          throw new RuntimeException("Expected init method of SwiftUI type to exist")
+        }
+      }
+    })
   }
 }

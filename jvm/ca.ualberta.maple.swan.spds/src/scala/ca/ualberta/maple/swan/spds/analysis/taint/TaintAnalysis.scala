@@ -81,9 +81,11 @@ class TaintAnalysis(val spec: TaintSpecification, val opts: TaintAnalysisOptions
                   var print = false
                   s.getValue.getAllStatements.forEach(n => {
                     if (n.stmt().getStart.containsInvokeExpr()) {
-                      if (query.sources.map(f => f.getName).contains(n.stmt().getStart.getInvokeExpr.getMethod.getName)) {
-                        print = true
-                      }
+                      n.stmt().getStart.getInvokeExpr.asInstanceOf[SWANInvokeExpr].declaredMethod.names.foreach(name => {
+                        if (query.sources.map(f => f.getName).contains(name)) {
+                          print = true
+                        }
+                      })
                     }
                     if (print) System.out.println("  " + n.stmt().getStart)
                   })

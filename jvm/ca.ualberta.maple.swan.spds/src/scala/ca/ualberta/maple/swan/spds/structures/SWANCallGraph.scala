@@ -24,7 +24,8 @@ import ca.ualberta.maple.swan.ir._
 
 import scala.collection.mutable
 
-class SWANCallGraph(var moduleGroup: ModuleGroup, val methods: mutable.HashMap[String, SWANMethod]) extends CallGraph {
+class SWANCallGraph(var moduleGroup: ModuleGroup,
+                    val methods: mutable.HashMap[String, SWANMethod]) extends CallGraph {
 
   override def toString: String = {
     val sb = new StringBuilder

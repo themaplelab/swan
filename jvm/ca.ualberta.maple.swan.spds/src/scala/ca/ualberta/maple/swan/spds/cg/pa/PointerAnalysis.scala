@@ -17,21 +17,16 @@
  * See https://github.com/themaplelab/swan/doc/LICENSE.md.
  */
 
-package ca.ualberta.maple.swan.spds.structures
+package ca.ualberta.maple.swan.spds.cg.pa
 
-import boomerang.scene.{ControlFlowGraph, DeclaredMethod, WrappedClass}
+import ca.ualberta.maple.swan.spds.cg.CallGraphUtils.CallGraphData
+import ca.ualberta.maple.swan.spds.structures.SWANStatement
 
-import scala.collection.mutable
+abstract class PointerAnalysis(cgs: CallGraphData) {
 
-abstract class SWANDeclaredMethod(val invokeExpr: SWANInvokeExpr, val edge: ControlFlowGraph.Edge) extends DeclaredMethod(invokeExpr) {
+  initialize()
 
-  val names: mutable.HashSet[String] = mutable.HashSet.empty
+  protected def initialize(): Unit
 
-  override def isNative: Boolean = ???
-  override def isStatic: Boolean = ???
-  override def isConstructor: Boolean = ???
-  override def getSignature: String = ???
-  override def getDeclaringClass: WrappedClass = ???
-  override def getSubSignature: String = "" // Don't use this
-  override def getName: String = "" // Don't use this
+  protected def resolveCallSite(stmt: SWANStatement.ApplyFunctionRef): Unit
 }

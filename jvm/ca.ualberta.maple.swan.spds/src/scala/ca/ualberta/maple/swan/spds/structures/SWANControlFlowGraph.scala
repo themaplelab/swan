@@ -20,10 +20,10 @@
 package ca.ualberta.maple.swan.spds.structures
 
 import java.util
-
 import boomerang.scene.{ControlFlowGraph, Statement}
 import ca.ualberta.maple.swan.ir
 import ca.ualberta.maple.swan.ir.{CanOperatorDef, Constants, Operator, SymbolRef, Terminator, Type}
+import ca.ualberta.maple.swan.spds.structures.SWANControlFlowGraph.SWANBlock
 import com.google.common.collect.{HashMultimap, Lists, Maps, Multimap}
 
 import scala.collection.mutable
@@ -40,7 +40,7 @@ class SWANControlFlowGraph(val method: SWANMethod) extends ControlFlowGraph {
   private val predsOfCache: Multimap[Statement, Statement] = HashMultimap.create
   private val statements: java.util.List[Statement] = Lists.newArrayList
 
-  val blocks = new mutable.HashMap[SWANStatement, (ArrayBuffer[SWANStatement], String)]
+  val blocks = new mutable.HashMap[SWANStatement, SWANBlock]
 
   {
     // TOD0: dedicated NOP instruction?
@@ -95,7 +95,7 @@ class SWANControlFlowGraph(val method: SWANMethod) extends ControlFlowGraph {
       blockStatements.append(statement)
       statement
     }
-    blocks.put(startStatement, (blockStatements, b.blockRef.label))
+    blocks.put(startStatement, new SWANBlock(b.blockRef.label, blockStatements))
     mappedStatements.put(b.terminator, termStatement)
     statements.add(termStatement)
   })
@@ -150,4 +150,8 @@ class SWANControlFlowGraph(val method: SWANMethod) extends ControlFlowGraph {
   override def getPredsOf(statement: Statement): util.Collection[Statement] = predsOfCache.get(statement)
 
   override def getStatements: java.util.List[Statement] = statements
+}
+
+object SWANControlFlowGraph {
+  class SWANBlock(val name: String, val stmts: ArrayBuffer[SWANStatement])
 }
