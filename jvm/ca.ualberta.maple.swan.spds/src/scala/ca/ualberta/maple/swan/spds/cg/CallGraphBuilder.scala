@@ -24,15 +24,20 @@ import ca.ualberta.maple.swan.ir.ModuleGroup
 object CallGraphBuilder {
 
   def createCallGraph(moduleGroup: ModuleGroup, style: CallGraphStyle.Style): CallGraphUtils.CallGraphData = {
-    style match {
-      case CallGraphStyle.CHA => new CHA(moduleGroup, PointerAnalysisStyle.None).buildCallGraph()
+    val cgBuilder = {
+      style match {
+        case CallGraphStyle.CHA => new CHA(moduleGroup, PointerAnalysisStyle.None)
+        case CallGraphStyle.PRTA => new PRTA(moduleGroup, PointerAnalysisStyle.None)
+      }
     }
+    cgBuilder.buildCallGraph()
   }
 
   object CallGraphStyle extends Enumeration {
     type Style = Value
 
     val CHA: CallGraphStyle.Value = Value
+    val PRTA: CallGraphStyle.Value = Value
   }
 
   object PointerAnalysisStyle extends Enumeration {

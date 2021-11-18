@@ -35,7 +35,7 @@ import scala.reflect.ClassTag
 class DynamicDispatchGraph extends Serializable {
 
   private val graph: Graph[Node, DefaultEdge] = new SimpleDirectedGraph(classOf[DefaultEdge])
-  private val nodes: mutable.HashMap[String, Node] = new mutable.HashMap[String, Node]()
+  val nodes: mutable.HashMap[String, Node] = new mutable.HashMap[String, Node]()
   private val reachabilityCache: SimpleDirectedGraph[Node, DefaultEdge] = new SimpleDirectedGraph(classOf[DefaultEdge])
 
   /**

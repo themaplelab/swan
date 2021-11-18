@@ -26,7 +26,9 @@ import ca.ualberta.maple.swan.spds.cg.CallGraphUtils.CallGraphData
 import ca.ualberta.maple.swan.spds.cg.pa.PointerAnalysis
 import ca.ualberta.maple.swan.spds.structures.SWANStatement
 
-class CHA(mg: ModuleGroup, pas: PointerAnalysisStyle.Style) extends CallGraphConstructor(mg) {
+import scala.collection.mutable
+
+class PRTA(mg: ModuleGroup, pas: PointerAnalysisStyle.Style) extends CallGraphConstructor(mg) {
 
   val pa: Option[PointerAnalysis] = {
     pas match {
@@ -42,9 +44,18 @@ class CHA(mg: ModuleGroup, pas: PointerAnalysisStyle.Style) extends CallGraphCon
 
   // TODO: Pointer analysis integration
   override def buildSpecificCallGraph(cgs: CallGraphData): Unit = {
-    var chaEdges: Int = 0
+    var prtaEdges: Int = 0
     val startTimeMs = System.currentTimeMillis()
     val methods = cgs.cg.methods
+
+    // This type set creation doesn't take long, don't worry
+    val types = mutable.HashSet.empty[String]
+    val validTypes = mutable.HashSet.empty[String]
+    moduleGroup.ddgs.foreach(d => validTypes.addAll(d._2.nodes.keySet))
+    methods.foreach(m => {
+      types.addAll(m._2.delegate.instantiatedTypes.intersect(validTypes))
+    })
+
     methods.foreach(x => {
       val m = x._2
       m.getCFG.blocks.foreach(b => {
@@ -68,8 +79,8 @@ class CHA(mg: ModuleGroup, pas: PointerAnalysisStyle.Style) extends CallGraphCon
                   }
                   case Operator.dynamicRef(_, _, index) => {
                     moduleGroup.ddgs.foreach(ddg => {
-                      ddg._2.query(index, None).foreach(target => {
-                        if (CallGraphUtils.addCGEdge(m, methods(target), applyStmt, edge, cgs)) chaEdges += 1
+                      ddg._2.query(index, Some(types)).foreach(target => {
+                        if (CallGraphUtils.addCGEdge(m, methods(target), applyStmt, edge, cgs)) prtaEdges += 1
                       })
                     })
                   }
@@ -79,22 +90,22 @@ class CHA(mg: ModuleGroup, pas: PointerAnalysisStyle.Style) extends CallGraphCon
               case _ =>
             }
           }
-
           case _ =>
         }
       })
     })
-    val stats = new CHA.CHAStats(chaEdges, System.currentTimeMillis() - startTimeMs)
+    val stats = new PRTA.PRTAStats(prtaEdges, System.currentTimeMillis() - startTimeMs)
     cgs.specificData.addOne(stats)
   }
 }
 
-object CHA {
+object PRTA {
 
-  class CHAStats(val chaEdges: Int, time: Long) extends CallGraphUtils.SpecificCallGraphStats("CHA", time) {
+  class PRTAStats(val edges: Int, time: Long) extends CallGraphUtils.SpecificCallGraphStats("pRTA", time) {
 
     override def specificStatsToString: String = {
-        s"      Edges: $chaEdges"
+      s"      Edges: $edges"
     }
   }
 }
+

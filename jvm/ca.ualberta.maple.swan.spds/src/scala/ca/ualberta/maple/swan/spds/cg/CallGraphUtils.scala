@@ -24,19 +24,29 @@ import ca.ualberta.maple.swan.ir.{CanModule, CanOperator, Instruction, Module, M
 import ca.ualberta.maple.swan.spds.structures.{SWANCallGraph, SWANMethod, SWANStatement}
 
 import scala.collection.mutable
+import scala.collection.mutable.ArrayBuffer
 
 object CallGraphUtils {
 
-  trait SpecificCallGraphStats
+  abstract class SpecificCallGraphStats(val name: String, val time: Long) {
+    override def toString: String = {
+      s"    $name:\n" +
+        s"      Time (ms): $time\n" + specificStatsToString
+    }
+
+    def specificStatsToString: String
+  }
 
   class CallGraphData(val cg: SWANCallGraph) {
     var trivialEdges: Int = 0
     val trivialCallSites: mutable.HashSet[SWANStatement.ApplyFunctionRef] = mutable.HashSet.empty
-    var msTimeToCreateInitialCG: Long = 0
     val debugInfo = new mutable.HashMap[CanOperator, mutable.HashSet[String]]()
-    var msTimeToConstructSpecificCG: Long = 0
-    var specificData: Option[SpecificCallGraphStats] = None
+    var msTimeToConstructCG: Long = 0
+    var msTimeToInitializeCG: Long = 0
+    var msTimeActualCGConstruction: Long = 0
+    var specificData: ArrayBuffer[SpecificCallGraphStats] = mutable.ArrayBuffer.empty
     var dynamicModels: Option[(Module, CanModule)] = None
+    var msTimeOverhead: Long = 0
     var finalModuleGroup: ModuleGroup = cg.moduleGroup
 
     override def toString: String = {
@@ -45,9 +55,11 @@ object CallGraphUtils {
         s"  Total Edges: ${cg.getEdges.size()}\n" +
         s"  Trivial Edges: $trivialEdges\n" +
         s"  Trivial Call Sites: ${trivialCallSites.size}\n" +
-        s"  Time to create initial CG (ms): $msTimeToCreateInitialCG\n" +
-        s"  Time to create specific CG (ms): $msTimeToConstructSpecificCG\n" +
-        ( if (specificData.nonEmpty) s"  Specific stats:\n${specificData.get}" else "" )
+        s"  Total time to create CG (ms): $msTimeToConstructCG\n" +
+        s"  Time to initialize CG (ms): $msTimeToInitializeCG\n" +
+        s"  Actual time to create CG (ms): $msTimeActualCGConstruction\n" +
+        s"  Overhead time (ms): $msTimeOverhead\n" +
+      ( if (specificData.nonEmpty) s"  Specific stats:\n${specificData.mkString("\n")}" else "" )
     }
   }
 
@@ -69,37 +81,6 @@ object CallGraphUtils {
     b
   }
 
-  private def resolveTrivialEdges(m: SWANMethod, cgs: CallGraphData): Unit = {
-    val methods = cgs.cg.methods
-    m.getCFG.blocks.foreach(b => {
-      b._2.stmts.foreach {
-        case applyStmt: SWANStatement.ApplyFunctionRef => {
-          val edge = new ControlFlowGraph.Edge(m.getCFG.getPredsOf(applyStmt).iterator().next(), applyStmt)
-          m.delegate.symbolTable(applyStmt.inst.functionRef.name) match {
-            case SymbolTableEntry.operator(_, operator) => {
-              operator match {
-                case Operator.builtinRef(_, name) => {
-                  if (methods.contains(name)) { // TODO: Why are some builtins missing stubs?
-                    cgs.trivialCallSites.add(applyStmt)
-                    addCGEdge(m, methods(name), applyStmt, edge, cgs)
-                  }
-                }
-                case Operator.functionRef(_, name) => {
-                  cgs.trivialCallSites.add(applyStmt)
-                  addCGEdge(m, methods(name), applyStmt, edge, cgs)
-                }
-                case Operator.dynamicRef(_, _, _) => // No trivial dynamic refs in practice
-                case _ =>
-              }
-            }
-            case _ => // multiple requires queries
-          }
-        }
-        case _ =>
-      }
-    })
-  }
-
   private def isUninteresting(m: SWANMethod): Boolean = {
     val name = m.getName
     name.startsWith("closure ") ||
@@ -117,9 +98,7 @@ object CallGraphUtils {
     })
   }
 
-  def generateInitialCallGraph(moduleGroup: ModuleGroup): CallGraphData = {
-
-    val startTime = System.currentTimeMillis()
+  def initializeCallGraph(moduleGroup: ModuleGroup): CallGraphData = {
 
     val methods = new mutable.HashMap[String, SWANMethod]()
     val cg = new SWANCallGraph(moduleGroup, methods)
@@ -134,17 +113,6 @@ object CallGraphUtils {
         entryPoints.add(m)
       }
     })
-
-    val it = entryPoints.iterator
-    while (it.hasNext) {
-      val e = it.next()
-      resolveTrivialEdges(e, cgs)
-    }
-
-    cgs.msTimeToCreateInitialCG = System.currentTimeMillis() - startTime
-    cgs.trivialEdges = cgs.cg.getEdges.size()
-
-    pruneEntryPoints(cgs)
 
     cgs
   }

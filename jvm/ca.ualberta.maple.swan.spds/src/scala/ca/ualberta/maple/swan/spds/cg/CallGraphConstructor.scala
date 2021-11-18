@@ -27,15 +27,22 @@ abstract class CallGraphConstructor(val moduleGroup: ModuleGroup) {
   def buildCallGraph(): CallGraphUtils.CallGraphData = {
     Logging.printInfo("Constructing Call Graph")
     val startTimeNano = System.nanoTime()
-    val cg = CallGraphUtils.generateInitialCallGraph(moduleGroup)
     val startTimeMs = System.currentTimeMillis()
+    // This initialization includes converting SWIRL to SPDS form
+    val cg = CallGraphUtils.initializeCallGraph(moduleGroup)
+    cg.msTimeToInitializeCG = System.currentTimeMillis() - startTimeMs
+    val startTimeActualMs = System.currentTimeMillis()
     buildSpecificCallGraph(cg)
-    cg.msTimeToConstructSpecificCG = System.currentTimeMillis() - startTimeMs
     CallGraphUtils.pruneEntryPoints(cg)
+    cg.msTimeToConstructCG = System.currentTimeMillis() - startTimeMs
+    cg.msTimeActualCGConstruction = System.currentTimeMillis() - startTimeActualMs
+    var overHeadTime = cg.msTimeToConstructCG
+    cg.specificData.foreach(s => overHeadTime -= s.time)
+    cg.msTimeOverhead = overHeadTime
     Logging.printTimeStampSimple(0, startTimeNano, "constructing")
     System.out.println(cg)
     cg
   }
 
-  protected def buildSpecificCallGraph(initialCG: CallGraphUtils.CallGraphData): Unit
+  def buildSpecificCallGraph(cg: CallGraphUtils.CallGraphData): Unit
 }
