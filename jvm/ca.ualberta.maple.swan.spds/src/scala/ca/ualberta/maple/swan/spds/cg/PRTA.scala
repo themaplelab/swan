@@ -84,10 +84,10 @@ class PRTA(mg: ModuleGroup, pas: PointerAnalysisStyle.Style) extends CallGraphCo
                       })
                     })
                   }
-                  case _ =>
+                  case _ => cgs.nonTrivialCallSites += 1
                 }
               }
-              case _ =>
+              case _ => cgs.nonTrivialCallSites += 1
             }
           }
           case _ =>

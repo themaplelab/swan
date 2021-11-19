@@ -40,6 +40,7 @@ object CallGraphUtils {
   class CallGraphData(val cg: SWANCallGraph) {
     var trivialEdges: Int = 0
     val trivialCallSites: mutable.HashSet[SWANStatement.ApplyFunctionRef] = mutable.HashSet.empty
+    var nonTrivialCallSites: Int = 0
     val debugInfo = new mutable.HashMap[CanOperator, mutable.HashSet[String]]()
     var msTimeToConstructCG: Long = 0
     var msTimeToInitializeCG: Long = 0
@@ -55,6 +56,7 @@ object CallGraphUtils {
         s"  Total Edges: ${cg.getEdges.size()}\n" +
         s"  Trivial Edges: $trivialEdges\n" +
         s"  Trivial Call Sites: ${trivialCallSites.size}\n" +
+        s"  Non-trivial Call Sites: ${nonTrivialCallSites}\n" +
         s"  Total time to create CG (ms): $msTimeToConstructCG\n" +
         s"  Time to initialize CG (ms): $msTimeToInitializeCG\n" +
         s"  Actual time to create CG (ms): $msTimeActualCGConstruction\n" +

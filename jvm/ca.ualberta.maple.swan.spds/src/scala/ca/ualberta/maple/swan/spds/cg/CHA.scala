@@ -73,13 +73,14 @@ class CHA(mg: ModuleGroup, pas: PointerAnalysisStyle.Style) extends CallGraphCon
                       })
                     })
                   }
-                  case _ =>
+                  case _ => {
+                    cgs.nonTrivialCallSites += 1
+                  }
                 }
               }
-              case _ =>
+              case _ => cgs.nonTrivialCallSites += 1
             }
           }
-
           case _ =>
         }
       })
