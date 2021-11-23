@@ -184,9 +184,6 @@ class AnnotationChecker extends Runnable {
               val components = c.trim.split(" ")(0).split("\\?")
               val name = components(1)
               val tpe = components(2)
-              if (tpe != "error") {
-                printErr("Invalid annotation type: " + tpe + " at line " + idx + " in\n  " + f.getName, exit = true)
-              }
               if (!annotations.contains(idx)) { annotations.put(idx, new ArrayBuffer[Annotation]())}
               var status: Option[String] = None
               if (components.length > 3) {
@@ -220,6 +217,10 @@ class AnnotationChecker extends Runnable {
                 } else if (a.status.get == "fn") {
                   failure = true
                   printErr("Annotation is not an FN: //?" + a.name + "?" + a.tpe + "?fn" + " on line " + a.line)
+                }
+                if (a.tpe != e._2.toString && a.tpe != "error") {
+                  failure = true
+                  printErr(s"Annotation final state name does not match (expected: ${a.tpe}, actual: ${e._2.toString}) on line ${a.line}")
                 }
                 if (annot.isEmpty) {
                   annotations.remove(pos.line)
@@ -285,7 +286,12 @@ class AnnotationChecker extends Runnable {
       v("errors").arr.foreach(e => {
         val components = e("pos").str.split(":")
         val p = new Position(components(0), components(1).toInt, components(2).toInt)
-        errors.append((p, null))
+        errors.append((p, new State {
+          override def isErrorState: Boolean = ???
+          override def isInitialState: Boolean = ???
+          override def isAccepting: Boolean = ???
+          override def toString: String = e("state").str
+        }))
       })
       ret.append(new TypeStateResults(errors, spec))
     })

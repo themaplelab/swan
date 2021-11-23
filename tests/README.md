@@ -116,7 +116,7 @@ Annotation format for taint analysis:
 Annotation format for typestate analysis:
 
 ```
-'//?' name '?' 'error' ( '!' 'fn' or 'fp' )?
+'//?' name '?' ('error' or the expected final state name) ( '!' 'fn' or 'fp' )?
 
 //?FileOpenClose?error
 //?FileOpenClose?error?fn

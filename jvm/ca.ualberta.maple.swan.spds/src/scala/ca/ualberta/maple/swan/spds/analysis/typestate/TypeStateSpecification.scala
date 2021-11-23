@@ -147,6 +147,7 @@ class TypeStateJSONSpecification(val name: String,
       val jsonState = this.states(x._2.toString)
       e("message") = jsonState.message.get
       if (jsonState.severity.nonEmpty) e("severity") = jsonState.severity.get
+      e("state") = x._2.toString
       errs.append(e)
     })
     v("errors") = errs
@@ -266,6 +267,7 @@ class TypeStateJSONProgrammaticSpecification(val name: String,
       val jsonState = this.states(x._2.toString)
       e("message") = jsonState.message
       if (jsonState.severity.nonEmpty) e("severity") = jsonState.severity.get
+      e("state") = x._2.toString
       errs.append(e)
     })
     v("errors") = errs
