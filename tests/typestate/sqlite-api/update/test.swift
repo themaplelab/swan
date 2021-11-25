@@ -69,65 +69,65 @@ class DBHelper {
   }
 }
 
-func test_simple_insert() {
+func test_simple_update() {
   let db:DBHelper = DBHelper()
-  db.insert(insertStatementString: "SQL_QUERY"); //?DBHelperCounter?UPDATE1
+  db.update(updateStatementString: "SQL_QUERY"); //?DBHelperCounter?UPDATE1
 }
 
-func test_interprocedural_insert() {
+func test_interprocedural_update() {
 
-  func foo1(insertStatementString:String, db: DBHelper) {
-    foo2(insertStatementString: insertStatementString,db: db);
+  func foo1(updateStatementString:String, db: DBHelper) {
+    foo2(updateStatementString: updateStatementString,db: db);
   }
 
-  func foo2(insertStatementString:String, db: DBHelper) {
-    db.insert(insertStatementString: insertStatementString); //?DBHelperCounter?UPDATE1
+  func foo2(updateStatementString:String, db: DBHelper) {
+    db.update(updateStatementString: updateStatementString); //?DBHelperCounter?UPDATE1
   }
 
   let db:DBHelper = DBHelper()
-  foo1(insertStatementString: "SQL_QUERY", db: db);
+  foo1(updateStatementString: "SQL_QUERY", db: db);
 }
 
-func test_simple_unused_insert() {
+func test_simple_unused_update() {
   let db:DBHelper = DBHelper()
   db.read(readStatementString: "SQL_QUERY");
 }
 
-func test_interprocedural_unsused_insert() {
+func test_interprocedural_unsused_update() {
 
-  func foo1(insertStatementString:String, db: DBHelper) {
-    foo2(insertStatementString: insertStatementString,db: db);
+  func foo1(updateStatementString:String, db: DBHelper) {
+    foo2(updateStatementString: updateStatementString,db: db);
   }
 
-  func foo2(insertStatementString:String, db: DBHelper) {
-    db.read(readStatementString: insertStatementString);
+  func foo2(updateStatementString:String, db: DBHelper) {
+    db.read(readStatementString: updateStatementString);
   }
 
   let db:DBHelper = DBHelper()
-  foo1(insertStatementString: "SQL_QUERY", db: db);
+  foo1(updateStatementString: "SQL_QUERY", db: db);
 }
 
-func test_simple_insert_frequency() {
+func test_simple_update_frequency() {
   let db:DBHelper = DBHelper()
-  db.insert(insertStatementString: "SQL_QUERY");
-  db.insert(insertStatementString: "SQL_QUERY");
-  db.insert(insertStatementString: "SQL_QUERY");
-  db.insert(insertStatementString: "SQL_QUERY"); //?DBHelperCounter?UPDATE4
+  db.update(updateStatementString: "SQL_QUERY");
+  db.update(updateStatementString: "SQL_QUERY");
+  db.update(updateStatementString: "SQL_QUERY");
+  db.update(updateStatementString: "SQL_QUERY"); //?DBHelperCounter?UPDATE4
 }
 
-func test_interprocedural_insert_frequency() {
+func test_interprocedural_update_frequency() {
 
-  func foo1(insertStatementString:String, db: DBHelper) {
-    foo2(insertStatementString: insertStatementString,db: db);
-    foo2(insertStatementString: insertStatementString,db: db);
-    foo2(insertStatementString: insertStatementString,db: db);
-    foo2(insertStatementString: insertStatementString,db: db);
+  func foo1(updateStatementString:String, db: DBHelper) {
+    foo2(updateStatementString: updateStatementString,db: db);
+    foo2(updateStatementString: updateStatementString,db: db);
+    foo2(updateStatementString: updateStatementString,db: db);
+    foo2(updateStatementString: updateStatementString,db: db);
   }
 
-  func foo2(insertStatementString:String, db: DBHelper) {
-    db.insert(insertStatementString: insertStatementString); //?DBHelperCounter?UPDATE4
+  func foo2(updateStatementString:String, db: DBHelper) {
+    db.update(updateStatementString: updateStatementString); //?DBHelperCounter?UPDATE4
   }
 
   let db:DBHelper = DBHelper()
-  foo1(insertStatementString: "SQL_QUERY", db: db);
+  foo1(updateStatementString: "SQL_QUERY", db: db);
 }
