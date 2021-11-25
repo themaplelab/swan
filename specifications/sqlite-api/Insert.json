@@ -1,0 +1,160 @@
+[
+  {
+    "style": 0,
+    "name": "DBHelperCounter",
+    "type": "DBHelper",
+    "description": "Counts (and prints) how many times insert() is called on DBHelper.",
+    "advice": "N/A",
+    "states": [
+      {
+        "name": "INIT",
+        "error": true,
+        "message": "initially error",
+        "initial": true,
+        "accepting": false
+      },
+      {
+        "name": "INSERT1",
+        "error": true,
+        "message": "insert called once",
+        "initial": false,
+        "accepting": false
+      },
+      {
+        "name": "INSERT2",
+        "error": true,
+        "message": "insert called 2 times",
+        "initial": false,
+        "accepting": false
+      },
+      {
+        "name": "INSERT3",
+        "error": true,
+        "message": "insert called 3 times",
+        "initial": false,
+        "accepting": false
+      },
+      {
+        "name": "INSERT4",
+        "error": true,
+        "message": "insert called 4 times",
+        "initial": false,
+        "accepting": false
+      },
+      {
+        "name": "INSERT5",
+        "error": true,
+        "message": "insert called 5 times",
+        "initial": false,
+        "accepting": false
+      },
+      {
+        "name": "INSERT6",
+        "error": true,
+        "message": "insert called 6 times",
+        "initial": false,
+        "accepting": false
+      },
+      {
+        "name": "INSERT7",
+        "error": true,
+        "message": "insert called 7 times",
+        "initial": false,
+        "accepting": false
+      },
+      {
+        "name": "INSERT8",
+        "error": true,
+        "message": "insert called 8 times",
+        "initial": false,
+        "accepting": false
+      },
+      {
+        "name": "INSERT9",
+        "error": true,
+        "message": "insert called 9 times",
+        "initial": false,
+        "accepting": false
+      },
+      {
+        "name": "INSERT10",
+        "error": true,
+        "message": "insert called 10 times",
+        "initial": false,
+        "accepting": false
+      }
+    ],
+    "transitions": [
+      {
+        "from": "INIT",
+        "method": ".*DBHelper.insert.*",
+        "param": "Param2",
+        "to": "INSERT1",
+        "type": "OnCall"
+      },
+      {
+        "from": "INSERT1",
+        "method": ".*DBHelper.insert.*",
+        "param": "Param2",
+        "to": "INSERT2",
+        "type": "OnCall"
+      },
+      {
+        "from": "INSERT2",
+        "method": ".*DBHelper.insert.*",
+        "param": "Param2",
+        "to": "INSERT3",
+        "type": "OnCall"
+      },
+      {
+        "from": "INSERT3",
+        "method": ".*DBHelper.insert.*",
+        "param": "Param2",
+        "to": "INSERT4",
+        "type": "OnCall"
+      },
+      {
+        "from": "INSERT4",
+        "method": ".*DBHelper.insert.*",
+        "param": "Param2",
+        "to": "INSERT5",
+        "type": "OnCall"
+      },
+      {
+        "from": "INSERT5",
+        "method": ".*DBHelper.insert.*",
+        "param": "Param2",
+        "to": "INSERT6",
+        "type": "OnCall"
+      },
+      {
+        "from": "INSERT6",
+        "method": ".*DBHelper.insert.*",
+        "param": "Param2",
+        "to": "INSERT7",
+        "type": "OnCall"
+      },
+      {
+        "from": "INSERT7",
+        "method": ".*DBHelper.insert.*",
+        "param": "Param2",
+        "to": "INSERT8",
+        "type": "OnCall"
+      },
+      {
+        "from": "INSERT8",
+        "method": ".*DBHelper.insert.*",
+        "param": "Param2",
+        "to": "INSERT9",
+        "type": "OnCall"
+      },
+      {
+        "from": "INSERT9",
+        "method": ".*DBHelper.insert.*",
+        "param": "Param2",
+        "to": "INSERT10",
+        "type": "OnCall"
+      }
+    ]
+  }
+]

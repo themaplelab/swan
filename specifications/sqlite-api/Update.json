@@ -1,0 +1,160 @@
+[
+  {
+    "style": 0,
+    "name": "DBHelperCounter",
+    "type": "DBHelper",
+    "description": "Counts (and prints) how many times update() is called on DBHelper.",
+    "advice": "N/A",
+    "states": [
+      {
+        "name": "INIT",
+        "error": true,
+        "message": "initially error",
+        "initial": true,
+        "accepting": false
+      },
+      {
+        "name": "UPDATE1",
+        "error": true,
+        "message": "update called once",
+        "initial": false,
+        "accepting": false
+      },
+      {
+        "name": "UPDATE2",
+        "error": true,
+        "message": "update called 2 times",
+        "initial": false,
+        "accepting": false
+      },
+      {
+        "name": "UPDATE3",
+        "error": true,
+        "message": "update called 3 times",
+        "initial": false,
+        "accepting": false
+      },
+      {
+        "name": "UPDATE4",
+        "error": true,
+        "message": "update called 4 times",
+        "initial": false,
+        "accepting": false
+      },
+      {
+        "name": "UPDATE5",
+        "error": true,
+        "message": "update called 5 times",
+        "initial": false,
+        "accepting": false
+      },
+      {
+        "name": "UPDATE6",
+        "error": true,
+        "message": "update called 6 times",
+        "initial": false,
+        "accepting": false
+      },
+      {
+        "name": "UPDATE7",
+        "error": true,
+        "message": "update called 7 times",
+        "initial": false,
+        "accepting": false
+      },
+      {
+        "name": "UPDATE8",
+        "error": true,
+        "message": "update called 8 times",
+        "initial": false,
+        "accepting": false
+      },
+      {
+        "name": "UPDATE9",
+        "error": true,
+        "message": "update called 9 times",
+        "initial": false,
+        "accepting": false
+      },
+      {
+        "name": "UPDATE10",
+        "error": true,
+        "message": "update called 10 times",
+        "initial": false,
+        "accepting": false
+      }
+    ],
+    "transitions": [
+      {
+        "from": "INIT",
+        "method": ".*DBHelper.update.*",
+        "param": "Param2",
+        "to": "UPDATE1",
+        "type": "OnCall"
+      },
+      {
+        "from": "UPDATE1",
+        "method": ".*DBHelper.update.*",
+        "param": "Param2",
+        "to": "UPDATE2",
+        "type": "OnCall"
+      },
+      {
+        "from": "UPDATE2",
+        "method": ".*DBHelper.update.*",
+        "param": "Param2",
+        "to": "UPDATE3",
+        "type": "OnCall"
+      },
+      {
+        "from": "UPDATE3",
+        "method": ".*DBHelper.update.*",
+        "param": "Param2",
+        "to": "UPDATE4",
+        "type": "OnCall"
+      },
+      {
+        "from": "UPDATE4",
+        "method": ".*DBHelper.update.*",
+        "param": "Param2",
+        "to": "UPDATE5",
+        "type": "OnCall"
+      },
+      {
+        "from": "UPDATE5",
+        "method": ".*DBHelper.update.*",
+        "param": "Param2",
+        "to": "UPDATE6",
+        "type": "OnCall"
+      },
+      {
+        "from": "UPDATE6",
+        "method": ".*DBHelper.update.*",
+        "param": "Param2",
+        "to": "UPDATE7",
+        "type": "OnCall"
+      },
+      {
+        "from": "UPDATE7",
+        "method": ".*DBHelper.update.*",
+        "param": "Param2",
+        "to": "UPDATE8",
+        "type": "OnCall"
+      },
+      {
+        "from": "UPDATE8",
+        "method": ".*DBHelper.update.*",
+        "param": "Param2",
+        "to": "UPDATE9",
+        "type": "OnCall"
+      },
+      {
+        "from": "UPDATE9",
+        "method": ".*DBHelper.update.*",
+        "param": "Param2",
+        "to": "UPDATE10",
+        "type": "OnCall"
+      }
+    ]
+  }
+]
