@@ -1,0 +1,160 @@
+[
+  {
+    "style": 0,
+    "name": "DBHelperCounter",
+    "type": "DBHelper",
+    "description": "Counts (and prints) how many times read() is called on DBHelper.",
+    "advice": "N/A",
+    "states": [
+      {
+        "name": "INIT",
+        "error": true,
+        "message": "initially error",
+        "initial": true,
+        "accepting": false
+      },
+      {
+        "name": "READ1",
+        "error": true,
+        "message": "read called once",
+        "initial": false,
+        "accepting": false
+      },
+      {
+        "name": "READ2",
+        "error": true,
+        "message": "read called 2 times",
+        "initial": false,
+        "accepting": false
+      },
+      {
+        "name": "READ3",
+        "error": true,
+        "message": "read called 3 times",
+        "initial": false,
+        "accepting": false
+      },
+      {
+        "name": "READ4",
+        "error": true,
+        "message": "read called 4 times",
+        "initial": false,
+        "accepting": false
+      },
+      {
+        "name": "READ5",
+        "error": true,
+        "message": "read called 5 times",
+        "initial": false,
+        "accepting": false
+      },
+      {
+        "name": "READ6",
+        "error": true,
+        "message": "read called 6 times",
+        "initial": false,
+        "accepting": false
+      },
+      {
+        "name": "READ7",
+        "error": true,
+        "message": "read called 7 times",
+        "initial": false,
+        "accepting": false
+      },
+      {
+        "name": "READ8",
+        "error": true,
+        "message": "read called 8 times",
+        "initial": false,
+        "accepting": false
+      },
+      {
+        "name": "READ9",
+        "error": true,
+        "message": "read called 9 times",
+        "initial": false,
+        "accepting": false
+      },
+      {
+        "name": "READ10",
+        "error": true,
+        "message": "read called 10 times",
+        "initial": false,
+        "accepting": false
+      }
+    ],
+    "transitions": [
+      {
+        "from": "INIT",
+        "method": ".*DBHelper.read.*",
+        "param": "Param2",
+        "to": "READ1",
+        "type": "OnCall"
+      },
+      {
+        "from": "READ1",
+        "method": ".*DBHelper.read.*",
+        "param": "Param2",
+        "to": "READ2",
+        "type": "OnCall"
+      },
+      {
+        "from": "READ2",
+        "method": ".*DBHelper.read.*",
+        "param": "Param2",
+        "to": "READ3",
+        "type": "OnCall"
+      },
+      {
+        "from": "READ3",
+        "method": ".*DBHelper.read.*",
+        "param": "Param2",
+        "to": "READ4",
+        "type": "OnCall"
+      },
+      {
+        "from": "READ4",
+        "method": ".*DBHelper.read.*",
+        "param": "Param2",
+        "to": "READ5",
+        "type": "OnCall"
+      },
+      {
+        "from": "READ5",
+        "method": ".*DBHelper.read.*",
+        "param": "Param2",
+        "to": "READ6",
+        "type": "OnCall"
+      },
+      {
+        "from": "READ6",
+        "method": ".*DBHelper.read.*",
+        "param": "Param2",
+        "to": "READ7",
+        "type": "OnCall"
+      },
+      {
+        "from": "READ7",
+        "method": ".*DBHelper.read.*",
+        "param": "Param2",
+        "to": "READ8",
+        "type": "OnCall"
+      },
+      {
+        "from": "READ8",
+        "method": ".*DBHelper.read.*",
+        "param": "Param2",
+        "to": "READ9",
+        "type": "OnCall"
+      },
+      {
+        "from": "READ9",
+        "method": ".*DBHelper.read.*",
+        "param": "Param2",
+        "to": "READ10",
+        "type": "OnCall"
+      }
+    ]
+  }
+]
