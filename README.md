@@ -87,7 +87,7 @@ SWAN's toolchain uses a three-step process:
 
 You can dump SIL for Xcode projects with `swan-xcodebuild`. Give it the same arguments you give `xcodebuild`, but put them after `--` (`swan-xcodebuild` specific arguments go before `--`). If you specify a single architecture with `-arch`, the build time will be faster and `swan-xcodebuild` will have less output to parse.
 
-It will build your project and then dump the SIL to the `swan-dir/` directory. You can optionally specify an alternative directory name with `--swan-dir`.
+It will build your project and then dump the SIL to the `swan-dir/` directory. You can optionally specify an alternative directory name with `--sil-dir`.
 
 ```
 swan-xcodebuild -- -project MyProject.xcodeproj -scheme MyScheme -arch arm64
