@@ -43,19 +43,19 @@ func ==(lhs: Section, rhs: Section) -> Bool {
 struct SWANXcodebuild: ParsableCommand {
   static let configuration = CommandConfiguration(
     abstract: "Build and dump SIL for a Swift application using xcodebuild.")
-  
+
   // Ignore the warning generated from this.
   @Option(default: Constants.defaultSwanDir, help: "Output directory for SIL.")
-  var silDir: String?
+  var swanDir: String?
 
   @Flag(help: "Attempt to parse the build output even if xcodebuild fails.")
   var allowFailure: Bool
-  
+
   @Argument(help: "Prefix these arguments with --")
   var xcodebuildArgs: [String]
-  
+
   init() { }
-  
+
   func generateXcodebuildArgs() -> [String] {
     return ["xcodebuild"] + self.xcodebuildArgs + [
       "SWIFT_COMPILATION_MODE=wholemodule",
@@ -65,26 +65,26 @@ struct SWANXcodebuild: ParsableCommand {
       "OTHER_SWIFT_FLAGS=-Xfrontend -gsil -Xllvm -sil-print-debuginfo -Xllvm -sil-print-before=SerializeSILPass"
     ]
   }
-  
+
   func printStatus(_ msg: String) {
     print(msg.foregroundColor(.steelBlue1_2).bold())
   }
-  
+
   func printFailure(_ msg: String) {
     print(msg.foregroundColor(.red).bold())
   }
-  
+
   func printWarning(_ msg: String) {
     print(msg.foregroundColor(.orange3).bold())
   }
-  
+
   func run() throws {
 
-    let outputDir = URL(fileURLWithPath: self.silDir!)
+    let outputDir = URL(fileURLWithPath: self.swanDir!)
     let srcCopyDir = outputDir.appendingPathComponent("src")
-    
+
     let xcodebuildLog = outputDir.appendingPathComponent(Constants.xcodebuildLog)
-        
+
     do {
       try FileManager.default.createDirectory(at: outputDir, withIntermediateDirectories: true)
     } catch {
@@ -92,11 +92,11 @@ struct SWANXcodebuild: ParsableCommand {
                     + ".\nReason: " + error.localizedDescription)
       throw ExitCode.failure
     }
-    
+
     if (FileManager().fileExists(atPath: srcCopyDir.path)) {
       try FileManager().removeItem(atPath: srcCopyDir.path)
     }
-    
+
     do {
       try FileManager.default.createDirectory(at: srcCopyDir, withIntermediateDirectories: true)
     } catch {
@@ -104,7 +104,7 @@ struct SWANXcodebuild: ParsableCommand {
                     + ".\nReason: " + error.localizedDescription)
       throw ExitCode.failure
     }
-    
+
     try self.xcodebuildArgs.forEach { (str) in
       if (str.contains(".xcodeproj") || str.contains(".xcworkspace")) {
         let searchPath = URL(fileURLWithPath: str).appendingPathComponent("..")
@@ -130,32 +130,32 @@ struct SWANXcodebuild: ParsableCommand {
         }
       }
     }
-    
-    
+
+
     let args = generateXcodebuildArgs()
     printStatus("Running " + args.joined(separator: " "))
-    
+
     let task = Process()
     let pipe = Pipe()
-    
+
     task.launchPath = URL(string: "/usr/bin/env")?.absoluteString
     task.arguments = args
     task.standardInput = FileHandle.nullDevice
     task.standardOutput = pipe
     task.standardError = pipe
-    
+
     let start = DispatchTime.now()
     task.launch()
-    
+
     let data = pipe.fileHandleForReading.readDataToEndOfFile()
     let output: String = String(data: data, encoding: String.Encoding.utf8)!
-    
+
     let end = DispatchTime.now()
     let nanoTime = (end.uptimeNanoseconds - start.uptimeNanoseconds)
     let timeInterval = Int(round(Double(nanoTime) / 1_000_000_000))
-    
+
     printStatus("\nxcodebuild finished in \(timeInterval.description)s")
-    
+
     do {
       try output.write(to: xcodebuildLog, atomically: true, encoding: String.Encoding.utf8)
       printStatus("xcodebuild output written to \(Constants.xcodebuildLog)")
@@ -163,7 +163,7 @@ struct SWANXcodebuild: ParsableCommand {
       printFailure("Could not write xcodebuild output to " + Constants.xcodebuildLog + "\nReason: " + error.localizedDescription)
       throw ExitCode.failure
     }
-    
+
     if (task.terminationStatus != 0) {
       printWarning("\nxcodebuild failed. Please see \(xcodebuildLog.relativeString)\n")
       if (allowFailure) {
@@ -172,13 +172,13 @@ struct SWANXcodebuild: ParsableCommand {
         throw ExitCode.failure
       }
     }
-    
+
     print("")
-    
+
     var roughSections = output.components(separatedBy: "\nCompileSwift normal ")
     roughSections.removeFirst()
     var sections = [Section]()
-    
+
     for (idx, s) in roughSections.enumerated() {
       // Quick and dirty parsing
       let chars: [Character] = Array(s[s.startIndex...s.firstIndex(of: "\n")!])
@@ -222,7 +222,7 @@ struct SWANXcodebuild: ParsableCommand {
         print("Ignored section because it already exists under another platform.")
       }
     }
-    
+
     for section in sections {
       let filename = outputDir.appendingPathComponent("\(section.target).\(section.project).sil")
       do {
@@ -231,11 +231,10 @@ struct SWANXcodebuild: ParsableCommand {
         printFailure("Could not write SIL to \(filename)\nReason: \(error.localizedDescription)")
       }
     }
-    
+
     printStatus("\nSIL written to \(outputDir.path)")
   }
-  
+
 }
 
 SWANXcodebuild.main()
-
