@@ -21,18 +21,21 @@ package ca.ualberta.maple.swan.spds.cg
 
 import boomerang.{BackwardQuery, Boomerang, DefaultBoomerangOptions, ForwardQuery}
 import boomerang.results.AbstractBoomerangResults
+import ca.ualberta.maple.swan.spds.Stats.{CallGraphStats, SpecificCallGraphStats}
 import boomerang.scene.{AllocVal, CallGraph, ControlFlowGraph, DataFlowScope, Val}
 import ca.ualberta.maple.swan.ir.{ModuleGroup, Operator, SymbolTableEntry}
 import ca.ualberta.maple.swan.spds.cg.CallGraphBuilder.PointerAnalysisStyle
-import ca.ualberta.maple.swan.spds.cg.CallGraphUtils.{CallGraphData, addCGEdge}
+import ca.ualberta.maple.swan.spds.cg.CallGraphUtils.addCGEdge
+import ca.ualberta.maple.swan.spds.cg.UCGUnsound.UCGUnsoundStats
 import ca.ualberta.maple.swan.spds.structures.SWANControlFlowGraph.SWANBlock
 import ca.ualberta.maple.swan.spds.structures.SWANStatement.ApplyFunctionRef
 import ca.ualberta.maple.swan.spds.structures.{SWANInvokeExpr, SWANMethod, SWANStatement, SWANVal}
+import ujson.Value
 
 import java.util
 import scala.collection.{immutable, mutable}
 
-final class UQueryCache(cgs: CallGraphData) {
+final class UQueryCache(cgs: CallGraphStats, stats: UCGUnsoundStats) {
   val cache: mutable.HashMap[(boomerang.scene.Statement, ApplyFunctionRef, Val), (util.Map[ForwardQuery, AbstractBoomerangResults.Context], Int)] =
     mutable.HashMap.empty
 
@@ -51,10 +54,10 @@ final class UQueryCache(cgs: CallGraphData) {
     val query = BackwardQuery.make(new ControlFlowGraph.Edge(pred, stmt), ref)
     val solver = new Boomerang(cgs.cg, DataFlowScope.INCLUDE_ALL, new DefaultBoomerangOptions)
     val backwardQueryResults = solver.solve(query)
-    cgs.totalQueries += 1
+    stats.totalQueries += 1
     val allocSites = backwardQueryResults.getAllocationSites
     if (allocSites.isEmpty) {
-      cgs.fruitlessQueries += 1
+      stats.fruitlessQueries += 1
     }
     if (query.asNode().stmt().getTarget.asInstanceOf[SWANStatement.ApplyFunctionRef] != stmt) {
       throw new AssertionError()
@@ -81,10 +84,11 @@ class UCGUnsound(mg: ModuleGroup, pas: PointerAnalysisStyle.Style) extends CallG
   private val edgeMap: mutable.HashMap[(SWANMethod,SWANMethod), Int] = new mutable.HashMap[(SWANMethod,SWANMethod), Int]
   private implicit val ddgTypes = mutable.HashMap.empty[String, Int]
   private implicit val ddgTypesInv = mutable.ArrayBuffer.empty[String]
+  val stats = new UCGUnsoundStats
 
   private var queryCache: UQueryCache = null
 
-  override def buildSpecificCallGraph(cgs: CallGraphData): Unit = {
+  override def buildSpecificCallGraph(cgs: CallGraphStats): Unit = {
     // This type set creation
     moduleGroup.ddgs.foreach { case (_,ddg) =>
       ddg.nodes.keySet.foreach{typ =>
@@ -95,32 +99,29 @@ class UCGUnsound(mg: ModuleGroup, pas: PointerAnalysisStyle.Style) extends CallG
     }
 
     // query cache
-    queryCache = new UQueryCache(cgs)
+    queryCache = new UQueryCache(cgs, stats)
 
-
-    val entryPoints = cgs.entryPoints.clone()
-    entryPoints.foreach(m =>
-      if (cgs.entryPoints.contains(m)) {
-        w.addMethod(m)
-        processWorklist(m, cgs.entryPoints, cgs)
-        val predMap = newestNewPredecessor(cgs)
-        val cacheClone = queryCache.cache.clone()
-        cacheClone.foreach{ case ((pred,stmt,ref),(allocSites,edgeCount)) =>
-          val m = stmt.getSWANMethod
-          if (predMap.contains(m) && predMap(m) >= edgeCount) {
-            val updatedAllocs = queryCache.query(pred,stmt,ref)
-            if (updatedAllocs.size() != allocSites.size()) {
-              queryCache.cache.update((pred,stmt,ref),(updatedAllocs,cgs.cg.size()))
-              // TODO: just stmt's block not entire method
-              stmt.getSWANMethod.getCFG.blocks.foreach{ case (_,block) => w.add(block)}
-            }
+    val entryPoints = cgs.cg.getEntryPoints.asInstanceOf[java.util.Collection[SWANMethod]]
+    entryPoints.forEach{m =>
+      w.addMethod(m)
+      processWorklist(m, cgs.cg.getEntryPoints.asInstanceOf[java.util.Collection[SWANMethod]], cgs)
+      val predMap = newestNewPredecessor(cgs)
+      val cacheClone = queryCache.cache.clone()
+      cacheClone.foreach{ case ((pred,stmt,ref),(allocSites,edgeCount)) =>
+        val m = stmt.getSWANMethod
+        if (predMap.contains(m) && predMap(m) >= edgeCount) {
+          val updatedAllocs = queryCache.query(pred,stmt,ref)
+          if (updatedAllocs.size() != allocSites.size()) {
+            queryCache.cache.update((pred,stmt,ref),(updatedAllocs,cgs.cg.size()))
+            // TODO: just stmt's block not entire method
+            stmt.getSWANMethod.getCFG.blocks.foreach{ case (_,block) => w.add(block)}
           }
         }
       }
-    )
+    }
   }
 
-  def newestNewPredecessor(cgs: CallGraphData): mutable.HashMap[SWANMethod, Int] = {
+  def newestNewPredecessor(cgs: CallGraphStats): mutable.HashMap[SWANMethod, Int] = {
     val predMap: mutable.HashMap[SWANMethod, Int] = mutable.HashMap.empty
     val processed: mutable.HashSet[SWANMethod] = mutable.HashSet.empty
     while (edgeMap.nonEmpty) {
@@ -149,7 +150,7 @@ class UCGUnsound(mg: ModuleGroup, pas: PointerAnalysisStyle.Style) extends CallG
     predMap
   }
 
-  def processWorklist(startMethod: SWANMethod, entryPoints: mutable.LinkedHashSet[SWANMethod], cgs: CallGraphData) = {
+  def processWorklist(startMethod: SWANMethod, entryPoints: util.Collection[SWANMethod], cgs: CallGraphStats) = {
     while (w.nonEmpty) {
       val currBlock = w.pop()
       var b: DDGTypeSet = new DDGTypeSet(immutable.BitSet.empty)//new immutable.HashSet[String]
@@ -164,10 +165,6 @@ class UCGUnsound(mg: ModuleGroup, pas: PointerAnalysisStyle.Style) extends CallG
         interProcInSets.get(method) match {
           case Some(inSet) => b = b.union(inSet)
           case None =>
-        }
-        // remove from entry points if necessary
-        if (method != startMethod) {
-          entryPoints.remove(currBlock.method)
         }
       }
       // add inset for debugging
@@ -184,8 +181,7 @@ class UCGUnsound(mg: ModuleGroup, pas: PointerAnalysisStyle.Style) extends CallG
             val target = cgs.cg.methods(name)
             val cgSize = cgs.cg.size()
             if (addCGEdge(m, target, applyStmt, edge, cgs)) {
-              cgs.trivialEdges += 1
-              cgs.trivialCallSites.add(applyStmt)
+              cgs.trivialCallSites += 1
               edgeMap.update((m,target),cgSize)
             }
             b = processTarget(target, currBlock, b)
@@ -200,7 +196,7 @@ class UCGUnsound(mg: ModuleGroup, pas: PointerAnalysisStyle.Style) extends CallG
                 val target = cgs.cg.methods(name)
                 val cgSize = cgs.cg.size()
                 if (addCGEdge(m, target, applyStmt, edge, cgs)) {
-                  cgs.virtualEdges += 1
+                  stats.virtualEdges += 1
                   edgeMap.update((m,target),cgSize)
                 }
                 b = b.union(processTarget(target, currBlock, currTypes))
@@ -215,7 +211,7 @@ class UCGUnsound(mg: ModuleGroup, pas: PointerAnalysisStyle.Style) extends CallG
               val target = cgs.cg.methods(name)
               val cgSize = cgs.cg.size()
               if (addCGEdge(m, target, applyStmt, edge, cgs)) {
-                cgs.queriedEdges += 1
+                stats.queriedEdges += 1
                 edgeMap.update((m,target),cgSize)
               }
               b = b.union(processTarget(target, currBlock, currTypes))
@@ -228,7 +224,7 @@ class UCGUnsound(mg: ModuleGroup, pas: PointerAnalysisStyle.Style) extends CallG
                   val target = cgs.cg.methods(name)
                   val cgSize = cgs.cg.size()
                   if (addCGEdge(m, target, applyStmt, edge, cgs)) {
-                    cgs.queriedEdges += 1
+                    stats.queriedEdges += 1
                     edgeMap.update((m,target),cgSize)
                   }
                   b = b.union(processTarget(target, currBlock, currTypes))
@@ -334,4 +330,25 @@ class UCGUnsound(mg: ModuleGroup, pas: PointerAnalysisStyle.Style) extends CallG
     })
   }
 
+}
+
+object UCGUnsound {
+
+  class UCGUnsoundStats() extends SpecificCallGraphStats {
+    var queriedEdges: Int = 0
+    var virtualEdges: Int = 0
+    var totalQueries: Int = 0
+    var fruitlessQueries: Int = 0
+    var time: Int = 0
+
+    override def toJSON: Value = {
+      val u = ujson.Obj()
+      u("ucg_queried_edges") = queriedEdges
+      u("ucg_virtual_edges") = virtualEdges
+      u("ucg_total_queries") = totalQueries
+      u("ucg_fruitless_queries") = fruitlessQueries
+      u("ucg_time") = time
+      u
+    }
+  }
 }
