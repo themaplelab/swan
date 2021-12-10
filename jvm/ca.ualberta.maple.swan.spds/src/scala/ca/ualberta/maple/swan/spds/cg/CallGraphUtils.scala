@@ -61,7 +61,7 @@ object CallGraphUtils {
   def pruneEntryPoints(cgs: CallGraphStats): Unit = {
     val cg = cgs.cg
     cg.methods.foreach(m => {
-      if (cg.edgesInto(m._2).isEmpty && cg.getEntryPoints.contains(m._2)) {
+      if (!cg.edgesInto(m._2).isEmpty && cg.getEntryPoints.contains(m._2)) {
         cgs.cg.getEntryPoints.remove(m._2)
         cgs.entryPoints -= 1
       }

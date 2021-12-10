@@ -20,7 +20,7 @@ public class ProbeMethod {
         return true;
     }
     public String toString() {
-        return cls.toString()+": "+name+"("+signature+")";
+        return name;
     }
 
     /* End of public methods. */
