@@ -27,7 +27,7 @@ import ca.ualberta.maple.swan.parser.{SILModule, SILParser}
 import ca.ualberta.maple.swan.spds.Stats.{AllStats, GeneralStats}
 import ca.ualberta.maple.swan.spds.analysis.taint._
 import ca.ualberta.maple.swan.spds.analysis.typestate.{TypeStateAnalysis, TypeStateResults}
-import ca.ualberta.maple.swan.spds.cg.CallGraphBuilder
+import ca.ualberta.maple.swan.spds.cg.{CallGraphBuilder, CallGraphUtils}
 import ca.ualberta.maple.swan.utils.Logging
 import org.apache.commons.io.{FileExistsException, FileUtils, IOUtils}
 import picocli.CommandLine
@@ -306,6 +306,7 @@ class Driver extends Runnable {
       val cgResults = CallGraphBuilder.createCallGraph(group, CallGraphBuilder.CallGraphStyle.UCG)
       allStats.cgs = Some(cgResults)
       val cg = cgResults.cg
+      CallGraphUtils.writeToProbe(cg, Paths.get(swanDir.getPath, "cg.txt").toFile)
       if (options.debug) {
         writeFile(cgResults.finalModuleGroup, debugDir, "grouped-cg", new SWIRLPrinterOptions().cgDebugInfo(cgResults.debugInfo))
         if (cgResults.dynamicModels.nonEmpty ) {

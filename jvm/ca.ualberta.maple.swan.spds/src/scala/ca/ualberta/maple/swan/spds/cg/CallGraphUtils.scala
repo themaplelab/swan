@@ -24,6 +24,7 @@ import ca.ualberta.maple.swan.ir.{CanModule, CanOperator, Instruction, Module, M
 import ca.ualberta.maple.swan.spds.Stats.CallGraphStats
 import ca.ualberta.maple.swan.spds.structures.{SWANCallGraph, SWANMethod, SWANStatement}
 
+import java.io.{File, FileWriter}
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
 
@@ -83,6 +84,37 @@ object CallGraphUtils {
     })
 
     cgs
+  }
+
+  def writeToProbe(cg: SWANCallGraph, f: File): Unit = {
+    val fw = new FileWriter(f)
+    try {
+      // Generate a fake class
+      fw.write("CLASS\n")
+      fw.write("id\n")
+      fw.write("package\n")
+      fw.write("name\n")
+      cg.methods.foreach(m => {
+        fw.write("METHOD\n")
+        fw.write(s"${m._2.getName.hashCode()}\n") // id
+        fw.write(s"${m._2.getName}\n") // name
+        fw.write(s"${m._2.getName}\n") // signature
+        fw.write(s"id\n") // class
+      })
+      cg.getEntryPoints.forEach(m => {
+        fw.write("ENTRYPOINT\n")
+        fw.write(s"${m.getName.hashCode()}\n") // id
+      })
+      cg.getEdges.forEach(edge => {
+        fw.write("CALLEDGE\n")
+        fw.write(s"${edge.src().getMethod.getName.hashCode}\n") // src id
+        fw.write(s"${edge.tgt().getName.hashCode}\n") // dst id
+        fw.write(s"${edge.src().getStartLineNumber}\n") // weight
+        fw.write("\n") // context
+      })
+    } finally {
+      fw.close()
+    }
   }
 
 }

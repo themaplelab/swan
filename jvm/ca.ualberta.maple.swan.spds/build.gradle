@@ -1,6 +1,7 @@
 plugins {
     id 'java'
     id 'scala'
+    id 'application'
 }
 
 sourceSets {
@@ -9,7 +10,7 @@ sourceSets {
             srcDirs = ['src/scala']
         }
         java {
-            srcDirs = []
+            srcDirs = ['src/java']
         }
     }
     test {
@@ -54,4 +55,12 @@ dependencies {
 test {
     useJUnitPlatform()
     testLogging.showStandardStreams true
+}
+
+jar {
+    manifest {
+        attributes (
+                'Main-Class': 'ca.ualberta.maple.swan.spds.probe.CallGraphInfo'
+        )
+    }
 }
