@@ -299,7 +299,7 @@ class Driver extends Runnable {
       fw.close()
     }
     if (options.constructCallGraph || options.taintAnalysisSpec.nonEmpty || options.typeStateAnalysisSpec.nonEmpty) {
-      val cgResults = CallGraphBuilder.createCallGraph(group, CallGraphBuilder.CallGraphStyle.CHA)
+      val cgResults = CallGraphBuilder.createCallGraph(group, CallGraphBuilder.CallGraphStyle.UCGU)
       val cg = cgResults.cg
       if (options.debug) {
         writeFile(cgResults.finalModuleGroup, debugDir, "grouped-cg", new SWIRLPrinterOptions().cgDebugInfo(cgResults.debugInfo))

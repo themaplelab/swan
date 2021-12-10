@@ -20,9 +20,9 @@
 package ca.ualberta.maple.swan.spds.structures
 
 import java.util
-
 import boomerang.scene._
 import ca.ualberta.maple.swan.ir.{CanFunction, ModuleGroup, SymbolRef, SymbolTableEntry}
+import ca.ualberta.maple.swan.spds.structures.SWANControlFlowGraph.SWANBlock
 import com.google.common.collect.{Lists, Sets}
 
 import scala.collection.mutable
@@ -109,6 +109,15 @@ class SWANMethod(val delegate: CanFunction, var moduleGroup: ModuleGroup) extend
 
   override def getControlFlowGraph: ControlFlowGraph = cfg
   def getCFG: SWANControlFlowGraph = cfg
+
+  def getStartBlock: SWANBlock = {
+    val startStatement = getCFG.getStartPoints.iterator().next()
+    getCFG.blocks(startStatement.asInstanceOf[SWANStatement])
+  }
+
+  def getExitBlocks: mutable.HashSet[SWANBlock] = {
+    getCFG.exitBlocks
+  }
 
   override def getSubSignature: String = delegate.name
 

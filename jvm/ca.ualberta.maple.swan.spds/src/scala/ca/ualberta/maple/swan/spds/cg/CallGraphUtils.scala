@@ -41,6 +41,10 @@ object CallGraphUtils {
     var trivialEdges: Int = 0
     val trivialCallSites: mutable.HashSet[SWANStatement.ApplyFunctionRef] = mutable.HashSet.empty
     var nonTrivialCallSites: Int = 0
+    var virtualEdges: Int = 0
+    var queriedEdges: Int = 0
+    var fruitlessQueries: Int = 0
+    var totalQueries: Int = 0
     val debugInfo = new mutable.HashMap[CanOperator, mutable.HashSet[String]]()
     var msTimeToConstructCG: Long = 0
     var msTimeToInitializeCG: Long = 0
@@ -49,6 +53,7 @@ object CallGraphUtils {
     var dynamicModels: Option[(Module, CanModule)] = None
     var msTimeOverhead: Long = 0
     var finalModuleGroup: ModuleGroup = cg.moduleGroup
+    val entryPoints = new mutable.LinkedHashSet[SWANMethod]
 
     override def toString: String = {
       "Call Graph Stats:\n" +
@@ -57,6 +62,10 @@ object CallGraphUtils {
         s"  Trivial Edges: $trivialEdges\n" +
         s"  Trivial Call Sites: ${trivialCallSites.size}\n" +
         s"  Non-trivial Call Sites: ${nonTrivialCallSites}\n" +
+        s"  Virtual Edges: ${virtualEdges}\n" +
+        s"  Queried Edges: ${queriedEdges}\n" +
+        s"  Fruitless Queries: ${fruitlessQueries}\n" +
+        s"  Total Queries: ${totalQueries}\n" +
         s"  Total time to create CG (ms): $msTimeToConstructCG\n" +
         s"  Time to initialize CG (ms): $msTimeToInitializeCG\n" +
         s"  Actual time to create CG (ms): $msTimeActualCGConstruction\n" +
@@ -105,14 +114,13 @@ object CallGraphUtils {
     val methods = new mutable.HashMap[String, SWANMethod]()
     val cg = new SWANCallGraph(moduleGroup, methods)
     val cgs = new CallGraphData(cg)
-    val entryPoints = new mutable.LinkedHashSet[SWANMethod]
 
     moduleGroup.functions.foreach(f => {
       val m = new SWANMethod(f, moduleGroup)
       methods.put(f.name, m)
       cg.addEntryPoint(m)
       if (!isUninteresting(m)) {
-        entryPoints.add(m)
+        cgs.entryPoints.add(m)
       }
     })
 
