@@ -23,11 +23,11 @@ import ca.ualberta.maple.swan.ir.canonical.SWIRLPass;
 import ca.ualberta.maple.swan.parser.SILModule;
 import ca.ualberta.maple.swan.parser.SILPrinter;
 import ca.ualberta.maple.swan.parser.SILPrinterOptions;
-import ca.ualberta.maple.swan.spds.CallGraphConstruction;
 import ca.ualberta.maple.swan.spds.analysis.taint.*;
 import ca.ualberta.maple.swan.spds.analysis.typestate.TypeStateAnalysis;
 import ca.ualberta.maple.swan.spds.analysis.typestate.TypeStateResults;
 import ca.ualberta.maple.swan.spds.analysis.typestate.TypeStateSpecification;
+import ca.ualberta.maple.swan.spds.cg.CallGraphBuilder;
 import ca.ualberta.maple.swan.spds.structures.SWANCallGraph;
 import ca.ualberta.maple.swan.test.TestDriver;
 import ca.ualberta.maple.swan.utils.Logging;
@@ -127,7 +127,7 @@ public class SPDSTests {
         // Logging.printInfo(result);
         TaintAnalysisOptions analysisOptions =
                 new TaintAnalysisOptions(AnalysisType.Forward$.MODULE$);
-        SWANCallGraph cg = new CallGraphConstruction(group).construct()._1();
+        SWANCallGraph cg = CallGraphBuilder.createCallGraph(group, CallGraphBuilder.CallGraphStyle$.MODULE$.CHA()).cg();
         TaintAnalysis taintAnalysis = new TaintAnalysis(taintSpec, analysisOptions);
         TaintResults taintResults = taintAnalysis.run(cg);
         // Logging.printInfo(taintResults.toString());
@@ -152,7 +152,7 @@ public class SPDSTests {
         // Logging.printInfo(result);
         TaintAnalysisOptions analysisOptions =
                 new TaintAnalysisOptions(AnalysisType.Forward$.MODULE$);
-        SWANCallGraph cg = new CallGraphConstruction(group).construct()._1();
+        SWANCallGraph cg = CallGraphBuilder.createCallGraph(group, CallGraphBuilder.CallGraphStyle$.MODULE$.CHA()).cg();
         TaintAnalysis taintAnalysis = new TaintAnalysis(taintSpec, analysisOptions);
         TaintResults taintResults = taintAnalysis.run(cg);
         // Logging.printInfo(taintResults.toString());

@@ -20,29 +20,26 @@
 package ca.ualberta.maple.swan.spds.cg
 
 import ca.ualberta.maple.swan.ir.ModuleGroup
+import ca.ualberta.maple.swan.spds.Stats.CallGraphStats
 import ca.ualberta.maple.swan.utils.Logging
 
 abstract class CallGraphConstructor(val moduleGroup: ModuleGroup) {
 
-  def buildCallGraph(): CallGraphUtils.CallGraphData = {
+  def buildCallGraph(): CallGraphStats = {
     Logging.printInfo("Constructing Call Graph")
     val startTimeNano = System.nanoTime()
     val startTimeMs = System.currentTimeMillis()
     // This initialization includes converting SWIRL to SPDS form
-    val cg = CallGraphUtils.initializeCallGraph(moduleGroup)
-    cg.msTimeToInitializeCG = System.currentTimeMillis() - startTimeMs
-    val startTimeActualMs = System.currentTimeMillis()
-    buildSpecificCallGraph(cg)
-    CallGraphUtils.pruneEntryPoints(cg)
-    cg.msTimeToConstructCG = System.currentTimeMillis() - startTimeMs
-    cg.msTimeActualCGConstruction = System.currentTimeMillis() - startTimeActualMs
-    var overHeadTime = cg.msTimeToConstructCG
-    cg.specificData.foreach(s => overHeadTime -= s.time)
-    cg.msTimeOverhead = overHeadTime
+    val cgs = CallGraphUtils.initializeCallGraph(moduleGroup)
+    cgs.initializationTimeMS = (System.currentTimeMillis() - startTimeMs).toInt
+    buildSpecificCallGraph(cgs)
+    CallGraphUtils.pruneEntryPoints(cgs)
+    cgs.totalCGConstructionTimeMS = (System.currentTimeMillis() - startTimeMs).toInt
+    cgs.entryPoints = cgs.cg.getEntryPoints.size()
+    cgs.totalEdges = cgs.cg.getEdges.size()
     Logging.printTimeStampSimple(0, startTimeNano, "constructing")
-    System.out.println(cg)
-    cg
+    cgs
   }
 
-  def buildSpecificCallGraph(cg: CallGraphUtils.CallGraphData): Unit
+  def buildSpecificCallGraph(cg: CallGraphStats): Unit
 }

@@ -19,12 +19,13 @@
 
 package ca.ualberta.maple.swan.spds.cg
 
-import boomerang.scene.{ControlFlowGraph, Method}
-import ca.ualberta.maple.swan.ir.{ModuleGroup, Operator, SymbolTableEntry}
+import boomerang.scene.Method
+import ca.ualberta.maple.swan.ir.ModuleGroup
+import ca.ualberta.maple.swan.spds.Stats.{CallGraphStats, SpecificCallGraphStats}
 import ca.ualberta.maple.swan.spds.cg.CallGraphBuilder.PointerAnalysisStyle
-import ca.ualberta.maple.swan.spds.cg.CallGraphUtils.CallGraphData
 import ca.ualberta.maple.swan.spds.cg.pa.PointerAnalysis
-import ca.ualberta.maple.swan.spds.structures.{SWANMethod, SWANStatement}
+import ca.ualberta.maple.swan.spds.structures.SWANMethod
+import ujson.Value
 
 import scala.collection.mutable
 
@@ -43,7 +44,7 @@ class ORTA(mg: ModuleGroup, pas: PointerAnalysisStyle.Style) extends CallGraphCo
   }
 
   // TODO: Pointer analysis integration
-  override def buildSpecificCallGraph(cgs: CallGraphData): Unit = {
+  override def buildSpecificCallGraph(cgs: CallGraphStats): Unit = {
 
     // Run CHA
     new CHA(moduleGroup, pas).buildSpecificCallGraph(cgs)
@@ -63,17 +64,24 @@ class ORTA(mg: ModuleGroup, pas: PointerAnalysisStyle.Style) extends CallGraphCo
       // https://ben-holland.com/call-graph-construction-algorithms-explained/
     }
 
-    val stats = new ORTA.ORTAStats(ortaEdges, System.currentTimeMillis() - startTimeMs)
+    val stats = new ORTA.ORTAStats(ortaEdges, (System.currentTimeMillis() - startTimeMs).toInt)
     cgs.specificData.addOne(stats)
   }
 }
 
 object ORTA {
 
-  class ORTAStats(val edges: Int, time: Long) extends CallGraphUtils.SpecificCallGraphStats("oRTA (depends on CHA)", time) {
+  class ORTAStats(val edges: Int, time: Int) extends SpecificCallGraphStats {
 
-    override def specificStatsToString: String = {
-      s"      Edges: $edges"
+    override def toJSON: Value = {
+      val u = ujson.Obj()
+      u("orta_edges") = edges
+      u("orta_time") = time
+      u
+    }
+
+    override def toString: String = {
+      s"  oRTA\n    Edges: $edges\n    Time (ms): $time"
     }
   }
 }

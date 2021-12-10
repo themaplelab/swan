@@ -21,10 +21,11 @@ package ca.ualberta.maple.swan.spds.cg
 
 import boomerang.scene.ControlFlowGraph
 import ca.ualberta.maple.swan.ir.{ModuleGroup, Operator, SymbolTableEntry}
+import ca.ualberta.maple.swan.spds.Stats.{CallGraphStats, SpecificCallGraphStats}
 import ca.ualberta.maple.swan.spds.cg.CallGraphBuilder.PointerAnalysisStyle
-import ca.ualberta.maple.swan.spds.cg.CallGraphUtils.CallGraphData
 import ca.ualberta.maple.swan.spds.cg.pa.PointerAnalysis
 import ca.ualberta.maple.swan.spds.structures.SWANStatement
+import ujson.Value
 
 class CHA(mg: ModuleGroup, pas: PointerAnalysisStyle.Style) extends CallGraphConstructor(mg) {
 
@@ -41,7 +42,7 @@ class CHA(mg: ModuleGroup, pas: PointerAnalysisStyle.Style) extends CallGraphCon
   }
 
   // TODO: Pointer analysis integration
-  override def buildSpecificCallGraph(cgs: CallGraphData): Unit = {
+  override def buildSpecificCallGraph(cgs: CallGraphStats): Unit = {
     var chaEdges: Int = 0
     val startTimeMs = System.currentTimeMillis()
     val methods = cgs.cg.methods
@@ -50,20 +51,19 @@ class CHA(mg: ModuleGroup, pas: PointerAnalysisStyle.Style) extends CallGraphCon
       m.getCFG.blocks.foreach(b => {
         b._2.stmts.foreach {
           case applyStmt: SWANStatement.ApplyFunctionRef => {
+            cgs.totalCallSites += 1
             val edge = new ControlFlowGraph.Edge(m.getCFG.getPredsOf(applyStmt).iterator().next(), applyStmt)
             m.delegate.symbolTable(applyStmt.inst.functionRef.name) match {
               case SymbolTableEntry.operator(_, operator) => {
                 operator match {
                   case Operator.builtinRef(_, name) => {
                     if (methods.contains(name)) { // TODO: Why are some builtins missing stubs?
-                      cgs.trivialCallSites.add(applyStmt)
-                      cgs.trivialEdges += 1
+                      cgs.trivialCallSites += 1
                       CallGraphUtils.addCGEdge(m, methods(name), applyStmt, edge, cgs)
                     }
                   }
                   case Operator.functionRef(_, name) => {
-                    cgs.trivialCallSites.add(applyStmt)
-                    cgs.trivialEdges += 1
+                    cgs.trivialCallSites += 1
                     CallGraphUtils.addCGEdge(m, methods(name), applyStmt, edge, cgs)
                   }
                   case Operator.dynamicRef(_, _, index) => {
@@ -73,29 +73,34 @@ class CHA(mg: ModuleGroup, pas: PointerAnalysisStyle.Style) extends CallGraphCon
                       })
                     })
                   }
-                  case _ => {
-                    cgs.nonTrivialCallSites += 1
-                  }
+                  case _ =>
                 }
               }
-              case _ => cgs.nonTrivialCallSites += 1
+              case _ =>
             }
           }
           case _ =>
         }
       })
     })
-    val stats = new CHA.CHAStats(chaEdges, System.currentTimeMillis() - startTimeMs)
+    val stats = new CHA.CHAStats(chaEdges, (System.currentTimeMillis() - startTimeMs).toInt)
     cgs.specificData.addOne(stats)
   }
 }
 
 object CHA {
 
-  class CHAStats(val chaEdges: Int, time: Long) extends CallGraphUtils.SpecificCallGraphStats("CHA", time) {
+  class CHAStats(val chaEdges: Int, val time: Int) extends SpecificCallGraphStats {
 
-    override def specificStatsToString: String = {
-        s"      Edges: $chaEdges"
+    override def toJSON: Value = {
+      val u = ujson.Obj()
+      u("cha_edges") = chaEdges
+      u("cha_time") = time
+      u
+    }
+
+    override def toString: String = {
+      s"  CHA\n    Edges: $chaEdges\n    Time (ms): $time"
     }
   }
 }

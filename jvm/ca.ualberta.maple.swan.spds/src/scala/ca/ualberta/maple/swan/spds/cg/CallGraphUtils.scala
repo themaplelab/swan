@@ -21,6 +21,7 @@ package ca.ualberta.maple.swan.spds.cg
 
 import boomerang.scene.{CallGraph, ControlFlowGraph}
 import ca.ualberta.maple.swan.ir.{CanModule, CanOperator, Instruction, Module, ModuleGroup, Operator, SymbolTableEntry}
+import ca.ualberta.maple.swan.spds.Stats.CallGraphStats
 import ca.ualberta.maple.swan.spds.structures.{SWANCallGraph, SWANMethod, SWANStatement}
 
 import scala.collection.mutable
@@ -28,54 +29,8 @@ import scala.collection.mutable.ArrayBuffer
 
 object CallGraphUtils {
 
-  abstract class SpecificCallGraphStats(val name: String, val time: Long) {
-    override def toString: String = {
-      s"    $name:\n" +
-        s"      Time (ms): $time\n" + specificStatsToString
-    }
-
-    def specificStatsToString: String
-  }
-
-  class CallGraphData(val cg: SWANCallGraph) {
-    var trivialEdges: Int = 0
-    val trivialCallSites: mutable.HashSet[SWANStatement.ApplyFunctionRef] = mutable.HashSet.empty
-    var nonTrivialCallSites: Int = 0
-    var virtualEdges: Int = 0
-    var queriedEdges: Int = 0
-    var fruitlessQueries: Int = 0
-    var totalQueries: Int = 0
-    val debugInfo = new mutable.HashMap[CanOperator, mutable.HashSet[String]]()
-    var msTimeToConstructCG: Long = 0
-    var msTimeToInitializeCG: Long = 0
-    var msTimeActualCGConstruction: Long = 0
-    var specificData: ArrayBuffer[SpecificCallGraphStats] = mutable.ArrayBuffer.empty
-    var dynamicModels: Option[(Module, CanModule)] = None
-    var msTimeOverhead: Long = 0
-    var finalModuleGroup: ModuleGroup = cg.moduleGroup
-    val entryPoints = new mutable.LinkedHashSet[SWANMethod]
-
-    override def toString: String = {
-      "Call Graph Stats:\n" +
-        s"  Methods: ${cg.methods.size}\n" +
-        s"  Total Edges: ${cg.getEdges.size()}\n" +
-        s"  Trivial Edges: $trivialEdges\n" +
-        s"  Trivial Call Sites: ${trivialCallSites.size}\n" +
-        s"  Non-trivial Call Sites: ${nonTrivialCallSites}\n" +
-        s"  Virtual Edges: ${virtualEdges}\n" +
-        s"  Queried Edges: ${queriedEdges}\n" +
-        s"  Fruitless Queries: ${fruitlessQueries}\n" +
-        s"  Total Queries: ${totalQueries}\n" +
-        s"  Total time to create CG (ms): $msTimeToConstructCG\n" +
-        s"  Time to initialize CG (ms): $msTimeToInitializeCG\n" +
-        s"  Actual time to create CG (ms): $msTimeActualCGConstruction\n" +
-        s"  Overhead time (ms): $msTimeOverhead\n" +
-      ( if (specificData.nonEmpty) s"  Specific stats:\n${specificData.mkString("\n")}" else "" )
-    }
-  }
-
   def addCGEdge(from: SWANMethod, to: SWANMethod, stmt: SWANStatement.ApplyFunctionRef,
-                        cfgEdge: ControlFlowGraph.Edge, cgs: CallGraphData): Boolean = {
+                        cfgEdge: ControlFlowGraph.Edge, cgs: CallGraphStats): Boolean = {
     val edge = new CallGraph.Edge(stmt, to)
     val b = cgs.cg.addEdge(edge)
     if (b) {
@@ -89,6 +44,7 @@ object CallGraphUtils {
       }
       cgs.debugInfo(op).add(to.getName)
     }
+    if (b) cgs.totalEdges += 1
     b
   }
 
@@ -101,26 +57,28 @@ object CallGraphUtils {
       name.endsWith(".__deallocating_deinit")
   }
 
-  def pruneEntryPoints(cgs: CallGraphData): Unit = {
-    cgs.cg.methods.foreach(m => {
-      if (cgs.cg.edgesInto(m._2).isEmpty) {
+  def pruneEntryPoints(cgs: CallGraphStats): Unit = {
+    val cg = cgs.cg
+    cg.methods.foreach(m => {
+      if (cg.edgesInto(m._2).isEmpty && cg.getEntryPoints.contains(m._2)) {
         cgs.cg.getEntryPoints.remove(m._2)
+        cgs.entryPoints -= 1
       }
     })
   }
 
-  def initializeCallGraph(moduleGroup: ModuleGroup): CallGraphData = {
+  def initializeCallGraph(moduleGroup: ModuleGroup): CallGraphStats = {
 
     val methods = new mutable.HashMap[String, SWANMethod]()
     val cg = new SWANCallGraph(moduleGroup, methods)
-    val cgs = new CallGraphData(cg)
+    val cgs = new CallGraphStats(cg)
 
     moduleGroup.functions.foreach(f => {
       val m = new SWANMethod(f, moduleGroup)
       methods.put(f.name, m)
-      cg.addEntryPoint(m)
       if (!isUninteresting(m)) {
-        cgs.entryPoints.add(m)
+        cg.addEntryPoint(m)
+        cgs.entryPoints += 1
       }
     })
 

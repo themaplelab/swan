@@ -20,16 +20,17 @@
 package ca.ualberta.maple.swan.spds.cg
 
 import ca.ualberta.maple.swan.ir.ModuleGroup
+import ca.ualberta.maple.swan.spds.Stats.CallGraphStats
 
 object CallGraphBuilder {
 
-  def createCallGraph(moduleGroup: ModuleGroup, style: CallGraphStyle.Style): CallGraphUtils.CallGraphData = {
+  def createCallGraph(moduleGroup: ModuleGroup, style: CallGraphStyle.Style): CallGraphStats = {
     val cgBuilder = {
       style match {
         case CallGraphStyle.CHA => new CHA(moduleGroup, PointerAnalysisStyle.None)
         case CallGraphStyle.PRTA => new PRTA(moduleGroup, PointerAnalysisStyle.None)
         case CallGraphStyle.UCG => new UCG(moduleGroup, PointerAnalysisStyle.None)
-        case CallGraphStyle.UCGU => new UCGUnsound(moduleGroup, PointerAnalysisStyle.None)
+        //case CallGraphStyle.UCGU => new UCGUnsound(moduleGroup, PointerAnalysisStyle.None)
       }
     }
     cgBuilder.buildCallGraph()

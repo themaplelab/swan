@@ -19,10 +19,10 @@
 
 package ca.ualberta.maple.swan.spds.cg.pa
 
-import ca.ualberta.maple.swan.spds.cg.CallGraphUtils.CallGraphData
+import ca.ualberta.maple.swan.spds.Stats.CallGraphStats
 import ca.ualberta.maple.swan.spds.structures.SWANStatement
 
-abstract class PointerAnalysis(cgs: CallGraphData) {
+abstract class PointerAnalysis(cgs: CallGraphStats) {
 
   initialize()
 

@@ -19,15 +19,12 @@
 
 package ca.ualberta.maple.swan.drivers
 
-import java.io.{File, FileWriter}
-import java.nio.charset.StandardCharsets
-import java.nio.file.{Files, Paths}
 import ca.ualberta.maple.swan.drivers.Driver.{taintAnalysisResultsFileName, typeStateAnalysisResultsFileName}
 import ca.ualberta.maple.swan.ir._
 import ca.ualberta.maple.swan.ir.canonical.SWIRLPass
 import ca.ualberta.maple.swan.ir.raw.SWIRLGen
 import ca.ualberta.maple.swan.parser.{SILModule, SILParser}
-import ca.ualberta.maple.swan.spds.{CallGraphConstruction, NewCallGraphConstruction}
+import ca.ualberta.maple.swan.spds.Stats.{AllStats, GeneralStats}
 import ca.ualberta.maple.swan.spds.analysis.taint._
 import ca.ualberta.maple.swan.spds.analysis.typestate.{TypeStateAnalysis, TypeStateResults}
 import ca.ualberta.maple.swan.spds.cg.CallGraphBuilder
@@ -36,6 +33,10 @@ import org.apache.commons.io.{FileExistsException, FileUtils, IOUtils}
 import picocli.CommandLine
 import picocli.CommandLine.{Command, Option, Parameters}
 
+import java.io.{File, FileWriter}
+import java.nio.charset.StandardCharsets
+import java.nio.file.{Files, Paths}
+import java.util.concurrent.TimeUnit
 import scala.collection.mutable.ArrayBuffer
 
 object Driver {
@@ -200,6 +201,7 @@ class Driver extends Runnable {
       throw new FileExistsException("swan-dir does not exist")
     }
     val runStartTime = System.nanoTime()
+    val generalStats = new GeneralStats
     val proc = new SwanDirProcessor(swanDir, options, invalidateCache.nonEmpty, forceRead.nonEmpty)
     val treatRegular = !options.cache || invalidateCache.nonEmpty || !proc.hadExistingCache
     if (!treatRegular) Logging.printInfo(proc.toString)
@@ -264,6 +266,7 @@ class Driver extends Runnable {
         ModuleGrouper.group(canModules, proc.cachedGroup, proc.changedFiles)
       }
     }
+    generalStats.moduleGroupReadyTimeMS = TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - runStartTime).toInt
     Logging.printTimeStampSimple(0, runStartTime, "(group ready for analysis)")
     Logging.printInfo(
       group.toString+group.functions.length+" functions\n"+
@@ -298,8 +301,10 @@ class Driver extends Runnable {
       })
       fw.close()
     }
+    val allStats = new AllStats(generalStats, None)
     if (options.constructCallGraph || options.taintAnalysisSpec.nonEmpty || options.typeStateAnalysisSpec.nonEmpty) {
-      val cgResults = CallGraphBuilder.createCallGraph(group, CallGraphBuilder.CallGraphStyle.UCGU)
+      val cgResults = CallGraphBuilder.createCallGraph(group, CallGraphBuilder.CallGraphStyle.UCG)
+      allStats.cgs = Some(cgResults)
       val cg = cgResults.cg
       if (options.debug) {
         writeFile(cgResults.finalModuleGroup, debugDir, "grouped-cg", new SWIRLPrinterOptions().cgDebugInfo(cgResults.debugInfo))
@@ -337,6 +342,13 @@ class Driver extends Runnable {
         TypeStateResults.writeResults(f, allResults)
       }
     }
+    generalStats.modules = group.metas.length - 1
+    generalStats.functions = group.functions.length
+    generalStats.totalRunTimeMS = TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - runStartTime).toInt
+    System.out.println(allStats)
+    val allStatsFile = Paths.get(swanDir.getPath, "stats.json").toFile
+    Logging.printInfo(s"Writing stats to ${allStatsFile.getName}")
+    allStats.writeToFile(allStatsFile)
     group
   }
 

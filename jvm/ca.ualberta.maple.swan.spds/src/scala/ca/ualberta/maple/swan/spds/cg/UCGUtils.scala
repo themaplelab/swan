@@ -20,14 +20,13 @@
 package ca.ualberta.maple.swan.spds.cg
 
 import boomerang.results.AbstractBoomerangResults
-import boomerang.scene.{AllocVal, ControlFlowGraph, DataFlowScope, Val}
+import boomerang.scene.{ControlFlowGraph, DataFlowScope, Val}
 import boomerang.{BackwardQuery, Boomerang, DefaultBoomerangOptions, ForwardQuery}
-import ca.ualberta.maple.swan.ir.{FunctionAttribute, ModuleGroup, Operator, SymbolTableEntry}
-import ca.ualberta.maple.swan.spds.cg.CallGraphBuilder.PointerAnalysisStyle
-import ca.ualberta.maple.swan.spds.cg.CallGraphUtils.{CallGraphData, addCGEdge}
+import ca.ualberta.maple.swan.ir.FunctionAttribute
+import ca.ualberta.maple.swan.spds.cg.UCG.UCGStats
 import ca.ualberta.maple.swan.spds.structures.SWANControlFlowGraph.SWANBlock
 import ca.ualberta.maple.swan.spds.structures.SWANStatement.ApplyFunctionRef
-import ca.ualberta.maple.swan.spds.structures.{SWANInvokeExpr, SWANMethod, SWANStatement, SWANVal}
+import ca.ualberta.maple.swan.spds.structures.{SWANCallGraph, SWANMethod, SWANStatement}
 
 import java.util
 import scala.collection.{immutable, mutable}
@@ -63,7 +62,7 @@ final class DFWorklist {
   }
 
   def nonEmpty: Boolean = {
-    !stack.isEmpty
+    stack.nonEmpty
   }
 
   def pop(): SWANBlock = {
@@ -83,41 +82,43 @@ final class DFWorklist {
 
 }
 
-final class DDGBitSet(val bitset: immutable.BitSet)(private implicit val ddgTypes: mutable.HashMap[String,Int], private implicit val ddgTypesInv: mutable.ArrayBuffer[String]) {
+final class DDGBitSet(val bitset: immutable.BitSet)(
+  private implicit val ddgTypes: mutable.HashMap[String,Int],
+  private implicit val ddgTypesInv: mutable.ArrayBuffer[String]) {
 
-  final def +(elem: String): DDGBitSet = {
+  def +(elem: String): DDGBitSet = {
     ddgTypes.get(elem) match {
       case Some(n) => new DDGBitSet(bitset + n)
       case None => this
     }
   }
 
-  final def union(that: DDGBitSet): DDGBitSet = {
+  def union(that: DDGBitSet): DDGBitSet = {
     new DDGBitSet(bitset.union(that.bitset))
   }
 
-  final def contains(s: String): Boolean = {
+  def contains(s: String): Boolean = {
     ddgTypes.get(s) match {
       case Some(n) => bitset.contains(n)
       case None => false
     }
   }
 
-  final def toHashSet: mutable.HashSet[String] = {
+  def toHashSet: mutable.HashSet[String] = {
     mutable.HashSet.from(bitset.map(n => ddgTypesInv(n)))
   }
 
-  final def subsetOf(that: DDGBitSet): Boolean = {
+  def subsetOf(that: DDGBitSet): Boolean = {
     bitset.subsetOf(that.bitset)
   }
 
-  final def nonEmpty: Boolean = {
+  def nonEmpty: Boolean = {
     bitset.nonEmpty
   }
 
 }
 
-final class QueryCache(cgs: CallGraphData) {
+final class QueryCache(cg: SWANCallGraph, cgs: UCGStats) {
   private val cache: mutable.HashMap[(boomerang.scene.Statement, ApplyFunctionRef, Val), util.Map[ForwardQuery, AbstractBoomerangResults.Context]] =
     mutable.HashMap.empty[(boomerang.scene.Statement, ApplyFunctionRef, Val), util.Map[ForwardQuery, AbstractBoomerangResults.Context]]
 
@@ -133,7 +134,7 @@ final class QueryCache(cgs: CallGraphData) {
 
   private def query(pred: boomerang.scene.Statement, stmt: ApplyFunctionRef, ref: Val): util.Map[ForwardQuery, AbstractBoomerangResults.Context] = {
     val query = BackwardQuery.make(new ControlFlowGraph.Edge(pred, stmt), ref)
-    val solver = new Boomerang(cgs.cg, DataFlowScope.INCLUDE_ALL, new DefaultBoomerangOptions)
+    val solver = new Boomerang(cg, DataFlowScope.INCLUDE_ALL, new DefaultBoomerangOptions)
     val backwardQueryResults = solver.solve(query)
     cgs.totalQueries += 1
     val allocSites = backwardQueryResults.getAllocationSites
