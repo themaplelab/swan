@@ -45,7 +45,7 @@ class SWIRLPass {
       val blocks = convertToCanonical(f, module)
       val cfg = generateCFG(blocks)
       val canFunction = new CanFunction(f.attribute, f.name, f.tpe, args, blocks, f.refTable,
-        f.instantiatedTypes, new SymbolTable(), cfg)
+        new SymbolTable(), cfg)
       generateSymbolTable(canFunction)
       removeThunkApplication(canFunction)
       // Analysis specific mutations
@@ -417,7 +417,7 @@ class SWIRLPass {
                 b.operators.insert(idx, a1)
               }
               case BinaryOperation.arbitrary | BinaryOperation.equals => {
-                val ni = new RawOperatorDef(Operator.neww(result), op.position)
+                val ni = new RawOperatorDef(Operator.neww(result, result.tpe), op.position)
                 mapToSIL(op, ni, module)
                 b.operators(idx) = ni
               }
@@ -426,7 +426,7 @@ class SWIRLPass {
           case Operator.unaryOp(result, operation, operand) => {
             operation match {
               case UnaryOperation.arbitrary => {
-                val ni = new RawOperatorDef(Operator.neww(result), op.position)
+                val ni = new RawOperatorDef(Operator.neww(result, result.tpe), op.position)
                 mapToSIL(op, ni, module)
                 b.operators(idx) = ni
               }
@@ -481,7 +481,7 @@ class SWIRLPass {
     f.blocks.foreach(b => {
       if (!resolvedBlocks.contains(b) && f.blocks(0) != b) {
         b.arguments.foreach(arg => {
-          val newInstr = new RawOperatorDef(Operator.neww(new Symbol(arg.ref, arg.tpe)), arg.pos)
+          val newInstr = new RawOperatorDef(Operator.neww(new Symbol(arg.ref, arg.tpe), arg.tpe), arg.pos)
           b.operators.insert(0, newInstr)
         })
       }

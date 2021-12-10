@@ -50,7 +50,7 @@ class SWANControlFlowGraph(val method: SWANMethod) extends ControlFlowGraph {
   {
     // TOD0: dedicated NOP instruction?
     val nopSymbol = new ir.Symbol(new SymbolRef("nop"), new Type("Any"))
-    val opDef = new CanOperatorDef(Operator.neww(nopSymbol), None)
+    val opDef = new CanOperatorDef(Operator.neww(nopSymbol, nopSymbol.tpe), None)
     val firstBlock = method.delegate.blocks(0)
     val startInst = if (firstBlock.operators.isEmpty) firstBlock.terminator else firstBlock.operators(0)
     val srcMap = method.moduleGroup.swirlSourceMap

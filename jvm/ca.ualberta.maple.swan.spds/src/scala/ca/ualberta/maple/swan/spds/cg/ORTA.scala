@@ -58,7 +58,6 @@ class ORTA(mg: ModuleGroup, pas: PointerAnalysisStyle.Style) extends CallGraphCo
 
     while (worklist.nonEmpty) {
       val m = worklist.dequeue().asInstanceOf[SWANMethod]
-      val types = m.delegate.instantiatedTypes
       // ... TODO
       // https://github.com/EnSoftCorp/call-graph-toolbox/blob/master/com.ensoftcorp.open.cg/src/com/ensoftcorp/open/cg/analysis/RapidTypeAnalysis.java
       // https://ben-holland.com/call-graph-construction-algorithms-explained/

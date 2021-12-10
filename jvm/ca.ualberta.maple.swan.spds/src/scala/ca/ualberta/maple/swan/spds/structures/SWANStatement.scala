@@ -195,7 +195,7 @@ object SWANStatement {
                         m: SWANMethod) extends SWANStatement(CanInstructionDef.operator(opDef), m) {
     override def getRightOp: Val = m.newValues(inst.result.ref.name)
     override def toString: String = {
-      if (inst.result.ref.name == "nop") {
+      if (inst.result.ref.name == "nop" && m.hasSwirlSource) {
         "f" + m.swirlLineNum(m.delegate)
       } else if (m.hasSwirlSource) {
         "i" + m.swirlLineNum(opDef).toString

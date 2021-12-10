@@ -85,13 +85,12 @@ class CanModule(val functions: ArrayBuffer[CanFunction],
 }
 
 class Function(val attribute: Option[FunctionAttribute], var name: String, val tpe: Type,
-               val blocks: ArrayBuffer[Block], val refTable: RefTable,
-               val instantiatedTypes: mutable.HashSet[String])
+               val blocks: ArrayBuffer[Block], val refTable: RefTable)
 
 class CanFunction(var attribute: Option[FunctionAttribute], val name: String, val tpe: Type,
                   val arguments: ArrayBuffer[Argument], val blocks: ArrayBuffer[CanBlock],
-                  val refTable: RefTable, val instantiatedTypes: mutable.HashSet[String],
-                  val symbolTable: SymbolTable, var cfg: Graph[CanBlock, DefaultEdge]) extends Serializable {
+                  val refTable: RefTable, val symbolTable: SymbolTable,
+                  var cfg: Graph[CanBlock, DefaultEdge]) extends Serializable {
   def getSymbol(name: String): Symbol = {
     symbolTable(name) match {
       case SymbolTableEntry.operator(symbol, _) => symbol
@@ -185,7 +184,7 @@ sealed trait CanOperator extends Operator
 sealed trait FunctionRef extends Operator
 
 object Operator {
-  case class neww(result: Symbol) extends WithResult(result) with RawOperator with CanOperator
+  case class neww(result: Symbol, allocType: Type) extends WithResult(result) with RawOperator with CanOperator
   case class assign(result: Symbol, from: SymbolRef, bbArg: Boolean = false) extends WithResult(result) with RawOperator with CanOperator
   case class literal(result: Symbol, literal: Literal) extends WithResult(result) with RawOperator with CanOperator
   case class dynamicRef(result: Symbol, obj: SymbolRef, index: String) extends WithResult(result) with RawOperator with CanOperator with FunctionRef

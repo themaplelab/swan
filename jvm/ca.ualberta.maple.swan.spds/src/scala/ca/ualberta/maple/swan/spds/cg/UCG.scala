@@ -20,6 +20,7 @@
 package ca.ualberta.maple.swan.spds.cg
 
 import boomerang.scene.{AllocVal, ControlFlowGraph}
+import ca.ualberta.maple.swan.ir.DynamicDispatchGraph.Node
 import ca.ualberta.maple.swan.ir.{ModuleGroup, Operator, SymbolTableEntry}
 import ca.ualberta.maple.swan.spds.Stats.{CallGraphStats, SpecificCallGraphStats}
 import ca.ualberta.maple.swan.spds.cg.CallGraphBuilder.PointerAnalysisStyle
@@ -50,9 +51,11 @@ class UCG(mg: ModuleGroup, pas: PointerAnalysisStyle.Style) extends CallGraphCon
     // This type set creation
     moduleGroup.ddgs.foreach { case (_, ddg) =>
       ddg.nodes.keySet.foreach { typ =>
-        val n = ddgTypes.size
-        ddgTypes.addOne(typ, n)
-        ddgTypesInv.insert(n, typ)
+        if (ddg.nodes(typ).isInstanceOf[Node.Class] || ddg.nodes(typ).isInstanceOf[Node.Protocol]) {
+          val n = ddgTypes.size
+          ddgTypes.addOne(typ, n)
+          ddgTypesInv.insert(n, typ)
+        }
       }
     }
 
@@ -97,9 +100,10 @@ class UCG(mg: ModuleGroup, pas: PointerAnalysisStyle.Style) extends CallGraphCon
       inSets.put(currBlock, b)
       // process operators
       currBlock.stmts.foreach {
-        case SWANStatement.Allocation(_, inst, _) =>
-          val tpe = inst.result.tpe.name
+        case SWANStatement.Allocation(_, inst, _) => {
+          val tpe = inst.allocType.name
           b = b + tpe
+        }
         case applyStmt: SWANStatement.ApplyFunctionRef => {
           callSites.add(applyStmt)
           val m = currBlock.method
@@ -275,7 +279,7 @@ object UCG {
     override def toString: String = {
       val sb = new StringBuilder("  UCG\n")
       sb.append(s"    Queried Edges: $queriedEdges\n")
-      sb.append(s"    Virtual Edges: $queriedEdges\n")
+      sb.append(s"    Virtual Edges: $virtualEdges\n")
       sb.append(s"    Total Queries: $totalQueries\n")
       sb.append(s"    Fruitless Queries: $fruitlessQueries\n")
       sb.append(s"    Time (ms): $time\n")

@@ -19,6 +19,7 @@
 
 package ca.ualberta.maple.swan.ir
 
+import ca.ualberta.maple.swan.ir.DynamicDispatchGraph.Node
 import ca.ualberta.maple.swan.ir.raw.Utils
 import ca.ualberta.maple.swan.parser.{SILDeclRef, SILModule, SILWitnessEntry}
 import org.jgrapht._
@@ -81,30 +82,6 @@ class DynamicDispatchGraph extends Serializable {
   private def addEdge(from: Node, to: Node) = {
     graph.addEdge(from, to)
     reachabilityCache.addEdge(from, to)
-  }
-
-  /** A node in the DDG. */
-  sealed class Node(val name: String) extends Serializable {
-    override def hashCode(): Int = {
-      this.name.hashCode()
-    }
-    override def equals(obj: Any): Boolean = {
-      obj match {
-        case node: Node =>
-          this.name == node.name
-        case _ =>
-          false
-      }
-    }
-    override def toString: String = {
-      this.name
-    }
-  }
-  object Node {
-    case class Class(s: String) extends Node(name = s)
-    case class Protocol(s: String) extends Node(name = s)
-    case class Index(s: String) extends Node(name = s)
-    case class Method(s: String) extends Node(name = s)
   }
 
   /** Generate and populate `graph`. */
@@ -219,5 +196,32 @@ class DynamicDispatchGraph extends Serializable {
     dot.append("\n")
     dot.append("}")
     dot.toString()
+  }
+}
+
+object DynamicDispatchGraph {
+  /** A node in the DDG. */
+  sealed class Node(val name: String) extends Serializable {
+    override def hashCode(): Int = {
+      this.name.hashCode()
+    }
+    override def equals(obj: Any): Boolean = {
+      obj match {
+        case node: Node =>
+          this.name == node.name
+        case _ =>
+          false
+      }
+    }
+    override def toString: String = {
+      this.name
+    }
+  }
+
+  object Node {
+    case class Class(s: String) extends Node(name = s)
+    case class Protocol(s: String) extends Node(name = s)
+    case class Index(s: String) extends Node(name = s)
+    case class Method(s: String) extends Node(name = s)
   }
 }

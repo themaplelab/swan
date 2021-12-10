@@ -38,7 +38,6 @@ import scala.util.control.Breaks.{break, breakable}
 class SWIRLParser extends SWIRLPrinter {
 
   var refTable: RefTable = new RefTable()
-  val instantiatedTypes: mutable.HashSet[String] = new mutable.HashSet[String]()
 
   // Default constructor should not be called.
 
@@ -273,14 +272,13 @@ class SWIRLParser extends SWIRLPrinter {
   @throws[Error]
   def parseFunction(): Function = {
     refTable = new RefTable()
-    instantiatedTypes.clear()
     take("func ")
     val attr = parseFunctionAttribute()
     val name = parseGlobalOrFunctionName()
     take(":")
     val tpe = parseType()
     val blocks = { parseNilOrMany("{", "", "}", parseBlock) }.getOrElse(ArrayBuffer.empty[Block])
-    new Function(attr, name, tpe, blocks.to(ArrayBuffer), refTable, mutable.HashSet.from(instantiatedTypes))
+    new Function(attr, name, tpe, blocks.to(ArrayBuffer), refTable)
   }
 
 
@@ -442,9 +440,9 @@ class SWIRLParser extends SWIRLPrinter {
       val result = possibleResult.get
       instructionName match {
         case "new" => {
-          val symbol = makeSymbol(result, parseType())
-          instantiatedTypes.add(symbol.tpe.name)
-          Instruction.rawOperator(Operator.neww(symbol))
+          val tpe = parseType()
+          val symbol = makeSymbol(result, tpe)
+          Instruction.rawOperator(Operator.neww(symbol, tpe))
         }
         case "assign" => {
           val from = parseSymbolRef()

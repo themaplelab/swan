@@ -30,7 +30,6 @@ class SWIRLPrinterOptions {
   var useArbitraryTypeNames = false
   var printCFG = false
   var genLocationMap = false // expensive
-  var printInstantiatedTypes = false
 
   // only for canonical (meant for SPDS debugging)
   var printLineNumber = false
@@ -54,10 +53,6 @@ class SWIRLPrinterOptions {
   }
   def printLineNumber(b: Boolean): SWIRLPrinterOptions = {
     printLineNumber = b
-    this
-  }
-  def printInstantiatedTypes(b: Boolean): SWIRLPrinterOptions = {
-    printInstantiatedTypes = b
     this
   }
   def cgDebugInfo(info: mutable.HashMap[CanOperator, mutable.HashSet[String]]): SWIRLPrinterOptions = {
@@ -135,20 +130,6 @@ class SWIRLPrinter extends Printer {
       // T0D0: slow?
       val cfg = canModule.functions.find(p => p == function).get.cfg
       print(function, cfg)
-    }
-    if (options.printInstantiatedTypes) {
-      val types = function.instantiatedTypes
-      if (types.nonEmpty) {
-        print("// types: {")
-        types.zipWithIndex.foreach(tpe => {
-          print("`")
-          print(tpe._1)
-          print("`")
-          if (tpe._2 != types.size - 1) print(",")
-        })
-        print("}")
-        printNewline()
-      }
     }
     if (options.genLocationMap) locMap.put(function, (line, getCol))
     if (options.printLineNumber) printLineNumber()
@@ -290,9 +271,9 @@ class SWIRLPrinter extends Printer {
       case _ =>
     }
     operator match {
-      case Operator.neww(result) => {
+      case Operator.neww(result, allocType) => {
         print("new ")
-        print(result.tpe)
+        print(allocType)
         return // don't print , $T
       }
       case Operator.assign(_, from, bbArg) => {
