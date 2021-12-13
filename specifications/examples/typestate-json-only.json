@@ -3,6 +3,7 @@
     "style": 0,
     "name": "FileOpenClose",
     "type": "File",
+    "class": true,
     "description": "Not closing file resources can cause resource leaks.",
     "advice": "Close file resources.",
     "states": [

@@ -37,3 +37,11 @@ func test_interprocedural_incorrect() {
   let f = File();
   foo_open(f);
 }
+
+// requires `"class": true` to work
+func test_multiple_objects() {
+  let f1 = File()
+  f1.open() //?FileOpenClose?error
+  let f2 = File()
+  f2.open() //?FileOpenClose?error
+}
