@@ -23,13 +23,12 @@ import java.io.File
 import java.util
 import java.util.Collections
 import java.util.regex.Pattern
-
 import boomerang.WeightedForwardQuery
 import boomerang.scene.{AllocVal, ControlFlowGraph, Statement}
 import ca.ualberta.maple.swan.ir.Position
 import ca.ualberta.maple.swan.spds.analysis.typestate.TypeStateSpecification.jsonVal
 import ca.ualberta.maple.swan.spds.analysis.typestate.statemachines.{StandardLocationService, VisitsLocationService}
-import ca.ualberta.maple.swan.spds.structures.{SWANCallGraph, SWANType}
+import ca.ualberta.maple.swan.spds.structures.{SWANCallGraph, SWANStatement, SWANType}
 import typestate.TransitionFunction
 import typestate.finiteautomata.MatcherTransition.{Parameter, Type}
 import typestate.finiteautomata.{MatcherTransition, State, TypeStateMachineWeightFunctions}
@@ -74,6 +73,7 @@ object TypeStateSpecification {
 
 class TypeStateJSONSpecification(val name: String,
                                  val typeName: String,
+                                 val isClass: Boolean,
                                  val description: String,
                                  val advice: String,
                                  val states: mutable.HashMap[String, TypeStateJSONSpecification.JSONState],
@@ -121,12 +121,26 @@ class TypeStateJSONSpecification(val name: String,
       })
 
       override def generateSeed(edge: ControlFlowGraph.Edge): util.Collection[WeightedForwardQuery[TransitionFunction]] = {
-        val s: Statement = edge.getStart
-        if (s.isAssign && s.getRightOp.isNewExpr) {
-          val newExprType = s.getRightOp.getNewExprType
-          if (Pattern.matches(typeName, newExprType.asInstanceOf[SWANType].tpe.name)) {
-            return Collections.singleton(new WeightedForwardQuery[TransitionFunction](edge,
-              new AllocVal(s.getLeftOp, s, s.getRightOp), initialTransition))
+        val s: SWANStatement = edge.getStart.asInstanceOf[SWANStatement]
+        if (isClass) {
+          s match {
+            case applyStmt: SWANStatement => {
+              cg.edgesOutOf(applyStmt).forEach(e => {
+                if (Pattern.matches("^(.*\\.)?" + typeName + "\\.__allocating_init\\(\\).*", e.tgt().getName)) {
+                  return Collections.singleton(new WeightedForwardQuery[TransitionFunction](edge,
+                    new AllocVal(s.getLeftOp, s, s.getLeftOp), initialTransition))
+                }
+              })
+            }
+            case _ =>
+          }
+        } else {
+          if (s.isAssign && s.getRightOp.isNewExpr) {
+            val newExprType = s.getRightOp.getNewExprType
+            if (Pattern.matches(typeName, newExprType.asInstanceOf[SWANType].tpe.name)) {
+              return Collections.singleton(new WeightedForwardQuery[TransitionFunction](edge,
+                new AllocVal(s.getLeftOp, s, s.getRightOp), initialTransition))
+            }
           }
         }
         Collections.emptySet
@@ -208,6 +222,7 @@ object TypeStateJSONSpecification {
   def parse(v: ujson.Value): TypeStateJSONSpecification = {
     val name = jsonVal(v, "name").str
     val typeNamePattern = jsonVal(v, "type").str
+    val isClass: Boolean = Try(v("class").bool).getOrElse(false)
     val description = jsonVal(v, "description").str
     val advice = jsonVal(v, "advice").str
     val states = mutable.HashMap.from[String, TypeStateJSONSpecification.JSONState](jsonVal(v, "states").arr.map(f => {
@@ -239,7 +254,7 @@ object TypeStateJSONSpecification {
       }
       new TypeStateJSONSpecification.JSONTransition(from, methodPattern, param, to, tpe)
     })
-    new TypeStateJSONSpecification(name, typeNamePattern, description, advice, states, transitions)
+    new TypeStateJSONSpecification(name, typeNamePattern, isClass, description, advice, states, transitions)
   }
 }
 
