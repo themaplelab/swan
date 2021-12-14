@@ -39,18 +39,12 @@ We aim to provide developers and researchers with an easy-to-use and well-docume
 - Analysis for *Visits Location Service* and *Standard Location Service* for finding energy inefficient configuration
 - Annotation checker for regression testing
 
-### Currently working on
-
-- Porting SPDS to Scala (see [this](https://github.com/themaplelab/swan/tree/port) branch)
-- Improving taint and typestate analysis
-- More language and Swift Standard Library modeling
-
 ### Relevant Wiki pages
 
 - [SWIRL](https://github.com/themaplelab/swan/wiki/SWIRL)
 - [SIL To SWIRL Spec](https://github.com/themaplelab/swan/wiki/SIL-To-SWIRL-Spec)
 - [IDE Configuration](https://github.com/themaplelab/swan/wiki/IDE-Configuration)
-- [Writing Analysis](https://github.com/themaplelab/swan/wiki/Writing-Analysis)
+- [Writing Analyses](https://github.com/themaplelab/swan/wiki/Writing-Analyses)
 - [Detecting Inefficient Location API Configurations](https://github.com/themaplelab/swan/wiki/Detecting-Inefficient-Location-API-Configurations)
 
 ## Getting started
