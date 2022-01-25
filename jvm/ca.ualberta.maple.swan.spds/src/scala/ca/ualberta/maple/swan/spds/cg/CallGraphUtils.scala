@@ -35,6 +35,7 @@ object CallGraphUtils {
     val edge = new CallGraph.Edge(stmt, to)
     val b = cgs.cg.addEdge(edge)
     if (b) {
+      cgs.cg.graph.addEdge(from, to)
       stmt.invokeExpr.updateDeclaredMethod(to.getName, cfgEdge)
       val op = stmt.delegate.instruction match {
         case Instruction.canOperator(op) => op
@@ -82,6 +83,8 @@ object CallGraphUtils {
         cgs.entryPoints += 1
       }
     })
+
+    methods.foreach{case (_,m) => cg.graph.addVertex(m)}
 
     cgs
   }

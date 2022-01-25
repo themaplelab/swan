@@ -58,13 +58,11 @@ class CHA(mg: ModuleGroup, pas: PointerAnalysisStyle.Style) extends CallGraphCon
                 operator match {
                   case Operator.builtinRef(_, name) => {
                     if (methods.contains(name)) { // TODO: Why are some builtins missing stubs?
-                      cgs.trivialCallSites += 1
-                      CallGraphUtils.addCGEdge(m, methods(name), applyStmt, edge, cgs)
+                      if (CallGraphUtils.addCGEdge(m, methods(name), applyStmt, edge, cgs)) cgs.trivialCallSites += 1
                     }
                   }
                   case Operator.functionRef(_, name) => {
-                    cgs.trivialCallSites += 1
-                    CallGraphUtils.addCGEdge(m, methods(name), applyStmt, edge, cgs)
+                    if (CallGraphUtils.addCGEdge(m, methods(name), applyStmt, edge, cgs)) cgs.trivialCallSites += 1
                   }
                   case Operator.dynamicRef(_, _, index) => {
                     moduleGroup.ddgs.foreach(ddg => {

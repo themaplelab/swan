@@ -21,11 +21,19 @@ package ca.ualberta.maple.swan.spds.structures
 
 import boomerang.scene._
 import ca.ualberta.maple.swan.ir._
+import org.jgrapht.Graph
+import org.jgrapht.graph.{DefaultDirectedGraph, DefaultEdge}
 
 import scala.collection.mutable
 
 class SWANCallGraph(var moduleGroup: ModuleGroup,
                     val methods: mutable.HashMap[String, SWANMethod]) extends CallGraph {
+
+  val graph: Graph[SWANMethod, DefaultEdge] = new DefaultDirectedGraph(classOf[DefaultEdge])
+
+  def outEdgeTargets(m: SWANMethod): Array[SWANMethod] = {
+    graph.outgoingEdgesOf(m).toArray().map(e => graph.getEdgeTarget(e.asInstanceOf[DefaultEdge]))
+  }
 
   override def toString: String = {
     val sb = new StringBuilder

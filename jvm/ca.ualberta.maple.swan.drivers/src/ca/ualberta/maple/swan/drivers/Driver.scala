@@ -303,7 +303,7 @@ class Driver extends Runnable {
     }
     val allStats = new AllStats(generalStats, None)
     if (options.constructCallGraph || options.taintAnalysisSpec.nonEmpty || options.typeStateAnalysisSpec.nonEmpty) {
-      val cgResults = CallGraphBuilder.createCallGraph(group, CallGraphBuilder.CallGraphStyle.UCG)
+      val cgResults = CallGraphBuilder.createCallGraph(group, CallGraphBuilder.CallGraphStyle.UCGSound)
       allStats.cgs = Some(cgResults)
       val cg = cgResults.cg
       CallGraphUtils.writeToProbe(cg, Paths.get(swanDir.getPath, "cg.txt").toFile)

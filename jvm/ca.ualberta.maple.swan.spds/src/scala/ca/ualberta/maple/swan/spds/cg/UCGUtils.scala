@@ -54,7 +54,9 @@ final class DFWorklist {
       return
     }
 
-    add(m.getStartBlock)
+    // TODO revert hack
+    m.getCFG.blocks.foreach{ case (_,blk) => add(blk)}
+    //add(m.getStartBlock)
   }
 
   def isEmpty: Boolean = {
