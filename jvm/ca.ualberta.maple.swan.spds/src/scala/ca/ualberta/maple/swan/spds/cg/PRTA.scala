@@ -116,7 +116,7 @@ object PRTA {
     }
 
     override def toString: String = {
-      s"  pRTA\n    Edges: $edges\n    Time (ms): $time"
+      s"pRTA\n  Edges: $edges\n  Time (ms): $time"
     }
   }
 }

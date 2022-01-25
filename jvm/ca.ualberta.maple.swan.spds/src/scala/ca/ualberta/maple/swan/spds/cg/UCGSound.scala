@@ -119,6 +119,9 @@ class UCGSound(mg: ModuleGroup, pas: PointerAnalysisStyle.Style) extends CallGra
       }
     }
 
+    // Add specific data to call graph stats
+    cgs.specificData.append(stats)
+
     // query cache
     queryCache = new SQueryCache(cgs, stats)
 
@@ -352,7 +355,16 @@ object UCGSound {
     var virtualEdges: Int = 0
     var totalQueries: Int = 0
     var fruitlessQueries: Int = 0
-    var time: Int = 0
+
+    override def toString: String = {
+      val sb = new StringBuilder()
+      sb.append("UCGSound\n")
+      sb.append(s"  Queried Edges: $queriedEdges\n")
+      sb.append(s"  Virtual Edges: $virtualEdges\n")
+      sb.append(s"  Total Queries: $totalQueries\n")
+      sb.append(s"  Fruintless Queries: $fruitlessQueries\n")
+      sb.toString()
+    }
 
     override def toJSON: Value = {
       val u = ujson.Obj()
@@ -360,7 +372,6 @@ object UCGSound {
       u("ucg_virtual_edges") = virtualEdges
       u("ucg_total_queries") = totalQueries
       u("ucg_fruitless_queries") = fruitlessQueries
-      u("ucg_time") = time
       u
     }
   }

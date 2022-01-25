@@ -98,7 +98,7 @@ object CHA {
     }
 
     override def toString: String = {
-      s"  CHA\n    Edges: $chaEdges\n    Time (ms): $time"
+      s"CHA\n  Edges: $chaEdges\n  Time (ms): $time"
     }
   }
 }

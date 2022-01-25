@@ -46,7 +46,7 @@ object Stats {
     var finalModuleGroup: Object = cg.moduleGroup
     val dynamicModels: Option[(Module, CanModule)] = None
 
-    override def toString: String = {
+    final override def toString: String = {
       var indent = "  "
       val sb = new StringBuilder(indent + "Call Graph Stats:\n")
       indent = indent + indent
@@ -60,14 +60,21 @@ object Stats {
       sb.append(indent + s"Non-trivial call sites: $nonTrivialCallSites\n")
       if (specificData.nonEmpty) {
         sb.append(indent + "Specific stats:\n")
-        specificData.foreach(d => sb.append(d.toString))
+        specificData.foreach(d => {
+          d.toString.split('\n').foreach(s => {
+            sb.append(indent)
+            sb.append("  ")
+            sb.append(s)
+            sb.append('\n')
+          })
+        })
       }
       sb.toString()
     }
 
     def toJSON: ujson.Value = {
       val u = ujson.Obj()
-      u("total_cg_time") = totalCGConstructionTimeMS.toInt
+      u("total_cg_time") = totalCGConstructionTimeMS
       u("initialization_time") = initializationTimeMS
       u("cg_only_time") = cgOnlyConstructionTimeMS
       u("entry_points") = entryPoints
@@ -116,7 +123,9 @@ object Stats {
     def toJSON: ujson.Value = {
       val u = ujson.Obj()
       gs.toJSON.obj.foreach(o => u(o._1) = o._2)
-      if (cgs.nonEmpty) cgs.get.toJSON.obj.foreach(o => u(o._1) = o._2)
+      if (cgs.nonEmpty) {
+        cgs.get.toJSON.obj.foreach(o => u(o._1) = o._2)
+      }
       u
     }
 
@@ -124,6 +133,8 @@ object Stats {
       val fw = new FileWriter(f)
       try {
         fw.write(toJSON.render(2))
+        // Unix convention trailing newline
+        fw.write("\n")
       } finally {
         fw.close()
       }

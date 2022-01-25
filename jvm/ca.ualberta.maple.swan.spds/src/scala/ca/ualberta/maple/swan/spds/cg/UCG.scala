@@ -277,12 +277,12 @@ object UCG {
     }
 
     override def toString: String = {
-      val sb = new StringBuilder("  UCG\n")
-      sb.append(s"    Queried Edges: $queriedEdges\n")
-      sb.append(s"    Virtual Edges: $virtualEdges\n")
-      sb.append(s"    Total Queries: $totalQueries\n")
-      sb.append(s"    Fruitless Queries: $fruitlessQueries\n")
-      sb.append(s"    Time (ms): $time\n")
+      val sb = new StringBuilder("UCG\n")
+      sb.append(s"  Queried Edges: $queriedEdges\n")
+      sb.append(s"  Virtual Edges: $virtualEdges\n")
+      sb.append(s"  Total Queries: $totalQueries\n")
+      sb.append(s"  Fruitless Queries: $fruitlessQueries\n")
+      sb.append(s"  Time (ms): $time\n")
       sb.toString()
     }
   }
