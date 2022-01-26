@@ -20,6 +20,7 @@
 package ca.ualberta.maple.swan.spds
 
 import ca.ualberta.maple.swan.ir.{CanModule, CanOperator, Module}
+import ca.ualberta.maple.swan.spds.cg.CallGraphUtils
 import ca.ualberta.maple.swan.spds.structures.SWANCallGraph
 
 import java.io.{File, FileWriter}
@@ -38,8 +39,9 @@ object Stats {
     def cgOnlyConstructionTimeMS: Int = totalCGConstructionTimeMS - initializationTimeMS
     var entryPoints: Int = 0
     var totalEdges: Int = 0
-    var totalCallSites: Int = 0
+    def totalCallSites: Int = CallGraphUtils.totalCallSites(this)
     var trivialCallSites: Int = 0
+    def resolvedCallSites: Int = CallGraphUtils.resolvedCallSites(this)
     def nonTrivialCallSites: Int = totalCallSites - trivialCallSites
     var specificData: mutable.ArrayBuffer[SpecificCallGraphStats] = mutable.ArrayBuffer.empty
     val debugInfo = new mutable.HashMap[CanOperator, mutable.HashSet[String]]()
@@ -57,6 +59,7 @@ object Stats {
       sb.append(indent + s"Total edges: $totalEdges\n")
       sb.append(indent + s"Total call sites: $totalCallSites\n")
       sb.append(indent + s"Trivial call sites: $trivialCallSites\n")
+      sb.append(indent + s"Resolved Call Sites: $resolvedCallSites\n")
       sb.append(indent + s"Non-trivial call sites: $nonTrivialCallSites\n")
       if (specificData.nonEmpty) {
         sb.append(indent + "Specific stats:\n")
@@ -81,6 +84,7 @@ object Stats {
       u("total_edges") = totalEdges
       u("total_call_sites") = totalCallSites
       u("trivial_call_sites") = trivialCallSites
+      u("resolved_call_sites") = resolvedCallSites
       u("non_trivial_call_sites") = nonTrivialCallSites
       specificData.foreach(s => s.toJSON.obj.foreach(o => u(o._1) = o._2))
       u

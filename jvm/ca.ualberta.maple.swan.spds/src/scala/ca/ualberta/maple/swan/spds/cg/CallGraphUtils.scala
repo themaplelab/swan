@@ -26,7 +26,6 @@ import ca.ualberta.maple.swan.spds.structures.{SWANCallGraph, SWANMethod, SWANSt
 
 import java.io.{File, FileWriter}
 import scala.collection.mutable
-import scala.collection.mutable.ArrayBuffer
 
 object CallGraphUtils {
 
@@ -48,6 +47,23 @@ object CallGraphUtils {
     }
     if (b) cgs.totalEdges += 1
     b
+  }
+
+  def resolvedCallSites(cgs: CallGraphStats) : Int = {
+    val cg : CallGraph = cgs.cg
+    val dict : mutable.MultiDict[SWANStatement, SWANMethod] = mutable.MultiDict.empty
+    cg.getEdges.forEach(e => dict.addOne(e.src().asInstanceOf[SWANStatement.ApplyFunctionRef], e.tgt().asInstanceOf[SWANMethod]))
+    dict.keySet.count(k => dict.get(k).size == 1)
+  }
+
+  def totalCallSites(cgs: CallGraphStats) : Int = {
+    val cg : CallGraph = cgs.cg
+    val outOf : mutable.HashSet[SWANStatement] = mutable.HashSet.empty
+    cg.getEdges.forEach(e => {
+      val src = e.src().asInstanceOf[SWANStatement.ApplyFunctionRef]
+      outOf.add(src)
+    })
+    outOf.size
   }
 
   private def isUninteresting(m: SWANMethod): Boolean = {

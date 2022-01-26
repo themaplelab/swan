@@ -27,6 +27,7 @@ import ca.ualberta.maple.swan.spds.cg.UCG.UCGStats
 import ca.ualberta.maple.swan.spds.structures.SWANControlFlowGraph.SWANBlock
 import ca.ualberta.maple.swan.spds.structures.SWANStatement.ApplyFunctionRef
 import ca.ualberta.maple.swan.spds.structures.{SWANCallGraph, SWANMethod, SWANStatement}
+import ca.ualberta.maple.swan.utils.Logging
 
 import java.util
 import scala.collection.{immutable, mutable}

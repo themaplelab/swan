@@ -70,7 +70,6 @@ class UCG(mg: ModuleGroup, pas: PointerAnalysisStyle.Style) extends CallGraphCon
         cgs, queryCache, stats, callSites)
     })
 
-    cgs.totalCallSites = callSites.size
     stats.time = (System.currentTimeMillis() - startTimeMs).toInt
     cgs.specificData.addOne(stats)
     CallGraphUtils.pruneEntryPoints(cgs)

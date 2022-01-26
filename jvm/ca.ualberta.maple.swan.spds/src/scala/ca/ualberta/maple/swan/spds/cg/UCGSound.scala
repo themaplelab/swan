@@ -88,7 +88,10 @@ final class SQueryCache(cgs: CallGraphStats, stats: UCGSoundStats) {
   }
 
   def invalidate(stmt: ApplyFunctionRef): Unit = {
-    cache.remove(stmt)
+    if (cache.contains(stmt)) {
+      stats.callSitesInvalidated += 1
+      cache.remove(stmt)
+    }
   }
 
 }
@@ -142,6 +145,9 @@ class UCGSound(mg: ModuleGroup, pas: PointerAnalysisStyle.Style) extends CallGra
       val successors = next.flatMap(m => cgs.cg.outEdgeTargets(m).diff(processed.toSeq))
       next.clear()
       next.addAll(successors)
+    }
+    if (processed.nonEmpty) {
+      stats.recursiveInvalidations += 1
     }
     processed.foreach{ m =>
       m.getCFG.blocks.foreach{ case (_,blk) =>
@@ -355,6 +361,8 @@ object UCGSound {
     var virtualEdges: Int = 0
     var totalQueries: Int = 0
     var fruitlessQueries: Int = 0
+    var recursiveInvalidations: Int = 0
+    var callSitesInvalidated: Int = 0
 
     override def toString: String = {
       val sb = new StringBuilder()
@@ -363,6 +371,8 @@ object UCGSound {
       sb.append(s"  Virtual Edges: $virtualEdges\n")
       sb.append(s"  Total Queries: $totalQueries\n")
       sb.append(s"  Fruintless Queries: $fruitlessQueries\n")
+      sb.append(s"  Recursive Invalidations: $recursiveInvalidations\n")
+      sb.append(s"  Call Sites Invalidated: $callSitesInvalidated\n")
       sb.toString()
     }
 
@@ -372,6 +382,8 @@ object UCGSound {
       u("ucg_virtual_edges") = virtualEdges
       u("ucg_total_queries") = totalQueries
       u("ucg_fruitless_queries") = fruitlessQueries
+      u("recursive_invalidations") = recursiveInvalidations
+      u("call_sites_invalidated") = callSitesInvalidated
       u
     }
   }

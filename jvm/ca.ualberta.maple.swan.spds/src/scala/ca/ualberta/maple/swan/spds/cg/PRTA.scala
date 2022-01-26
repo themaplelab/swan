@@ -67,7 +67,6 @@ class PRTA(mg: ModuleGroup, pas: PointerAnalysisStyle.Style) extends CallGraphCo
       m.getCFG.blocks.foreach(b => {
         b._2.stmts.foreach {
           case applyStmt: SWANStatement.ApplyFunctionRef => {
-            cgs.totalCallSites += 1
             val edge = new ControlFlowGraph.Edge(m.getCFG.getPredsOf(applyStmt).iterator().next(), applyStmt)
             m.delegate.symbolTable(applyStmt.inst.functionRef.name) match {
               case SymbolTableEntry.operator(_, operator) => {
