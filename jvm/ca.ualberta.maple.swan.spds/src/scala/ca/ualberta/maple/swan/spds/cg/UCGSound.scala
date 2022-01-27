@@ -164,14 +164,14 @@ class UCGSound(mg: ModuleGroup, pas: PointerAnalysisStyle.Style) extends CallGra
               operator match {
                 // Trivial cases (intra-procedural)
                 case Operator.functionRef(_, name) =>
-                  visitSimpleRef(name)
+                  visitSimpleRef(name, trivial = true)
                 case Operator.builtinRef(_, name) =>
                   if (cgs.cg.methods.contains(name)) {
-                    visitSimpleRef(name)
+                    visitSimpleRef(name, trivial = true)
                   }
                 case Operator.dynamicRef(_, _, index) => {
                   val block = m.getCFG.blocks(m.getCFG.mappedStatements.get(operator).asInstanceOf[SWANStatement])
-                  visitDynamicRef(index, block)
+                  visitDynamicRef(index, block, queried = false)
                 }
 
                 // The function ref must be being used in a more interesting
@@ -189,14 +189,14 @@ class UCGSound(mg: ModuleGroup, pas: PointerAnalysisStyle.Style) extends CallGra
               multiple.operators.foreach {
                 // Trivial cases (intra-procedural)
                 case Operator.functionRef(_, name) =>
-                  visitSimpleRef(name)
+                  visitSimpleRef(name, trivial = true)
                 case Operator.builtinRef(_, name) =>
                   if (cgs.cg.methods.contains(name)) {
-                    visitSimpleRef(name)
+                    visitSimpleRef(name, trivial = true)
                   }
                 case operator@Operator.dynamicRef(_, _, index) => {
                   val block = m.getCFG.blocks(m.getCFG.mappedStatements.get(operator).asInstanceOf[SWANStatement])
-                  visitDynamicRef(index, block)
+                  visitDynamicRef(index, block, queried = false)
                 }
                 // The function ref must be being used in a more interesting
                 // way (e.g., assignment). TODO: Count these cases.
@@ -212,11 +212,16 @@ class UCGSound(mg: ModuleGroup, pas: PointerAnalysisStyle.Style) extends CallGra
           // new edges may introduce new query results for function pointers.
 
           // Handler for simple (trivial) function references
-          def visitSimpleRef(name: String): Unit = {
+          def visitSimpleRef(name: String, trivial: Boolean): Unit = {
             val target = cgs.cg.methods(name)
             val added = addCGEdge(m, target, applyStmt, edge, cgs)
+            b = b.union(processTarget(target, c, b))
             if (added) {
-              cgs.trivialCallSites += 1
+              if (trivial) {
+                cgs.trivialCallSites += 1
+              } else {
+                stats.queriedEdges += 1
+              }
               if (seen.contains(target.getStartBlock)) {
                 invalidateAndRevisitSuccessors(target, cgs)
               }
@@ -226,8 +231,7 @@ class UCGSound(mg: ModuleGroup, pas: PointerAnalysisStyle.Style) extends CallGra
           }
 
           // Handler for dynamic (virtual) function references
-          def visitDynamicRef(index: String, block: SWANBlock): Unit = {
-            val currTypes = b
+          def visitDynamicRef(index: String, block: SWANBlock, queried: Boolean): Unit = {
             val instantiatedTypes = b.toHashSet
             interProcSuccessors.get(block) match {
               case Some(_) => interProcSuccessors(block).add(c)
@@ -239,9 +243,13 @@ class UCGSound(mg: ModuleGroup, pas: PointerAnalysisStyle.Style) extends CallGra
                 val target = cgs.cg.methods(name)
                 val added = addCGEdge(m, target, applyStmt, edge, cgs)
                 // TODO: Incorrect (target is not processed in w to gen outset)
-                b = b.union(processTarget(target, c, currTypes))
+                b = b.union(processTarget(target, c, b))
                 if (added) {
-                  stats.virtualEdges += 1
+                  if (queried) {
+                    stats.queriedEdges += 1
+                  } else {
+                    stats.virtualEdges += 1
+                  }
                   if (seen.contains(target.getStartBlock)) {
                     invalidateAndRevisitSuccessors(target, cgs)
                   }
@@ -253,49 +261,16 @@ class UCGSound(mg: ModuleGroup, pas: PointerAnalysisStyle.Style) extends CallGra
           // Query a call-site for its function reference allocation site
           def queryRef(stmt: SWANStatement.ApplyFunctionRef): Unit = {
             val ref = stmt.getInvokeExpr.asInstanceOf[SWANInvokeExpr].getFunctionRef
-            // not reusing the above because of different edge count increments and currTypes management
-            val currTypes = b
-            def visitSimpleRef(name: String): Unit = {
-              val target = cgs.cg.methods(name)
-              val added = addCGEdge(m, target, applyStmt, edge, cgs)
-              b = b.union(processTarget(target, c, currTypes))
-              if (added) {
-                stats.queriedEdges += 1
-                if (seen.contains(target.getStartBlock)) {
-                  invalidateAndRevisitSuccessors(target, cgs)
-                }
-              }
-            }
-            def visitDynamicRef(index: String, block: SWANBlock): Unit = {
-              val instantiatedTypes = b.toHashSet
-              interProcSuccessors.get(block) match {
-                case Some(_) => interProcSuccessors(block).add(c)
-                case None => interProcSuccessors.addOne(block, mutable.HashSet(c))
-              }
-              moduleGroup.ddgs.foreach(ddg => {
-                val functionNames = ddg._2.query(index, Some(instantiatedTypes))
-                functionNames.foreach(name => {
-                  val target = cgs.cg.methods(name)
-                  val added = addCGEdge(m, target, applyStmt, edge, cgs)
-                  b = b.union(processTarget(target, c, currTypes))
-                  if (added) {
-                    stats.queriedEdges += 1
-                    if (seen.contains(target.getStartBlock)) {
-                      invalidateAndRevisitSuccessors(target, cgs)
-                    }
-                  }
-                })
-              })
-            }
+
             m.getControlFlowGraph.getPredsOf(stmt).forEach(pred => {
               // TODO: Verify only ever one pred?
               val allocSites = queryCache.get(pred, stmt, ref)
               allocSites.forEach((forwardQuery, _) => {
                 forwardQuery.`var`().asInstanceOf[AllocVal].getAllocVal match {
                   case v : SWANVal.FunctionRef =>
-                    visitSimpleRef(v.ref)
+                    visitSimpleRef(v.ref, trivial = false)
                   case v: SWANVal.BuiltinFunctionRef =>
-                    visitSimpleRef(v.ref)
+                    visitSimpleRef(v.ref, trivial = false)
                   case v: SWANVal.DynamicFunctionRef => {
                     val block = {
                       v.method.delegate.symbolTable(v.getVariableName) match {
@@ -305,7 +280,7 @@ class UCGSound(mg: ModuleGroup, pas: PointerAnalysisStyle.Style) extends CallGra
                         case _ => throw new RuntimeException("unexpected")
                       }
                     }
-                    visitDynamicRef(v.index, block)
+                    visitDynamicRef(v.index, block, queried = true)
                   }
                   case _ => // likely result of partial_apply (ignore for now)
                 }
