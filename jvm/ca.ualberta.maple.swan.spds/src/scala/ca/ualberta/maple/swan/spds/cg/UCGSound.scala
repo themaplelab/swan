@@ -150,7 +150,8 @@ class UCGSound(mg: ModuleGroup, pas: PointerAnalysisStyle.Style) extends CallGra
       c.stmts.foreach {
         // If operator is an allocation, add alloc type to b.
         case SWANStatement.Allocation(_, inst, _) =>
-          b.union(inst.result.tpe.name)
+          b = b.union(inst.result.tpe.name)
+
         // If operator is a call site...
         case applyStmt: SWANStatement.ApplyFunctionRef => {
 
