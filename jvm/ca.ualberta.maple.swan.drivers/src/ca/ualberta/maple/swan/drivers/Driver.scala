@@ -53,6 +53,7 @@ object Driver {
     var cache = false
     var dumpFunctionNames = false
     var constructCallGraph = false
+    var callGraphAlgorithm: CallGraphBuilder.CallGraphStyle.Style = CallGraphBuilder.CallGraphStyle.UCGSound
     var taintAnalysisSpec: scala.Option[File] = None
     var typeStateAnalysisSpec: scala.Option[File] = None
     var pathTracking = false
@@ -73,6 +74,18 @@ object Driver {
     }
     def constructCallGraph(v: Boolean): Options = {
       this.constructCallGraph = v; this
+    }
+    def callGraphAlgorithm(v: String): Options = {
+      if (v != null) {
+        val style = v.toLowerCase() match {
+          case "cha" => CallGraphBuilder.CallGraphStyle.CHA
+          case "prta" => CallGraphBuilder.CallGraphStyle.PRTA
+          case "ucg" => CallGraphBuilder.CallGraphStyle.UCGSound
+          case "unsound_ucg" => CallGraphBuilder.CallGraphStyle.UCG
+        }
+        this.callGraphAlgorithm = style
+      }
+      this
     }
     def taintAnalysisSpec(v: File): Options = {
       this.taintAnalysisSpec = scala.Option(v); this
@@ -146,6 +159,10 @@ class Driver extends Runnable {
     description = Array("Construct the Call Graph."))
   private val constructCallGraph = new Array[Boolean](0)
 
+  @Option(names = Array("--cg-algo"),
+    description = Array("Algorithm used for building the Call Graph."))
+  private val callGraphAlgorithm = new Array[String](1)
+
   @Option(names = Array("-t", "--taint-analysis-spec"),
     description = Array("JSON specification file for taint analysis."))
   private val taintAnalysisSpec: File = null
@@ -185,6 +202,7 @@ class Driver extends Runnable {
       .single(singleThreaded.nonEmpty)
       .dumpFunctionNames(dumpFunctionNames.nonEmpty)
       .constructCallGraph(constructCallGraph.nonEmpty)
+      .callGraphAlgorithm(callGraphAlgorithm(0))
       .taintAnalysisSpec(taintAnalysisSpec)
       .typeStateAnalysisSpec(typeStateAnalysisSpec)
       .pathTracking(pathTracking.nonEmpty)
@@ -303,7 +321,7 @@ class Driver extends Runnable {
     }
     val allStats = new AllStats(generalStats, None)
     if (options.constructCallGraph || options.taintAnalysisSpec.nonEmpty || options.typeStateAnalysisSpec.nonEmpty) {
-      val cgResults = CallGraphBuilder.createCallGraph(group, CallGraphBuilder.CallGraphStyle.UCGSound)
+      val cgResults = CallGraphBuilder.createCallGraph(group, options.callGraphAlgorithm)
       allStats.cgs = Some(cgResults)
       val cg = cgResults.cg
       CallGraphUtils.writeToProbe(cg, Paths.get(swanDir.getPath, "cg.txt").toFile)
