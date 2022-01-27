@@ -46,7 +46,7 @@ import scala.collection.{immutable, mutable}
  * The algorithm ... distribute/monotonic/order-indendepent?
  *
  */
-class UCGSound(mg: ModuleGroup, pas: PointerAnalysisStyle.Style) extends CallGraphConstructor(mg) {
+class UCGSound(mg: ModuleGroup, pas: PointerAnalysisStyle.Style, val invalidations: Boolean) extends CallGraphConstructor(mg) {
 
   type DDGTypeSet = DDGBitSet
 
@@ -323,6 +323,9 @@ class UCGSound(mg: ModuleGroup, pas: PointerAnalysisStyle.Style) extends CallGra
    * relevant cached information to facilitate revisting.
    */
   def invalidateAndRevisitSuccessors(startMethod: SWANMethod, cgs: CallGraphStats): Unit = {
+    if (!invalidations) {
+      return
+    }
     val processed = mutable.HashSet.empty[SWANMethod]
     val next = mutable.HashSet.empty[SWANMethod]
     next.add(startMethod)

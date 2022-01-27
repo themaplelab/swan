@@ -29,8 +29,8 @@ object CallGraphBuilder {
       style match {
         case CallGraphStyle.CHA => new CHA(moduleGroup, PointerAnalysisStyle.None)
         case CallGraphStyle.PRTA => new PRTA(moduleGroup, PointerAnalysisStyle.None)
-        case CallGraphStyle.UCG => new UCG(moduleGroup, PointerAnalysisStyle.None)
-        case CallGraphStyle.UCGSound => new UCGSound(moduleGroup, PointerAnalysisStyle.None)
+        case CallGraphStyle.UCG => new UCGSound(moduleGroup, PointerAnalysisStyle.None, false)
+        case CallGraphStyle.UCGSound => new UCGSound(moduleGroup, PointerAnalysisStyle.None, true)
       }
     }
     cgBuilder.buildCallGraph()

@@ -23,7 +23,6 @@ import boomerang.results.AbstractBoomerangResults
 import boomerang.scene.{ControlFlowGraph, DataFlowScope, Val}
 import boomerang.{BackwardQuery, Boomerang, DefaultBoomerangOptions, ForwardQuery}
 import ca.ualberta.maple.swan.ir.FunctionAttribute
-import ca.ualberta.maple.swan.spds.cg.UCG.UCGStats
 import ca.ualberta.maple.swan.spds.structures.SWANControlFlowGraph.SWANBlock
 import ca.ualberta.maple.swan.spds.structures.SWANStatement.ApplyFunctionRef
 import ca.ualberta.maple.swan.spds.structures.{SWANCallGraph, SWANMethod, SWANStatement}
@@ -124,41 +123,6 @@ final class DDGBitSet(val bitset: immutable.BitSet)(
 
   def nonEmpty: Boolean = {
     bitset.nonEmpty
-  }
-
-}
-
-final class QueryCache(cg: SWANCallGraph, cgs: UCGStats) {
-  private val cache: mutable.HashMap[(boomerang.scene.Statement, ApplyFunctionRef, Val), util.Map[ForwardQuery, AbstractBoomerangResults.Context]] =
-    mutable.HashMap.empty[(boomerang.scene.Statement, ApplyFunctionRef, Val), util.Map[ForwardQuery, AbstractBoomerangResults.Context]]
-
-  def get(pred: boomerang.scene.Statement, stmt: ApplyFunctionRef, ref: Val): util.Map[ForwardQuery, AbstractBoomerangResults.Context] = {
-    cache.get(pred, stmt, ref) match {
-      case Some(allocSites) => allocSites
-      case None =>
-        val allocSites = query(pred, stmt, ref)
-        cache.update((pred,stmt,ref), allocSites)
-        allocSites
-    }
-  }
-
-  private def query(pred: boomerang.scene.Statement, stmt: ApplyFunctionRef, ref: Val): util.Map[ForwardQuery, AbstractBoomerangResults.Context] = {
-    val query = BackwardQuery.make(new ControlFlowGraph.Edge(pred, stmt), ref)
-    val solver = new Boomerang(cg, DataFlowScope.INCLUDE_ALL, new DefaultBoomerangOptions)
-    val backwardQueryResults = solver.solve(query)
-    cgs.totalQueries += 1
-    val allocSites = backwardQueryResults.getAllocationSites
-    if (allocSites.isEmpty) {
-      cgs.fruitlessQueries += 1
-    }
-    if (query.asNode().stmt().getTarget.asInstanceOf[SWANStatement.ApplyFunctionRef] != stmt) {
-      throw new AssertionError()
-    }
-    allocSites
-  }
-
-  def invalidate(pred: boomerang.scene.Statement, stmt: ApplyFunctionRef, ref: Val): Unit = {
-    cache.remove(pred, stmt, ref)
   }
 
 }
