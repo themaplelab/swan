@@ -170,7 +170,7 @@ class UCGSound(mg: ModuleGroup, pas: PointerAnalysisStyle.Style) extends CallGra
                     visitSimpleRef(name, trivial = true)
                   }
                 case Operator.dynamicRef(_, _, index) => {
-                  val block = m.getCFG.blocks(m.getCFG.mappedStatements.get(operator).asInstanceOf[SWANStatement])
+                  val block = m.getCFG.stmtToBlock(m.getCFG.mappedStatements.get(operator).asInstanceOf[SWANStatement])
                   visitDynamicRef(index, block, queried = false)
                 }
 
@@ -195,7 +195,7 @@ class UCGSound(mg: ModuleGroup, pas: PointerAnalysisStyle.Style) extends CallGra
                     visitSimpleRef(name, trivial = true)
                   }
                 case operator@Operator.dynamicRef(_, _, index) => {
-                  val block = m.getCFG.blocks(m.getCFG.mappedStatements.get(operator).asInstanceOf[SWANStatement])
+                  val block = m.getCFG.stmtToBlock(m.getCFG.mappedStatements.get(operator).asInstanceOf[SWANStatement])
                   visitDynamicRef(index, block, queried = false)
                 }
                 // The function ref must be being used in a more interesting
@@ -272,7 +272,7 @@ class UCGSound(mg: ModuleGroup, pas: PointerAnalysisStyle.Style) extends CallGra
                     val block = {
                       v.method.delegate.symbolTable(v.getVariableName) match {
                         case SymbolTableEntry.operator(_, operator) => {
-                          v.method.getCFG.blocks(v.method.getCFG.mappedStatements.get(operator).asInstanceOf[SWANStatement])
+                          v.method.getCFG.stmtToBlock(v.method.getCFG.mappedStatements.get(operator).asInstanceOf[SWANStatement])
                         }
                         case _ => throw new RuntimeException("unexpected")
                       }

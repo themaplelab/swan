@@ -34,7 +34,7 @@ import scala.jdk.CollectionConverters.IterableHasAsScala
 
 class SWANControlFlowGraph(val method: SWANMethod) extends ControlFlowGraph {
 
-  // Map from CanOperator or CanTerminator to Statement
+  // Map from CanOperator(Def) or CanTerminator(Def) to Statement
   val mappedStatements: util.HashMap[Object, Statement] = Maps.newHashMap
 
   private val startPointCache: util.List[Statement] = Lists.newArrayList
@@ -43,7 +43,9 @@ class SWANControlFlowGraph(val method: SWANMethod) extends ControlFlowGraph {
   private val predsOfCache: Multimap[Statement, Statement] = HashMultimap.create
   private val statements: java.util.List[Statement] = Lists.newArrayList
 
+  // These mappings use up a lot of space, but are necessary for quick lookup.
   val blocks = new mutable.HashMap[SWANStatement, SWANBlock]
+  val stmtToBlock = new mutable.HashMap[SWANStatement, SWANBlock]
   val exitBlocks = new mutable.HashSet[SWANBlock]
   private val graph: Graph[SWANBlock, DefaultEdge] = new DefaultDirectedGraph(classOf[DefaultEdge])
 
@@ -87,6 +89,7 @@ class SWANControlFlowGraph(val method: SWANMethod) extends ControlFlowGraph {
       }
       if (startStatement == null) startStatement = statement
       blockStatements.append(statement)
+      mappedStatements.put(op, statement)
       mappedStatements.put(op.operator, statement)
       statements.add(statement)
     })
@@ -109,8 +112,10 @@ class SWANControlFlowGraph(val method: SWANMethod) extends ControlFlowGraph {
     // Create Block
     val newBlock = new SWANBlock(b.blockRef.label, blockStatements)
     blocks.put(startStatement, newBlock)
+    blockStatements.foreach(s => stmtToBlock.put(s, newBlock))
     exitBlocks.add(newBlock)
     graph.addVertex(newBlock)
+    mappedStatements.put(b.terminator, termStatement)
     mappedStatements.put(b.terminator.terminator, termStatement)
     statements.add(termStatement)
   })
@@ -118,10 +123,10 @@ class SWANControlFlowGraph(val method: SWANMethod) extends ControlFlowGraph {
   // Add first block's first statement to startPointCache
   if (method.delegate.blocks(0).operators.nonEmpty){
     startPointCache.add(
-      mappedStatements.get(method.delegate.blocks(0).operators(0).operator))
+      mappedStatements.get(method.delegate.blocks(0).operators(0)))
   } else {
     startPointCache.add(
-      mappedStatements.get(method.delegate.blocks(0).terminator.terminator))
+      mappedStatements.get(method.delegate.blocks(0).terminator))
   }
 
   // Iterate through all delegate blocks again for succs/preds
@@ -129,7 +134,7 @@ class SWANControlFlowGraph(val method: SWANMethod) extends ControlFlowGraph {
     // succs/preds for block statements
     var prev: Statement = null
     b.operators.foreach(op => {
-      val curr = mappedStatements.get(op.operator)
+      val curr = mappedStatements.get(op)
       if (prev != null) {
         succsOfCache.put(prev, curr)
         predsOfCache.put(curr, prev)
@@ -137,7 +142,7 @@ class SWANControlFlowGraph(val method: SWANMethod) extends ControlFlowGraph {
       prev = curr
     })
     // succs/prods for last block statement and terminator
-    val term = mappedStatements.get(b.terminator.terminator)
+    val term = mappedStatements.get(b.terminator)
     if (prev != null) {
       succsOfCache.put(prev, term)
       predsOfCache.put(term, prev)
@@ -146,9 +151,9 @@ class SWANControlFlowGraph(val method: SWANMethod) extends ControlFlowGraph {
     val block: SWANBlock = {
       val fstStmt: Object = {
         if (b.operators.nonEmpty) {
-          b.operators(0).operator
+          b.operators(0)
         } else {
-          b.terminator.terminator
+          b.terminator
         }
       }
       blocks(mappedStatements.get(fstStmt).asInstanceOf[SWANStatement])
@@ -163,9 +168,9 @@ class SWANControlFlowGraph(val method: SWANMethod) extends ControlFlowGraph {
       } else {
         val targetStatement = mappedStatements.get({
           if (target.operators.nonEmpty) {
-            target.operators(0).operator
+            target.operators(0)
           } else {
-            target.terminator.terminator
+            target.terminator
           }
         })
         succsOfCache.put(term, targetStatement)
