@@ -39,7 +39,7 @@ final class DFWorklist {
   private val stack: mutable.Stack[SWANBlock] = new mutable.Stack[SWANBlock]()
 
   def add(b: SWANBlock): Unit = {
-    if (!hs.contains(b)) {
+    if (!hs.contains(b) && !CallGraphUtils.isUninteresting(b.method)) {
       hs.add(b)
       stack.push(b)
     }

@@ -21,6 +21,7 @@ package ca.ualberta.maple.swan.spds.cg
 
 import boomerang.results.AbstractBoomerangResults
 import boomerang.scene._
+import boomerang.scene.jimple.JimpleVal
 import boomerang.{BackwardQuery, Boomerang, DefaultBoomerangOptions, ForwardQuery}
 import ca.ualberta.maple.swan.ir.{ModuleGroup, Operator, SymbolTableEntry}
 import ca.ualberta.maple.swan.spds.Stats.{CallGraphStats, SpecificCallGraphStats}
@@ -279,7 +280,7 @@ class UCGSound(mg: ModuleGroup, pas: PointerAnalysisStyle.Style) extends CallGra
                     }
                     visitDynamicRef(v.index, block, queried = true)
                   }
-                  case _ => // likely result of partial_apply (ignore for now)
+                  case _ => // likely partial_apply results
                 }
               })
             })
@@ -320,7 +321,7 @@ class UCGSound(mg: ModuleGroup, pas: PointerAnalysisStyle.Style) extends CallGra
    * Find all (transitive) successors of the method and invalidate all the
    * relevant cached information to facilitate revisting.
    */
-  def invalidateAndRevisitSuccessors(startMethod:SWANMethod, cgs: CallGraphStats): Unit = {
+  def invalidateAndRevisitSuccessors(startMethod: SWANMethod, cgs: CallGraphStats): Unit = {
     val processed = mutable.HashSet.empty[SWANMethod]
     val next = mutable.HashSet.empty[SWANMethod]
     next.add(startMethod)
@@ -330,6 +331,23 @@ class UCGSound(mg: ModuleGroup, pas: PointerAnalysisStyle.Style) extends CallGra
       next.clear()
       next.addAll(successors)
     }
+
+    var shortExit = true
+    processed.foreach{ m =>
+      m.getCFG.blocks.foreach{ case (_,blk) =>
+        blk.stmts.foreach {
+          case applyStmt: SWANStatement.ApplyFunctionRef => {
+            if (queryCache.cache.contains(applyStmt)) {
+              shortExit = false
+            }
+          }
+          case _ =>
+        }
+      }
+    }
+
+    if (shortExit) return
+
     if (processed.nonEmpty) {
       stats.recursiveInvalidations += 1
     }
@@ -391,6 +409,7 @@ object UCGSound {
     var fruitlessQueries: Int = 0
     var recursiveInvalidations: Int = 0
     var callSitesInvalidated: Int = 0
+    var updatedCallSites: Int = 0
 
     override def toString: String = {
       val sb = new StringBuilder()
@@ -398,9 +417,10 @@ object UCGSound {
       sb.append(s"  Queried Edges: $queriedEdges\n")
       sb.append(s"  Virtual Edges: $virtualEdges\n")
       sb.append(s"  Total Queries: $totalQueries\n")
-      sb.append(s"  Fruintless Queries: $fruitlessQueries\n")
+      sb.append(s"  Fruitless Queries: $fruitlessQueries\n")
       sb.append(s"  Recursive Invalidations: $recursiveInvalidations\n")
       sb.append(s"  Call Sites Invalidated: $callSitesInvalidated\n")
+      sb.append(s"  Updated Call Sites: $updatedCallSites\n")
       sb.toString()
     }
 
@@ -462,12 +482,27 @@ final class SQueryCache(cgs: CallGraphStats, stats: UCGSoundStats) {
     val solver = new Boomerang(cgs.cg, DataFlowScope.INCLUDE_ALL, new DefaultBoomerangOptions)
     val backwardQueryResults = solver.solve(query)
     stats.totalQueries += 1
+    val prevAllocSites = this.cacheGet(pred, stmt, ref)
     val allocSites = backwardQueryResults.getAllocationSites
+    if (prevAllocSites.nonEmpty && !prevAllocSites.get.equals(allocSites)) {
+      stats.updatedCallSites += 1
+    }
     if (allocSites.isEmpty) {
       stats.fruitlessQueries += 1
+    } else {
+      var fruitless = true
+      allocSites.forEach((forwardQuery, _) => {
+        forwardQuery.`var`().asInstanceOf[AllocVal].getAllocVal match {
+          case _: SWANVal.FunctionRef => fruitless = false
+          case _: SWANVal.BuiltinFunctionRef => fruitless = false
+          case _: SWANVal.DynamicFunctionRef => fruitless = false
+          case _ =>
+        }
+      })
+      if (fruitless) stats.fruitlessQueries += 1
     }
     if (query.asNode().stmt().getTarget.asInstanceOf[SWANStatement.ApplyFunctionRef] != stmt) {
-      throw new AssertionError()
+      throw new RuntimeException()
     }
     allocSites
   }

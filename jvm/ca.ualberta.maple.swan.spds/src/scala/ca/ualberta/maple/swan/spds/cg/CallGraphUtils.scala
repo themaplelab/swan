@@ -75,7 +75,7 @@ object CallGraphUtils {
     outOf.size
   }
 
-  private def isUninteresting(m: SWANMethod): Boolean = {
+  def isUninteresting(m: SWANMethod): Boolean = {
     val name = m.getName
     name.startsWith("closure ") ||
       name.startsWith("reabstraction thunk") ||
