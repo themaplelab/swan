@@ -226,8 +226,6 @@ class UCGSound(mg: ModuleGroup, pas: PointerAnalysisStyle.Style) extends CallGra
                 invalidateAndRevisitSuccessors(target, cgs)
               }
             }
-            // TODO: Incorrect (target is not processed in w to gen outset)
-            b = processTarget(target, c, b)
           }
 
           // Handler for dynamic (virtual) function references
@@ -242,7 +240,6 @@ class UCGSound(mg: ModuleGroup, pas: PointerAnalysisStyle.Style) extends CallGra
               functionNames.foreach(name => {
                 val target = cgs.cg.methods(name)
                 val added = addCGEdge(m, target, applyStmt, edge, cgs)
-                // TODO: Incorrect (target is not processed in w to gen outset)
                 b = b.union(processTarget(target, c, b))
                 if (added) {
                   if (queried) {
