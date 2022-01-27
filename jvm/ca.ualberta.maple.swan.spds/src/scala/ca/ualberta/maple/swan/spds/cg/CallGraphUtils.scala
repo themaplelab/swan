@@ -20,7 +20,7 @@
 package ca.ualberta.maple.swan.spds.cg
 
 import boomerang.scene.{CallGraph, ControlFlowGraph}
-import ca.ualberta.maple.swan.ir.{CanModule, CanOperator, Instruction, Module, ModuleGroup, Operator, SymbolTableEntry}
+import ca.ualberta.maple.swan.ir.{Instruction, ModuleGroup}
 import ca.ualberta.maple.swan.spds.Stats.CallGraphStats
 import ca.ualberta.maple.swan.spds.structures.{SWANCallGraph, SWANMethod, SWANStatement}
 
@@ -29,8 +29,17 @@ import scala.collection.mutable
 
 object CallGraphUtils {
 
+  /**
+   * Add a Call Graph edge and update relevant information
+   * @param from Method from which the edge is being drawn (caller).
+   * @param to Method to which the edge is being drawn (callee).
+   * @param stmt Call site
+   * @param cfgEdge Relevant control-flow-graph edge. TODO: Does pred matter (e.g., call site is first stmt in block)?
+   * @param cgs Call graph stats to update
+   * @return true if the edge was added, false if not (because the edge already existed)
+   */
   def addCGEdge(from: SWANMethod, to: SWANMethod, stmt: SWANStatement.ApplyFunctionRef,
-                        cfgEdge: ControlFlowGraph.Edge, cgs: CallGraphStats): Boolean = {
+                cfgEdge: ControlFlowGraph.Edge, cgs: CallGraphStats): Boolean = {
     val edge = new CallGraph.Edge(stmt, to)
     val b = cgs.cg.addEdge(edge)
     if (b) {

@@ -34,8 +34,8 @@ import scala.jdk.CollectionConverters.IterableHasAsScala
 
 class SWANControlFlowGraph(val method: SWANMethod) extends ControlFlowGraph {
 
-  // Map from OperatorDef or TerminatorDef to Statement
-  private val mappedStatements: util.HashMap[Object, Statement] = Maps.newHashMap
+  // Map from CanOperator or CanTerminator to Statement
+  val mappedStatements: util.HashMap[Object, Statement] = Maps.newHashMap
 
   private val startPointCache: util.List[Statement] = Lists.newArrayList
   private val endPointCache: util.List[Statement] = Lists.newArrayList
@@ -87,7 +87,7 @@ class SWANControlFlowGraph(val method: SWANMethod) extends ControlFlowGraph {
       }
       if (startStatement == null) startStatement = statement
       blockStatements.append(statement)
-      mappedStatements.put(op, statement)
+      mappedStatements.put(op.operator, statement)
       statements.add(statement)
     })
 
@@ -111,17 +111,17 @@ class SWANControlFlowGraph(val method: SWANMethod) extends ControlFlowGraph {
     blocks.put(startStatement, newBlock)
     exitBlocks.add(newBlock)
     graph.addVertex(newBlock)
-    mappedStatements.put(b.terminator, termStatement)
+    mappedStatements.put(b.terminator.terminator, termStatement)
     statements.add(termStatement)
   })
 
   // Add first block's first statement to startPointCache
   if (method.delegate.blocks(0).operators.nonEmpty){
     startPointCache.add(
-      mappedStatements.get(method.delegate.blocks(0).operators(0)))
+      mappedStatements.get(method.delegate.blocks(0).operators(0).operator))
   } else {
     startPointCache.add(
-      mappedStatements.get(method.delegate.blocks(0).terminator))
+      mappedStatements.get(method.delegate.blocks(0).terminator.terminator))
   }
 
   // Iterate through all delegate blocks again for succs/preds
@@ -129,7 +129,7 @@ class SWANControlFlowGraph(val method: SWANMethod) extends ControlFlowGraph {
     // succs/preds for block statements
     var prev: Statement = null
     b.operators.foreach(op => {
-      val curr = mappedStatements.get(op)
+      val curr = mappedStatements.get(op.operator)
       if (prev != null) {
         succsOfCache.put(prev, curr)
         predsOfCache.put(curr, prev)
@@ -137,18 +137,18 @@ class SWANControlFlowGraph(val method: SWANMethod) extends ControlFlowGraph {
       prev = curr
     })
     // succs/prods for last block statement and terminator
-    val term = mappedStatements.get(b.terminator)
+    val term = mappedStatements.get(b.terminator.terminator)
     if (prev != null) {
       succsOfCache.put(prev, term)
       predsOfCache.put(term, prev)
     }
     // get block for next step
     val block: SWANBlock = {
-      val fstStmt = {
+      val fstStmt: Object = {
         if (b.operators.nonEmpty) {
-          b.operators(0)
+          b.operators(0).operator
         } else {
-          b.terminator
+          b.terminator.terminator
         }
       }
       blocks(mappedStatements.get(fstStmt).asInstanceOf[SWANStatement])
@@ -163,9 +163,9 @@ class SWANControlFlowGraph(val method: SWANMethod) extends ControlFlowGraph {
       } else {
         val targetStatement = mappedStatements.get({
           if (target.operators.nonEmpty) {
-            target.operators(0)
+            target.operators(0).operator
           } else {
-            target.terminator
+            target.terminator.terminator
           }
         })
         succsOfCache.put(term, targetStatement)

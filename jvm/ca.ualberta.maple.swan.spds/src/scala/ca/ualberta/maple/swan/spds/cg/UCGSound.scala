@@ -17,16 +17,6 @@
  * See https://github.com/themaplelab/swan/doc/LICENSE.md.
  */
 
-/*
- * This file contains an algorithm that soundly and precisely handles dynamic
- * dispatch and function pointers simultaneously. The algorithm is tentatively
- * called UCG, or Unified Call Graph [Construction], because it is the first
- * algorithm to tackle the two aforementioned elements in a unified way.
- *
- * The algorithm ... distribute/monotonic/order-indendepent?
- *
- */
-
 package ca.ualberta.maple.swan.spds.cg
 
 import boomerang.results.AbstractBoomerangResults
@@ -46,6 +36,15 @@ import java.util
 import scala.collection.mutable.ArrayBuffer
 import scala.collection.{immutable, mutable}
 
+/**
+ * An algorithm that soundly and precisely handles dynamic
+ * dispatch and function pointers simultaneously. The algorithm is tentatively
+ * called UCG, or Unified Call Graph [Construction], because it is the first
+ * algorithm to tackle the two aforementioned elements in a unified way.
+ *
+ * The algorithm ... distribute/monotonic/order-indendepent?
+ *
+ */
 class UCGSound(mg: ModuleGroup, pas: PointerAnalysisStyle.Style) extends CallGraphConstructor(mg) {
 
   type DDGTypeSet = DDGBitSet
@@ -104,9 +103,8 @@ class UCGSound(mg: ModuleGroup, pas: PointerAnalysisStyle.Style) extends CallGra
     queryCache = new SQueryCache(cgs, stats)
 
     // Iterate over entry points and add them to work list
-    // TODO: The entry-points should be mutatable (processTarget can remove them)
     val entryPoints = cgs.cg.getEntryPoints.asInstanceOf[java.util.Collection[SWANMethod]]
-    entryPoints.forEach{m =>
+    entryPoints.forEach{ m =>
       w.addMethod(m)
       processWorklist(cgs)
     }
@@ -156,7 +154,7 @@ class UCGSound(mg: ModuleGroup, pas: PointerAnalysisStyle.Style) extends CallGra
         case applyStmt: SWANStatement.ApplyFunctionRef => {
 
           val m = c.method
-          // TODO: Verify only ever one pred
+          // TODO: Verify only ever one pred? Do multiple preds create problems?
           val edge = new ControlFlowGraph.Edge(m.getCFG.getPredsOf(applyStmt).iterator().next(), applyStmt)
 
           // Look up the function ref in the symbol table...
@@ -172,7 +170,7 @@ class UCGSound(mg: ModuleGroup, pas: PointerAnalysisStyle.Style) extends CallGra
                     visitSimpleRef(name)
                   }
                 case Operator.dynamicRef(_, _, index) => {
-                  val block: SWANBlock = null // TODO: Somehow get SWANBlock that dynamic ref is inside of
+                  val block = m.getCFG.blocks(m.getCFG.mappedStatements.get(operator).asInstanceOf[SWANStatement])
                   visitDynamicRef(index, block)
                 }
 
@@ -196,8 +194,8 @@ class UCGSound(mg: ModuleGroup, pas: PointerAnalysisStyle.Style) extends CallGra
                   if (cgs.cg.methods.contains(name)) {
                     visitSimpleRef(name)
                   }
-                case Operator.dynamicRef(_, _, index) => {
-                  val block: SWANBlock = null // TODO: Somehow get SWANBlock that dynamic ref is inside of
+                case operator@Operator.dynamicRef(_, _, index) => {
+                  val block = m.getCFG.blocks(m.getCFG.mappedStatements.get(operator).asInstanceOf[SWANStatement])
                   visitDynamicRef(index, block)
                 }
                 // The function ref must be being used in a more interesting
@@ -290,7 +288,7 @@ class UCGSound(mg: ModuleGroup, pas: PointerAnalysisStyle.Style) extends CallGra
               })
             }
             m.getControlFlowGraph.getPredsOf(stmt).forEach(pred => {
-              // TODO: Verify only ever one pred.
+              // TODO: Verify only ever one pred?
               val allocSites = queryCache.get(pred, stmt, ref)
               allocSites.forEach((forwardQuery, _) => {
                 forwardQuery.`var`().asInstanceOf[AllocVal].getAllocVal match {
@@ -299,7 +297,14 @@ class UCGSound(mg: ModuleGroup, pas: PointerAnalysisStyle.Style) extends CallGra
                   case v: SWANVal.BuiltinFunctionRef =>
                     visitSimpleRef(v.ref)
                   case v: SWANVal.DynamicFunctionRef => {
-                    val block: SWANBlock = null // TODO: Somehow get SWANBlock that dynamic ref is inside of
+                    val block = {
+                      v.method.delegate.symbolTable(v.getVariableName) match {
+                        case SymbolTableEntry.operator(_, operator) => {
+                          v.method.getCFG.blocks(v.method.getCFG.mappedStatements.get(operator).asInstanceOf[SWANStatement])
+                        }
+                        case _ => throw new RuntimeException("unexpected")
+                      }
+                    }
                     visitDynamicRef(v.index, block)
                   }
                   case _ => // likely result of partial_apply (ignore for now)
