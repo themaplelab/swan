@@ -77,11 +77,15 @@ object CallGraphUtils {
 
   def isUninteresting(m: SWANMethod): Boolean = {
     val name = m.getName
+    name.endsWith(".deinit") ||
+    name.endsWith(".modify") ||
+    name.endsWith(".__deallocating_deinit")
+  }
+
+  def isClosureRelated(m: SWANMethod): Boolean = {
+    val name = m.getName
     name.startsWith("closure ") ||
-      name.startsWith("reabstraction thunk") ||
-      name.endsWith(".deinit") ||
-      name.endsWith(".modify") ||
-      name.endsWith(".__deallocating_deinit")
+      name.startsWith("reabstraction thunk")
   }
 
   def pruneEntryPoints(cgs: CallGraphStats): Unit = {
@@ -103,7 +107,7 @@ object CallGraphUtils {
     moduleGroup.functions.foreach(f => {
       val m = new SWANMethod(f, moduleGroup)
       methods.put(f.name, m)
-      if (!isUninteresting(m)) {
+      if (!isUninteresting(m) && !isClosureRelated(m)) {
         cg.addEntryPoint(m)
         cgs.entryPoints += 1
       }
