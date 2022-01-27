@@ -100,6 +100,13 @@ final class DDGBitSet(val bitset: immutable.BitSet)(
     new DDGBitSet(bitset.union(that.bitset))
   }
 
+  def union(elem: String): DDGBitSet = {
+    ddgTypes.get(elem) match {
+      case Some(n) => new DDGBitSet(bitset + n)
+      case None => this
+    }
+  }
+
   def contains(s: String): Boolean = {
     ddgTypes.get(s) match {
       case Some(n) => bitset.contains(n)
