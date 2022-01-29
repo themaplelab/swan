@@ -29,6 +29,7 @@ import ca.ualberta.maple.swan.spds.structures.{SWANCallGraph, SWANMethod, SWANSt
 import ca.ualberta.maple.swan.utils.Logging
 
 import java.util
+import scala.collection.mutable.ArrayBuffer
 import scala.collection.{immutable, mutable}
 
 // The Depth First Worklist is a stack, and not a queue
@@ -54,9 +55,23 @@ final class DFWorklist {
       return
     }
 
-    // TODO revert hack
-    m.getCFG.blocks.foreach{ case (_,blk) => add(blk)}
-    //add(m.getStartBlock)
+    // TODO: Make this awful thing more efficient
+    val toAdd = new ArrayBuffer[SWANBlock]()
+    val worklist = new mutable.Queue[SWANBlock]()
+    val added = new mutable.HashSet[SWANBlock]()
+    worklist.enqueue(m.getStartBlock)
+    added.add(m.getStartBlock)
+    while (worklist.nonEmpty) {
+      val b = worklist.dequeue()
+      toAdd.append(b)
+      m.getCFG.getBlockSuccsOf(b).foreach(s => {
+        if (!added.contains(s)) {
+          worklist.enqueue(s)
+          added.add(s)
+        }
+      })
+    }
+    toAdd.reverse.foreach(add)
   }
 
   def isEmpty: Boolean = {
