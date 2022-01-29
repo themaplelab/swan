@@ -32,11 +32,11 @@ class CHA(mg: ModuleGroup, pas: PointerAnalysisStyle.Style) extends CallGraphCon
   val pa: Option[PointerAnalysis] = {
     pas match {
       case PointerAnalysisStyle.None => None
-      case ca.ualberta.maple.swan.spds.cg.CallGraphBuilder.PointerAnalysisStyle.SWPA => None
-      case ca.ualberta.maple.swan.spds.cg.CallGraphBuilder.PointerAnalysisStyle.SOD => None
-      case ca.ualberta.maple.swan.spds.cg.CallGraphBuilder.PointerAnalysisStyle.SPDS => None
-      case ca.ualberta.maple.swan.spds.cg.CallGraphBuilder.PointerAnalysisStyle.VTA => {
-        throw new RuntimeException("VTA pointer analysis should only be used with VTA CG construction")
+      case ca.ualberta.maple.swan.spds.cg.CallGraphBuilder.PointerAnalysisStyle.SPDS => {
+        throw new RuntimeException("SPDS pointer analysis is currently not supported with CHA")
+      }
+      case ca.ualberta.maple.swan.spds.cg.CallGraphBuilder.PointerAnalysisStyle.UFF => {
+        throw new RuntimeException("UFF pointer analysis is currently not supported with CHA")
       }
     }
   }

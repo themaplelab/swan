@@ -21,13 +21,13 @@ package ca.ualberta.maple.swan.spds.cg
 
 import boomerang.results.AbstractBoomerangResults
 import boomerang.scene._
-import boomerang.scene.jimple.JimpleVal
 import boomerang.{BackwardQuery, Boomerang, DefaultBoomerangOptions, ForwardQuery}
 import ca.ualberta.maple.swan.ir.{ModuleGroup, Operator, SymbolTableEntry}
 import ca.ualberta.maple.swan.spds.Stats.{CallGraphStats, SpecificCallGraphStats}
 import ca.ualberta.maple.swan.spds.cg.CallGraphBuilder.PointerAnalysisStyle
 import ca.ualberta.maple.swan.spds.cg.CallGraphUtils.addCGEdge
 import ca.ualberta.maple.swan.spds.cg.UCGSound.UCGSoundStats
+import ca.ualberta.maple.swan.spds.cg.pa.{PointerAnalysis, UnionFind}
 import ca.ualberta.maple.swan.spds.structures.SWANControlFlowGraph.SWANBlock
 import ca.ualberta.maple.swan.spds.structures.SWANStatement.ApplyFunctionRef
 import ca.ualberta.maple.swan.spds.structures.{SWANInvokeExpr, SWANMethod, SWANStatement, SWANVal}
@@ -49,6 +49,8 @@ import scala.collection.{immutable, mutable}
 class UCGSound(mg: ModuleGroup, pas: PointerAnalysisStyle.Style, val invalidations: Boolean) extends CallGraphConstructor(mg) {
 
   type DDGTypeSet = DDGBitSet
+  type SPDSResults = util.Map[ForwardQuery, AbstractBoomerangResults.Context]
+  type UFFResults = mutable.HashSet[SWANVal]
 
   /** Worklist of blocks to be visited and processed (unique stack) */
   private val w: DFWorklist = new DFWorklist
@@ -65,11 +67,13 @@ class UCGSound(mg: ModuleGroup, pas: PointerAnalysisStyle.Style, val invalidatio
   private val interProcSuccessors: mutable.HashMap[SWANBlock, mutable.HashSet[SWANBlock]] =
     new mutable.HashMap[SWANBlock, mutable.HashSet[SWANBlock]]
 
+  private val uf = new UnionFind
+
   private implicit val ddgTypes: mutable.HashMap[String, Int] = mutable.HashMap.empty[String, Int]
   private implicit val ddgTypesInv: ArrayBuffer[String] = mutable.ArrayBuffer.empty[String]
   val stats = new UCGSoundStats
 
-  private var queryCache: SQueryCache = null
+  private var queryCache: SQueryCache[_] = null
 
   override def buildSpecificCallGraph(cgs: CallGraphStats): Unit = {
 
@@ -101,7 +105,70 @@ class UCGSound(mg: ModuleGroup, pas: PointerAnalysisStyle.Style, val invalidatio
    */
   def mainLoop(cgs: CallGraphStats): Unit = {
     // Init cache of call sites to their ref alloc sites
-    queryCache = new SQueryCache(cgs, stats)
+    queryCache = {
+      pas match {
+        case PointerAnalysisStyle.None => null
+        case ca.ualberta.maple.swan.spds.cg.CallGraphBuilder.PointerAnalysisStyle.SPDS => {
+          new SQueryCache[SPDSResults](cgs, stats) {
+            def query(pred: boomerang.scene.Statement, stmt: ApplyFunctionRef, ref: Val): SPDSResults = {
+              val query = BackwardQuery.make(new ControlFlowGraph.Edge(pred, stmt), ref)
+              val solver = new Boomerang(cgs.cg, DataFlowScope.INCLUDE_ALL, new DefaultBoomerangOptions)
+              val backwardQueryResults = solver.solve(query)
+              stats.totalQueries += 1
+              val prevAllocSites = this.cacheGet(pred, stmt, ref)
+              val allocSites = backwardQueryResults.getAllocationSites
+              if (prevAllocSites.nonEmpty && !prevAllocSites.get.equals(allocSites)) {
+                stats.updatedCallSites += 1
+              }
+              if (allocSites.isEmpty) {
+                stats.fruitlessQueries += 1
+              } else {
+                var fruitless = true
+                allocSites.forEach((forwardQuery, _) => {
+                  forwardQuery.`var`().asInstanceOf[AllocVal].getAllocVal match {
+                    case _: SWANVal.FunctionRef => fruitless = false
+                    case _: SWANVal.BuiltinFunctionRef => fruitless = false
+                    case _: SWANVal.DynamicFunctionRef => fruitless = false
+                    case _ =>
+                  }
+                })
+                if (fruitless) stats.fruitlessQueries += 1
+              }
+              if (query.asNode().stmt().getTarget.asInstanceOf[SWANStatement.ApplyFunctionRef] != stmt) {
+                throw new RuntimeException()
+              }
+              allocSites
+            }
+          }
+        }
+        case ca.ualberta.maple.swan.spds.cg.CallGraphBuilder.PointerAnalysisStyle.UFF => {
+          new SQueryCache[UFFResults](cgs, stats) {
+            override def query(pred: Statement, stmt: ApplyFunctionRef, ref: Val): UFFResults = {
+              val results = uf.query(stmt.getFunctionRef.asInstanceOf[SWANVal])
+              stats.totalQueries += 1
+              val prevAllocSites = this.cacheGet(pred, stmt, ref)
+              val allocSites = results.filter(v => v.isNewExpr)
+              if (prevAllocSites.nonEmpty && !prevAllocSites.get.equals(allocSites)) {
+                stats.updatedCallSites += 1
+              }
+              if (allocSites.isEmpty) {
+                stats.fruitlessQueries += 1
+              } else {
+                var fruitless = true
+                allocSites.foreach {
+                    case _: SWANVal.FunctionRef => fruitless = false
+                    case _: SWANVal.BuiltinFunctionRef => fruitless = false
+                    case _: SWANVal.DynamicFunctionRef => fruitless = false
+                    case _ =>
+                }
+                if (fruitless) stats.fruitlessQueries += 1
+              }
+              allocSites
+            }
+          }
+        }
+      }
+    }
 
     // Iterate over entry points and add them to work list
     val entryPoints = cgs.cg.getEntryPoints.asInstanceOf[java.util.Collection[SWANMethod]]
@@ -147,126 +214,140 @@ class UCGSound(mg: ModuleGroup, pas: PointerAnalysisStyle.Style, val invalidatio
       seen.put(c, b)
 
       // Process operators in the block.
-      c.stmts.foreach {
-        // If operator is an allocation, add alloc type to b.
-        case SWANStatement.Allocation(_, inst, _) =>
-          b = b.union(inst.result.tpe.name)
+      c.stmts.foreach(stmt => {
+        uf.handleStatement(cgs.cg, stmt)
+        stmt match {
+          // If operator is an allocation, add alloc type to b.
+          case SWANStatement.Allocation(_, inst, _) =>
+            b = b.union(inst.result.tpe.name)
 
-        // If operator is a call site...
-        case applyStmt: SWANStatement.ApplyFunctionRef => {
+          // If operator is a call site...
+          case applyStmt: SWANStatement.ApplyFunctionRef => {
 
-          val m = c.method
-          // TODO: Verify only ever one pred? Do multiple preds create problems?
-          val edge = new ControlFlowGraph.Edge(m.getCFG.getPredsOf(applyStmt).iterator().next(), applyStmt)
+            val m = c.method
+            // TODO: Verify only ever one pred? Do multiple preds create problems?
+            val edge = new ControlFlowGraph.Edge(m.getCFG.getPredsOf(applyStmt).iterator().next(), applyStmt)
 
-          // Look up the function ref in the symbol table...
-          m.delegate.symbolTable(applyStmt.inst.functionRef.name) match {
-            // We find an operator
-            case SymbolTableEntry.operator(_, operator) => {
-              operator match {
-                // Trivial cases (intra-procedural)
-                case Operator.functionRef(_, name) =>
-                  visitSimpleRef(name, trivial = true)
-                case Operator.builtinRef(_, name) =>
-                  if (cgs.cg.methods.contains(name)) {
+            // Look up the function ref in the symbol table...
+            m.delegate.symbolTable(applyStmt.inst.functionRef.name) match {
+              // We find an operator
+              case SymbolTableEntry.operator(_, operator) => {
+                operator match {
+                  // Trivial cases (intra-procedural)
+                  case Operator.functionRef(_, name) =>
                     visitSimpleRef(name, trivial = true)
+                  case Operator.builtinRef(_, name) =>
+                    if (cgs.cg.methods.contains(name)) {
+                      visitSimpleRef(name, trivial = true)
+                    }
+                  case Operator.dynamicRef(_, _, index) => {
+                    val block = m.getCFG.stmtToBlock(m.getCFG.mappedStatements.get(operator).asInstanceOf[SWANStatement])
+                    visitDynamicRef(index, block, queried = false)
                   }
-                case Operator.dynamicRef(_, _, index) => {
-                  val block = m.getCFG.stmtToBlock(m.getCFG.mappedStatements.get(operator).asInstanceOf[SWANStatement])
-                  visitDynamicRef(index, block, queried = false)
-                }
 
-                // The function ref must be being used in a more interesting
-                // way (e.g., assignment). TODO: Count these cases.
-                case _ => queryRef(applyStmt)
+                  // The function ref must be being used in a more interesting
+                  // way (e.g., assignment). TODO: Count these cases.
+                  case _ => queryRef(applyStmt)
+                }
               }
-            }
-            // Function ref is an argument, which means it is inter-procedural,
-            // so we need to query.
-            case _: SymbolTableEntry.argument => queryRef(applyStmt)
-            // Function ref has multiple symbol table entries (certainly from
-            // non-SSA compliant basic block argument manipulation
-            // from SWIRLPass). The function ref is a basic block argument.
-            case multiple: SymbolTableEntry.multiple => {
-              multiple.operators.foreach {
-                // Trivial cases (intra-procedural)
-                case Operator.functionRef(_, name) =>
-                  visitSimpleRef(name, trivial = true)
-                case Operator.builtinRef(_, name) =>
-                  if (cgs.cg.methods.contains(name)) {
+              // Function ref is an argument, which means it is inter-procedural,
+              // so we need to query.
+              case _: SymbolTableEntry.argument => queryRef(applyStmt)
+              // Function ref has multiple symbol table entries (certainly from
+              // non-SSA compliant basic block argument manipulation
+              // from SWIRLPass). The function ref is a basic block argument.
+              case multiple: SymbolTableEntry.multiple => {
+                multiple.operators.foreach {
+                  // Trivial cases (intra-procedural)
+                  case Operator.functionRef(_, name) =>
                     visitSimpleRef(name, trivial = true)
+                  case Operator.builtinRef(_, name) =>
+                    if (cgs.cg.methods.contains(name)) {
+                      visitSimpleRef(name, trivial = true)
+                    }
+                  case operator@Operator.dynamicRef(_, _, index) => {
+                    val block = m.getCFG.stmtToBlock(m.getCFG.mappedStatements.get(operator).asInstanceOf[SWANStatement])
+                    visitDynamicRef(index, block, queried = false)
                   }
-                case operator@Operator.dynamicRef(_, _, index) => {
-                  val block = m.getCFG.stmtToBlock(m.getCFG.mappedStatements.get(operator).asInstanceOf[SWANStatement])
-                  visitDynamicRef(index, block, queried = false)
+                  // The function ref must be being used in a more interesting
+                  // way (e.g., assignment). TODO: Count these cases.
+                  case _ => queryRef(applyStmt)
                 }
-                // The function ref must be being used in a more interesting
-                // way (e.g., assignment). TODO: Count these cases.
-                case _ => queryRef(applyStmt)
               }
             }
-          }
 
-          // Below are handlers for two cases: static and dynamic dispatch.
-          // In both cases, once we have the target method, we add an edge
-          // to the target and process it. If we have seen the target before,
-          // we need to invalidate and revisit its successors because these
-          // new edges may introduce new query results for function pointers.
+            // Below are handlers for two cases: static and dynamic dispatch.
+            // In both cases, once we have the target method, we add an edge
+            // to the target and process it. If we have seen the target before,
+            // we need to invalidate and revisit its successors because these
+            // new edges may introduce new query results for function pointers.
 
-          // Handler for simple (trivial) function references
-          def visitSimpleRef(name: String, trivial: Boolean): Unit = {
-            val target = cgs.cg.methods(name)
-            val added = addCGEdge(m, target, applyStmt, edge, cgs)
-            b = b.union(processTarget(target, c, b))
-            if (added) {
-              if (trivial) {
-                cgs.trivialCallSites += 1
-              } else {
-                stats.queriedEdges += 1
-              }
-              if (seen.contains(target.getStartBlock)) {
-                invalidateAndRevisitSuccessors(target, cgs)
-              }
-            }
-          }
-
-          // Handler for dynamic (virtual) function references
-          def visitDynamicRef(index: String, block: SWANBlock, queried: Boolean): Unit = {
-            val instantiatedTypes = b.toHashSet
-            interProcSuccessors.get(block) match {
-              case Some(_) => interProcSuccessors(block).add(c)
-              case None => interProcSuccessors.addOne(block, mutable.HashSet(c))
-            }
-            moduleGroup.ddgs.foreach(ddg => {
-              val functionNames = ddg._2.query(index, Some(instantiatedTypes))
-              functionNames.foreach(name => {
-                val target = cgs.cg.methods(name)
-                val added = addCGEdge(m, target, applyStmt, edge, cgs)
-                b = b.union(processTarget(target, c, b))
-                if (added) {
-                  if (queried) {
-                    stats.queriedEdges += 1
-                  } else {
-                    stats.virtualEdges += 1
-                  }
-                  if (seen.contains(target.getStartBlock)) {
-                    invalidateAndRevisitSuccessors(target, cgs)
-                  }
+            // Handler for simple (trivial) function references
+            def visitSimpleRef(name: String, trivial: Boolean): Unit = {
+              val target = cgs.cg.methods(name)
+              val added = addCGEdge(m, target, applyStmt, edge, cgs)
+              uf.handleCGEdge(applyStmt, target)
+              b = b.union(processTarget(target, c, b))
+              if (added) {
+                if (trivial) {
+                  cgs.trivialCallSites += 1
+                } else {
+                  stats.queriedEdges += 1
                 }
+                if (seen.contains(target.getStartBlock)) {
+                  invalidateAndRevisitSuccessors(target, cgs)
+                }
+              }
+            }
+
+            // Handler for dynamic (virtual) function references
+            def visitDynamicRef(index: String, block: SWANBlock, queried: Boolean): Unit = {
+              val instantiatedTypes = b.toHashSet
+              interProcSuccessors.get(block) match {
+                case Some(_) => interProcSuccessors(block).add(c)
+                case None => interProcSuccessors.addOne(block, mutable.HashSet(c))
+              }
+              moduleGroup.ddgs.foreach(ddg => {
+                val functionNames = ddg._2.query(index, Some(instantiatedTypes))
+                functionNames.foreach(name => {
+                  val target = cgs.cg.methods(name)
+                  val added = addCGEdge(m, target, applyStmt, edge, cgs)
+                  uf.handleCGEdge(applyStmt, target)
+                  b = b.union(processTarget(target, c, b))
+                  if (added) {
+                    if (queried) {
+                      stats.queriedEdges += 1
+                    } else {
+                      stats.virtualEdges += 1
+                    }
+                    if (seen.contains(target.getStartBlock)) {
+                      invalidateAndRevisitSuccessors(target, cgs)
+                    }
+                  }
+                })
               })
-            })
-          }
+            }
 
-          // Query a call-site for its function reference allocation site
-          def queryRef(stmt: SWANStatement.ApplyFunctionRef): Unit = {
-            val ref = stmt.getInvokeExpr.asInstanceOf[SWANInvokeExpr].getFunctionRef
+            // Query a call-site for its function reference allocation site
+            def queryRef(stmt: SWANStatement.ApplyFunctionRef): Unit = {
+              val ref = stmt.getInvokeExpr.asInstanceOf[SWANInvokeExpr].getFunctionRef
 
-            m.getControlFlowGraph.getPredsOf(stmt).forEach(pred => {
-              // TODO: Verify only ever one pred?
-              val allocSites = queryCache.get(pred, stmt, ref)
-              allocSites.forEach((forwardQuery, _) => {
-                forwardQuery.`var`().asInstanceOf[AllocVal].getAllocVal match {
-                  case v : SWANVal.FunctionRef =>
+              // TODO: Do multiple preds create problems?
+              m.getControlFlowGraph.getPredsOf(stmt).forEach(pred => {
+                val allocSites = new ArrayBuffer[SWANVal]()
+                pas match {
+                  case PointerAnalysisStyle.None =>
+                  case ca.ualberta.maple.swan.spds.cg.CallGraphBuilder.PointerAnalysisStyle.SPDS => {
+                    queryCache.asInstanceOf[SQueryCache[SPDSResults]].get(pred, stmt, ref).forEach((forwardQuery, _) => {
+                      allocSites.addOne(forwardQuery.`var`().asInstanceOf[AllocVal].getAllocVal.asInstanceOf[SWANVal])
+                    })
+                  }
+                  case ca.ualberta.maple.swan.spds.cg.CallGraphBuilder.PointerAnalysisStyle.UFF => {
+                    queryCache.asInstanceOf[SQueryCache[UFFResults]].get(pred, stmt, ref).foreach(allocSites.addOne)
+                  }
+                }
+                allocSites.foreach {
+                  case v: SWANVal.FunctionRef =>
                     visitSimpleRef(v.ref, trivial = false)
                   case v: SWANVal.BuiltinFunctionRef =>
                     visitSimpleRef(v.ref, trivial = false)
@@ -282,14 +363,14 @@ class UCGSound(mg: ModuleGroup, pas: PointerAnalysisStyle.Style, val invalidatio
                     visitDynamicRef(v.index, block, queried = true)
                   }
                   case _ => // likely partial_apply results
-                }
+                  }
               })
-            })
+            }
           }
+          // All other statement types are ignored.
+          case _ =>
         }
-        // All other statement types are ignored.
-        case _ =>
-      }
+      })
       // Check if the outset has changed since we last visited the block
       // (if we have visited it).
       val outSetChanged = outSets.get(c) match {
@@ -445,24 +526,24 @@ object UCGSound {
  * This cache structure is for caching queries to their
  * function reference allocation sites.
  */
-final class SQueryCache(cgs: CallGraphStats, stats: UCGSoundStats) {
-  val cache: mutable.HashMap[ApplyFunctionRef, mutable.HashMap[(boomerang.scene.Statement, Val), util.Map[ForwardQuery, AbstractBoomerangResults.Context]]] =
+abstract class SQueryCache[T](cgs: CallGraphStats, stats: UCGSoundStats) {
+  val cache: mutable.HashMap[ApplyFunctionRef, mutable.HashMap[(boomerang.scene.Statement, Val), T]] =
     mutable.HashMap.empty
 
-  private def cacheUpdate(pred: boomerang.scene.Statement, stmt: ApplyFunctionRef, ref: Val, allocSites: util.Map[ForwardQuery, AbstractBoomerangResults.Context]): Unit = {
+  protected def cacheUpdate(pred: boomerang.scene.Statement, stmt: ApplyFunctionRef, ref: Val, allocSites: T): Unit = {
     cache.get(stmt) match {
       case Some(hashMap) => {
         hashMap.update((pred, ref), allocSites)
       }
       case None =>
-        val hashMap: mutable.HashMap[(boomerang.scene.Statement, Val), util.Map[ForwardQuery, AbstractBoomerangResults.Context]] =
+        val hashMap: mutable.HashMap[(boomerang.scene.Statement, Val), T] =
           mutable.HashMap.empty
         hashMap.update((pred, ref), allocSites)
         cache.update(stmt, hashMap)
     }
   }
 
-  private def cacheGet(pred: boomerang.scene.Statement, stmt: ApplyFunctionRef, ref: Val): Option[util.Map[ForwardQuery, AbstractBoomerangResults.Context]] = {
+  protected def cacheGet(pred: boomerang.scene.Statement, stmt: ApplyFunctionRef, ref: Val): Option[T] = {
     cache.get(stmt) match {
       case Some(hashMap) => {
         hashMap.get((pred, ref))
@@ -471,7 +552,7 @@ final class SQueryCache(cgs: CallGraphStats, stats: UCGSoundStats) {
     }
   }
 
-  def get(pred: boomerang.scene.Statement, stmt: ApplyFunctionRef, ref: Val): util.Map[ForwardQuery, AbstractBoomerangResults.Context] = {
+  def get(pred: boomerang.scene.Statement, stmt: ApplyFunctionRef, ref: Val): T = {
     cacheGet(pred, stmt, ref) match {
       case Some(allocSites) => allocSites
       case None =>
@@ -481,35 +562,7 @@ final class SQueryCache(cgs: CallGraphStats, stats: UCGSoundStats) {
     }
   }
 
-  private def query(pred: boomerang.scene.Statement, stmt: ApplyFunctionRef, ref: Val): util.Map[ForwardQuery, AbstractBoomerangResults.Context] = {
-    val query = BackwardQuery.make(new ControlFlowGraph.Edge(pred, stmt), ref)
-    val solver = new Boomerang(cgs.cg, DataFlowScope.INCLUDE_ALL, new DefaultBoomerangOptions)
-    val backwardQueryResults = solver.solve(query)
-    stats.totalQueries += 1
-    val prevAllocSites = this.cacheGet(pred, stmt, ref)
-    val allocSites = backwardQueryResults.getAllocationSites
-    if (prevAllocSites.nonEmpty && !prevAllocSites.get.equals(allocSites)) {
-      stats.updatedCallSites += 1
-    }
-    if (allocSites.isEmpty) {
-      stats.fruitlessQueries += 1
-    } else {
-      var fruitless = true
-      allocSites.forEach((forwardQuery, _) => {
-        forwardQuery.`var`().asInstanceOf[AllocVal].getAllocVal match {
-          case _: SWANVal.FunctionRef => fruitless = false
-          case _: SWANVal.BuiltinFunctionRef => fruitless = false
-          case _: SWANVal.DynamicFunctionRef => fruitless = false
-          case _ =>
-        }
-      })
-      if (fruitless) stats.fruitlessQueries += 1
-    }
-    if (query.asNode().stmt().getTarget.asInstanceOf[SWANStatement.ApplyFunctionRef] != stmt) {
-      throw new RuntimeException()
-    }
-    allocSites
-  }
+  def query(pred: boomerang.scene.Statement, stmt: ApplyFunctionRef, ref: Val): T
 
   def invalidate(stmt: ApplyFunctionRef): Unit = {
     if (cache.contains(stmt)) {

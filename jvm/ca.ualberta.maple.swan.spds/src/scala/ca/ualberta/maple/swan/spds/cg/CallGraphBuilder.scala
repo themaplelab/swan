@@ -24,13 +24,27 @@ import ca.ualberta.maple.swan.spds.Stats.CallGraphStats
 
 object CallGraphBuilder {
 
-  def createCallGraph(moduleGroup: ModuleGroup, style: CallGraphStyle.Style): CallGraphStats = {
+  def createCallGraph(moduleGroup: ModuleGroup, cgStyle: CallGraphStyle.Style, paStyle: Option[PointerAnalysisStyle.Style]): CallGraphStats = {
     val cgBuilder = {
-      style match {
-        case CallGraphStyle.CHA => new CHA(moduleGroup, PointerAnalysisStyle.None)
-        case CallGraphStyle.PRTA => new PRTA(moduleGroup, PointerAnalysisStyle.None)
-        case CallGraphStyle.UCG => new UCGSound(moduleGroup, PointerAnalysisStyle.None, false)
-        case CallGraphStyle.UCGSound => new UCGSound(moduleGroup, PointerAnalysisStyle.None, true)
+      cgStyle match {
+        case CallGraphStyle.CHA => {
+          new CHA(moduleGroup, paStyle match {
+            case Some(value) => value
+            case None => PointerAnalysisStyle.None
+          })
+        }
+        case CallGraphStyle.PRTA => new PRTA(moduleGroup, paStyle match {
+          case Some(value) => value
+          case None => PointerAnalysisStyle.None
+        })
+        case CallGraphStyle.UCG => new UCGSound(moduleGroup, paStyle match {
+          case Some(value) => value
+          case None => PointerAnalysisStyle.SPDS
+        }, false)
+        case CallGraphStyle.UCGSound => new UCGSound(moduleGroup, paStyle match {
+          case Some(value) => value
+          case None => PointerAnalysisStyle.SPDS
+        }, true)
       }
     }
     cgBuilder.buildCallGraph()
@@ -49,9 +63,7 @@ object CallGraphBuilder {
     type Style = Value
 
     val None: PointerAnalysisStyle.Value = Value
-    val SWPA: PointerAnalysisStyle.Value = Value
-    val SOD: PointerAnalysisStyle.Value = Value
     val SPDS: PointerAnalysisStyle.Value = Value
-    val VTA: PointerAnalysisStyle.Value = Value
+    val UFF: PointerAnalysisStyle.Value = Value
   }
 }

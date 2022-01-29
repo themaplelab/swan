@@ -207,5 +207,6 @@ object SWANControlFlowGraph {
     def succs: Set[SWANBlock] = method.getCFG.getBlockSuccsOf(this)
     def preds: Set[SWANBlock] = method.getCFG.getBlockPredsOf(this)
     def isExitBlock: Boolean = method.getCFG.exitBlocks.contains(this)
+    override def toString: String = s"$name (${stmts.length} stmts)"
   }
 }
