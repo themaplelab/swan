@@ -20,9 +20,8 @@
 package ca.ualberta.maple.swan.spds.structures
 
 import java.util
-
 import boomerang.scene._
-import ca.ualberta.maple.swan.ir.{CanInstructionDef, CanOperatorDef, CanTerminatorDef, Operator, Position, Symbol, Terminator, WithResult}
+import ca.ualberta.maple.swan.ir.{CanInstructionDef, CanOperatorDef, CanTerminatorDef, Operator, Position, Symbol, SymbolRef, SymbolTableEntry, Terminator, WithResult}
 
 // toString implementations are not necessarily accurate
 abstract class SWANStatement(val delegate: CanInstructionDef, method: SWANMethod) extends Statement(method) {
@@ -57,11 +56,25 @@ abstract class SWANStatement(val delegate: CanInstructionDef, method: SWANMethod
     }
   }
   // Shared
-  private def getResult: Symbol = {
-    delegate.asInstanceOf[CanInstructionDef.operator].operatorDef.operator.asInstanceOf[WithResult].value
-  }
-  override def getLeftOp: Val = {
-    method.allValues(getResult.ref.name)
+  protected def toSWANVal(s: SymbolRef, m: SWANMethod): SWANVal = {
+    m.allValues.get(s.name) match {
+      case Some(value) => value.asInstanceOf[SWANVal]
+      case None => {
+        m.delegate.symbolTable(s.name) match {
+          case SymbolTableEntry.operator(symbol, _) => {
+            m.addVal(SWANVal.Simple(symbol, m))
+          }
+          case SymbolTableEntry.multiple(symbol, _) => {
+            m.addVal(SWANVal.Simple(symbol, m))
+          }
+          case SymbolTableEntry.argument(symbol) => {
+            m.addVal(SWANVal.Simple(symbol, m))
+            // throw new RuntimeException() // TODO: This should be impossible
+          }
+        }
+      }
+    }
+
   }
   override def isStringAllocation: Boolean = false
   final override def isArrayLoad: Boolean = false
@@ -117,8 +130,10 @@ object SWANStatement {
                         m: SWANMethod) extends SWANStatement(CanInstructionDef.operator(opDef), m) {
     override def getWrittenField: Field = new SWANField(inst.field)
     override def isFieldWriteWithBase(base: Val): Boolean = getFieldStore.getX.equals(base)
-    override def getLeftOp: Val = Val.zero()
-    override def getRightOp: Val = m.allValues(inst.value.name)
+    private val lhs = Val.zero()
+    private val rhs = toSWANVal(inst.value, m)
+    override def getLeftOp: Val = lhs
+    override def getRightOp: Val = rhs
     override def isAssign: Boolean = true
     override def isFieldStore: Boolean = true
     override def getFieldStore: Pair[Val, Field] = new Pair[Val, Field](m.allValues(inst.obj.name), getWrittenField)
@@ -134,7 +149,10 @@ object SWANStatement {
                        m: SWANMethod) extends SWANStatement(CanInstructionDef.operator(opDef), m) {
     override def getLoadedField: Field = new SWANField(inst.field)
     override def isFieldLoadWithBase(base: Val): Boolean = getFieldLoad.getX.equals(base)
-    override def getRightOp: Val = Val.zero()
+    private val lhs = toSWANVal(inst.result.ref, m)
+    private val rhs = Val.zero()
+    override def getLeftOp: Val = lhs
+    override def getRightOp: Val = rhs
     override def isFieldLoad: Boolean = true
     override def getFieldLoad: Pair[Val, Field] = new Pair[Val, Field](m.allValues(inst.obj.name), getLoadedField)
     override def toString: String = {
@@ -147,7 +165,10 @@ object SWANStatement {
   }
   case class Assign(opDef: CanOperatorDef, inst: Operator.assign,
                     m: SWANMethod) extends SWANStatement(CanInstructionDef.operator(opDef), m) {
-    override def getRightOp: Val = m.allValues(inst.from.name)
+    private val lhs = toSWANVal(inst.result.ref, m)
+    private val rhs = toSWANVal(inst.from, m)
+    override def getLeftOp: Val = lhs
+    override def getRightOp: Val = rhs
     override def isIdentityStmt: Boolean = false // ?
     override def toString: String = {
       if (m.hasSwirlSource) {
@@ -162,7 +183,10 @@ object SWANStatement {
                              m: SWANMethod) extends SWANStatement(CanInstructionDef.operator(opDef), m) {
     val staticField = new SWANStaticFieldVal(new SWANField(inst.tpe + "." + inst.field), m)
     override def containsStaticFieldAccess(): Boolean = true
-    override def getRightOp: Val = staticField
+    private val lhs = toSWANVal(inst.result.ref, m)
+    private val rhs = staticField
+    override def getLeftOp: Val = lhs
+    override def getRightOp: Val = rhs
     override def isStaticFieldLoad: Boolean = true
     override def getStaticField: StaticFieldVal = staticField
     override def toString: String = {
@@ -178,8 +202,10 @@ object SWANStatement {
                               m: SWANMethod) extends SWANStatement(CanInstructionDef.operator(opDef), m) {
     val staticField = new SWANStaticFieldVal(new SWANField(inst.tpe + "." + inst.field), m)
     override def containsStaticFieldAccess(): Boolean = true
-    override def getLeftOp: Val = staticField
-    override def getRightOp: Val = m.allValues(inst.value.name)
+    private val lhs = staticField
+    private val rhs = toSWANVal(inst.value, m)
+    override def getLeftOp: Val = lhs
+    override def getRightOp: Val = rhs
     override def isAssign: Boolean = true
     override def isStaticFieldStore: Boolean = true
     override def getStaticField: StaticFieldVal = staticField
@@ -193,7 +219,9 @@ object SWANStatement {
   }
   case class Allocation(opDef: CanOperatorDef, inst: Operator.neww,
                         m: SWANMethod) extends SWANStatement(CanInstructionDef.operator(opDef), m) {
-    override def getRightOp: Val = m.newValues(inst.result.ref.name)
+    private val v = m.addVal(SWANVal.NewExpr(inst.result, m))
+    override def getLeftOp: Val = v
+    override def getRightOp: Val = v
     override def toString: String = {
       if (inst.result.ref.name == "nop" && m.hasSwirlSource) {
         "f" + m.swirlLineNum(m.delegate)
@@ -210,7 +238,9 @@ object SWANStatement {
       case ca.ualberta.maple.swan.ir.Literal.string(_) => true
       case _ => false
     }
-    override def getRightOp: Val = m.addVal(SWANVal.Constant(inst.result, inst.literal, m))
+    private val v = m.addVal(SWANVal.Constant(inst.result, inst.literal, m))
+    override def getLeftOp: Val = v
+    override def getRightOp: Val = v
     override def toString: String = {
       if (m.hasSwirlSource) {
         "i" + m.swirlLineNum(opDef).toString
@@ -221,7 +251,9 @@ object SWANStatement {
   }
   case class DynamicFunctionRef(opDef: CanOperatorDef, inst: Operator.dynamicRef,
                                 m: SWANMethod) extends SWANStatement(CanInstructionDef.operator(opDef), m) {
-    override def getRightOp: Val = m.addVal(SWANVal.DynamicFunctionRef(inst.result, inst.index, m))
+    private val v = m.addVal(SWANVal.DynamicFunctionRef(inst.result, inst.index, m))
+    override def getLeftOp: Val = v
+    override def getRightOp: Val = v
     override def toString: String = {
       if (m.hasSwirlSource) {
         "i" + m.swirlLineNum(opDef).toString
@@ -232,7 +264,9 @@ object SWANStatement {
   }
   case class BuiltinFunctionRef(opDef: CanOperatorDef, inst: Operator.builtinRef,
                                 m: SWANMethod) extends SWANStatement(CanInstructionDef.operator(opDef), m) {
-    override def getRightOp: Val = m.addVal(SWANVal.BuiltinFunctionRef(inst.result, inst.name, m))
+    private val v = m.addVal(SWANVal.BuiltinFunctionRef(inst.result, inst.name, m))
+    override def getLeftOp: Val = v
+    override def getRightOp: Val = v
     override def toString: String = {
       if (m.hasSwirlSource) {
         "i" + m.swirlLineNum(opDef).toString
@@ -243,7 +277,9 @@ object SWANStatement {
   }
   case class FunctionRef(opDef: CanOperatorDef, inst: Operator.functionRef,
                          m: SWANMethod) extends SWANStatement(CanInstructionDef.operator(opDef), m) {
-    override def getRightOp: Val = m.addVal(SWANVal.FunctionRef(inst.result, inst.name, m))
+    private val v = m.addVal(SWANVal.FunctionRef(inst.result, inst.name, m))
+    override def getLeftOp: Val = v
+    override def getRightOp: Val = v
     override def toString: String = {
       if (m.hasSwirlSource) {
         "i" + m.swirlLineNum(opDef).toString
@@ -256,7 +292,10 @@ object SWANStatement {
                               m: SWANMethod) extends SWANStatement(CanInstructionDef.operator(opDef), m) {
     val invokeExpr = new SWANInvokeExpr(this, m)
     override def containsInvokeExpr(): Boolean = true
-    override def getRightOp: Val = Val.zero()
+    private val lhs = toSWANVal(inst.result.ref, m)
+    private val rhs = Val.zero()
+    override def getLeftOp: Val = lhs
+    override def getRightOp: Val = rhs
     override def getInvokeExpr: InvokeExpr = invokeExpr
     def getFunctionRef: Val = m.allValues(inst.functionRef.name)
     override def toString: String = {
@@ -283,6 +322,8 @@ object SWANStatement {
   // *** TERMINATORS ***
   case class Branch(termDef: CanTerminatorDef, inst: Terminator.br_can,
                     m: SWANMethod) extends SWANStatement(CanInstructionDef.terminator(termDef), m) {
+    override def getLeftOp: Val = ???
+    override def getRightOp: Val = ???
     override def toString: String = {
       if (m.hasSwirlSource) {
         "i" + m.swirlLineNum(termDef).toString
@@ -294,7 +335,9 @@ object SWANStatement {
   case class ConditionalBranch(termDef: CanTerminatorDef, inst: Terminator.brIf_can,
                                m: SWANMethod) extends SWANStatement(CanInstructionDef.terminator(termDef), m) {
     val ifStmt = new SWANIfStatement(this)
-    override def getRightOp: Val = m.allValues(inst.cond.name)
+    override def getLeftOp: Val = ???
+    private val op = toSWANVal(inst.cond, m)
+    override def getRightOp: Val = op
     override def isIfStmt: Boolean = true
     override def getIfStmt: IfStatement = ifStmt
     override def toString: String = {

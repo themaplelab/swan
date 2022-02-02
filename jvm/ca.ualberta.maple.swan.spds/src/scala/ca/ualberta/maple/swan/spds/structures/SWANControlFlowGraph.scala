@@ -60,8 +60,7 @@ class SWANControlFlowGraph(val method: SWANMethod) extends ControlFlowGraph {
       srcMap.get.put(opDef, srcMap.get(startInst))
     }
     firstBlock.operators.insert(0, opDef)
-    method.allValues.put("nop", SWANVal.Simple(nopSymbol, method))
-    method.newValues.put("nop", SWANVal.NewExpr(nopSymbol, method))
+    // method.allValues.put("nop", SWANVal.Simple(nopSymbol, method))
   }
 
   // Iterate through delegate blocks

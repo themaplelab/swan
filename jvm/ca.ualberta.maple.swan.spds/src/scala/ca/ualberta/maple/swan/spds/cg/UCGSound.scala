@@ -27,7 +27,7 @@ import ca.ualberta.maple.swan.spds.Stats.{CallGraphStats, SpecificCallGraphStats
 import ca.ualberta.maple.swan.spds.cg.CallGraphBuilder.PointerAnalysisStyle
 import ca.ualberta.maple.swan.spds.cg.CallGraphUtils.addCGEdge
 import ca.ualberta.maple.swan.spds.cg.UCGSound.UCGSoundStats
-import ca.ualberta.maple.swan.spds.cg.pa.{PointerAnalysis, UnionFind}
+import ca.ualberta.maple.swan.spds.cg.pa.{MatrixUnionFind, PointerAnalysis, UnionFind}
 import ca.ualberta.maple.swan.spds.structures.SWANControlFlowGraph.SWANBlock
 import ca.ualberta.maple.swan.spds.structures.SWANStatement.ApplyFunctionRef
 import ca.ualberta.maple.swan.spds.structures.{SWANInvokeExpr, SWANMethod, SWANStatement, SWANVal}
@@ -67,7 +67,7 @@ class UCGSound(mg: ModuleGroup, pas: PointerAnalysisStyle.Style, val invalidatio
   private val interProcSuccessors: mutable.HashMap[SWANBlock, mutable.HashSet[SWANBlock]] =
     new mutable.HashMap[SWANBlock, mutable.HashSet[SWANBlock]]
 
-  private val uf = new UnionFind
+  private var uf: MatrixUnionFind = null
 
   private implicit val ddgTypes: mutable.HashMap[String, Int] = mutable.HashMap.empty[String, Int]
   private implicit val ddgTypesInv: ArrayBuffer[String] = mutable.ArrayBuffer.empty[String]
@@ -76,6 +76,13 @@ class UCGSound(mg: ModuleGroup, pas: PointerAnalysisStyle.Style, val invalidatio
   private var queryCache: SQueryCache[_] = null
 
   override def buildSpecificCallGraph(cgs: CallGraphStats): Unit = {
+
+    pas match {
+      case ca.ualberta.maple.swan.spds.cg.CallGraphBuilder.PointerAnalysisStyle.UFF => {
+        uf = new MatrixUnionFind(cgs.cg)
+      }
+      case _ =>
+    }
 
     // This type set creation (map types to bits)
     moduleGroup.ddgs.foreach { case (_, ddg) =>

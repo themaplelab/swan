@@ -85,17 +85,9 @@ class UnionFind {
     r
   }
 
+  // TODO: Static fields
   def handleStatement(cg: SWANCallGraph, stmt: SWANStatement): Unit = {
     stmt match {
-      case s: SWANStatement.Allocation =>
-        // Not really needed, but here for completeness
-        union(s.getLeftOp.asInstanceOf[SWANVal], s.getRightOp.asInstanceOf[SWANVal])
-      case s: SWANStatement.FunctionRef =>
-        union(s.getLeftOp.asInstanceOf[SWANVal], s.getRightOp.asInstanceOf[SWANVal])
-      case s: SWANStatement.BuiltinFunctionRef =>
-        union(s.getLeftOp.asInstanceOf[SWANVal], s.getRightOp.asInstanceOf[SWANVal])
-      case s: SWANStatement.DynamicFunctionRef =>
-        union(s.getLeftOp.asInstanceOf[SWANVal], s.getRightOp.asInstanceOf[SWANVal])
       case s: SWANStatement.Assign => {
         union(s.getLeftOp.asInstanceOf[SWANVal], s.getRightOp.asInstanceOf[SWANVal])
       }
