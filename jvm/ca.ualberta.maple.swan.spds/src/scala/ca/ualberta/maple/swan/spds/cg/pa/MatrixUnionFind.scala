@@ -32,7 +32,7 @@ class MatrixUnionFind(callGraph: SWANCallGraph) {
               var rep: Int,
               var largest: Int,
               var size: Int,
-              val set: mutable.BitSet)
+              var set: mutable.BitSet /* can be null */)
 
   private val fields: mutable.HashMap[(SWANVal, String), SWANVal] = new mutable.HashMap()
   private var allocBoundary: Int = 0
@@ -56,8 +56,8 @@ class MatrixUnionFind(callGraph: SWANCallGraph) {
     bitSetSize = vals.length
     allocBoundary = vals.lastIndexWhere(_.isNewExpr)
     vals.zipWithIndex.foreach(v => {
-      val b = new mutable.BitSet(bitSetSize)
-      b.add(v._2)
+      val b = new mutable.BitSet()
+      //b.add(v._2)
       m.put(v._1, new Entry(v._2, v._2, v._2, 1, b))
       itv.put(v._2, v._1)
     })
@@ -66,12 +66,14 @@ class MatrixUnionFind(callGraph: SWANCallGraph) {
 
   def query(x: SWANVal): mutable.HashSet[SWANVal] = {
     val r = mutable.HashSet.empty[SWANVal]
-    val rep = find(x)
-    if (rep.index <= allocBoundary) {
-      rep.set.takeWhile(v => {
-        r.add(itv(v))
-        v <= allocBoundary
-      })
+    if (m.contains(x)) {
+      val rep = m(itv(find(x).largest))
+      if (rep.rep <= allocBoundary) {
+        rep.set.takeWhile(v => {
+          r.add(itv(v))
+          v <= allocBoundary
+        })
+      }
     }
     r
   }
@@ -129,19 +131,27 @@ class MatrixUnionFind(callGraph: SWANCallGraph) {
     // stubs often don't have the correct # of args
     if (to.delegate.attribute.isEmpty || to.delegate.attribute.get != FunctionAttribute.stub) {
       var index = 0
-      from.invokeExpr.args.forEach(arg => {
-        union(arg.asInstanceOf[SWANVal], to.getParameterLocals.get(index).asInstanceOf[SWANVal])
-        index += 1
-      })
+      // TODO: Why does this happen?
+      if (from.invokeExpr.args.size() <= to.getParameterLocals.size()) {
+        from.invokeExpr.args.forEach(arg => {
+          union(arg.asInstanceOf[SWANVal], to.getParameterLocals.get(index).asInstanceOf[SWANVal])
+          index += 1
+        })
+      }
     }
   }
 
   private def find(x: SWANVal): Entry = {
     val entry = m(x)
-    val largest = m(itv(entry.largest))
-    var rep = m(itv(largest.rep))
-    while (rep.index != rep.rep) {
-      rep = m(itv(rep.rep))
+    if (entry.set != null && entry.set.isEmpty) {
+      entry.set.add(entry.index)
+    }
+    var rep = m(itv(entry.rep))
+    var depth = 0
+    while (m(itv(rep.largest)).rep != rep.index) {
+      val largest = m(itv(rep.largest))
+      rep = m(itv(largest.rep))
+      depth += 1
     }
     rep
   }
@@ -150,21 +160,27 @@ class MatrixUnionFind(callGraph: SWANCallGraph) {
     if (m.contains(x) && m.contains(y)) {
       val xRep = find(x)
       val yRep = find(y)
-      if (xRep.size >= yRep.size) {
-        doUnion(xRep, y, yRep)
-      } else {
-        doUnion(yRep, x, xRep)
+      if (xRep.index != yRep.index) {
+        if (xRep.size >= yRep.size) {
+          doUnion(xRep, y, yRep)
+        } else {
+          doUnion(yRep, x, xRep)
+        }
       }
     }
   }
 
   private def doUnion(xRep: Entry, y: SWANVal, yRep: Entry): Unit = {
-    xRep.set |= yRep.set
-    xRep.size += yRep.size
-    if (yRep.rep < xRep.rep) {
-      xRep.rep = yRep.rep
+    val xLargest = m(itv(xRep.largest))
+    val yLargest = m(itv(yRep.largest))
+    xLargest.size += yLargest.size
+    xLargest.set |= yLargest.set
+    yRep.set = null
+    yRep.size = 1
+    if (yLargest.rep < xLargest.rep) {
+      xLargest.rep = yLargest.rep
     }
-    m(y).largest = xRep.index
-    yRep.largest = xRep.index
+    m(y).largest = xLargest.index
+    yRep.largest = xLargest.index
   }
 }

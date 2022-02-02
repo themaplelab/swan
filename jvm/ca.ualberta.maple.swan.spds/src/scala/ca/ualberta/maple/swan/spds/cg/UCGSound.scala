@@ -115,7 +115,7 @@ class UCGSound(mg: ModuleGroup, pas: PointerAnalysisStyle.Style, val invalidatio
     queryCache = {
       pas match {
         case PointerAnalysisStyle.None => null
-        case ca.ualberta.maple.swan.spds.cg.CallGraphBuilder.PointerAnalysisStyle.SPDS => {
+        case PointerAnalysisStyle.SPDS => {
           new SQueryCache[SPDSResults](cgs, stats) {
             def query(pred: boomerang.scene.Statement, stmt: ApplyFunctionRef, ref: Val): SPDSResults = {
               val query = BackwardQuery.make(new ControlFlowGraph.Edge(pred, stmt), ref)
@@ -148,7 +148,7 @@ class UCGSound(mg: ModuleGroup, pas: PointerAnalysisStyle.Style, val invalidatio
             }
           }
         }
-        case ca.ualberta.maple.swan.spds.cg.CallGraphBuilder.PointerAnalysisStyle.UFF => {
+        case PointerAnalysisStyle.UFF => {
           new SQueryCache[UFFResults](cgs, stats) {
             override def query(pred: Statement, stmt: ApplyFunctionRef, ref: Val): UFFResults = {
               val results = uf.query(stmt.getFunctionRef.asInstanceOf[SWANVal])
@@ -222,7 +222,11 @@ class UCGSound(mg: ModuleGroup, pas: PointerAnalysisStyle.Style, val invalidatio
 
       // Process operators in the block.
       c.stmts.foreach(stmt => {
-        uf.handleStatement(cgs.cg, stmt)
+        pas match {
+          case PointerAnalysisStyle.UFF =>
+            uf.handleStatement(cgs.cg, stmt)
+          case _ =>
+        }
         stmt match {
           // If operator is an allocation, add alloc type to b.
           case SWANStatement.Allocation(_, inst, _) =>
@@ -293,7 +297,10 @@ class UCGSound(mg: ModuleGroup, pas: PointerAnalysisStyle.Style, val invalidatio
             def visitSimpleRef(name: String, trivial: Boolean): Unit = {
               val target = cgs.cg.methods(name)
               val added = addCGEdge(m, target, applyStmt, edge, cgs)
-              uf.handleCGEdge(applyStmt, target)
+              pas match {
+                case PointerAnalysisStyle.UFF => uf.handleCGEdge(applyStmt, target)
+                case _ =>
+              }
               b = b.union(processTarget(target, c, b))
               if (added) {
                 if (trivial) {
@@ -319,7 +326,10 @@ class UCGSound(mg: ModuleGroup, pas: PointerAnalysisStyle.Style, val invalidatio
                 functionNames.foreach(name => {
                   val target = cgs.cg.methods(name)
                   val added = addCGEdge(m, target, applyStmt, edge, cgs)
-                  uf.handleCGEdge(applyStmt, target)
+                  pas match {
+                    case PointerAnalysisStyle.UFF => uf.handleCGEdge(applyStmt, target)
+                    case _ =>
+                  }
                   b = b.union(processTarget(target, c, b))
                   if (added) {
                     if (queried) {
