@@ -75,9 +75,6 @@ object SWANVal {
         case other: Simple =>
           delegate.equals(other.delegate) && method.equals(other.m) &&
             { if (other.unbalanced != null) other.unbalanced.equals(unbalanced) else true }
-        case other: Argument =>
-          delegate.equals(other.delegate) && method.equals(other.m) &&
-            { if (other.unbalanced != null) other.unbalanced.equals(unbalanced) else true }
         case other: Constant =>
           delegate.equals(other.delegate) && method.equals(other.m) &&
             { if (other.unbalanced != null) other.unbalanced.equals(unbalanced) else true }
@@ -87,38 +84,6 @@ object SWANVal {
     override def toString: String = {
       if (method.hasSwirlSource) getVariableName + " v" + method.swirlLineNum(delegate) else
       "<v " + getVariableName + " " + getType.toString + " />"
-    }
-  }
-  case class Argument(delegate: Symbol, index: Int, method: SWANMethod, unbalanced: Edge = null) extends SWANVal(method, unbalanced) {
-    private val tpe = SWANType.create(delegate.tpe)
-    override def getType: Type = tpe
-    override def getVariableName: String = delegate.ref.name
-    override def asUnbalanced(edge: Edge): Val = method.addVal(Argument(delegate, index, method, edge))
-    override def hashCode: Int = {
-      val prime = 31
-      var result = 1
-      result = prime * result + delegate.hashCode
-      result = prime * result + method.hashCode
-      result
-    }
-    override def equals(obj: Any): Boolean = {
-      obj match {
-        case other: Argument =>
-          delegate.equals(other.delegate) && method.equals(other.m) &&
-            { if (other.unbalanced != null) other.unbalanced.equals(unbalanced) else true }
-        case other: Simple =>
-          delegate.equals(other.delegate) && method.equals(other.m) &&
-            { if (other.unbalanced != null) other.unbalanced.equals(unbalanced) else true }
-        case other: Constant =>
-          delegate.equals(other.delegate) && method.equals(other.m) &&
-            { if (other.unbalanced != null) other.unbalanced.equals(unbalanced) else true }
-        case _: AllocVal => false
-        case _ => false
-      }
-    }
-    override def toString: String = {
-      if (method.hasSwirlSource) getVariableName + " v" + method.swirlLineNum(delegate) else
-      "<a " + getVariableName + " " + this.getType.toString + " />"
     }
   }
   case class NewExpr(delegate: Symbol, method: SWANMethod, unbalanced: Edge = null) extends SWANVal(method, unbalanced) {

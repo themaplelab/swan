@@ -48,7 +48,6 @@ class MatrixUnionFind(callGraph: SWANCallGraph) {
           case s: SWANVal.FunctionRef => vals.prepend(s)
           case s: SWANVal.BuiltinFunctionRef => vals.prepend(s)
           case s: SWANVal.DynamicFunctionRef => vals.prepend(s)
-          case s: SWANVal.Argument => vals.append(s)
           case _ =>
         }
       })
