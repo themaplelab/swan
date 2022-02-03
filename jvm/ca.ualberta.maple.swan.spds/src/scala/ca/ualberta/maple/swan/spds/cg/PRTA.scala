@@ -54,7 +54,7 @@ class PRTA(mg: ModuleGroup, pas: PointerAnalysisStyle.Style) extends CallGraphCo
     val validTypes = mutable.HashSet.empty[String]
     moduleGroup.ddgs.foreach(d => validTypes.addAll(d._2.nodes.keySet))
     methods.foreach(m => {
-      m._2.delegate.blocks.foreach(m => m.operators.foreach(op => {
+      m._2.delegate.blocks.foreach(b => b.operators.foreach(op => {
         op.operator match {
           case Operator.neww(_, allocType) => types.add(allocType.name)
           case _ =>

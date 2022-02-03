@@ -45,6 +45,10 @@ object CallGraphBuilder {
           case Some(value) => value
           case None => PointerAnalysisStyle.SPDS
         }, true)
+        case CallGraphStyle.SRTA => new SRTA(moduleGroup, paStyle match {
+          case Some(value) => value
+          case None => PointerAnalysisStyle.None
+        })
       }
     }
     cgBuilder.buildCallGraph()
@@ -55,6 +59,7 @@ object CallGraphBuilder {
 
     val CHA: CallGraphStyle.Value = Value
     val PRTA: CallGraphStyle.Value = Value
+    val SRTA: CallGraphStyle.Value = Value
     val UCG: CallGraphStyle.Value = Value
     val UCGSound: CallGraphStyle.Value = Value
   }

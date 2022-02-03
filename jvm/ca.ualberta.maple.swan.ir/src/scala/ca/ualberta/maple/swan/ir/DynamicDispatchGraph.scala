@@ -27,7 +27,8 @@ import org.jgrapht.alg.TransitiveClosure
 import org.jgrapht.graph._
 import org.jgrapht.traverse.BreadthFirstIterator
 
-import scala.collection.mutable
+import scala.collection.convert.ImplicitConversions.`set asScala`
+import scala.collection.{immutable, mutable}
 import scala.collection.mutable.ArrayBuffer
 import scala.jdk.CollectionConverters.CollectionHasAsScala
 import scala.reflect.ClassTag
@@ -37,6 +38,7 @@ class DynamicDispatchGraph extends Serializable {
 
   private val graph: Graph[Node, DefaultEdge] = new SimpleDirectedGraph(classOf[DefaultEdge])
   val nodes: mutable.HashMap[String, Node] = new mutable.HashMap[String, Node]()
+  private val classNodes: mutable.HashSet[Node.Class] = new mutable.HashSet[Node.Class]()
   private val reachabilityCache: SimpleDirectedGraph[Node, DefaultEdge] = new SimpleDirectedGraph(classOf[DefaultEdge])
 
   /**
@@ -46,14 +48,11 @@ class DynamicDispatchGraph extends Serializable {
     if (!nodes.contains(index)) return Array.empty
     val functions = ArrayBuffer[String]()
     val startNode = nodes(index)
-    val classNodes: Option[Array[Node]] = {
-      if (types.nonEmpty) {
-        // TODO: .toArray not efficient
-        Some(types.get.toArray.filter(s => nodes.contains(s) && nodes(s).isInstanceOf[Node.Class]).map(s => nodes(s)))
-      } else {
-        None
-      }
-    }
+    val classNodes: Option[mutable.HashSet[Node]] =
+      types.map(_.flatMap{s => nodes.get(s) match {
+        case nOpt @ Some(n) if n.isInstanceOf[Node.Class] => nOpt
+        case _ => None
+      }})
     val iterator = new BreadthFirstIterator(graph, startNode)
     var done = false
     while (iterator.hasNext && !done) {
@@ -61,13 +60,12 @@ class DynamicDispatchGraph extends Serializable {
       if (iterator.getDepth(cur) < 2) {
         cur match {
           case Node.Method(s) => {
-            if (classNodes.nonEmpty) {
-              val classes = classNodes.get
-              if (classes.find(cls => reachabilityCache.containsEdge(cur,cls)).nonEmpty) {
-                functions.append(s)
-              }
-            } else {
-              functions.append(s)
+            classNodes match {
+              case Some(classes) =>
+                if (classes.exists(cls => reachabilityCache.containsEdge(cur, cls))) {
+                  functions.append(s)
+                }
+              case None => functions.append(s)
             }
           }
           case _ =>
@@ -77,6 +75,28 @@ class DynamicDispatchGraph extends Serializable {
       }
     }
     functions.toArray
+  }
+
+  def isDDGClass(name: String): Boolean = {
+    classNodes.contains(Node.Class(name))
+  }
+
+  def queryTypeTargets(index: String): immutable.MultiDict[String,String] = {
+    nodes.get(index) match {
+      case Some(startNode) => {
+        val methods: Set[Node.Method] = {
+          val nodes: Set[Node] = Set.empty[Node] + startNode ++ graph.outgoingEdgesOf(startNode).asScala.toSeq.map(graph.getEdgeTarget).collect{ case n : Node.Method => n}
+          nodes.collect{case n : Node.Method => n}
+        }
+        val edges: mutable.MultiDict[String,String] = mutable.MultiDict.empty[String,String]
+        methods.foreach{m => classNodes.foreach{cls =>
+          if (reachabilityCache.containsEdge(m, cls)) edges.addOne(cls.s, m.name)}
+        }
+        //val edges = classNodes.toSeq.flatMap(cls => methods.toSeq.collect{case cur @ Node.Method(s) if reachabilityCache.containsEdge(cur, cls) => (cls.s, s)})
+        immutable.MultiDict.from(edges)
+      }
+      case None => immutable.MultiDict.empty
+    }
   }
 
   private def addEdge(from: Node, to: Node) = {
@@ -92,7 +112,11 @@ class DynamicDispatchGraph extends Serializable {
       } else {
         val n = {
           tpe match {
-            case "Class" => Node.Class(name)
+            case "Class" => {
+              val n = Node.Class(name)
+              classNodes.add(n)
+              n
+            }
             case "Protocol" => Node.Protocol(name)
             case "Index" => Node.Index(name)
             case "Method" => Node.Method(name)

@@ -81,6 +81,7 @@ object Driver {
         val style = v.toLowerCase() match {
           case "cha" => CallGraphBuilder.CallGraphStyle.CHA
           case "prta" => CallGraphBuilder.CallGraphStyle.PRTA
+          case "srta" => CallGraphBuilder.CallGraphStyle.SRTA
           case "ucg" => CallGraphBuilder.CallGraphStyle.UCGSound
           case "unsound_ucg" => CallGraphBuilder.CallGraphStyle.UCG
         }
