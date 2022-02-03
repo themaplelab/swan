@@ -24,9 +24,12 @@ import ca.ualberta.maple.swan.spds.structures.{SWANCallGraph, SWANMethod, SWANSt
 
 import scala.collection.mutable
 
+// INEFFICIENT -- don't use!
+
 // TODO: Check if node order matters, especially for path compression
 // TODO: See if there is an optimization to get alloc nodes faster
 //       instead of going over all nodes in the tree
+// TODO: Union field edges (if rep is no longer relevant)
 class UnionFind {
 
   private val fields: mutable.HashMap[(SWANVal, String), SWANVal] = new mutable.HashMap()

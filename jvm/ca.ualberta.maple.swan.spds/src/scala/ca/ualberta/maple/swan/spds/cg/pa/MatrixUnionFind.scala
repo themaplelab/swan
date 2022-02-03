@@ -22,10 +22,14 @@ package ca.ualberta.maple.swan.spds.cg.pa
 import ca.ualberta.maple.swan.ir.FunctionAttribute
 import ca.ualberta.maple.swan.spds.structures.{SWANCallGraph, SWANMethod, SWANStatement, SWANVal}
 
+import java.awt.Toolkit
+import java.awt.datatransfer.StringSelection
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
 
 // TODO: Track lookup length
+// TODO: Fields are broken likely because they are not updated during unions
+//       when rep becomes dead
 class MatrixUnionFind(callGraph: SWANCallGraph) {
 
   class Entry(val index: Int,
@@ -34,7 +38,18 @@ class MatrixUnionFind(callGraph: SWANCallGraph) {
               var size: Int,
               var set: mutable.BitSet /* can be null */)
 
-  private val fields: mutable.HashMap[(SWANVal, String), SWANVal] = new mutable.HashMap()
+  private val fields = new mutable.HashMap[SWANVal, mutable.HashMap[String, SWANVal]] {
+    override def default(key: SWANVal): mutable.HashMap[String, SWANVal] = {
+      get(key: SWANVal) match {
+        case Some(value) => value
+        case None => {
+          val v = new mutable.HashMap[String, SWANVal]
+          put(key,v)
+          v
+        }
+      }
+    }
+  }
   private var allocBoundary: Int = 0
   private var bitSetSize: Int = 0
   private val itv: mutable.HashMap[Int, SWANVal] = new mutable.HashMap()
@@ -89,12 +104,13 @@ class MatrixUnionFind(callGraph: SWANCallGraph) {
         val yVal = s.getFieldLoad.getX.asInstanceOf[SWANVal]
         if (m.contains(xVal) && m.contains(yVal)) {
           val xRoot = itv(find(xVal).index)
-          val yRoot = itv(find(yVal).index)
+          val yRoot = itv(find(yVal).largest)
           val z = s.getLoadedField.toString
-          fields.get((yRoot, z)) match {
+          val f = fields(yRoot)
+          f.get(z) match {
             case Some(value) => union(value, xRoot)
             // Add a field, but really this is not necessary due to revisiting
-            case None => fields.put((yRoot, z), xRoot)
+            case None => //f.put(z, xRoot)
           }
         }
       }
@@ -102,13 +118,19 @@ class MatrixUnionFind(callGraph: SWANCallGraph) {
         // x.y = z
         val xVal = s.getFieldStore.getX.asInstanceOf[SWANVal]
         val zVal = s.getRightOp.asInstanceOf[SWANVal]
-        if (m.contains(xVal) && m.contains(zVal)) {
+        if (m.contains(zVal)) {
+          if (!m.contains(xVal)) {
+            m.put(xVal, new Entry(bitSetSize, bitSetSize, bitSetSize, 1, new mutable.BitSet()))
+            itv.put(bitSetSize, xVal)
+            bitSetSize += 1
+          }
           val xRoot = itv(find(xVal).index)
           val y = s.getWrittenField.toString
           val zRoot = itv(find(zVal).index)
-          fields.get((xRoot, y)) match {
+          val f = fields(xRoot)
+          f.get(y) match {
             case Some(value) => union(value, zRoot)
-            case None => fields.put((xRoot, y), zRoot)
+            case None => f.put(y, zRoot)
           }
         }
       }
@@ -181,5 +203,68 @@ class MatrixUnionFind(callGraph: SWANCallGraph) {
     }
     m(y).largest = xLargest.index
     yRep.largest = xLargest.index
+    val yVal = itv(yRep.index) // TODO: Should be largest?
+    val xVal = itv(xRep.index) // TODO: Should be largest?
+    if (fields.contains(yVal)) {
+      fields(xVal).addAll(fields(yVal))
+      fields.remove(yVal)
+    }
+  }
+
+  // Not for big programs!
+  def printToDot(): String = {
+    val dot: StringBuilder = new StringBuilder("digraph G {\n")
+    val reps = new mutable.HashSet[Int]()
+    this.m.foreach(x => {
+      reps.add(x._2.rep)
+    })
+    def printEntry(x: (SWANVal, Entry)): String = {
+      val s = "\"" + { if (x._1.getVariableName.startsWith("%")) "\\" else "" } + s"${x._1.getVariableName}, " +
+        s"${ { x._1 match {
+        case f: SWANVal.FunctionRef => s"f=${f.ref}"
+        case f: SWANVal.BuiltinFunctionRef => s"bf=${f.ref}"
+        case f: SWANVal.DynamicFunctionRef => s"df=${f.index}"
+        case _ => x._1.getType.toString
+      } }}, |${x._2.size}|" + "\""
+      if (reps.contains(x._2.index)) {
+        s"{$s [color=red]}"
+      } else s
+    }
+    this.m.foreach(x => {
+      if (x._2.largest != x._2.index) {
+        val largest = itv(x._2.largest)
+        dot.append(s"  ${printEntry(x)} -> ${printEntry((largest, m(largest)))} [color=blue, arrowhead=box]\n")
+      }
+      if (x._2.rep != x._2.index) {
+        val rep = itv(x._2.rep)
+        dot.append(s"  ${printEntry(x)} -> ${printEntry((rep, m(rep)))} [color=red]\n")
+      }
+      if (x._2.set != null) {
+        x._2.set.foreach(i => {
+          val to = itv(i)
+          if (x._2.index != m(to).index) {
+            dot.append(s"  ${printEntry(x)} -> ${printEntry((to, m(to)))}\n")
+          }
+        })
+      }
+    })
+    this.fields.foreach(f => {
+      f._2.foreach(t => {
+        dot.append(s"  ${printEntry(f._1, m(f._1))} -> ${printEntry((t._2, m(t._2)))} [label=${t._1}, style=dotted]\n")
+      })
+    })
+    dot.append("  subgraph cluster_legend {\n")
+    dot.append("    label=\"Legend\"\n")
+    dot.append("    graph[style=solid]\n")
+    dot.append("    a -> b [label=largest, color=blue, arrowhead=box]\n")
+    dot.append("    c -> {rep [color=red]} [label=rep, color=red]\n")
+    dot.append("    e -> f [label=child]\n")
+    dot.append("    g -> h [label=field, style=dotted]\n")
+    dot.append("  }\n")
+    dot.append("label=\"Self-relationships are ommited.\"\n")
+    dot.append("}")
+    val selection = new StringSelection(dot.toString())
+    Toolkit.getDefaultToolkit.getSystemClipboard.setContents(selection, selection)
+    dot.toString()
   }
 }
