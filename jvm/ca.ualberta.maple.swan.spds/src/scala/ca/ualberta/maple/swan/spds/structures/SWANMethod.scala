@@ -33,7 +33,6 @@ class SWANMethod(val delegate: CanFunction, var moduleGroup: ModuleGroup) extend
 
   val localParams: util.List[Val] = Lists.newArrayList
   val localValues: util.HashSet[Val] = Sets.newHashSet
-  private val cfg: SWANControlFlowGraph = new SWANControlFlowGraph(this)
 
   def hasSwirlSource: Boolean = moduleGroup.swirlSourceMap.nonEmpty
 
@@ -51,6 +50,9 @@ class SWANMethod(val delegate: CanFunction, var moduleGroup: ModuleGroup) extend
     localValues.add(v)
     allValues.put(argument.ref.name, v)
   })
+
+  // SWANControlFlowGraph constructor requires allValues to be populated with arguments
+  private val cfg: SWANControlFlowGraph = new SWANControlFlowGraph(this)
 
   override def isStaticInitializer: Boolean = false
 
