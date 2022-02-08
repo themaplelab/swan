@@ -290,13 +290,19 @@ object SWANStatement {
   }
   case class ApplyFunctionRef(opDef: CanOperatorDef, inst: Operator.apply,
                               m: SWANMethod) extends SWANStatement(CanInstructionDef.operator(opDef), m) {
-    val invokeExpr = new SWANInvokeExpr(this, m)
+    private var ie: SWANInvokeExpr = null // delay creation because m.allValues not yet fully populated
     override def containsInvokeExpr(): Boolean = true
     private val lhs = toSWANVal(inst.result.ref, m)
     private val rhs = Val.zero()
     override def getLeftOp: Val = lhs
     override def getRightOp: Val = rhs
-    override def getInvokeExpr: InvokeExpr = invokeExpr
+    def invokeExpr: SWANInvokeExpr = getInvokeExpr.asInstanceOf[SWANInvokeExpr]
+    override def getInvokeExpr: InvokeExpr = {
+      if (ie == null) {
+        ie = new SWANInvokeExpr(this, m)
+      }
+      ie
+    }
     def getFunctionRef: Val = m.allValues(inst.functionRef.name)
     override def toString: String = {
       if (m.hasSwirlSource) {
