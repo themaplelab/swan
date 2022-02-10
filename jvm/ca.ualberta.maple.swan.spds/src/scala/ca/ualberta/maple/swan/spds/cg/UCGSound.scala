@@ -98,6 +98,8 @@ class UCGSound(mg: ModuleGroup, pas: PointerAnalysisStyle.Style, val invalidatio
 
     // Call the algorithm
     mainLoop(cgs)
+
+    //System.out.println(uf.printToDot())
   }
 
   /**
@@ -439,7 +441,7 @@ class UCGSound(mg: ModuleGroup, pas: PointerAnalysisStyle.Style, val invalidatio
       m.getCFG.blocks.foreach{ case (_,blk) =>
         blk.stmts.foreach {
           case applyStmt: SWANStatement.ApplyFunctionRef => {
-            if (queryCache.cache.contains(applyStmt)) {
+            if (queryCache != null && queryCache.cache.contains(applyStmt)) {
               shortExit = false
             }
           }
@@ -460,7 +462,7 @@ class UCGSound(mg: ModuleGroup, pas: PointerAnalysisStyle.Style, val invalidatio
         w.add(blk)
         blk.stmts.foreach {
           case applyStmt: SWANStatement.ApplyFunctionRef =>
-            queryCache.invalidate(applyStmt)
+            if (queryCache != null) queryCache.invalidate(applyStmt)
           case _ =>
         }
       }
