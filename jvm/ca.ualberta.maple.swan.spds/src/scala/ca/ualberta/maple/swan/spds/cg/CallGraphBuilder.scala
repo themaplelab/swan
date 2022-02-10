@@ -21,6 +21,7 @@ package ca.ualberta.maple.swan.spds.cg
 
 import ca.ualberta.maple.swan.ir.ModuleGroup
 import ca.ualberta.maple.swan.spds.Stats.CallGraphStats
+import ca.ualberta.maple.swan.spds.cg.CallGraphBuilder.{CallGraphStyle, PointerAnalysisStyle}
 
 object CallGraphBuilder {
 
@@ -52,6 +53,10 @@ object CallGraphBuilder {
       }
     }
     cgBuilder.buildCallGraph()
+  }
+
+  def createCallGraph(moduleGroup: ModuleGroup, cgStyle: CallGraphStyle.Style): CallGraphStats = {
+    createCallGraph(moduleGroup, cgStyle, None)
   }
 
   object CallGraphStyle extends Enumeration {

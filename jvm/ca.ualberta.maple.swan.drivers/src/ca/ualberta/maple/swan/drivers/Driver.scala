@@ -94,6 +94,8 @@ object Driver {
         val style = v.toLowerCase() match {
           case "spds" => CallGraphBuilder.PointerAnalysisStyle.SPDS
           case "uff" => CallGraphBuilder.PointerAnalysisStyle.UFF
+          case "none" => CallGraphBuilder.PointerAnalysisStyle.None
+          case _ => throw new RuntimeException("Unknown pointer analysis style")
         }
         this.pointerAnalysisAlgorithm = style
       }
