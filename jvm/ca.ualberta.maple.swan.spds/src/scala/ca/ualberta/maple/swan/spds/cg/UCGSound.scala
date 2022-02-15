@@ -77,7 +77,7 @@ class UCGSound(mg: ModuleGroup, pas: PointerAnalysisStyle.Style,
 
   private var queryCache: SQueryCache[_] = null
 
-  override def buildSpecificCallGraph(cgs: CallGraphStats): Unit = {
+  override def buildSpecificCallGraph(): Unit = {
 
     pas match {
       case ca.ualberta.maple.swan.spds.cg.CallGraphBuilder.PointerAnalysisStyle.UFF => {

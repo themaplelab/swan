@@ -120,7 +120,7 @@ class SRTA(mg: ModuleGroup, pas: PointerAnalysisStyle.Style, options: Options) e
   }
 
   // TODO: Pointer analysis integration
-  override def buildSpecificCallGraph(cgs: CallGraphStats): Unit = {
+  override def buildSpecificCallGraph(): Unit = {
     val startTimeMs = System.currentTimeMillis()
 
     // ORTA/SRTA isn't meaningful without a main function

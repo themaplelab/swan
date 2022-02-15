@@ -45,7 +45,7 @@ class PRTA(mg: ModuleGroup, pas: PointerAnalysisStyle.Style, options: Options) e
   }
 
   // TODO: Pointer analysis integration
-  override def buildSpecificCallGraph(cgs: CallGraphStats): Unit = {
+  override def buildSpecificCallGraph(): Unit = {
     var prtaEdges: Int = 0
     val startTimeMs = System.currentTimeMillis()
     val methods = cgs.cg.methods

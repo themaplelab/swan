@@ -99,11 +99,7 @@ object CallGraphUtils {
     })
   }
 
-  def initializeCallGraph(moduleGroup: ModuleGroup, options: CallGraphConstructor.Options): CallGraphStats = {
-
-    val methods = new mutable.HashMap[String, SWANMethod]()
-    val cg = new SWANCallGraph(moduleGroup, methods)
-    val cgs = new CallGraphStats(cg)
+  def initializeCallGraph(moduleGroup: ModuleGroup, methods: mutable.HashMap[String, SWANMethod], cg: SWANCallGraph, cgs: CallGraphStats, options: CallGraphConstructor.Options): Unit = {
 
     moduleGroup.functions.foreach(f => {
       val m = new SWANMethod(f, moduleGroup)
@@ -115,8 +111,6 @@ object CallGraphUtils {
     })
 
     methods.foreach{case (_,m) => cg.graph.addVertex(m)}
-
-    cgs
   }
 
   def writeToProbe(cg: SWANCallGraph, f: File): Unit = {

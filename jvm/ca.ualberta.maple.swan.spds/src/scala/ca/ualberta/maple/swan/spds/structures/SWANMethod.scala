@@ -98,6 +98,10 @@ class SWANMethod(val delegate: CanFunction, var moduleGroup: ModuleGroup) extend
     getCFG.exitBlocks
   }
 
+  def applyFunctionRefs: Iterator[SWANStatement.ApplyFunctionRef] = {
+    getCFG.blocks.iterator.flatMap{case (_,blk) => blk.applyFunctionRefs}
+  }
+
   override def getSubSignature: String = delegate.name
 
   override def getName: String = delegate.name

@@ -45,10 +45,10 @@ class ORTA(mg: ModuleGroup, pas: PointerAnalysisStyle.Style, options: Options) e
   }
 
   // TODO: Pointer analysis integration
-  override def buildSpecificCallGraph(cgs: CallGraphStats): Unit = {
+  override def buildSpecificCallGraph(): Unit = {
 
     // Run CHA
-    new CHA(moduleGroup, pas, options).buildSpecificCallGraph(cgs)
+    new CHA(moduleGroup, pas, options).buildSpecificCallGraph()
 
     var ortaEdges: Int = 0
     val startTimeMs = System.currentTimeMillis()

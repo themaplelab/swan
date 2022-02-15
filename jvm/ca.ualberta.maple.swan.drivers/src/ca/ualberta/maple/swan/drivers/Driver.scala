@@ -83,6 +83,7 @@ object Driver {
           case "cha" => CallGraphBuilder.CallGraphStyle.CHA
           case "prta" => CallGraphBuilder.CallGraphStyle.PRTA
           case "srta" => CallGraphBuilder.CallGraphStyle.SRTA
+          case "vta" => CallGraphBuilder.CallGraphStyle.VTA
           case "ucg" => CallGraphBuilder.CallGraphStyle.UCGSound
           case "unsound_ucg" => CallGraphBuilder.CallGraphStyle.UCG
         }

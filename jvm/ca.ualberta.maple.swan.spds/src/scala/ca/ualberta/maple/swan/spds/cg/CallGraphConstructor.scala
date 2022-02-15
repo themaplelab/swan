@@ -21,18 +21,26 @@ package ca.ualberta.maple.swan.spds.cg
 
 import ca.ualberta.maple.swan.ir.ModuleGroup
 import ca.ualberta.maple.swan.spds.Stats.CallGraphStats
+import ca.ualberta.maple.swan.spds.structures.{SWANCallGraph, SWANMethod}
 import ca.ualberta.maple.swan.utils.Logging
+
+import scala.collection.mutable
 
 abstract class CallGraphConstructor(val moduleGroup: ModuleGroup, val options: CallGraphConstructor.Options) {
 
-  def buildCallGraph(): CallGraphStats = {
+  // These must not be used without calling CallGraphUtils.initializeCallGraph(moduleGroup, methods, cg, cgs)
+  val methods = new mutable.HashMap[String, SWANMethod]()
+  val cg = new SWANCallGraph(moduleGroup, methods)
+  val cgs = new CallGraphStats(cg)
+
+  final def buildCallGraph(): CallGraphStats = {
     Logging.printInfo("Constructing Call Graph")
     val startTimeNano = System.nanoTime()
     val startTimeMs = System.currentTimeMillis()
     // This initialization includes converting SWIRL to SPDS form
-    val cgs = CallGraphUtils.initializeCallGraph(moduleGroup, options)
+    CallGraphUtils.initializeCallGraph(moduleGroup, methods, cg, cgs, options)
     cgs.initializationTimeMS = (System.currentTimeMillis() - startTimeMs).toInt
-    buildSpecificCallGraph(cgs)
+    buildSpecificCallGraph()
     CallGraphUtils.pruneEntryPoints(cgs)
     cgs.totalCGConstructionTimeMS = (System.currentTimeMillis() - startTimeMs).toInt
     cgs.entryPoints = cgs.cg.getEntryPoints.size()
@@ -41,7 +49,7 @@ abstract class CallGraphConstructor(val moduleGroup: ModuleGroup, val options: C
     cgs
   }
 
-  def buildSpecificCallGraph(cg: CallGraphStats): Unit
+  def buildSpecificCallGraph(): Unit
 }
 
 object CallGraphConstructor {

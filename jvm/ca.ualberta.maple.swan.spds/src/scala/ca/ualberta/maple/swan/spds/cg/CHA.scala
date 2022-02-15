@@ -43,10 +43,9 @@ class CHA(mg: ModuleGroup, pas: PointerAnalysisStyle.Style, options: Options) ex
   }
 
   // TODO: Pointer analysis integration
-  override def buildSpecificCallGraph(cgs: CallGraphStats): Unit = {
+  override def buildSpecificCallGraph(): Unit = {
     var chaEdges: Int = 0
     val startTimeMs = System.currentTimeMillis()
-    val methods = cgs.cg.methods
     methods.foreach(x => {
       val m = x._2
       m.getCFG.blocks.foreach(b => {
