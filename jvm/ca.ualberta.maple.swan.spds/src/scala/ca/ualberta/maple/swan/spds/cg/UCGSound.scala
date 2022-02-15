@@ -25,6 +25,7 @@ import boomerang.{BackwardQuery, Boomerang, DefaultBoomerangOptions, ForwardQuer
 import ca.ualberta.maple.swan.ir.{ModuleGroup, Operator, SymbolTableEntry}
 import ca.ualberta.maple.swan.spds.Stats.{CallGraphStats, SpecificCallGraphStats}
 import ca.ualberta.maple.swan.spds.cg.CallGraphBuilder.PointerAnalysisStyle
+import ca.ualberta.maple.swan.spds.cg.CallGraphConstructor.Options
 import ca.ualberta.maple.swan.spds.cg.CallGraphUtils.addCGEdge
 import ca.ualberta.maple.swan.spds.cg.UCGSound.UCGSoundStats
 import ca.ualberta.maple.swan.spds.cg.pa.{MatrixUnionFind, PointerAnalysis, UnionFind}
@@ -46,7 +47,8 @@ import scala.collection.{immutable, mutable}
  * The algorithm ... distribute/monotonic/order-indendepent?
  *
  */
-class UCGSound(mg: ModuleGroup, pas: PointerAnalysisStyle.Style, val invalidations: Boolean) extends CallGraphConstructor(mg) {
+class UCGSound(mg: ModuleGroup, pas: PointerAnalysisStyle.Style,
+               val invalidations: Boolean,options: Options) extends CallGraphConstructor(mg, options) {
 
   type DDGTypeSet = DDGBitSet
   type SPDSResults = util.Map[ForwardQuery, AbstractBoomerangResults.Context]
@@ -123,7 +125,6 @@ class UCGSound(mg: ModuleGroup, pas: PointerAnalysisStyle.Style, val invalidatio
               val query = BackwardQuery.make(new ControlFlowGraph.Edge(pred, stmt), ref)
               val solver = new Boomerang(cgs.cg, DataFlowScope.INCLUDE_ALL, new DefaultBoomerangOptions)
               val backwardQueryResults = solver.solve(query)
-              stats.totalQueries += 1
               val prevAllocSites = this.cacheGet(pred, stmt, ref)
               val allocSites = backwardQueryResults.getAllocationSites
               if (prevAllocSites.nonEmpty && !prevAllocSites.get.equals(allocSites)) {
@@ -154,7 +155,6 @@ class UCGSound(mg: ModuleGroup, pas: PointerAnalysisStyle.Style, val invalidatio
           new SQueryCache[UFFResults](cgs, stats) {
             override def query(pred: Statement, stmt: ApplyFunctionRef, ref: Val): UFFResults = {
               val results = uf.query(stmt.getFunctionRef.asInstanceOf[SWANVal])
-              stats.totalQueries += 1
               val prevAllocSites = this.cacheGet(pred, stmt, ref)
               val allocSites = results.filter(v => v.isNewExpr)
               if (prevAllocSites.nonEmpty && !prevAllocSites.get.equals(allocSites)) {
@@ -514,6 +514,14 @@ object UCGSound {
     var recursiveInvalidations: Int = 0
     var callSitesInvalidated: Int = 0
     var updatedCallSites: Int = 0
+    var averageQueryTimeMs: Long = 0
+    private var totalQueryTime: Long = 0
+
+    def addQueryStat(time: Long): Unit = {
+      totalQueryTime += time
+      totalQueries += 1
+      averageQueryTimeMs = totalQueryTime / totalQueries
+    }
 
     override def toString: String = {
       val sb = new StringBuilder()
@@ -525,6 +533,7 @@ object UCGSound {
       sb.append(s"  Recursive Invalidations: $recursiveInvalidations\n")
       sb.append(s"  Call Sites Invalidated: $callSitesInvalidated\n")
       sb.append(s"  Updated Call Sites: $updatedCallSites\n")
+      sb.append(s"  Average Query Time (ms): $averageQueryTimeMs\n")
       sb.toString()
     }
 
@@ -536,6 +545,7 @@ object UCGSound {
       u("ucg_fruitless_queries") = fruitlessQueries
       u("recursive_invalidations") = recursiveInvalidations
       u("call_sites_invalidated") = callSitesInvalidated
+      u("average_query_time_ms") = averageQueryTimeMs.toInt
       u
     }
   }
@@ -575,7 +585,9 @@ abstract class SQueryCache[T](cgs: CallGraphStats, stats: UCGSoundStats) {
     cacheGet(pred, stmt, ref) match {
       case Some(allocSites) => allocSites
       case None =>
+        val startTime = System.currentTimeMillis()
         val allocSites = query(pred, stmt, ref)
+        stats.addQueryStat(System.currentTimeMillis() - startTime)
         cacheUpdate(pred,stmt,ref, allocSites)
         allocSites
     }

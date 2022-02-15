@@ -23,13 +23,14 @@ import boomerang.scene.Method
 import ca.ualberta.maple.swan.ir.ModuleGroup
 import ca.ualberta.maple.swan.spds.Stats.{CallGraphStats, SpecificCallGraphStats}
 import ca.ualberta.maple.swan.spds.cg.CallGraphBuilder.PointerAnalysisStyle
+import ca.ualberta.maple.swan.spds.cg.CallGraphConstructor.Options
 import ca.ualberta.maple.swan.spds.cg.pa.PointerAnalysis
 import ca.ualberta.maple.swan.spds.structures.SWANMethod
 import ujson.Value
 
 import scala.collection.mutable
 
-class ORTA(mg: ModuleGroup, pas: PointerAnalysisStyle.Style) extends CallGraphConstructor(mg) {
+class ORTA(mg: ModuleGroup, pas: PointerAnalysisStyle.Style, options: Options) extends CallGraphConstructor(mg, options) {
 
   val pa: Option[PointerAnalysis] = {
     pas match {
@@ -47,7 +48,7 @@ class ORTA(mg: ModuleGroup, pas: PointerAnalysisStyle.Style) extends CallGraphCo
   override def buildSpecificCallGraph(cgs: CallGraphStats): Unit = {
 
     // Run CHA
-    new CHA(moduleGroup, pas).buildSpecificCallGraph(cgs)
+    new CHA(moduleGroup, pas, options).buildSpecificCallGraph(cgs)
 
     var ortaEdges: Int = 0
     val startTimeMs = System.currentTimeMillis()

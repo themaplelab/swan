@@ -23,13 +23,14 @@ import boomerang.scene.ControlFlowGraph
 import ca.ualberta.maple.swan.ir.{ModuleGroup, Operator, SymbolTableEntry}
 import ca.ualberta.maple.swan.spds.Stats.{CallGraphStats, SpecificCallGraphStats}
 import ca.ualberta.maple.swan.spds.cg.CallGraphBuilder.PointerAnalysisStyle
+import ca.ualberta.maple.swan.spds.cg.CallGraphConstructor.Options
 import ca.ualberta.maple.swan.spds.cg.pa.PointerAnalysis
 import ca.ualberta.maple.swan.spds.structures.SWANStatement
 import ujson.Value
 
 import scala.collection.mutable
 
-class PRTA(mg: ModuleGroup, pas: PointerAnalysisStyle.Style) extends CallGraphConstructor(mg) {
+class PRTA(mg: ModuleGroup, pas: PointerAnalysisStyle.Style, options: Options) extends CallGraphConstructor(mg, options) {
 
   val pa: Option[PointerAnalysis] = {
     pas match {

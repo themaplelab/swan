@@ -23,14 +23,14 @@ import ca.ualberta.maple.swan.ir.ModuleGroup
 import ca.ualberta.maple.swan.spds.Stats.CallGraphStats
 import ca.ualberta.maple.swan.utils.Logging
 
-abstract class CallGraphConstructor(val moduleGroup: ModuleGroup) {
+abstract class CallGraphConstructor(val moduleGroup: ModuleGroup, val options: CallGraphConstructor.Options) {
 
   def buildCallGraph(): CallGraphStats = {
     Logging.printInfo("Constructing Call Graph")
     val startTimeNano = System.nanoTime()
     val startTimeMs = System.currentTimeMillis()
     // This initialization includes converting SWIRL to SPDS form
-    val cgs = CallGraphUtils.initializeCallGraph(moduleGroup)
+    val cgs = CallGraphUtils.initializeCallGraph(moduleGroup, options)
     cgs.initializationTimeMS = (System.currentTimeMillis() - startTimeMs).toInt
     buildSpecificCallGraph(cgs)
     CallGraphUtils.pruneEntryPoints(cgs)
@@ -42,4 +42,10 @@ abstract class CallGraphConstructor(val moduleGroup: ModuleGroup) {
   }
 
   def buildSpecificCallGraph(cg: CallGraphStats): Unit
+}
+
+object CallGraphConstructor {
+  class Options(val analyzeLibraries: Boolean = false)
+
+  def defaultOptions: Options = new Options()
 }

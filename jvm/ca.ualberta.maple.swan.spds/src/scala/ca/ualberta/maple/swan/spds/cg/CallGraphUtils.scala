@@ -75,11 +75,12 @@ object CallGraphUtils {
     outOf.size
   }
 
-  def isUninteresting(m: SWANMethod): Boolean = {
+  def isUninteresting(m: SWANMethod, options: CallGraphConstructor.Options): Boolean = {
     val name = m.getName
     name.endsWith(".deinit") ||
-    name.endsWith(".modify") ||
-    name.endsWith(".__deallocating_deinit")
+      name.endsWith(".modify") ||
+      name.endsWith(".__deallocating_deinit") ||
+      (!options.analyzeLibraries && m.delegate.isLibrary)
   }
 
   def isClosureRelated(m: SWANMethod): Boolean = {
@@ -98,7 +99,7 @@ object CallGraphUtils {
     })
   }
 
-  def initializeCallGraph(moduleGroup: ModuleGroup): CallGraphStats = {
+  def initializeCallGraph(moduleGroup: ModuleGroup, options: CallGraphConstructor.Options): CallGraphStats = {
 
     val methods = new mutable.HashMap[String, SWANMethod]()
     val cg = new SWANCallGraph(moduleGroup, methods)
@@ -107,7 +108,7 @@ object CallGraphUtils {
     moduleGroup.functions.foreach(f => {
       val m = new SWANMethod(f, moduleGroup)
       methods.put(f.name, m)
-      if (!isUninteresting(m) && !isClosureRelated(m)) {
+      if (!isUninteresting(m, options) && !isClosureRelated(m)) {
         cg.addEntryPoint(m)
         cgs.entryPoints += 1
       }

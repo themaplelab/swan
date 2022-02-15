@@ -90,7 +90,7 @@ class Function(val attribute: Option[FunctionAttribute], var name: String, val t
 class CanFunction(var attribute: Option[FunctionAttribute], val name: String, val tpe: Type,
                   val arguments: ArrayBuffer[Argument], val blocks: ArrayBuffer[CanBlock],
                   val refTable: RefTable, val symbolTable: SymbolTable,
-                  var cfg: Graph[CanBlock, DefaultEdge]) extends Serializable {
+                  var cfg: Graph[CanBlock, DefaultEdge], val isLibrary: Boolean) extends Serializable {
   def getSymbol(name: String): Symbol = {
     symbolTable(name) match {
       case SymbolTableEntry.operator(symbol, _) => symbol

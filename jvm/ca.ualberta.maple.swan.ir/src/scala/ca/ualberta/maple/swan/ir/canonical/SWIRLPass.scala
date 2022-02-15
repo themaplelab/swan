@@ -36,6 +36,7 @@ class SWIRLPass {
   /** Convert a raw module to a canonical module. */
   def runPasses(module: Module): CanModule = {
     Logging.printInfo("Running SWIRL canonical passes on " + module)
+    val isLibrary = !module.functions.exists(_.name.startsWith("main_"))
     val startTime = System.nanoTime()
     resolveAliases(module)
     val functions = new ArrayBuffer[CanFunction]()
@@ -45,7 +46,7 @@ class SWIRLPass {
       val blocks = convertToCanonical(f, module)
       val cfg = generateCFG(blocks)
       val canFunction = new CanFunction(f.attribute, f.name, f.tpe, args, blocks, f.refTable,
-        new SymbolTable(), cfg)
+        new SymbolTable(), cfg, isLibrary)
       generateSymbolTable(canFunction)
       removeThunkApplication(canFunction)
       // Analysis specific mutations
@@ -624,6 +625,7 @@ class SWIRLPass {
     })
     // Delete dead blocks? Does this even ever happen?
     // blocks.filterInPlace(b => !graph.edgesOf(b).isEmpty)
+
     graph
   }
 }

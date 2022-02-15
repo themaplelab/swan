@@ -50,7 +50,7 @@ object TestDriver {
     }
   }
 
-  def getModelModule(): CanModule = {
+  def getModelModule: CanModule = {
     val in = this.getClass.getClassLoader.getResourceAsStream("models.swirl")
     val modelsContent = IOUtils.toString(in, StandardCharsets.UTF_8)
     val swirlModule = new SWIRLParser(modelsContent, model = true).parseModule()
@@ -75,7 +75,7 @@ object TestDriver {
     }
     val modules = ArrayBuffer.empty[CanModule]
     modules.append(canSwirlModule)
-    modules.append(getModelModule())
+    modules.append(getModelModule)
     val group = ModuleGrouper.group(modules)
     group
   }

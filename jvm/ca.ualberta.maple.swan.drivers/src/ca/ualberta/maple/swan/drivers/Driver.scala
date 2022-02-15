@@ -27,7 +27,7 @@ import ca.ualberta.maple.swan.parser.{SILModule, SILParser}
 import ca.ualberta.maple.swan.spds.Stats.{AllStats, GeneralStats}
 import ca.ualberta.maple.swan.spds.analysis.taint._
 import ca.ualberta.maple.swan.spds.analysis.typestate.{TypeStateAnalysis, TypeStateResults}
-import ca.ualberta.maple.swan.spds.cg.{CallGraphBuilder, CallGraphUtils}
+import ca.ualberta.maple.swan.spds.cg.{CallGraphBuilder, CallGraphConstructor, CallGraphUtils}
 import ca.ualberta.maple.swan.utils.Logging
 import org.apache.commons.io.{FileExistsException, FileUtils, IOUtils}
 import picocli.CommandLine
@@ -58,6 +58,7 @@ object Driver {
     var taintAnalysisSpec: scala.Option[File] = None
     var typeStateAnalysisSpec: scala.Option[File] = None
     var pathTracking = false
+    var analyzeLibraries = false
     var silModuleCB: SILModule => Unit = _
     var rawSwirlModuleCB: Module => Unit = _
     var canSwirlModuleCB: CanModule => Unit = _
@@ -109,6 +110,9 @@ object Driver {
     }
     def pathTracking(v: Boolean): Options = {
       this.pathTracking = v; this
+    }
+    def analyzeLibraries(v: Boolean): Options = {
+      this.analyzeLibraries = v; this
     }
     def addSILCallBack(cb: SILModule => Unit): Options = {
       silModuleCB = cb; this
@@ -197,6 +201,10 @@ class Driver extends Runnable {
     description = Array("Invalidate cache."))
   private val invalidateCache = new Array[Boolean](0)
 
+  @Option(names = Array("-l", "--analyze-libraries"),
+    description = Array("Analyze libraries (treat as entry points)."))
+  private val analyzeLibraries = new Array[Boolean](0)
+
   @Option(names = Array("-f", "--force-cache-read"),
     description = Array("Force reading the cache, regardless of changed files."))
   private val forceRead = new Array[Boolean](0)
@@ -225,6 +233,7 @@ class Driver extends Runnable {
       .taintAnalysisSpec(taintAnalysisSpec)
       .typeStateAnalysisSpec(typeStateAnalysisSpec)
       .pathTracking(pathTracking.nonEmpty)
+      .analyzeLibraries(analyzeLibraries.nonEmpty)
     runActual(options, inputFile)
   }
 
@@ -340,7 +349,9 @@ class Driver extends Runnable {
     }
     val allStats = new AllStats(generalStats, None)
     if (options.constructCallGraph || options.taintAnalysisSpec.nonEmpty || options.typeStateAnalysisSpec.nonEmpty) {
-      val cgResults = CallGraphBuilder.createCallGraph(group, options.callGraphAlgorithm, scala.Option(options.pointerAnalysisAlgorithm))
+      val cgResults = CallGraphBuilder.createCallGraph(
+        group,options.callGraphAlgorithm, scala.Option(options.pointerAnalysisAlgorithm),
+        new CallGraphConstructor.Options(options.analyzeLibraries))
       allStats.cgs = Some(cgResults)
       val cg = cgResults.cg
       // System.out.println(cg.toDot)

@@ -21,42 +21,48 @@ package ca.ualberta.maple.swan.spds.cg
 
 import ca.ualberta.maple.swan.ir.ModuleGroup
 import ca.ualberta.maple.swan.spds.Stats.CallGraphStats
-import ca.ualberta.maple.swan.spds.cg.CallGraphBuilder.{CallGraphStyle, PointerAnalysisStyle}
 
 object CallGraphBuilder {
 
-  def createCallGraph(moduleGroup: ModuleGroup, cgStyle: CallGraphStyle.Style, paStyle: Option[PointerAnalysisStyle.Style]): CallGraphStats = {
+  def createCallGraph(moduleGroup: ModuleGroup,
+                      cgStyle: CallGraphStyle.Style,
+                      paStyle: Option[PointerAnalysisStyle.Style],
+                      options: CallGraphConstructor.Options): CallGraphStats = {
     val cgBuilder = {
       cgStyle match {
         case CallGraphStyle.CHA => {
           new CHA(moduleGroup, paStyle match {
             case Some(value) => value
             case None => PointerAnalysisStyle.None
-          })
+          }, options)
         }
         case CallGraphStyle.PRTA => new PRTA(moduleGroup, paStyle match {
           case Some(value) => value
           case None => PointerAnalysisStyle.None
-        })
+        }, options)
         case CallGraphStyle.UCG => new UCGSound(moduleGroup, paStyle match {
           case Some(value) => value
           case None => PointerAnalysisStyle.SPDS
-        }, false)
+        }, false, options)
         case CallGraphStyle.UCGSound => new UCGSound(moduleGroup, paStyle match {
           case Some(value) => value
           case None => PointerAnalysisStyle.SPDS
-        }, true)
+        }, true, options)
         case CallGraphStyle.SRTA => new SRTA(moduleGroup, paStyle match {
           case Some(value) => value
           case None => PointerAnalysisStyle.None
-        })
+        }, options)
       }
     }
     cgBuilder.buildCallGraph()
   }
 
+  def createCallGraph(moduleGroup: ModuleGroup, cgStyle: CallGraphStyle.Style, options: CallGraphConstructor.Options): CallGraphStats = {
+    createCallGraph(moduleGroup, cgStyle, None, options)
+  }
+
   def createCallGraph(moduleGroup: ModuleGroup, cgStyle: CallGraphStyle.Style): CallGraphStats = {
-    createCallGraph(moduleGroup, cgStyle, None)
+    createCallGraph(moduleGroup, cgStyle, None, CallGraphConstructor.defaultOptions)
   }
 
   object CallGraphStyle extends Enumeration {
