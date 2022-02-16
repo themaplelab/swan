@@ -60,6 +60,8 @@ class UCGSound(mg: ModuleGroup, pas: PointerAnalysisStyle.Style,
   private val seen: mutable.HashMap[SWANBlock, DDGTypeSet] = new mutable.HashMap[SWANBlock, DDGTypeSet]
   /** The cached outsets of blocks (for later comparison) */
   private val outSets: mutable.HashMap[SWANBlock, DDGTypeSet] = new mutable.HashMap[SWANBlock, DDGTypeSet]
+  /** The cached outsets of methods */
+  private val methodOutSets: mutable.HashMap[SWANMethod, DDGTypeSet] = new mutable.HashMap[SWANMethod, DDGTypeSet]
   /** Mapping of methods to bitsets, which are aggregates of all callsites that call the method */
   private val interProcInSets: mutable.HashMap[SWANMethod, DDGTypeSet] = new mutable.HashMap[SWANMethod, DDGTypeSet]
   /** Mapping of methods to their return sites (set of blocks) */
@@ -411,6 +413,16 @@ class UCGSound(mg: ModuleGroup, pas: PointerAnalysisStyle.Style,
         // If the block is an exit block, then we also need to add any return
         // site blocks as successors.
         if (c.isExitBlock) {
+          var methodOutSetChanged = false
+          // update method outset
+          methodOutSets.get(c.method) match {
+            case Some(oldMethodOutset) =>
+              methodOutSets.update(c.method, oldMethodOutset.union(b))
+            case None =>
+              methodOutSets.update(c.method, b)
+          }
+
+          // TODO check if detecting if method outset has changed to skip this can save some cycles
           returnSites.get(c.method) match {
             case Some(succs) => succs.foreach(succ => w.add(succ))
             case None =>
@@ -496,12 +508,11 @@ class UCGSound(mg: ModuleGroup, pas: PointerAnalysisStyle.Style,
         w.addMethod(t)
     }
     // Union t's outset to the set of DDGTypeSet
-    val exitBlocks = t.getExitBlocks
-    // TODO: cache outsets per method
-    exitBlocks.foldLeft(b)((acc,nxt) => outSets.get(nxt) match {
-      case Some(outSet) => outSet.union(acc)
-      case None => acc
-    })
+    methodOutSets.get(t) match {
+      case Some(targetOutset) =>
+        targetOutset.union(b)
+      case None => b
+    }
   }
 
 }
