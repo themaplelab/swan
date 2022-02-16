@@ -22,7 +22,7 @@ package ca.ualberta.maple.swan.spds.cg
 import boomerang.results.AbstractBoomerangResults
 import boomerang.scene._
 import boomerang.{BackwardQuery, Boomerang, DefaultBoomerangOptions, ForwardQuery}
-import ca.ualberta.maple.swan.ir.{ModuleGroup, Operator, SymbolTableEntry}
+import ca.ualberta.maple.swan.ir.{DynamicDispatchGraph, ModuleGroup, Operator, SymbolTableEntry}
 import ca.ualberta.maple.swan.spds.Stats.{CallGraphStats, SpecificCallGraphStats}
 import ca.ualberta.maple.swan.spds.cg.CallGraphBuilder.PointerAnalysisStyle
 import ca.ualberta.maple.swan.spds.cg.CallGraphConstructor.Options
@@ -88,10 +88,12 @@ class UCGSound(mg: ModuleGroup, pas: PointerAnalysisStyle.Style,
 
     // This type set creation (map types to bits)
     moduleGroup.ddgs.foreach { case (_, ddg) =>
-      ddg.nodes.keySet.foreach{typ =>
-        val n = ddgTypes.size
-        ddgTypes.addOne(typ, n)
-        ddgTypesInv.insert(n, typ)
+      ddg.nodes.iterator.foreach{ case (typ, n) =>
+        if (n.isInstanceOf[DynamicDispatchGraph.Node.Class]) {
+          val n = ddgTypes.size
+          ddgTypes.addOne(typ, n)
+          ddgTypesInv.insert(n, typ)
+        }
       }
     }
 
@@ -199,7 +201,7 @@ class UCGSound(mg: ModuleGroup, pas: PointerAnalysisStyle.Style,
       val c = w.pop()
 
       // b is the current working bitset
-      var b: DDGTypeSet = new DDGTypeSet(immutable.BitSet.empty)
+      var b: DDGTypeSet = new DDGTypeSet()
 
       // Add the outsets of c's block predecessors to b.
       // We need the aggregate bitset from them.
@@ -232,7 +234,7 @@ class UCGSound(mg: ModuleGroup, pas: PointerAnalysisStyle.Style,
         stmt match {
           // If operator is an allocation, add alloc type to b.
           case SWANStatement.Allocation(_, inst, _) =>
-            b = b.union(inst.result.tpe.name)
+            b = b.add(inst.result.tpe.name)
 
           // If operator is a call site...
           case applyStmt: SWANStatement.ApplyFunctionRef => {

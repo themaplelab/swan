@@ -30,7 +30,7 @@ import ca.ualberta.maple.swan.utils.Logging
 
 import java.util
 import scala.collection.mutable.ArrayBuffer
-import scala.collection.{immutable, mutable}
+import scala.collection.{BitSetOps, immutable, mutable}
 
 // The Depth First Worklist is a stack, and not a queue
 // The Depth First Worklist will ignore blocks already in the worklist
@@ -99,7 +99,7 @@ final class DFWorklist {
 
 }
 
-final class DDGBitSet(val bitset: immutable.BitSet)(
+final class DDGBitSet(val bitset: immutable.BitSet = immutable.BitSet.empty)(
   private implicit val ddgTypes: mutable.HashMap[String,Int],
   private implicit val ddgTypesInv: mutable.ArrayBuffer[String]) {
 
@@ -111,10 +111,10 @@ final class DDGBitSet(val bitset: immutable.BitSet)(
   }
 
   def union(that: DDGBitSet): DDGBitSet = {
-    new DDGBitSet(bitset.union(that.bitset))
+    new DDGBitSet(bitset.concat(that.bitset))
   }
 
-  def union(elem: String): DDGBitSet = {
+  def add(elem: String): DDGBitSet = {
     ddgTypes.get(elem) match {
       case Some(n) => new DDGBitSet(bitset + n)
       case None => this
