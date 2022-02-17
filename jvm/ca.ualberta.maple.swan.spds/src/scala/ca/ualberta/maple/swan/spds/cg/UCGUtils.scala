@@ -34,12 +34,12 @@ import scala.collection.{BitSetOps, immutable, mutable}
 
 // The Depth First Worklist is a stack, and not a queue
 // The Depth First Worklist will ignore blocks already in the worklist
-final class DFWorklist {
+final class DFWorklist(val options: CallGraphConstructor.Options) {
   private val hs: mutable.HashSet[SWANBlock] = new mutable.HashSet[SWANBlock]()
   private val stack: mutable.Stack[SWANBlock] = new mutable.Stack[SWANBlock]()
 
   def add(b: SWANBlock): Unit = {
-    if (!hs.contains(b) && !CallGraphUtils.isClosureRelated(b.method)) {
+    if (!hs.contains(b) && !CallGraphUtils.isClosureRelated(b.method, options)) {
       hs.add(b)
       stack.push(b)
     }
@@ -51,7 +51,7 @@ final class DFWorklist {
       return
     }
 
-    if (m.getName.startsWith("closure ") || m.getName.startsWith("reabstraction thunk")) {
+    if (CallGraphUtils.isClosureRelated(m, options)) {
       return
     }
 

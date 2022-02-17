@@ -40,11 +40,11 @@ object CallGraphUtils {
    */
   def addCGEdge(from: SWANMethod, to: SWANMethod, stmt: SWANStatement.ApplyFunctionRef,
                 cfgEdge: ControlFlowGraph.Edge, cgs: CallGraphStats): Boolean = {
-    if (isClosureRelated(from)) {
+    if (isClosureRelated(from, cgs.options)) {
       // Closures are not supported
       throw new RuntimeException("Adding CG edge from closure, this is not supported")
     }
-    if (isClosureRelated(to)) {
+    if (isClosureRelated(to, cgs.options)) {
       // Closures are not supported
       return false
     }
@@ -91,10 +91,12 @@ object CallGraphUtils {
       (!options.analyzeLibraries && m.delegate.isLibrary)
   }
 
-  def isClosureRelated(m: SWANMethod): Boolean = {
-    val name = m.getName
-    name.startsWith("closure ") ||
-      name.startsWith("reabstraction thunk")
+  def isClosureRelated(m: SWANMethod, options: CallGraphConstructor.Options): Boolean = {
+    if (options.analyzeClosures) false else {
+      val name = m.getName
+      name.startsWith("closure ") ||
+        name.startsWith("reabstraction thunk")
+    }
   }
 
   def pruneEntryPoints(cgs: CallGraphStats): Unit = {
@@ -107,12 +109,12 @@ object CallGraphUtils {
     })
   }
 
-  def initializeCallGraph(moduleGroup: ModuleGroup, methods: mutable.HashMap[String, SWANMethod], cg: SWANCallGraph, cgs: CallGraphStats, options: CallGraphConstructor.Options): Unit = {
+  def initializeCallGraph(moduleGroup: ModuleGroup, methods: mutable.HashMap[String, SWANMethod], cg: SWANCallGraph, cgs: CallGraphStats): Unit = {
 
     moduleGroup.functions.foreach(f => {
       val m = new SWANMethod(f, moduleGroup)
       methods.put(f.name, m)
-      if (!isUninteresting(m, options) && !isClosureRelated(m)) {
+      if (!isUninteresting(m, cgs.options) && !isClosureRelated(m, cgs.options)) {
         cg.addEntryPoint(m)
         cgs.entryPoints += 1
       }

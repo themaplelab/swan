@@ -49,7 +49,7 @@ class SRTA(mg: ModuleGroup, pas: PointerAnalysisStyle.Style, options: Options) e
   val unreachableTypeTargets = mutable.MultiDict.empty[String, (ApplyFunctionRef, ControlFlowGraph.Edge, Set[String])]
   val reachableTypes = mutable.HashSet.empty[String]
   val reachableMethods = mutable.HashSet.empty[SWANMethod]
-  val blockWorklist = new DFWorklist
+  val blockWorklist = new DFWorklist(options)
   val newTypesWorklist = mutable.HashSet.empty[String]
   val newMethodsWorklist = mutable.HashSet.empty[SWANMethod]
 

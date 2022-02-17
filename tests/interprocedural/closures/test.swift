@@ -91,8 +91,8 @@ func test_closure_array_escaping() {
     closureArr.append(closure);
   }
   foo(closure: {
-    let sourced = source(); //!testing!source!fn //SWAN-34
-    sink(sunk: sourced); //!testing!sink!fn //SWAN-34
+    let sourced = source(); //!testing!source
+    sink(sunk: sourced); //!testing!sink
   });
   closureArr[0]();
 }

@@ -31,14 +31,14 @@ abstract class CallGraphConstructor(val moduleGroup: ModuleGroup, val options: C
   // These must not be used without calling CallGraphUtils.initializeCallGraph(moduleGroup, methods, cg, cgs)
   val methods = new mutable.HashMap[String, SWANMethod]()
   val cg = new SWANCallGraph(moduleGroup, methods)
-  val cgs = new CallGraphStats(cg)
+  val cgs = new CallGraphStats(cg, options)
 
   final def buildCallGraph(): CallGraphStats = {
     Logging.printInfo("Constructing Call Graph")
     val startTimeNano = System.nanoTime()
     val startTimeMs = System.currentTimeMillis()
     // This initialization includes converting SWIRL to SPDS form
-    CallGraphUtils.initializeCallGraph(moduleGroup, methods, cg, cgs, options)
+    CallGraphUtils.initializeCallGraph(moduleGroup, methods, cg, cgs)
     cgs.initializationTimeMS = (System.currentTimeMillis() - startTimeMs).toInt
     buildSpecificCallGraph()
     CallGraphUtils.pruneEntryPoints(cgs)
@@ -46,6 +46,9 @@ abstract class CallGraphConstructor(val moduleGroup: ModuleGroup, val options: C
     cgs.entryPoints = cgs.cg.getEntryPoints.size()
     cgs.totalEdges = cgs.cg.getEdges.size()
     Logging.printTimeStampSimple(0, startTimeNano, "constructing")
+    if (cgs.totalEdges == 0) {
+      Logging.printInfo("No call graph edges! Try analyzing libraries with `-l`.")
+    }
     cgs
   }
 
@@ -53,7 +56,8 @@ abstract class CallGraphConstructor(val moduleGroup: ModuleGroup, val options: C
 }
 
 object CallGraphConstructor {
-  class Options(val analyzeLibraries: Boolean = false)
+  class Options(val analyzeLibraries: Boolean,
+                val analyzeClosures: Boolean)
 
-  def defaultOptions: Options = new Options()
+  def defaultOptions: Options = new Options(false, false)
 }

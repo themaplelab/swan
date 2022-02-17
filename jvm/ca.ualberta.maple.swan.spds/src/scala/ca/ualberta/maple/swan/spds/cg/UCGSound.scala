@@ -48,14 +48,14 @@ import scala.collection.{immutable, mutable}
  *
  */
 class UCGSound(mg: ModuleGroup, pas: PointerAnalysisStyle.Style,
-               val invalidations: Boolean,options: Options) extends CallGraphConstructor(mg, options) {
+               val invalidations: Boolean, options: Options) extends CallGraphConstructor(mg, options) {
 
   type DDGTypeSet = DDGBitSet
   type SPDSResults = util.Map[ForwardQuery, AbstractBoomerangResults.Context]
   type UFFResults = mutable.HashSet[SWANVal]
 
   /** Worklist of blocks to be visited and processed (unique stack) */
-  private val w: DFWorklist = new DFWorklist
+  private val w: DFWorklist = new DFWorklist(options)
   /** Seen/visited blocks (for more efficient condition checking) */
   private val seen: mutable.HashMap[SWANBlock, DDGTypeSet] = new mutable.HashMap[SWANBlock, DDGTypeSet]
   /** The cached outsets of blocks (for later comparison) */

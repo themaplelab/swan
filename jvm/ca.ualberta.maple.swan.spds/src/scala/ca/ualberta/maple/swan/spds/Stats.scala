@@ -20,7 +20,7 @@
 package ca.ualberta.maple.swan.spds
 
 import ca.ualberta.maple.swan.ir.{CanModule, CanOperator, Module}
-import ca.ualberta.maple.swan.spds.cg.CallGraphUtils
+import ca.ualberta.maple.swan.spds.cg.{CallGraphConstructor, CallGraphUtils}
 import ca.ualberta.maple.swan.spds.structures.SWANCallGraph
 
 import java.io.{File, FileWriter}
@@ -33,7 +33,7 @@ object Stats {
     def toString: String
   }
 
-  class CallGraphStats(val cg: SWANCallGraph) {
+  class CallGraphStats(val cg: SWANCallGraph, val options: CallGraphConstructor.Options) {
     var totalCGConstructionTimeMS: Int = 0
     var initializationTimeMS: Int = 0
     def cgOnlyConstructionTimeMS: Int = totalCGConstructionTimeMS - initializationTimeMS

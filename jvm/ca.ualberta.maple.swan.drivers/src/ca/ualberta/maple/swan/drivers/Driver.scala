@@ -59,6 +59,9 @@ object Driver {
     var typeStateAnalysisSpec: scala.Option[File] = None
     var pathTracking = false
     var analyzeLibraries = false
+    var analyzeClosures = false
+    var printToProbe = false
+    var printToDot = false
     var silModuleCB: SILModule => Unit = _
     var rawSwirlModuleCB: Module => Unit = _
     var canSwirlModuleCB: CanModule => Unit = _
@@ -114,6 +117,15 @@ object Driver {
     }
     def analyzeLibraries(v: Boolean): Options = {
       this.analyzeLibraries = v; this
+    }
+    def analyzeClosures(v: Boolean): Options = {
+      this.analyzeClosures = v; this
+    }
+    def printToProbe(v: Boolean): Options = {
+      this.printToProbe = v; this
+    }
+    def printToDot(v: Boolean): Options = {
+      this.printToDot = v; this
     }
     def addSILCallBack(cb: SILModule => Unit): Options = {
       silModuleCB = cb; this
@@ -206,6 +218,18 @@ class Driver extends Runnable {
     description = Array("Analyze libraries (treat as entry points)."))
   private val analyzeLibraries = new Array[Boolean](0)
 
+  @Option(names = Array("-u", "--analyze-closures"),
+    description = Array("Analyze closures (limited support)."))
+  private val analyzeClosures = new Array[Boolean](0)
+
+  @Option(names = Array("-r", "--probe"),
+    description = Array("Print probe CG to cg.txt."))
+  private val printProbe = new Array[Boolean](0)
+
+  @Option(names = Array("-o", "--dot"),
+    description = Array("Print dot CG to dot.txt."))
+  private val printDot = new Array[Boolean](0)
+
   @Option(names = Array("-f", "--force-cache-read"),
     description = Array("Force reading the cache, regardless of changed files."))
   private val forceRead = new Array[Boolean](0)
@@ -235,6 +259,9 @@ class Driver extends Runnable {
       .typeStateAnalysisSpec(typeStateAnalysisSpec)
       .pathTracking(pathTracking.nonEmpty)
       .analyzeLibraries(analyzeLibraries.nonEmpty)
+      .analyzeClosures(analyzeClosures.nonEmpty)
+      .printToProbe(printProbe.nonEmpty)
+      .printToDot(printDot.nonEmpty)
     runActual(options, inputFile)
   }
 
@@ -352,11 +379,20 @@ class Driver extends Runnable {
     if (options.constructCallGraph || options.taintAnalysisSpec.nonEmpty || options.typeStateAnalysisSpec.nonEmpty) {
       val cgResults = CallGraphBuilder.createCallGraph(
         group,options.callGraphAlgorithm, scala.Option(options.pointerAnalysisAlgorithm),
-        new CallGraphConstructor.Options(options.analyzeLibraries))
+        new CallGraphConstructor.Options(options.analyzeLibraries, options.analyzeClosures))
       allStats.cgs = Some(cgResults)
       val cg = cgResults.cg
-      // System.out.println(cg.toDot)
-      CallGraphUtils.writeToProbe(cg, Paths.get(swanDir.getPath, "cg.txt").toFile)
+      if (options.printToDot) {
+        val fw = new FileWriter(Paths.get(swanDir.getPath, "dot.txt").toFile)
+        try {
+          fw.write(cg.toDot)
+        } finally {
+          fw.close()
+        }
+      }
+      if (options.printToProbe) {
+        CallGraphUtils.writeToProbe(cg, Paths.get(swanDir.getPath, "cg.txt").toFile)
+      }
       if (options.debug) {
         writeFile(cgResults.finalModuleGroup, debugDir, "grouped-cg", new SWIRLPrinterOptions().cgDebugInfo(cgResults.debugInfo))
         if (cgResults.dynamicModels.nonEmpty ) {
