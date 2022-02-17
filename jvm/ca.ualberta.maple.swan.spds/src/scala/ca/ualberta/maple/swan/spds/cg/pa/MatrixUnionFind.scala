@@ -28,8 +28,7 @@ import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
 
 // TODO: Track lookup length
-// TODO: Fields are broken likely because they are not updated during unions
-//       when rep becomes dead
+// TODO: itv lookup takes long, just use Int instead of SWANVal where possible
 class MatrixUnionFind(callGraph: SWANCallGraph) {
 
   class Entry(val index: Int,
@@ -164,7 +163,8 @@ class MatrixUnionFind(callGraph: SWANCallGraph) {
 
   private def find(x: SWANVal): Entry = {
     val entry = m(x)
-    if (entry.set != null && entry.set.isEmpty) {
+    // isEmpty is slow, adding each time should be fine
+    if (entry.set != null /*&& entry.set.isEmpty*/ ) {
       entry.set.add(entry.index)
     }
     var rep = m(itv(entry.rep))
