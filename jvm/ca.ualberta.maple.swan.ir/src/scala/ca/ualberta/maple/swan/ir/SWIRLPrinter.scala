@@ -33,7 +33,7 @@ class SWIRLPrinterOptions {
 
   // only for canonical (meant for SPDS debugging)
   var printLineNumber = false
-  var cgDebugInfo = new mutable.HashMap[CanOperator, mutable.HashSet[String]]
+  var cgDebugInfo: Option[SWIRLPrinterOptions.CallGraphDebugInfo] = None
 
   def printLocation(b: Boolean): SWIRLPrinterOptions = {
     printLocation = b
@@ -55,8 +55,8 @@ class SWIRLPrinterOptions {
     printLineNumber = b
     this
   }
-  def cgDebugInfo(info: mutable.HashMap[CanOperator, mutable.HashSet[String]]): SWIRLPrinterOptions = {
-    cgDebugInfo = info
+  def cgDebugInfo(info: SWIRLPrinterOptions.CallGraphDebugInfo): SWIRLPrinterOptions = {
+    cgDebugInfo = Some(info)
     this
   }
 }
@@ -133,7 +133,11 @@ class SWIRLPrinter extends Printer {
     }
     if (options.genLocationMap) locMap.put(function, (line, getCol))
     if (options.printLineNumber) printLineNumber()
+    if (options.cgDebugInfo.nonEmpty && options.cgDebugInfo.get.entries.contains(function)) {
+      print("// ENTRY"); printNewline()
+    }
     print("func ")
+    if (function.isLibrary) print("[lib] ")
     if (function.attribute.nonEmpty) print(function.attribute.get)
     print("@`")
     print(function.name)
@@ -259,11 +263,17 @@ class SWIRLPrinter extends Printer {
   }
 
   def print(operator: Operator): Unit = {
-    if (options.cgDebugInfo.nonEmpty && options.cgDebugInfo.contains(operator.asInstanceOf[CanOperator])) {
-      options.cgDebugInfo(operator.asInstanceOf[CanOperator]).foreach(f => {
-        print("// " + f)
-        printNewline()
-      })
+    if (options.cgDebugInfo.nonEmpty) {
+      val d = options.cgDebugInfo.get
+      d.edges.get(operator.asInstanceOf[CanOperator]) match {
+        case Some(value) => {
+          value.foreach(f => {
+            print("// " + f)
+            printNewline()
+          })
+        }
+        case None =>
+      }
     }
     operator match {
       case result: WithResult =>
@@ -506,7 +516,6 @@ class SWIRLPrinter extends Printer {
       case FunctionAttribute.stub => print("[stub] ")
       case FunctionAttribute.model => print("[model] ")
       case FunctionAttribute.modelOverride => print("[model_override] ")
-      case FunctionAttribute.entry => print("[entry] ")
       case FunctionAttribute.linked => print("[linked] ")
     }
   }
@@ -573,4 +582,13 @@ class SWIRLPrinter extends Printer {
     print(":")
     literal(pos.col)
   }
+}
+
+object SWIRLPrinterOptions {
+
+  class CallGraphDebugInfo() {
+    val edges = new mutable.HashMap[CanOperator, mutable.HashSet[String]]
+    val entries = new mutable.HashSet[CanFunction]
+  }
+
 }

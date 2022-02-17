@@ -379,7 +379,7 @@ class Driver extends Runnable {
     if (options.constructCallGraph || options.taintAnalysisSpec.nonEmpty || options.typeStateAnalysisSpec.nonEmpty) {
       val cgResults = CallGraphBuilder.createCallGraph(
         group,options.callGraphAlgorithm, scala.Option(options.pointerAnalysisAlgorithm),
-        new CallGraphConstructor.Options(options.analyzeLibraries, options.analyzeClosures))
+        new CallGraphConstructor.Options(options.analyzeLibraries, options.analyzeClosures, options.debug))
       allStats.cgs = Some(cgResults)
       val cg = cgResults.cg
       if (options.printToDot) {

@@ -57,7 +57,6 @@ object ModuleGrouper {
       } else {
         if (f.attribute.nonEmpty) {
           f.attribute.get match {
-            case FunctionAttribute.entry => entries.put(f.name, f)
             case FunctionAttribute.model => models.put(f.name, f)
             case FunctionAttribute.stub => stubs.put(f.name, f)
             case FunctionAttribute.linked => linked.put(f.name, f)
@@ -105,12 +104,6 @@ object ModuleGrouper {
                 f.attribute.get match {
                   case FunctionAttribute.stub => // ignore
                   case FunctionAttribute.model => add(f, FunctionAttribute.modelOverride)
-                  case _ => throwException("unexpected")
-                }
-              }
-              case FunctionAttribute.entry => {
-                f.attribute.get match {
-                  case FunctionAttribute.entry => if (forceAdd) add(f) else throwException("unexpected")
                   case _ => throwException("unexpected")
                 }
               }

@@ -42,6 +42,11 @@ abstract class CallGraphConstructor(val moduleGroup: ModuleGroup, val options: C
     cgs.initializationTimeMS = (System.currentTimeMillis() - startTimeMs).toInt
     buildSpecificCallGraph()
     CallGraphUtils.pruneEntryPoints(cgs)
+    if (options.addDebugInfo) {
+      cg.getEntryPoints.forEach(e => {
+        cgs.debugInfo.entries.add(e.asInstanceOf[SWANMethod].delegate)
+      })
+    }
     cgs.totalCGConstructionTimeMS = (System.currentTimeMillis() - startTimeMs).toInt
     cgs.entryPoints = cgs.cg.getEntryPoints.size()
     cgs.totalEdges = cgs.cg.getEdges.size()
@@ -57,7 +62,8 @@ abstract class CallGraphConstructor(val moduleGroup: ModuleGroup, val options: C
 
 object CallGraphConstructor {
   class Options(val analyzeLibraries: Boolean,
-                val analyzeClosures: Boolean)
+                val analyzeClosures: Boolean,
+                val addDebugInfo: Boolean)
 
-  def defaultOptions: Options = new Options(false, false)
+  def defaultOptions: Options = new Options(false, false, false)
 }

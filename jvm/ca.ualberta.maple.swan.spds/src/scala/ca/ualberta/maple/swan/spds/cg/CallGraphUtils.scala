@@ -57,10 +57,12 @@ object CallGraphUtils {
         case Instruction.canOperator(op) => op
         case _ => null // never
       }
-      if (!cgs.debugInfo.contains(op)) {
-        cgs.debugInfo.put(op, new mutable.HashSet[String]())
+      if (cgs.options.addDebugInfo) {
+        if (!cgs.debugInfo.edges.contains(op)) {
+          cgs.debugInfo.edges.put(op, new mutable.HashSet[String]())
+        }
+        cgs.debugInfo.edges(op).add(to.getName)
       }
-      cgs.debugInfo(op).add(to.getName)
     }
     if (b) cgs.totalEdges += 1
     b

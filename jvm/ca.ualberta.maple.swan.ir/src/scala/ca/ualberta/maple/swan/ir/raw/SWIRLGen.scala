@@ -216,7 +216,7 @@ class SWIRLGen {
       val fmRefTable = new RefTable()
       val fmInstantiatedTypes = new mutable.HashSet[String]
       val dummyCtx = Context.dummy(silModule, fmRefTable, fmInstantiatedTypes)
-      fmFunction = Some(new Function(Some(FunctionAttribute.entry), fakeMainFunctionName,
+      fmFunction = Some(new Function(None, fakeMainFunctionName,
         new Type("Int32"), new ArrayBuffer[Block](), fmRefTable))
       val blockRef = makeBlockRef("bb0", dummyCtx)
       val retRef = makeSymbolRef("ret", dummyCtx)

@@ -19,7 +19,7 @@
 
 package ca.ualberta.maple.swan.spds
 
-import ca.ualberta.maple.swan.ir.{CanModule, CanOperator, Module}
+import ca.ualberta.maple.swan.ir.{CanModule, CanOperator, Module, SWIRLPrinterOptions}
 import ca.ualberta.maple.swan.spds.cg.{CallGraphConstructor, CallGraphUtils}
 import ca.ualberta.maple.swan.spds.structures.SWANCallGraph
 
@@ -44,7 +44,7 @@ object Stats {
     def resolvedCallSites: Int = CallGraphUtils.resolvedCallSites(this)
     def nonTrivialCallSites: Int = totalCallSites - trivialCallSites
     var specificData: mutable.ArrayBuffer[SpecificCallGraphStats] = mutable.ArrayBuffer.empty
-    val debugInfo = new mutable.HashMap[CanOperator, mutable.HashSet[String]]()
+    val debugInfo = new SWIRLPrinterOptions.CallGraphDebugInfo()
     var finalModuleGroup: Object = cg.moduleGroup
     val dynamicModels: Option[(Module, CanModule)] = None
 
