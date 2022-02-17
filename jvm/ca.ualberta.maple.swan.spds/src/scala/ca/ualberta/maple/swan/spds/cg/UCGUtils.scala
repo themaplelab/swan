@@ -19,12 +19,18 @@
 
 package ca.ualberta.maple.swan.spds.cg
 
+import boomerang.results.AbstractBoomerangResults
+import boomerang.scene.{ControlFlowGraph, DataFlowScope, Val}
+import boomerang.{BackwardQuery, Boomerang, DefaultBoomerangOptions, ForwardQuery}
 import ca.ualberta.maple.swan.ir.FunctionAttribute
 import ca.ualberta.maple.swan.spds.structures.SWANControlFlowGraph.SWANBlock
-import ca.ualberta.maple.swan.spds.structures.SWANMethod
+import ca.ualberta.maple.swan.spds.structures.SWANStatement.ApplyFunctionRef
+import ca.ualberta.maple.swan.spds.structures.{SWANCallGraph, SWANMethod, SWANStatement}
+import ca.ualberta.maple.swan.utils.Logging
 
+import java.util
 import scala.collection.mutable.ArrayBuffer
-import scala.collection.{immutable, mutable}
+import scala.collection.{BitSetOps, immutable, mutable}
 
 // The Depth First Worklist is a stack, and not a queue
 // The Depth First Worklist will ignore blocks already in the worklist
@@ -93,24 +99,24 @@ final class DFWorklist {
 
 }
 
-final class DDGBitSet(val bitset: immutable.BitSet = immutable.BitSet.empty, val nonEmpty: Boolean = false)(
+final class DDGBitSet(val bitset: immutable.BitSet = immutable.BitSet.empty)(
   private implicit val ddgTypes: mutable.HashMap[String,Int],
   private implicit val ddgTypesInv: mutable.ArrayBuffer[String]) {
 
   def +(elem: String): DDGBitSet = {
     ddgTypes.get(elem) match {
-      case Some(n) => new DDGBitSet(bitset + n, true)
+      case Some(n) => new DDGBitSet(bitset + n)
       case None => this
     }
   }
 
   def union(that: DDGBitSet): DDGBitSet = {
-    new DDGBitSet(bitset.concat(that.bitset), nonEmpty && that.nonEmpty)
+    new DDGBitSet(bitset.concat(that.bitset))
   }
 
   def add(elem: String): DDGBitSet = {
     ddgTypes.get(elem) match {
-      case Some(n) => new DDGBitSet(bitset + n, true)
+      case Some(n) => new DDGBitSet(bitset + n)
       case None => this
     }
   }
@@ -126,20 +132,12 @@ final class DDGBitSet(val bitset: immutable.BitSet = immutable.BitSet.empty, val
     mutable.HashSet.from(bitset.map(n => ddgTypesInv(n)))
   }
 
-  def isEmpty: Boolean = {
-    !nonEmpty
+  def subsetOf(that: DDGBitSet): Boolean = {
+    bitset.subsetOf(that.bitset)
   }
 
-  def subsetOf(that: DDGBitSet): Boolean = {
-    if (nonEmpty && that.nonEmpty) {
-      bitset.subsetOf(that.bitset)
-    }
-    else if (nonEmpty) {
-      false
-    }
-    else {
-      true
-    }
+  def nonEmpty: Boolean = {
+    bitset.nonEmpty
   }
 
 }
