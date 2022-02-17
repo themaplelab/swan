@@ -31,6 +31,7 @@ import scala.collection.convert.ImplicitConversions.`set asScala`
 import scala.collection.{immutable, mutable}
 import scala.collection.mutable.ArrayBuffer
 import scala.jdk.CollectionConverters.CollectionHasAsScala
+import scala.jdk.CollectionConverters._
 import scala.reflect.ClassTag
 
 /** Creates a DDG from a SIL Module's witness and value tables. */
@@ -53,25 +54,22 @@ class DynamicDispatchGraph extends Serializable {
         case nOpt @ Some(n) if n.isInstanceOf[Node.Class] => nOpt
         case _ => None
       }})
-    val iterator = new BreadthFirstIterator(graph, startNode)
+    // iterator upto depth 2
+    val iterator: Iterator[Node] = Iterator(startNode) ++ graph.outgoingEdgesOf(startNode).iterator().asScala.map(e => graph.getEdgeTarget(e))
     var done = false
     while (iterator.hasNext && !done) {
       val cur = iterator.next()
-      if (iterator.getDepth(cur) < 2) {
-        cur match {
-          case Node.Method(s) => {
-            classNodes match {
-              case Some(classes) =>
-                if (classes.exists(cls => reachabilityCache.containsEdge(cur, cls))) {
-                  functions.append(s)
-                }
-              case None => functions.append(s)
-            }
+      cur match {
+        case Node.Method(s) => {
+          classNodes match {
+            case Some(classes) =>
+              if (classes.exists(cls => reachabilityCache.containsEdge(cur, cls))) {
+                functions.append(s)
+              }
+            case None => functions.append(s)
           }
-          case _ =>
         }
-      } else {
-        done = true
+        case _ =>
       }
     }
     functions.toArray
