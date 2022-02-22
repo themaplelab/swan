@@ -498,10 +498,16 @@ class UCGSound(mg: ModuleGroup, pas: PointerAnalysisStyle.Style,
     // Union t's outset to the set of DDGTypeSet
     val exitBlocks = t.getExitBlocks
     // TODO: cache outsets per method
-    exitBlocks.foldLeft(b)((acc,nxt) => outSets.get(nxt) match {
+    var exitUnion = b
+    exitBlocks.foreach{blk => outSets.get(blk) match {
+      case Some(outSet) => exitUnion = exitUnion.union(outSet)
+      case None =>
+    }}
+    /*exitBlocks.foldLeft(b)((acc,nxt) => outSets.get(nxt) match {
       case Some(outSet) => outSet.union(acc)
       case None => acc
-    })
+    })*/
+    exitUnion
   }
 
 }

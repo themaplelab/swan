@@ -27,7 +27,6 @@ import org.jgrapht.alg.TransitiveClosure
 import org.jgrapht.graph._
 import org.jgrapht.traverse.BreadthFirstIterator
 
-import scala.collection.convert.ImplicitConversions.`set asScala`
 import scala.collection.{immutable, mutable}
 import scala.collection.mutable.ArrayBuffer
 import scala.jdk.CollectionConverters.CollectionHasAsScala
@@ -43,21 +42,18 @@ class DynamicDispatchGraph extends Serializable {
   private val reachabilityCache: SimpleDirectedGraph[Node, DefaultEdge] = new SimpleDirectedGraph(classOf[DefaultEdge])
 
   /**
-   * Query the graph with an index. Optionally, specify RTA types.
+   * Query the graph with an index. Optionally, specify RTA types (Class Nodes).
    */
   def query(index: String, types: Option[mutable.HashSet[String]]): Array[String] = {
     if (!nodes.contains(index)) return Array.empty
     val functions = ArrayBuffer[String]()
     val startNode = nodes(index)
-    val classNodes: Option[mutable.HashSet[Node]] =
-      types.map(_.flatMap{s => nodes.get(s) match {
-        case nOpt @ Some(n) if n.isInstanceOf[Node.Class] => nOpt
-        case _ => None
-      }})
+    val classNodes: Option[mutable.HashSet[Node]] = {
+      types.map(_.flatMap(nodes.get))
+    }
     // iterator upto depth 2
     val iterator: Iterator[Node] = Iterator(startNode) ++ graph.outgoingEdgesOf(startNode).iterator().asScala.map(e => graph.getEdgeTarget(e))
-    var done = false
-    while (iterator.hasNext && !done) {
+    while (iterator.hasNext) {
       val cur = iterator.next()
       cur match {
         case Node.Method(s) => {
