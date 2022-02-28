@@ -32,14 +32,15 @@ import ca.ualberta.maple.swan.utils.Logging
 import fj.data.Java
 import org.jgrapht.Graph
 import org.jgrapht.graph.{DefaultDirectedGraph, DefaultEdge}
-import org.jgrapht.traverse.DepthFirstIterator
 import org.jgrapht.alg.connectivity.KosarajuStrongConnectivityInspector
+import org.jgrapht.graph.DirectedAcyclicGraph
 
 import scala.collection.mutable
 import scala.jdk.CollectionConverters._
 import ujson.Value
 
 import scala.collection.mutable.ArrayBuffer
+import ca.ualberta.maple.swan.ir.Constants
 
 class VTA(mg: ModuleGroup, pas: PointerAnalysisStyle.Style, options: Options) extends TrivialEdges(mg, options: Options) {
 
@@ -49,15 +50,16 @@ class VTA(mg: ModuleGroup, pas: PointerAnalysisStyle.Style, options: Options) ex
       throw new RuntimeException("Pointer Analysis must not be set for VTA call graph construction")
   }
 
-  val conservativeGraph = new CHA(mg,pas, options: Options)
-  //val conservativeGraph = new UCGSound(mg,PointerAnalysisStyle.SPDS,true)
+  private var conservativeGraph = new CHA(mg,pas, options: Options)
+  //private val conservativeGraph = new UCGSound(mg,PointerAnalysisStyle.SPDS,true, options)
   conservativeGraph.buildCallGraph()
+  val stats = new VTAStats()
 
   type valGraphNode = Either[SWANVal,SWANField]
   type reachingTypes = SWANVal
-  val reachingTypes = mutable.HashMap.empty[valGraphNode,reachingTypes]
+  private var reachingTypes = mutable.HashMap.empty[valGraphNode,reachingTypes]
 
-  val valueGraph: Graph[valGraphNode, DefaultEdge] = new DefaultDirectedGraph(classOf[DefaultEdge])
+  private var valueGraph: DefaultDirectedGraph[valGraphNode, DefaultEdge] = new DefaultDirectedGraph(classOf[DefaultEdge])
   def addValNodes(): Unit = {
     methods.foreach{ case (_,m) =>
       m.allValues.foreach{ case (_,v) =>
@@ -103,19 +105,27 @@ class VTA(mg: ModuleGroup, pas: PointerAnalysisStyle.Style, options: Options) ex
             reachingTypes.addOne(Left(s.getLeftOp.asInstanceOf[SWANVal]),s.inst)
           }
           case s: SWANStatement.DynamicFunctionRef => {
-            reachingTypes.addOne(Left(s.getLeftOp.asInstanceOf[SWANVal]),s.inst)
+            reachingTypes.addOne(Left(s.getLeftOp.asInstanceOf[SWANVal]),s.getRightOp.asInstanceOf[SWANVal])
           }
            */
           case s: SWANStatement.Assign => {
             addValFlow(from = s.getRightOp.asInstanceOf[SWANVal], to = s.getLeftOp.asInstanceOf[SWANVal])
           }
           case s: SWANStatement.FieldLoad => {
-            // x = y.z
+            // x = y.f
             val xVal = s.getLeftOp.asInstanceOf[SWANVal]
             val fieldLoad = s.getFieldLoad
-            // val yVal = fieldLoad.getX.asInstanceOf[SWANVal]
-            val z = fieldLoad.getY.asInstanceOf[SWANField]
-            addFieldLoadFlow(to = xVal, from = z)
+            val f = fieldLoad.getY.asInstanceOf[SWANField]
+            // don't discriminate pointerField
+            addFieldLoadFlow(to = xVal, from = f)
+            /*
+            if (f.name == Constants.pointerField) {
+              val yVal = fieldLoad.getX.asInstanceOf[SWANVal]
+              addValFlow(to = xVal, from = yVal)
+            }
+            else {
+              addFieldLoadFlow(to = xVal, from = f)
+            }*/
           }
           case s: SWANStatement.StaticFieldLoad => {
             // x = Static z
@@ -154,17 +164,26 @@ class VTA(mg: ModuleGroup, pas: PointerAnalysisStyle.Style, options: Options) ex
             }
           }
           case s: SWANStatement.ApplyFunctionRef => {
-            val iterator = conservativeGraph.cg.edgesOutOf(s).iterator()
-            while (iterator.hasNext) {
-              val target = iterator.next().tgt()
-              val args = s.getInvokeExpr.getArgs.iterator()
-              val params = target.getParameterLocals.iterator()
-              while (args.hasNext && params.hasNext) {
-                val arg = args.next().asInstanceOf[SWANVal]
-                val param = params.next().asInstanceOf[SWANVal]
-                stats.paramArgValues += 1
-                addValFlow(from = arg, to = param)
-              }
+            val ref = m.delegate.symbolTable(s.inst.functionRef.name)
+            ref match {
+              case SymbolTableEntry.operator(_, Operator.builtinRef(_, "#UIView.init!initializer.foreign")) =>
+                // %n = super.init(..., %i) ~~ %n = %i
+                val vi = s.getInvokeExpr.getArgs.asScala.last.asInstanceOf[SWANVal]
+                val vn = s.getLeftOp.asInstanceOf[SWANVal]
+                addValFlow(from = vi, to = vn)
+              case _ =>
+                val iterator = conservativeGraph.cg.edgesOutOf(s).iterator()
+                while (iterator.hasNext) {
+                  val target = iterator.next().tgt()
+                  val args = s.getInvokeExpr.getArgs.iterator()
+                  val params = target.getParameterLocals.iterator()
+                  while (args.hasNext && params.hasNext) {
+                    val arg = args.next().asInstanceOf[SWANVal]
+                    val param = params.next().asInstanceOf[SWANVal]
+                    stats.paramArgValues += 1
+                    addValFlow(from = arg, to = param)
+                  }
+                }
             }
           }
           case _ =>
@@ -173,9 +192,9 @@ class VTA(mg: ModuleGroup, pas: PointerAnalysisStyle.Style, options: Options) ex
     }}
   }
 
-  val scc: mutable.HashMap[valGraphNode,valGraphNode] = mutable.HashMap.empty[valGraphNode,valGraphNode]
-  val finalReachingTypes: mutable.MultiDict[valGraphNode, reachingTypes] = mutable.MultiDict.empty[valGraphNode,reachingTypes]
-  val finalDag: Graph[valGraphNode, DefaultEdge] = new DefaultDirectedGraph(classOf[DefaultEdge])
+  private val scc: mutable.HashMap[valGraphNode,valGraphNode] = mutable.HashMap.empty[valGraphNode,valGraphNode]
+  private var finalReachingTypes: mutable.MultiDict[valGraphNode, reachingTypes] = mutable.MultiDict.empty[valGraphNode,reachingTypes]
+  private var finalDag: DirectedAcyclicGraph[valGraphNode, DefaultEdge] = new DirectedAcyclicGraph(classOf[DefaultEdge])
 
   def vtaSCC(): Unit = {
     val kosaraju = new KosarajuStrongConnectivityInspector[valGraphNode, DefaultEdge](valueGraph)
@@ -200,13 +219,16 @@ class VTA(mg: ModuleGroup, pas: PointerAnalysisStyle.Style, options: Options) ex
       val edge = finalEdgeAdd.next()
       val src = scc(valueGraph.getEdgeSource(edge))
       val tgt = scc(valueGraph.getEdgeTarget(edge))
-      finalDag.addEdge(src, tgt)
+      if (src != tgt) {
+        finalDag.addEdge(src, tgt)
+      }
     }
   }
 
   def propagateReachingTypes(): Unit = {
-    val iterator = new DepthFirstIterator(finalDag).asScala
-    iterator.foreach{ node =>
+    //val vertices = finalDag.vertexSet().iterator().asScala //new DepthFirstIterator(finalDag).asScala
+    val vertices = finalDag.iterator().asScala // new TopologicalOrderIterator(finalDag).asScala
+    vertices.foreach{ node =>
       finalReachingTypes.get(node).foreach(typ =>
         finalDag.outgoingEdgesOf(node).iterator().asScala.foreach{ edge =>
           val target = finalDag.getEdgeTarget(edge)
@@ -217,16 +239,15 @@ class VTA(mg: ModuleGroup, pas: PointerAnalysisStyle.Style, options: Options) ex
   }
 
   def addDDGEdges(stmt: SWANStatement.ApplyFunctionRef, predEdge: ControlFlowGraph.Edge, index: String, instanTypes: mutable.HashSet[String]): Unit = {
-    //Logging.printInfo("DDG index: " + index)
     moduleGroup.ddgs.foreach{ case (_,ddg) =>
       ddg.query(index,Some(instanTypes)).foreach{ fn =>
         val tgt = methods(fn)
-        if (addCGEdge(stmt.m,tgt,stmt,predEdge,cgs)) vtaEdges += 1
+        if (addCGEdge(stmt.m,tgt,stmt,predEdge,cgs)) stats.ddgEdges += 1
       }
     }
   }
 
-  private def vtaRef(stmt: SWANStatement.ApplyFunctionRef, predEdge: ControlFlowGraph.Edge, instanTypes: mutable.HashSet[String]): Unit = {
+  private def vtaRef(stmt: SWANStatement.ApplyFunctionRef, predEdge: ControlFlowGraph.Edge): Unit = {
     stats.vtaRefs += 1
 
     //Logging.printInfo(stmt.toString)
@@ -234,7 +255,6 @@ class VTA(mg: ModuleGroup, pas: PointerAnalysisStyle.Style, options: Options) ex
     val ref: Val = stmt.getInvokeExpr.asInstanceOf[SWANInvokeExpr].getFunctionRef
     val swanRef: SWANVal = ref.asInstanceOf[SWANVal]
     val refComponent: valGraphNode = scc(Left(swanRef))
-    val m = stmt.m
     val types = finalReachingTypes.get(refComponent)
 
     if (types.isEmpty) stats.emptyVTATypes += 1
@@ -247,14 +267,16 @@ class VTA(mg: ModuleGroup, pas: PointerAnalysisStyle.Style, options: Options) ex
       case v@SWANVal.FunctionRef(delegate, ref, method, unbalanced) =>
         val target = methods(ref)
         //Logging.printInfo("Function Ref " + ref)
-        if (addCGEdge(from = stmt.m, to = target, stmt, predEdge, cgs)) vtaEdges += 1
+        if (addCGEdge(from = stmt.m, to = target, stmt, predEdge, cgs)) stats.ptEdges += 1
       case v@SWANVal.BuiltinFunctionRef(delegate, ref, method, unbalanced) =>
         val target = methods(ref)
         //Logging.printInfo("Builtin Ref " + ref)
-        if (addCGEdge(from = stmt.m, to = target, stmt, predEdge, cgs)) vtaEdges += 1
+        if (addCGEdge(from = stmt.m, to = target, stmt, predEdge, cgs)) stats.ptEdges += 1
       case v@SWANVal.DynamicFunctionRef(delegate, index, method, unbalanced) =>
         //Logging.printInfo("Dynamic index " + index)
-        addDDGEdges(stmt, predEdge, index, instanTypes)
+        val types = finalReachingTypes.get(Left(method.allValues(delegate.ref.name).asInstanceOf[SWANVal]))
+        val instantiatedTypes = mutable.HashSet.from(types.collect { case neww: SWANVal.NewExpr => neww.delegate.tpe.name })
+        addDDGEdges(stmt, predEdge, index, instantiatedTypes)
       case neww: SWANVal.NewExpr => // dealt with via instantiated types
         //Logging.printInfo("New Expr " + neww.delegate.tpe.name)
       case _: SWANVal.Simple | _: SWANVal.Constant => // ignore simple or constant
@@ -262,60 +284,69 @@ class VTA(mg: ModuleGroup, pas: PointerAnalysisStyle.Style, options: Options) ex
     }
   }
 
-  private def handleOperator(operator: Operator, stmt: SWANStatement.ApplyFunctionRef, predEdge: ControlFlowGraph.Edge, instantiatedTypes: mutable.HashSet[String]): Unit = {
+  private def handleOperator(operator: Operator, stmt: SWANStatement.ApplyFunctionRef, predEdge: ControlFlowGraph.Edge): Unit = {
     operator match {
-      case Operator.dynamicRef(_, _, index) => addDDGEdges(stmt, predEdge, index, instantiatedTypes)
+      case Operator.dynamicRef(_, ref, index) =>
+        val types = finalReachingTypes.get(Left(stmt.m.allValues(ref.name).asInstanceOf[SWANVal]))
+        val instantiatedTypes = mutable.HashSet.from(types.collect { case neww: SWANVal.NewExpr => neww.delegate.tpe.name })
+        addDDGEdges(stmt, predEdge, index, instantiatedTypes)
       case _: Operator.builtinRef | _: Operator.functionRef => // already done via trivial edges pass
       // The function ref must be being used in a more interesting
       // way (e.g., assignment).
-      case _ => vtaRef(stmt, predEdge, instantiatedTypes)
+      case _ => vtaRef(stmt, predEdge)
     }
   }
-
-  var vtaEdges: Int = 0
 
   private def buildCG(): Unit = {
     methods.foreach { case (_, m) =>
       m.applyFunctionRefs.foreach {
         case stmt@SWANStatement.ApplyFunctionRef(opDef, inst, _m) =>
           val predEdge = new ControlFlowGraph.Edge(m.getCFG.getPredsOf(stmt).iterator().next(), stmt)
-          val types = finalReachingTypes.get(Left(stmt.getFunctionRef.asInstanceOf[SWANVal]))
-          val instantiatedTypes = mutable.HashSet.from(types.collect { case neww: SWANVal.NewExpr => neww.delegate.tpe.name })
 
           m.delegate.symbolTable(inst.functionRef.name) match {
             // regular entry
             case SymbolTableEntry.operator(_, operator) =>
+              handleOperator(operator,stmt,predEdge)
             // Function ref has multiple symbol table entries (certainly from
             // non-SSA compliant basic block argument manipulation
             // from SWIRLPass). The function ref is a basic block argument.
             case SymbolTableEntry.multiple(_, operators) => operators.foreach{ operator =>
-              handleOperator(operator,stmt,predEdge,instantiatedTypes)
+              handleOperator(operator,stmt,predEdge)
             }
             // Function ref is an argument, which means it is inter-procedural,
             // so we need to use pointer analysis.
-            case _: SymbolTableEntry.argument => vtaRef(stmt, predEdge, instantiatedTypes)
+            case _: SymbolTableEntry.argument => vtaRef(stmt, predEdge)
           }
       }
     }
   }
 
-  val stats = new VTAStats()
-
   override def buildSpecificCallGraph(): Unit = {
     val startTimeMs = System.currentTimeMillis()
     addTrivialEdges()
+
     addValNodes()
     addLocalFlow()
+    cgs.specificData.addOne(conservativeGraph.cgs.specificData.last)
+    conservativeGraph = null
+
+    val sccStartTimeMs = System.currentTimeMillis()
     vtaSCC()
-    propagateReachingTypes()
-    buildCG()
-    stats.edges = vtaEdges
-    stats.time = (System.currentTimeMillis() - startTimeMs).toInt
+    stats.SCCTime = (System.currentTimeMillis() - sccStartTimeMs).toInt
     stats.reachingNodes = valueGraph.vertexSet().size()
     stats.reachingEdges = valueGraph.edgeSet().size()
+    reachingTypes = null
+    valueGraph = null
+
+    val propStartTimeMs = System.currentTimeMillis()
+    propagateReachingTypes()
+    stats.propagationTime = (System.currentTimeMillis() - propStartTimeMs).toInt
     stats.finalNodes = finalDag.vertexSet().size()
     stats.finalEdges = finalDag.edgeSet().size()
-    cgs.specificData.addOne(conservativeGraph.cgs.specificData.last)
+    finalDag = null
+
+    buildCG()
+    stats.time = (System.currentTimeMillis() - startTimeMs).toInt
     cgs.specificData.addOne(stats)
     /*
     valueGraph.edgeSet().iterator().asScala.foreach{e =>
@@ -330,8 +361,11 @@ class VTA(mg: ModuleGroup, pas: PointerAnalysisStyle.Style, options: Options) ex
 object VTA {
 
   class VTAStats() extends SpecificCallGraphStats {
-    var edges: Int = 0
+    var ptEdges: Int = 0
+    var ddgEdges: Int = 0
     var time: Int = 0
+    var SCCTime: Int = 0
+    var propagationTime: Int = 0
     var reachingNodes: Int = 0
     var assignEdges: Int = 0
     var reachingEdges: Int = 0
@@ -344,7 +378,7 @@ object VTA {
     var paramArgValues: Int = 0
     override def toJSON: Value = {
       val u = ujson.Obj()
-      u("vta_edges") = edges
+      u("vta_edges") = ptEdges
       u("vta_time") = time
       u("reaching_nodes") = reachingNodes
       u("reaching_edges") = reachingEdges
@@ -356,8 +390,11 @@ object VTA {
     override def toString: String = {
       val sb = new StringBuilder()
       sb.append(s"VTA\n")
-      sb.append(s"  Edges: $edges\n")
+      sb.append(s"  Edges: $ptEdges\n")
+      sb.append(s"  DDGEdges: $ddgEdges\n")
       sb.append(s"  Time (ms): $time\n")
+      sb.append(s"  SCC Time (ms): $SCCTime\n")
+      sb.append(s"  Propagation Time (ms): $propagationTime\n")
       sb.append(s"  Reaching Nodes: $reachingNodes\n")
       sb.append(s"  Final Nodes: $finalNodes\n")
       sb.append(s"  Reaching Edges: $reachingEdges\n")

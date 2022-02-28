@@ -1043,3 +1043,9 @@ bb0(%0: $`CLLocationManager`, %1: $`Double`):
   ret = new $`()`
   return ret
 }
+
+// -------------------- NSObject ----------------------------
+func @`#NSObject.init!initializer.foreign` : $`@owned NSObject` {
+bb0(%0 : $`NSObject`):
+  return %0
+}

@@ -284,6 +284,8 @@ class SWIRLPrinter extends Printer {
       case Operator.neww(result, allocType) => {
         print("new ")
         print(allocType)
+        print(", ")
+        print(result.tpe)
         return // don't print , $T
       }
       case Operator.assign(_, from, bbArg) => {

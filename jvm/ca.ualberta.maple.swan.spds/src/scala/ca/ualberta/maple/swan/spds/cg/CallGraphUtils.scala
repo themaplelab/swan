@@ -42,7 +42,8 @@ object CallGraphUtils {
                 cfgEdge: ControlFlowGraph.Edge, cgs: CallGraphStats): Boolean = {
     if (isClosureRelated(from, cgs.options)) {
       // Closures are not supported
-      throw new RuntimeException("Adding CG edge from closure, this is not supported")
+      //throw new RuntimeException("Adding CG edge from closure, this is not supported")
+      return false
     }
     if (isClosureRelated(to, cgs.options)) {
       // Closures are not supported
