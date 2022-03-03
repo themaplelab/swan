@@ -123,9 +123,18 @@ class UCGSound(mg: ModuleGroup, pas: PointerAnalysisStyle.Style,
         case PointerAnalysisStyle.None => null
         case PointerAnalysisStyle.SPDS => {
           new SQueryCache[SPDSResults](cgs, stats) {
+            val solvers = new mutable.HashMap[BackwardQuery, Boomerang]
             def query(pred: boomerang.scene.Statement, stmt: ApplyFunctionRef, ref: Val): SPDSResults = {
               val query = BackwardQuery.make(new ControlFlowGraph.Edge(pred, stmt), ref)
-              val solver = new Boomerang(cgs.cg, DataFlowScope.INCLUDE_ALL, new DefaultBoomerangOptions)
+              val solver = {
+                if (!solvers.contains(query)) {
+                  solvers.put(query, new Boomerang(cgs.cg, DataFlowScope.INCLUDE_ALL,
+                    new DefaultBoomerangOptions {
+                      override def allowMultipleQueries(): Boolean = true
+                    }))
+                }
+                solvers(query)
+              }
               val backwardQueryResults = solver.solve(query)
               val prevAllocSites = this.cacheGet(pred, stmt, ref)
               val allocSites = backwardQueryResults.getAllocationSites
@@ -523,12 +532,17 @@ object UCGSound {
     var callSitesInvalidated: Int = 0
     var updatedCallSites: Int = 0
     var averageQueryTimeMs: Long = 0
+    var anomalies: Int = 0
+    private val anomalyThresholdMs = 1000
     private var totalQueryTime: Long = 0
 
     def addQueryStat(time: Long): Unit = {
       totalQueryTime += time
       totalQueries += 1
       averageQueryTimeMs = totalQueryTime / totalQueries
+      if (time > anomalyThresholdMs) {
+        anomalies += 1
+      }
     }
 
     override def toString: String = {
@@ -542,6 +556,8 @@ object UCGSound {
       sb.append(s"  Call Sites Invalidated: $callSitesInvalidated\n")
       sb.append(s"  Updated Call Sites: $updatedCallSites\n")
       sb.append(s"  Average Query Time (ms): $averageQueryTimeMs\n")
+      sb.append(s"  Total Query Time (ms): $totalQueryTime\n")
+      sb.append(s"  Anomalies (>${anomalyThresholdMs}ms): $anomalies\n")
       sb.toString()
     }
 
@@ -554,6 +570,8 @@ object UCGSound {
       u("recursive_invalidations") = recursiveInvalidations
       u("call_sites_invalidated") = callSitesInvalidated
       u("average_query_time_ms") = averageQueryTimeMs.toInt
+      u("total_query_time") = totalQueryTime.toInt
+      u("anomalies") = anomalies
       u
     }
   }
