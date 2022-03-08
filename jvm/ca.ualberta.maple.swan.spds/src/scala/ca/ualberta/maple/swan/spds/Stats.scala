@@ -121,7 +121,9 @@ object Stats {
     }
   }
 
-  class AllStats(val gs: GeneralStats, var cgs: Option[CallGraphStats]) {
+  class AllStats(val gs: GeneralStats) {
+    var cgs: Option[CallGraphStats] = None
+
     override def toString: String = s"STATS:\n$gs${ if (cgs.nonEmpty) cgs.get else ""}"
 
     def toJSON: ujson.Value = {

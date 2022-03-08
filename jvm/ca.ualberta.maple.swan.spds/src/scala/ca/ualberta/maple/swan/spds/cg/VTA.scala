@@ -19,28 +19,21 @@
 
 package ca.ualberta.maple.swan.spds.cg
 
-import boomerang.scene.jimple.JimpleStatement
-import boomerang.scene.{AllocVal, ControlFlowGraph, Val}
+import boomerang.scene.{ControlFlowGraph, Val}
 import ca.ualberta.maple.swan.ir.{ModuleGroup, Operator, SymbolTableEntry}
-import ca.ualberta.maple.swan.spds.Stats.{CallGraphStats, SpecificCallGraphStats}
+import ca.ualberta.maple.swan.spds.Stats.SpecificCallGraphStats
 import ca.ualberta.maple.swan.spds.cg.CallGraphBuilder.PointerAnalysisStyle
 import ca.ualberta.maple.swan.spds.cg.CallGraphConstructor.Options
 import ca.ualberta.maple.swan.spds.cg.CallGraphUtils.addCGEdge
 import ca.ualberta.maple.swan.spds.cg.VTA.VTAStats
 import ca.ualberta.maple.swan.spds.structures.{SWANField, SWANInvokeExpr, SWANStatement, SWANVal}
 import ca.ualberta.maple.swan.utils.Logging
-import fj.data.Java
-import org.jgrapht.Graph
-import org.jgrapht.graph.{DefaultDirectedGraph, DefaultEdge}
 import org.jgrapht.alg.connectivity.KosarajuStrongConnectivityInspector
-import org.jgrapht.graph.DirectedAcyclicGraph
+import org.jgrapht.graph.{DefaultDirectedGraph, DefaultEdge, DirectedAcyclicGraph}
+import ujson.Value
 
 import scala.collection.mutable
 import scala.jdk.CollectionConverters._
-import ujson.Value
-
-import scala.collection.mutable.ArrayBuffer
-import ca.ualberta.maple.swan.ir.Constants
 
 class VTA(mg: ModuleGroup, pas: PointerAnalysisStyle.Style, options: Options) extends TrivialEdges(mg, options: Options) {
 
@@ -52,7 +45,8 @@ class VTA(mg: ModuleGroup, pas: PointerAnalysisStyle.Style, options: Options) ex
 
   private var conservativeGraph = new CHA(mg,pas, options: Options)
   //private val conservativeGraph = new UCGSound(mg,PointerAnalysisStyle.SPDS,true, options)
-  conservativeGraph.buildCallGraph()
+  Logging.printInfo("Building conservative graph (CHA) for VTA")
+  conservativeGraph.buildCallGraph(CallGraphBuilder.CallGraphStyle.CHA)
   val stats = new VTAStats()
 
   type valGraphNode = Either[SWANVal,SWANField]

@@ -37,6 +37,7 @@ import java.io.{File, FileWriter}
 import java.nio.charset.StandardCharsets
 import java.nio.file.{Files, Paths}
 import java.util.concurrent.TimeUnit
+import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
 
 object Driver {
@@ -53,7 +54,7 @@ object Driver {
     var cache = false
     var dumpFunctionNames = false
     var constructCallGraph = false
-    var callGraphAlgorithm: CallGraphBuilder.CallGraphStyle.Style = CallGraphBuilder.CallGraphStyle.UCGSound
+    var callGraphAlgorithms: ArrayBuffer[CallGraphBuilder.CallGraphStyle.Style] = ArrayBuffer(CallGraphBuilder.CallGraphStyle.UCGSound)
     var pointerAnalysisAlgorithm: CallGraphBuilder.PointerAnalysisStyle.Style = null
     var taintAnalysisSpec: scala.Option[File] = None
     var typeStateAnalysisSpec: scala.Option[File] = None
@@ -80,18 +81,20 @@ object Driver {
     def constructCallGraph(v: Boolean): Options = {
       this.constructCallGraph = v; this
     }
-    def callGraphAlgorithm(v: String): Options = {
-      if (v != null) {
-        val style = v.toLowerCase() match {
-          case "cha" => CallGraphBuilder.CallGraphStyle.CHA
-          case "prta" => CallGraphBuilder.CallGraphStyle.PRTA
-          case "srta" => CallGraphBuilder.CallGraphStyle.SRTA
-          case "vta" => CallGraphBuilder.CallGraphStyle.VTA
-          case "ucg" => CallGraphBuilder.CallGraphStyle.UCGSound
-          case "unsound_ucg" => CallGraphBuilder.CallGraphStyle.UCG
+    def callGraphAlgorithms(a: Array[String]): Options = {
+      a.foreach(v => {
+        if (v != null) {
+          val style = v.toLowerCase() match {
+            case "cha" => CallGraphBuilder.CallGraphStyle.CHA
+            case "prta" => CallGraphBuilder.CallGraphStyle.PRTA
+            case "srta" => CallGraphBuilder.CallGraphStyle.SRTA
+            case "vta" => CallGraphBuilder.CallGraphStyle.VTA
+            case "ucg" => CallGraphBuilder.CallGraphStyle.UCGSound
+            case "unsound_ucg" => CallGraphBuilder.CallGraphStyle.UCG
+          }
+          this.callGraphAlgorithms.append(style)
         }
-        this.callGraphAlgorithm = style
-      }
+      })
       this
     }
     def pointerAnalysisAlgorithm(v: String): Options = {
@@ -191,8 +194,8 @@ class Driver extends Runnable {
   private val constructCallGraph = new Array[Boolean](0)
 
   @Option(names = Array("--cg-algo"),
-    description = Array("Algorithm used for building the Call Graph."))
-  private val callGraphAlgorithm = new Array[String](1)
+    description = Array("Algorithm(s) used for building the Call Graph."))
+  private val callGraphAlgorithms: Array[String] = Array.empty[String]
 
   @Option(names = Array("--pa-algo"),
     description = Array("Algorithm used for pointer analysis during Call Graph construction."))
@@ -253,7 +256,7 @@ class Driver extends Runnable {
       .single(singleThreaded.nonEmpty)
       .dumpFunctionNames(dumpFunctionNames.nonEmpty)
       .constructCallGraph(constructCallGraph.nonEmpty)
-      .callGraphAlgorithm(callGraphAlgorithm(0))
+      .callGraphAlgorithms(callGraphAlgorithms)
       .pointerAnalysisAlgorithm(pointerAnalysisAlgorithm(0))
       .taintAnalysisSpec(taintAnalysisSpec)
       .typeStateAnalysisSpec(typeStateAnalysisSpec)
@@ -375,67 +378,85 @@ class Driver extends Runnable {
       })
       fw.close()
     }
-    val allStats = new AllStats(generalStats, None)
+    val stats = new mutable.HashMap[String, AllStats]()
     if (options.constructCallGraph || options.taintAnalysisSpec.nonEmpty || options.typeStateAnalysisSpec.nonEmpty) {
-      val cgResults = CallGraphBuilder.createCallGraph(
-        group,options.callGraphAlgorithm, scala.Option(options.pointerAnalysisAlgorithm),
-        new CallGraphConstructor.Options(options.analyzeLibraries, options.analyzeClosures, options.debug))
-      allStats.cgs = Some(cgResults)
-      val cg = cgResults.cg
-      if (options.printToDot) {
-        val fw = new FileWriter(Paths.get(swanDir.getPath, "dot.txt").toFile)
-        try {
-          fw.write(cg.toDot)
-        } finally {
-          fw.close()
+      options.callGraphAlgorithms.foreach(cgAlgo => {
+        val allStats = new AllStats(generalStats)
+        val cgResults = CallGraphBuilder.createCallGraph(
+          group, cgAlgo, scala.Option(options.pointerAnalysisAlgorithm),
+          new CallGraphConstructor.Options(options.analyzeLibraries, options.analyzeClosures, options.debug))
+        allStats.cgs = Some(cgResults)
+        val cg = cgResults.cg
+        val prefix = cgAlgo match {
+          case ca.ualberta.maple.swan.spds.cg.CallGraphBuilder.CallGraphStyle.CHA => "CHA"
+          case ca.ualberta.maple.swan.spds.cg.CallGraphBuilder.CallGraphStyle.PRTA => "PRTA"
+          case ca.ualberta.maple.swan.spds.cg.CallGraphBuilder.CallGraphStyle.SRTA => "SRTA"
+          case ca.ualberta.maple.swan.spds.cg.CallGraphBuilder.CallGraphStyle.VTA => "VTA"
+          case ca.ualberta.maple.swan.spds.cg.CallGraphBuilder.CallGraphStyle.UCG => "UCG"
+          case ca.ualberta.maple.swan.spds.cg.CallGraphBuilder.CallGraphStyle.UCGSound => "UCGSound"
         }
-      }
-      if (options.printToProbe) {
-        CallGraphUtils.writeToProbe(cg, Paths.get(swanDir.getPath, "cg.txt").toFile)
-      }
-      if (options.debug) {
-        writeFile(cgResults.finalModuleGroup, debugDir, "grouped-cg", new SWIRLPrinterOptions().cgDebugInfo(cgResults.debugInfo))
-        if (cgResults.dynamicModels.nonEmpty ) {
-          val r = cgResults.dynamicModels.get
-          writeFile(r._1, debugDir, "dynamic-models.raw")
-          writeFile(r._2, debugDir, "dynamic-models")
+        if (options.printToDot) {
+          val fw = new FileWriter(Paths.get(swanDir.getPath, s"$prefix-dot.txt").toFile)
+          try {
+            fw.write(cg.toDot)
+          } finally {
+            fw.close()
+          }
         }
-      }
-      if (options.taintAnalysisSpec.nonEmpty) {
-        val allResults = new ArrayBuffer[TaintResults]()
-        val specs = TaintSpecification.parse(options.taintAnalysisSpec.get)
-        specs.foreach(spec => {
-          val analysisOptions = new TaintAnalysisOptions(
-            if (options.pathTracking) AnalysisType.ForwardPathTracking
-            else AnalysisType.Forward)
-          val analysis = new TaintAnalysis(spec, analysisOptions)
-          val results = analysis.run(cg)
-          Logging.printInfo(results.toString)
-          allResults.append(results)
-        })
-        val f = Paths.get(swanDir.getPath, taintAnalysisResultsFileName).toFile
-        TaintSpecification.writeResults(f, allResults)
-      }
-      if (options.typeStateAnalysisSpec.nonEmpty) {
-        val allResults = new ArrayBuffer[TypeStateResults]()
-        val specs = TypeStateAnalysis.parse(options.typeStateAnalysisSpec.get)
-        specs.foreach(spec => {
-          val analysis = new TypeStateAnalysis(cg, spec.make(cg), spec)
-          val results = analysis.executeAnalysis()
-          Logging.printInfo(results.toString)
-          allResults.append(results)
-        })
-        val f = Paths.get(swanDir.getPath, typeStateAnalysisResultsFileName).toFile
-        TypeStateResults.writeResults(f, allResults)
-      }
+        if (options.printToProbe) {
+          CallGraphUtils.writeToProbe(cg, Paths.get(swanDir.getPath, s"$prefix.probe.txt").toFile)
+        }
+        if (options.debug) {
+          writeFile(cgResults.finalModuleGroup, debugDir, s"$prefix-grouped-cg", new SWIRLPrinterOptions().cgDebugInfo(cgResults.debugInfo))
+          if (cgResults.dynamicModels.nonEmpty ) {
+            val r = cgResults.dynamicModels.get
+            writeFile(r._1, debugDir, "dynamic-models.raw")
+            writeFile(r._2, debugDir, "dynamic-models")
+          }
+        }
+        if (options.taintAnalysisSpec.nonEmpty) {
+          val allResults = new ArrayBuffer[TaintResults]()
+          val specs = TaintSpecification.parse(options.taintAnalysisSpec.get)
+          specs.foreach(spec => {
+            val analysisOptions = new TaintAnalysisOptions(
+              if (options.pathTracking) AnalysisType.ForwardPathTracking
+              else AnalysisType.Forward)
+            val analysis = new TaintAnalysis(spec, analysisOptions)
+            val results = analysis.run(cg)
+            Logging.printInfo(results.toString)
+            allResults.append(results)
+          })
+          val f = Paths.get(swanDir.getPath, taintAnalysisResultsFileName).toFile
+          TaintSpecification.writeResults(f, allResults)
+        }
+        if (options.typeStateAnalysisSpec.nonEmpty) {
+          val allResults = new ArrayBuffer[TypeStateResults]()
+          val specs = TypeStateAnalysis.parse(options.typeStateAnalysisSpec.get)
+          specs.foreach(spec => {
+            val analysis = new TypeStateAnalysis(cg, spec.make(cg), spec)
+            val results = analysis.executeAnalysis()
+            Logging.printInfo(results.toString)
+            allResults.append(results)
+          })
+          val f = Paths.get(swanDir.getPath, typeStateAnalysisResultsFileName).toFile
+          TypeStateResults.writeResults(f, allResults)
+        }
+        stats.put(prefix, allStats)
+      })
     }
     generalStats.modules = group.metas.length - 1
     generalStats.functions = group.functions.length
     generalStats.totalRunTimeMS = TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - runStartTime).toInt
-    System.out.println(allStats)
-    val allStatsFile = Paths.get(swanDir.getPath, "stats.json").toFile
-    Logging.printInfo(s"Writing stats to ${allStatsFile.getName}")
-    allStats.writeToFile(allStatsFile)
+    stats.foreach(s => {
+      val prefix = s._1
+      System.out.println(s._2)
+      val allStatsFile = Paths.get(swanDir.getPath, s"$prefix-stats.json").toFile
+      Logging.printInfo(s"Writing $prefix stats to ${allStatsFile.getName}")
+      s._2.writeToFile(allStatsFile)
+    })
+    if (options.callGraphAlgorithms.length > 1) {
+      Logging.printInfo("NOTE: Multiple CGs generated - total runtime will be longer.")
+    }
     group
   }
 

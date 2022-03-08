@@ -58,7 +58,7 @@ object CallGraphBuilder {
         }, options)
       }
     }
-    cgBuilder.buildCallGraph()
+    cgBuilder.buildCallGraph(cgStyle)
   }
 
   def createCallGraph(moduleGroup: ModuleGroup, cgStyle: CallGraphStyle.Style, options: CallGraphConstructor.Options): CallGraphStats = {
