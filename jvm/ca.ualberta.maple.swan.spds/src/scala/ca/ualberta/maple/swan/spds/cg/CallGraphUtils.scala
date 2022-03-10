@@ -126,7 +126,7 @@ object CallGraphUtils {
     methods.foreach{case (_,m) => cg.graph.addVertex(m)}
   }
 
-  def writeToProbe(cg: SWANCallGraph, f: File): Unit = {
+  def writeToProbe(cg: SWANCallGraph, f: File, contextSenstive: Boolean = true): Unit = {
     val fw = new FileWriter(f)
     try {
       // Generate a fake class
@@ -150,7 +150,13 @@ object CallGraphUtils {
         fw.write(s"${edge.src().getMethod.getName.hashCode}\n") // src id
         fw.write(s"${edge.tgt().getName.hashCode}\n") // dst id
         fw.write(s"1.0\n") // weight
-        fw.write(s"${edge.src().hashCode()}\n") // context
+        // context
+        if (contextSenstive) {
+          fw.write(s"${edge.src().hashCode()}\n") // context
+        }
+        else {
+          fw.write(s"\n")
+        }
       })
     } finally {
       fw.close()
