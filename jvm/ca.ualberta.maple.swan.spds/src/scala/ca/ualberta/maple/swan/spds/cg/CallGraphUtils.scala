@@ -149,7 +149,7 @@ object CallGraphUtils {
         fw.write("CALLEDGE\n")
         fw.write(s"${edge.src().getMethod.getName.hashCode}\n") // src id
         fw.write(s"${edge.tgt().getName.hashCode}\n") // dst id
-        fw.write(s"\n") // weight
+        fw.write(s"1.0\n") // weight
         fw.write(s"${edge.src().getStartLineNumber}\n") // context
       })
     } finally {

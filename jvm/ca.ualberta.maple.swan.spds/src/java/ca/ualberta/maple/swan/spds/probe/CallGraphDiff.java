@@ -11,6 +11,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.zip.GZIPInputStream;
+import ca.ualberta.maple.swan.spds.probe.DiffStats;
 
 /** Calculates and reports the differences between two call graphs. */
 public class CallGraphDiff {
@@ -29,6 +30,9 @@ public class CallGraphDiff {
 		Util.out.println("  -p      : ignore edges out of doPrivileged methods");
 		Util.out.println("  -d      : output dot graphs");
 		Util.out.println("  -switch : switch supergraph and subgraph");
+		Util.out.println("  -mstat  : dump call site stats mono-to-none, mono-to-mono, mono-to-poly");
+		Util.out.println("  -pstat  : dump call site stats poly-to-none, poly-to-mono, poly-to-poly");
+		Util.out.println("  -pdiff  : dump call site stats poly-increase, poly-decrease, poly-same");
 		System.exit(1);
 	}
 
@@ -45,6 +49,9 @@ public class CallGraphDiff {
 	public static boolean dashP = false;
 	public static boolean dashD = false;
 	public static boolean dashSwitch = false;
+	public static boolean dashMStat = false;
+	public static boolean dashPStat = false;
+	public static boolean dashPDiff = false;
 
 	public static final void main(String[] args) {
 		if (args.length < 2) {
@@ -80,6 +87,12 @@ public class CallGraphDiff {
 				dashD = true;
 			else if (!doneOptions && args[i].equals("-switch"))
 				dashSwitch = !dashSwitch;
+			else if (!doneOptions && args[i].equals("-mstat"))
+				dashMStat = true;
+			else if (!doneOptions && args[i].equals("-pstat"))
+				dashPStat = true;
+			else if (!doneOptions && args[i].equals("-pdiff"))
+				dashPDiff = true;
 			else if (!doneOptions && args[i].equals("--"))
 				doneOptions = true;
 			else if (superFile == null)
@@ -197,6 +210,49 @@ public class CallGraphDiff {
 			Collections.sort(lines);
 			for (String line : lines) {
 				Util.out.println(line);
+			}
+		}
+
+		if (dashMStat || dashPStat || dashPDiff) {
+			DiffStats ds = new DiffStats(supergraph, subgraph);
+			if (dashMStat) {
+				Util.out.println("===========================================================================");
+				Util.out.println("Total monomorphic call sites: " + ds.monoCount());
+				Util.out.println("===========================================================================");
+				Util.out.println("===========================================================================");
+				Util.out.println("Mono to none call sites: " + ds.monoToNone());
+				Util.out.println("===========================================================================");
+				Util.out.println("===========================================================================");
+				Util.out.println("Mono to mono call sites: " + ds.monoToMono());
+				Util.out.println("===========================================================================");
+				Util.out.println("===========================================================================");
+				Util.out.println("Mono to poly call sites: " + ds.monoToPoly());
+				Util.out.println("===========================================================================");
+			}
+			if (dashPStat) {
+				Util.out.println("===========================================================================");
+				Util.out.println("Total polymorphic call sites: " + ds.polyCount());
+				Util.out.println("===========================================================================");
+				Util.out.println("===========================================================================");
+				Util.out.println("Poly to none call sites: " + ds.polyToNone());
+				Util.out.println("===========================================================================");
+				Util.out.println("===========================================================================");
+				Util.out.println("Poly to mono call sites: " + ds.polyToMono());
+				Util.out.println("===========================================================================");
+				Util.out.println("===========================================================================");
+				Util.out.println("Poly to poly call sites: " + ds.polyToPoly());
+				Util.out.println("===========================================================================");
+			}
+			if (dashPDiff) {
+				Util.out.println("===========================================================================");
+				Util.out.println("Polymorphic call sites with extra edges: " + ds.polyToPolyIncrease());
+				Util.out.println("===========================================================================");
+				Util.out.println("===========================================================================");
+				Util.out.println("Polymorphic call sites with missing edges: " + ds.polyToPolyDecrease());
+				Util.out.println("===========================================================================");
+				Util.out.println("===========================================================================");
+				Util.out.println("Polymorphic call sites with same edges: " + ds.polyToPolySame());
+				Util.out.println("===========================================================================");
 			}
 		}
 

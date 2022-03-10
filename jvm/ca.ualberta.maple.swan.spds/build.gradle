@@ -7,10 +7,10 @@ plugins {
 sourceSets {
     main {
         scala {
-            srcDirs = ['src/scala']
+            srcDirs = ['src/scala', 'src/java']
         }
         java {
-            srcDirs = ['src/java']
+            srcDirs = []
         }
     }
     test {
