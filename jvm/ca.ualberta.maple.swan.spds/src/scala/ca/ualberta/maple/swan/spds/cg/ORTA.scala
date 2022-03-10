@@ -19,16 +19,18 @@
 
 package ca.ualberta.maple.swan.spds.cg
 
-import boomerang.scene.Method
-import ca.ualberta.maple.swan.ir.ModuleGroup
+import boomerang.scene.{ControlFlowGraph, Method}
+import ca.ualberta.maple.swan.ir.{Constants, ModuleGroup, Operator, SymbolTableEntry}
 import ca.ualberta.maple.swan.spds.Stats.{CallGraphStats, SpecificCallGraphStats}
 import ca.ualberta.maple.swan.spds.cg.CallGraphBuilder.PointerAnalysisStyle
 import ca.ualberta.maple.swan.spds.cg.CallGraphConstructor.Options
 import ca.ualberta.maple.swan.spds.cg.pa.PointerAnalysis
-import ca.ualberta.maple.swan.spds.structures.SWANMethod
+import ca.ualberta.maple.swan.spds.structures.{SWANMethod, SWANStatement}
+import ca.ualberta.maple.swan.spds.structures.SWANStatement.ApplyFunctionRef
 import ujson.Value
 
 import scala.collection.mutable
+import scala.collection.mutable.ArrayBuffer
 
 class ORTA(mg: ModuleGroup, pas: PointerAnalysisStyle.Style, options: Options) extends CallGraphConstructor(mg, options) {
 
@@ -36,42 +38,145 @@ class ORTA(mg: ModuleGroup, pas: PointerAnalysisStyle.Style, options: Options) e
     pas match {
       case PointerAnalysisStyle.None => None
       case ca.ualberta.maple.swan.spds.cg.CallGraphBuilder.PointerAnalysisStyle.SPDS => {
-        throw new RuntimeException("SPDS pointer analysis is currently not supported with ORTA")
+        throw new RuntimeException("SPDS pointer analysis is currently not supported with SRTA")
       }
       case ca.ualberta.maple.swan.spds.cg.CallGraphBuilder.PointerAnalysisStyle.UFF => {
-        throw new RuntimeException("UFF pointer analysis is currently not supported with ORTA")
+        throw new RuntimeException("UFF pointer analysis is currently not supported with SRTA")
       }
+    }
+  }
+
+  val unreachableTypeTargets = mutable.MultiDict.empty[String, (ApplyFunctionRef, ControlFlowGraph.Edge, Set[String])]
+  val reachableTypes = mutable.HashSet.empty[String]
+  val reachableMethods = mutable.HashSet.empty[SWANMethod]
+  val blockWorklist = new DFWorklist(options)
+  val newTypesWorklist = mutable.HashSet.empty[String]
+  val newMethodsWorklist = mutable.HashSet.empty[SWANMethod]
+
+  def addMethod(m : SWANMethod): Unit = {
+    if (!reachableMethods.contains(m)) {
+      reachableMethods.add(m)
+      blockWorklist.addMethod(m)
+      m.delegate.blocks.foreach(_.operators.foreach{op => op.operator match {
+        case Operator.neww(_, allocType) => {
+          if (!reachableTypes.contains(allocType.name)) {
+            newTypesWorklist.addOne(allocType.name)
+          }
+        }
+        // ignore non allocation operators
+        case _ =>
+      }})
+    }
+  }
+
+  var rtaEdges: Int = 0
+  def addCallSiteEdges(cgs: CallGraphStats, stmt: ApplyFunctionRef, predEdge: ControlFlowGraph.Edge) = {
+    val method = stmt.m
+    val methods = cgs.cg.methods
+    method.delegate.symbolTable(stmt.inst.functionRef.name) match {
+      case SymbolTableEntry.operator(_, operator) => {
+        operator match {
+          case Operator.builtinRef(_, name) => {
+            if (methods.contains(name)) {
+              val targetMethod = methods(name)
+              if (CallGraphUtils.addCGEdge(method, targetMethod, stmt, predEdge, cgs)) {
+                cgs.trivialCallSites += 1
+                addMethod(targetMethod)
+              }
+            }
+          }
+          case Operator.functionRef(_, name) => {
+            val targetMethod = methods(name)
+            if (CallGraphUtils.addCGEdge(method, targetMethod, stmt, predEdge, cgs)) {
+              cgs.trivialCallSites += 1
+              addMethod(targetMethod)
+            }
+          }
+          case Operator.dynamicRef(_, _, index) => {
+            moduleGroup.ddgs.foreach{ case (_,ddg) => {
+              ddg.queryTypeTargets(index).sets.foreach{ case (typ,targets) => {
+                if (reachableTypes.contains(typ)) {
+                  targets.foreach{target =>
+                    val targetMethod = methods(target)
+                    if (CallGraphUtils.addCGEdge(method, targetMethod, stmt, predEdge, cgs)) {
+                      rtaEdges += 1
+                      addMethod(targetMethod)
+                    }
+                  }
+                }
+                else {
+                  unreachableTypeTargets.addOne(typ,(stmt,predEdge,targets))
+                }
+              }}
+            }}
+          }
+          // ignore other operators
+          case _ =>
+        }
+      }
+      // ignore non-operator symbol table entries
+      case _ =>
     }
   }
 
   // TODO: Pointer analysis integration
   override def buildSpecificCallGraph(): Unit = {
-
-    // Run CHA
-    new CHA(moduleGroup, pas, options).buildSpecificCallGraph()
-
-    var ortaEdges: Int = 0
     val startTimeMs = System.currentTimeMillis()
-    val methods = cgs.cg.methods
 
-    val worklist = mutable.Queue.empty[Method]
-    cgs.cg.getEntryPoints.forEach(e => worklist.enqueue(e))
-
-    while (worklist.nonEmpty) {
-      val m = worklist.dequeue().asInstanceOf[SWANMethod]
-      // ... TODO
-      // https://github.com/EnSoftCorp/call-graph-toolbox/blob/master/com.ensoftcorp.open.cg/src/com/ensoftcorp/open/cg/analysis/RapidTypeAnalysis.java
-      // https://ben-holland.com/call-graph-construction-algorithms-explained/
+    // ORTA/SRTA isn't meaningful without a main function
+    // ORTA/SRTA is equivalent to PRTA if everything is reachable
+    // TODO figure out better entry points
+    val entryPointsIterator = cgs.cg.getEntryPoints.asInstanceOf[java.util.Collection[SWANMethod]].iterator()
+    while (entryPointsIterator.hasNext) {
+      val m = entryPointsIterator.next()
+      addMethod(m)
     }
 
-    val stats = new ORTA.ORTAStats(ortaEdges, (System.currentTimeMillis() - startTimeMs).toInt)
+
+    while (blockWorklist.nonEmpty || newTypesWorklist.nonEmpty) {
+      while (blockWorklist.nonEmpty) {
+        val blk = blockWorklist.pop()
+        blk.stmts.foreach {
+          // call site
+          case applyStmt: SWANStatement.ApplyFunctionRef =>
+            val predEdge = new ControlFlowGraph.Edge(blk.method.getCFG.getPredsOf(applyStmt).iterator().next(), applyStmt)
+            addCallSiteEdges(cgs,applyStmt,predEdge)
+          // ignore non-call-sites
+          case _ =>
+        }
+      }
+      while (newTypesWorklist.nonEmpty) {
+        val typ = newTypesWorklist.iterator.next()
+        newTypesWorklist.remove(typ)
+        reachableTypes.add(typ)
+        val callSites = unreachableTypeTargets.get(typ)
+        callSites.foreach{case (stmt,predEdge,targets) =>
+          val method = stmt.getSWANMethod
+          val methods = cgs.cg.methods
+          targets.foreach{target =>
+            val targetMethod = methods(target)
+            if (CallGraphUtils.addCGEdge(method, targetMethod, stmt, predEdge, cgs)) {
+              rtaEdges += 1
+              addMethod(targetMethod)
+            }
+          }
+        }
+        unreachableTypeTargets.removeKey(typ)
+      }
+    }
+
+    val stats = new ORTA.SRTAStats(rtaEdges, (System.currentTimeMillis() - startTimeMs).toInt)
     cgs.specificData.addOne(stats)
   }
 }
 
+
+
+
+
 object ORTA {
 
-  class ORTAStats(val edges: Int, time: Int) extends SpecificCallGraphStats {
+  class SRTAStats(val edges: Int, time: Int) extends SpecificCallGraphStats {
 
     override def toJSON: Value = {
       val u = ujson.Obj()
@@ -81,10 +186,11 @@ object ORTA {
     }
 
     override def toString: String = {
-      s"  oRTA\n    Edges: $edges\n    Time (ms): $time"
+      s"sRTA\n  Edges: $edges\n  Time (ms): $time"
     }
   }
 }
+
 
 
 

@@ -87,10 +87,9 @@ object Driver {
           val style = v.toLowerCase() match {
             case "cha" => CallGraphBuilder.CallGraphStyle.CHA
             case "prta" => CallGraphBuilder.CallGraphStyle.PRTA
-            case "srta" => CallGraphBuilder.CallGraphStyle.SRTA
+            case "srta" => CallGraphBuilder.CallGraphStyle.ORTA
             case "vta" => CallGraphBuilder.CallGraphStyle.VTA
             case "ucg" => CallGraphBuilder.CallGraphStyle.UCGSound
-            case "unsound_ucg" => CallGraphBuilder.CallGraphStyle.UCG
           }
           this.callGraphAlgorithms.append(style)
         }
@@ -390,9 +389,8 @@ class Driver extends Runnable {
         val prefix = cgAlgo match {
           case ca.ualberta.maple.swan.spds.cg.CallGraphBuilder.CallGraphStyle.CHA => "CHA"
           case ca.ualberta.maple.swan.spds.cg.CallGraphBuilder.CallGraphStyle.PRTA => "PRTA"
-          case ca.ualberta.maple.swan.spds.cg.CallGraphBuilder.CallGraphStyle.SRTA => "SRTA"
+          case ca.ualberta.maple.swan.spds.cg.CallGraphBuilder.CallGraphStyle.ORTA => "SRTA"
           case ca.ualberta.maple.swan.spds.cg.CallGraphBuilder.CallGraphStyle.VTA => "VTA"
-          case ca.ualberta.maple.swan.spds.cg.CallGraphBuilder.CallGraphStyle.UCG => "UCG"
           case ca.ualberta.maple.swan.spds.cg.CallGraphBuilder.CallGraphStyle.UCGSound => "UCGSound"
         }
         if (options.printToDot) {
