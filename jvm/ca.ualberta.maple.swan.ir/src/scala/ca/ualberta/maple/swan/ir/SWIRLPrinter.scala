@@ -293,10 +293,22 @@ class SWIRLPrinter extends Printer {
         print(result.tpe)
         return // don't print , $T
       }
-      case Operator.assign(_, from, bbArg) => {
+      case Operator.assign(_, from, assignType) => {
         print("assign ")
         print(from)
-        print(" [bb arg]", when = bbArg)
+        assignType match {
+          case Some(value) => {
+            value match {
+              case AssignType.BBArg() =>
+                print(" [bb arg]")
+              case AssignType.PointerRead() =>
+                print(" [pointer read]")
+              case AssignType.PointerWrite() =>
+                print(" [pointer write]")
+            }
+          }
+          case None =>
+        }
       }
       case Operator.literal(_, lit) => {
         print("literal ")

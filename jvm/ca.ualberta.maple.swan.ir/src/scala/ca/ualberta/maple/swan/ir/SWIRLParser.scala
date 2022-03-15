@@ -446,9 +446,22 @@ class SWIRLParser extends SWIRLPrinter {
         }
         case "assign" => {
           val from = parseSymbolRef()
-          val bbArg = skip("[bb arg]")
+          val assignType = {
+            if (skip("[bb arg]")) {
+              Some(AssignType.BBArg())
+            }
+            else if (skip("[pointer read]")) {
+              Some(AssignType.PointerRead())
+            }
+            else if (skip("[pointer write]")) {
+              Some(AssignType.PointerRead())
+            }
+            else {
+              None
+            }
+          }
           val symbol = parseResultSymbol(result)
-          Instruction.rawOperator(Operator.assign(symbol, from, bbArg))
+          Instruction.rawOperator(Operator.assign(symbol, from, assignType))
         }
         case "literal" => {
           if (skip("[string]")) {

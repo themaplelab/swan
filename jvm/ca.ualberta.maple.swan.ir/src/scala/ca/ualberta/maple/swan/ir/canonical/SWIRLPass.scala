@@ -20,7 +20,7 @@
 package ca.ualberta.maple.swan.ir.canonical
 
 import ca.ualberta.maple.swan.ir.Exceptions.{ExperimentalException, IncompleteRawSWIRLException, IncorrectRawSWIRLException, UnexpectedSILFormatException}
-import ca.ualberta.maple.swan.ir.{Argument, BinaryOperation, Block, BlockRef, CanBlock, CanFunction, CanModule, CanOperator, CanOperatorDef, CanTerminator, CanTerminatorDef, Constants, FieldWriteAttribute, Function, Literal, Module, Operator, RawOperatorDef, RawTerminatorDef, SwitchCase, SwitchEnumCase, Symbol, SymbolRef, SymbolTable, SymbolTableEntry, Terminator, Type, UnaryOperation, WithResult}
+import ca.ualberta.maple.swan.ir.{Argument, AssignType, BinaryOperation, Block, BlockRef, CanBlock, CanFunction, CanModule, CanOperator, CanOperatorDef, CanTerminator, CanTerminatorDef, Constants, FieldWriteAttribute, Function, Literal, Module, Operator, RawOperatorDef, RawTerminatorDef, SwitchCase, SwitchEnumCase, Symbol, SymbolRef, SymbolTable, SymbolTableEntry, Terminator, Type, UnaryOperation, WithResult}
 import ca.ualberta.maple.swan.utils.Logging
 import org.jgrapht.Graph
 import org.jgrapht.graph.{DefaultDirectedGraph, DefaultEdge}
@@ -282,7 +282,7 @@ class SWIRLPass {
           }
           case Operator.pointerWrite(value, pointer, weak) => {
             val fw = new RawOperatorDef(Operator.fieldWrite(value, pointer, Constants.pointerField, {
-              if (weak) { Some(FieldWriteAttribute.weakPointer) } else None
+              if (weak) { Some(FieldWriteAttribute.weakPointer) } else Some(FieldWriteAttribute.pointer)
             }), op.position)
             mapToSIL(op, fw, module)
             b.operators(j) = fw
@@ -456,7 +456,7 @@ class SWIRLPass {
             resolvedBlocks.add(b)
             val targetArgument = b.arguments(arg._2)
             val assign = new RawOperatorDef(Operator.assign(
-              new Symbol(targetArgument.ref, targetArgument.tpe), arg._1, bbArg = true), block.terminator.position)
+              new Symbol(targetArgument.ref, targetArgument.tpe), arg._1, assignType = Some(AssignType.BBArg())), block.terminator.position)
             mapToSIL(block.terminator, assign, module)
             assigns.append(assign)
           })
@@ -468,7 +468,7 @@ class SWIRLPass {
             resolvedBlocks.add(block)
             val targetArgument = block.arguments(arg._2)
             val assign = new RawOperatorDef(Operator.assign(
-              new Symbol(targetArgument.ref, targetArgument.tpe), arg._1, bbArg = true), block.terminator.position)
+              new Symbol(targetArgument.ref, targetArgument.tpe), arg._1, assignType = Some(AssignType.BBArg())), block.terminator.position)
             mapToSIL(block.terminator, assign, module)
             assigns.append(assign)
           })

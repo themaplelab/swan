@@ -19,7 +19,7 @@
 
 package ca.ualberta.maple.swan.ir.canonical
 
-import ca.ualberta.maple.swan.ir.{CanFunction, CanOperatorDef, Module, Operator, Symbol, SymbolRef, SymbolTableEntry, Type}
+import ca.ualberta.maple.swan.ir.{AssignType, CanFunction, CanOperatorDef, FieldWriteAttribute, Module, Operator, Symbol, SymbolRef, SymbolTableEntry, Type}
 
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
@@ -34,6 +34,7 @@ class Mutations(val function: CanFunction, val module: Module) {
 
   def doMutations(): Unit = {
     locationManager()
+    pointerManager()
 
     // ...
   }
@@ -116,6 +117,71 @@ class Mutations(val function: CanFunction, val module: Module) {
               case _ =>
             }
           }
+          case _ =>
+        }
+        opIdx += 1
+      }
+    })
+  }
+
+  /** Does a simple escape analysis to convert pointers to variables. */
+  private def pointerManager(): Unit = {
+    val allNewws = mutable.HashSet.empty[Symbol]
+    val pointers = mutable.HashSet.empty[SymbolRef]
+    val escaped = mutable.HashSet.empty[SymbolRef]
+    function.blocks.foreach{ b =>
+      b.operators.foreach{ canOperatorDef => canOperatorDef.operator match {
+        case o@Operator.neww(result, allocType) => {
+          allNewws.add(o.value)
+        }
+        case Operator.fieldRead(result, alias, obj, field, pointer) if pointer =>
+          pointers.add(obj)
+        case Operator.fieldWrite(value, obj, field, Some(FieldWriteAttribute.pointer)) =>
+          escaped.add(value)
+          pointers.add(obj)
+        case Operator.fieldWrite(value, obj, field, Some(FieldWriteAttribute.weakPointer)) =>
+          escaped.add(value)
+          pointers.add(obj)
+        case Operator.fieldWrite(value, obj, field, attr) =>
+          escaped.add(value)
+        case o: Operator.condFail =>
+        case o: Operator.assign =>
+          escaped.add(o.from)
+        case Operator.fieldRead(result, alias, obj, field, pointer) =>
+        case o: Operator.literal =>
+        case o: Operator.dynamicRef =>
+        case o: Operator.builtinRef =>
+        case o: Operator.functionRef =>
+        case Operator.apply(result, functionRef, args) =>
+          args.foreach(escaped.add)
+        case o: Operator.singletonRead =>
+        case Operator.singletonWrite(value, tpe, field) =>
+          escaped.add(value)
+        case _ =>
+          throw new RuntimeException("Unexpected Operator in escape analysis")
+      }
+      }
+    }
+    val unescapedPointers = allNewws.filter(s => pointers.contains(s.ref) && !escaped.contains(s.ref))
+    val unescapedPointerRefs = mutable.HashMap.empty[SymbolRef,Symbol]
+    unescapedPointers.foreach(s => unescapedPointerRefs.addOne(s.ref,s))
+    function.blocks.foreach(b => {
+      var opIdx = 0
+      while (opIdx < b.operators.length) {
+        val opDef = b.operators(opIdx)
+        opDef.operator match {
+          case Operator.fieldRead(result, alias, obj, field, pointer) if (pointer && unescapedPointerRefs.contains(obj)) =>
+            val newAssign = new CanOperatorDef(Operator.assign(result,obj,Some(AssignType.PointerRead())), opDef.position)
+            b.operators.remove(opIdx)
+            b.operators.insert(opIdx, newAssign)
+          case Operator.fieldWrite(value, obj, field, Some(FieldWriteAttribute.pointer)) if (unescapedPointerRefs.contains(obj)) =>
+            val newAssign = new CanOperatorDef(Operator.assign(unescapedPointerRefs(obj),value,Some(AssignType.PointerWrite())), opDef.position)
+            b.operators.remove(opIdx)
+            b.operators.insert(opIdx, newAssign)
+          case Operator.fieldWrite(value, obj, field, Some(FieldWriteAttribute.weakPointer)) if (unescapedPointerRefs.contains(obj)) =>
+            val newAssign = new CanOperatorDef(Operator.assign(unescapedPointerRefs(obj),value,Some(AssignType.PointerWrite())), opDef.position)
+            b.operators.remove(opIdx)
+            b.operators.insert(opIdx, newAssign)
           case _ =>
         }
         opIdx += 1

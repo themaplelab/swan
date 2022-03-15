@@ -182,9 +182,16 @@ sealed trait RawOperator extends Operator
 sealed trait CanOperator extends Operator
 sealed trait FunctionRef extends Operator
 
+object AssignType {
+  sealed trait AssignType
+  case class BBArg() extends AssignType
+  case class PointerRead() extends AssignType
+  case class PointerWrite() extends AssignType
+}
+
 object Operator {
   case class neww(result: Symbol, allocType: Type) extends WithResult(result) with RawOperator with CanOperator
-  case class assign(result: Symbol, from: SymbolRef, bbArg: Boolean = false) extends WithResult(result) with RawOperator with CanOperator
+  case class assign(result: Symbol, from: SymbolRef, assignType: Option[AssignType.AssignType] = None) extends WithResult(result) with RawOperator with CanOperator
   case class literal(result: Symbol, literal: Literal) extends WithResult(result) with RawOperator with CanOperator
   case class dynamicRef(result: Symbol, obj: SymbolRef, index: String) extends WithResult(result) with RawOperator with CanOperator with FunctionRef
   case class builtinRef(result: Symbol, name: String) extends WithResult(result) with RawOperator with CanOperator with FunctionRef
@@ -333,6 +340,7 @@ class SymbolTable extends mutable.HashMap[String, SymbolTableEntry] {
     throw new RuntimeException("Do not use put() directly")
   }
   def putArg(key: String, arg: Argument): Unit = {
+
     if (this.contains(key)) {
       throw new RuntimeException("Attempted to add argument entry to symbol table when key already in table")
     }
