@@ -406,7 +406,7 @@ class Driver extends Runnable {
           CallGraphUtils.writeToProbe(cg, Paths.get(swanDir.getPath, s"$prefix.insensitive.probe.txt").toFile, contextSenstive = false)
         }
         if (options.debug) {
-          writeFile(cgResults.finalModuleGroup, debugDir, s"$prefix-grouped-cg", new SWIRLPrinterOptions().cgDebugInfo(cgResults.debugInfo))
+          writeFile(cgResults.finalModuleGroup, debugDir, s"$prefix-grouped-cg", new SWIRLPrinterOptions().cgDebugInfo(cgResults.debugInfo).printLocation(true).printLocationPaths(false))
           if (cgResults.dynamicModels.nonEmpty ) {
             val r = cgResults.dynamicModels.get
             writeFile(r._1, debugDir, "dynamic-models.raw")

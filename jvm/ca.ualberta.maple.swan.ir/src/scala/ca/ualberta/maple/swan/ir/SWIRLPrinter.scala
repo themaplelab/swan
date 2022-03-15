@@ -27,6 +27,7 @@ import scala.collection.mutable.ArrayBuffer
 
 class SWIRLPrinterOptions {
   var printLocation = false
+  var printLocationPaths = true
   var useArbitraryTypeNames = false
   var printCFG = false
   var genLocationMap = false // expensive
@@ -37,6 +38,10 @@ class SWIRLPrinterOptions {
 
   def printLocation(b: Boolean): SWIRLPrinterOptions = {
     printLocation = b
+    this
+  }
+  def printLocationPaths(b: Boolean): SWIRLPrinterOptions = {
+    printLocationPaths = b
     this
   }
   def useArbitraryTypeNames(b: Boolean): SWIRLPrinterOptions = {
@@ -574,15 +579,17 @@ class SWIRLPrinter extends Printer {
   }
 
   def print(pos: Position): Unit = {
-    if (!options.printLocation) {
-      return
+    if (options.printLocation) {
+      print(", loc ")
+      if (options.printLocationPaths) {
+        print("\"")
+        print(pos.path)
+        print("\":")
+      }
+      literal(pos.line)
+      print(":")
+      literal(pos.col)
     }
-    print(", loc \"")
-    print(pos.path)
-    print("\":")
-    literal(pos.line)
-    print(":")
-    literal(pos.col)
   }
 }
 

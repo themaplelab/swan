@@ -270,7 +270,7 @@ class VTA(mg: ModuleGroup, pas: PointerAnalysisStyle.Style, options: Options) ex
         //Logging.printInfo("Dynamic index " + index)
         val types = finalReachingTypes.get(Left(method.allValues(delegate.ref.name).asInstanceOf[SWANVal]))
         val instantiatedTypes = mutable.HashSet.from(types.collect { case neww: SWANVal.NewExpr => neww.delegate.tpe.name })
-        addDDGEdges(stmt, predEdge, index, instantiatedTypes)
+        addDDGEdges(stmt, predEdge, index, getRecieverTypes(stmt))
       case neww: SWANVal.NewExpr => // dealt with via instantiated types
         //Logging.printInfo("New Expr " + neww.delegate.tpe.name)
       case _: SWANVal.Simple | _: SWANVal.Constant => // ignore simple or constant
@@ -278,12 +278,22 @@ class VTA(mg: ModuleGroup, pas: PointerAnalysisStyle.Style, options: Options) ex
     }
   }
 
+  private def getRecieverTypes(stmt: SWANStatement.ApplyFunctionRef): mutable.HashSet[String] = {
+    val ie = stmt.getInvokeExpr
+    if (!ie.getArgs.isEmpty) {
+      val reciever = ie.getArgs.asScala.last.asInstanceOf[SWANVal]
+      val types = finalReachingTypes.get(Left(reciever))
+      mutable.HashSet.from(types.collect { case neww: SWANVal.NewExpr => neww.delegate.tpe.name })
+    }
+    else {
+      mutable.HashSet.empty[String]
+    }
+  }
+
   private def handleOperator(operator: Operator, stmt: SWANStatement.ApplyFunctionRef, predEdge: ControlFlowGraph.Edge): Unit = {
     operator match {
       case Operator.dynamicRef(_, ref, index) =>
-        val types = finalReachingTypes.get(Left(stmt.m.allValues(ref.name).asInstanceOf[SWANVal]))
-        val instantiatedTypes = mutable.HashSet.from(types.collect { case neww: SWANVal.NewExpr => neww.delegate.tpe.name })
-        addDDGEdges(stmt, predEdge, index, instantiatedTypes)
+        addDDGEdges(stmt, predEdge, index, getRecieverTypes(stmt))
       case _: Operator.builtinRef | _: Operator.functionRef => // already done via trivial edges pass
       // The function ref must be being used in a more interesting
       // way (e.g., assignment).

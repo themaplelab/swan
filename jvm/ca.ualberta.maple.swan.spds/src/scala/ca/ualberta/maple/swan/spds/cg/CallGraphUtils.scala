@@ -152,7 +152,8 @@ object CallGraphUtils {
         fw.write(s"1.0\n") // weight
         // context
         if (contextSenstive) {
-          fw.write(s"${edge.src().hashCode()}\n") // context
+          fw.write(s"${edge.src.getStartLineNumber}:${edge.src.getStartColumnNumber}\n") // context
+          //fw.write(s"${edge.src.getStartLineNumber}:${edge.src().hashCode()}\n") // context
         }
         else {
           fw.write(s"\n")
