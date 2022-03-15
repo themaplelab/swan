@@ -268,8 +268,6 @@ class VTA(mg: ModuleGroup, pas: PointerAnalysisStyle.Style, options: Options) ex
         if (addCGEdge(from = stmt.m, to = target, stmt, predEdge, cgs)) stats.ptEdges += 1
       case v@SWANVal.DynamicFunctionRef(delegate, index, method, unbalanced) =>
         //Logging.printInfo("Dynamic index " + index)
-        val types = finalReachingTypes.get(Left(method.allValues(delegate.ref.name).asInstanceOf[SWANVal]))
-        val instantiatedTypes = mutable.HashSet.from(types.collect { case neww: SWANVal.NewExpr => neww.delegate.tpe.name })
         addDDGEdges(stmt, predEdge, index, getRecieverTypes(stmt))
       case neww: SWANVal.NewExpr => // dealt with via instantiated types
         //Logging.printInfo("New Expr " + neww.delegate.tpe.name)
@@ -282,7 +280,8 @@ class VTA(mg: ModuleGroup, pas: PointerAnalysisStyle.Style, options: Options) ex
     val ie = stmt.getInvokeExpr
     if (!ie.getArgs.isEmpty) {
       val reciever = ie.getArgs.asScala.last.asInstanceOf[SWANVal]
-      val types = finalReachingTypes.get(Left(reciever))
+      val recieverSCC = scc(Left(reciever))
+      val types = finalReachingTypes.get(recieverSCC)
       mutable.HashSet.from(types.collect { case neww: SWANVal.NewExpr => neww.delegate.tpe.name })
     }
     else {
