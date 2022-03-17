@@ -46,7 +46,7 @@ class DiffStats(private val superGraph: CallGraph, private val subGraph: CallGra
   private val (subMono, subPoly): (scala.collection.Set[String], scala.collection.Set[String]) =
     subSiteMap.keySet.partition(ctx => subSiteMap.get(ctx).size == 1)
 
-  private def toNoneMonoPoly(callSites: scala.collection.Set[String]): (Int,Int,Int) = {
+  private def toNoneMonoPoly(callSites: scala.collection.Set[String], callSiteName: String): (Int,Int,Int) = {
     var toN: Int = 0
     var toM: Int = 0
     var toP: Int = 0
@@ -58,6 +58,7 @@ class DiffStats(private val superGraph: CallGraph, private val subGraph: CallGra
         toP += 1
       }
       else {
+        println(s"${callSiteName}-to-none ${ctx}")
         toN += 1
       }
     )
@@ -78,10 +79,10 @@ class DiffStats(private val superGraph: CallGraph, private val subGraph: CallGra
   }
 
   val monoCount: Int = superMono.size
-  val (monoToNone, monoToMono, monoToPoly): (Int,Int,Int) = toNoneMonoPoly(superMono)
+  val (monoToNone, monoToMono, monoToPoly): (Int,Int,Int) = toNoneMonoPoly(superMono, "mono")
 
   val polyCount: Int = superPoly.size
-  val (polyToNone, polyToMono, polyToPoly): (Int,Int,Int) = toNoneMonoPoly(superPoly)
+  val (polyToNone, polyToMono, polyToPoly): (Int,Int,Int) = toNoneMonoPoly(superPoly, "poly")
 
   // For sound call graphs
   // polyToPolyIncrease counts polymorphic sites where precision was reduced
