@@ -79,7 +79,7 @@ class Mutations(val function: CanFunction, val module: Module) {
                       val funcRef = new CanOperatorDef(Operator.functionRef(funcRefRet, "SWAN.CLLocationManager.setActivityType"), None)
                       function.symbolTable.putOp(funcRefRet, funcRef.operator)
                       val args = ArrayBuffer(apply.arguments(1), fieldReadRet.ref)
-                      val newApply = new CanOperatorDef(Operator.apply(apply.result, funcRefRet.ref, args), opDef.position)
+                      val newApply = new CanOperatorDef(Operator.apply(apply.result, funcRefRet.ref, args, None), opDef.position)
                       function.symbolTable.replace(apply.result.ref.name, SymbolTableEntry.operator(apply.result, newApply.operator))
                       b.operators.remove(opIdx)
                       b.operators.insert(opIdx, newApply)
@@ -93,7 +93,7 @@ class Mutations(val function: CanFunction, val module: Module) {
                       val funcRef = new CanOperatorDef(Operator.functionRef(funcRefRet, "SWAN.CLLocationManager.setDistanceFilter"), None)
                       function.symbolTable.putOp(funcRefRet, funcRef.operator)
                       val args = ArrayBuffer(apply.arguments(1), fieldReadRet.ref)
-                      val newApply = new CanOperatorDef(Operator.apply(apply.result, funcRefRet.ref, args), opDef.position)
+                      val newApply = new CanOperatorDef(Operator.apply(apply.result, funcRefRet.ref, args, None), opDef.position)
                       function.symbolTable.replace(apply.result.ref.name, SymbolTableEntry.operator(apply.result, newApply.operator))
                       b.operators.remove(opIdx)
                       b.operators.insert(opIdx, newApply)
@@ -104,7 +104,7 @@ class Mutations(val function: CanFunction, val module: Module) {
                       val funcRef = new CanOperatorDef(Operator.functionRef(funcRefRet, "SWAN.CLLocationManager.setDesiredAccuracy"), None)
                       function.symbolTable.putOp(funcRefRet, funcRef.operator)
                       val args = ArrayBuffer(apply.arguments(1), apply.arguments(0))
-                      val newApply = new CanOperatorDef(Operator.apply(apply.result, funcRefRet.ref, args), opDef.position)
+                      val newApply = new CanOperatorDef(Operator.apply(apply.result, funcRefRet.ref, args, None), opDef.position)
                       function.symbolTable.replace(apply.result.ref.name, SymbolTableEntry.operator(apply.result, newApply.operator))
                       b.operators.remove(opIdx)
                       b.operators.insert(opIdx, newApply)
@@ -152,7 +152,7 @@ class Mutations(val function: CanFunction, val module: Module) {
         case o: Operator.dynamicRef =>
         case o: Operator.builtinRef =>
         case o: Operator.functionRef =>
-        case Operator.apply(result, functionRef, args) =>
+        case Operator.apply(result, functionRef, args, functionType) =>
           args.foreach(escaped.add)
         case o: Operator.singletonRead =>
         case Operator.singletonWrite(value, tpe, field) =>

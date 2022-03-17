@@ -501,7 +501,8 @@ class SWIRLParser extends SWIRLPrinter {
           val functionRef = parseSymbolRef()
           val arguments = parseMany("(",",",")", parseSymbolRef)
           val symbol = parseResultSymbol(result)
-          Instruction.rawOperator(Operator.apply(symbol, functionRef, arguments))
+          // TODO: Parse functionType?
+          Instruction.rawOperator(Operator.apply(symbol, functionRef, arguments, None))
         }
         case "singleton_read" => {
           val field = parseBackTick()

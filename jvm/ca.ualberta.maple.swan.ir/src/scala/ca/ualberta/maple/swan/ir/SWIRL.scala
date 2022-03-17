@@ -196,7 +196,8 @@ object Operator {
   case class dynamicRef(result: Symbol, obj: SymbolRef, index: String) extends WithResult(result) with RawOperator with CanOperator with FunctionRef
   case class builtinRef(result: Symbol, name: String) extends WithResult(result) with RawOperator with CanOperator with FunctionRef
   case class functionRef(result: Symbol, name: String) extends WithResult(result) with RawOperator with CanOperator with FunctionRef
-  case class apply(result: Symbol, functionRef: SymbolRef, arguments: ArrayBuffer[SymbolRef]) extends WithResult(result) with RawOperator with CanOperator {
+  // only use None for functionType when you know its a trivial case
+  case class apply(result: Symbol, functionRef: SymbolRef, arguments: ArrayBuffer[SymbolRef], functionType: Option[Type]) extends WithResult(result) with RawOperator with CanOperator {
     // Used by CG debugInfo for printing
     override def hashCode(): Int = System.identityHashCode(this)
   }

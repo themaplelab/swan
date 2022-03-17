@@ -248,7 +248,7 @@ class SWIRLGen {
       block.operators.append(new RawOperatorDef(
         Operator.functionRef(new Symbol(functionRef, new Type("Any")), newMainFunctionName), None))
       block.operators.append(new RawOperatorDef(
-        Operator.apply(new Symbol(retRef, new Type("Int32")), functionRef, ArrayBuffer(arg0, arg1)), None))
+        Operator.apply(new Symbol(retRef, new Type("Int32")), functionRef, ArrayBuffer(arg0, arg1), Some(fmFunction.get.tpe)), None))
       functions.insert(0, fmFunction.get)
     }
     Logging.printTimeStamp(1, startTime, "translating", silModule.functions.length, "functions")
@@ -951,7 +951,8 @@ class SWIRLGen {
   @throws[UnexpectedSILFormatException]
   def visitApply(r: Option[SILResult], I: SILOperator.apply, ctx: Context): ArrayBuffer[RawInstructionDef] = {
     val result = getSingleResult(r, Utils.SILFunctionTypeToReturnType(I.tpe), ctx)
-    makeOperator(ctx, Operator.apply(result, makeSymbolRef(I.value, ctx), stringArrayToSymbolRefArrayBuffer(I.arguments, ctx)))
+    val functionType = Utils.SILTypeToType(I.tpe)
+    makeOperator(ctx, Operator.apply(result, makeSymbolRef(I.value, ctx), stringArrayToSymbolRefArrayBuffer(I.arguments, ctx), Some(functionType)))
   }
 
   @throws[UnexpectedSILFormatException]
@@ -994,7 +995,7 @@ class SWIRLGen {
     }
     operators.append(makeOperator(ctx,
       Operator.apply/*Coroutine*/(result, makeSymbolRef(I.value, ctx),
-        stringArrayToSymbolRefArrayBuffer(I.arguments, ctx),
+        stringArrayToSymbolRefArrayBuffer(I.arguments, ctx), Some(Utils.SILTypeToType(I.tpe))
       /* new Symbol(token, Utils.SILTypeToType(SILType.namedType("*Any")))*/ )).head)
     operators
   }
@@ -1014,7 +1015,8 @@ class SWIRLGen {
     //  The return type is the partially-applied function type.
     // For now, just treat as regular apply (special thunk case is handled in SWIRLPass)
     val result = getSingleResult(r, Utils.SILFunctionTypeToReturnType(I.tpe), ctx)
-    makeOperator(ctx, Operator.apply(result, makeSymbolRef(I.value, ctx), stringArrayToSymbolRefArrayBuffer(I.arguments, ctx)))
+    val functionType = Utils.SILTypeToType(I.tpe)
+    makeOperator(ctx, Operator.apply(result, makeSymbolRef(I.value, ctx), stringArrayToSymbolRefArrayBuffer(I.arguments, ctx), Some(functionType)))
   }
 
   @throws[UnexpectedSILFormatException]
@@ -1029,7 +1031,7 @@ class SWIRLGen {
     makeOperator(
       ctx,
       Operator.builtinRef(functionRef, I.name),
-      Operator.apply(result, functionRef.ref, arguments)
+      Operator.apply(result, functionRef.ref, arguments, None)
     )
   }
 
@@ -1860,7 +1862,7 @@ class SWIRLGen {
     val condVal = generateSymbolName(I.value, ctx)
     val instructions = new ArrayBuffer[RawInstructionDef]()
     instructions.appendAll(makeOperator(ctx,
-      Operator.apply(retVal, makeSymbolRef(I.value, ctx), stringArrayToSymbolRefArrayBuffer(I.arguments, ctx)),
+      Operator.apply(retVal, makeSymbolRef(I.value, ctx), stringArrayToSymbolRefArrayBuffer(I.arguments, ctx), Some(Utils.SILTypeToType(I.tpe))),
       makeNewOperator(new Symbol(condVal,  Utils.SILTypeToType(SILType.namedType("Builtin.Int1"))), ctx)))
     instructions.appendAll(makeTerminator(ctx,
       Terminator.condBr(

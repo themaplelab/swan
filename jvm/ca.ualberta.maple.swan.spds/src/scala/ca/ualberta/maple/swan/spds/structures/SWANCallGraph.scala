@@ -19,6 +19,7 @@
 
 package ca.ualberta.maple.swan.spds.structures
 
+import boomerang.scene.CallGraph.Edge
 import boomerang.scene._
 import ca.ualberta.maple.swan.ir._
 import org.jgrapht.Graph
@@ -33,6 +34,12 @@ class SWANCallGraph(var moduleGroup: ModuleGroup,
 
   def outEdgeTargets(m: SWANMethod): Array[SWANMethod] = {
     graph.outgoingEdgesOf(m).toArray().map(e => graph.getEdgeTarget(e.asInstanceOf[DefaultEdge]))
+  }
+
+  def removeEdge(edge: Edge): Unit = {
+    this.getEdges.remove(edge)
+    this.edgesInto(edge.tgt()).remove(edge)
+    this.edgesOutOf(edge.src()).remove(edge)
   }
 
   override def toString: String = {

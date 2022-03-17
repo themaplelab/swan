@@ -126,7 +126,7 @@ class SWIRLPass {
                       }
                       val replacement = {
                         if (argIsFuncRef) {
-                          new CanOperatorDef(Operator.apply(apply.result, arg, new ArrayBuffer[SymbolRef]()), opDefIdx._1.position)
+                          new CanOperatorDef(Operator.apply(apply.result, arg, new ArrayBuffer[SymbolRef](), None), opDefIdx._1.position)
                         } else {
                           new CanOperatorDef(Operator.assign(apply.result, arg), opDefIdx._1.position)
                         }

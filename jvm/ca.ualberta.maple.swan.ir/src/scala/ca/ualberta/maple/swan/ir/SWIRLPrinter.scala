@@ -338,7 +338,8 @@ class SWIRLPrinter extends Printer {
         print(name)
         print('`')
       }
-      case Operator.apply(_, functionRef, arguments) => {
+      case Operator.apply(_, functionRef, arguments, functionType) => {
+        // TODO: Print functionType + update documentation
         print("apply ")
         print(functionRef)
         print(whenEmpty = true, "(", arguments, ", ", ")", (arg: SymbolRef) => print(arg))
