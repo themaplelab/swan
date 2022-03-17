@@ -54,7 +54,7 @@ object Driver {
     var cache = false
     var dumpFunctionNames = false
     var constructCallGraph = false
-    var callGraphAlgorithms: ArrayBuffer[CallGraphBuilder.CallGraphStyle.Style] = ArrayBuffer(CallGraphBuilder.CallGraphStyle.UCGSound)
+    var callGraphAlgorithms: ArrayBuffer[CallGraphBuilder.CallGraphStyle.Style] = ArrayBuffer(CallGraphBuilder.CallGraphStyle.UCG)
     var pointerAnalysisAlgorithm: CallGraphBuilder.PointerAnalysisStyle.Style = null
     var taintAnalysisSpec: scala.Option[File] = None
     var typeStateAnalysisSpec: scala.Option[File] = None
@@ -89,7 +89,7 @@ object Driver {
             case "prta" => CallGraphBuilder.CallGraphStyle.PRTA
             case "srta" => CallGraphBuilder.CallGraphStyle.ORTA
             case "vta" => CallGraphBuilder.CallGraphStyle.VTA
-            case "ucg" => CallGraphBuilder.CallGraphStyle.UCGSound
+            case "ucg" => CallGraphBuilder.CallGraphStyle.UCG
           }
           this.callGraphAlgorithms.append(style)
         }
@@ -391,7 +391,7 @@ class Driver extends Runnable {
           case ca.ualberta.maple.swan.spds.cg.CallGraphBuilder.CallGraphStyle.PRTA => "PRTA"
           case ca.ualberta.maple.swan.spds.cg.CallGraphBuilder.CallGraphStyle.ORTA => "SRTA"
           case ca.ualberta.maple.swan.spds.cg.CallGraphBuilder.CallGraphStyle.VTA => "VTA"
-          case ca.ualberta.maple.swan.spds.cg.CallGraphBuilder.CallGraphStyle.UCGSound => "UCGSound"
+          case ca.ualberta.maple.swan.spds.cg.CallGraphBuilder.CallGraphStyle.UCG => "UCG"
         }
         if (options.printToDot) {
           val fw = new FileWriter(Paths.get(swanDir.getPath, s"$prefix-dot.txt").toFile)

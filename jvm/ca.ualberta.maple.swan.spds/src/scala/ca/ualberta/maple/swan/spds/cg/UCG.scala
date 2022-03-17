@@ -27,7 +27,7 @@ import ca.ualberta.maple.swan.spds.Stats.{CallGraphStats, SpecificCallGraphStats
 import ca.ualberta.maple.swan.spds.cg.CallGraphBuilder.PointerAnalysisStyle
 import ca.ualberta.maple.swan.spds.cg.CallGraphConstructor.Options
 import ca.ualberta.maple.swan.spds.cg.CallGraphUtils.addCGEdge
-import ca.ualberta.maple.swan.spds.cg.UCGSound.UCGSoundStats
+import ca.ualberta.maple.swan.spds.cg.UCG.UCGSoundStats
 import ca.ualberta.maple.swan.spds.cg.pa.{MatrixUnionFind, PointerAnalysis, UnionFind}
 import ca.ualberta.maple.swan.spds.structures.SWANControlFlowGraph.SWANBlock
 import ca.ualberta.maple.swan.spds.structures.SWANStatement.ApplyFunctionRef
@@ -47,8 +47,8 @@ import scala.collection.{immutable, mutable}
  * The algorithm ... distribute/monotonic/order-indendepent?
  *
  */
-class UCGSound(mg: ModuleGroup, pas: PointerAnalysisStyle.Style,
-               val invalidations: Boolean, options: Options) extends CallGraphConstructor(mg, options) {
+class UCG(mg: ModuleGroup, pas: PointerAnalysisStyle.Style,
+          val invalidations: Boolean, options: Options) extends CallGraphConstructor(mg, options) {
 
   type DDGTypeSet = DDGBitSet
   type SPDSResults = util.Map[ForwardQuery, AbstractBoomerangResults.Context]
@@ -521,7 +521,7 @@ class UCGSound(mg: ModuleGroup, pas: PointerAnalysisStyle.Style,
 
 }
 
-object UCGSound {
+object UCG {
 
   class UCGSoundStats() extends SpecificCallGraphStats {
     var queriedEdges: Int = 0

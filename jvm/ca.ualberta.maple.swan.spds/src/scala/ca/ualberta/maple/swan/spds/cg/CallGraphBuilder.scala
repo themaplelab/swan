@@ -44,7 +44,7 @@ object CallGraphBuilder {
           case Some(value) => value
           case None => PointerAnalysisStyle.None
         }, options)
-        case CallGraphStyle.UCGSound => new UCGSound(moduleGroup, paStyle match {
+        case CallGraphStyle.UCG => new UCG(moduleGroup, paStyle match {
           case Some(value) => value
           case None => PointerAnalysisStyle.SPDS
         }, true, options)
@@ -72,7 +72,7 @@ object CallGraphBuilder {
     val PRTA: CallGraphStyle.Value = Value
     val ORTA: CallGraphStyle.Value = Value
     val VTA: CallGraphStyle.Value = Value
-    val UCGSound: CallGraphStyle.Value = Value
+    val UCG: CallGraphStyle.Value = Value
   }
 
   object PointerAnalysisStyle extends Enumeration {
