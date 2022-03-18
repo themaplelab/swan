@@ -121,6 +121,7 @@ class UCG(mg: ModuleGroup, pas: PointerAnalysisStyle.Style,
     queryCache = {
       pas match {
         case PointerAnalysisStyle.None => null
+        case PointerAnalysisStyle.NameBased => throw new RuntimeException("name-based PA unsupported for UCG")
         case PointerAnalysisStyle.SPDS => {
           new SQueryCache[SPDSResults](cgs, stats) {
             val solvers = new mutable.HashMap[BackwardQuery, Boomerang]
