@@ -125,7 +125,9 @@ class SWIRLPrinter extends Printer {
     print(function.name)
     print("`")
     print(" : ")
-    print(function.tpe)
+    print(function.returnTpe)
+    print(" : ")
+    print(function.fullTpe)
     print(whenEmpty = false, " {\n", function.blocks, "\n", "}", (block: Block) => print(block))
     printNewline()
   }
@@ -152,7 +154,9 @@ class SWIRLPrinter extends Printer {
       print(arg)
     })
     print(" : ")
-    print(function.tpe)
+    print(function.returnTpe)
+    print(" : ")
+    print(function.fullTpe)
     print(whenEmpty = false, " {\n", function.blocks, "\n", "}", (block: CanBlock) => print(block))
     printNewline()
     if (options.genLocationMap) {
@@ -339,10 +343,14 @@ class SWIRLPrinter extends Printer {
         print('`')
       }
       case Operator.apply(_, functionRef, arguments, functionType) => {
-        // TODO: Print functionType + update documentation
+        // TODO: update documentation
         print("apply ")
         print(functionRef)
         print(whenEmpty = true, "(", arguments, ", ", ")", (arg: SymbolRef) => print(arg))
+        if (functionType.nonEmpty) {
+          print(", func_tpe: ")
+          print(functionType.get)
+        }
       }
       case Operator.singletonRead(_, tpe, field) => {
         print("singleton_read `")

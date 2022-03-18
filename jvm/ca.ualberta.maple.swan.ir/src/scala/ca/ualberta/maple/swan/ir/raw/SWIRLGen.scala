@@ -174,6 +174,7 @@ class SWIRLGen {
           })
         })
         val returnType = Utils.SILFunctionTypeToReturnType(silFunction.tpe)
+        val fullType = Utils.SILTypeToType(silFunction.tpe)
         // If function is empty, generate a stub based on return type.
         // However, param types isn't reliable - actual args may be different.
         if (silFunction.blocks.isEmpty) {
@@ -193,7 +194,7 @@ class SWIRLGen {
             new RawTerminatorDef(Terminator.ret(retRef), None)))
           attribute = Some(FunctionAttribute.stub)
         }
-        val f = new Function(attribute, silFunction.name.demangled, returnType,
+        val f = new Function(attribute, silFunction.name.demangled, returnType, fullType,
           blocks, refTable)
         if (populateSILMap) silMap.map(silFunction, f)
         f
@@ -217,7 +218,7 @@ class SWIRLGen {
       val fmInstantiatedTypes = new mutable.HashSet[String]
       val dummyCtx = Context.dummy(silModule, fmRefTable, fmInstantiatedTypes)
       fmFunction = Some(new Function(None, fakeMainFunctionName,
-        new Type("Int32"), new ArrayBuffer[Block](), fmRefTable))
+        mainFunction.get.returnTpe, mainFunction.get.fullTpe, new ArrayBuffer[Block](), fmRefTable))
       val blockRef = makeBlockRef("bb0", dummyCtx)
       val retRef = makeSymbolRef("ret", dummyCtx)
       val block = new Block(blockRef, new ArrayBuffer, {
@@ -248,7 +249,7 @@ class SWIRLGen {
       block.operators.append(new RawOperatorDef(
         Operator.functionRef(new Symbol(functionRef, new Type("Any")), newMainFunctionName), None))
       block.operators.append(new RawOperatorDef(
-        Operator.apply(new Symbol(retRef, new Type("Int32")), functionRef, ArrayBuffer(arg0, arg1), Some(fmFunction.get.tpe)), None))
+        Operator.apply(new Symbol(retRef, new Type("Int32")), functionRef, ArrayBuffer(arg0, arg1), Some(fmFunction.get.returnTpe)), None))
       functions.insert(0, fmFunction.get)
     }
     Logging.printTimeStamp(1, startTime, "translating", silModule.functions.length, "functions")

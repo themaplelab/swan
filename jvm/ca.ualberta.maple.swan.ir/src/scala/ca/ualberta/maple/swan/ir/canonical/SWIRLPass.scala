@@ -45,7 +45,7 @@ class SWIRLPass {
       val args = resolveBasicBlockArguments(f, module)
       val blocks = convertToCanonical(f, module)
       val cfg = generateCFG(blocks)
-      val canFunction = new CanFunction(f.attribute, f.name, f.tpe, args, blocks, f.refTable,
+      val canFunction = new CanFunction(f.attribute, f.name, f.returnTpe, f.fullTpe, args, blocks, f.refTable,
         new SymbolTable(), cfg, isLibrary)
       generateSymbolTable(canFunction)
       removeThunkApplication(canFunction)

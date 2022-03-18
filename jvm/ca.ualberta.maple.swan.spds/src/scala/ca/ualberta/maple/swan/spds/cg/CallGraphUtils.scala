@@ -122,31 +122,35 @@ object CallGraphUtils {
     cgs.cg.methods.values.foreach(m => {
       m.getStatements.forEach {
         case stmt@(apply: SWANStatement.ApplyFunctionRef) =>  {
-          val funcType = apply.inst.functionType
-          def matchBasedOnArgs(): Unit = {
-            cgs.cg.methods.foreach(m => {
-              if (m._2.getParameterLocals.size() == apply.getInvokeExpr.getArgs.size()) {
-                if (cgs.cg.addEdge(new CallGraph.Edge(stmt, m._2))) edgesMatchedUsingArgs += 1
-              }
-            })
-          }
-          if (funcType.nonEmpty) {
-            val functions = new mutable.HashSet[SWANMethod]()
-            cgs.cg.methods.foreach(m => {
-              if (m._2.delegate.tpe == funcType.get) {
-                functions.add(m._2)
-              }
-            })
-            if (functions.nonEmpty) {
-              functions.foreach(f => {
-                if (cgs.cg.addEdge(new CallGraph.Edge(stmt, f))) edgesMatchedUsingType += 1
+          if (cgs.cg.edgesOutOf(stmt).isEmpty) {
+            val funcType = apply.inst.functionType
+            def matchBasedOnArgs(): Unit = {
+              cgs.cg.methods.foreach(m => {
+                if (m._2.getParameterLocals.size() == apply.getInvokeExpr.getArgs.size()) {
+                  if (cgs.cg.addEdge(new CallGraph.Edge(stmt, m._2))) edgesMatchedUsingArgs += 1
+                }
               })
+            }
+            if (funcType.nonEmpty) {
+              val functions = new mutable.HashSet[SWANMethod]()
+              cgs.cg.methods.foreach(m => {
+                if (m._2.delegate.fullTpe == funcType.get) {
+                  functions.add(m._2)
+                }
+              })
+              if (functions.nonEmpty) {
+                functions.foreach(f => {
+                  if (cgs.cg.addEdge(new CallGraph.Edge(stmt, f))) edgesMatchedUsingType += 1
+                })
+              } else matchBasedOnArgs()
             } else matchBasedOnArgs()
-          } else matchBasedOnArgs()
+          }
         }
         case _ =>
       }
     })
+    System.out.println("edges matched using type: " + edgesMatchedUsingType)
+    System.out.println("edges matched using args: " + edgesMatchedUsingArgs)
   }
 
   def resolveFunctionPointersWithSPDS(cgs: CallGraphStats, additive: Boolean): Unit = {

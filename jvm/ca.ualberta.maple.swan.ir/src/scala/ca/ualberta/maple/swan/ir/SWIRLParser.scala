@@ -276,9 +276,15 @@ class SWIRLParser extends SWIRLPrinter {
     val attr = parseFunctionAttribute()
     val name = parseGlobalOrFunctionName()
     take(":")
-    val tpe = parseType()
+    val returnType = parseType()
+    // TODO: Update models.swirl, hack for now
+    var fullType = returnType
+    if (peek(":")) {
+      take(":")
+      fullType = parseType()
+    }
     val blocks = { parseNilOrMany("{", "", "}", parseBlock) }.getOrElse(ArrayBuffer.empty[Block])
-    new Function(attr, name, tpe, blocks.to(ArrayBuffer), refTable)
+    new Function(attr, name, returnType, fullType, blocks.to(ArrayBuffer), refTable)
   }
 
 
@@ -500,9 +506,12 @@ class SWIRLParser extends SWIRLPrinter {
         case "apply" => {
           val functionRef = parseSymbolRef()
           val arguments = parseMany("(",",",")", parseSymbolRef)
+          var functionType: Option[Type] = None
+          if (skip(", func_tpe:")) {
+            functionType = Some(parseType())
+          }
           val symbol = parseResultSymbol(result)
-          // TODO: Parse functionType?
-          Instruction.rawOperator(Operator.apply(symbol, functionRef, arguments, None))
+          Instruction.rawOperator(Operator.apply(symbol, functionRef, arguments, functionType))
         }
         case "singleton_read" => {
           val field = parseBackTick()

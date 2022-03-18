@@ -84,10 +84,10 @@ class CanModule(val functions: ArrayBuffer[CanFunction],
   }
 }
 
-class Function(val attribute: Option[FunctionAttribute], var name: String, val tpe: Type,
+class Function(val attribute: Option[FunctionAttribute], var name: String, val returnTpe: Type, val fullTpe: Type,
                val blocks: ArrayBuffer[Block], val refTable: RefTable)
 
-class CanFunction(var attribute: Option[FunctionAttribute], val name: String, val tpe: Type,
+class CanFunction(var attribute: Option[FunctionAttribute], val name: String, val returnTpe: Type, val fullTpe: Type,
                   val arguments: ArrayBuffer[Argument], val blocks: ArrayBuffer[CanBlock],
                   val refTable: RefTable, val symbolTable: SymbolTable,
                   var cfg: Graph[CanBlock, DefaultEdge], val isLibrary: Boolean) extends Serializable {

@@ -41,7 +41,7 @@ class SWIRLBuilder {
     sb.append(" @`")
     sb.append(function.name)
     sb.append("` : $`")
-    sb.append(function.tpe.name)
+    sb.append(function.returnTpe.name)
     sb.append("` {\n")
     sb.append(s"bb$blockNo")
     blockNo += 1
