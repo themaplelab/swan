@@ -68,7 +68,7 @@ class PRTA(mg: ModuleGroup, pas: PointerAnalysisStyle.Style, options: Options) e
               case SymbolTableEntry.operator(_, operator) => {
                 operator match {
                   case Operator.builtinRef(_, name) => {
-                    if (methods.contains(name)) { // TODO: Why are some builtins missing stubs?
+                    if (methods.contains(name)) {
                       cgs.trivialCallSites += 1
                       CallGraphUtils.addCGEdge(m, methods(name), applyStmt, edge, cgs)
                     }

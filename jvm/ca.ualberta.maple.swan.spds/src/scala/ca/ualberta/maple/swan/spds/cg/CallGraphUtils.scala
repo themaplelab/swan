@@ -22,7 +22,7 @@ package ca.ualberta.maple.swan.spds.cg
 import boomerang.{BackwardQuery, Boomerang, DefaultBoomerangOptions}
 import boomerang.scene.jimple.JimpleStatement
 import boomerang.scene.{AllocVal, CallGraph, ControlFlowGraph, DataFlowScope, Statement}
-import ca.ualberta.maple.swan.ir.{Instruction, ModuleGroup}
+import ca.ualberta.maple.swan.ir.{Instruction, ModuleGroup, Operator, SymbolTableEntry}
 import ca.ualberta.maple.swan.spds.Stats.CallGraphStats
 import ca.ualberta.maple.swan.spds.structures.{SWANCallGraph, SWANMethod, SWANStatement, SWANVal}
 
@@ -115,21 +115,44 @@ object CallGraphUtils {
   }
 
   def resolveFunctionPointersWithMatching(cgs: CallGraphStats): Unit = {
+    // assumes trivial function pointers are already resolved
     // TODO: Use these stats somewhere
     var edgesMatchedUsingType = 0
     var edgesMatchedUsingArgs = 0
+    var edgesMatchedUsingArgsAndRetType = 0
     // Only additive
     cgs.cg.methods.values.foreach(m => {
       m.getStatements.forEach {
         case stmt@(apply: SWANStatement.ApplyFunctionRef) =>  {
-          if (cgs.cg.edgesOutOf(stmt).isEmpty) {
+          val isTrivial: Boolean = {
+            m.delegate.symbolTable(stmt.inst.functionRef.name) match {
+              case SymbolTableEntry.operator(_, operator) => {
+                operator match {
+                  case _: Operator.builtinRef => true
+                  case _: Operator.functionRef => true
+                  case _: Operator.dynamicRef => true
+                  case _ => false
+                }
+              }
+              case _ => false
+            }
+          }
+          if (cgs.cg.edgesOutOf(stmt).isEmpty && !isTrivial) {
             val funcType = apply.inst.functionType
             def matchBasedOnArgs(): Unit = {
-              cgs.cg.methods.foreach(m => {
-                if (m._2.getParameterLocals.size() == apply.getInvokeExpr.getArgs.size()) {
-                  if (cgs.cg.addEdge(new CallGraph.Edge(stmt, m._2))) edgesMatchedUsingArgs += 1
+              var matched = false
+              cgs.cg.methods.foreach(target => {
+                if (target._2.getParameterLocals.size() == apply.getInvokeExpr.getArgs.size()) {
+                  if (target._2.delegate.returnTpe == apply.inst.result.tpe) {
+                    if (addCGEdge(m, target._2, stmt, new ControlFlowGraph.Edge(m.getCFG.getPredsOf(stmt).iterator().next(), stmt), cgs)) edgesMatchedUsingArgsAndRetType += 1
+                    matched = true
+                  }
                 }
               })
+              if (!matched) {
+                // Insignificant amount, mostly closures
+                // System.out.println(s"${apply.inst.result.ref.name} = apply ${apply.inst.functionRef.name}, ${ if (apply.inst.functionType.nonEmpty) apply.inst.functionType.get.name else ""}")
+              }
             }
             if (funcType.nonEmpty) {
               val functions = new mutable.HashSet[SWANMethod]()
@@ -140,7 +163,7 @@ object CallGraphUtils {
               })
               if (functions.nonEmpty) {
                 functions.foreach(f => {
-                  if (cgs.cg.addEdge(new CallGraph.Edge(stmt, f))) edgesMatchedUsingType += 1
+                  if (addCGEdge(m, f, stmt, new ControlFlowGraph.Edge(m.getCFG.getPredsOf(stmt).iterator().next(), stmt), cgs)) edgesMatchedUsingType += 1
                 })
               } else matchBasedOnArgs()
             } else matchBasedOnArgs()
@@ -149,8 +172,24 @@ object CallGraphUtils {
         case _ =>
       }
     })
+
+    var unresolved = 0
+    cgs.cg.methods.foreach(m => {
+      m._2.getStatements.forEach {
+        case apply: SWANStatement.ApplyFunctionRef => {
+          if (cgs.cg.edgesOutOf(apply).isEmpty) {
+            System.out.println(s"${apply.inst.result.ref.name} = apply ${apply.inst.functionRef.name}, ${ if (apply.inst.functionType.nonEmpty) apply.inst.functionType.get.name else ""}")
+            unresolved += 1
+          }
+        }
+        case _ =>
+      }
+    })
+
     System.out.println("edges matched using type: " + edgesMatchedUsingType)
-    System.out.println("edges matched using args: " + edgesMatchedUsingArgs)
+    //System.out.println("edges matched using args: " + edgesMatchedUsingArgs)
+    System.out.println("edges matched using args and ret type: " + edgesMatchedUsingArgsAndRetType)
+    System.out.println("unresolved call sites: " + unresolved)
   }
 
   def resolveFunctionPointersWithSPDS(cgs: CallGraphStats, additive: Boolean): Unit = {
@@ -160,9 +199,9 @@ object CallGraphUtils {
     while (edges != cgs.cg.getEdges.size()) {
       edges = cgs.cg.getEdges.size()
       if (!additive) { // pruning (e.g., VTA)
-        val toReplace = new mutable.HashMap[Statement, mutable.HashSet[String]]
+        val toReplace = new mutable.HashMap[SWANStatement.ApplyFunctionRef, mutable.HashSet[String]]
         cgs.cg.getEdges.forEach(cgEdge => {
-          if (!toReplace.contains(cgEdge.src())) {
+          if (!toReplace.contains(cgEdge.src().asInstanceOf[SWANStatement.ApplyFunctionRef])) {
             cgEdge.src() match {
               case apply: SWANStatement.ApplyFunctionRef => {
                 val edge = new ControlFlowGraph.Edge(cgEdge.src().getMethod.getControlFlowGraph.getPredsOf(apply).iterator().next(), apply)
@@ -199,10 +238,10 @@ object CallGraphUtils {
                     })
                   })
                   if (dynamicTargets.nonEmpty) {
-                    toReplace.put(cgEdge.src(), dynamicTargets)
+                    toReplace.put(apply, dynamicTargets)
                   }
                 } else {
-                  toReplace.put(cgEdge.src(), functions)
+                  toReplace.put(apply, functions)
                 }
               }
               case _ =>
@@ -212,7 +251,11 @@ object CallGraphUtils {
         toReplace.foreach(r => {
           val edges = cgs.cg.edgesOutOf(r._1)
           edges.forEach(cgs.cg.removeEdge)
-          r._2.foreach(f => cgs.cg.addEdge(new CallGraph.Edge(r._1, cgs.cg.methods(f))))
+          val stmt = r._1
+          val src = stmt.getMethod.asInstanceOf[SWANMethod]
+          r._2.foreach(f => {
+            addCGEdge(src, cgs.cg.methods(f), stmt, new ControlFlowGraph.Edge(src.getCFG.getPredsOf(stmt).iterator().next(), stmt), cgs)
+          })
         })
       } else { // adding (e.g., RTA)
         cgs.cg.methods.values.foreach(m => {

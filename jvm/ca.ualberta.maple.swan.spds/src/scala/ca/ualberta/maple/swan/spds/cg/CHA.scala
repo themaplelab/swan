@@ -43,36 +43,34 @@ class CHA(mg: ModuleGroup, pas: PointerAnalysisStyle.Style, options: Options) ex
     val startTimeMs = System.currentTimeMillis()
     methods.foreach(x => {
       val m = x._2
-      m.getCFG.blocks.foreach(b => {
-        b._2.stmts.foreach {
-          case applyStmt: SWANStatement.ApplyFunctionRef => {
-            val edge = new ControlFlowGraph.Edge(m.getCFG.getPredsOf(applyStmt).iterator().next(), applyStmt)
-            m.delegate.symbolTable(applyStmt.inst.functionRef.name) match {
-              case SymbolTableEntry.operator(_, operator) => {
-                operator match {
-                  case Operator.builtinRef(_, name) => {
-                    if (methods.contains(name)) { // TODO: Why are some builtins missing stubs?
-                      if (CallGraphUtils.addCGEdge(m, methods(name), applyStmt, edge, cgs)) cgs.trivialCallSites += 1
-                    }
-                  }
-                  case Operator.functionRef(_, name) => {
+      x._2.getStatements.forEach({
+        case applyStmt: SWANStatement.ApplyFunctionRef => {
+          val edge = new ControlFlowGraph.Edge(m.getCFG.getPredsOf(applyStmt).iterator().next(), applyStmt)
+          m.delegate.symbolTable(applyStmt.inst.functionRef.name) match {
+            case SymbolTableEntry.operator(_, operator) => {
+              operator match {
+                case Operator.builtinRef(_, name) => {
+                  if (methods.contains(name)) {
                     if (CallGraphUtils.addCGEdge(m, methods(name), applyStmt, edge, cgs)) cgs.trivialCallSites += 1
                   }
-                  case Operator.dynamicRef(_, _, index) => {
-                    moduleGroup.ddgs.foreach(ddg => {
-                      ddg._2.query(index, None).foreach(target => {
-                        if (CallGraphUtils.addCGEdge(m, methods(target), applyStmt, edge, cgs)) chaEdges += 1
-                      })
-                    })
-                  }
-                  case _ =>
                 }
+                case Operator.functionRef(_, name) => {
+                  if (CallGraphUtils.addCGEdge(m, methods(name), applyStmt, edge, cgs)) cgs.trivialCallSites += 1
+                }
+                case Operator.dynamicRef(_, _, index) => {
+                  moduleGroup.ddgs.foreach(ddg => {
+                    ddg._2.query(index, None).foreach(target => {
+                      if (CallGraphUtils.addCGEdge(m, methods(target), applyStmt, edge, cgs)) chaEdges += 1
+                    })
+                  })
+                }
+                case _ =>
               }
-              case _ =>
             }
+            case _ =>
           }
-          case _ =>
         }
+        case _ =>
       })
     })
 

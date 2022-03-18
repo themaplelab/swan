@@ -36,10 +36,11 @@ class SWANCallGraph(var moduleGroup: ModuleGroup,
     graph.outgoingEdgesOf(m).toArray().map(e => graph.getEdgeTarget(e.asInstanceOf[DefaultEdge]))
   }
 
-  def removeEdge(edge: Edge): Unit = {
-    this.getEdges.remove(edge)
+  // TODO: !!! This doesn't take care of stats or graph, not reliable
+  def removeEdge(edge: Edge): Boolean = {
     this.edgesInto(edge.tgt()).remove(edge)
     this.edgesOutOf(edge.src()).remove(edge)
+    this.getEdges.remove(edge)
   }
 
   override def toString: String = {

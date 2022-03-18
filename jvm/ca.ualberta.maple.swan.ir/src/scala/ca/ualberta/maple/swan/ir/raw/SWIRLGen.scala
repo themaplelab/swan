@@ -54,7 +54,7 @@ class SWIRLGen {
   class Context(val silModule: SILModule, val silFunction: SILFunction,
                 val silBlock: SILBlock, val pos: Option[Position],
                 val refTable: RefTable, val instantiatedTypes: mutable.HashSet[String],
-                val arguments: ArrayBuffer[Argument], val silMap: SILMap) {
+                val arguments: ArrayBuffer[Argument], val silMap: SILMap, val builtins: mutable.HashSet[(String, Type)]) {
     def globalsSingletonName: String = Constants.globalsSingleton + silModule.toString
     override def toString: String = {
       val sb = new StringBuilder
@@ -72,7 +72,7 @@ class SWIRLGen {
   }
   object Context {
     def dummy(silModule: SILModule, refTable: RefTable, instantiatedTypes: mutable.HashSet[String]): Context = {
-      new Context(silModule, null, null, null, refTable, instantiatedTypes, null, null)
+      new Context(silModule, null, null, null, refTable, instantiatedTypes, null, null, null)
     }
   }
 
@@ -92,6 +92,7 @@ class SWIRLGen {
     val startTime = System.nanoTime()
     val functions = new ArrayBuffer[Function]
     val silMap: SILMap = if (populateSILMap) new SILMap else null
+    val builtins = mutable.HashSet.empty[(String, Type)]
     silModule.functions.view.zipWithIndex.foreach(zippedFunction => {
       val silFunction = zippedFunction._1
       val instantiatedTypes = new mutable.HashSet[String]()
@@ -114,7 +115,7 @@ class SWIRLGen {
             silBlock.operatorDefs.foreach((silOperatorDef: SILOperatorDef) => {
               breakable {
                 val position: Option[Position] = Utils.SILSourceInfoToPosition(silOperatorDef.sourceInfo)
-                val ctx = new Context(silModule, silFunction, silBlock, position, refTable, instantiatedTypes, arguments, silMap)
+                val ctx = new Context(silModule, silFunction, silBlock, position, refTable, instantiatedTypes, arguments, silMap, builtins)
                 val instructions: ArrayBuffer[RawInstructionDef] = translateSILInstruction(SILInstructionDef.operator(silOperatorDef), ctx)
                 if (instructions == NOP) {
                   break()
@@ -132,7 +133,7 @@ class SWIRLGen {
             })
             val terminator: RawTerminatorDef = {
               val position: Option[Position] = Utils.SILSourceInfoToPosition(silBlock.terminatorDef.sourceInfo)
-              val ctx = new Context(silModule, silFunction, silBlock, position, refTable, instantiatedTypes, arguments, silMap)
+              val ctx = new Context(silModule, silFunction, silBlock, position, refTable, instantiatedTypes, arguments, silMap, builtins)
               val instructions = translateSILInstruction(
                 SILInstructionDef.terminator(silBlock.terminatorDef), ctx)
               if (instructions == null) {
@@ -199,6 +200,24 @@ class SWIRLGen {
         if (populateSILMap) silMap.map(silFunction, f)
         f
       })
+    })
+
+    // Generate stubs for builtins - no arguments, though.
+    builtins.foreach(b => {
+      intermediateSymbols.clear()
+      val refTable = new RefTable
+      val instantiatedTypes = new mutable.HashSet[String]()
+      val dummyCtx = Context.dummy(silModule, refTable, instantiatedTypes)
+      val blockRef = makeBlockRef("bb0", dummyCtx)
+      val retRef = makeSymbolRef("%ret", dummyCtx)
+      refTable.blocks.put(blockRef.label, blockRef)
+      val blocks = new ArrayBuffer[Block]
+      blocks.append(new Block(blockRef, new ArrayBuffer[Argument](), ArrayBuffer(new RawOperatorDef(
+        makeNewOperator(new Symbol(retRef, b._2), dummyCtx), None)),
+        new RawTerminatorDef(Terminator.ret(retRef), None)))
+      val attribute = Some(FunctionAttribute.stub)
+      val f = new Function(attribute, b._1, b._2, b._2, blocks, refTable)
+      functions.append(f)
     })
 
     // Create fake main function. The fake main function initializes globals
@@ -1029,10 +1048,12 @@ class SWIRLGen {
     I.operands.foreach(op => {
       arguments.append(makeSymbolRef(op.value, ctx))
     })
+    val tpe = Utils.SILTypeToType(I.tpe)
+    ctx.builtins.add((I.name, tpe))
     makeOperator(
       ctx,
       Operator.builtinRef(functionRef, I.name),
-      Operator.apply(result, functionRef.ref, arguments, None)
+      Operator.apply(result, functionRef.ref, arguments, Some(tpe))
     )
   }
 
