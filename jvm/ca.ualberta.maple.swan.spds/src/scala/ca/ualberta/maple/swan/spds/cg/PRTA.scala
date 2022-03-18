@@ -32,19 +32,14 @@ import scala.collection.mutable
 
 class PRTA(mg: ModuleGroup, pas: PointerAnalysisStyle.Style, options: Options) extends CallGraphConstructor(mg, options) {
 
-  val pa: Option[PointerAnalysis] = {
-    pas match {
-      case PointerAnalysisStyle.None => None
-      case ca.ualberta.maple.swan.spds.cg.CallGraphBuilder.PointerAnalysisStyle.SPDS => {
-        throw new RuntimeException("SPDS pointer analysis is currently not supported with PRTA")
-      }
-      case ca.ualberta.maple.swan.spds.cg.CallGraphBuilder.PointerAnalysisStyle.UFF => {
-        throw new RuntimeException("UFF pointer analysis is currently not supported with PRTA")
-      }
-    }
+  pas match {
+    case PointerAnalysisStyle.None =>
+    case PointerAnalysisStyle.SPDS =>
+    case PointerAnalysisStyle.UFF =>
+      throw new RuntimeException("UFF pointer analysis is currently not supported with PRTA")
+    case PointerAnalysisStyle.NameBased =>
   }
 
-  // TODO: Pointer analysis integration
   override def buildSpecificCallGraph(): Unit = {
     var prtaEdges: Int = 0
     val startTimeMs = System.currentTimeMillis()
@@ -99,6 +94,15 @@ class PRTA(mg: ModuleGroup, pas: PointerAnalysisStyle.Style, options: Options) e
         }
       })
     })
+
+    pas match {
+      case PointerAnalysisStyle.SPDS =>
+        CallGraphUtils.resolveFunctionPointersWithSPDS(cgs, additive = false)
+      case PointerAnalysisStyle.NameBased =>
+        CallGraphUtils.resolveFunctionPointersWithMatching(cgs)
+      case _ =>
+    }
+
     val stats = new PRTA.PRTAStats(prtaEdges, (System.currentTimeMillis() - startTimeMs).toInt)
     cgs.specificData.addOne(stats)
   }

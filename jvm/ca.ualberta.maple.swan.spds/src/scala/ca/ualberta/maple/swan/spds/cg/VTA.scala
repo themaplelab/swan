@@ -39,11 +39,12 @@ class VTA(mg: ModuleGroup, pas: PointerAnalysisStyle.Style, options: Options) ex
 
   pas match {
     case PointerAnalysisStyle.None =>
+    case PointerAnalysisStyle.NameBased =>
     case _ =>
       throw new RuntimeException("Pointer Analysis must not be set for VTA call graph construction")
   }
 
-  private var conservativeGraph = new CHA(mg,pas, options: Options)
+  private var conservativeGraph = new CHA(mg, pas, options: Options)
   //private val conservativeGraph = new UCGSound(mg,PointerAnalysisStyle.SPDS,true, options)
   Logging.printInfo("Building conservative graph (CHA) for VTA")
   conservativeGraph.buildCallGraph(CallGraphBuilder.CallGraphStyle.CHA)

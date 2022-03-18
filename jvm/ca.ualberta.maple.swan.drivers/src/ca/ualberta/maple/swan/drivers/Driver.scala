@@ -87,7 +87,7 @@ object Driver {
           val style = v.toLowerCase() match {
             case "cha" => CallGraphBuilder.CallGraphStyle.CHA
             case "prta" => CallGraphBuilder.CallGraphStyle.PRTA
-            case "srta" => CallGraphBuilder.CallGraphStyle.ORTA
+            case "orta" => CallGraphBuilder.CallGraphStyle.ORTA
             case "vta" => CallGraphBuilder.CallGraphStyle.VTA
             case "ucg" => CallGraphBuilder.CallGraphStyle.UCG
           }
@@ -102,6 +102,7 @@ object Driver {
           case "spds" => CallGraphBuilder.PointerAnalysisStyle.SPDS
           case "uff" => CallGraphBuilder.PointerAnalysisStyle.UFF
           case "none" => CallGraphBuilder.PointerAnalysisStyle.None
+          case "namebased" => CallGraphBuilder.PointerAnalysisStyle.NameBased
           case _ => throw new RuntimeException("Unknown pointer analysis style")
         }
         this.pointerAnalysisAlgorithm = style
@@ -193,11 +194,11 @@ class Driver extends Runnable {
   private val constructCallGraph = new Array[Boolean](0)
 
   @Option(names = Array("--cg-algo"),
-    description = Array("Algorithm(s) used for building the Call Graph."))
+    description = Array("Algorithm(s) used for building the Call Graph. Options: cha, prta, orta, vta, ucg"))
   private val callGraphAlgorithms: Array[String] = Array.empty[String]
 
   @Option(names = Array("--pa-algo"),
-    description = Array("Algorithm used for pointer analysis during Call Graph construction."))
+    description = Array("Algorithm used for pointer analysis during Call Graph construction. Options: spds, uff, none, namebased"))
   private val pointerAnalysisAlgorithm = new Array[String](1)
 
   @Option(names = Array("-t", "--taint-analysis-spec"),
@@ -389,7 +390,7 @@ class Driver extends Runnable {
         val prefix = cgAlgo match {
           case ca.ualberta.maple.swan.spds.cg.CallGraphBuilder.CallGraphStyle.CHA => "CHA"
           case ca.ualberta.maple.swan.spds.cg.CallGraphBuilder.CallGraphStyle.PRTA => "PRTA"
-          case ca.ualberta.maple.swan.spds.cg.CallGraphBuilder.CallGraphStyle.ORTA => "SRTA"
+          case ca.ualberta.maple.swan.spds.cg.CallGraphBuilder.CallGraphStyle.ORTA => "ORTA"
           case ca.ualberta.maple.swan.spds.cg.CallGraphBuilder.CallGraphStyle.VTA => "VTA"
           case ca.ualberta.maple.swan.spds.cg.CallGraphBuilder.CallGraphStyle.UCG => "UCG"
         }

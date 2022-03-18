@@ -34,19 +34,15 @@ import scala.collection.mutable.ArrayBuffer
 
 class ORTA(mg: ModuleGroup, pas: PointerAnalysisStyle.Style, options: Options) extends CallGraphConstructor(mg, options) {
 
-  val pa: Option[PointerAnalysis] = {
-    pas match {
-      case PointerAnalysisStyle.None => None
-      case ca.ualberta.maple.swan.spds.cg.CallGraphBuilder.PointerAnalysisStyle.SPDS => {
-        throw new RuntimeException("SPDS pointer analysis is currently not supported with SRTA")
-      }
-      case ca.ualberta.maple.swan.spds.cg.CallGraphBuilder.PointerAnalysisStyle.UFF => {
-        throw new RuntimeException("UFF pointer analysis is currently not supported with SRTA")
-      }
-    }
+  pas match {
+    case PointerAnalysisStyle.None =>
+    case PointerAnalysisStyle.SPDS =>
+    case PointerAnalysisStyle.UFF =>
+      throw new RuntimeException("UFF pointer analysis is currently not supported with ORTA")
+    case PointerAnalysisStyle.NameBased =>
   }
 
-  val unreachableTypeTargets = mutable.MultiDict.empty[String, (ApplyFunctionRef, ControlFlowGraph.Edge, Set[String])]
+  val unreachableTypeTargets: mutable.MultiDict[String, (ApplyFunctionRef, ControlFlowGraph.Edge, Set[String])] = mutable.MultiDict.empty[String, (ApplyFunctionRef, ControlFlowGraph.Edge, Set[String])]
   val reachableTypes = mutable.HashSet.empty[String]
   val reachableMethods = mutable.HashSet.empty[SWANMethod]
   val blockWorklist = new DFWorklist(options)
@@ -70,7 +66,7 @@ class ORTA(mg: ModuleGroup, pas: PointerAnalysisStyle.Style, options: Options) e
   }
 
   var rtaEdges: Int = 0
-  def addCallSiteEdges(cgs: CallGraphStats, stmt: ApplyFunctionRef, predEdge: ControlFlowGraph.Edge) = {
+  def addCallSiteEdges(cgs: CallGraphStats, stmt: ApplyFunctionRef, predEdge: ControlFlowGraph.Edge): Unit = {
     val method = stmt.m
     val methods = cgs.cg.methods
     method.delegate.symbolTable(stmt.inst.functionRef.name) match {
@@ -119,19 +115,17 @@ class ORTA(mg: ModuleGroup, pas: PointerAnalysisStyle.Style, options: Options) e
     }
   }
 
-  // TODO: Pointer analysis integration
   override def buildSpecificCallGraph(): Unit = {
     val startTimeMs = System.currentTimeMillis()
 
-    // ORTA/SRTA isn't meaningful without a main function
-    // ORTA/SRTA is equivalent to PRTA if everything is reachable
+    // ORTA isn't meaningful without a main function
+    // ORTA is equivalent to PRTA if everything is reachable
     // TODO figure out better entry points
     val entryPointsIterator = cgs.cg.getEntryPoints.asInstanceOf[java.util.Collection[SWANMethod]].iterator()
     while (entryPointsIterator.hasNext) {
       val m = entryPointsIterator.next()
       addMethod(m)
     }
-
 
     while (blockWorklist.nonEmpty || newTypesWorklist.nonEmpty) {
       while (blockWorklist.nonEmpty) {
@@ -165,18 +159,23 @@ class ORTA(mg: ModuleGroup, pas: PointerAnalysisStyle.Style, options: Options) e
       }
     }
 
-    val stats = new ORTA.SRTAStats(rtaEdges, (System.currentTimeMillis() - startTimeMs).toInt)
+    pas match {
+      case PointerAnalysisStyle.SPDS =>
+        CallGraphUtils.resolveFunctionPointersWithSPDS(cgs, additive = false)
+      case PointerAnalysisStyle.NameBased =>
+        CallGraphUtils.resolveFunctionPointersWithMatching(cgs)
+      case _ =>
+    }
+
+    val stats = new ORTA.ORTAStats(rtaEdges, (System.currentTimeMillis() - startTimeMs).toInt)
     cgs.specificData.addOne(stats)
   }
 }
 
 
-
-
-
 object ORTA {
 
-  class SRTAStats(val edges: Int, time: Int) extends SpecificCallGraphStats {
+  class ORTAStats(val edges: Int, time: Int) extends SpecificCallGraphStats {
 
     override def toJSON: Value = {
       val u = ujson.Obj()
@@ -186,7 +185,7 @@ object ORTA {
     }
 
     override def toString: String = {
-      s"sRTA\n  Edges: $edges\n  Time (ms): $time"
+      s"ORTA\n  Edges: $edges\n  Time (ms): $time"
     }
   }
 }

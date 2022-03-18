@@ -30,19 +30,14 @@ import ujson.Value
 
 class CHA(mg: ModuleGroup, pas: PointerAnalysisStyle.Style, options: Options) extends CallGraphConstructor(mg, options) {
 
-  val pa: Option[PointerAnalysis] = {
-    pas match {
-      case PointerAnalysisStyle.None => None
-      case ca.ualberta.maple.swan.spds.cg.CallGraphBuilder.PointerAnalysisStyle.SPDS => {
-        throw new RuntimeException("SPDS pointer analysis is currently not supported with CHA")
-      }
-      case ca.ualberta.maple.swan.spds.cg.CallGraphBuilder.PointerAnalysisStyle.UFF => {
-        throw new RuntimeException("UFF pointer analysis is currently not supported with CHA")
-      }
-    }
+  pas match {
+    case PointerAnalysisStyle.None =>
+    case PointerAnalysisStyle.SPDS =>
+    case PointerAnalysisStyle.UFF =>
+      throw new RuntimeException("UFF pointer analysis is currently not supported with CHA")
+    case PointerAnalysisStyle.NameBased =>
   }
 
-  // TODO: Pointer analysis integration
   override def buildSpecificCallGraph(): Unit = {
     var chaEdges: Int = 0
     val startTimeMs = System.currentTimeMillis()
@@ -80,6 +75,15 @@ class CHA(mg: ModuleGroup, pas: PointerAnalysisStyle.Style, options: Options) ex
         }
       })
     })
+
+    pas match {
+      case PointerAnalysisStyle.SPDS =>
+        CallGraphUtils.resolveFunctionPointersWithSPDS(cgs, additive = true)
+      case PointerAnalysisStyle.NameBased =>
+        CallGraphUtils.resolveFunctionPointersWithMatching(cgs)
+      case _ =>
+    }
+
     val stats = new CHA.CHAStats(chaEdges, (System.currentTimeMillis() - startTimeMs).toInt)
     cgs.specificData.addOne(stats)
   }
