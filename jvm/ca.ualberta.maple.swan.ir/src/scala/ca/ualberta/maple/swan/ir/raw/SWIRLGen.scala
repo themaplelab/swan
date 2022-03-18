@@ -54,7 +54,8 @@ class SWIRLGen {
   class Context(val silModule: SILModule, val silFunction: SILFunction,
                 val silBlock: SILBlock, val pos: Option[Position],
                 val refTable: RefTable, val instantiatedTypes: mutable.HashSet[String],
-                val arguments: ArrayBuffer[Argument], val silMap: SILMap, val builtins: mutable.HashSet[(String, Type)]) {
+                val arguments: ArrayBuffer[Argument], val silMap: SILMap,
+                val builtins: mutable.HashSet[(String, Type, ArrayBuffer[Type])]) {
     def globalsSingletonName: String = Constants.globalsSingleton + silModule.toString
     override def toString: String = {
       val sb = new StringBuilder
@@ -92,7 +93,7 @@ class SWIRLGen {
     val startTime = System.nanoTime()
     val functions = new ArrayBuffer[Function]
     val silMap: SILMap = if (populateSILMap) new SILMap else null
-    val builtins = mutable.HashSet.empty[(String, Type)]
+    val builtins = mutable.HashSet.empty[(String, Type, ArrayBuffer[Type])]
     silModule.functions.view.zipWithIndex.foreach(zippedFunction => {
       val silFunction = zippedFunction._1
       val instantiatedTypes = new mutable.HashSet[String]()
@@ -202,7 +203,7 @@ class SWIRLGen {
       })
     })
 
-    // Generate stubs for builtins - no arguments, though.
+    // Generate stubs for builtins
     builtins.foreach(b => {
       intermediateSymbols.clear()
       val refTable = new RefTable
@@ -212,7 +213,13 @@ class SWIRLGen {
       val retRef = makeSymbolRef("%ret", dummyCtx)
       refTable.blocks.put(blockRef.label, blockRef)
       val blocks = new ArrayBuffer[Block]
-      blocks.append(new Block(blockRef, new ArrayBuffer[Argument](), ArrayBuffer(new RawOperatorDef(
+      blocks.append(new Block(blockRef, {
+        val args = new ArrayBuffer[Argument]()
+        b._3.zipWithIndex.foreach(f => {
+          args.append(new Argument(makeSymbolRef("%" + f._2.toString, dummyCtx), f._1))
+        })
+        args
+      }, ArrayBuffer(new RawOperatorDef(
         makeNewOperator(new Symbol(retRef, b._2), dummyCtx), None)),
         new RawTerminatorDef(Terminator.ret(retRef), None)))
       val attribute = Some(FunctionAttribute.stub)
@@ -1045,11 +1052,13 @@ class SWIRLGen {
     // Use Any type because we don't know the type of the function ref value.
     val functionRef = new Symbol(generateSymbolName(r.get.valueNames.head, ctx), new Type())
     val arguments = ArrayBuffer[SymbolRef]()
+    val argumentTypes = ArrayBuffer[Type]()
     I.operands.foreach(op => {
       arguments.append(makeSymbolRef(op.value, ctx))
+      argumentTypes.append(Utils.SILTypeToType(op.tpe))
     })
     val tpe = Utils.SILTypeToType(I.tpe)
-    ctx.builtins.add((I.name, tpe))
+    ctx.builtins.add((I.name, tpe, argumentTypes))
     makeOperator(
       ctx,
       Operator.builtinRef(functionRef, I.name),
