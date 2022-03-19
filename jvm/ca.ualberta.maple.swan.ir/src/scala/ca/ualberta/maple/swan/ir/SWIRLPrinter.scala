@@ -35,6 +35,7 @@ class SWIRLPrinterOptions {
   // only for canonical (meant for SPDS debugging)
   var printLineNumber = false
   var cgDebugInfo: Option[SWIRLPrinterOptions.CallGraphDebugInfo] = None
+  var queryReachedInfo: Option[mutable.HashSet[CanOperatorDef]] = None
 
   def printLocation(b: Boolean): SWIRLPrinterOptions = {
     printLocation = b
@@ -62,6 +63,10 @@ class SWIRLPrinterOptions {
   }
   def cgDebugInfo(info: SWIRLPrinterOptions.CallGraphDebugInfo): SWIRLPrinterOptions = {
     cgDebugInfo = Some(info)
+    this
+  }
+  def queryReachedInfo(info: mutable.HashSet[CanOperatorDef]): SWIRLPrinterOptions = {
+    queryReachedInfo = Some(info)
     this
   }
 }
@@ -250,6 +255,10 @@ class SWIRLPrinter extends Printer {
   }
 
   def print(op: CanOperatorDef): Unit = {
+    if (options.queryReachedInfo.nonEmpty && options.queryReachedInfo.get.contains(op)) {
+      print("// REACHED")
+      printNewline()
+    }
     if (options.genLocationMap) {
       locMap.put(op, (line, getCol))
       locMap.put(op.operator, locMap(op))

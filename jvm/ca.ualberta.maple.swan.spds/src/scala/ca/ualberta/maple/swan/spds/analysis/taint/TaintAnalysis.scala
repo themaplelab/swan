@@ -19,19 +19,20 @@
 
 package ca.ualberta.maple.swan.spds.analysis.taint
 
-import java.util
-import java.util.regex.Pattern
-
 import boomerang.results.ForwardBoomerangResults
 import boomerang.scene._
 import boomerang.weights.{DataFlowPathWeight, PathTrackingBoomerang}
 import boomerang.{BackwardQuery, Boomerang, BoomerangOptions, DefaultBoomerangOptions, ForwardQuery}
-import ca.ualberta.maple.swan.ir.{CanInstructionDef, Position}
+import ca.ualberta.maple.swan.ir._
 import ca.ualberta.maple.swan.spds.analysis.taint.TaintResults.Path
 import ca.ualberta.maple.swan.spds.analysis.taint.TaintSpecification.JSONMethod
 import ca.ualberta.maple.swan.spds.structures.{SWANCallGraph, SWANInvokeExpr, SWANMethod, SWANStatement}
 import wpds.impl.Weight
 
+import java.io.{File, FileWriter}
+import java.nio.file.Paths
+import java.util
+import java.util.regex.Pattern
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
 
@@ -45,7 +46,7 @@ object AnalysisType {
 class TaintAnalysisOptions(val tpe: AnalysisType)
 
 
-class TaintAnalysis(val spec: TaintSpecification, val opts: TaintAnalysisOptions) {
+class TaintAnalysis(val spec: TaintSpecification, val opts: TaintAnalysisOptions, val debugDir: File) {
 
   class ForwardMethodTaintQuery(val edge: ControlFlowGraph.Edge,
                                 val variable: Val, val source: Method,
@@ -305,6 +306,26 @@ class TaintAnalysis(val spec: TaintSpecification, val opts: TaintAnalysisOptions
         })
       })
     })
+
+    val debug = false
+    if (debug) {
+      val reached = new mutable.HashSet[CanOperatorDef]()
+      results.rowKeySet().forEach(rowKey => {
+        rowKey.getStart.asInstanceOf[SWANStatement].delegate match {
+          case CanInstructionDef.operator(operatorDef) => reached.add(operatorDef)
+          case CanInstructionDef.terminator(terminatorDef) =>
+        }
+      })
+      val printer = new SWIRLPrinter
+      val printingOptions = new SWIRLPrinterOptions().queryReachedInfo(reached)
+      val printed = printer.print(cg.moduleGroup, printingOptions)
+
+      val f = Paths.get(debugDir.getPath, sourceName + "-query.swirl").toFile
+      val fw = new FileWriter(f)
+      fw.write(printed)
+      fw.close()
+    }
+
     paths
   }
 }

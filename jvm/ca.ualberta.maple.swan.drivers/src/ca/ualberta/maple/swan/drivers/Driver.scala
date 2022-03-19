@@ -436,7 +436,7 @@ class Driver extends Runnable {
             val analysisOptions = new TaintAnalysisOptions(
               if (options.pathTracking) AnalysisType.ForwardPathTracking
               else AnalysisType.Forward)
-            val analysis = new TaintAnalysis(spec, analysisOptions)
+            val analysis = new TaintAnalysis(spec, analysisOptions, debugDir)
             val results = analysis.run(cg)
             Logging.printInfo(results.toString)
             allResults.append(results)
