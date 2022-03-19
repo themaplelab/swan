@@ -28,7 +28,7 @@ import ca.ualberta.maple.swan.spds.cg.CallGraphBuilder.PointerAnalysisStyle
 import ca.ualberta.maple.swan.spds.cg.CallGraphConstructor.Options
 import ca.ualberta.maple.swan.spds.cg.CallGraphUtils.addCGEdge
 import ca.ualberta.maple.swan.spds.cg.UCG.UCGSoundStats
-import ca.ualberta.maple.swan.spds.cg.pa.MatrixUnionFind
+import ca.ualberta.maple.swan.spds.cg.pa.{MatrixUnionFind, PointerAnalysis, UnionFind, VTAPAStats}
 import ca.ualberta.maple.swan.spds.structures.SWANControlFlowGraph.SWANBlock
 import ca.ualberta.maple.swan.spds.structures.SWANStatement.ApplyFunctionRef
 import ca.ualberta.maple.swan.spds.structures.{SWANInvokeExpr, SWANMethod, SWANStatement, SWANVal}
@@ -37,6 +37,8 @@ import ujson.Value
 import java.util
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
+import scala.collection.{immutable, mutable}
+import scala.jdk.CollectionConverters.ListHasAsScala
 
 /**
  * An algorithm that soundly and precisely handles dynamic
@@ -79,6 +81,13 @@ class UCG(mg: ModuleGroup, pas: PointerAnalysisStyle.Style,
 
   private var queryCache: SQueryCache[_] = null
 
+  val vtaPruning: Boolean = pas match {
+    case ca.ualberta.maple.swan.spds.cg.CallGraphBuilder.PointerAnalysisStyle.SPDSVTA => true
+    case _ => false
+  }
+  var vta: pa.TypeFlow = _
+
+
   override def buildSpecificCallGraph(): Unit = {
 
     pas match {
@@ -86,6 +95,9 @@ class UCG(mg: ModuleGroup, pas: PointerAnalysisStyle.Style,
         uf = new MatrixUnionFind(cgs.cg)
       }
       case _ =>
+    }
+    if (vtaPruning) {
+      vta = new pa.VTA(new VTAPAStats {}).getTypeFlow(methods, new CHA(mg, pas, options).cg)
     }
 
     // This type set creation (map types to bits)
@@ -124,7 +136,7 @@ class UCG(mg: ModuleGroup, pas: PointerAnalysisStyle.Style,
       pas match {
         case PointerAnalysisStyle.None => null
         case PointerAnalysisStyle.NameBased => throw new RuntimeException("name-based PA unsupported for UCG")
-        case PointerAnalysisStyle.SPDS => {
+        case PointerAnalysisStyle.SPDS | PointerAnalysisStyle.SPDSVTA => {
           new SQueryCache[SPDSResults](cgs, stats) {
             val solvers = new mutable.HashMap[BackwardQuery, Boomerang]
             def query(pred: boomerang.scene.Statement, stmt: ApplyFunctionRef, ref: Val): SPDSResults = {
@@ -333,6 +345,17 @@ class UCG(mg: ModuleGroup, pas: PointerAnalysisStyle.Style,
             // Handler for dynamic (virtual) function references
             def visitDynamicRef(index: String, block: SWANBlock, queried: Boolean): Unit = {
               val instantiatedTypes = b.toHashSet
+              if (vtaPruning) {
+                val ie = applyStmt.getInvokeExpr
+                if (!ie.getArgs.isEmpty) {
+                  val reciever = ie.getArgs.asScala.last.asInstanceOf[SWANVal]
+                  val types =
+                  mutable.HashSet.from{
+                    vta.getValTypes(reciever).collect { case neww: SWANVal.NewExpr => neww.delegate.tpe.name }
+                  }
+                  instantiatedTypes.filterInPlace(typ => types.contains(typ))
+                }
+              }
               interProcSuccessors.get(block) match {
                 case Some(_) => interProcSuccessors(block).add(c)
                 case None => interProcSuccessors.addOne(block, mutable.HashSet(c))
@@ -370,7 +393,7 @@ class UCG(mg: ModuleGroup, pas: PointerAnalysisStyle.Style,
                 val allocSites = new ArrayBuffer[SWANVal]()
                 pas match {
                   case PointerAnalysisStyle.None =>
-                  case ca.ualberta.maple.swan.spds.cg.CallGraphBuilder.PointerAnalysisStyle.SPDS => {
+                  case ca.ualberta.maple.swan.spds.cg.CallGraphBuilder.PointerAnalysisStyle.SPDS | ca.ualberta.maple.swan.spds.cg.CallGraphBuilder.PointerAnalysisStyle.SPDSVTA => {
                     queryCache.asInstanceOf[SQueryCache[SPDSResults]].get(pred, stmt, ref).forEach((forwardQuery, _) => {
                       allocSites.addOne(forwardQuery.`var`().asInstanceOf[AllocVal].getAllocVal.asInstanceOf[SWANVal])
                     })

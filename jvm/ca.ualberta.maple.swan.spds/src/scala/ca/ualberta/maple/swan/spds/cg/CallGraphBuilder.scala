@@ -80,6 +80,7 @@ object CallGraphBuilder {
 
     val None: PointerAnalysisStyle.Value = Value
     val SPDS: PointerAnalysisStyle.Value = Value
+    val SPDSVTA: PointerAnalysisStyle.Value = Value
     val UFF: PointerAnalysisStyle.Value = Value
     val NameBased: PointerAnalysisStyle.Value = Value
   }

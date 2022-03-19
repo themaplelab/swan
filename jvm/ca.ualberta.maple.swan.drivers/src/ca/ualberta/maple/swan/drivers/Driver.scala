@@ -103,6 +103,7 @@ object Driver {
       if (v != null) {
         val style = v.toLowerCase() match {
           case "spds" => CallGraphBuilder.PointerAnalysisStyle.SPDS
+          case "spdsvta" => CallGraphBuilder.PointerAnalysisStyle.SPDSVTA
           case "uff" => CallGraphBuilder.PointerAnalysisStyle.UFF
           case "none" => CallGraphBuilder.PointerAnalysisStyle.None
           case "namebased" => CallGraphBuilder.PointerAnalysisStyle.NameBased
@@ -388,13 +389,26 @@ class Driver extends Runnable {
           new CallGraphConstructor.Options(options.analyzeLibraries, options.analyzeClosures, options.debug))
         allStats.cgs = Some(cgResults)
         val cg = cgResults.cg
-        val prefix = cgAlgo match {
+        val cgPrefix = cgAlgo match {
           case ca.ualberta.maple.swan.spds.cg.CallGraphBuilder.CallGraphStyle.CHA => "CHA"
           case ca.ualberta.maple.swan.spds.cg.CallGraphBuilder.CallGraphStyle.PRTA => "PRTA"
           case ca.ualberta.maple.swan.spds.cg.CallGraphBuilder.CallGraphStyle.ORTA => "ORTA"
           case ca.ualberta.maple.swan.spds.cg.CallGraphBuilder.CallGraphStyle.VTA => "VTA"
           case ca.ualberta.maple.swan.spds.cg.CallGraphBuilder.CallGraphStyle.UCG => "UCG"
         }
+        val paPrefix = options.pointerAnalysisAlgorithm match {
+          case ca.ualberta.maple.swan.spds.cg.CallGraphBuilder.PointerAnalysisStyle.None =>
+            ""
+          case ca.ualberta.maple.swan.spds.cg.CallGraphBuilder.PointerAnalysisStyle.SPDS =>
+            "SPDS"
+          case ca.ualberta.maple.swan.spds.cg.CallGraphBuilder.PointerAnalysisStyle.SPDSVTA =>
+            "SPDS-VTA"
+          case ca.ualberta.maple.swan.spds.cg.CallGraphBuilder.PointerAnalysisStyle.UFF =>
+            "UFF"
+          case ca.ualberta.maple.swan.spds.cg.CallGraphBuilder.PointerAnalysisStyle.NameBased =>
+            "NameBased"
+        }
+        val prefix = s"${cgPrefix}-${paPrefix}"
         if (options.printToDot) {
           val fw = new FileWriter(Paths.get(swanDir.getPath, s"$prefix-dot.txt").toFile)
           try {
