@@ -37,7 +37,7 @@ class PRTA(mg: ModuleGroup, pas: PointerAnalysisStyle.Style, options: Options) e
     case PointerAnalysisStyle.SPDS => // options.analyzeClosures = true
     case PointerAnalysisStyle.UFF =>
       throw new RuntimeException("UFF pointer analysis is currently not supported with CHA")
-    case PointerAnalysisStyle.NameBased => options.analyzeClosures = true
+    case PointerAnalysisStyle.NameBased => // options.analyzeClosures = true
   }
 
   override def buildSpecificCallGraph(): Unit = {

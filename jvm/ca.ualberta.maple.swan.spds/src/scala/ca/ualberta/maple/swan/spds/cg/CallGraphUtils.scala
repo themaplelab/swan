@@ -19,7 +19,7 @@
 
 package ca.ualberta.maple.swan.spds.cg
 
-import boomerang.scene.{AllocVal, CallGraph, ControlFlowGraph, DataFlowScope}
+import boomerang.scene.{AllocVal, CallGraph, ControlFlowGraph, DataFlowScope, DeclaredMethod, Method}
 import boomerang.{BackwardQuery, Boomerang, DefaultBoomerangOptions}
 import ca.ualberta.maple.swan.ir.{Instruction, ModuleGroup, Operator, SymbolTableEntry}
 import ca.ualberta.maple.swan.spds.Stats.CallGraphStats
@@ -29,6 +29,12 @@ import java.io.{File, FileWriter}
 import scala.collection.mutable
 
 object CallGraphUtils {
+
+  def getDataFlowScope(options: CallGraphConstructor.Options): DataFlowScope = new DataFlowScope {
+    override def isExcluded(declaredMethod: DeclaredMethod): Boolean = isClosureRelated(declaredMethod.getName, options)
+
+    override def isExcluded(method: Method): Boolean = isClosureRelated(method.getName, options)
+  }
 
   /**
    * Add a Call Graph edge and update relevant information
@@ -41,15 +47,6 @@ object CallGraphUtils {
    */
   def addCGEdge(from: SWANMethod, to: SWANMethod, stmt: SWANStatement.ApplyFunctionRef,
                 cfgEdge: ControlFlowGraph.Edge, cgs: CallGraphStats): Boolean = {
-    if (isClosureRelated(from, cgs.options)) {
-      // Closures are not supported
-      //throw new RuntimeException("Adding CG edge from closure, this is not supported")
-      return false
-    }
-    if (isClosureRelated(to, cgs.options)) {
-      // Closures are not supported
-      return false
-    }
     val edge = new CallGraph.Edge(stmt, to)
     val b = cgs.cg.addEdge(edge)
     if (b) {
@@ -93,7 +90,8 @@ object CallGraphUtils {
               }
               case SymbolTableEntry.multiple(symbol, operators) => trulyUnresolved = true
             }
-            if (trulyUnresolved) {
+            // Using isClosureRelated here might miss some, but that's okay
+            if (trulyUnresolved && !isClosureRelated(m._1, cgs.options)) {
               // System.out.println(s"${apply.inst.result.ref.name} = apply ${apply.inst.functionRef.name}, ${if (apply.inst.functionType.nonEmpty) apply.inst.functionType.get.name else ""}")
               tUnresolved += 1
             }
@@ -115,9 +113,8 @@ object CallGraphUtils {
       (!options.analyzeLibraries && m.delegate.isLibrary)
   }
 
-  def isClosureRelated(m: SWANMethod, options: CallGraphConstructor.Options): Boolean = {
+  def isClosureRelated(name: String, options: CallGraphConstructor.Options): Boolean = {
     if (options.analyzeClosures) false else {
-      val name = m.getName
       name.startsWith("closure ") ||
         name.startsWith("reabstraction thunk")
     }
@@ -197,6 +194,7 @@ object CallGraphUtils {
   }
 
   def resolveFunctionPointersWithSPDS(cgs: CallGraphStats, additive: Boolean): Unit = {
+    val scope = CallGraphUtils.getDataFlowScope(cgs.options)
     // Using fixed-point Kleene's
     // TODO: stats
     var edges = 0
@@ -210,7 +208,7 @@ object CallGraphUtils {
               case apply: SWANStatement.ApplyFunctionRef => {
                 val edge = new ControlFlowGraph.Edge(cgEdge.src().getMethod.getControlFlowGraph.getPredsOf(apply).iterator().next(), apply)
                 val query = BackwardQuery.make(edge, apply.getFunctionRef)
-                val solver = new Boomerang(cgs.cg, DataFlowScope.INCLUDE_ALL, new DefaultBoomerangOptions)
+                val solver = new Boomerang(cgs.cg, scope, new DefaultBoomerangOptions)
                 val backwardQueryResults = solver.solve(query)
                 val allocSites = backwardQueryResults.getAllocationSites
                 val functions = new mutable.HashSet[String]()
@@ -267,7 +265,7 @@ object CallGraphUtils {
             case stmt@(apply: SWANStatement.ApplyFunctionRef) => {
               val edge = new ControlFlowGraph.Edge(m.getControlFlowGraph.getPredsOf(apply).iterator().next(), apply)
               val query = BackwardQuery.make(edge, apply.getFunctionRef)
-              val solver = new Boomerang(cgs.cg, DataFlowScope.INCLUDE_ALL, new DefaultBoomerangOptions {
+              val solver = new Boomerang(cgs.cg, scope, new DefaultBoomerangOptions {
                 override def allowMultipleQueries(): Boolean = true
               })
               val backwardQueryResults = solver.solve(query)
@@ -316,7 +314,7 @@ object CallGraphUtils {
     moduleGroup.functions.foreach(f => {
       val m = new SWANMethod(f, moduleGroup)
       methods.put(f.name, m)
-      if (!isUninteresting(m, cgs.options) && !isClosureRelated(m, cgs.options)) {
+      if (!isUninteresting(m, cgs.options)) {
         cg.addEntryPoint(m)
         cgs.entryPoints += 1
       }

@@ -19,18 +19,12 @@
 
 package ca.ualberta.maple.swan.spds.cg
 
-import boomerang.results.AbstractBoomerangResults
-import boomerang.scene.{ControlFlowGraph, DataFlowScope, Val}
-import boomerang.{BackwardQuery, Boomerang, DefaultBoomerangOptions, ForwardQuery}
 import ca.ualberta.maple.swan.ir.FunctionAttribute
 import ca.ualberta.maple.swan.spds.structures.SWANControlFlowGraph.SWANBlock
-import ca.ualberta.maple.swan.spds.structures.SWANStatement.ApplyFunctionRef
-import ca.ualberta.maple.swan.spds.structures.{SWANCallGraph, SWANMethod, SWANStatement}
-import ca.ualberta.maple.swan.utils.Logging
+import ca.ualberta.maple.swan.spds.structures.SWANMethod
 
-import java.util
 import scala.collection.mutable.ArrayBuffer
-import scala.collection.{BitSetOps, immutable, mutable}
+import scala.collection.{immutable, mutable}
 
 // The Depth First Worklist is a stack, and not a queue
 // The Depth First Worklist will ignore blocks already in the worklist
@@ -39,7 +33,7 @@ final class DFWorklist(val options: CallGraphConstructor.Options) {
   private val stack: mutable.Stack[SWANBlock] = new mutable.Stack[SWANBlock]()
 
   def add(b: SWANBlock): Unit = {
-    if (!hs.contains(b) && !CallGraphUtils.isClosureRelated(b.method, options)) {
+    if (!hs.contains(b)) {
       hs.add(b)
       stack.push(b)
     }
@@ -48,10 +42,6 @@ final class DFWorklist(val options: CallGraphConstructor.Options) {
   def addMethod(m: SWANMethod): Unit = {
     // TODO move this to traverse method
     if (m.delegate.attribute.nonEmpty && m.delegate.attribute.get == FunctionAttribute.stub) {
-      return
-    }
-
-    if (CallGraphUtils.isClosureRelated(m, options)) {
       return
     }
 

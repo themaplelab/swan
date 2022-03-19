@@ -35,7 +35,7 @@ class CHA(mg: ModuleGroup, pas: PointerAnalysisStyle.Style, options: Options) ex
     case PointerAnalysisStyle.SPDS => // options.analyzeClosures = true
     case PointerAnalysisStyle.UFF =>
       throw new RuntimeException("UFF pointer analysis is currently not supported with CHA")
-    case PointerAnalysisStyle.NameBased => options.analyzeClosures = true
+    case PointerAnalysisStyle.NameBased => // options.analyzeClosures = true
   }
 
   override def buildSpecificCallGraph(): Unit = {

@@ -28,15 +28,15 @@ import ca.ualberta.maple.swan.spds.cg.CallGraphBuilder.PointerAnalysisStyle
 import ca.ualberta.maple.swan.spds.cg.CallGraphConstructor.Options
 import ca.ualberta.maple.swan.spds.cg.CallGraphUtils.addCGEdge
 import ca.ualberta.maple.swan.spds.cg.UCG.UCGSoundStats
-import ca.ualberta.maple.swan.spds.cg.pa.{MatrixUnionFind, PointerAnalysis, UnionFind}
+import ca.ualberta.maple.swan.spds.cg.pa.MatrixUnionFind
 import ca.ualberta.maple.swan.spds.structures.SWANControlFlowGraph.SWANBlock
 import ca.ualberta.maple.swan.spds.structures.SWANStatement.ApplyFunctionRef
 import ca.ualberta.maple.swan.spds.structures.{SWANInvokeExpr, SWANMethod, SWANStatement, SWANVal}
 import ujson.Value
 
 import java.util
+import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
-import scala.collection.{immutable, mutable}
 
 /**
  * An algorithm that soundly and precisely handles dynamic
@@ -53,6 +53,8 @@ class UCG(mg: ModuleGroup, pas: PointerAnalysisStyle.Style,
   type DDGTypeSet = DDGBitSet
   type SPDSResults = util.Map[ForwardQuery, AbstractBoomerangResults.Context]
   type UFFResults = mutable.HashSet[SWANVal]
+
+  private val scope = CallGraphUtils.getDataFlowScope(options)
 
   /** Worklist of blocks to be visited and processed (unique stack) */
   private val w: DFWorklist = new DFWorklist(options)
@@ -129,7 +131,7 @@ class UCG(mg: ModuleGroup, pas: PointerAnalysisStyle.Style,
               val query = BackwardQuery.make(new ControlFlowGraph.Edge(pred, stmt), ref)
               val solver = {
                 if (!solvers.contains(query)) {
-                  solvers.put(query, new Boomerang(cgs.cg, DataFlowScope.INCLUDE_ALL,
+                  solvers.put(query, new Boomerang(cgs.cg, scope,
                     new DefaultBoomerangOptions {
                       override def allowMultipleQueries(): Boolean = true
                     }))
