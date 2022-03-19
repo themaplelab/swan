@@ -35,8 +35,7 @@ object ModuleGrouper {
   // The model module must be merged last.
   // TODO: The current function merging is likely inefficient.
   private def merge(toMerge: ArrayBuffer[CanFunction],
-            existingFunctions: mutable.HashMap[String, CanFunction],
-            entries: mutable.HashMap[String, CanFunction], models: mutable.HashMap[String, CanFunction],
+            existingFunctions: mutable.HashMap[String, CanFunction], models: mutable.HashMap[String, CanFunction],
             mains: mutable.HashMap[String, CanFunction], others: mutable.HashMap[String, CanFunction],
             stubs: mutable.HashMap[String, CanFunction], linked: mutable.HashMap[String, CanFunction],
             forceAdd: Boolean = false): Unit = {
@@ -45,7 +44,6 @@ object ModuleGrouper {
       if (attr != null) {
         f.attribute = Some(attr)
       }
-      if (entries.contains(f.name)) entries.remove(f.name)
       if (mains.contains(f.name)) mains.remove(f.name)
       if (models.contains(f.name)) models.remove(f.name)
       if (mains.contains(f.name)) mains.remove(f.name)
@@ -144,7 +142,6 @@ object ModuleGrouper {
 
   def group(modules: ArrayBuffer[CanModule], existingGroup: ModuleGroup = null, changedFiles: ArrayBuffer[File] = null): ModuleGroup = {
     val functions = ArrayBuffer.empty[CanFunction]
-    val entries = mutable.HashMap.empty[String, CanFunction]
     val models = mutable.HashMap.empty[String, CanFunction]
     val mains = mutable.HashMap.empty[String, CanFunction]
     val others = mutable.HashMap.empty[String, CanFunction]
@@ -155,7 +152,7 @@ object ModuleGrouper {
     val silMap = new SILMap
     val metas = ArrayBuffer.empty[ModuleMetadata]
     if (existingGroup != null) {
-      merge(existingGroup.functions, existingFunctions, entries, models, mains, others, stubs, linked)
+      merge(existingGroup.functions, existingFunctions, models, mains, others, stubs, linked)
       ddgs = existingGroup.ddgs
       if (existingGroup.silMap.nonEmpty) {
         silMap.combine(existingGroup.silMap.get)
@@ -174,7 +171,7 @@ object ModuleGrouper {
       if (changed) {
         Logging.printInfo("Merging " + module.functions.length + " functions into existing group")
       }
-      merge(module.functions, existingFunctions, entries, models, mains, others, stubs, linked, changed)
+      merge(module.functions, existingFunctions, models, mains, others, stubs, linked, changed)
       if (module.ddg.nonEmpty && !changed) {
         val name = module.toString
         if (ddgs.contains(name)) {
@@ -193,14 +190,12 @@ object ModuleGrouper {
       }
     })
 
-    functions.appendAll(entries.values)
     functions.appendAll(mains.values)
     functions.appendAll(models.values)
     functions.appendAll(linked.values)
     functions.appendAll(others.values)
     functions.appendAll(stubs.values)
 
-    new ModuleGroup(functions, entries.values.to(immutable.HashSet), ddgs,
-      if (silMap.nonEmpty()) Some(silMap) else None, None, metas)
+    new ModuleGroup(functions, ddgs, if (silMap.nonEmpty()) Some(silMap) else None, None, metas)
   }
 }

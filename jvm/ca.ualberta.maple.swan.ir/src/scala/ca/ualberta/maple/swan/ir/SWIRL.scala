@@ -35,7 +35,6 @@ import scala.collection.mutable.ArrayBuffer
 import scala.collection.{immutable, mutable}
 
 class ModuleGroup(val functions: ArrayBuffer[CanFunction],
-                  val entries: immutable.HashSet[CanFunction],
                   val ddgs: mutable.HashMap[String, DynamicDispatchGraph],
                   val silMap: Option[SILMap], var swirlSourceMap: Option[mutable.HashMap[Object, (Int, Int)]],
                   val metas: ArrayBuffer[ModuleMetadata]) extends Serializable {

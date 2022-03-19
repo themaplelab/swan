@@ -348,9 +348,7 @@ class Driver extends Runnable {
     }
     generalStats.moduleGroupReadyTimeMS = TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - runStartTime).toInt
     Logging.printTimeStampSimple(0, runStartTime, "(group ready for analysis)")
-    Logging.printInfo(
-      group.toString+group.functions.length+" functions\n"+
-      group.entries.size+" entries")
+    Logging.printInfo(group.toString+group.functions.length+" functions")
     if (options.debug) {
       writeFile(group, debugDir, "grouped")
       val f = Paths.get(debugDir.getPath, "missing-models.txt").toFile
