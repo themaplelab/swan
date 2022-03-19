@@ -29,7 +29,7 @@ abstract class TrivialEdges(mg: ModuleGroup, options: Options) extends CallGraph
   private def handleOperator(operator: Operator, stmt: SWANStatement.ApplyFunctionRef, edge: ControlFlowGraph.Edge): Unit = {
     operator match {
       case Operator.builtinRef(_, name) => {
-        if (methods.contains(name)) { // TODO: Why are some builtins missing stubs?
+        if (methods.contains(name)) {
           if (CallGraphUtils.addCGEdge(stmt.m, methods(name), stmt, edge, cgs)) cgs.trivialCallSites += 1
         }
       }
@@ -42,27 +42,22 @@ abstract class TrivialEdges(mg: ModuleGroup, options: Options) extends CallGraph
 
   // This must be called after initialized call graph
   final def addTrivialEdges(): Unit = {
-    methods.foreach{ case (_,m) => {
-      m.applyFunctionRefs.foreach{ case stmt => {
-        val edge = new ControlFlowGraph.Edge(m.getCFG.getPredsOf(stmt).iterator().next(), stmt)
-        m.delegate.symbolTable(stmt.inst.functionRef.name) match {
-          case SymbolTableEntry.operator(_, operator) => {
-            handleOperator(operator,stmt,edge)
+    methods.foreach{ case (_, m) => {
+      m.applyFunctionRefs.foreach {
+        stmt => {
+          val edge = new ControlFlowGraph.Edge(m.getCFG.getPredsOf(stmt).iterator().next(), stmt)
+          m.delegate.symbolTable(stmt.inst.functionRef.name) match {
+            case SymbolTableEntry.operator(_, operator) => {
+              handleOperator(operator, stmt, edge)
+            }
+            case SymbolTableEntry.multiple(_, operators) => operators.foreach { operator =>
+              handleOperator(operator, stmt, edge)
+            }
+            // interproc ref
+            case _: SymbolTableEntry.argument =>
           }
-          case SymbolTableEntry.multiple(_, operators) => operators.foreach{ operator =>
-            handleOperator(operator,stmt,edge)
-          }
-          // interproc ref
-          case _: SymbolTableEntry.argument =>
         }
       }
-      }
-      m.getCFG.blocks.foreach{ case (_,b) => {
-        b.stmts.foreach {
-          case applyStmt: SWANStatement.ApplyFunctionRef =>
-          case _ =>
-        }
-      }}
     }}
   }
 }

@@ -46,6 +46,10 @@ object Utils {
     new Type(printer.clearNakedPrint(SILType.addressType(rootTpe)))
   }
 
+  def SILDeclRefToString(ref: SILDeclRef): String = {
+    printer.printSILDeclRef(ref)
+  }
+
   def getFunctionTypeFromType(rootTpe: SILType): SILType.functionType = {
     var curType = rootTpe
     def unexpected(): Nothing = {

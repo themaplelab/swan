@@ -943,6 +943,7 @@ class SWIRLGen {
 
   @throws[UnexpectedSILFormatException]
   def visitObjCMethod(r: Option[SILResult], I: SILOperator.objcMethod, ctx: Context): ArrayBuffer[RawInstructionDef] = {
+    ctx.builtins.add((Utils.SILDeclRefToString(I.declRef), Utils.SILFunctionTypeToReturnType(I.tpe), new ArrayBuffer[Type]()))
     val result = getSingleResult(r, Utils.SILTypeToType(I.tpe), ctx)
     makeOperator(ctx, Operator.builtinRef(result, Utils.print(I.declRef)))
   }
@@ -954,6 +955,7 @@ class SWIRLGen {
 
   @throws[UnexpectedSILFormatException]
   def visitObjCSuperMethod(r: Option[SILResult], I: SILOperator.objcSuperMethod, ctx: Context): ArrayBuffer[RawInstructionDef] = {
+    ctx.builtins.add((Utils.SILDeclRefToString(I.declRef), Utils.SILFunctionTypeToReturnType(I.tpe), new ArrayBuffer[Type]()))
     val result = getSingleResult(r, Utils.SILTypeToType(I.tpe), ctx)
     if (I.declRef.name.length < 2) { // #T.method[...]
       throw new UnexpectedSILFormatException("Expected decl ref of objc_super_method to have at least two components: " + Utils.print(I.declRef))
@@ -1062,7 +1064,7 @@ class SWIRLGen {
     makeOperator(
       ctx,
       Operator.builtinRef(functionRef, I.name),
-      Operator.apply(result, functionRef.ref, arguments, Some(tpe))
+      Operator.apply(result, functionRef.ref, arguments, None)
     )
   }
 

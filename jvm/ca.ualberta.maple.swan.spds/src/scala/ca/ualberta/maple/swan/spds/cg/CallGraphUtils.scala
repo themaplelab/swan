@@ -19,9 +19,8 @@
 
 package ca.ualberta.maple.swan.spds.cg
 
+import boomerang.scene.{AllocVal, CallGraph, ControlFlowGraph, DataFlowScope}
 import boomerang.{BackwardQuery, Boomerang, DefaultBoomerangOptions}
-import boomerang.scene.jimple.JimpleStatement
-import boomerang.scene.{AllocVal, CallGraph, ControlFlowGraph, DataFlowScope, Statement}
 import ca.ualberta.maple.swan.ir.{Instruction, ModuleGroup, Operator, SymbolTableEntry}
 import ca.ualberta.maple.swan.spds.Stats.CallGraphStats
 import ca.ualberta.maple.swan.spds.structures.{SWANCallGraph, SWANMethod, SWANStatement, SWANVal}
@@ -71,21 +70,41 @@ object CallGraphUtils {
     b
   }
 
-  def resolvedCallSites(cgs: CallGraphStats) : Int = {
-    val cg : CallGraph = cgs.cg
-    val dict : mutable.MultiDict[SWANStatement, SWANMethod] = mutable.MultiDict.empty
-    cg.getEdges.forEach(e => dict.addOne(e.src().asInstanceOf[SWANStatement.ApplyFunctionRef], e.tgt().asInstanceOf[SWANMethod]))
-    dict.keySet.count(k => dict.get(k).size == 1)
-  }
-
-  def totalCallSites(cgs: CallGraphStats) : Int = {
-    val cg : CallGraph = cgs.cg
-    val outOf : mutable.HashSet[SWANStatement] = mutable.HashSet.empty
-    cg.getEdges.forEach(e => {
-      val src = e.src().asInstanceOf[SWANStatement.ApplyFunctionRef]
-      outOf.add(src)
+  def calculateResolvedCallsites(cgs: CallGraphStats): (Int, Int, Int, Int) = {
+    var callsites = 0
+    var tUnresolved = 0
+    var unresolved = 0
+    var resolved = 0
+    cgs.cg.methods.foreach(m => {
+      m._2.getStatements.forEach {
+        case apply: SWANStatement.ApplyFunctionRef => {
+          callsites += 1
+          if (cgs.cg.edgesOutOf(apply).isEmpty) {
+            unresolved += 1
+            var trulyUnresolved = false
+            m._2.delegate.symbolTable(apply.inst.functionRef.name) match {
+              case SymbolTableEntry.operator(symbol, operator) => {
+                if (!apply.inst.functionType.get.name.contains("witness_method")) {
+                  trulyUnresolved = true
+                }
+              }
+              case SymbolTableEntry.argument(argument) => {
+                if (!cgs.cg.getEntryPoints.contains(m._2) && !cgs.cg.edgesInto(m._2).isEmpty) trulyUnresolved = true
+              }
+              case SymbolTableEntry.multiple(symbol, operators) => trulyUnresolved = true
+            }
+            if (trulyUnresolved) {
+              // System.out.println(s"${apply.inst.result.ref.name} = apply ${apply.inst.functionRef.name}, ${if (apply.inst.functionType.nonEmpty) apply.inst.functionType.get.name else ""}")
+              tUnresolved += 1
+            }
+          } else {
+            resolved += 1
+          }
+        }
+        case _ =>
+      }
     })
-    outOf.size
+    (tUnresolved, unresolved, resolved, callsites)
   }
 
   def isUninteresting(m: SWANMethod, options: CallGraphConstructor.Options): Boolean = {
@@ -110,6 +129,7 @@ object CallGraphUtils {
       if (!cg.edgesInto(m._2).isEmpty && cg.getEntryPoints.contains(m._2)) {
         cgs.cg.getEntryPoints.remove(m._2)
         cgs.entryPoints -= 1
+        cgs.debugInfo.entries.remove(m._2.delegate)
       }
     })
   }
@@ -173,23 +193,9 @@ object CallGraphUtils {
       }
     })
 
-    var unresolved = 0
-    cgs.cg.methods.foreach(m => {
-      m._2.getStatements.forEach {
-        case apply: SWANStatement.ApplyFunctionRef => {
-          if (cgs.cg.edgesOutOf(apply).isEmpty) {
-            System.out.println(s"${apply.inst.result.ref.name} = apply ${apply.inst.functionRef.name}, ${ if (apply.inst.functionType.nonEmpty) apply.inst.functionType.get.name else ""}")
-            unresolved += 1
-          }
-        }
-        case _ =>
-      }
-    })
-
     System.out.println("edges matched using type: " + edgesMatchedUsingType)
     //System.out.println("edges matched using args: " + edgesMatchedUsingArgs)
     System.out.println("edges matched using args and ret type: " + edgesMatchedUsingArgsAndRetType)
-    System.out.println("unresolved call sites: " + unresolved)
   }
 
   def resolveFunctionPointersWithSPDS(cgs: CallGraphStats, additive: Boolean): Unit = {
@@ -322,7 +328,7 @@ object CallGraphUtils {
     methods.foreach{case (_,m) => cg.graph.addVertex(m)}
   }
 
-  def writeToProbe(cg: SWANCallGraph, f: File, contextSenstive: Boolean = true): Unit = {
+  def writeToProbe(cg: SWANCallGraph, f: File, contextSensitive: Boolean = true): Unit = {
     val fw = new FileWriter(f)
     try {
       // Generate a fake class
@@ -347,7 +353,7 @@ object CallGraphUtils {
         fw.write(s"${edge.tgt().getName.hashCode}\n") // dst id
         fw.write(s"1.0\n") // weight
         // context
-        if (contextSenstive) {
+        if (contextSensitive) {
           fw.write(s"${edge.src.getStartLineNumber}:${edge.src.getStartColumnNumber}\n") // context
           //fw.write(s"${edge.src.getStartLineNumber}:${edge.src().hashCode()}\n") // context
         }

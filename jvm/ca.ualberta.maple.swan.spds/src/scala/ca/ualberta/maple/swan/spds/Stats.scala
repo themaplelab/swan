@@ -39,10 +39,13 @@ object Stats {
     def cgOnlyConstructionTimeMS: Int = totalCGConstructionTimeMS - initializationTimeMS
     var entryPoints: Int = 0
     var totalEdges: Int = 0
-    def totalCallSites: Int = CallGraphUtils.totalCallSites(this)
+    lazy val totalCallSites: Int = resolvedCallSiteStats._4
     var trivialCallSites: Int = 0
-    def resolvedCallSites: Int = CallGraphUtils.resolvedCallSites(this)
-    def nonTrivialCallSites: Int = totalCallSites - trivialCallSites
+    lazy private val resolvedCallSiteStats: (Int, Int, Int, Int) = CallGraphUtils.calculateResolvedCallsites(this)
+    lazy val trulyUnresolvedCallSites: Int = resolvedCallSiteStats._1
+    lazy val unresolvedCallSites: Int = resolvedCallSiteStats._2
+    lazy val resolvedCallSites: Int = resolvedCallSiteStats._3
+    lazy val nonTrivialCallSites: Int = totalCallSites - trivialCallSites
     var specificData: mutable.ArrayBuffer[SpecificCallGraphStats] = mutable.ArrayBuffer.empty
     val debugInfo = new SWIRLPrinterOptions.CallGraphDebugInfo()
     var finalModuleGroup: Object = cg.moduleGroup
@@ -60,6 +63,8 @@ object Stats {
       sb.append(indent + s"Total call sites: $totalCallSites\n")
       sb.append(indent + s"Trivial call sites: $trivialCallSites\n")
       sb.append(indent + s"Resolved Call Sites: $resolvedCallSites\n")
+      sb.append(indent + s"Unresolved Call Sites: $unresolvedCallSites\n")
+      sb.append(indent + s"Truly* Unresolved Call Sites: $trulyUnresolvedCallSites\n")
       sb.append(indent + s"Non-trivial call sites: $nonTrivialCallSites\n")
       if (specificData.nonEmpty) {
         sb.append(indent + "Specific stats:\n")
@@ -85,6 +90,8 @@ object Stats {
       u("total_call_sites") = totalCallSites
       u("trivial_call_sites") = trivialCallSites
       u("resolved_call_sites") = resolvedCallSites
+      u("unresolved_call_sites") = unresolvedCallSites
+      u("truly_unresolved_call_sites") = trulyUnresolvedCallSites
       u("non_trivial_call_sites") = nonTrivialCallSites
       specificData.foreach(s => s.toJSON.obj.foreach(o => u(o._1) = o._2))
       u

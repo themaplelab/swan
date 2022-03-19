@@ -140,8 +140,12 @@ class SWIRLPrinter extends Printer {
     }
     if (options.genLocationMap) locMap.put(function, (line, getCol))
     if (options.printLineNumber) printLineNumber()
-    if (options.cgDebugInfo.nonEmpty && options.cgDebugInfo.get.entries.contains(function)) {
-      print("// ENTRY"); printNewline()
+    if (options.cgDebugInfo.nonEmpty) {
+       if (options.cgDebugInfo.get.entries.contains(function)) {
+         print("// ENTRY"); printNewline()
+       } else if (options.cgDebugInfo.get.dead.contains(function)) {
+         print("// DEAD"); printNewline()
+       }
     }
     print("func ")
     if (function.isLibrary) print("[lib] ")
@@ -619,6 +623,7 @@ object SWIRLPrinterOptions {
   class CallGraphDebugInfo() {
     val edges = new mutable.HashMap[CanOperator, mutable.HashSet[String]]
     val entries = new mutable.HashSet[CanFunction]
+    val dead = new mutable.HashSet[CanFunction]
   }
 
 }

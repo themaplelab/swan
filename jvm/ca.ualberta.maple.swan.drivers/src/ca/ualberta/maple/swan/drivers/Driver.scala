@@ -407,7 +407,7 @@ class Driver extends Runnable {
         }
         if (options.printToProbe) {
           CallGraphUtils.writeToProbe(cg, Paths.get(swanDir.getPath, s"$prefix.probe.txt").toFile)
-          CallGraphUtils.writeToProbe(cg, Paths.get(swanDir.getPath, s"$prefix.insensitive.probe.txt").toFile, contextSenstive = false)
+          CallGraphUtils.writeToProbe(cg, Paths.get(swanDir.getPath, s"$prefix.insensitive.probe.txt").toFile, contextSensitive = false)
         }
         if (options.debug) {
           writeFile(cgResults.finalModuleGroup, debugDir, s"$prefix-grouped-cg", new SWIRLPrinterOptions().cgDebugInfo(cgResults.debugInfo).printLocation(true).printLocationPaths(false))
