@@ -31,7 +31,7 @@ import ca.ualberta.maple.swan.spds.cg.{CallGraphBuilder, CallGraphConstructor, C
 import ca.ualberta.maple.swan.utils.Logging
 import org.apache.commons.io.{FileExistsException, FileUtils, IOUtils}
 import picocli.CommandLine
-import picocli.CommandLine.{Command, Option, Parameters}
+import picocli.CommandLine.{ArgGroup, Command, Option, Parameters}
 
 import java.io.{File, FileWriter}
 import java.nio.charset.StandardCharsets
@@ -54,8 +54,7 @@ object Driver {
     var cache = false
     var dumpFunctionNames = false
     var constructCallGraph = false
-    var callGraphAlgorithms: ArrayBuffer[CallGraphBuilder.CallGraphStyle.Style] = ArrayBuffer()
-    var pointerAnalysisAlgorithm: CallGraphBuilder.PointerAnalysisStyle.Style = null
+    var callGraphAndPointerAlgorithms: ArrayBuffer[(CallGraphBuilder.CallGraphStyle.Style, scala.Option[CallGraphBuilder.PointerAnalysisStyle.Style])] = ArrayBuffer.empty
     var taintAnalysisSpec: scala.Option[File] = None
     var typeStateAnalysisSpec: scala.Option[File] = None
     var pathTracking = false
@@ -81,35 +80,39 @@ object Driver {
     def constructCallGraph(v: Boolean): Options = {
       this.constructCallGraph = v; this
     }
-    def callGraphAlgorithms(a: Array[String]): Options = {
+    def callGraphPAAlgorithms(a: Array[Driver.CGPAPair]): Options = {
       a.foreach(v => {
         if (v != null) {
-          val style = v.toLowerCase() match {
+          val cgStyle = v.cgAlgorithm.toLowerCase() match {
             case "cha" => CallGraphBuilder.CallGraphStyle.CHA
             case "prta" => CallGraphBuilder.CallGraphStyle.PRTA
             case "orta" => CallGraphBuilder.CallGraphStyle.ORTA
             case "vta" => CallGraphBuilder.CallGraphStyle.VTA
             case "ucg" => CallGraphBuilder.CallGraphStyle.UCG
           }
-          this.callGraphAlgorithms.append(style)
+          val paStyle = {
+            if (v.paAlgorithm == null) {
+              None
+            }
+            else {
+              val style = v.paAlgorithm.toLowerCase() match {
+                case "spds" => CallGraphBuilder.PointerAnalysisStyle.SPDS
+                case "spdsvta" => CallGraphBuilder.PointerAnalysisStyle.SPDSVTA
+                case "uff" => CallGraphBuilder.PointerAnalysisStyle.UFF
+                case "none" => CallGraphBuilder.PointerAnalysisStyle.None
+                case "namebased" => CallGraphBuilder.PointerAnalysisStyle.NameBased
+                case _ => throw new RuntimeException("Unknown pointer analysis style")
+              }
+              Some(style)
+            }
+          }
+          val style = (cgStyle,paStyle)
+          this.callGraphAndPointerAlgorithms.append(style)
         }
       })
-      if (this.callGraphAlgorithms.isEmpty) {
-        this.callGraphAlgorithms.append(CallGraphBuilder.CallGraphStyle.UCG)
-      }
-      this
-    }
-    def pointerAnalysisAlgorithm(v: String): Options = {
-      if (v != null) {
-        val style = v.toLowerCase() match {
-          case "spds" => CallGraphBuilder.PointerAnalysisStyle.SPDS
-          case "spdsvta" => CallGraphBuilder.PointerAnalysisStyle.SPDSVTA
-          case "uff" => CallGraphBuilder.PointerAnalysisStyle.UFF
-          case "none" => CallGraphBuilder.PointerAnalysisStyle.None
-          case "namebased" => CallGraphBuilder.PointerAnalysisStyle.NameBased
-          case _ => throw new RuntimeException("Unknown pointer analysis style")
-        }
-        this.pointerAnalysisAlgorithm = style
+      if (this.callGraphAndPointerAlgorithms.isEmpty) {
+        val style = (CallGraphBuilder.CallGraphStyle.UCG,None)
+        this.callGraphAndPointerAlgorithms.append(style)
       }
       this
     }
@@ -148,6 +151,20 @@ object Driver {
   def main(args: Array[String]): Unit = {
     val exitCode = new CommandLine(new Driver).execute(args:_*)
     System.exit(exitCode);
+  }
+
+  class CGPAPair() {
+    @Option(names = Array("--cg-algo"),
+      required = true,
+      description = Array("Algorithm(s) used for building the Call Graph. Options: cha, prta, orta, vta, ucg")
+    )
+    var cgAlgorithm: String = null
+
+    @Option(names = Array("--pa-algo"),
+      required = false,
+      description = Array("Algorithm used for pointer analysis during Call Graph construction. Options: spds, uff, none, namebased")
+    )
+    var paAlgorithm: String = null
   }
 }
 
@@ -197,13 +214,8 @@ class Driver extends Runnable {
     description = Array("Construct the Call Graph."))
   private val constructCallGraph = new Array[Boolean](0)
 
-  @Option(names = Array("--cg-algo"),
-    description = Array("Algorithm(s) used for building the Call Graph. Options: cha, prta, orta, vta, ucg"))
-  private val callGraphAlgorithms: Array[String] = Array.empty[String]
-
-  @Option(names = Array("--pa-algo"),
-    description = Array("Algorithm used for pointer analysis during Call Graph construction. Options: spds, uff, none, namebased"))
-  private val pointerAnalysisAlgorithm = new Array[String](1)
+  @ArgGroup(exclusive = false, multiplicity="0..*")
+  private val callGraphAndPointerAlgorithms: Array[Driver.CGPAPair] = Array.empty[Driver.CGPAPair]
 
   @Option(names = Array("-t", "--taint-analysis-spec"),
     description = Array("JSON specification file for taint analysis."))
@@ -260,8 +272,9 @@ class Driver extends Runnable {
       .single(singleThreaded.nonEmpty)
       .dumpFunctionNames(dumpFunctionNames.nonEmpty)
       .constructCallGraph(constructCallGraph.nonEmpty)
-      .callGraphAlgorithms(callGraphAlgorithms)
-      .pointerAnalysisAlgorithm(pointerAnalysisAlgorithm(0))
+      //.callGraphAlgorithms(callGraphAlgorithms)
+      //.pointerAnalysisAlgorithm(pointerAnalysisAlgorithm(0))
+      .callGraphPAAlgorithms(callGraphAndPointerAlgorithms)
       .taintAnalysisSpec(taintAnalysisSpec)
       .typeStateAnalysisSpec(typeStateAnalysisSpec)
       .pathTracking(pathTracking.nonEmpty)
@@ -382,10 +395,10 @@ class Driver extends Runnable {
     }
     val stats = new mutable.HashMap[String, AllStats]()
     if (options.constructCallGraph || options.taintAnalysisSpec.nonEmpty || options.typeStateAnalysisSpec.nonEmpty) {
-      options.callGraphAlgorithms.foreach(cgAlgo => {
+      options.callGraphAndPointerAlgorithms.foreach{case (cgAlgo,paAlgo) => {
         val allStats = new AllStats(generalStats)
         val cgResults = CallGraphBuilder.createCallGraph(
-          group, cgAlgo, scala.Option(options.pointerAnalysisAlgorithm),
+          group, cgAlgo, paAlgo,
           new CallGraphConstructor.Options(options.analyzeLibraries, options.analyzeClosures, options.debug))
         allStats.cgs = Some(cgResults)
         val cg = cgResults.cg
@@ -396,19 +409,14 @@ class Driver extends Runnable {
           case ca.ualberta.maple.swan.spds.cg.CallGraphBuilder.CallGraphStyle.VTA => "VTA"
           case ca.ualberta.maple.swan.spds.cg.CallGraphBuilder.CallGraphStyle.UCG => "UCG"
         }
-        val paPrefix = options.pointerAnalysisAlgorithm match {
-          case ca.ualberta.maple.swan.spds.cg.CallGraphBuilder.PointerAnalysisStyle.None =>
-            ""
-          case ca.ualberta.maple.swan.spds.cg.CallGraphBuilder.PointerAnalysisStyle.SPDS =>
-            "SPDS"
-          case ca.ualberta.maple.swan.spds.cg.CallGraphBuilder.PointerAnalysisStyle.SPDSVTA =>
-            "SPDS-VTA"
-          case ca.ualberta.maple.swan.spds.cg.CallGraphBuilder.PointerAnalysisStyle.UFF =>
-            "UFF"
-          case ca.ualberta.maple.swan.spds.cg.CallGraphBuilder.PointerAnalysisStyle.NameBased =>
-            "NameBased"
+        val paPrefix = paAlgo.getOrElse(CallGraphBuilder.defaultPAStyle(cgAlgo)) match {
+          case CallGraphBuilder.PointerAnalysisStyle.None => ""
+          case CallGraphBuilder.PointerAnalysisStyle.SPDS => "SPDS"
+          case CallGraphBuilder.PointerAnalysisStyle.SPDSVTA => "SPDS-VTA"
+          case CallGraphBuilder.PointerAnalysisStyle.UFF => "UFF"
+          case CallGraphBuilder.PointerAnalysisStyle.NameBased => "NameBased"
         }
-        val prefix = s"${cgPrefix}-${paPrefix}"
+        val prefix = if (paPrefix != "") {s"${cgPrefix}-${paPrefix}"} else {cgPrefix}
         if (options.printToDot) {
           val fw = new FileWriter(Paths.get(swanDir.getPath, s"$prefix-dot.txt").toFile)
           try {
@@ -457,7 +465,7 @@ class Driver extends Runnable {
           TypeStateResults.writeResults(f, allResults)
         }
         stats.put(prefix, allStats)
-      })
+      }}
     }
     generalStats.modules = group.metas.length - 1
     generalStats.functions = group.functions.length
@@ -469,7 +477,7 @@ class Driver extends Runnable {
       Logging.printInfo(s"Writing $prefix stats to ${allStatsFile.getName}")
       s._2.writeToFile(allStatsFile)
     })
-    if (options.callGraphAlgorithms.length > 1) {
+    if (options.callGraphAndPointerAlgorithms.length > 1) {
       Logging.printInfo("NOTE: Multiple CGs generated - total runtime will be longer.")
     }
     group

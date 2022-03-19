@@ -21,40 +21,33 @@ package ca.ualberta.maple.swan.spds.cg
 
 import ca.ualberta.maple.swan.ir.ModuleGroup
 import ca.ualberta.maple.swan.spds.Stats.CallGraphStats
+import ca.ualberta.maple.swan.spds.cg.CallGraphBuilder.PointerAnalysisStyle
 
 object CallGraphBuilder {
 
   def createCallGraph(moduleGroup: ModuleGroup,
                       cgStyle: CallGraphStyle.Style,
-                      paStyle: Option[PointerAnalysisStyle.Style],
+                      paStyleOpt: Option[PointerAnalysisStyle.Style],
                       options: CallGraphConstructor.Options): CallGraphStats = {
+    val paStyle = paStyleOpt.getOrElse(defaultPAStyle(cgStyle))
     val cgBuilder = {
       cgStyle match {
-        case CallGraphStyle.CHA => {
-          new CHA(moduleGroup, paStyle match {
-            case Some(value) => value
-            case None => PointerAnalysisStyle.None
-          }, options)
-        }
-        case CallGraphStyle.PRTA => new PRTA(moduleGroup, paStyle match {
-          case Some(value) => value
-          case None => PointerAnalysisStyle.None
-        }, options)
-        case CallGraphStyle.VTA => new VTA(moduleGroup, paStyle match {
-          case Some(value) => value
-          case None => PointerAnalysisStyle.None
-        }, options)
-        case CallGraphStyle.UCG => new UCG(moduleGroup, paStyle match {
-          case Some(value) => value
-          case None => PointerAnalysisStyle.SPDS
-        }, true, options)
-        case CallGraphStyle.ORTA => new ORTA(moduleGroup, paStyle match {
-          case Some(value) => value
-          case None => PointerAnalysisStyle.None
-        }, options)
+        case CallGraphStyle.CHA => new CHA(moduleGroup, paStyle, options)
+        case CallGraphStyle.PRTA => new PRTA(moduleGroup, paStyle, options)
+        case CallGraphStyle.VTA => new VTA(moduleGroup, paStyle, options)
+        case CallGraphStyle.UCG => new UCG(moduleGroup, paStyle, true, options)
+        case CallGraphStyle.ORTA => new ORTA(moduleGroup, paStyle, options)
       }
     }
     cgBuilder.buildCallGraph(cgStyle)
+  }
+
+  def defaultPAStyle(callGraphStyle: CallGraphStyle.Style): PointerAnalysisStyle.Value = callGraphStyle match {
+    case CallGraphStyle.CHA => PointerAnalysisStyle.None
+    case CallGraphStyle.PRTA => PointerAnalysisStyle.None
+    case CallGraphStyle.ORTA => PointerAnalysisStyle.None
+    case CallGraphStyle.VTA => PointerAnalysisStyle.None
+    case CallGraphStyle.UCG => PointerAnalysisStyle.SPDS
   }
 
   def createCallGraph(moduleGroup: ModuleGroup, cgStyle: CallGraphStyle.Style, options: CallGraphConstructor.Options): CallGraphStats = {
