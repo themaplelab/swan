@@ -36,10 +36,10 @@ class ORTA(mg: ModuleGroup, pas: PointerAnalysisStyle.Style, options: Options) e
 
   pas match {
     case PointerAnalysisStyle.None =>
-    case PointerAnalysisStyle.SPDS =>
+    case PointerAnalysisStyle.SPDS => // options.analyzeClosures = true
     case PointerAnalysisStyle.UFF =>
-      throw new RuntimeException("UFF pointer analysis is currently not supported with ORTA")
-    case PointerAnalysisStyle.NameBased =>
+      throw new RuntimeException("UFF pointer analysis is currently not supported with CHA")
+    case PointerAnalysisStyle.NameBased => options.analyzeClosures = true
   }
 
   val unreachableTypeTargets: mutable.MultiDict[String, (ApplyFunctionRef, ControlFlowGraph.Edge, Set[String])] = mutable.MultiDict.empty[String, (ApplyFunctionRef, ControlFlowGraph.Edge, Set[String])]

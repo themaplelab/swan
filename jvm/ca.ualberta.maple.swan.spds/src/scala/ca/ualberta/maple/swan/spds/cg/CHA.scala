@@ -32,7 +32,7 @@ class CHA(mg: ModuleGroup, pas: PointerAnalysisStyle.Style, options: Options) ex
 
   pas match {
     case PointerAnalysisStyle.None =>
-    case PointerAnalysisStyle.SPDS => options.analyzeClosures = true
+    case PointerAnalysisStyle.SPDS => // options.analyzeClosures = true
     case PointerAnalysisStyle.UFF =>
       throw new RuntimeException("UFF pointer analysis is currently not supported with CHA")
     case PointerAnalysisStyle.NameBased => options.analyzeClosures = true

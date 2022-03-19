@@ -138,7 +138,7 @@ object CallGraphUtils {
     // assumes trivial function pointers are already resolved
     // TODO: Use these stats somewhere
     var edgesMatchedUsingType = 0
-    var edgesMatchedUsingArgs = 0
+    // var edgesMatchedUsingArgs = 0
     var edgesMatchedUsingArgsAndRetType = 0
     // Only additive
     cgs.cg.methods.values.foreach(m => {
@@ -192,10 +192,8 @@ object CallGraphUtils {
         case _ =>
       }
     })
-
-    System.out.println("edges matched using type: " + edgesMatchedUsingType)
-    //System.out.println("edges matched using args: " + edgesMatchedUsingArgs)
-    System.out.println("edges matched using args and ret type: " + edgesMatchedUsingArgsAndRetType)
+    //System.out.println("edges matched using type: " + edgesMatchedUsingType)
+    //System.out.println("edges matched using args and ret type: " + edgesMatchedUsingArgsAndRetType)
   }
 
   def resolveFunctionPointersWithSPDS(cgs: CallGraphStats, additive: Boolean): Unit = {
@@ -310,7 +308,6 @@ object CallGraphUtils {
           }
         })
       }
-
     }
   }
 
