@@ -128,7 +128,7 @@ public class SPDSTests {
         TaintAnalysisOptions analysisOptions =
                 new TaintAnalysisOptions(AnalysisType.Forward$.MODULE$);
         SWANCallGraph cg = CallGraphBuilder.createCallGraph(group, CallGraphBuilder.CallGraphStyle$.MODULE$.CHA()).cg();
-        TaintAnalysis taintAnalysis = new TaintAnalysis(taintSpec, analysisOptions);
+        TaintAnalysis taintAnalysis = new TaintAnalysis(taintSpec, analysisOptions, null);
         TaintResults taintResults = taintAnalysis.run(cg);
         // Logging.printInfo(taintResults.toString());
         TypeStateAnalysis typeStateAnalysis = new TypeStateAnalysis(cg, typeStateSpec.make(cg), typeStateSpec);
@@ -153,7 +153,7 @@ public class SPDSTests {
         TaintAnalysisOptions analysisOptions =
                 new TaintAnalysisOptions(AnalysisType.Forward$.MODULE$);
         SWANCallGraph cg = CallGraphBuilder.createCallGraph(group, CallGraphBuilder.CallGraphStyle$.MODULE$.CHA()).cg();
-        TaintAnalysis taintAnalysis = new TaintAnalysis(taintSpec, analysisOptions);
+        TaintAnalysis taintAnalysis = new TaintAnalysis(taintSpec, analysisOptions, null);
         TaintResults taintResults = taintAnalysis.run(cg);
         // Logging.printInfo(taintResults.toString());
         TypeStateAnalysis typeStateAnalysis = new TypeStateAnalysis(cg, typeStateSpec.make(cg), typeStateSpec);

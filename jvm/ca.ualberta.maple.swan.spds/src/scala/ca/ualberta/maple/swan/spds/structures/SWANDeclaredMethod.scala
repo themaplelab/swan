@@ -23,6 +23,7 @@ import boomerang.scene.{ControlFlowGraph, DeclaredMethod, WrappedClass}
 
 import scala.collection.mutable
 
+// TODO: InvokeExpr can only have one DeclaredMethod -- makes a problem for typestate matching
 abstract class SWANDeclaredMethod(val invokeExpr: SWANInvokeExpr, val edge: ControlFlowGraph.Edge) extends DeclaredMethod(invokeExpr) {
 
   val names: mutable.HashSet[String] = mutable.HashSet.empty
@@ -32,6 +33,6 @@ abstract class SWANDeclaredMethod(val invokeExpr: SWANInvokeExpr, val edge: Cont
   override def isConstructor: Boolean = ???
   override def getSignature: String = ???
   override def getDeclaringClass: WrappedClass = ???
-  override def getSubSignature: String = "" // Don't use this
-  override def getName: String = "" // Don't use this
+  override def getSubSignature: String =  if (names.nonEmpty) names.head else ""
+  override def getName: String = if (names.nonEmpty) names.head else ""
 }

@@ -73,34 +73,31 @@ object CallGraphUtils {
     var unresolved = 0
     var resolved = 0
     cgs.cg.methods.foreach(m => {
-      m._2.getStatements.forEach {
-        case apply: SWANStatement.ApplyFunctionRef => {
-          callsites += 1
-          if (cgs.cg.edgesOutOf(apply).isEmpty) {
-            unresolved += 1
-            var trulyUnresolved = false
-            m._2.delegate.symbolTable(apply.inst.functionRef.name) match {
-              case SymbolTableEntry.operator(symbol, operator) => {
-                if (!apply.inst.functionType.get.name.contains("witness_method")) {
-                  trulyUnresolved = true
-                }
+      m._2.applyFunctionRefs.foreach(apply => {
+        callsites += 1
+        if (cgs.cg.edgesOutOf(apply).isEmpty) {
+          unresolved += 1
+          var trulyUnresolved = false
+          m._2.delegate.symbolTable(apply.inst.functionRef.name) match {
+            case SymbolTableEntry.operator(symbol, operator) => {
+              if (apply.inst.functionType.nonEmpty && !apply.inst.functionType.get.name.contains("witness_method")) {
+                trulyUnresolved = true
               }
-              case SymbolTableEntry.argument(argument) => {
-                if (!cgs.cg.getEntryPoints.contains(m._2) && !cgs.cg.edgesInto(m._2).isEmpty) trulyUnresolved = true
-              }
-              case SymbolTableEntry.multiple(symbol, operators) => trulyUnresolved = true
             }
-            // Using isClosureRelated here might miss some, but that's okay
-            if (trulyUnresolved && !isClosureRelated(m._1, cgs.options)) {
-              // System.out.println(s"${apply.inst.result.ref.name} = apply ${apply.inst.functionRef.name}, ${if (apply.inst.functionType.nonEmpty) apply.inst.functionType.get.name else ""}")
-              tUnresolved += 1
+            case SymbolTableEntry.argument(argument) => {
+              if (!cgs.cg.getEntryPoints.contains(m._2) && !cgs.cg.edgesInto(m._2).isEmpty) trulyUnresolved = true
             }
-          } else {
-            resolved += 1
+            case SymbolTableEntry.multiple(symbol, operators) => trulyUnresolved = true
           }
+          // Using isClosureRelated here might miss some, but that's okay
+          if (trulyUnresolved && !isClosureRelated(m._1, cgs.options) && !isUninteresting(m._2, cgs.options)) {
+            // System.out.println(s"${apply.inst.result.ref.name} = apply ${apply.inst.functionRef.name}, ${if (apply.inst.functionType.nonEmpty) apply.inst.functionType.get.name else ""}")
+            tUnresolved += 1
+          }
+        } else {
+          resolved += 1
         }
-        case _ =>
-      }
+      })
     })
     (tUnresolved, unresolved, resolved, callsites)
   }
@@ -139,55 +136,52 @@ object CallGraphUtils {
     var edgesMatchedUsingArgsAndRetType = 0
     // Only additive
     cgs.cg.methods.values.foreach(m => {
-      m.getStatements.forEach {
-        case stmt@(apply: SWANStatement.ApplyFunctionRef) =>  {
-          val isTrivial: Boolean = {
-            m.delegate.symbolTable(stmt.inst.functionRef.name) match {
-              case SymbolTableEntry.operator(_, operator) => {
-                operator match {
-                  case _: Operator.builtinRef => true
-                  case _: Operator.functionRef => true
-                  case _: Operator.dynamicRef => true
-                  case _ => false
-                }
-              }
-              case _ => false
-            }
-          }
-          if (cgs.cg.edgesOutOf(stmt).isEmpty && !isTrivial) {
-            val funcType = apply.inst.functionType
-            def matchBasedOnArgs(): Unit = {
-              var matched = false
-              cgs.cg.methods.foreach(target => {
-                if (target._2.getParameterLocals.size() == apply.getInvokeExpr.getArgs.size()) {
-                  if (target._2.delegate.returnTpe == apply.inst.result.tpe) {
-                    if (addCGEdge(m, target._2, stmt, new ControlFlowGraph.Edge(m.getCFG.getPredsOf(stmt).iterator().next(), stmt), cgs)) edgesMatchedUsingArgsAndRetType += 1
-                    matched = true
-                  }
-                }
-              })
-              if (!matched) {
-                // Insignificant amount, mostly closures
-                // System.out.println(s"${apply.inst.result.ref.name} = apply ${apply.inst.functionRef.name}, ${ if (apply.inst.functionType.nonEmpty) apply.inst.functionType.get.name else ""}")
+      m.applyFunctionRefs.foreach(apply => {
+        val isTrivial: Boolean = {
+          m.delegate.symbolTable(apply.inst.functionRef.name) match {
+            case SymbolTableEntry.operator(_, operator) => {
+              operator match {
+                case _: Operator.builtinRef => true
+                case _: Operator.functionRef => true
+                case _: Operator.dynamicRef => true
+                case _ => false
               }
             }
-            if (funcType.nonEmpty) {
-              val functions = new mutable.HashSet[SWANMethod]()
-              cgs.cg.methods.foreach(m => {
-                if (m._2.delegate.fullTpe == funcType.get) {
-                  functions.add(m._2)
-                }
-              })
-              if (functions.nonEmpty) {
-                functions.foreach(f => {
-                  if (addCGEdge(m, f, stmt, new ControlFlowGraph.Edge(m.getCFG.getPredsOf(stmt).iterator().next(), stmt), cgs)) edgesMatchedUsingType += 1
-                })
-              } else matchBasedOnArgs()
-            } else matchBasedOnArgs()
+            case _ => false
           }
         }
-        case _ =>
-      }
+        if (cgs.cg.edgesOutOf(apply).isEmpty && !isTrivial) {
+          val funcType = apply.inst.functionType
+          def matchBasedOnArgs(): Unit = {
+            var matched = false
+            cgs.cg.methods.foreach(target => {
+              if (target._2.getParameterLocals.size() == apply.getInvokeExpr.getArgs.size()) {
+                if (target._2.delegate.returnTpe == apply.inst.result.tpe) {
+                  if (addCGEdge(m, target._2, apply, new ControlFlowGraph.Edge(m.getCFG.getPredsOf(apply).iterator().next(), apply), cgs)) edgesMatchedUsingArgsAndRetType += 1
+                  matched = true
+                }
+              }
+            })
+            if (!matched) {
+              // Insignificant amount, mostly closures
+              // System.out.println(s"${apply.inst.result.ref.name} = apply ${apply.inst.functionRef.name}, ${ if (apply.inst.functionType.nonEmpty) apply.inst.functionType.get.name else ""}")
+            }
+          }
+          if (funcType.nonEmpty) {
+            val functions = new mutable.HashSet[SWANMethod]()
+            cgs.cg.methods.foreach(m => {
+              if (m._2.delegate.fullTpe == funcType.get) {
+                functions.add(m._2)
+              }
+            })
+            if (functions.nonEmpty) {
+              functions.foreach(f => {
+                if (addCGEdge(m, f, apply, new ControlFlowGraph.Edge(m.getCFG.getPredsOf(apply).iterator().next(), apply), cgs)) edgesMatchedUsingType += 1
+              })
+            } else matchBasedOnArgs()
+          } else matchBasedOnArgs()
+        }
+      })
     })
     //System.out.println("edges matched using type: " + edgesMatchedUsingType)
     //System.out.println("edges matched using args and ret type: " + edgesMatchedUsingArgsAndRetType)
@@ -261,49 +255,46 @@ object CallGraphUtils {
         })
       } else { // adding (e.g., RTA)
         cgs.cg.methods.values.foreach(m => {
-          m.getStatements.forEach {
-            case stmt@(apply: SWANStatement.ApplyFunctionRef) => {
-              val edge = new ControlFlowGraph.Edge(m.getControlFlowGraph.getPredsOf(apply).iterator().next(), apply)
-              val query = BackwardQuery.make(edge, apply.getFunctionRef)
-              val solver = new Boomerang(cgs.cg, scope, new DefaultBoomerangOptions {
-                override def allowMultipleQueries(): Boolean = true
-              })
-              val backwardQueryResults = solver.solve(query)
-              val allocSites = backwardQueryResults.getAllocationSites
-              val functions = new mutable.HashSet[String]()
-              val indices = new mutable.HashSet[String]()
+          m.applyFunctionRefs.foreach(apply => {
+            val edge = new ControlFlowGraph.Edge(m.getControlFlowGraph.getPredsOf(apply).iterator().next(), apply)
+            val query = BackwardQuery.make(edge, apply.getFunctionRef)
+            val solver = new Boomerang(cgs.cg, scope, new DefaultBoomerangOptions {
+              override def allowMultipleQueries(): Boolean = true
+            })
+            val backwardQueryResults = solver.solve(query)
+            val allocSites = backwardQueryResults.getAllocationSites
+            val functions = new mutable.HashSet[String]()
+            val indices = new mutable.HashSet[String]()
+            allocSites.keySet().forEach(allocSite => {
+              allocSite.`var`().asInstanceOf[AllocVal].getAllocVal match {
+                case fr: SWANVal.FunctionRef => functions.add(fr.ref)
+                case fr: SWANVal.BuiltinFunctionRef => functions.add(fr.ref)
+                case fr: SWANVal.DynamicFunctionRef => indices.add(fr.index)
+                case _ =>
+              }
+            })
+            if (functions.nonEmpty && indices.nonEmpty) throw new RuntimeException("Unexpected: apply site is both func ref and dynamic")
+            if (indices.nonEmpty) {
+              solver.unregisterAllListeners()
+              val query = BackwardQuery.make(edge, apply.getInvokeExpr.getArgs.get(apply.getInvokeExpr.getArgs.size() - 1))
+              val allocSites = solver.solve(query).getAllocationSites
+              val types = new mutable.HashSet[String]()
               allocSites.keySet().forEach(allocSite => {
                 allocSite.`var`().asInstanceOf[AllocVal].getAllocVal match {
-                  case fr: SWANVal.FunctionRef => functions.add(fr.ref)
-                  case fr: SWANVal.BuiltinFunctionRef => functions.add(fr.ref)
-                  case fr: SWANVal.DynamicFunctionRef => indices.add(fr.index)
+                  case alloc: SWANVal.NewExpr => types.add(alloc.tpe.tpe.name)
                   case _ =>
                 }
               })
-              if (functions.nonEmpty && indices.nonEmpty) throw new RuntimeException("Unexpected: apply site is both func ref and dynamic")
-              if (indices.nonEmpty) {
-                solver.unregisterAllListeners()
-                val query = BackwardQuery.make(edge, apply.getInvokeExpr.getArgs.get(apply.getInvokeExpr.getArgs.size() - 1))
-                val allocSites = solver.solve(query).getAllocationSites
-                val types = new mutable.HashSet[String]()
-                allocSites.keySet().forEach(allocSite => {
-                  allocSite.`var`().asInstanceOf[AllocVal].getAllocVal match {
-                    case alloc: SWANVal.NewExpr => types.add(alloc.tpe.tpe.name)
-                    case _ =>
-                  }
+              indices.foreach(i => {
+                cgs.cg.moduleGroup.ddgs.foreach(ddg => {
+                  val targets = ddg._2.query(i, Some(types))
+                  targets.foreach(t => cgs.cg.addEdge(new CallGraph.Edge(apply, cgs.cg.methods(t))))
                 })
-                indices.foreach(i => {
-                  cgs.cg.moduleGroup.ddgs.foreach(ddg => {
-                    val targets = ddg._2.query(i, Some(types))
-                    targets.foreach(t => cgs.cg.addEdge(new CallGraph.Edge(stmt, cgs.cg.methods(t))))
-                  })
-                })
-              } else {
-                functions.foreach(f => cgs.cg.addEdge(new CallGraph.Edge(stmt, cgs.cg.methods(f))))
-              }
+              })
+            } else {
+              functions.foreach(f => cgs.cg.addEdge(new CallGraph.Edge(apply, cgs.cg.methods(f))))
             }
-            case _ =>
-          }
+          })
         })
       }
     }

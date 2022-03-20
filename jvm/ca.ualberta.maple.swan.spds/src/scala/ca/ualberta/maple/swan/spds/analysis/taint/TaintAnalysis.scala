@@ -307,8 +307,8 @@ class TaintAnalysis(val spec: TaintSpecification, val opts: TaintAnalysisOptions
       })
     })
 
-    val debug = false
-    if (debug) {
+    val debug = true
+    if (debug && debugDir != null) {
       val reached = new mutable.HashSet[CanOperatorDef]()
       results.rowKeySet().forEach(rowKey => {
         rowKey.getStart.asInstanceOf[SWANStatement].delegate match {
