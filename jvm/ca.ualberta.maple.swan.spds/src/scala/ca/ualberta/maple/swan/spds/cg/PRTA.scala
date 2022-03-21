@@ -30,13 +30,14 @@ import ujson.Value
 
 import scala.collection.mutable
 
+// TODO: This isn't actually pessimistic because it doesn't use CHA
 class PRTA(mg: ModuleGroup, pas: PointerAnalysisStyle.Style, options: Options) extends CallGraphConstructor(mg, options) {
 
   pas match {
     case PointerAnalysisStyle.None =>
     case PointerAnalysisStyle.SPDS => // options.analyzeClosures = true
     case PointerAnalysisStyle.UFF =>
-      throw new RuntimeException("UFF pointer analysis is currently not supported with CHA")
+      throw new RuntimeException("UFF pointer analysis is currently not supported with PRTA")
     case PointerAnalysisStyle.NameBased => // options.analyzeClosures = true
   }
 

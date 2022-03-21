@@ -38,7 +38,7 @@ class ORTA(mg: ModuleGroup, pas: PointerAnalysisStyle.Style, options: Options) e
     case PointerAnalysisStyle.None =>
     case PointerAnalysisStyle.SPDS => // options.analyzeClosures = true
     case PointerAnalysisStyle.UFF =>
-      throw new RuntimeException("UFF pointer analysis is currently not supported with CHA")
+      throw new RuntimeException("UFF pointer analysis is currently not supported with ORTA")
     case PointerAnalysisStyle.NameBased => // options.analyzeClosures = true
   }
 

@@ -34,6 +34,7 @@ object Stats {
   }
 
   class CallGraphStats(val cg: SWANCallGraph, val options: CallGraphConstructor.Options) {
+    // TODO: Dynamic calculation
     var totalCGConstructionTimeMS: Int = 0
     var initializationTimeMS: Int = 0
     def cgOnlyConstructionTimeMS: Int = totalCGConstructionTimeMS - initializationTimeMS

@@ -30,6 +30,7 @@ import scala.collection.mutable
 class SWANCallGraph(var moduleGroup: ModuleGroup,
                     val methods: mutable.HashMap[String, SWANMethod]) extends CallGraph {
 
+  // This is for UCG only
   val graph: Graph[SWANMethod, DefaultEdge] = new DefaultDirectedGraph(classOf[DefaultEdge])
 
   def outEdgeTargets(m: SWANMethod): Array[SWANMethod] = {
