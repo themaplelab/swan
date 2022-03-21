@@ -3,6 +3,7 @@
 </p>
 
 
+
 [![macOS CI](https://github.com/themaplelab/swan/actions/workflows/macOS.yml/badge.svg)](https://github.com/themaplelab/swan/actions/workflows/macOS.yml) [![Ubuntu CI](https://github.com/themaplelab/swan/actions/workflows/ubuntu.yml/badge.svg)](https://github.com/themaplelab/swan/actions/workflows/ubuntu.yml)
 
 ![Typestate Location API Example](https://github.com/themaplelab/swan/blob/spds/doc/readme/example-typestate.gif)
@@ -33,17 +34,17 @@ We aim to provide developers and researchers with an easy-to-use and well-docume
 - Optimizations: multi-threaded module processing, caching, selective parsing
 - Cross-module analysis support
 - [Synchronized Pushdown Systems (SPDS)](https://github.com/CodeShield-Security/SPDS) integration
-- Call graph construction
+- Call graph construction that handles dynamic dispatch and function pointers + RTA, CHA, VTA
 - Configurable taint analysis
 - Configurable typestate analysis
 - Analysis for *Visits Location Service* and *Standard Location Service* for finding energy inefficient configuration
 - Annotation checker for regression testing
 
-### Currently working on
+### We are currently working on
 
-- Porting SPDS to Scala (see [this](https://github.com/themaplelab/swan/tree/port) branch)
-- Improving taint and typestate analysis
-- More language and Swift Standard Library modeling
+- Improving call graph construction
+- Crypto API misuse detection
+- Developing a UI for SWAN
 
 ### Relevant Wiki pages
 
@@ -55,7 +56,7 @@ We aim to provide developers and researchers with an easy-to-use and well-docume
 
 ## Getting started
 
-For now, you will need to build the framework to use SWAN, but we will soon make a release available.
+For now, you will need to build the framework to use SWAN.
 
 We have tested SWAN on macOS Big Sur with Xcode 12.5 and Ubuntu 20.04 with Swift 5.4. You need Xcode Command Line Tools installed for macOS, or the latest Swift release for Linux (see [this](https://linuxconfig.org/how-to-install-swift-on-ubuntu-20-04)). Anything involving Xcode will not work on Linux, but you should be able to build Swift Package Manager projects. You also need Java 8.
 
@@ -107,9 +108,7 @@ To build your project with `(swan-)xcodebuild` you need an `.xcodeproj`. If your
 
 Use `driver.jar` to analyze the SIL in the `swan-dir/`. You can use `-h` to view the driver options.
 
-You can learn about how to write analysis for SWAN [here](https://github.com/themaplelab/swan/wiki/Writing-Analysis). Use `-t` to give the driver a taint analysis specification. Use `-e` to give the driver a typestate specification. You can view some example specifications in `specifications/`. Use `-p` to enable path-tracking. Note that path-tracking sometimes hangs (see the related [issue](https://github.com/CodeShield-Security/SPDS/issues/26#issuecomment-882852532) for details). The default analysis will still show you the source and sink callsite locations.
-
-The analysis engine (SDPS) may run out of stack memory. Currently, it will not tell you if this has happened. You can use `-Xss` to increase the stack memory.
+You can learn about how to write analysis for SWAN [here](https://github.com/themaplelab/swan/wiki/Writing-Analysis). Use `-t` to give the driver a taint analysis specification. Use `-e` to give the driver a typestate specification. You can view some example specifications in `specifications/`.
 
 ### 3. Processing analysis results
 
