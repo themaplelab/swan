@@ -51,10 +51,12 @@ class VTA(val stats: VTAPAStats) {
           valueGraph.addVertex(Right(s.getLoadedField.asInstanceOf[SWANField]))
         case s: SWANStatement.FieldWrite =>
           valueGraph.addVertex(Right(s.getWrittenField.asInstanceOf[SWANField]))
+          /*
         case s: SWANStatement.StaticFieldLoad =>
           valueGraph.addVertex(Right(s.getLoadedField.asInstanceOf[SWANField]))
         case s: SWANStatement.StaticFieldStore =>
           valueGraph.addVertex(Right(s.getWrittenField.asInstanceOf[SWANField]))
+           */
         case _ =>
       }
     }
@@ -110,6 +112,7 @@ class VTA(val stats: VTAPAStats) {
               addFieldLoadFlow(to = xVal, from = f)
             }*/
           }
+          /*
           case s: SWANStatement.StaticFieldLoad => {
             // x = Static z
             val xVal = s.getLeftOp.asInstanceOf[SWANVal]
@@ -117,6 +120,7 @@ class VTA(val stats: VTAPAStats) {
             val z = s.getLoadedField.asInstanceOf[SWANField]
             addFieldLoadFlow(to = xVal, from = z)
           }
+           */
           case s: SWANStatement.FieldWrite => {
             // x.f = y
             val fieldStore = s.getFieldStore
@@ -125,12 +129,14 @@ class VTA(val stats: VTAPAStats) {
             val yVal = s.getRightOp.asInstanceOf[SWANVal]
             addFieldStoreFlow(to = f, from = yVal)
           }
+          /*
           case s: SWANStatement.StaticFieldStore => {
             // statif f = y
             val f = s.getWrittenField.asInstanceOf[SWANField]
             val yVal = s.getRightOp.asInstanceOf[SWANVal]
             addFieldStoreFlow(to = f, from = yVal)
           }
+           */
           case s: SWANStatement.Return => {
             val yVal = s.getReturnOp.asInstanceOf[SWANVal]
             conservativeCallGraph.edgesInto(s.getSWANMethod).forEach{ edge =>
