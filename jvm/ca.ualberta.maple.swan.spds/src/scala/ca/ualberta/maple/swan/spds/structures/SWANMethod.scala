@@ -21,7 +21,7 @@ package ca.ualberta.maple.swan.spds.structures
 
 import java.util
 import boomerang.scene._
-import ca.ualberta.maple.swan.ir.{CanFunction, ModuleGroup, SymbolRef, SymbolTableEntry}
+import ca.ualberta.maple.swan.ir.{CanFunction, ModuleGroup, Operator, SymbolRef, SymbolTableEntry}
 import ca.ualberta.maple.swan.spds.structures.SWANControlFlowGraph.SWANBlock
 import com.google.common.collect.{Lists, Sets}
 
@@ -32,7 +32,6 @@ class SWANMethod(val delegate: CanFunction, var moduleGroup: ModuleGroup) extend
   // Use allValues instead of create new Vals, when possible
   // Only use for non allocation (simple value references).
   val allValues: mutable.HashMap[String, Val] = new mutable.HashMap[String, Val]()
-  val newValues: mutable.HashMap[String, Val] = new mutable.HashMap[String, Val]()
 
   private val localParams: util.List[Val] = Lists.newArrayList
   private val localValues: util.HashSet[Val] = Sets.newHashSet
@@ -48,21 +47,15 @@ class SWANMethod(val delegate: CanFunction, var moduleGroup: ModuleGroup) extend
 
   delegate.symbolTable.foreach(sym => {
     sym._2 match {
-      case SymbolTableEntry.operator(symbol, _) => {
+      case SymbolTableEntry.operator(symbol, operator) => {
         val v = SWANVal.Simple(symbol, this)
         localValues.add(v)
         allValues.put(symbol.ref.name, v)
-        val n = SWANVal.NewExpr(symbol, this)
-        localValues.add(n)
-        newValues.put(symbol.ref.name, n)
       }
       case SymbolTableEntry.multiple(symbol, operators) => {
         val v = SWANVal.Simple(symbol, this)
         localValues.add(v)
         allValues.put(symbol.ref.name, v)
-        val n = SWANVal.NewExpr(symbol, this)
-        localValues.add(n)
-        newValues.put(symbol.ref.name, n)
       }
       case _ =>
     }
