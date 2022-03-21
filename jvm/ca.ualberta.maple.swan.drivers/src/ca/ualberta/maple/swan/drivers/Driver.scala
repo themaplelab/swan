@@ -37,13 +37,31 @@ import java.io.{File, FileWriter}
 import java.nio.charset.StandardCharsets
 import java.nio.file.{Files, Paths}
 import java.util.concurrent.TimeUnit
-import scala.collection.mutable
+import scala.collection.{immutable, mutable}
 import scala.collection.mutable.ArrayBuffer
 
 object Driver {
 
   val taintAnalysisResultsFileName = "taint-results.json"
   val typeStateAnalysisResultsFileName = "typestate-results.json"
+
+  private val callGraphOptions = immutable.HashMap(
+    ("cha", CallGraphBuilder.CallGraphStyle.CHA),
+    ("cha_sm", CallGraphBuilder.CallGraphStyle.CHA_SIGMATCHING),
+    ("orta", CallGraphBuilder.CallGraphStyle.ORTA),
+    ("orta_sm", CallGraphBuilder.CallGraphStyle.ORTA_SIGMATCHING),
+    ("prta", CallGraphBuilder.CallGraphStyle.PRTA),
+    ("prta_sm", CallGraphBuilder.CallGraphStyle.PRTA_SIGMATCHING),
+    ("spds", CallGraphBuilder.CallGraphStyle.SPDS),
+    ("spds_wpf", CallGraphBuilder.CallGraphStyle.SPDS_WP_FILTER),
+    ("spds_queryf", CallGraphBuilder.CallGraphStyle.SPDS_QUERY_FILTER),
+    ("vta", CallGraphBuilder.CallGraphStyle.VTA),
+    ("ucg", CallGraphBuilder.CallGraphStyle.UCG),
+    ("ucg_vta", CallGraphBuilder.CallGraphStyle.UCG_VTA),
+    ("ucg_vta_spds", CallGraphBuilder.CallGraphStyle.UCG_VTA_SPDS),
+    ("ucg_spds", CallGraphBuilder.CallGraphStyle.UCG_SPDS),
+    ("ucg_spds_dynamic", CallGraphBuilder.CallGraphStyle.UCG_SPDS_DYNAMIC))
+
 
   /* Because this driver can be invoked programmatically, most picocli options
    * (@Option) should have a matching field in Driver.Options.
@@ -83,25 +101,10 @@ object Driver {
     def callGraphPAAlgorithms(a: Array[Driver.CGPAPair]): Options = {
       a.foreach(v => {
         if (v != null) {
-          val cgStyle = v.cgAlgorithm.toLowerCase() match {
-            case "cha" => CallGraphBuilder.CallGraphStyle.CHA
-            case "cha_sm" => CallGraphBuilder.CallGraphStyle.CHA_SIGMATCHING
-            case "orta" => CallGraphBuilder.CallGraphStyle.ORTA
-            case "orta_sm" => CallGraphBuilder.CallGraphStyle.ORTA_SIGMATCHING
-            case "prta" => CallGraphBuilder.CallGraphStyle.PRTA
-            case "prta_sm" => CallGraphBuilder.CallGraphStyle.PRTA_SIGMATCHING
-            case "spds" => CallGraphBuilder.CallGraphStyle.SPDS
-            case "spds_wpf" => CallGraphBuilder.CallGraphStyle.SPDS_WP_FILTER
-            case "spds_queryf" => CallGraphBuilder.CallGraphStyle.SPDS_QUERY_FILTER
-            case "vta" => CallGraphBuilder.CallGraphStyle.VTA
-            case "ucg" => CallGraphBuilder.CallGraphStyle.UCG
-            case "ucg_vta" => CallGraphBuilder.CallGraphStyle.UCG_VTA
-            case "ucg_vta_spds" => CallGraphBuilder.CallGraphStyle.UCG_VTA_SPDS
-            case "ucg_spds" => CallGraphBuilder.CallGraphStyle.UCG_SPDS
-            case "ucg_spds_dynamic" => CallGraphBuilder.CallGraphStyle.UCG_SPDS_DYNAMIC
-            case _ => throw new RuntimeException("Unrecognized CG style")
+          callGraphOptions.get(v.cgAlgorithm.toLowerCase()) match {
+            case Some(value) => callGraphAlgorithms.append(value)
+            case None => throw new RuntimeException("Unrecognized CG style. Options are " + callGraphOptions.mkString(","))
           }
-          this.callGraphAlgorithms.append(cgStyle)
         }
       })
       if (this.callGraphAlgorithms.isEmpty) {
@@ -150,7 +153,7 @@ object Driver {
   class CGPAPair() {
     @Option(names = Array("--cg-algo"),
       required = true,
-      description = Array("Algorithm(s) used for building the Call Graph. Options: ...")
+      description = Array("Algorithm(s) used for building the Call Graph.")
     )
     var cgAlgorithm: String = null
   }
