@@ -24,11 +24,10 @@ import boomerang.scene._
 import boomerang.{BackwardQuery, Boomerang, DefaultBoomerangOptions, ForwardQuery}
 import ca.ualberta.maple.swan.ir.{DynamicDispatchGraph, ModuleGroup, Operator, SymbolTableEntry}
 import ca.ualberta.maple.swan.spds.Stats.{CallGraphStats, SpecificCallGraphStats}
-import ca.ualberta.maple.swan.spds.cg.CallGraphBuilder.PointerAnalysisStyle
 import ca.ualberta.maple.swan.spds.cg.CallGraphConstructor.Options
 import ca.ualberta.maple.swan.spds.cg.CallGraphUtils.addCGEdge
 import ca.ualberta.maple.swan.spds.cg.UCG.UCGSoundStats
-import ca.ualberta.maple.swan.spds.cg.pa.{MatrixUnionFind, PointerAnalysis, UnionFind, VTAPAStats}
+import ca.ualberta.maple.swan.spds.cg.pa.VTAPAStats
 import ca.ualberta.maple.swan.spds.structures.SWANControlFlowGraph.SWANBlock
 import ca.ualberta.maple.swan.spds.structures.SWANStatement.ApplyFunctionRef
 import ca.ualberta.maple.swan.spds.structures.{SWANInvokeExpr, SWANMethod, SWANStatement, SWANVal}
@@ -37,7 +36,6 @@ import ujson.Value
 import java.util
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
-import scala.collection.{immutable, mutable}
 import scala.jdk.CollectionConverters.ListHasAsScala
 
 /**
@@ -49,7 +47,7 @@ import scala.jdk.CollectionConverters.ListHasAsScala
  * The algorithm ... distribute/monotonic/order-indendepent?
  *
  */
-class UCG(mg: ModuleGroup, pas: PointerAnalysisStyle.Style,
+class UCG(mg: ModuleGroup, style: UCG.Options.Value,
           val invalidations: Boolean, options: Options) extends CallGraphConstructor(mg, options) {
 
   type DDGTypeSet = DDGBitSet
@@ -73,31 +71,23 @@ class UCG(mg: ModuleGroup, pas: PointerAnalysisStyle.Style,
   private val interProcSuccessors: mutable.HashMap[SWANBlock, mutable.HashSet[SWANBlock]] =
     new mutable.HashMap[SWANBlock, mutable.HashSet[SWANBlock]]
 
-  private var uf: MatrixUnionFind = null
-
   private implicit val ddgTypes: mutable.HashMap[String, Int] = mutable.HashMap.empty[String, Int]
   private implicit val ddgTypesInv: ArrayBuffer[String] = mutable.ArrayBuffer.empty[String]
   val stats = new UCGSoundStats
 
   private var queryCache: SQueryCache[_] = null
 
-  val vtaPruning: Boolean = pas match {
-    case ca.ualberta.maple.swan.spds.cg.CallGraphBuilder.PointerAnalysisStyle.SPDSVTA => true
+  val vtaPruning: Boolean = style match {
+    case UCG.Options.VTA | UCG.Options.VTA_SPDS => true
     case _ => false
   }
-  var vta: pa.TypeFlow = _
 
+  var vta: pa.TypeFlow = _
 
   override def buildSpecificCallGraph(): Unit = {
 
-    pas match {
-      case ca.ualberta.maple.swan.spds.cg.CallGraphBuilder.PointerAnalysisStyle.UFF => {
-        uf = new MatrixUnionFind(cgs.cg)
-      }
-      case _ =>
-    }
     if (vtaPruning) {
-      vta = new pa.VTA(new VTAPAStats {}).getTypeFlow(methods, new CHA(mg, pas, options).cg)
+      vta = new pa.VTA(new VTAPAStats {}).getTypeFlow(methods, new CHA(mg, true, options).cg)
     }
 
     // This type set creation (map types to bits)
@@ -133,10 +123,10 @@ class UCG(mg: ModuleGroup, pas: PointerAnalysisStyle.Style,
   def mainLoop(cgs: CallGraphStats): Unit = {
     // Init cache of call sites to their ref alloc sites
     queryCache = {
-      pas match {
-        case PointerAnalysisStyle.None => null
-        case PointerAnalysisStyle.NameBased => throw new RuntimeException("name-based PA unsupported for UCG")
-        case PointerAnalysisStyle.SPDS | PointerAnalysisStyle.SPDSVTA => {
+      style match {
+        case UCG.Options.NONE => null
+        case UCG.Options.VTA => null // TODO
+        case UCG.Options.SPDS | UCG.Options.SPDS_DYNAMIC | UCG.Options.VTA_SPDS => {
           new SQueryCache[SPDSResults](cgs, stats) {
             val solvers = new mutable.HashMap[BackwardQuery, Boomerang]
             def query(pred: boomerang.scene.Statement, stmt: ApplyFunctionRef, ref: Val): SPDSResults = {
@@ -172,31 +162,6 @@ class UCG(mg: ModuleGroup, pas: PointerAnalysisStyle.Style,
               }
               if (query.asNode().stmt().getTarget.asInstanceOf[SWANStatement.ApplyFunctionRef] != stmt) {
                 throw new RuntimeException()
-              }
-              allocSites
-            }
-          }
-        }
-        case PointerAnalysisStyle.UFF => {
-          new SQueryCache[UFFResults](cgs, stats) {
-            override def query(pred: Statement, stmt: ApplyFunctionRef, ref: Val): UFFResults = {
-              val results = uf.query(stmt.getFunctionRef.asInstanceOf[SWANVal])
-              val prevAllocSites = this.cacheGet(pred, stmt, ref)
-              val allocSites = results.filter(v => v.isNewExpr)
-              if (prevAllocSites.nonEmpty && !prevAllocSites.get.equals(allocSites)) {
-                stats.updatedCallSites += 1
-              }
-              if (allocSites.isEmpty) {
-                stats.fruitlessQueries += 1
-              } else {
-                var fruitless = true
-                allocSites.foreach {
-                    case _: SWANVal.FunctionRef => fruitless = false
-                    case _: SWANVal.BuiltinFunctionRef => fruitless = false
-                    case _: SWANVal.DynamicFunctionRef => fruitless = false
-                    case _ =>
-                }
-                if (fruitless) stats.fruitlessQueries += 1
               }
               allocSites
             }
@@ -249,184 +214,185 @@ class UCG(mg: ModuleGroup, pas: PointerAnalysisStyle.Style,
       seen.put(c, b)
 
       // Process operators in the block.
-      c.stmts.foreach(stmt => {
-        pas match {
-          case PointerAnalysisStyle.UFF =>
-            uf.handleStatement(cgs.cg, stmt)
-          case _ =>
-        }
-        stmt match {
-          // If operator is an allocation, add alloc type to b.
-          case SWANStatement.Allocation(_, inst, _) =>
-            b = b.add(inst.result.tpe.name)
+      c.stmts.foreach {
+        // If operator is an allocation, add alloc type to b.
+        case SWANStatement.Allocation(_, inst, _) =>
+          b = b.add(inst.result.tpe.name)
 
-          // If operator is a call site...
-          case applyStmt: SWANStatement.ApplyFunctionRef => {
+        // If operator is a call site...
+        case applyStmt: SWANStatement.ApplyFunctionRef => {
 
-            val m = c.method
-            // TODO: Verify only ever one pred? Do multiple preds create problems?
-            val edge = new ControlFlowGraph.Edge(m.getCFG.getPredsOf(applyStmt).iterator().next(), applyStmt)
+          val m = c.method
+          // TODO: Verify only ever one pred? Do multiple preds create problems?
+          val edge = new ControlFlowGraph.Edge(m.getCFG.getPredsOf(applyStmt).iterator().next(), applyStmt)
 
-            // Look up the function ref in the symbol table...
-            m.delegate.symbolTable(applyStmt.inst.functionRef.name) match {
-              // We find an operator
-              case SymbolTableEntry.operator(_, operator) => {
-                operator match {
-                  // Trivial cases (intra-procedural)
-                  case Operator.functionRef(_, name) =>
+          // Look up the function ref in the symbol table...
+          m.delegate.symbolTable(applyStmt.inst.functionRef.name) match {
+            // We find an operator
+            case SymbolTableEntry.operator(_, operator) => {
+              operator match {
+                // Trivial cases (intra-procedural)
+                case Operator.functionRef(_, name) =>
+                  visitSimpleRef(name, trivial = true)
+                case Operator.builtinRef(_, name) =>
+                  if (cgs.cg.methods.contains(name)) {
                     visitSimpleRef(name, trivial = true)
-                  case Operator.builtinRef(_, name) =>
-                    if (cgs.cg.methods.contains(name)) {
-                      visitSimpleRef(name, trivial = true)
-                    }
-                  case Operator.dynamicRef(_, _, index) => {
-                    val block = m.getCFG.stmtToBlock(m.getCFG.mappedStatements.get(operator).asInstanceOf[SWANStatement])
-                    visitDynamicRef(index, block, queried = false)
                   }
+                case Operator.dynamicRef(_, _, index) => {
+                  val block = m.getCFG.stmtToBlock(m.getCFG.mappedStatements.get(operator).asInstanceOf[SWANStatement])
+                  visitDynamicRef(index, block, queried = false)
+                }
 
-                  // The function ref must be being used in a more interesting
-                  // way (e.g., assignment). TODO: Count these cases.
-                  case _ => queryRef(applyStmt)
-                }
-              }
-              // Function ref is an argument, which means it is inter-procedural,
-              // so we need to query.
-              case _: SymbolTableEntry.argument => queryRef(applyStmt)
-              // Function ref has multiple symbol table entries (certainly from
-              // non-SSA compliant basic block argument manipulation
-              // from SWIRLPass). The function ref is a basic block argument.
-              case multiple: SymbolTableEntry.multiple => {
-                multiple.operators.foreach {
-                  // Trivial cases (intra-procedural)
-                  case Operator.functionRef(_, name) =>
-                    visitSimpleRef(name, trivial = true)
-                  case Operator.builtinRef(_, name) =>
-                    if (cgs.cg.methods.contains(name)) {
-                      visitSimpleRef(name, trivial = true)
-                    }
-                  case operator@Operator.dynamicRef(_, _, index) => {
-                    val block = m.getCFG.stmtToBlock(m.getCFG.mappedStatements.get(operator).asInstanceOf[SWANStatement])
-                    visitDynamicRef(index, block, queried = false)
-                  }
-                  // The function ref must be being used in a more interesting
-                  // way (e.g., assignment). TODO: Count these cases.
-                  case _ => queryRef(applyStmt)
-                }
+                // The function ref must be being used in a more interesting
+                // way (e.g., assignment). TODO: Count these cases.
+                case _ => queryRef(applyStmt)
               }
             }
-
-            // Below are handlers for two cases: static and dynamic dispatch.
-            // In both cases, once we have the target method, we add an edge
-            // to the target and process it. If we have seen the target before,
-            // we need to invalidate and revisit its successors because these
-            // new edges may introduce new query results for function pointers.
-
-            // Handler for simple (trivial) function references
-            def visitSimpleRef(name: String, trivial: Boolean): Unit = {
-              val target = cgs.cg.methods(name)
-              val added = addCGEdge(m, target, applyStmt, edge, cgs)
-              pas match {
-                case PointerAnalysisStyle.UFF => uf.handleCGEdge(applyStmt, target)
-                case _ =>
-              }
-              b = b.union(processTarget(target, c, b))
-              if (added) {
-                if (trivial) {
-                  cgs.trivialCallSites += 1
-                } else {
-                  stats.queriedEdges += 1
+            // Function ref is an argument, which means it is inter-procedural,
+            // so we need to query.
+            case _: SymbolTableEntry.argument => queryRef(applyStmt)
+            // Function ref has multiple symbol table entries (certainly from
+            // non-SSA compliant basic block argument manipulation
+            // from SWIRLPass). The function ref is a basic block argument.
+            case multiple: SymbolTableEntry.multiple => {
+              multiple.operators.foreach {
+                // Trivial cases (intra-procedural)
+                case Operator.functionRef(_, name) =>
+                  visitSimpleRef(name, trivial = true)
+                case Operator.builtinRef(_, name) =>
+                  if (cgs.cg.methods.contains(name)) {
+                    visitSimpleRef(name, trivial = true)
+                  }
+                case operator@Operator.dynamicRef(_, _, index) => {
+                  val block = m.getCFG.stmtToBlock(m.getCFG.mappedStatements.get(operator).asInstanceOf[SWANStatement])
+                  visitDynamicRef(index, block, queried = false)
                 }
-                if (seen.contains(target.getStartBlock)) {
-                  invalidateAndRevisitSuccessors(target, cgs)
-                }
+                // The function ref must be being used in a more interesting
+                // way (e.g., assignment). TODO: Count these cases.
+                case _ => queryRef(applyStmt)
               }
             }
+          }
 
-            // Handler for dynamic (virtual) function references
-            def visitDynamicRef(index: String, block: SWANBlock, queried: Boolean): Unit = {
-              val instantiatedTypes = b.toHashSet
-              if (vtaPruning) {
+          // Below are handlers for two cases: static and dynamic dispatch.
+          // In both cases, once we have the target method, we add an edge
+          // to the target and process it. If we have seen the target before,
+          // we need to invalidate and revisit its successors because these
+          // new edges may introduce new query results for function pointers.
+
+          // Handler for simple (trivial) function references
+          def visitSimpleRef(name: String, trivial: Boolean): Unit = {
+            val target = cgs.cg.methods(name)
+            val added = addCGEdge(m, target, applyStmt, edge, cgs)
+            b = b.union(processTarget(target, c, b))
+            if (added) {
+              if (trivial) {
+                cgs.trivialCallSites += 1
+              } else {
+                stats.queriedEdges += 1
+              }
+              if (seen.contains(target.getStartBlock)) {
+                invalidateAndRevisitSuccessors(target, cgs)
+              }
+            }
+          }
+
+          // Handler for dynamic (virtual) function references
+          def visitDynamicRef(index: String, block: SWANBlock, queried: Boolean): Unit = {
+            val instantiatedTypes: mutable.HashSet[String] = style match {
+              case UCG.Options.NONE => b.toHashSet
+              case UCG.Options.VTA | UCG.Options.VTA_SPDS => {
                 val ie = applyStmt.getInvokeExpr
                 if (!ie.getArgs.isEmpty) {
                   val reciever = ie.getArgs.asScala.last.asInstanceOf[SWANVal]
                   val types =
-                  mutable.HashSet.from{
-                    vta.getValTypes(reciever).collect { case neww: SWANVal.NewExpr => neww.delegate.tpe.name }
-                  }
-                  instantiatedTypes.filterInPlace(typ => types.contains(typ))
-                }
-              }
-              interProcSuccessors.get(block) match {
-                case Some(_) => interProcSuccessors(block).add(c)
-                case None => interProcSuccessors.addOne(block, mutable.HashSet(c))
-              }
-              moduleGroup.ddgs.foreach(ddg => {
-                val functionNames = ddg._2.query(index, Some(instantiatedTypes))
-                functionNames.foreach(name => {
-                  val target = cgs.cg.methods(name)
-                  val added = addCGEdge(m, target, applyStmt, edge, cgs)
-                  pas match {
-                    case PointerAnalysisStyle.UFF => uf.handleCGEdge(applyStmt, target)
-                    case _ =>
-                  }
-                  b = b.union(processTarget(target, c, b))
-                  if (added) {
-                    if (queried) {
-                      stats.queriedEdges += 1
-                    } else {
-                      stats.virtualEdges += 1
+                    mutable.HashSet.from {
+                      vta.getValTypes(reciever).collect { case neww: SWANVal.NewExpr => neww.delegate.tpe.name }
                     }
-                    if (seen.contains(target.getStartBlock)) {
-                      invalidateAndRevisitSuccessors(target, cgs)
+                  b.toHashSet.filterInPlace(typ => types.contains(typ))
+                } else b.toHashSet
+              }
+              case UCG.Options.SPDS => b.toHashSet
+              case UCG.Options.SPDS_DYNAMIC => {
+                if (!applyStmt.getInvokeExpr.getArgs.isEmpty) {
+                  val solver = new Boomerang(cgs.cg, scope, new DefaultBoomerangOptions)
+                  val foundTypes = new mutable.HashSet[String]()
+                  val query = BackwardQuery.make(edge, applyStmt.getInvokeExpr.getArgs.get(applyStmt.getInvokeExpr.getArgs.size() - 1))
+                  val allocSites = solver.solve(query).getAllocationSites
+                  allocSites.keySet().forEach(allocSite => {
+                    allocSite.`var`().asInstanceOf[AllocVal].getAllocVal match {
+                      case alloc: SWANVal.NewExpr => foundTypes.add(alloc.tpe.tpe.name)
+                      case _ =>
                     }
-                  }
-                })
-              })
+                  })
+                  foundTypes // TODO: Should this be an intersection operation?
+                } else b.toHashSet
+              }
             }
-
-            // Query a call-site for its function reference allocation site
-            def queryRef(stmt: SWANStatement.ApplyFunctionRef): Unit = {
-              val ref = stmt.getInvokeExpr.asInstanceOf[SWANInvokeExpr].getFunctionRef
-
-              // TODO: Do multiple preds create problems?
-              m.getControlFlowGraph.getPredsOf(stmt).forEach(pred => {
-                val allocSites = new ArrayBuffer[SWANVal]()
-                pas match {
-                  case PointerAnalysisStyle.None =>
-                  case ca.ualberta.maple.swan.spds.cg.CallGraphBuilder.PointerAnalysisStyle.SPDS | ca.ualberta.maple.swan.spds.cg.CallGraphBuilder.PointerAnalysisStyle.SPDSVTA => {
-                    queryCache.asInstanceOf[SQueryCache[SPDSResults]].get(pred, stmt, ref).forEach((forwardQuery, _) => {
-                      allocSites.addOne(forwardQuery.`var`().asInstanceOf[AllocVal].getAllocVal.asInstanceOf[SWANVal])
-                    })
+            interProcSuccessors.get(block) match {
+              case Some(_) => interProcSuccessors(block).add(c)
+              case None => interProcSuccessors.addOne(block, mutable.HashSet(c))
+            }
+            moduleGroup.ddgs.foreach(ddg => {
+              val functionNames = ddg._2.query(index, Some(instantiatedTypes))
+              functionNames.foreach(name => {
+                val target = cgs.cg.methods(name)
+                val added = addCGEdge(m, target, applyStmt, edge, cgs)
+                b = b.union(processTarget(target, c, b))
+                if (added) {
+                  if (queried) {
+                    stats.queriedEdges += 1
+                  } else {
+                    stats.virtualEdges += 1
                   }
-                  case ca.ualberta.maple.swan.spds.cg.CallGraphBuilder.PointerAnalysisStyle.UFF => {
-                    queryCache.asInstanceOf[SQueryCache[UFFResults]].get(pred, stmt, ref).foreach(allocSites.addOne)
+                  if (seen.contains(target.getStartBlock)) {
+                    invalidateAndRevisitSuccessors(target, cgs)
                   }
                 }
-                allocSites.foreach {
-                  case v: SWANVal.FunctionRef =>
-                    visitSimpleRef(v.ref, trivial = false)
-                  case v: SWANVal.BuiltinFunctionRef =>
-                    visitSimpleRef(v.ref, trivial = false)
-                  case v: SWANVal.DynamicFunctionRef => {
-                    val block = {
-                      v.method.delegate.symbolTable(v.getVariableName) match {
-                        case SymbolTableEntry.operator(_, operator) => {
-                          v.method.getCFG.stmtToBlock(v.method.getCFG.mappedStatements.get(operator).asInstanceOf[SWANStatement])
-                        }
-                        case _ => throw new RuntimeException("unexpected")
-                      }
-                    }
-                    visitDynamicRef(v.index, block, queried = true)
-                  }
-                  case _ => // likely partial_apply results
-                  }
               })
-            }
+            })
           }
-          // All other statement types are ignored.
-          case _ =>
+
+          // Query a call-site for its function reference allocation site
+          def queryRef(stmt: SWANStatement.ApplyFunctionRef): Unit = {
+            val ref = stmt.getInvokeExpr.asInstanceOf[SWANInvokeExpr].getFunctionRef.asInstanceOf[SWANVal]
+
+            // TODO: Do multiple preds create problems?
+            m.getControlFlowGraph.getPredsOf(stmt).forEach(pred => {
+              val allocSites = new ArrayBuffer[SWANVal]()
+              style match {
+                case UCG.Options.NONE =>
+                case UCG.Options.VTA => vta.getValTypes(ref).collect { case neww: SWANVal.NewExpr => neww.delegate.tpe.name }
+                case UCG.Options.SPDS | UCG.Options.SPDS_DYNAMIC | UCG.Options.VTA_SPDS => {
+                  queryCache.asInstanceOf[SQueryCache[SPDSResults]].get(pred, stmt, ref).forEach((forwardQuery, _) => {
+                    allocSites.addOne(forwardQuery.`var`().asInstanceOf[AllocVal].getAllocVal.asInstanceOf[SWANVal])
+                  })
+                }
+              }
+              allocSites.foreach {
+                case v: SWANVal.FunctionRef =>
+                  visitSimpleRef(v.ref, trivial = false)
+                case v: SWANVal.BuiltinFunctionRef =>
+                  visitSimpleRef(v.ref, trivial = false)
+                case v: SWANVal.DynamicFunctionRef => {
+                  val block = {
+                    v.method.delegate.symbolTable(v.getVariableName) match {
+                      case SymbolTableEntry.operator(_, operator) => {
+                        v.method.getCFG.stmtToBlock(v.method.getCFG.mappedStatements.get(operator).asInstanceOf[SWANStatement])
+                      }
+                      case _ => throw new RuntimeException("unexpected")
+                    }
+                  }
+                  visitDynamicRef(v.index, block, queried = true)
+                }
+                case _ => // likely partial_apply results
+              }
+            })
+          }
         }
-      })
+        // All other statement types are ignored.
+        case _ =>
+      }
       // Check if the outset has changed since we last visited the block
       // (if we have visited it).
       val outSetChanged = outSets.get(c) match {
@@ -548,6 +514,16 @@ class UCG(mg: ModuleGroup, pas: PointerAnalysisStyle.Style,
 }
 
 object UCG {
+
+  object Options extends Enumeration {
+    type Style = Value
+
+    val NONE: Options.Value = Value
+    val VTA: Options.Value = Value
+    val SPDS: Options.Value = Value
+    val SPDS_DYNAMIC: Options.Value = Value
+    val VTA_SPDS: Options.Value = Value
+  }
 
   class UCGSoundStats() extends SpecificCallGraphStats {
     var queriedEdges: Int = 0

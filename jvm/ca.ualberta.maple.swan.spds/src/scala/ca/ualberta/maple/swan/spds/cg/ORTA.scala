@@ -19,28 +19,17 @@
 
 package ca.ualberta.maple.swan.spds.cg
 
-import boomerang.scene.{ControlFlowGraph, Method}
-import ca.ualberta.maple.swan.ir.{Constants, ModuleGroup, Operator, SymbolTableEntry}
+import boomerang.scene.ControlFlowGraph
+import ca.ualberta.maple.swan.ir.{ModuleGroup, Operator, SymbolTableEntry}
 import ca.ualberta.maple.swan.spds.Stats.{CallGraphStats, SpecificCallGraphStats}
-import ca.ualberta.maple.swan.spds.cg.CallGraphBuilder.PointerAnalysisStyle
 import ca.ualberta.maple.swan.spds.cg.CallGraphConstructor.Options
-import ca.ualberta.maple.swan.spds.cg.pa.PointerAnalysis
-import ca.ualberta.maple.swan.spds.structures.{SWANMethod, SWANStatement}
 import ca.ualberta.maple.swan.spds.structures.SWANStatement.ApplyFunctionRef
+import ca.ualberta.maple.swan.spds.structures.{SWANMethod, SWANStatement}
 import ujson.Value
 
 import scala.collection.mutable
-import scala.collection.mutable.ArrayBuffer
 
-class ORTA(mg: ModuleGroup, pas: PointerAnalysisStyle.Style, options: Options) extends CallGraphConstructor(mg, options) {
-
-  pas match {
-    case PointerAnalysisStyle.None =>
-    case PointerAnalysisStyle.SPDS => // options.analyzeClosures = true
-    case PointerAnalysisStyle.UFF =>
-      throw new RuntimeException("UFF pointer analysis is currently not supported with ORTA")
-    case PointerAnalysisStyle.NameBased => // options.analyzeClosures = true
-  }
+class ORTA(mg: ModuleGroup, sigMatching: Boolean, options: Options) extends CallGraphConstructor(mg, options) {
 
   val unreachableTypeTargets: mutable.MultiDict[String, (ApplyFunctionRef, ControlFlowGraph.Edge, Set[String])] = mutable.MultiDict.empty[String, (ApplyFunctionRef, ControlFlowGraph.Edge, Set[String])]
   val reachableTypes = mutable.HashSet.empty[String]
@@ -159,15 +148,9 @@ class ORTA(mg: ModuleGroup, pas: PointerAnalysisStyle.Style, options: Options) e
       }
     }
 
-    pas match {
-      case PointerAnalysisStyle.SPDS =>
-        CallGraphUtils.resolveFunctionPointersWithSPDS(cgs, additive = false)
-      case PointerAnalysisStyle.NameBased =>
-        CallGraphUtils.resolveFunctionPointersWithMatching(cgs)
-      case _ =>
-    }
+    val sigMatchedEdges = if (sigMatching) CallGraphUtils.resolveFunctionPointersWithSigMatching(cgs) else 0
 
-    val stats = new ORTA.ORTAStats(rtaEdges, (System.currentTimeMillis() - startTimeMs).toInt)
+    val stats = new ORTA.ORTAStats(rtaEdges, sigMatchedEdges, (System.currentTimeMillis() - startTimeMs).toInt)
     cgs.specificData.addOne(stats)
   }
 }
@@ -175,17 +158,18 @@ class ORTA(mg: ModuleGroup, pas: PointerAnalysisStyle.Style, options: Options) e
 
 object ORTA {
 
-  class ORTAStats(val edges: Int, time: Int) extends SpecificCallGraphStats {
+  class ORTAStats(val edges: Int, sigMatchedEdges: Int, time: Int) extends SpecificCallGraphStats {
 
     override def toJSON: Value = {
       val u = ujson.Obj()
       u("orta_edges") = edges
+      u("orta_sig_matched_edges") = sigMatchedEdges
       u("orta_time") = time
       u
     }
 
     override def toString: String = {
-      s"ORTA\n  Edges: $edges\n  Time (ms): $time"
+      s"ORTA\n  Edges: $edges\nSig Matched Edges: $sigMatchedEdges\n  Time (ms): $time"
     }
   }
 }

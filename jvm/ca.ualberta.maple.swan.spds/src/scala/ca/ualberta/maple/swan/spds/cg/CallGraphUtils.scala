@@ -128,13 +128,11 @@ object CallGraphUtils {
     })
   }
 
-  def resolveFunctionPointersWithMatching(cgs: CallGraphStats): Unit = {
-    // assumes trivial function pointers are already resolved
-    // TODO: Use these stats somewhere
+  def resolveFunctionPointersWithSigMatching(cgs: CallGraphStats): Int = {
+    // assumes trivial function pointers are already resolved, only additive
+    // fills in the gaps, and only adds edges from empty call sites
     var edgesMatchedUsingType = 0
-    // var edgesMatchedUsingArgs = 0
     var edgesMatchedUsingArgsAndRetType = 0
-    // Only additive
     cgs.cg.methods.values.foreach(m => {
       m.applyFunctionRefs.foreach(apply => {
         val isTrivial: Boolean = {
@@ -185,119 +183,7 @@ object CallGraphUtils {
     })
     //System.out.println("edges matched using type: " + edgesMatchedUsingType)
     //System.out.println("edges matched using args and ret type: " + edgesMatchedUsingArgsAndRetType)
-  }
-
-  def resolveFunctionPointersWithSPDS(cgs: CallGraphStats, additive: Boolean): Unit = {
-    val scope = CallGraphUtils.getDataFlowScope(cgs.options)
-    // Using fixed-point Kleene's
-    // TODO: stats
-    var edges = 0
-    while (edges != cgs.cg.getEdges.size()) {
-      edges = cgs.cg.getEdges.size()
-      if (!additive) { // pruning (e.g., VTA)
-        val toReplace = new mutable.HashMap[SWANStatement.ApplyFunctionRef, mutable.HashSet[String]]
-        cgs.cg.getEdges.forEach(cgEdge => {
-          if (!toReplace.contains(cgEdge.src().asInstanceOf[SWANStatement.ApplyFunctionRef])) {
-            cgEdge.src() match {
-              case apply: SWANStatement.ApplyFunctionRef => {
-                val edge = new ControlFlowGraph.Edge(cgEdge.src().getMethod.getControlFlowGraph.getPredsOf(apply).iterator().next(), apply)
-                val query = BackwardQuery.make(edge, apply.getFunctionRef)
-                val solver = new Boomerang(cgs.cg, scope, new DefaultBoomerangOptions)
-                val backwardQueryResults = solver.solve(query)
-                val allocSites = backwardQueryResults.getAllocationSites
-                val functions = new mutable.HashSet[String]()
-                val indices = new mutable.HashSet[String]()
-                allocSites.keySet().forEach(allocSite => {
-                  allocSite.`var`().asInstanceOf[AllocVal].getAllocVal match {
-                    case fr: SWANVal.FunctionRef => functions.add(fr.ref)
-                    case fr: SWANVal.BuiltinFunctionRef => functions.add(fr.ref)
-                    case fr: SWANVal.DynamicFunctionRef => indices.add(fr.index)
-                    case _ =>
-                  }
-                })
-                if (functions.nonEmpty && indices.nonEmpty) throw new RuntimeException("Unexpected: apply site is both func ref and dynamic")
-                if (indices.nonEmpty) {
-                  solver.unregisterAllListeners()
-                  val query = BackwardQuery.make(edge, apply.getInvokeExpr.getArgs.get(apply.getInvokeExpr.getArgs.size() - 1))
-                  val allocSites = solver.solve(query).getAllocationSites
-                  val types = new mutable.HashSet[String]()
-                  allocSites.keySet().forEach(allocSite => {
-                    allocSite.`var`().asInstanceOf[AllocVal].getAllocVal match {
-                      case alloc: SWANVal.NewExpr => types.add(alloc.tpe.tpe.name)
-                      case _ =>
-                    }
-                  })
-                  val dynamicTargets = new mutable.HashSet[String]()
-                  indices.foreach(i => {
-                    cgs.cg.moduleGroup.ddgs.foreach(ddg => {
-                      dynamicTargets.addAll(ddg._2.query(i, Some(types)))
-                    })
-                  })
-                  if (dynamicTargets.nonEmpty) {
-                    toReplace.put(apply, dynamicTargets)
-                  }
-                } else {
-                  toReplace.put(apply, functions)
-                }
-              }
-              case _ =>
-            }
-          }
-        })
-        toReplace.foreach(r => {
-          val edges = cgs.cg.edgesOutOf(r._1)
-          edges.forEach(cgs.cg.removeEdge)
-          val stmt = r._1
-          val src = stmt.getMethod.asInstanceOf[SWANMethod]
-          r._2.foreach(f => {
-            addCGEdge(src, cgs.cg.methods(f), stmt, new ControlFlowGraph.Edge(src.getCFG.getPredsOf(stmt).iterator().next(), stmt), cgs)
-          })
-        })
-      } else { // adding (e.g., RTA)
-        cgs.cg.methods.values.foreach(m => {
-          m.applyFunctionRefs.foreach(apply => {
-            val edge = new ControlFlowGraph.Edge(m.getControlFlowGraph.getPredsOf(apply).iterator().next(), apply)
-            val query = BackwardQuery.make(edge, apply.getFunctionRef)
-            val solver = new Boomerang(cgs.cg, scope, new DefaultBoomerangOptions {
-              override def allowMultipleQueries(): Boolean = true
-            })
-            val backwardQueryResults = solver.solve(query)
-            val allocSites = backwardQueryResults.getAllocationSites
-            val functions = new mutable.HashSet[String]()
-            val indices = new mutable.HashSet[String]()
-            allocSites.keySet().forEach(allocSite => {
-              allocSite.`var`().asInstanceOf[AllocVal].getAllocVal match {
-                case fr: SWANVal.FunctionRef => functions.add(fr.ref)
-                case fr: SWANVal.BuiltinFunctionRef => functions.add(fr.ref)
-                case fr: SWANVal.DynamicFunctionRef => indices.add(fr.index)
-                case _ =>
-              }
-            })
-            if (functions.nonEmpty && indices.nonEmpty) throw new RuntimeException("Unexpected: apply site is both func ref and dynamic")
-            if (indices.nonEmpty) {
-              solver.unregisterAllListeners()
-              val query = BackwardQuery.make(edge, apply.getInvokeExpr.getArgs.get(apply.getInvokeExpr.getArgs.size() - 1))
-              val allocSites = solver.solve(query).getAllocationSites
-              val types = new mutable.HashSet[String]()
-              allocSites.keySet().forEach(allocSite => {
-                allocSite.`var`().asInstanceOf[AllocVal].getAllocVal match {
-                  case alloc: SWANVal.NewExpr => types.add(alloc.tpe.tpe.name)
-                  case _ =>
-                }
-              })
-              indices.foreach(i => {
-                cgs.cg.moduleGroup.ddgs.foreach(ddg => {
-                  val targets = ddg._2.query(i, Some(types))
-                  targets.foreach(t => cgs.cg.addEdge(new CallGraph.Edge(apply, cgs.cg.methods(t))))
-                })
-              })
-            } else {
-              functions.foreach(f => cgs.cg.addEdge(new CallGraph.Edge(apply, cgs.cg.methods(f))))
-            }
-          })
-        })
-      }
-    }
+    edgesMatchedUsingArgsAndRetType + edgesMatchedUsingType
   }
 
   def initializeCallGraph(moduleGroup: ModuleGroup, methods: mutable.HashMap[String, SWANMethod], cg: SWANCallGraph, cgs: CallGraphStats): Unit = {

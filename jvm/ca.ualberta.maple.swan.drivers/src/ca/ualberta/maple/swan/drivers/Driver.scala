@@ -54,7 +54,7 @@ object Driver {
     var cache = false
     var dumpFunctionNames = false
     var constructCallGraph = false
-    var callGraphAndPointerAlgorithms: ArrayBuffer[(CallGraphBuilder.CallGraphStyle.Style, scala.Option[CallGraphBuilder.PointerAnalysisStyle.Style])] = ArrayBuffer.empty
+    var callGraphAlgorithms: ArrayBuffer[CallGraphBuilder.CallGraphStyle.Style] = ArrayBuffer.empty
     var taintAnalysisSpec: scala.Option[File] = None
     var typeStateAnalysisSpec: scala.Option[File] = None
     var pathTracking = false
@@ -85,34 +85,28 @@ object Driver {
         if (v != null) {
           val cgStyle = v.cgAlgorithm.toLowerCase() match {
             case "cha" => CallGraphBuilder.CallGraphStyle.CHA
-            case "prta" => CallGraphBuilder.CallGraphStyle.PRTA
+            case "cha_sm" => CallGraphBuilder.CallGraphStyle.CHA_SIGMATCHING
             case "orta" => CallGraphBuilder.CallGraphStyle.ORTA
+            case "orta_sm" => CallGraphBuilder.CallGraphStyle.ORTA_SIGMATCHING
+            case "prta" => CallGraphBuilder.CallGraphStyle.PRTA
+            case "prta_sm" => CallGraphBuilder.CallGraphStyle.PRTA_SIGMATCHING
+            case "spds" => CallGraphBuilder.CallGraphStyle.SPDS
+            case "spds_wpf" => CallGraphBuilder.CallGraphStyle.SPDS_WP_FILTER
+            case "spds_queryf" => CallGraphBuilder.CallGraphStyle.SPDS_QUERY_FILTER
             case "vta" => CallGraphBuilder.CallGraphStyle.VTA
             case "ucg" => CallGraphBuilder.CallGraphStyle.UCG
+            case "ucg_vta" => CallGraphBuilder.CallGraphStyle.UCG_VTA
+            case "ucg_vta_spds" => CallGraphBuilder.CallGraphStyle.UCG_VTA_SPDS
+            case "ucg_spds" => CallGraphBuilder.CallGraphStyle.UCG_SPDS
+            case "ucg_spds_dynamic" => CallGraphBuilder.CallGraphStyle.UCG_SPDS_DYNAMIC
+            case _ => throw new RuntimeException("Unrecognized CG style")
           }
-          val paStyle = {
-            if (v.paAlgorithm == null) {
-              None
-            }
-            else {
-              val style = v.paAlgorithm.toLowerCase() match {
-                case "spds" => CallGraphBuilder.PointerAnalysisStyle.SPDS
-                case "spdsvta" => CallGraphBuilder.PointerAnalysisStyle.SPDSVTA
-                case "uff" => CallGraphBuilder.PointerAnalysisStyle.UFF
-                case "none" => CallGraphBuilder.PointerAnalysisStyle.None
-                case "namebased" => CallGraphBuilder.PointerAnalysisStyle.NameBased
-                case _ => throw new RuntimeException("Unknown pointer analysis style")
-              }
-              Some(style)
-            }
-          }
-          val style = (cgStyle,paStyle)
-          this.callGraphAndPointerAlgorithms.append(style)
+          this.callGraphAlgorithms.append(cgStyle)
         }
       })
-      if (this.callGraphAndPointerAlgorithms.isEmpty) {
-        val style = (CallGraphBuilder.CallGraphStyle.UCG,None)
-        this.callGraphAndPointerAlgorithms.append(style)
+      if (this.callGraphAlgorithms.isEmpty) {
+        val style = CallGraphBuilder.CallGraphStyle.UCG
+        this.callGraphAlgorithms.append(style)
       }
       this
     }
@@ -156,15 +150,9 @@ object Driver {
   class CGPAPair() {
     @Option(names = Array("--cg-algo"),
       required = true,
-      description = Array("Algorithm(s) used for building the Call Graph. Options: cha, prta, orta, vta, ucg")
+      description = Array("Algorithm(s) used for building the Call Graph. Options: ...")
     )
     var cgAlgorithm: String = null
-
-    @Option(names = Array("--pa-algo"),
-      required = false,
-      description = Array("Algorithm used for pointer analysis during Call Graph construction. Options: spds, uff, none, namebased")
-    )
-    var paAlgorithm: String = null
   }
 }
 
@@ -211,7 +199,7 @@ class Driver extends Runnable {
   private val dumpFunctionNames = new Array[Boolean](0)
 
   @Option(names = Array("-g", "--call-graph"),
-    description = Array("Construct the Call Graph."))
+    description = Array("Construct the Call Graph (allowing you to omit -t or -e)."))
   private val constructCallGraph = new Array[Boolean](0)
 
   @ArgGroup(exclusive = false, multiplicity="0..*")
@@ -395,30 +383,32 @@ class Driver extends Runnable {
     }
     val stats = new mutable.HashMap[String, AllStats]()
     if (options.constructCallGraph || options.taintAnalysisSpec.nonEmpty || options.typeStateAnalysisSpec.nonEmpty) {
-      options.callGraphAndPointerAlgorithms.foreach{case (cgAlgo,paAlgo) => {
+      options.callGraphAlgorithms.foreach { cgAlgo => {
         val allStats = new AllStats(generalStats)
         val cgResults = CallGraphBuilder.createCallGraph(
-          group, cgAlgo, paAlgo,
+          group, cgAlgo,
           new CallGraphConstructor.Options(options.analyzeLibraries, options.analyzeClosures, options.debug))
         allStats.cgs = Some(cgResults)
         val cg = cgResults.cg
         val cgPrefix = cgAlgo match {
-          case ca.ualberta.maple.swan.spds.cg.CallGraphBuilder.CallGraphStyle.CHA => "CHA"
-          case ca.ualberta.maple.swan.spds.cg.CallGraphBuilder.CallGraphStyle.PRTA => "PRTA"
-          case ca.ualberta.maple.swan.spds.cg.CallGraphBuilder.CallGraphStyle.ORTA => "ORTA"
-          case ca.ualberta.maple.swan.spds.cg.CallGraphBuilder.CallGraphStyle.VTA => "VTA"
-          case ca.ualberta.maple.swan.spds.cg.CallGraphBuilder.CallGraphStyle.UCG => "UCG"
+          case CallGraphBuilder.CallGraphStyle.CHA => "CHA"
+          case CallGraphBuilder.CallGraphStyle.CHA_SIGMATCHING => "CHA_SIG"
+          case CallGraphBuilder.CallGraphStyle.ORTA => "ORTA"
+          case CallGraphBuilder.CallGraphStyle.ORTA_SIGMATCHING => "ORTA_SIG"
+          case CallGraphBuilder.CallGraphStyle.PRTA => "PRTA"
+          case CallGraphBuilder.CallGraphStyle.PRTA_SIGMATCHING => "PRTA_SIG"
+          case CallGraphBuilder.CallGraphStyle.SPDS => "SPDS"
+          case CallGraphBuilder.CallGraphStyle.SPDS_WP_FILTER => "SPDS_WPF"
+          case CallGraphBuilder.CallGraphStyle.SPDS_QUERY_FILTER => "SPDS_QUERYF"
+          case CallGraphBuilder.CallGraphStyle.VTA => "VTA"
+          case CallGraphBuilder.CallGraphStyle.UCG => "UCG"
+          case CallGraphBuilder.CallGraphStyle.UCG_VTA => "UCG_VTA"
+          case CallGraphBuilder.CallGraphStyle.UCG_SPDS => "UCG_SPDS"
+          case CallGraphBuilder.CallGraphStyle.UCG_SPDS_DYNAMIC => "UCG_SPDS_DYNAMIC"
+          case CallGraphBuilder.CallGraphStyle.UCG_VTA_SPDS => "UCG_VTA_SPDS"
         }
-        val paPrefix = paAlgo.getOrElse(CallGraphBuilder.defaultPAStyle(cgAlgo)) match {
-          case CallGraphBuilder.PointerAnalysisStyle.None => ""
-          case CallGraphBuilder.PointerAnalysisStyle.SPDS => "SPDS"
-          case CallGraphBuilder.PointerAnalysisStyle.SPDSVTA => "SPDS-VTA"
-          case CallGraphBuilder.PointerAnalysisStyle.UFF => "UFF"
-          case CallGraphBuilder.PointerAnalysisStyle.NameBased => "NameBased"
-        }
-        val prefix = if (paPrefix != "") {s"${cgPrefix}-${paPrefix}"} else {cgPrefix}
         if (options.printToDot) {
-          val fw = new FileWriter(Paths.get(swanDir.getPath, s"$prefix-dot.txt").toFile)
+          val fw = new FileWriter(Paths.get(swanDir.getPath, s"$cgPrefix-dot.txt").toFile)
           try {
             fw.write(cg.toDot)
           } finally {
@@ -426,12 +416,12 @@ class Driver extends Runnable {
           }
         }
         if (options.printToProbe) {
-          CallGraphUtils.writeToProbe(cg, Paths.get(swanDir.getPath, s"$prefix.probe.txt").toFile)
-          CallGraphUtils.writeToProbe(cg, Paths.get(swanDir.getPath, s"$prefix.insensitive.probe.txt").toFile, contextSensitive = false)
+          CallGraphUtils.writeToProbe(cg, Paths.get(swanDir.getPath, s"$cgPrefix.probe.txt").toFile)
+          CallGraphUtils.writeToProbe(cg, Paths.get(swanDir.getPath, s"$cgPrefix.insensitive.probe.txt").toFile, contextSensitive = false)
         }
         if (options.debug) {
-          writeFile(cgResults.finalModuleGroup, debugDir, s"$prefix-grouped-cg", new SWIRLPrinterOptions().cgDebugInfo(cgResults.debugInfo).printLocation(true).printLocationPaths(false))
-          if (cgResults.dynamicModels.nonEmpty ) {
+          writeFile(cgResults.finalModuleGroup, debugDir, s"$cgPrefix-grouped-cg", new SWIRLPrinterOptions().cgDebugInfo(cgResults.debugInfo).printLocation(true).printLocationPaths(false))
+          if (cgResults.dynamicModels.nonEmpty) {
             val r = cgResults.dynamicModels.get
             writeFile(r._1, debugDir, "dynamic-models.raw")
             writeFile(r._2, debugDir, "dynamic-models")
@@ -464,8 +454,9 @@ class Driver extends Runnable {
           val f = Paths.get(swanDir.getPath, typeStateAnalysisResultsFileName).toFile
           TypeStateResults.writeResults(f, allResults)
         }
-        stats.put(prefix, allStats)
-      }}
+        stats.put(cgPrefix, allStats)
+      }
+      }
     }
     generalStats.modules = group.metas.length - 1
     generalStats.functions = group.functions.length
@@ -477,7 +468,7 @@ class Driver extends Runnable {
       Logging.printInfo(s"Writing $prefix stats to ${allStatsFile.getName}")
       s._2.writeToFile(allStatsFile)
     })
-    if (options.callGraphAndPointerAlgorithms.length > 1) {
+    if (options.callGraphAlgorithms.length > 1) {
       Logging.printInfo("NOTE: Multiple CGs generated - total runtime will be longer.")
     }
     group

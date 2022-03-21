@@ -21,21 +21,12 @@ package ca.ualberta.maple.swan.spds.cg
 
 import ca.ualberta.maple.swan.ir.ModuleGroup
 import ca.ualberta.maple.swan.spds.Stats.SpecificCallGraphStats
-import ca.ualberta.maple.swan.spds.cg.CallGraphBuilder.PointerAnalysisStyle
 import ca.ualberta.maple.swan.spds.cg.CallGraphConstructor.Options
 import ca.ualberta.maple.swan.spds.cg.VTA.VTAStats
 import ca.ualberta.maple.swan.utils.Logging
 import ujson.Value
 
-class VTA(mg: ModuleGroup, pas: PointerAnalysisStyle.Style, options: Options) extends TypeFlowCG(mg, options: Options) {
-
-  pas match {
-    case PointerAnalysisStyle.None =>
-    case PointerAnalysisStyle.NameBased =>
-    case _ =>
-      throw new RuntimeException("Pointer Analysis must not be set for VTA call graph construction")
-  }
-
+class VTA(mg: ModuleGroup, options: Options) extends TypeFlowCG(mg, options: Options) {
 
   override def buildSpecificCallGraph(): Unit = {
     val stats = new VTAStats()
@@ -46,7 +37,7 @@ class VTA(mg: ModuleGroup, pas: PointerAnalysisStyle.Style, options: Options) ex
     addTrivialEdges()
 
     Logging.printInfo("Building conservative graph (CHA) for VTA")
-    val conservativeGraph = new CHA(mg,pas, options: Options)
+    val conservativeGraph = new CHA(mg, true, options: Options)
     // val conservativeGraph = new UCGSound(mg,PointerAnalysisStyle.SPDS,true, options)
     conservativeGraph.buildCallGraph(CallGraphBuilder.CallGraphStyle.CHA)
     cgs.specificData.addOne(conservativeGraph.cgs.specificData.last)

@@ -21,25 +21,15 @@ package ca.ualberta.maple.swan.spds.cg
 
 import boomerang.scene.ControlFlowGraph
 import ca.ualberta.maple.swan.ir.{ModuleGroup, Operator, SymbolTableEntry}
-import ca.ualberta.maple.swan.spds.Stats.{CallGraphStats, SpecificCallGraphStats}
-import ca.ualberta.maple.swan.spds.cg.CallGraphBuilder.PointerAnalysisStyle
+import ca.ualberta.maple.swan.spds.Stats.SpecificCallGraphStats
 import ca.ualberta.maple.swan.spds.cg.CallGraphConstructor.Options
-import ca.ualberta.maple.swan.spds.cg.pa.PointerAnalysis
 import ca.ualberta.maple.swan.spds.structures.SWANStatement
 import ujson.Value
 
 import scala.collection.mutable
 
 // TODO: This isn't actually pessimistic because it doesn't use CHA
-class PRTA(mg: ModuleGroup, pas: PointerAnalysisStyle.Style, options: Options) extends CallGraphConstructor(mg, options) {
-
-  pas match {
-    case PointerAnalysisStyle.None =>
-    case PointerAnalysisStyle.SPDS => // options.analyzeClosures = true
-    case PointerAnalysisStyle.UFF =>
-      throw new RuntimeException("UFF pointer analysis is currently not supported with PRTA")
-    case PointerAnalysisStyle.NameBased => // options.analyzeClosures = true
-  }
+class PRTA(mg: ModuleGroup, sigMatching: Boolean, options: Options) extends CallGraphConstructor(mg, options) {
 
   override def buildSpecificCallGraph(): Unit = {
     var prtaEdges: Int = 0
@@ -96,32 +86,27 @@ class PRTA(mg: ModuleGroup, pas: PointerAnalysisStyle.Style, options: Options) e
       })
     })
 
-    pas match {
-      case PointerAnalysisStyle.SPDS =>
-        CallGraphUtils.resolveFunctionPointersWithSPDS(cgs, additive = false)
-      case PointerAnalysisStyle.NameBased =>
-        CallGraphUtils.resolveFunctionPointersWithMatching(cgs)
-      case _ =>
-    }
+    val sigMatchedEdges = if (sigMatching) CallGraphUtils.resolveFunctionPointersWithSigMatching(cgs) else 0
 
-    val stats = new PRTA.PRTAStats(prtaEdges, (System.currentTimeMillis() - startTimeMs).toInt)
+    val stats = new PRTA.PRTAStats(prtaEdges, sigMatchedEdges, (System.currentTimeMillis() - startTimeMs).toInt)
     cgs.specificData.addOne(stats)
   }
 }
 
 object PRTA {
 
-  class PRTAStats(val edges: Int, time: Int) extends SpecificCallGraphStats {
+  class PRTAStats(val edges: Int, sigMatchedEdges: Int, time: Int) extends SpecificCallGraphStats {
 
     override def toJSON: Value = {
       val u = ujson.Obj()
       u("prta_edges") = edges
+      u("prta_sig_matched_edges") = sigMatchedEdges
       u("prta_time") = time
       u
     }
 
     override def toString: String = {
-      s"pRTA\n  Edges: $edges\n  Time (ms): $time"
+      s"PRTA\n  Edges: $edges\nSig Matched Edges: $sigMatchedEdges\n  Time (ms): $time"
     }
   }
 }

@@ -21,23 +21,11 @@ package ca.ualberta.maple.swan.spds.cg
 
 import boomerang.scene.ControlFlowGraph
 import ca.ualberta.maple.swan.ir.{ModuleGroup, Operator, SymbolTableEntry}
-import ca.ualberta.maple.swan.spds.Stats.{CallGraphStats, SpecificCallGraphStats}
-import ca.ualberta.maple.swan.spds.cg.CallGraphBuilder.PointerAnalysisStyle
+import ca.ualberta.maple.swan.spds.Stats.SpecificCallGraphStats
 import ca.ualberta.maple.swan.spds.cg.CallGraphConstructor.Options
-import ca.ualberta.maple.swan.spds.cg.pa.PointerAnalysis
-import ca.ualberta.maple.swan.spds.structures.SWANStatement
 import ujson.Value
 
-class CHA(mg: ModuleGroup, pas: PointerAnalysisStyle.Style, options: Options) extends CallGraphConstructor(mg, options) {
-
-  pas match {
-    case PointerAnalysisStyle.None =>
-    case PointerAnalysisStyle.SPDS => // options.analyzeClosures = true
-    case PointerAnalysisStyle.SPDSVTA =>
-    case PointerAnalysisStyle.UFF =>
-      throw new RuntimeException("UFF pointer analysis is currently not supported with CHA")
-    case PointerAnalysisStyle.NameBased => // options.analyzeClosures = true
-  }
+class CHA(mg: ModuleGroup, sigMatching: Boolean, options: Options) extends CallGraphConstructor(mg, options) {
 
   override def buildSpecificCallGraph(): Unit = {
     var chaEdges: Int = 0
@@ -72,32 +60,27 @@ class CHA(mg: ModuleGroup, pas: PointerAnalysisStyle.Style, options: Options) ex
       })
     })
 
-    pas match {
-      case PointerAnalysisStyle.SPDS =>
-        CallGraphUtils.resolveFunctionPointersWithSPDS(cgs, additive = true)
-      case PointerAnalysisStyle.NameBased =>
-        CallGraphUtils.resolveFunctionPointersWithMatching(cgs)
-      case _ =>
-    }
+    val sigMatchedEdges = if (sigMatching) CallGraphUtils.resolveFunctionPointersWithSigMatching(cgs) else 0
 
-    val stats = new CHA.CHAStats(chaEdges, (System.currentTimeMillis() - startTimeMs).toInt)
+    val stats = new CHA.CHAStats(chaEdges, sigMatchedEdges, (System.currentTimeMillis() - startTimeMs).toInt)
     cgs.specificData.addOne(stats)
   }
 }
 
 object CHA {
 
-  class CHAStats(val chaEdges: Int, val time: Int) extends SpecificCallGraphStats {
+  class CHAStats(val chaEdges: Int, val sigMatchedEdges: Int, val time: Int) extends SpecificCallGraphStats {
 
     override def toJSON: Value = {
       val u = ujson.Obj()
       u("cha_edges") = chaEdges
+      u("cha_sig_matched_edges") = sigMatchedEdges
       u("cha_time") = time
       u
     }
 
     override def toString: String = {
-      s"CHA\n  Edges: $chaEdges\n  Time (ms): $time"
+      s"CHA\n  Edges: $chaEdges\nSig Matched Edges: $sigMatchedEdges\n  Time (ms): $time"
     }
   }
 }
