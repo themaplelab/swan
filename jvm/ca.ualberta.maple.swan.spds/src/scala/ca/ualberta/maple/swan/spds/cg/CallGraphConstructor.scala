@@ -43,6 +43,7 @@ abstract class CallGraphConstructor(val moduleGroup: ModuleGroup, val options: C
     cgs.initializationTimeMS = (System.currentTimeMillis() - startTimeMs).toInt
     buildSpecificCallGraph()
     CallGraphUtils.pruneEntryPoints(cgs)
+    // TODO: Add option to "plug holes" with over-approximation
     if (options.addDebugInfo) {
       cg.methods.foreach(m => {
         if (cg.edgesInto(m._2).isEmpty) {

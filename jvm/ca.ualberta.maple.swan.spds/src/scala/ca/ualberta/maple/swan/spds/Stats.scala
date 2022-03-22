@@ -65,7 +65,7 @@ object Stats {
       sb.append(indent + s"Trivial call sites: $trivialCallSites\n")
       sb.append(indent + s"Resolved Call Sites: $resolvedCallSites\n")
       sb.append(indent + s"Unresolved Call Sites: $unresolvedCallSites\n")
-      sb.append(indent + s"Truly* Unresolved Call Sites: $trulyUnresolvedCallSites\n")
+      sb.append(indent + s"Possibly Unresolved Call Sites: $trulyUnresolvedCallSites\n")
       sb.append(indent + s"Non-trivial call sites: $nonTrivialCallSites\n")
       if (specificData.nonEmpty) {
         sb.append(indent + "Specific stats:\n")

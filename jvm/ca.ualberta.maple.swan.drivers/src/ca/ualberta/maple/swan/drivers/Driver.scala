@@ -62,7 +62,6 @@ object Driver {
     ("ucg_spds", CallGraphBuilder.CallGraphStyle.UCG_SPDS),
     ("ucg_spds_dynamic", CallGraphBuilder.CallGraphStyle.UCG_SPDS_DYNAMIC))
 
-
   /* Because this driver can be invoked programmatically, most picocli options
    * (@Option) should have a matching field in Driver.Options.
    */

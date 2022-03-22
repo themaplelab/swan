@@ -193,7 +193,7 @@ object SWANStatement {
   }
   case class Allocation(opDef: CanOperatorDef, inst: Operator.neww,
                         m: SWANMethod) extends SWANStatement(CanInstructionDef.operator(opDef), m) {
-    private lazy val newVal = SWANVal.NewExpr(new Symbol(inst.result.ref, inst.allocType), m)
+    private lazy val newVal = SWANVal.NewExpr(inst.result, m)
     override def getRightOp: Val = newVal
     override def toString: String = {
       if (inst.result.ref.name == "nop" && m.hasSwirlSource) {

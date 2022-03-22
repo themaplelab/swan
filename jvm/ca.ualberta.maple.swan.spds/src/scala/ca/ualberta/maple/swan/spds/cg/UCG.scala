@@ -304,10 +304,10 @@ class UCG(mg: ModuleGroup, style: UCG.Options.Value,
               case UCG.Options.VTA | UCG.Options.VTA_SPDS => {
                 val ie = applyStmt.getInvokeExpr
                 if (!ie.getArgs.isEmpty) {
-                  val reciever = ie.getArgs.asScala.last.asInstanceOf[SWANVal]
+                  val receiver = ie.getArgs.asScala.last.asInstanceOf[SWANVal]
                   val types =
                     mutable.HashSet.from {
-                      vta.getValTypes(reciever).collect { case neww: SWANVal.NewExpr => neww.delegate.tpe.name }
+                      vta.getValTypes(receiver).collect { case neww: SWANVal.NewExpr => neww.delegate.tpe.name }
                     }
                   b.toHashSet.filterInPlace(typ => types.contains(typ))
                 } else b.toHashSet
@@ -629,5 +629,4 @@ abstract class SQueryCache[T](cgs: CallGraphStats, stats: UCGSoundStats) {
       cache.remove(stmt)
     }
   }
-
 }
