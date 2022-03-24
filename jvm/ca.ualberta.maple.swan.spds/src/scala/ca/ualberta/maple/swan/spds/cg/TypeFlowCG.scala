@@ -21,9 +21,10 @@ package ca.ualberta.maple.swan.spds.cg
 
 import boomerang.scene.{ControlFlowGraph, Val}
 import ca.ualberta.maple.swan.ir.{ModuleGroup, Operator, SymbolTableEntry}
+import ca.ualberta.maple.swan.spds.Stats.CallGraphStats
 import ca.ualberta.maple.swan.spds.cg.CallGraphConstructor.Options
 import ca.ualberta.maple.swan.spds.cg.CallGraphUtils.addCGEdge
-import ca.ualberta.maple.swan.spds.structures.{SWANInvokeExpr, SWANStatement, SWANVal}
+import ca.ualberta.maple.swan.spds.structures.{SWANInvokeExpr, SWANMethod, SWANStatement, SWANVal}
 
 import scala.collection.mutable
 import scala.jdk.CollectionConverters.ListHasAsScala
@@ -84,14 +85,24 @@ abstract class TypeFlowCG(mg: ModuleGroup, options: Options) extends TrivialEdge
     types.foreach{
       case SWANVal.FunctionRef(delegate, ref, method, unbalanced) =>
         val target = methods(ref)
-        if (addCGEdge(from = stmt.m, to = target, stmt, predEdge, cgs)) stats.ptEdges += 1
+        if (addCGEdgeIfSigMatch(from = stmt, to = target, predEdge, cgs)) stats.ptEdges += 1
       case SWANVal.BuiltinFunctionRef(delegate, ref, method, unbalanced) =>
         val target = methods(ref)
-        if (addCGEdge(from = stmt.m, to = target, stmt, predEdge, cgs)) stats.ptEdges += 1
+        if (addCGEdgeIfSigMatch(from = stmt, to = target, predEdge, cgs)) stats.ptEdges += 1
       case SWANVal.DynamicFunctionRef(delegate, index, method, unbalanced) =>
         addDDGEdges(stmt, predEdge, index, getRecieverTypes(stmt))
       case _: SWANVal.NewExpr => // dealt with via instantiated types
       case _: SWANVal.Simple | _: SWANVal.Constant => // ignore simple or constant
+    }
+  }
+
+  private def addCGEdgeIfSigMatch(from: SWANStatement.ApplyFunctionRef, to: SWANMethod, predEdge: ControlFlowGraph.Edge, cgs: CallGraphStats): Boolean = {
+    val invokeExpr = from.getInvokeExpr
+    if (invokeExpr.getArgs.size() == to.getParameterLocals.size() && to.delegate.returnTpe == from.inst.result.tpe) {
+      addCGEdge(from = from.m, to, stmt = from, predEdge, cgs)
+    }
+    else {
+      false
     }
   }
 
