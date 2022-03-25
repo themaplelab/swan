@@ -42,7 +42,7 @@ abstract class TrivialEdges(mg: ModuleGroup, options: Options) extends CallGraph
 
   // This must be called after initialized call graph
   final def addTrivialEdges(): Unit = {
-    methods.foreach{ case (_, m) => {
+    methods.iterator.filter{ case (_,m) => CallGraphUtils.isEntryOrLibrary(m, cgs)}.foreach{ case (_,m) => {
       m.applyFunctionRefs.foreach {
         stmt => {
           val edge = new ControlFlowGraph.Edge(m.getCFG.getPredsOf(stmt).iterator().next(), stmt)

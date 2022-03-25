@@ -23,6 +23,7 @@ import boomerang.scene.ControlFlowGraph
 import ca.ualberta.maple.swan.ir.{ModuleGroup, Operator, SymbolTableEntry}
 import ca.ualberta.maple.swan.spds.Stats.SpecificCallGraphStats
 import ca.ualberta.maple.swan.spds.cg.CallGraphConstructor.Options
+import ca.ualberta.maple.swan.spds.structures.SWANMethod
 import ujson.Value
 
 class CHA(mg: ModuleGroup, sigMatching: Boolean, options: Options) extends CallGraphConstructor(mg, options) {
@@ -30,7 +31,7 @@ class CHA(mg: ModuleGroup, sigMatching: Boolean, options: Options) extends CallG
   override def buildSpecificCallGraph(): Unit = {
     var chaEdges: Int = 0
     val startTimeMs = System.currentTimeMillis()
-    methods.foreach(x => {
+    methods.iterator.filter{ case (_,m) => CallGraphUtils.isEntryOrLibrary(m, cgs)}.foreach(x => {
       val m = x._2
       m.applyFunctionRefs.foreach(applyStmt => {
         val edge = new ControlFlowGraph.Edge(m.getCFG.getPredsOf(applyStmt).iterator().next(), applyStmt)

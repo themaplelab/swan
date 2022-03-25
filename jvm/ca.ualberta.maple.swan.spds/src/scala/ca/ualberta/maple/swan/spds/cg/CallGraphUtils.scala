@@ -131,12 +131,22 @@ object CallGraphUtils {
     })
   }
 
+  def nonDead(m: SWANMethod,cgs: CallGraphStats): Boolean = {
+    val cg = cgs.cg
+    !cg.edgesInto(m).isEmpty || cg.getEntryPoints.contains(m)
+  }
+
+  def isEntryOrLibrary(m: SWANMethod, cgs: CallGraphStats): Boolean = {
+    cgs.cg.getEntryPoints.contains(m) || m.delegate.isLibrary
+  }
+
   def resolveFunctionPointersWithSigMatching(cgs: CallGraphStats): Int = {
     // assumes trivial function pointers are already resolved, only additive
     // fills in the gaps, and only adds edges from empty call sites
     var edgesMatchedUsingType = 0
     var edgesMatchedUsingArgsAndRetType = 0
-    cgs.cg.methods.values.foreach(m => {
+    cgs.cg.methods.iterator.filter{case (_,m) => CallGraphUtils.nonDead(m, cgs)}.foreach(x => {
+      val m = x._2
       m.applyFunctionRefs.foreach(apply => {
         val isTrivial: Boolean = {
           m.delegate.symbolTable(apply.inst.functionRef.name) match {

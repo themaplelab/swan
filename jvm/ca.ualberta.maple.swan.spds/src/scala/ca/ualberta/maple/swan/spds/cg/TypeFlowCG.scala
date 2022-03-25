@@ -41,7 +41,7 @@ abstract class TypeFlowCG(mg: ModuleGroup, options: Options) extends TrivialEdge
   }
 
   def addTypeFlowEdges(): Unit = {
-    methods.foreach { case (_, m) =>
+    methods.iterator.filter{ case (_,m) => CallGraphUtils.isEntryOrLibrary(m, cgs)}.foreach{ case (_,m) =>
       m.applyFunctionRefs.foreach {
         case stmt@SWANStatement.ApplyFunctionRef(opDef, inst, _m) =>
           val predEdge = new ControlFlowGraph.Edge(m.getCFG.getPredsOf(stmt).iterator().next(), stmt)
