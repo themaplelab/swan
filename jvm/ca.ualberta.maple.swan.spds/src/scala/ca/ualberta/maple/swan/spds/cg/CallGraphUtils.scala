@@ -59,9 +59,9 @@ object CallGraphUtils {
       }
       if (cgs.options.addDebugInfo) {
         if (!cgs.debugInfo.edges.contains(op)) {
-          cgs.debugInfo.edges.put(op, new mutable.HashSet[String]())
+          cgs.debugInfo.edges.put(op, new mutable.HashSet[(String,String)]())
         }
-        cgs.debugInfo.edges(op).add(to.getName)
+        cgs.debugInfo.edges(op).add(from.getName, to.getName)
       }
     }
     if (b) cgs.totalEdges += 1
@@ -108,6 +108,7 @@ object CallGraphUtils {
   def isUninteresting(m: SWANMethod, options: CallGraphConstructor.Options): Boolean = {
     val name = m.getName
     name.endsWith(".deinit") ||
+      name.endsWith(".deinit!deallocator.foreign") ||
       name.endsWith(".modify") ||
       name.endsWith(".__deallocating_deinit") ||
       (!options.analyzeLibraries && m.delegate.isLibrary)
@@ -145,8 +146,10 @@ object CallGraphUtils {
     // fills in the gaps, and only adds edges from empty call sites
     var edgesMatchedUsingType = 0
     var edgesMatchedUsingArgsAndRetType = 0
-    cgs.cg.methods.iterator.filter{case (_,m) => CallGraphUtils.nonDead(m, cgs)}.foreach(x => {
-      val m = x._2
+
+    // val newlyNonDead = mutable.HashSet.empty[SWANMethod]
+
+    def resolve(m: SWANMethod): Unit = {
       m.applyFunctionRefs.foreach(apply => {
         val isTrivial: Boolean = {
           m.delegate.symbolTable(apply.inst.functionRef.name) match {
@@ -163,12 +166,17 @@ object CallGraphUtils {
         }
         if (cgs.cg.edgesOutOf(apply).isEmpty && !isTrivial) {
           val funcType = apply.inst.functionType
+
           def matchBasedOnArgs(): Unit = {
             var matched = false
             cgs.cg.methods.foreach(target => {
               if (target._2.getParameterLocals.size() == apply.getInvokeExpr.getArgs.size()) {
                 if (target._2.delegate.returnTpe == apply.inst.result.tpe) {
-                  if (addCGEdge(m, target._2, apply, new ControlFlowGraph.Edge(m.getCFG.getPredsOf(apply).iterator().next(), apply), cgs)) edgesMatchedUsingArgsAndRetType += 1
+                  //val targetDead = cgs.cg.edgesInto(target._2).isEmpty
+                  if (addCGEdge(m, target._2, apply, new ControlFlowGraph.Edge(m.getCFG.getPredsOf(apply).iterator().next(), apply), cgs)) {
+                    edgesMatchedUsingArgsAndRetType += 1
+                    //if (targetDead) newlyNonDead.add(target._2)
+                  }
                   matched = true
                 }
               }
@@ -178,6 +186,7 @@ object CallGraphUtils {
               // System.out.println(s"${apply.inst.result.ref.name} = apply ${apply.inst.functionRef.name}, ${ if (apply.inst.functionType.nonEmpty) apply.inst.functionType.get.name else ""}")
             }
           }
+
           if (funcType.nonEmpty) {
             val functions = new mutable.HashSet[SWANMethod]()
             cgs.cg.methods.foreach(m => {
@@ -187,13 +196,28 @@ object CallGraphUtils {
             })
             if (functions.nonEmpty) {
               functions.foreach(f => {
-                if (addCGEdge(m, f, apply, new ControlFlowGraph.Edge(m.getCFG.getPredsOf(apply).iterator().next(), apply), cgs)) edgesMatchedUsingType += 1
+                //val targetDead = cgs.cg.edgesInto(f).isEmpty
+                if (addCGEdge(m, f, apply, new ControlFlowGraph.Edge(m.getCFG.getPredsOf(apply).iterator().next(), apply), cgs)) {
+                  edgesMatchedUsingType += 1
+                  //if (targetDead) newlyNonDead.add(f)
+                }
               })
             } else matchBasedOnArgs()
           } else matchBasedOnArgs()
         }
       })
+    }
+
+    cgs.cg.methods.iterator.filter{case (_,m) => CallGraphUtils.isEntryOrLibrary(m, cgs)}.foreach(x => {
+      val m = x._2
+      resolve(m)
     })
+    /*
+    while (newlyNonDead.nonEmpty) {
+      val x = newlyNonDead.head
+      newlyNonDead.remove(x)
+      resolve(x)
+    }*/
     //System.out.println("edges matched using type: " + edgesMatchedUsingType)
     //System.out.println("edges matched using args and ret type: " + edgesMatchedUsingArgsAndRetType)
     edgesMatchedUsingArgsAndRetType + edgesMatchedUsingType
@@ -240,6 +264,7 @@ object CallGraphUtils {
         // context
         if (contextSensitive) {
           fw.write(s"${edge.src.getStartLineNumber}:${edge.src.getStartColumnNumber}\n") // context
+          //fw.write(s"${edge.src.getStartLineNumber}:${edge.src.getStartColumnNumber}:${edge.src.asInstanceOf[SWANStatement].getSWANMethod.getName}\n") // context
           //fw.write(s"${edge.src.getStartLineNumber}:${edge.src().hashCode()}\n") // context
         }
         else {

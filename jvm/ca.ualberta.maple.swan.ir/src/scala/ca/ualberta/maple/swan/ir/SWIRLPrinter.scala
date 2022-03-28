@@ -151,6 +151,17 @@ class SWIRLPrinter extends Printer {
        } else if (options.cgDebugInfo.get.dead.contains(function)) {
          print("// DEAD"); printNewline()
        }
+       else {
+         val from = mutable.HashSet.empty[String]
+         options.cgDebugInfo.get.edges.foreach{ case (op, allTo) =>
+           allTo.foreach{ case (m,to) =>
+             if (to == function.name) {
+               from.add(m)
+             }
+           }
+         }
+         from.foreach{m => print("// "); print(m); printNewline()}
+       }
     }
     print("func ")
     if (function.isLibrary) print("[lib] ")
@@ -289,10 +300,10 @@ class SWIRLPrinter extends Printer {
       val d = options.cgDebugInfo.get
       d.edges.get(operator.asInstanceOf[CanOperator]) match {
         case Some(value) => {
-          value.foreach(f => {
+          value.foreach{ case (_,f) => {
             print("// " + f)
             printNewline()
-          })
+          }}
         }
         case None =>
       }
@@ -630,7 +641,7 @@ class SWIRLPrinter extends Printer {
 object SWIRLPrinterOptions {
 
   class CallGraphDebugInfo() {
-    val edges = new mutable.HashMap[CanOperator, mutable.HashSet[String]]
+    val edges = new mutable.HashMap[CanOperator, mutable.HashSet[(String,String)]]
     val entries = new mutable.HashSet[CanFunction]
     val dead = new mutable.HashSet[CanFunction]
   }
