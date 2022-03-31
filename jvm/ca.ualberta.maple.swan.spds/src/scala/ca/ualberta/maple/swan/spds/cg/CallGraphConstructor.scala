@@ -42,7 +42,9 @@ abstract class CallGraphConstructor(val moduleGroup: ModuleGroup, val options: C
     CallGraphUtils.initializeCallGraph(moduleGroup, methods, cg, cgs)
     cgs.initializationTimeMS = (System.currentTimeMillis() - startTimeMs).toInt
     buildSpecificCallGraph()
-    CallGraphUtils.pruneEntryPoints(cgs)
+    if (!options.skipEntryPointsPruning) {
+      CallGraphUtils.pruneEntryPoints(cgs)
+    }
     // TODO: Add option to "plug holes" with over-approximation
     if (options.addDebugInfo) {
       cg.methods.foreach(m => {
@@ -71,7 +73,11 @@ abstract class CallGraphConstructor(val moduleGroup: ModuleGroup, val options: C
 object CallGraphConstructor {
   class Options(var analyzeLibraries: Boolean,
                 var analyzeClosures: Boolean,
+                var skipEntryPointsPruning: Boolean,
                 var addDebugInfo: Boolean)
 
-  def defaultOptions: Options = new Options(false, false, false)
+  def defaultOptions: Options = new Options(analyzeLibraries = false,
+  analyzeClosures = false,
+  skipEntryPointsPruning = false,
+  addDebugInfo = false)
 }

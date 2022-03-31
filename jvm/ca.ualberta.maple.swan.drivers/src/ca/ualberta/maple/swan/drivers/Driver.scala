@@ -80,6 +80,7 @@ object Driver {
     var pathTracking = false
     var analyzeLibraries = false
     var analyzeClosures = false
+    var skipEntryPointsPruning = false
     var printToProbe = false
     var printToDot = false
     var silModuleCB: SILModule => Unit = _
@@ -138,6 +139,9 @@ object Driver {
     }
     def analyzeClosures(v: Boolean): Options = {
       this.analyzeClosures = v; this
+    }
+    def skipEntryPointsPruning(v: Boolean): Options = {
+      this.skipEntryPointsPruning = v; this
     }
     def printToProbe(v: Boolean): Options = {
       this.printToProbe = v; this
@@ -247,6 +251,10 @@ class Driver extends Runnable {
     description = Array("Analyze closures (limited support)."))
   private val analyzeClosures = new Array[Boolean](0)
 
+  @Option(names = Array("--skip-entry-point-pruning"),
+    description = Array("Skips pruning entry points."))
+  private val skipEntryPointsPruning = new Array[Boolean](0)
+
   @Option(names = Array("-r", "--probe"),
     description = Array("Print probe CG to cg.txt."))
   private val printProbe = new Array[Boolean](0)
@@ -285,6 +293,7 @@ class Driver extends Runnable {
       .pathTracking(pathTracking.nonEmpty)
       .analyzeLibraries(analyzeLibraries.nonEmpty)
       .analyzeClosures(analyzeClosures.nonEmpty)
+      .skipEntryPointsPruning(skipEntryPointsPruning.nonEmpty)
       .printToProbe(printProbe.nonEmpty)
       .printToDot(printDot.nonEmpty)
     runActual(options, inputFile)
@@ -435,7 +444,10 @@ class Driver extends Runnable {
   private def createCallGraph(group: ModuleGroup, cgAlgo: Style): Stats.CallGraphStats = {
     CallGraphBuilder.createCallGraph(
       group, cgAlgo,
-      new CallGraphConstructor.Options(options.analyzeLibraries, options.analyzeClosures, options.debug))
+      new CallGraphConstructor.Options(analyzeLibraries = options.analyzeLibraries,
+      analyzeClosures = options.analyzeClosures,
+      skipEntryPointsPruning = options.skipEntryPointsPruning,
+      addDebugInfo = options.debug))
   }
 
 

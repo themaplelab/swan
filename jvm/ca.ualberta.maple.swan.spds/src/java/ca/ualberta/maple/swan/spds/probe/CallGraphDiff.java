@@ -52,6 +52,7 @@ public class CallGraphDiff {
 	public static boolean dashMStat = false;
 	public static boolean dashPStat = false;
 	public static boolean dashPDiff = false;
+	public static boolean dashRDiff = false;
 
 	public static final void main(String[] args) {
 		if (args.length < 2) {
@@ -93,6 +94,8 @@ public class CallGraphDiff {
 				dashPStat = true;
 			else if (!doneOptions && args[i].equals("-pdiff"))
 				dashPDiff = true;
+			else if (!doneOptions && args[i].equals("-rdiff"))
+				dashRDiff = true;
 			else if (!doneOptions && args[i].equals("--"))
 				doneOptions = true;
 			else if (superFile == null)
@@ -213,34 +216,40 @@ public class CallGraphDiff {
 			}
 		}
 
-		if (dashMStat || dashPStat || dashPDiff) {
+		if (dashMStat || dashPStat || dashPDiff || dashRDiff) {
 			DiffStats ds = new DiffStats(supergraph, subgraph);
 			if (dashMStat) {
 				Util.out.println("===========================================================================");
-				Util.out.println("Total monomorphic call sites: " + ds.monoCount());
+				Util.out.println("Total reachable monomorphic call sites: " + ds.monoReachCount());
 				Util.out.println("===========================================================================");
 				Util.out.println("===========================================================================");
-				Util.out.println("Mono to none call sites: " + ds.monoToNone());
+				Util.out.println("Mono reachable to unreachable call sites: " + ds.monoReachToUnreach());
 				Util.out.println("===========================================================================");
 				Util.out.println("===========================================================================");
-				Util.out.println("Mono to mono call sites: " + ds.monoToMono());
+				Util.out.println("Mono reachable to none call sites: " + ds.monoReachToNone());
 				Util.out.println("===========================================================================");
 				Util.out.println("===========================================================================");
-				Util.out.println("Mono to poly call sites: " + ds.monoToPoly());
+				Util.out.println("Mono reachable to mono call sites: " + ds.monoReachToMono());
+				Util.out.println("===========================================================================");
+				Util.out.println("===========================================================================");
+				Util.out.println("Mono reachable to poly call sites: " + ds.monoReachToPoly());
 				Util.out.println("===========================================================================");
 			}
 			if (dashPStat) {
 				Util.out.println("===========================================================================");
-				Util.out.println("Total polymorphic call sites: " + ds.polyCount());
+				Util.out.println("Total reachable polymorphic call sites: " + ds.polyReachCount());
 				Util.out.println("===========================================================================");
 				Util.out.println("===========================================================================");
-				Util.out.println("Poly to none call sites: " + ds.polyToNone());
+				Util.out.println("Poly reachable to unreachable call sites: " + ds.polyReachToUnreach());
 				Util.out.println("===========================================================================");
 				Util.out.println("===========================================================================");
-				Util.out.println("Poly to mono call sites: " + ds.polyToMono());
+				Util.out.println("Poly reachable to none call sites: " + ds.polyReachToNone());
 				Util.out.println("===========================================================================");
 				Util.out.println("===========================================================================");
-				Util.out.println("Poly to poly call sites: " + ds.polyToPoly());
+				Util.out.println("Poly reachable to mono call sites: " + ds.polyReachToMono());
+				Util.out.println("===========================================================================");
+				Util.out.println("===========================================================================");
+				Util.out.println("Poly reachable to poly call sites: " + ds.polyReachToPoly());
 				Util.out.println("===========================================================================");
 			}
 			if (dashPDiff) {
@@ -252,6 +261,17 @@ public class CallGraphDiff {
 				Util.out.println("===========================================================================");
 				Util.out.println("===========================================================================");
 				Util.out.println("Polymorphic call sites with same edges: " + ds.polyToPolySame());
+				Util.out.println("===========================================================================");
+			}
+			if (dashRDiff) {
+				Util.out.println("===========================================================================");
+				Util.out.println("Reachable to Unreachable: " + ds.reachableToUnreachable());
+				Util.out.println("===========================================================================");
+				Util.out.println("===========================================================================");
+				Util.out.println("Monomorphic call sites that became or stayed unreachable: " + ds.monoToUnreachable());
+				Util.out.println("===========================================================================");
+				Util.out.println("===========================================================================");
+				Util.out.println("Polymorphic call sites that became or stayed unreachable: " + ds.polyToUnreachable());
 				Util.out.println("===========================================================================");
 			}
 		}

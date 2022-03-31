@@ -39,23 +39,48 @@ class DiffStats(private val superGraph: CallGraph, private val subGraph: CallGra
   private val superReach: mutable.Set[ProbeMethod] = superGraph.findReachables().asScala
   private val subReach: mutable.Set[ProbeMethod] = subGraph.findReachables().asScala
 
+  private val superReachCtxs = mutable.HashSet.empty[String]
+  private val subReachCtxs = mutable.HashSet.empty[String]
+
+  {
+    superGraph.edges().iterator().asScala.foreach{ e =>
+      if (superReach.contains(e.src())) {
+        superReachCtxs.add(e.context())
+      }
+    }
+    subGraph.edges().iterator().asScala.foreach{ e =>
+      if (subReach.contains(e.src())) {
+        subReachCtxs.add(e.context())
+      }
+    }
+  }
+
   val reachableToUnreachable: Int = superReach.count(m => !subReach.contains(m))
 
   private val (superMono, superPoly): (scala.collection.Set[String], scala.collection.Set[String]) =
   superSiteMap.keySet.partition(ctx => superSiteMap.get(ctx).size == 1)
+  private val (superMonoReach, superMonoUnreach) = superMono.partition(ctx => superReachCtxs.contains(ctx))
+  private val (superPolyReach, superPolyUnreach) = superPoly.partition(ctx => superReachCtxs.contains(ctx))
   private val (subMono, subPoly): (scala.collection.Set[String], scala.collection.Set[String]) =
     subSiteMap.keySet.partition(ctx => subSiteMap.get(ctx).size == 1)
+  private val (subMonoReach, subMonoUnreach) = subMono.partition(ctx => subReachCtxs.contains(ctx))
+  private val (subPolyReach, subPolyUnreach) = subPoly.partition(ctx => subReachCtxs.contains(ctx))
 
-  private def toNoneMonoPoly(callSites: scala.collection.Set[String], callSiteName: String): (Int,Int,Int) = {
+  private def toUnreachNoneMonoPoly(callSites: scala.collection.Set[String], callSiteName: String): (Int, Int,Int,Int) = {
     var toN: Int = 0
+    var toU: Int = 0
     var toM: Int = 0
     var toP: Int = 0
     callSites.foreach(ctx =>
-      if (subMono.contains(ctx)) {
+      if (subMonoReach.contains(ctx)) {
         toM += 1
       }
-      else if (subPoly.contains(ctx)) {
+      else if (subPolyReach.contains(ctx)) {
         toP += 1
+      }
+      else if (subMonoUnreach.contains(ctx) || subPolyUnreach.contains(ctx)) {
+        println(s"${callSiteName}-to-unreach ${ctx}")
+        toU += 1
       }
       else {
         println(s"${callSiteName}-to-none ${ctx}")
@@ -63,7 +88,7 @@ class DiffStats(private val superGraph: CallGraph, private val subGraph: CallGra
       }
     )
 
-    (toN, toM, toP)
+    (toU, toN, toM, toP)
   }
 
   private def countToUnrechable(callSites: scala.collection.Set[String]): Int = {
@@ -79,10 +104,17 @@ class DiffStats(private val superGraph: CallGraph, private val subGraph: CallGra
   }
 
   val monoCount: Int = superMono.size
-  val (monoToNone, monoToMono, monoToPoly): (Int,Int,Int) = toNoneMonoPoly(superMono, "mono")
+  val (monoToUnreach, monoToNone, monoToMono, monoToPoly): (Int,Int,Int,Int) = toUnreachNoneMonoPoly(superMono, "mono")
 
   val polyCount: Int = superPoly.size
-  val (polyToNone, polyToMono, polyToPoly): (Int,Int,Int) = toNoneMonoPoly(superPoly, "poly")
+  val (polyToUnreach, polyToNone, polyToMono, polyToPoly): (Int,Int,Int,Int) = toUnreachNoneMonoPoly(superPoly, "poly")
+
+  val monoReachCount: Int = superMonoReach.size
+  val (monoReachToUnreach, monoReachToNone, monoReachToMono, monoReachToPoly): (Int,Int,Int,Int) =
+    toUnreachNoneMonoPoly(superMonoReach, "monoReach")
+  val polyReachCount: Int = superPolyReach.size
+  val (polyReachToUnreach, polyReachToNone, polyReachToMono, polyReachToPoly): (Int,Int,Int,Int) =
+    toUnreachNoneMonoPoly(superPolyReach, "polyReach")
 
   // For sound call graphs
   // polyToPolyIncrease counts polymorphic sites where precision was reduced
@@ -91,9 +123,9 @@ class DiffStats(private val superGraph: CallGraph, private val subGraph: CallGra
     var inc = 0
     var dec = 0
     var same = 0
-    superPoly.foreach{ ctx =>
+    superPolyReach.foreach{ ctx =>
       val superEdges = superSiteMap.get(ctx).toSet
-      if (subPoly.contains(ctx)) {
+      if (subPolyReach.contains(ctx)) {
         val subEdges = superSiteMap.get(ctx).toSet
         val superMore = (superEdges -- subEdges).size
         val subMore = (subEdges -- superEdges).size
