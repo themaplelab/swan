@@ -307,7 +307,7 @@ class TaintAnalysis(val spec: TaintSpecification, val opts: TaintAnalysisOptions
       })
     })
 
-    val debug = true
+    val debug = false
     if (debug && debugDir != null) {
       val reached = new mutable.HashSet[CanOperatorDef]()
       results.rowKeySet().forEach(rowKey => {

@@ -93,7 +93,7 @@ object CallGraphUtils {
           // Using isClosureRelated here might miss some, but that's okay
           if (trulyUnresolved && !isClosureRelated(m._1, cgs.options) &&
               !isUninteresting(m._2, cgs.options) && !cgs.cg.getEntryPoints.contains(m._2) &&
-              !m._2.getParameterLocals.contains(apply.getInvokeExpr.getArgs.asScala.last)) {
+              { if (!apply.getInvokeExpr.getArgs.isEmpty) !m._2.getParameterLocals.contains(apply.getInvokeExpr.getArgs.asScala.last) else true }) {
             // System.out.println(s"${apply.inst.result.ref.name} = apply ${apply.inst.functionRef.name}, ${if (apply.inst.functionType.nonEmpty) apply.inst.functionType.get.name else ""}")
             tUnresolved += 1
           }
