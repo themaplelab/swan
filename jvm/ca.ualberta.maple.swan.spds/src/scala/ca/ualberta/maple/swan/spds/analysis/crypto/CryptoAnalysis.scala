@@ -23,13 +23,14 @@ import boomerang.BoomerangOptions.ArrayStrategy
 import boomerang.results.{BackwardBoomerangResults, ForwardBoomerangResults}
 import boomerang.scene.{AllocVal, ControlFlowGraph, DataFlowScope, DeclaredMethod, Method}
 import boomerang.{BackwardQuery, Boomerang, BoomerangOptions, DefaultBoomerangOptions, ForwardQuery}
-import ca.ualberta.maple.swan.ir.{FunctionAttribute, Literal}
+import ca.ualberta.maple.swan.ir.{FunctionAttribute, Literal, Position}
 import ca.ualberta.maple.swan.spds.structures.{SWANCallGraph, SWANField, SWANMethod, SWANStatement, SWANVal}
 import wpds.impl.Weight
 
-import java.io.File
+import java.io.{File, FileWriter}
 import java.util.regex.Pattern
 import scala.collection.mutable
+import scala.collection.mutable.ArrayBuffer
 
 class CryptoAnalysis(val cg: SWANCallGraph, val debugDir: File, val analyzeLibraries: Boolean) {
 
@@ -56,19 +57,22 @@ class CryptoAnalysis(val cg: SWANCallGraph, val debugDir: File, val analyzeLibra
     }
   }
 
-  def evaluate(): Unit = {
+  def evaluate(): CryptoAnalysis.Results = {
     System.out.println("=== Evaluating CryptoAnalysis: All Rules")
-    evaluateRule1()
-    evaluateRule2()
-    evaluateRule3()
-    evaluateRule4()
-    evaluateRule5()
-    evaluateRule7()
+    val results = new CryptoAnalysis.Results()
+    evaluateRule1(results)
+    evaluateRule2(results)
+    evaluateRule3(results)
+    evaluateRule4(results)
+    evaluateRule5(results)
+    evaluateRule7(results)
+    System.out.println(s"+++ Found ${results.values.size} total violations")
+    results
   }
 
-  private def evaluateRule1(): mutable.ArrayBuffer[SWANStatement.ApplyFunctionRef] = {
+  private def evaluateRule1(resultCollector: CryptoAnalysis.Results): Unit = {
     System.out.println("=== Evaluating CryptoAnalysis: Rule 1")
-    val violatingCallSites = mutable.ArrayBuffer.empty[SWANStatement.ApplyFunctionRef]
+    val i = resultCollector.values.size
     val potentialCallSites = getCallSitesWithBlockMode
     if (!analyzeLibraries) potentialCallSites.filterInPlace(p => !p.apply.m.delegate.isLibrary)
     potentialCallSites.foreach(callSite => {
@@ -76,15 +80,15 @@ class CryptoAnalysis(val cg: SWANCallGraph, val debugDir: File, val analyzeLibra
       val query = callSite.getBackwardQuery
       if (comesFrom(callSite, query,
         Array(("CryptoSwift.ECB.init() -> CryptoSwift.ECB", false)))) {
-        reportViolation(callSite.apply, "Using ECB Block Mode")
+        reportViolation(CryptoAnalysis.ResultType.RULE_1, resultCollector, callSite.apply, "Using ECB Block Mode")
       }
     })
-    violatingCallSites
+    System.out.println(s"  Found ${resultCollector.values.size - i} violations")
   }
 
-  private def evaluateRule2(): mutable.ArrayBuffer[SWANStatement.ApplyFunctionRef] = {
+  private def evaluateRule2(resultCollector: CryptoAnalysis.Results): Unit = {
     System.out.println("=== Evaluating CryptoAnalysis: Rule 2")
-    val violatingCallSites = mutable.ArrayBuffer.empty[SWANStatement.ApplyFunctionRef]
+    val i = resultCollector.values.size
     val potentialCallSites = getCallSitesWithIVs
     if (!analyzeLibraries) potentialCallSites.filterInPlace(p => !p.apply.m.delegate.isLibrary)
     potentialCallSites.foreach(callSite => {
@@ -92,15 +96,16 @@ class CryptoAnalysis(val cg: SWANCallGraph, val debugDir: File, val analyzeLibra
       val query = callSite.getBackwardQuery
       if (!comesFrom(callSite, query,
         Array(("static (extension in CryptoSwift):CryptoSwift.Cryptors.randomIV(Swift.Int) -> [Swift.UInt8]", false)))) {
-        reportViolation(callSite.apply, "Non-Random IV - Use randomIV()")
+        reportViolation(CryptoAnalysis.ResultType.RULE_2, resultCollector, callSite.apply,
+          "Non-Random IV - Use randomIV()")
       }
     })
-    violatingCallSites
+    System.out.println(s"  Found ${resultCollector.values.size - i} violations")
   }
 
-  private def evaluateRule3(): mutable.ArrayBuffer[SWANStatement.ApplyFunctionRef] = {
+  private def evaluateRule3(resultCollector: CryptoAnalysis.Results): Unit = {
     System.out.println("=== Evaluating CryptoAnalysis: Rule 3")
-    val violatingCallSites = mutable.ArrayBuffer.empty[SWANStatement.ApplyFunctionRef]
+    val i = resultCollector.values.size
     val potentialCallSites = getCallSitesWithKeys
     if (!analyzeLibraries) potentialCallSites.filterInPlace(p => !p.apply.m.delegate.isLibrary)
     potentialCallSites.foreach(callSite => {
@@ -108,15 +113,16 @@ class CryptoAnalysis(val cg: SWANCallGraph, val debugDir: File, val analyzeLibra
       val query = callSite.getBackwardQuery
       val result = isConstant(query)
       if (result._1) {
-        reportViolation(callSite.apply, "Constant Key: " + result._2.mkString("[", ",", "]"))
+        reportViolation(CryptoAnalysis.ResultType.RULE_3, resultCollector, callSite.apply,
+          "Constant Key: " + result._2.mkString("[", ",", "]"))
       }
     })
-    violatingCallSites
+    System.out.println(s"  Found ${resultCollector.values.size - i} violations")
   }
 
-  private def evaluateRule4(): mutable.ArrayBuffer[SWANStatement.ApplyFunctionRef] = {
+  private def evaluateRule4(resultCollector: CryptoAnalysis.Results): Unit = {
     System.out.println("=== Evaluating CryptoAnalysis: Rule 4")
-    val violatingCallSites = mutable.ArrayBuffer.empty[SWANStatement.ApplyFunctionRef]
+    val i = resultCollector.values.size
     val potentialCallSites = getCallSitesWithSalts
     if (!analyzeLibraries) potentialCallSites.filterInPlace(p => !p.apply.m.delegate.isLibrary)
     potentialCallSites.foreach(callSite => {
@@ -124,16 +130,17 @@ class CryptoAnalysis(val cg: SWANCallGraph, val debugDir: File, val analyzeLibra
       val query = callSite.getBackwardQuery
       val result = isConstant(query)
       if (result._1) {
-        reportViolation(callSite.apply, "Constant Salt: " + result._2.mkString("[", ",", "]"))
+        reportViolation(CryptoAnalysis.ResultType.RULE_4, resultCollector, callSite.apply,
+          "Constant Salt: " + result._2.mkString("[", ",", "]"))
       }
     })
-    violatingCallSites
+    System.out.println(s"  Found ${resultCollector.values.size - i} violations")
   }
 
 
-  private def evaluateRule5(): mutable.ArrayBuffer[SWANStatement.ApplyFunctionRef] = {
+  private def evaluateRule5(resultCollector: CryptoAnalysis.Results): Unit = {
     System.out.println("=== Evaluating CryptoAnalysis: Rule 5")
-    val violatingCallSites = mutable.ArrayBuffer.empty[SWANStatement.ApplyFunctionRef]
+    val i = resultCollector.values.size
     val potentialCallSites = getCallSitesWithIterations
     potentialCallSites.foreach(callSite => {
       if (debug) System.out.println(s"POTENTIAL CALL SITE: ${callSite.apply} (arg ${callSite.argIdx})")
@@ -146,16 +153,17 @@ class CryptoAnalysis(val cg: SWANCallGraph, val debugDir: File, val analyzeLibra
           case _ =>
         }
         if (violating.nonEmpty) {
-          reportViolation(callSite.apply, "Low iteration count (<1000): " + violating.mkString("[", ",", "]"))
+          reportViolation(CryptoAnalysis.ResultType.RULE_5, resultCollector, callSite.apply,
+            "Low iteration count (<1000): " + violating.mkString("[", ",", "]"))
         }
       }
     })
-    violatingCallSites
+    System.out.println(s"  Found ${resultCollector.values.size - i} violations")
   }
 
-  private def evaluateRule7(): mutable.ArrayBuffer[SWANStatement.ApplyFunctionRef] = {
+  private def evaluateRule7(resultCollector: CryptoAnalysis.Results): Unit = {
     System.out.println("=== Evaluating CryptoAnalysis: Rule 7")
-    val violatingCallSites = mutable.ArrayBuffer.empty[SWANStatement.ApplyFunctionRef]
+    val i = resultCollector.values.size
     val potentialCallSites = getCallSitesWithPassword
     if (!analyzeLibraries) potentialCallSites.filterInPlace(p => !p.apply.m.delegate.isLibrary)
     potentialCallSites.foreach(callSite => {
@@ -163,19 +171,22 @@ class CryptoAnalysis(val cg: SWANCallGraph, val debugDir: File, val analyzeLibra
       val query = callSite.getBackwardQuery
       val result = isConstant(query)
       if (result._1) {
-        reportViolation(callSite.apply, "Constant Password: " + result._2.mkString("[", ",", "]"))
+        reportViolation(CryptoAnalysis.ResultType.RULE_7, resultCollector, callSite.apply,
+          "Constant Password: " + result._2.mkString("[", ",", "]"))
       }
     })
-    violatingCallSites
+    System.out.println(s"  Found ${resultCollector.values.size - i} violations")
   }
 
-  private def reportViolation(apply: SWANStatement.ApplyFunctionRef, message: String): Unit = {
+  private def reportViolation(tpe: CryptoAnalysis.ResultType.Value, resultCollector: CryptoAnalysis.Results,
+                              apply: SWANStatement.ApplyFunctionRef, message: String): Unit = {
     val sb = new StringBuilder(s"Found violation: $message")
     apply.getPosition match {
       case Some(pos) => sb.append(s"\n  at " + pos.toString)
       case None => sb.append(" location unknown")
     }
-    System.out.println(sb.toString())
+    resultCollector.add(new CryptoAnalysis.Result(tpe, apply.getPosition, message))
+    // System.out.println(sb.toString())
   }
 
   private def getCallSitesWithSalts: mutable.ArrayBuffer[CallSiteSelector] = {
@@ -448,4 +459,54 @@ class CryptoAnalysis(val cg: SWANCallGraph, val debugDir: File, val analyzeLibra
       override def handleMaps(): Boolean = false
     })
   }
+}
+
+object CryptoAnalysis {
+  
+  object ResultType extends Enumeration {
+    type Type = Value
+    
+    val RULE_1: ResultType.Type = Value
+    val RULE_2: ResultType.Type = Value
+    val RULE_3: ResultType.Type = Value
+    val RULE_4: ResultType.Type = Value
+    val RULE_5: ResultType.Type = Value
+    val RULE_7: ResultType.Type = Value
+
+    def toDisplayString(t: ResultType.Value): String = {
+      t match {
+        case CryptoAnalysis.ResultType.RULE_1 => "ECB"
+        case CryptoAnalysis.ResultType.RULE_2 => "IV"
+        case CryptoAnalysis.ResultType.RULE_3 => "KEY"
+        case CryptoAnalysis.ResultType.RULE_4 => "SALT"
+        case CryptoAnalysis.ResultType.RULE_5 => "ITERATION"
+        case CryptoAnalysis.ResultType.RULE_7 => "PASSWORD"
+      }rm
+    }
+  }
+
+  class Results() {
+    val values: mutable.HashSet[Result] = mutable.HashSet.empty
+
+    def add(r: Result): Unit = values.add(r)
+
+    def writeResults(f: File): Unit = {
+      val fw = new FileWriter(f)
+      try {
+        val j = new ArrayBuffer[ujson.Obj]
+        values.foreach(r => {
+          val json = ujson.Obj("name" -> CryptoAnalysis.ResultType.toDisplayString(r.tpe))
+          json("message") = r.message
+          json("location") = if (r.pos.nonEmpty) r.pos.get.toString else "none"
+          j.append(json)
+        })
+        val finalJson = ujson.Value(j)
+        fw.write(finalJson.render(2))
+      } finally {
+        fw.close()
+      }
+    }
+  }
+  
+  class Result(val tpe: ResultType.Value, val pos: Option[Position], val message: String)
 }

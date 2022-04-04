@@ -19,11 +19,9 @@
 
 package ca.ualberta.maple.swan.test
 
-import java.io.File
-import java.nio.file.{Files, Paths}
-
 import ca.ualberta.maple.swan.drivers.Driver
 import ca.ualberta.maple.swan.ir.{CanInstructionDef, Position}
+import ca.ualberta.maple.swan.spds.analysis.crypto.CryptoAnalysis
 import ca.ualberta.maple.swan.spds.analysis.taint.TaintResults.Path
 import ca.ualberta.maple.swan.spds.analysis.taint.TaintSpecification.JSONMethod
 import ca.ualberta.maple.swan.spds.analysis.taint.{TaintResults, TaintSpecification}
@@ -34,6 +32,8 @@ import picocli.CommandLine
 import picocli.CommandLine.{Command, Parameters}
 import typestate.finiteautomata.State
 
+import java.io.File
+import java.nio.file.{Files, Paths}
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
 import scala.io.Source
@@ -66,6 +66,10 @@ class AnnotationChecker extends Runnable {
     val typeStateResultsFile = new File(Paths.get(inputFile.getPath, Driver.typeStateAnalysisResultsFileName).toUri)
     if (typeStateResultsFile.exists()) {
       checkTypeStateAnalysisResults(typeStateResultsFile)
+    }
+    val cryptoResultsFile = new File(Paths.get(inputFile.getPath, Driver.cryptoAnalysisResultsFileName).toUri)
+    if (cryptoResultsFile.exists()) {
+      checkCryptoResults(cryptoResultsFile)
     }
   }
 
@@ -243,6 +247,120 @@ class AnnotationChecker extends Runnable {
       })
     })
     if (failure) System.exit(1)
+  }
+
+  private def checkCryptoResults(resultsFile: File): Unit = {
+    def printErr(s: String, exit: Boolean = false): Unit = {
+      System.err.println("[Crypto] " + s)
+      if (exit) System.exit(1)
+    }
+    val sourceDir = new File(Paths.get(inputFile.getPath, "src").toUri)
+    if (!sourceDir.exists()) {
+      throw new FileExistsException("src directory does not exist in swan-dir")
+    }
+    val results = getCryptoResults(resultsFile)
+    var failure = false
+    Files.walk(sourceDir.toPath).filter(Files.isRegularFile(_)).forEach(p => {
+      val f = new File(p.toUri)
+      val buffer = Source.fromFile(f)
+      val annotations = new mutable.HashMap[Int, ArrayBuffer[Annotation]]
+      buffer.getLines().zipWithIndex.foreach(l => {
+        val line = l._1
+        val idx = l._2 + 1
+        if (line.contains("//")) {
+          line.split("//").foreach(c => {
+            if (c.startsWith("$")) {
+              val components = c.trim.split(" ")(0).split("\\$")
+              val name = components(1)
+              val tpe = components(2)
+              if (tpe != "error") {
+                printErr("Invalid annotation type: " + tpe + " at line " + idx + " in\n  " + f.getName, exit = true)
+              }
+              if (!annotations.contains(idx)) { annotations.put(idx, new ArrayBuffer[Annotation]())}
+              var status: Option[String] = None
+              if (components.length > 3) {
+                status = Some(components(3))
+                if (status.get != "fn" && status.get != "fp") {
+                  printErr("Invalid status type: " + status + " at line " + idx + " in\n  " + f.getName, exit = true)
+                }
+              }
+              annotations(idx).append(new Annotation(name, tpe, status, idx))
+            }
+          })
+        }
+      })
+      buffer.close()
+      results.values.foreach(e => {
+        if (e.pos.nonEmpty) {
+          val pos = e.pos.get
+          if (pos.path.endsWith(f.getName)) { // copied file has different path than original
+            if (annotations.contains(pos.line)) {
+              var idx = -1
+              val annot = annotations(pos.line)
+              annot.zipWithIndex.foreach(a => {
+                if (a._1.name == CryptoAnalysis.ResultType.toDisplayString(e.tpe)) {
+                  idx = a._2
+                }
+              })
+              if (idx > -1) {
+                val a = annot(idx)
+                if (a.status.isEmpty || a.status.get == "fp") {
+                  annot.remove(idx)
+                } else if (a.status.get == "fn") {
+                  failure = true
+                  printErr("Annotation is not an FN: //?" + a.name + "?" + a.tpe + "?fn" + " on line " + a.line)
+                }
+                if (annot.isEmpty) {
+                  annotations.remove(pos.line)
+                }
+              }
+            } else {
+              failure = true
+              printErr("Missing annotation for " + pos.toString)
+            }
+          }
+        }
+      })
+      annotations.foreach(v => {
+        v._2.foreach(a => {
+          if (a.status.isEmpty || a.status.get != "fn") {
+            failure = true
+            printErr("No matching path node for annotation: //?" + a.name + "?" + a.tpe +
+              { if (a.status.nonEmpty) "?" + a.status.get else ""} + " on line " + a.line)
+          }
+        })
+      })
+    })
+    if (failure) System.exit(1)
+  }
+
+  private def getCryptoResults(resultsFile: File): CryptoAnalysis.Results = {
+    val results = new CryptoAnalysis.Results
+    val buffer = Source.fromFile(resultsFile)
+    val jsonString = buffer.getLines().mkString
+    buffer.close()
+    val data = ujson.read(jsonString)
+    data.arr.foreach(v => {
+      val tpe: CryptoAnalysis.ResultType.Value = v("name").str match {
+        case "ECB" => CryptoAnalysis.ResultType.RULE_1
+        case "IV" => CryptoAnalysis.ResultType.RULE_2
+        case "KEY" => CryptoAnalysis.ResultType.RULE_3
+        case "SALT" => CryptoAnalysis.ResultType.RULE_4
+        case "ITERATION" => CryptoAnalysis.ResultType.RULE_5
+        case "PASSWORD" => CryptoAnalysis.ResultType.RULE_7
+        case _ => throw new RuntimeException("Invalid crypto type")
+      }
+      val message = v("message").str
+      val position: Option[Position] = {
+        val p = v("location").str
+        if (p.equals("none")) None else {
+          val components = p.split(":")
+          Some(new Position(components(0), components(1).toInt, components(2).toInt))
+        }
+      }
+      results.add(new CryptoAnalysis.Result(tpe, position, message))
+    })
+    results
   }
 
   private def getTaintResults(resultsFile: File): ArrayBuffer[TaintResults] = {

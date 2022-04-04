@@ -19,7 +19,7 @@
 
 package ca.ualberta.maple.swan.drivers
 
-import ca.ualberta.maple.swan.drivers.Driver.{taintAnalysisResultsFileName, typeStateAnalysisResultsFileName}
+import ca.ualberta.maple.swan.drivers.Driver.{cryptoAnalysisResultsFileName, taintAnalysisResultsFileName, typeStateAnalysisResultsFileName}
 import ca.ualberta.maple.swan.ir._
 import ca.ualberta.maple.swan.ir.canonical.SWIRLPass
 import ca.ualberta.maple.swan.ir.raw.SWIRLGen
@@ -39,14 +39,15 @@ import picocli.CommandLine.{ArgGroup, Command, Option, Parameters}
 import java.io.{File, FileWriter}
 import java.nio.charset.StandardCharsets
 import java.nio.file.{Files, Paths}
-import java.util.concurrent.{Callable, ExecutionException, Future, FutureTask, TimeUnit, TimeoutException}
-import scala.collection.{immutable, mutable}
+import java.util.concurrent.{ExecutionException, FutureTask, TimeUnit, TimeoutException}
 import scala.collection.mutable.ArrayBuffer
+import scala.collection.{immutable, mutable}
 
 object Driver {
 
   val taintAnalysisResultsFileName = "taint-results.json"
   val typeStateAnalysisResultsFileName = "typestate-results.json"
+  val cryptoAnalysisResultsFileName = "crypto-results.json"
 
   private val callGraphOptions = immutable.HashMap(
     ("cha", CallGraphBuilder.CallGraphStyle.CHA),
@@ -500,6 +501,7 @@ class Driver extends Runnable {
       })
       val f = Paths.get(swanDir.getPath, taintAnalysisResultsFileName).toFile
       TaintSpecification.writeResults(f, allResults)
+      Logging.printInfo("Taint results written to " + taintAnalysisResultsFileName)
     }
     if (options.typeStateAnalysisSpec.nonEmpty) {
       val allResults = new ArrayBuffer[TypeStateResults]()
@@ -512,9 +514,13 @@ class Driver extends Runnable {
       })
       val f = Paths.get(swanDir.getPath, typeStateAnalysisResultsFileName).toFile
       TypeStateResults.writeResults(f, allResults)
+      Logging.printInfo("Typestate results written to " + typeStateAnalysisResultsFileName)
     }
     if (options.analyzeCrypto) {
-      new CryptoAnalysis(cg, debugDir, analyzeLibraries.nonEmpty).evaluate()
+      val results = new CryptoAnalysis(cg, debugDir, analyzeLibraries.nonEmpty).evaluate()
+      val f = Paths.get(swanDir.getPath, cryptoAnalysisResultsFileName).toFile
+      results.writeResults(f)
+      Logging.printInfo("Crypto results written to " + cryptoAnalysisResultsFileName)
     }
     stats.put(cgPrefix, allStats)
   }
