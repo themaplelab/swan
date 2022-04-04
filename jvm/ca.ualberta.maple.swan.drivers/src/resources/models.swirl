@@ -1049,3 +1049,36 @@ func @`#NSObject.init!initializer.foreign` : $`@owned NSObject` {
 bb0(%0 : $`NSObject`):
   return %0
 }
+
+// -------------------- SwiftCrypto ----------------------------
+
+func [model] @`(extension in CryptoSwift):Swift.Array<A where A == Swift.UInt8>.init(hex: Swift.String) -> [Swift.UInt8]` : $`@owned Array<UInt8>` {
+bb0(hex : $`String`, %1 : $`@thin Array<UInt8>.Type`):
+  return hex
+}
+
+func [model] @`(extension in CryptoSwift):Swift.String.bytes.getter : [Swift.UInt8]` : $`@owned Array<UInt8>` {
+bb0(self : $`String`):
+  return self
+}
+
+func [model] @`CryptoSwift.MD5.calculate(for: [Swift.UInt8]) -> [Swift.UInt8]` : $`@owned Array<UInt8>` {
+bb0(bytes : $`Array<UInt8>`, self : $`MD5`):
+  return bytes
+}
+
+func [model] @`(extension in CryptoSwift):Swift.Array<A where A == Swift.UInt8>.md5() -> [Swift.UInt8]` : $`@owned Array<UInt8>` {
+bb0(%0 : $`@guaranteed Array<UInt8>`):
+  return %0
+}
+
+func [model] @`(extension in CryptoSwift):Swift.Array<A where A == Swift.UInt8>.toHexString() -> Swift.String` : $`@owned String` {
+bb0(self : $`Array<UInt8>`):
+  return self
+}
+
+func [model] @`static (extension in CryptoSwift):CryptoSwift.Cryptors.randomIV(Swift.Int) -> [Swift.UInt8]` : $`@owned Array<UInt8>` {
+bb0(count : $`Int`, self : $`@thick Self.Type`):
+  ret = new $`Array<UInt8>`
+  return ret
+}

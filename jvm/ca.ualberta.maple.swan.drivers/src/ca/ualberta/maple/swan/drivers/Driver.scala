@@ -26,6 +26,7 @@ import ca.ualberta.maple.swan.ir.raw.SWIRLGen
 import ca.ualberta.maple.swan.parser.{SILModule, SILParser}
 import ca.ualberta.maple.swan.spds.Stats
 import ca.ualberta.maple.swan.spds.Stats.{AllStats, GeneralStats}
+import ca.ualberta.maple.swan.spds.analysis.crypto.CryptoAnalysis
 import ca.ualberta.maple.swan.spds.analysis.taint._
 import ca.ualberta.maple.swan.spds.analysis.typestate.{TypeStateAnalysis, TypeStateResults}
 import ca.ualberta.maple.swan.spds.cg.CallGraphBuilder.CallGraphStyle.Style
@@ -80,6 +81,7 @@ object Driver {
     var pathTracking = false
     var analyzeLibraries = false
     var analyzeClosures = false
+    var analyzeCrypto = false
     var skipEntryPointsPruning = false
     var printToProbe = false
     var printToDot = false
@@ -136,6 +138,9 @@ object Driver {
     }
     def analyzeLibraries(v: Boolean): Options = {
       this.analyzeLibraries = v; this
+    }
+    def analyzeCrypto(v: Boolean): Options = {
+      this.analyzeCrypto = v; this
     }
     def analyzeClosures(v: Boolean): Options = {
       this.analyzeClosures = v; this
@@ -271,6 +276,10 @@ class Driver extends Runnable {
     description = Array("Cache SIL and SWIRL group module. This is experimental, slow, and incomplete (DDGs and CFGs not serialized)."))
   private val useCache = new Array[Boolean](0)
 
+  @Option(names = Array("--crypto"),
+    description = Array("Analyze application for crypto API misuses. Currently only supports CryptoSwift."))
+  private val cryptoAnalysis = new Array[Boolean](0)
+
   @Parameters(arity = "1", paramLabel = "swan-dir", description = Array("swan-dir to process."))
   private val inputFile: File = null
 
@@ -292,6 +301,7 @@ class Driver extends Runnable {
       .typeStateAnalysisSpec(typeStateAnalysisSpec)
       .pathTracking(pathTracking.nonEmpty)
       .analyzeLibraries(analyzeLibraries.nonEmpty)
+      .analyzeCrypto(cryptoAnalysis.nonEmpty)
       .analyzeClosures(analyzeClosures.nonEmpty)
       .skipEntryPointsPruning(skipEntryPointsPruning.nonEmpty)
       .printToProbe(printProbe.nonEmpty)
@@ -408,7 +418,7 @@ class Driver extends Runnable {
       fw.close()
     }
     val stats = new mutable.HashMap[String, AllStats]()
-    if (options.constructCallGraph || options.taintAnalysisSpec.nonEmpty || options.typeStateAnalysisSpec.nonEmpty) {
+    if (options.constructCallGraph || options.taintAnalysisSpec.nonEmpty || options.typeStateAnalysisSpec.nonEmpty || options.analyzeCrypto) {
       options.callGraphAlgorithms.foreach { cgAlgo =>
         if (options.callGraphTimeout == 0) {
           val cgResults = createCallGraph(group, cgAlgo)
@@ -502,6 +512,9 @@ class Driver extends Runnable {
       })
       val f = Paths.get(swanDir.getPath, typeStateAnalysisResultsFileName).toFile
       TypeStateResults.writeResults(f, allResults)
+    }
+    if (options.analyzeCrypto) {
+      new CryptoAnalysis(cg, debugDir, analyzeLibraries.nonEmpty).evaluate()
     }
     stats.put(cgPrefix, allStats)
   }
