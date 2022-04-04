@@ -29,7 +29,7 @@ import ca.ualberta.maple.swan.spds.analysis.typestate.{TypeStateJSONProgrammatic
 import ca.ualberta.maple.swan.test.AnnotationChecker.Annotation
 import org.apache.commons.io.FileExistsException
 import picocli.CommandLine
-import picocli.CommandLine.{Command, Parameters}
+import picocli.CommandLine.{ArgGroup, Command, Parameters}
 import typestate.finiteautomata.State
 
 import java.io.File
@@ -47,10 +47,20 @@ object AnnotationChecker {
   }
 
   private class Annotation(val name: String, val tpe: String, val status: Option[String], val line: Int)
+
+  class ExtraSourceDir() {
+    @picocli.CommandLine.Option(names = Array("--src-dir"),
+      required = false,
+      description = Array("Extra source directories to check for annotations."))
+    var dir: String = null
+  }
 }
 
 @Command(name = "SWAN Annotation Checker", mixinStandardHelpOptions = true)
 class AnnotationChecker extends Runnable {
+
+  @ArgGroup(exclusive = false, multiplicity="0..*")
+  private val extraSourceDirs: Array[AnnotationChecker.ExtraSourceDir] = Array.empty[AnnotationChecker.ExtraSourceDir]
 
   @Parameters(arity = "1", paramLabel = "swan-dir", description = Array("swan-dir to process."))
   private val inputFile: File = null
@@ -73,19 +83,27 @@ class AnnotationChecker extends Runnable {
     }
   }
 
+  private def getSourceDirs: ArrayBuffer[java.nio.file.Path] = {
+    val sourceDir = new File(Paths.get(inputFile.getPath, "src").toUri)
+    if (!sourceDir.exists()) {
+      throw new FileExistsException("src directory does not exist in swan-dir")
+    }
+    val paths = ArrayBuffer.empty[java.nio.file.Path]
+    Files.walk(sourceDir.toPath).filter(Files.isRegularFile(_)).forEach(p => paths.append(p))
+    extraSourceDirs.foreach(s => if (s != null) {
+      Files.walk(Paths.get(s.dir)).filter(Files.isRegularFile(_)).forEach(p => paths.append(p))
+    })
+    paths
+  }
+
   private def checkTaintAnalysisResults(resultsFile: File): Unit = {
     def printErr(s: String, exit: Boolean = false): Unit = {
       System.err.println("[Taint] " + s)
       if (exit) System.exit(1)
     }
-
-    val sourceDir = new File(Paths.get(inputFile.getPath, "src").toUri)
-    if (!sourceDir.exists()) {
-      throw new FileExistsException("src directory does not exist in swan-dir")
-    }
     val results = getTaintResults(resultsFile)
     var failure = false
-    Files.walk(sourceDir.toPath).filter(Files.isRegularFile(_)).forEach(p => {
+    getSourceDirs.foreach(p => {
       val f = new File(p.toUri)
       val buffer = Source.fromFile(f)
       val annotations = new mutable.HashMap[Int, ArrayBuffer[Annotation]]
@@ -168,15 +186,9 @@ class AnnotationChecker extends Runnable {
       System.err.println("[TypeState] " + s)
       if (exit) System.exit(1)
     }
-
-    val sourceDir = new File(Paths.get(inputFile.getPath, "src").toUri)
-    if (!sourceDir.exists()) {
-      throw new FileExistsException("src directory does not exist in swan-dir")
-    }
     val results = getTypeStateResults(resultsFile)
     var failure = false
-    Files.walk(sourceDir.toPath).filter(Files.isRegularFile(_)).forEach(p => {
-      val f = new File(p.toUri)
+    getSourceDirs.foreach(p => {      val f = new File(p.toUri)
       val buffer = Source.fromFile(f)
       val annotations = new mutable.HashMap[Int, ArrayBuffer[Annotation]]
       buffer.getLines().zipWithIndex.foreach(l => {
@@ -241,7 +253,7 @@ class AnnotationChecker extends Runnable {
           if (a.status.isEmpty || a.status.get != "fn") {
             failure = true
             printErr("No matching path node for annotation: //?" + a.name + "?" + a.tpe +
-              { if (a.status.nonEmpty) "?" + a.status.get else ""} + " on line " + a.line)
+              { if (a.status.nonEmpty) "?" + a.status.get else "" } + " on line " + a.line)
           }
         })
       })
@@ -254,13 +266,9 @@ class AnnotationChecker extends Runnable {
       System.err.println("[Crypto] " + s)
       if (exit) System.exit(1)
     }
-    val sourceDir = new File(Paths.get(inputFile.getPath, "src").toUri)
-    if (!sourceDir.exists()) {
-      throw new FileExistsException("src directory does not exist in swan-dir")
-    }
     val results = getCryptoResults(resultsFile)
     var failure = false
-    Files.walk(sourceDir.toPath).filter(Files.isRegularFile(_)).forEach(p => {
+    getSourceDirs.foreach(p => {
       val f = new File(p.toUri)
       val buffer = Source.fromFile(f)
       val annotations = new mutable.HashMap[Int, ArrayBuffer[Annotation]]

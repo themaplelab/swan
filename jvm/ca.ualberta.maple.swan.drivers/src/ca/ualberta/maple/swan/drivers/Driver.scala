@@ -77,6 +77,7 @@ object Driver {
     var constructCallGraph = false
     var callGraphTimeout = 0
     var callGraphAlgorithms: ArrayBuffer[CallGraphBuilder.CallGraphStyle.Style] = ArrayBuffer.empty
+    var moduleFilters: ArrayBuffer[String] = ArrayBuffer.empty
     var taintAnalysisSpec: scala.Option[File] = None
     var typeStateAnalysisSpec: scala.Option[File] = None
     var pathTracking = false
@@ -128,6 +129,12 @@ object Driver {
       }
       this
     }
+    def moduleFilters(a: Array[Driver.ModuleFilter]): Options = {
+      a.foreach(v => {
+        if (v != null) moduleFilters.append(v.module)
+      })
+      this
+    }
     def taintAnalysisSpec(v: File): Options = {
       this.taintAnalysisSpec = scala.Option(v); this
     }
@@ -177,6 +184,14 @@ object Driver {
       description = Array("Algorithm(s) used for building the Call Graph.")
     )
     var cgAlgorithm: String = null
+  }
+
+  class ModuleFilter() {
+    @Option(names = Array("--module"),
+      required = false,
+      description = Array("Modules to analyze (basically selective analysis mostly meant for libraries). Uses regex matching.")
+    )
+    var module: String = null
   }
 }
 
@@ -232,6 +247,9 @@ class Driver extends Runnable {
 
   @ArgGroup(exclusive = false, multiplicity="0..*")
   private val callGraphAndPointerAlgorithms: Array[Driver.CGPAPair] = Array.empty[Driver.CGPAPair]
+
+  @ArgGroup(exclusive = false, multiplicity="0..*")
+  private val moduleFilters: Array[Driver.ModuleFilter] = Array.empty[Driver.ModuleFilter]
 
   @Option(names = Array("-t", "--taint-analysis-spec"),
     description = Array("JSON specification file for taint analysis."))
@@ -298,6 +316,7 @@ class Driver extends Runnable {
       .constructCallGraph(constructCallGraph.nonEmpty)
       .callGraphTimeout(cgTimeout)
       .callGraphPAAlgorithms(callGraphAndPointerAlgorithms)
+      .moduleFilters(moduleFilters)
       .taintAnalysisSpec(taintAnalysisSpec)
       .typeStateAnalysisSpec(typeStateAnalysisSpec)
       .pathTracking(pathTracking.nonEmpty)
@@ -571,7 +590,7 @@ class Driver extends Runnable {
     if (partial && rawSwirlModule.functions(0).name.startsWith("SWAN_FAKE_MAIN")) rawSwirlModule.functions.remove(0)
     if (options.rawSwirlModuleCB != null) options.rawSwirlModuleCB(rawSwirlModule)
     if (options.debug) writeFile(rawSwirlModule, debugDir, file.getName + ".raw")
-    val canSwirlModule = new SWIRLPass().runPasses(rawSwirlModule)
+    val canSwirlModule = new SWIRLPass().runPasses(rawSwirlModule, options.moduleFilters)
     if (options.canSwirlModuleCB != null) options.canSwirlModuleCB(canSwirlModule)
     if (options.debug) writeFile(canSwirlModule, debugDir, file.getName)
     (silModule, rawSwirlModule, canSwirlModule)
@@ -581,7 +600,7 @@ class Driver extends Runnable {
   def swirlRunner(debugDir: File, modelsContent: String, options: Driver.Options, name: String): (Module, CanModule) = {
     val swirlModule = new SWIRLParser(modelsContent, model = true).parseModule()
     if (options.debug) writeFile(swirlModule, debugDir, name + ".raw")
-    val canSwirlModule = new SWIRLPass().runPasses(swirlModule)
+    val canSwirlModule = new SWIRLPass().runPasses(swirlModule, options.moduleFilters)
     if (options.debug) writeFile(canSwirlModule, debugDir, name)
     (swirlModule, canSwirlModule)
   }

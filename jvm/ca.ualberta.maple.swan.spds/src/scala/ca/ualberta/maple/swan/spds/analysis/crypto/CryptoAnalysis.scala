@@ -481,7 +481,7 @@ object CryptoAnalysis {
         case CryptoAnalysis.ResultType.RULE_4 => "SALT"
         case CryptoAnalysis.ResultType.RULE_5 => "ITERATION"
         case CryptoAnalysis.ResultType.RULE_7 => "PASSWORD"
-      }rm
+      }
     }
   }
 
