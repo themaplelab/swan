@@ -58,11 +58,28 @@ class CryptoAnalysis(val cg: SWANCallGraph, val debugDir: File, val analyzeLibra
 
   def evaluate(): Unit = {
     System.out.println("=== Evaluating CryptoAnalysis: All Rules")
+    evaluateRule1()
     evaluateRule2()
     evaluateRule3()
     evaluateRule4()
     evaluateRule5()
     evaluateRule7()
+  }
+
+  private def evaluateRule1(): mutable.ArrayBuffer[SWANStatement.ApplyFunctionRef] = {
+    System.out.println("=== Evaluating CryptoAnalysis: Rule 1")
+    val violatingCallSites = mutable.ArrayBuffer.empty[SWANStatement.ApplyFunctionRef]
+    val potentialCallSites = getCallSitesWithBlockMode
+    if (!analyzeLibraries) potentialCallSites.filterInPlace(p => !p.apply.m.delegate.isLibrary)
+    potentialCallSites.foreach(callSite => {
+      if (debug) System.out.println(s"POTENTIAL CALL SITE: ${callSite.apply} (arg ${callSite.argIdx})")
+      val query = callSite.getBackwardQuery
+      if (comesFrom(callSite, query,
+        Array(("CryptoSwift.ECB.init() -> CryptoSwift.ECB", false)))) {
+        reportViolation(callSite.apply, "Using ECB Block Mode")
+      }
+    })
+    violatingCallSites
   }
 
   private def evaluateRule2(): mutable.ArrayBuffer[SWANStatement.ApplyFunctionRef] = {
@@ -73,7 +90,7 @@ class CryptoAnalysis(val cg: SWANCallGraph, val debugDir: File, val analyzeLibra
     potentialCallSites.foreach(callSite => {
       if (debug) System.out.println(s"POTENTIAL CALL SITE: ${callSite.apply} (arg ${callSite.argIdx})")
       val query = callSite.getBackwardQuery
-      if (!isSanitized(callSite, query,
+      if (!comesFrom(callSite, query,
         Array(("static (extension in CryptoSwift):CryptoSwift.Cryptors.randomIV(Swift.Int) -> [Swift.UInt8]", false)))) {
         reportViolation(callSite.apply, "Non-Random IV - Use randomIV()")
       }
@@ -146,7 +163,7 @@ class CryptoAnalysis(val cg: SWANCallGraph, val debugDir: File, val analyzeLibra
       val query = callSite.getBackwardQuery
       val result = isConstant(query)
       if (result._1) {
-        reportViolation(callSite.apply, "Constant Password:" + result._2.mkString("[", ",", "]"))
+        reportViolation(callSite.apply, "Constant Password: " + result._2.mkString("[", ",", "]"))
       }
     })
     violatingCallSites
@@ -203,6 +220,13 @@ class CryptoAnalysis(val cg: SWANCallGraph, val debugDir: File, val analyzeLibra
       (0, "CryptoSwift.Rabbit.__allocating_init(key: Swift.String) throws -> CryptoSwift.Rabbit"),
       (0, "CryptoSwift.Rabbit.__allocating_init(key: Swift.String, iv: Swift.String) throws -> CryptoSwift.Rabbit"),
       (0, "CryptoSwift.Rabbit.__allocating_init(key: [Swift.UInt8]) throws -> CryptoSwift.Rabbit"))
+    getCallSitesUsingConfig(initializersWithKeys)
+  }
+
+  private def getCallSitesWithBlockMode: mutable.ArrayBuffer[CallSiteSelector] = {
+    val initializersWithKeys: Array[(Int, String)] = Array(
+      (1, "CryptoSwift.AES.__allocating_init(key: [Swift.UInt8], blockMode: CryptoSwift.BlockMode, padding: CryptoSwift.Padding) throws -> CryptoSwift.AES"),
+      (1, "CryptoSwift.Blowfish.__allocating_init(key: [Swift.UInt8], blockMode: CryptoSwift.BlockMode, padding: CryptoSwift.Padding) throws -> CryptoSwift.Blowfish"))
     getCallSitesUsingConfig(initializersWithKeys)
   }
 
@@ -263,11 +287,11 @@ class CryptoAnalysis(val cg: SWANCallGraph, val debugDir: File, val analyzeLibra
     (foundConstant, constantValues)
   }
 
-  private def isSanitized(callSiteSelector: CallSiteSelector, query: BackwardQuery, sanitizers: Array[(String, Boolean)]): Boolean = {
-    if (debug) System.out.println("IS_SANITIZED: " + query)
+  private def comesFrom(callSiteSelector: CallSiteSelector, query: BackwardQuery, from: Array[(String, Boolean)]): Boolean = {
+    if (debug) System.out.println("COME_FROM: " + query)
     val validFields = Array("_value", "data")
-    var foundSanitizer = false
-    sanitizers.foreach(s => {
+    var found = false
+    from.foreach(s => {
       val methods = if (s._2) cg.methods.filter(p => Pattern.matches(s._1, p._1)) else cg.methods.filter(p => p._1.equals(s._1))
       methods.foreach(m => {
         cg.edgesInto(m._2).forEach(cgEdge => {
@@ -279,7 +303,7 @@ class CryptoAnalysis(val cg: SWANCallGraph, val debugDir: File, val analyzeLibra
             cell.getRowKey.getStart match {
               case apply: SWANStatement.ApplyFunctionRef => {
                 if (apply.equals(query.cfgEdge().getTarget) && apply.getInvokeExpr.getArg(callSiteSelector.argIdx).equals(cell.getColumnKey)) {
-                  foundSanitizer = true
+                  found = true
                 }
               }
               case fieldWrite: SWANStatement.FieldWrite => {
@@ -291,8 +315,8 @@ class CryptoAnalysis(val cg: SWANCallGraph, val debugDir: File, val analyzeLibra
                     cell.getRowKey.getStart match {
                       case apply: SWANStatement.ApplyFunctionRef => {
                         if (apply.equals(query.cfgEdge().getTarget) && apply.getInvokeExpr.getArg(callSiteSelector.argIdx).equals(cell.getColumnKey)) {
-                          if (debug) System.out.println("SANITIZED WITH FIELD WRITE: " + fieldWrite)
-                          foundSanitizer = true
+                          if (debug) System.out.println("FOUND WITH FIELD WRITE: " + fieldWrite)
+                          found = true
                         }
                       } case _ =>
                     }
@@ -305,8 +329,8 @@ class CryptoAnalysis(val cg: SWANCallGraph, val debugDir: File, val analyzeLibra
         })
       })
     })
-    if (debug) System.out.println("SANITIZED")
-    foundSanitizer
+    if (debug) System.out.println("FOUND")
+    found
   }
 
   private def findUnderlyingValuesOfField(initialResults: BackwardBoomerangResults[Weight.NoWeight],
