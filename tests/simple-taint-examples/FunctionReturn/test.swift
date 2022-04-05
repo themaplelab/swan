@@ -16,5 +16,7 @@ func getFunc() -> (String) -> Int {
     return testFunc;
 }
 
-var f = getFunc();
-let x = f(source()); //!testing!source
+func testMain() {
+  let f = getFunc();
+  let x = f(source()); //!testing!source
+}

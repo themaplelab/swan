@@ -53,6 +53,8 @@ dependencies {
     testRuntime('org.junit.jupiter:junit-jupiter-engine:5.4.2')
 }
 
+mainClassName = "ca.ualberta.maple.swan.spds.probe.CallGraphInfo"
+
 test {
     useJUnitPlatform()
     testLogging.showStandardStreams true
