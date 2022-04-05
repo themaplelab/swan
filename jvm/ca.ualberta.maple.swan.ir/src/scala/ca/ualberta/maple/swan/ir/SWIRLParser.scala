@@ -38,7 +38,6 @@ import scala.util.control.Breaks.{break, breakable}
 class SWIRLParser extends SWIRLPrinter {
 
   var refTable: RefTable = new RefTable()
-  val instantiatedTypes: mutable.HashSet[String] = new mutable.HashSet[String]()
 
   // Default constructor should not be called.
 
@@ -273,14 +272,19 @@ class SWIRLParser extends SWIRLPrinter {
   @throws[Error]
   def parseFunction(): Function = {
     refTable = new RefTable()
-    instantiatedTypes.clear()
     take("func ")
     val attr = parseFunctionAttribute()
     val name = parseGlobalOrFunctionName()
     take(":")
-    val tpe = parseType()
+    val returnType = parseType()
+    // TODO: Update models.swirl, hack for now
+    var fullType = returnType
+    if (peek(":")) {
+      take(":")
+      fullType = parseType()
+    }
     val blocks = { parseNilOrMany("{", "", "}", parseBlock) }.getOrElse(ArrayBuffer.empty[Block])
-    new Function(attr, name, tpe, blocks.to(ArrayBuffer), refTable, mutable.HashSet.from(instantiatedTypes))
+    new Function(attr, name, returnType, fullType, blocks.to(ArrayBuffer), refTable)
   }
 
 
@@ -442,15 +446,28 @@ class SWIRLParser extends SWIRLPrinter {
       val result = possibleResult.get
       instructionName match {
         case "new" => {
-          val symbol = makeSymbol(result, parseType())
-          instantiatedTypes.add(symbol.tpe.name)
-          Instruction.rawOperator(Operator.neww(symbol))
+          val tpe = parseType()
+          val symbol = makeSymbol(result, tpe)
+          Instruction.rawOperator(Operator.neww(symbol, tpe))
         }
         case "assign" => {
           val from = parseSymbolRef()
-          val bbArg = skip("[bb arg]")
+          val assignType = {
+            if (skip("[bb arg]")) {
+              Some(AssignType.BBArg())
+            }
+            else if (skip("[pointer read]")) {
+              Some(AssignType.PointerRead())
+            }
+            else if (skip("[pointer write]")) {
+              Some(AssignType.PointerRead())
+            }
+            else {
+              None
+            }
+          }
           val symbol = parseResultSymbol(result)
-          Instruction.rawOperator(Operator.assign(symbol, from, bbArg))
+          Instruction.rawOperator(Operator.assign(symbol, from, assignType))
         }
         case "literal" => {
           if (skip("[string]")) {
@@ -470,9 +487,11 @@ class SWIRLParser extends SWIRLPrinter {
           }
         }
         case "dynamic_ref" => {
+          val obj = parseSymbolRef()
+          take(",")
           val index = parseGlobalOrFunctionName()
           val symbol = parseResultSymbol(result)
-          Instruction.rawOperator(Operator.dynamicRef(symbol, index))
+          Instruction.rawOperator(Operator.dynamicRef(symbol, obj, index))
         }
         case "builtin_ref" => {
           val index = parseGlobalOrFunctionNameWithTicks()
@@ -487,8 +506,12 @@ class SWIRLParser extends SWIRLPrinter {
         case "apply" => {
           val functionRef = parseSymbolRef()
           val arguments = parseMany("(",",",")", parseSymbolRef)
+          var functionType: Option[Type] = None
+          if (skip(", func_tpe:")) {
+            functionType = Some(parseType())
+          }
           val symbol = parseResultSymbol(result)
-          Instruction.rawOperator(Operator.apply(symbol, functionRef, arguments))
+          Instruction.rawOperator(Operator.apply(symbol, functionRef, arguments, functionType))
         }
         case "singleton_read" => {
           val field = parseBackTick()
@@ -684,7 +707,6 @@ class SWIRLParser extends SWIRLPrinter {
     if(skip("[stub]")) return Some(FunctionAttribute.stub)
     if(skip("[model]")) return Some(FunctionAttribute.model)
     if(skip("[model_override]")) return Some(FunctionAttribute.modelOverride)
-    if(skip("[entry]")) return Some(FunctionAttribute.entry)
     if(skip("[linked]")) return Some(FunctionAttribute.linked)
     None
   }

@@ -27,17 +27,22 @@ import scala.collection.mutable.ArrayBuffer
 
 class SWIRLPrinterOptions {
   var printLocation = false
+  var printLocationPaths = true
   var useArbitraryTypeNames = false
   var printCFG = false
   var genLocationMap = false // expensive
-  var printInstantiatedTypes = false
 
   // only for canonical (meant for SPDS debugging)
   var printLineNumber = false
-  var cgDebugInfo = new mutable.HashMap[CanOperator, mutable.HashSet[String]]
+  var cgDebugInfo: Option[SWIRLPrinterOptions.CallGraphDebugInfo] = None
+  var queryReachedInfo: Option[mutable.HashSet[CanOperatorDef]] = None
 
   def printLocation(b: Boolean): SWIRLPrinterOptions = {
     printLocation = b
+    this
+  }
+  def printLocationPaths(b: Boolean): SWIRLPrinterOptions = {
+    printLocationPaths = b
     this
   }
   def useArbitraryTypeNames(b: Boolean): SWIRLPrinterOptions = {
@@ -56,12 +61,12 @@ class SWIRLPrinterOptions {
     printLineNumber = b
     this
   }
-  def printInstantiatedTypes(b: Boolean): SWIRLPrinterOptions = {
-    printInstantiatedTypes = b
+  def cgDebugInfo(info: SWIRLPrinterOptions.CallGraphDebugInfo): SWIRLPrinterOptions = {
+    cgDebugInfo = Some(info)
     this
   }
-  def cgDebugInfo(info: mutable.HashMap[CanOperator, mutable.HashSet[String]]): SWIRLPrinterOptions = {
-    cgDebugInfo = info
+  def queryReachedInfo(info: mutable.HashSet[CanOperatorDef]): SWIRLPrinterOptions = {
+    queryReachedInfo = Some(info)
     this
   }
 }
@@ -125,7 +130,9 @@ class SWIRLPrinter extends Printer {
     print(function.name)
     print("`")
     print(" : ")
-    print(function.tpe)
+    print(function.returnTpe)
+    print(" : ")
+    print(function.fullTpe)
     print(whenEmpty = false, " {\n", function.blocks, "\n", "}", (block: Block) => print(block))
     printNewline()
   }
@@ -136,23 +143,28 @@ class SWIRLPrinter extends Printer {
       val cfg = canModule.functions.find(p => p == function).get.cfg
       print(function, cfg)
     }
-    if (options.printInstantiatedTypes) {
-      val types = function.instantiatedTypes
-      if (types.nonEmpty) {
-        print("// types: {")
-        types.zipWithIndex.foreach(tpe => {
-          print("`")
-          print(tpe._1)
-          print("`")
-          if (tpe._2 != types.size - 1) print(",")
-        })
-        print("}")
-        printNewline()
-      }
-    }
     if (options.genLocationMap) locMap.put(function, (line, getCol))
     if (options.printLineNumber) printLineNumber()
+    if (options.cgDebugInfo.nonEmpty) {
+       if (options.cgDebugInfo.get.entries.contains(function)) {
+         print("// ENTRY"); printNewline()
+       } else if (options.cgDebugInfo.get.dead.contains(function)) {
+         print("// DEAD"); printNewline()
+       }
+       else {
+         val from = mutable.HashSet.empty[String]
+         options.cgDebugInfo.get.edges.foreach{ case (op, allTo) =>
+           allTo.foreach{ case (m,to) =>
+             if (to == function.name) {
+               from.add(m)
+             }
+           }
+         }
+         from.foreach{m => print("// "); print(m); printNewline()}
+       }
+    }
     print("func ")
+    if (function.isLibrary) print("[lib] ")
     if (function.attribute.nonEmpty) print(function.attribute.get)
     print("@`")
     print(function.name)
@@ -162,7 +174,9 @@ class SWIRLPrinter extends Printer {
       print(arg)
     })
     print(" : ")
-    print(function.tpe)
+    print(function.returnTpe)
+    print(" : ")
+    print(function.fullTpe)
     print(whenEmpty = false, " {\n", function.blocks, "\n", "}", (block: CanBlock) => print(block))
     printNewline()
     if (options.genLocationMap) {
@@ -252,6 +266,10 @@ class SWIRLPrinter extends Printer {
   }
 
   def print(op: CanOperatorDef): Unit = {
+    if (options.queryReachedInfo.nonEmpty && options.queryReachedInfo.get.contains(op)) {
+      print("// REACHED")
+      printNewline()
+    }
     if (options.genLocationMap) {
       locMap.put(op, (line, getCol))
       locMap.put(op.operator, locMap(op))
@@ -278,11 +296,17 @@ class SWIRLPrinter extends Printer {
   }
 
   def print(operator: Operator): Unit = {
-    if (options.cgDebugInfo.nonEmpty && options.cgDebugInfo.contains(operator.asInstanceOf[CanOperator])) {
-      options.cgDebugInfo(operator.asInstanceOf[CanOperator]).foreach(f => {
-        print("// " + f)
-        printNewline()
-      })
+    if (options.cgDebugInfo.nonEmpty) {
+      val d = options.cgDebugInfo.get
+      d.edges.get(operator.asInstanceOf[CanOperator]) match {
+        case Some(value) => {
+          value.foreach{ case (_,f) => {
+            print("// " + f)
+            printNewline()
+          }}
+        }
+        case None =>
+      }
     }
     operator match {
       case result: WithResult =>
@@ -290,15 +314,29 @@ class SWIRLPrinter extends Printer {
       case _ =>
     }
     operator match {
-      case Operator.neww(result) => {
+      case Operator.neww(result, allocType) => {
         print("new ")
+        print(allocType)
+        print(", ")
         print(result.tpe)
         return // don't print , $T
       }
-      case Operator.assign(_, from, bbArg) => {
+      case Operator.assign(_, from, assignType) => {
         print("assign ")
         print(from)
-        print(" [bb arg]", when = bbArg)
+        assignType match {
+          case Some(value) => {
+            value match {
+              case AssignType.BBArg() =>
+                print(" [bb arg]")
+              case AssignType.PointerRead() =>
+                print(" [pointer read]")
+              case AssignType.PointerWrite() =>
+                print(" [pointer write]")
+            }
+          }
+          case None =>
+        }
       }
       case Operator.literal(_, lit) => {
         print("literal ")
@@ -308,8 +346,10 @@ class SWIRLPrinter extends Printer {
           case Literal.float(value) => print("[float] "); literal(value)
         }
       }
-      case Operator.dynamicRef(_, index) => {
+      case Operator.dynamicRef(_, obj, index) => {
         print("dynamic_ref ")
+        print(obj)
+        print(", ")
         print("@`")
         print(index)
         print("`")
@@ -326,10 +366,15 @@ class SWIRLPrinter extends Printer {
         print(name)
         print('`')
       }
-      case Operator.apply(_, functionRef, arguments) => {
+      case Operator.apply(_, functionRef, arguments, functionType) => {
+        // TODO: update documentation
         print("apply ")
         print(functionRef)
         print(whenEmpty = true, "(", arguments, ", ", ")", (arg: SymbolRef) => print(arg))
+        if (functionType.nonEmpty) {
+          print(", func_tpe: ")
+          print(functionType.get)
+        }
       }
       case Operator.singletonRead(_, tpe, field) => {
         print("singleton_read `")
@@ -523,7 +568,6 @@ class SWIRLPrinter extends Printer {
       case FunctionAttribute.stub => print("[stub] ")
       case FunctionAttribute.model => print("[model] ")
       case FunctionAttribute.modelOverride => print("[model_override] ")
-      case FunctionAttribute.entry => print("[entry] ")
       case FunctionAttribute.linked => print("[linked] ")
     }
   }
@@ -580,14 +624,26 @@ class SWIRLPrinter extends Printer {
   }
 
   def print(pos: Position): Unit = {
-    if (!options.printLocation) {
-      return
+    if (options.printLocation) {
+      print(", loc ")
+      if (options.printLocationPaths) {
+        print("\"")
+        print(pos.path)
+        print("\":")
+      }
+      literal(pos.line)
+      print(":")
+      literal(pos.col)
     }
-    print(", loc \"")
-    print(pos.path)
-    print("\":")
-    literal(pos.line)
-    print(":")
-    literal(pos.col)
   }
+}
+
+object SWIRLPrinterOptions {
+
+  class CallGraphDebugInfo() {
+    val edges = new mutable.HashMap[CanOperator, mutable.HashSet[(String,String)]]
+    val entries = new mutable.HashSet[CanFunction]
+    val dead = new mutable.HashSet[CanFunction]
+  }
+
 }

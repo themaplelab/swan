@@ -1,5 +1,4 @@
 plugins {
-    id 'java'
     id 'scala'
     id 'com.github.johnrengelman.shadow' version '5.2.0'
     id 'application'
@@ -14,17 +13,6 @@ sourceSets {
         scala {
             srcDirs = ['src/scala']
         }
-        java {
-            srcDirs = []
-        }
-    }
-    test {
-        scala {
-            srcDirs = []
-        }
-        java {
-            srcDirs = ['src/test/java']
-        }
     }
 }
 
@@ -35,17 +23,9 @@ dependencies {
     implementation project(":ca.ualberta.maple.swan.utils")
     implementation project(":ca.ualberta.maple.swan.spds")
 
-    implementation 'org.scala-lang:scala3-library_3:'+project.property("SCALA_VERSION")
+    implementation 'org.scala-lang:scala3-library_3:' + project.property("SCALA_VERSION")
 
     implementation 'info.picocli:picocli:4.6.1'
-
-    testImplementation('org.junit.jupiter:junit-jupiter-api:5.4.2')
-    testImplementation('org.junit.jupiter:junit-jupiter-params:5.4.2')
-    testRuntime('org.junit.jupiter:junit-jupiter-engine:5.4.2')
-}
-
-test {
-    useJUnitPlatform()
 }
 
 mainClassName = "ca.ualberta.maple.swan.test.AnnotationChecker"

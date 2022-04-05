@@ -20,9 +20,9 @@
 package ca.ualberta.maple.swan.spds.structures
 
 import java.util
-
 import boomerang.scene._
-import ca.ualberta.maple.swan.ir.{CanFunction, ModuleGroup, SymbolRef, SymbolTableEntry}
+import ca.ualberta.maple.swan.ir.{CanFunction, ModuleGroup, Operator, SymbolRef, SymbolTableEntry}
+import ca.ualberta.maple.swan.spds.structures.SWANControlFlowGraph.SWANBlock
 import com.google.common.collect.{Lists, Sets}
 
 import scala.collection.mutable
@@ -32,11 +32,9 @@ class SWANMethod(val delegate: CanFunction, var moduleGroup: ModuleGroup) extend
   // Use allValues instead of create new Vals, when possible
   // Only use for non allocation (simple value references).
   val allValues: mutable.HashMap[String, Val] = new mutable.HashMap[String, Val]()
-  val newValues: mutable.HashMap[String, Val] = new mutable.HashMap[String, Val]()
 
   private val localParams: util.List[Val] = Lists.newArrayList
   private val localValues: util.HashSet[Val] = Sets.newHashSet
-  private val cfg: SWANControlFlowGraph = new SWANControlFlowGraph(this)
 
   def hasSwirlSource: Boolean = moduleGroup.swirlSourceMap.nonEmpty
 
@@ -49,21 +47,15 @@ class SWANMethod(val delegate: CanFunction, var moduleGroup: ModuleGroup) extend
 
   delegate.symbolTable.foreach(sym => {
     sym._2 match {
-      case SymbolTableEntry.operator(symbol, _) => {
+      case SymbolTableEntry.operator(symbol, operator) => {
         val v = SWANVal.Simple(symbol, this)
         localValues.add(v)
         allValues.put(symbol.ref.name, v)
-        val n = SWANVal.NewExpr(symbol, this)
-        localValues.add(n)
-        newValues.put(symbol.ref.name, n)
       }
       case SymbolTableEntry.multiple(symbol, operators) => {
         val v = SWANVal.Simple(symbol, this)
         localValues.add(v)
         allValues.put(symbol.ref.name, v)
-        val n = SWANVal.NewExpr(symbol, this)
-        localValues.add(n)
-        newValues.put(symbol.ref.name, n)
       }
       case _ =>
     }
@@ -76,6 +68,9 @@ class SWANMethod(val delegate: CanFunction, var moduleGroup: ModuleGroup) extend
     allValues.put(argument.ref.name, v)
   })
 
+  // SWANControlFlowGraph constructor requires allValues to be populated with arguments
+  private val cfg: SWANControlFlowGraph = new SWANControlFlowGraph(this)
+
   override def isStaticInitializer: Boolean = false
 
   override def isParameterLocal(v: Val): Boolean = {
@@ -84,6 +79,7 @@ class SWANMethod(val delegate: CanFunction, var moduleGroup: ModuleGroup) extend
 
   override def isThisLocal(v: Val): Boolean = false
 
+  // TODO: Get rid of localValues and just convert allValues to ret type
   override def getLocals: java.util.Set[Val] = localValues
 
   override def getThisLocal: Val = null
@@ -109,6 +105,19 @@ class SWANMethod(val delegate: CanFunction, var moduleGroup: ModuleGroup) extend
 
   override def getControlFlowGraph: ControlFlowGraph = cfg
   def getCFG: SWANControlFlowGraph = cfg
+
+  def getStartBlock: SWANBlock = {
+    val startStatement = getCFG.getStartPoints.iterator().next()
+    getCFG.blocks(startStatement.asInstanceOf[SWANStatement])
+  }
+
+  def getExitBlocks: mutable.HashSet[SWANBlock] = {
+    getCFG.exitBlocks
+  }
+
+  def applyFunctionRefs: Iterator[SWANStatement.ApplyFunctionRef] = {
+    getCFG.blocks.iterator.flatMap{case (_,blk) => blk.applyFunctionRefs}
+  }
 
   override def getSubSignature: String = delegate.name
 

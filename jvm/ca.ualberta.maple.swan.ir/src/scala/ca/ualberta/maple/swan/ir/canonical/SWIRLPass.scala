@@ -20,7 +20,7 @@
 package ca.ualberta.maple.swan.ir.canonical
 
 import ca.ualberta.maple.swan.ir.Exceptions.{ExperimentalException, IncompleteRawSWIRLException, IncorrectRawSWIRLException, UnexpectedSILFormatException}
-import ca.ualberta.maple.swan.ir.{Argument, BinaryOperation, Block, BlockRef, CanBlock, CanFunction, CanModule, CanOperator, CanOperatorDef, CanTerminator, CanTerminatorDef, Constants, FieldWriteAttribute, Function, Literal, Module, Operator, RawOperatorDef, RawTerminatorDef, SwitchCase, SwitchEnumCase, Symbol, SymbolRef, SymbolTable, SymbolTableEntry, Terminator, Type, UnaryOperation, WithResult}
+import ca.ualberta.maple.swan.ir.{Argument, AssignType, BinaryOperation, Block, BlockRef, CanBlock, CanFunction, CanModule, CanOperator, CanOperatorDef, CanTerminator, CanTerminatorDef, Constants, FieldWriteAttribute, Function, Literal, Module, Operator, RawOperatorDef, RawTerminatorDef, SwitchCase, SwitchEnumCase, Symbol, SymbolRef, SymbolTable, SymbolTableEntry, Terminator, Type, UnaryOperation, WithResult}
 import ca.ualberta.maple.swan.utils.Logging
 import org.jgrapht.Graph
 import org.jgrapht.graph.{DefaultDirectedGraph, DefaultEdge}
@@ -34,8 +34,10 @@ class SWIRLPass {
   // https://github.com/themaplelab/swan/wiki/SWIRL#swirlpass-and-canonical-swirl
 
   /** Convert a raw module to a canonical module. */
-  def runPasses(module: Module): CanModule = {
+  def runPasses(module: Module, moduleFilter: ArrayBuffer[String] = ArrayBuffer.empty): CanModule = {
     Logging.printInfo("Running SWIRL canonical passes on " + module)
+    val isLibrary = if (moduleFilter.nonEmpty) !moduleFilter.exists(m => module.meta.toString.matches(m)) else
+      !module.functions.exists(_.name.startsWith("main_"))
     val startTime = System.nanoTime()
     resolveAliases(module)
     val functions = new ArrayBuffer[CanFunction]()
@@ -44,8 +46,8 @@ class SWIRLPass {
       val args = resolveBasicBlockArguments(f, module)
       val blocks = convertToCanonical(f, module)
       val cfg = generateCFG(blocks)
-      val canFunction = new CanFunction(f.attribute, f.name, f.tpe, args, blocks, f.refTable,
-        f.instantiatedTypes, new SymbolTable(), cfg)
+      val canFunction = new CanFunction(f.attribute, f.name, f.returnTpe, f.fullTpe, args, blocks, f.refTable,
+        new SymbolTable(), cfg, isLibrary)
       generateSymbolTable(canFunction)
       removeThunkApplication(canFunction)
       // Analysis specific mutations
@@ -125,7 +127,7 @@ class SWIRLPass {
                       }
                       val replacement = {
                         if (argIsFuncRef) {
-                          new CanOperatorDef(Operator.apply(apply.result, arg, new ArrayBuffer[SymbolRef]()), opDefIdx._1.position)
+                          new CanOperatorDef(Operator.apply(apply.result, arg, new ArrayBuffer[SymbolRef](), None), opDefIdx._1.position)
                         } else {
                           new CanOperatorDef(Operator.assign(apply.result, arg), opDefIdx._1.position)
                         }
@@ -281,7 +283,7 @@ class SWIRLPass {
           }
           case Operator.pointerWrite(value, pointer, weak) => {
             val fw = new RawOperatorDef(Operator.fieldWrite(value, pointer, Constants.pointerField, {
-              if (weak) { Some(FieldWriteAttribute.weakPointer) } else None
+              if (weak) { Some(FieldWriteAttribute.weakPointer) } else Some(FieldWriteAttribute.pointer)
             }), op.position)
             mapToSIL(op, fw, module)
             b.operators(j) = fw
@@ -417,7 +419,7 @@ class SWIRLPass {
                 b.operators.insert(idx, a1)
               }
               case BinaryOperation.arbitrary | BinaryOperation.equals => {
-                val ni = new RawOperatorDef(Operator.neww(result), op.position)
+                val ni = new RawOperatorDef(Operator.neww(result, result.tpe), op.position)
                 mapToSIL(op, ni, module)
                 b.operators(idx) = ni
               }
@@ -426,7 +428,7 @@ class SWIRLPass {
           case Operator.unaryOp(result, operation, operand) => {
             operation match {
               case UnaryOperation.arbitrary => {
-                val ni = new RawOperatorDef(Operator.neww(result), op.position)
+                val ni = new RawOperatorDef(Operator.neww(result, result.tpe), op.position)
                 mapToSIL(op, ni, module)
                 b.operators(idx) = ni
               }
@@ -455,7 +457,7 @@ class SWIRLPass {
             resolvedBlocks.add(b)
             val targetArgument = b.arguments(arg._2)
             val assign = new RawOperatorDef(Operator.assign(
-              new Symbol(targetArgument.ref, targetArgument.tpe), arg._1, bbArg = true), block.terminator.position)
+              new Symbol(targetArgument.ref, targetArgument.tpe), arg._1, assignType = Some(AssignType.BBArg())), block.terminator.position)
             mapToSIL(block.terminator, assign, module)
             assigns.append(assign)
           })
@@ -467,7 +469,7 @@ class SWIRLPass {
             resolvedBlocks.add(block)
             val targetArgument = block.arguments(arg._2)
             val assign = new RawOperatorDef(Operator.assign(
-              new Symbol(targetArgument.ref, targetArgument.tpe), arg._1, bbArg = true), block.terminator.position)
+              new Symbol(targetArgument.ref, targetArgument.tpe), arg._1, assignType = Some(AssignType.BBArg())), block.terminator.position)
             mapToSIL(block.terminator, assign, module)
             assigns.append(assign)
           })
@@ -481,7 +483,7 @@ class SWIRLPass {
     f.blocks.foreach(b => {
       if (!resolvedBlocks.contains(b) && f.blocks(0) != b) {
         b.arguments.foreach(arg => {
-          val newInstr = new RawOperatorDef(Operator.neww(new Symbol(arg.ref, arg.tpe)), arg.pos)
+          val newInstr = new RawOperatorDef(Operator.neww(new Symbol(arg.ref, arg.tpe), arg.tpe), arg.pos)
           b.operators.insert(0, newInstr)
         })
       }
@@ -624,6 +626,7 @@ class SWIRLPass {
     })
     // Delete dead blocks? Does this even ever happen?
     // blocks.filterInPlace(b => !graph.edgesOf(b).isEmpty)
+
     graph
   }
 }

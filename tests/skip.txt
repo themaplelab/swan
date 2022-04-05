@@ -9,5 +9,6 @@ FlowDroidListing2
 ObjectSensitivity1
 
 # SWAN-44: Boomerang queries silently crash with stack overflow
+array
 set
 dictionary

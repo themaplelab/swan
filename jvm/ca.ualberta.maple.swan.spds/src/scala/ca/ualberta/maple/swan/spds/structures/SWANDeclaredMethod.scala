@@ -21,10 +21,18 @@ package ca.ualberta.maple.swan.spds.structures
 
 import boomerang.scene.{ControlFlowGraph, DeclaredMethod, WrappedClass}
 
+import scala.collection.mutable
+
+// TODO: InvokeExpr can only have one DeclaredMethod -- makes a problem for typestate matching
 abstract class SWANDeclaredMethod(val invokeExpr: SWANInvokeExpr, val edge: ControlFlowGraph.Edge) extends DeclaredMethod(invokeExpr) {
+
+  val names: mutable.HashSet[String] = mutable.HashSet.empty
+
   override def isNative: Boolean = ???
   override def isStatic: Boolean = ???
   override def isConstructor: Boolean = ???
   override def getSignature: String = ???
   override def getDeclaringClass: WrappedClass = ???
+  override def getSubSignature: String =  if (names.nonEmpty) names.head else ""
+  override def getName: String = if (names.nonEmpty) names.head else ""
 }

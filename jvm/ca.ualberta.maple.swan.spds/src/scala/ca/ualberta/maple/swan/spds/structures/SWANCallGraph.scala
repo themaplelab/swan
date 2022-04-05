@@ -19,12 +19,30 @@
 
 package ca.ualberta.maple.swan.spds.structures
 
+import boomerang.scene.CallGraph.Edge
 import boomerang.scene._
 import ca.ualberta.maple.swan.ir._
+import org.jgrapht.Graph
+import org.jgrapht.graph.{DefaultDirectedGraph, DefaultEdge}
 
 import scala.collection.mutable
 
-class SWANCallGraph(var moduleGroup: ModuleGroup, val methods: mutable.HashMap[String, SWANMethod]) extends CallGraph {
+class SWANCallGraph(var moduleGroup: ModuleGroup,
+                    val methods: mutable.HashMap[String, SWANMethod]) extends CallGraph {
+
+  // This is for UCG only
+  val graph: Graph[SWANMethod, DefaultEdge] = new DefaultDirectedGraph(classOf[DefaultEdge])
+
+  def outEdgeTargets(m: SWANMethod): Array[SWANMethod] = {
+    graph.outgoingEdgesOf(m).toArray().map(e => graph.getEdgeTarget(e.asInstanceOf[DefaultEdge]))
+  }
+
+  // TODO: !!! This doesn't take care of stats or graph, not reliable
+  def removeEdge(edge: Edge): Boolean = {
+    this.edgesInto(edge.tgt()).remove(edge)
+    this.edgesOutOf(edge.src()).remove(edge)
+    this.getEdges.remove(edge)
+  }
 
   override def toString: String = {
     val sb = new StringBuilder

@@ -25,7 +25,7 @@ import boomerang.scene._
 import ca.ualberta.maple.swan.ir.{CanInstructionDef, CanOperatorDef, CanTerminatorDef, Operator, Position, Symbol, Terminator, WithResult}
 
 // toString implementations are not necessarily accurate
-abstract class SWANStatement(val delegate: CanInstructionDef, m: SWANMethod) extends Statement(m) {
+abstract class SWANStatement(val delegate: CanInstructionDef, method: SWANMethod) extends Statement(method) {
   // Modifiable
   override def containsStaticFieldAccess(): Boolean = false
   override def containsInvokeExpr(): Boolean = false
@@ -61,7 +61,7 @@ abstract class SWANStatement(val delegate: CanInstructionDef, m: SWANMethod) ext
     delegate.asInstanceOf[CanInstructionDef.operator].operatorDef.operator.asInstanceOf[WithResult].value
   }
   override def getLeftOp: Val = {
-    m.allValues(getResult.ref.name)
+    method.allValues(getResult.ref.name)
   }
   override def isStringAllocation: Boolean = false
   final override def isArrayLoad: Boolean = false
@@ -83,7 +83,7 @@ abstract class SWANStatement(val delegate: CanInstructionDef, m: SWANMethod) ext
     val prime = 31
     var result = 1
     result = prime * result + delegate.hashCode
-    result = prime * result + m.hashCode
+    result = prime * result + method.hashCode
     result
   }
   override def equals(obj: Any): Boolean = {
@@ -106,6 +106,8 @@ abstract class SWANStatement(val delegate: CanInstructionDef, m: SWANMethod) ext
       ""
     }
   }
+
+  def getSWANMethod: SWANMethod = method
 }
 
 object SWANStatement {
@@ -191,9 +193,10 @@ object SWANStatement {
   }
   case class Allocation(opDef: CanOperatorDef, inst: Operator.neww,
                         m: SWANMethod) extends SWANStatement(CanInstructionDef.operator(opDef), m) {
-    override def getRightOp: Val = m.newValues(inst.result.ref.name)
+    private lazy val newVal = SWANVal.NewExpr(inst.result, m)
+    override def getRightOp: Val = newVal
     override def toString: String = {
-      if (inst.result.ref.name == "nop") {
+      if (inst.result.ref.name == "nop" && m.hasSwirlSource) {
         "f" + m.swirlLineNum(m.delegate)
       } else if (m.hasSwirlSource) {
         "i" + m.swirlLineNum(opDef).toString

@@ -262,7 +262,9 @@ class SILParser extends SILPrinter {
       } else if (peek("sil_witness_table ")) {
         witnessTables.append(parseWitnessTable())
       } else if (peek("sil_default_witness_table ")) {
-        // T0D0: Has not appeared yet. Leave for now.
+        // Pass it for now (e.g., appears in CryptoSwift)
+        skip(!_.equals('}'))
+        skip("}")
       } else if (peek("sil_vtable ")) {
         vTables.append(parseVTable())
       } else if (peek("sil_global ")) {

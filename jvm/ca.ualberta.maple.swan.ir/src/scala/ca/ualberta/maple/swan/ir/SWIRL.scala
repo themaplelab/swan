@@ -35,7 +35,6 @@ import scala.collection.mutable.ArrayBuffer
 import scala.collection.{immutable, mutable}
 
 class ModuleGroup(val functions: ArrayBuffer[CanFunction],
-                  val entries: immutable.HashSet[CanFunction],
                   val ddgs: mutable.HashMap[String, DynamicDispatchGraph],
                   val silMap: Option[SILMap], var swirlSourceMap: Option[mutable.HashMap[Object, (Int, Int)]],
                   val metas: ArrayBuffer[ModuleMetadata]) extends Serializable {
@@ -84,14 +83,13 @@ class CanModule(val functions: ArrayBuffer[CanFunction],
   }
 }
 
-class Function(val attribute: Option[FunctionAttribute], var name: String, val tpe: Type,
-               val blocks: ArrayBuffer[Block], val refTable: RefTable,
-               val instantiatedTypes: mutable.HashSet[String])
+class Function(val attribute: Option[FunctionAttribute], var name: String, val returnTpe: Type, val fullTpe: Type,
+               val blocks: ArrayBuffer[Block], val refTable: RefTable)
 
-class CanFunction(var attribute: Option[FunctionAttribute], val name: String, val tpe: Type,
+class CanFunction(var attribute: Option[FunctionAttribute], val name: String, val returnTpe: Type, val fullTpe: Type,
                   val arguments: ArrayBuffer[Argument], val blocks: ArrayBuffer[CanBlock],
-                  val refTable: RefTable, val instantiatedTypes: mutable.HashSet[String],
-                  val symbolTable: SymbolTable, var cfg: Graph[CanBlock, DefaultEdge]) extends Serializable {
+                  val refTable: RefTable, val symbolTable: SymbolTable,
+                  var cfg: Graph[CanBlock, DefaultEdge], val isLibrary: Boolean) extends Serializable {
   def getSymbol(name: String): Symbol = {
     symbolTable(name) match {
       case SymbolTableEntry.operator(symbol, _) => symbol
@@ -113,7 +111,6 @@ object FunctionAttribute {
   case object stub extends FunctionAttribute
   case object model extends FunctionAttribute
   case object modelOverride extends FunctionAttribute
-  case object entry extends FunctionAttribute
   case object linked extends FunctionAttribute
 }
 
@@ -182,15 +179,24 @@ object Instruction {
 abstract class Operator extends Serializable
 sealed trait RawOperator extends Operator
 sealed trait CanOperator extends Operator
+sealed trait FunctionRef extends Operator
+
+object AssignType {
+  sealed trait AssignType
+  case class BBArg() extends AssignType
+  case class PointerRead() extends AssignType
+  case class PointerWrite() extends AssignType
+}
 
 object Operator {
-  case class neww(result: Symbol) extends WithResult(result) with RawOperator with CanOperator
-  case class assign(result: Symbol, from: SymbolRef, bbArg: Boolean = false) extends WithResult(result) with RawOperator with CanOperator
+  case class neww(result: Symbol, allocType: Type) extends WithResult(result) with RawOperator with CanOperator
+  case class assign(result: Symbol, from: SymbolRef, assignType: Option[AssignType.AssignType] = None) extends WithResult(result) with RawOperator with CanOperator
   case class literal(result: Symbol, literal: Literal) extends WithResult(result) with RawOperator with CanOperator
-  case class dynamicRef(result: Symbol, index: String) extends WithResult(result) with RawOperator with CanOperator
-  case class builtinRef(result: Symbol, name: String) extends WithResult(result) with RawOperator with CanOperator
-  case class functionRef(result: Symbol, name: String) extends WithResult(result) with RawOperator with CanOperator
-  case class apply(result: Symbol, functionRef: SymbolRef, arguments: ArrayBuffer[SymbolRef]) extends WithResult(result) with RawOperator with CanOperator {
+  case class dynamicRef(result: Symbol, obj: SymbolRef, index: String) extends WithResult(result) with RawOperator with CanOperator with FunctionRef
+  case class builtinRef(result: Symbol, name: String) extends WithResult(result) with RawOperator with CanOperator with FunctionRef
+  case class functionRef(result: Symbol, name: String) extends WithResult(result) with RawOperator with CanOperator with FunctionRef
+  // only use None for functionType when you know its a trivial case
+  case class apply(result: Symbol, functionRef: SymbolRef, arguments: ArrayBuffer[SymbolRef], functionType: Option[Type]) extends WithResult(result) with RawOperator with CanOperator {
     // Used by CG debugInfo for printing
     override def hashCode(): Int = System.identityHashCode(this)
   }
@@ -258,9 +264,15 @@ object BinaryOperation {
 
 sealed trait Literal extends Serializable
 object Literal {
-  case class string(value: String) extends Literal
-  case class int(value: BigInt) extends Literal
-  case class float(value: Double) extends Literal
+  case class string(value: String) extends Literal {
+    override def toString: String = value
+  }
+  case class int(value: BigInt) extends Literal {
+    override def toString: String = value.toString()
+  }
+  case class float(value: Double) extends Literal {
+    override def toString: String = value.toString
+  }
 }
 
 class Symbol(val ref: SymbolRef, val tpe: Type) extends Serializable {
@@ -334,6 +346,7 @@ class SymbolTable extends mutable.HashMap[String, SymbolTableEntry] {
     throw new RuntimeException("Do not use put() directly")
   }
   def putArg(key: String, arg: Argument): Unit = {
+
     if (this.contains(key)) {
       throw new RuntimeException("Attempted to add argument entry to symbol table when key already in table")
     }

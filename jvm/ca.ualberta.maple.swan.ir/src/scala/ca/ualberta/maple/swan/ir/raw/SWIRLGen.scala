@@ -54,7 +54,8 @@ class SWIRLGen {
   class Context(val silModule: SILModule, val silFunction: SILFunction,
                 val silBlock: SILBlock, val pos: Option[Position],
                 val refTable: RefTable, val instantiatedTypes: mutable.HashSet[String],
-                val arguments: ArrayBuffer[Argument], val silMap: SILMap) {
+                val arguments: ArrayBuffer[Argument], val silMap: SILMap,
+                val builtins: mutable.HashSet[(String, Type, ArrayBuffer[Type])]) {
     def globalsSingletonName: String = Constants.globalsSingleton + silModule.toString
     override def toString: String = {
       val sb = new StringBuilder
@@ -72,7 +73,7 @@ class SWIRLGen {
   }
   object Context {
     def dummy(silModule: SILModule, refTable: RefTable, instantiatedTypes: mutable.HashSet[String]): Context = {
-      new Context(silModule, null, null, null, refTable, instantiatedTypes, null, null)
+      new Context(silModule, null, null, null, refTable, instantiatedTypes, null, null, null)
     }
   }
 
@@ -92,6 +93,7 @@ class SWIRLGen {
     val startTime = System.nanoTime()
     val functions = new ArrayBuffer[Function]
     val silMap: SILMap = if (populateSILMap) new SILMap else null
+    val builtins = mutable.HashSet.empty[(String, Type, ArrayBuffer[Type])]
     silModule.functions.view.zipWithIndex.foreach(zippedFunction => {
       val silFunction = zippedFunction._1
       val instantiatedTypes = new mutable.HashSet[String]()
@@ -114,7 +116,7 @@ class SWIRLGen {
             silBlock.operatorDefs.foreach((silOperatorDef: SILOperatorDef) => {
               breakable {
                 val position: Option[Position] = Utils.SILSourceInfoToPosition(silOperatorDef.sourceInfo)
-                val ctx = new Context(silModule, silFunction, silBlock, position, refTable, instantiatedTypes, arguments, silMap)
+                val ctx = new Context(silModule, silFunction, silBlock, position, refTable, instantiatedTypes, arguments, silMap, builtins)
                 val instructions: ArrayBuffer[RawInstructionDef] = translateSILInstruction(SILInstructionDef.operator(silOperatorDef), ctx)
                 if (instructions == NOP) {
                   break()
@@ -132,7 +134,7 @@ class SWIRLGen {
             })
             val terminator: RawTerminatorDef = {
               val position: Option[Position] = Utils.SILSourceInfoToPosition(silBlock.terminatorDef.sourceInfo)
-              val ctx = new Context(silModule, silFunction, silBlock, position, refTable, instantiatedTypes, arguments, silMap)
+              val ctx = new Context(silModule, silFunction, silBlock, position, refTable, instantiatedTypes, arguments, silMap, builtins)
               val instructions = translateSILInstruction(
                 SILInstructionDef.terminator(silBlock.terminatorDef), ctx)
               if (instructions == null) {
@@ -174,6 +176,7 @@ class SWIRLGen {
           })
         })
         val returnType = Utils.SILFunctionTypeToReturnType(silFunction.tpe)
+        val fullType = Utils.SILTypeToType(silFunction.tpe)
         // If function is empty, generate a stub based on return type.
         // However, param types isn't reliable - actual args may be different.
         if (silFunction.blocks.isEmpty) {
@@ -193,11 +196,35 @@ class SWIRLGen {
             new RawTerminatorDef(Terminator.ret(retRef), None)))
           attribute = Some(FunctionAttribute.stub)
         }
-        val f = new Function(attribute, silFunction.name.demangled, returnType,
-          blocks, refTable, instantiatedTypes)
+        val f = new Function(attribute, silFunction.name.demangled, returnType, fullType,
+          blocks, refTable)
         if (populateSILMap) silMap.map(silFunction, f)
         f
       })
+    })
+
+    // Generate stubs for builtins
+    builtins.foreach(b => {
+      intermediateSymbols.clear()
+      val refTable = new RefTable
+      val instantiatedTypes = new mutable.HashSet[String]()
+      val dummyCtx = Context.dummy(silModule, refTable, instantiatedTypes)
+      val blockRef = makeBlockRef("bb0", dummyCtx)
+      val retRef = makeSymbolRef("%ret", dummyCtx)
+      refTable.blocks.put(blockRef.label, blockRef)
+      val blocks = new ArrayBuffer[Block]
+      blocks.append(new Block(blockRef, {
+        val args = new ArrayBuffer[Argument]()
+        b._3.zipWithIndex.foreach(f => {
+          args.append(new Argument(makeSymbolRef("%" + f._2.toString, dummyCtx), f._1))
+        })
+        args
+      }, ArrayBuffer(new RawOperatorDef(
+        makeNewOperator(new Symbol(retRef, b._2), dummyCtx), None)),
+        new RawTerminatorDef(Terminator.ret(retRef), None)))
+      val attribute = Some(FunctionAttribute.stub)
+      val f = new Function(attribute, b._1, b._2, b._2, blocks, refTable)
+      functions.append(f)
     })
 
     // Create fake main function. The fake main function initializes globals
@@ -216,8 +243,8 @@ class SWIRLGen {
       val fmRefTable = new RefTable()
       val fmInstantiatedTypes = new mutable.HashSet[String]
       val dummyCtx = Context.dummy(silModule, fmRefTable, fmInstantiatedTypes)
-      fmFunction = Some(new Function(Some(FunctionAttribute.entry), fakeMainFunctionName,
-        new Type("Int32"), new ArrayBuffer[Block](), fmRefTable, fmInstantiatedTypes))
+      fmFunction = Some(new Function(None, fakeMainFunctionName,
+        mainFunction.get.returnTpe, mainFunction.get.fullTpe, new ArrayBuffer[Block](), fmRefTable))
       val blockRef = makeBlockRef("bb0", dummyCtx)
       val retRef = makeSymbolRef("ret", dummyCtx)
       val block = new Block(blockRef, new ArrayBuffer, {
@@ -248,7 +275,7 @@ class SWIRLGen {
       block.operators.append(new RawOperatorDef(
         Operator.functionRef(new Symbol(functionRef, new Type("Any")), newMainFunctionName), None))
       block.operators.append(new RawOperatorDef(
-        Operator.apply(new Symbol(retRef, new Type("Int32")), functionRef, ArrayBuffer(arg0, arg1)), None))
+        Operator.apply(new Symbol(retRef, new Type("Int32")), functionRef, ArrayBuffer(arg0, arg1), Some(fmFunction.get.returnTpe)), None))
       functions.insert(0, fmFunction.get)
     }
     Logging.printTimeStamp(1, startTime, "translating", silModule.functions.length, "functions")
@@ -320,9 +347,13 @@ class SWIRLGen {
     }
   }
   
+  // allocType and s.tpe may differ
+  protected def makeNewOperator(s: Symbol, allocType: Type, ctx: Context): Operator.neww = {
+    Operator.neww(s, allocType)
+  }
+
   protected def makeNewOperator(s: Symbol, ctx: Context): Operator.neww = {
-    ctx.instantiatedTypes.add(s.tpe.name)
-    Operator.neww(s)
+    Operator.neww(s, s.tpe)
   }
 
   @throws[IncorrectSWIRLStructureException]
@@ -549,35 +580,32 @@ class SWIRLGen {
   @throws[UnexpectedSILFormatException]
   def visitAllocStack(r: Option[SILResult], I: SILOperator.allocStack, ctx: Context): ArrayBuffer[RawInstructionDef] = {
     val result = getSingleResult(r, Utils.SILTypeToPointerType(I.tpe), ctx) // $T to $*T
-    ctx.instantiatedTypes.add(Utils.print(I.tpe))
-    makeOperator(ctx, makeNewOperator(result, ctx))
+    makeOperator(ctx, makeNewOperator(result, Utils.SILTypeToType(I.tpe), ctx))
   }
 
   @throws[UnexpectedSILFormatException]
   def visitAllocRef(r: Option[SILResult], I: SILOperator.allocRef, ctx: Context): ArrayBuffer[RawInstructionDef] = {
     val result = getSingleResult(r, Utils.SILTypeToType(I.tpe), ctx)
-    ctx.instantiatedTypes.add(Utils.print(I.tpe))
-    makeOperator(ctx, makeNewOperator(result, ctx))
+    makeOperator(ctx, makeNewOperator(result, Utils.SILTypeToType(I.tpe), ctx))
   }
 
   @throws[UnexpectedSILFormatException]
   def visitAllocRefDynamic(r: Option[SILResult], I: SILOperator.allocRefDynamic, ctx: Context): ArrayBuffer[RawInstructionDef] = {
     val result = getSingleResult(r, Utils.SILTypeToType(I.tpe), ctx)
-    ctx.instantiatedTypes.add(Utils.print(I.tpe))
-    makeOperator(ctx, makeNewOperator(result, ctx))
+    makeOperator(ctx, makeNewOperator(result, Utils.SILTypeToType(I.tpe), ctx))
   }
 
   @throws[UnexpectedSILFormatException]
   def visitAllocBox(r: Option[SILResult], I: SILOperator.allocBox, ctx: Context): ArrayBuffer[RawInstructionDef] = {
     // Boxes are treated like pointers.
     val result = getSingleResult(r, Utils.SILTypeToPointerType(I.tpe), ctx) // $T to $*T
-    makeOperator(ctx, makeNewOperator(result, ctx))
+    makeOperator(ctx, makeNewOperator(result, Utils.SILTypeToType(I.tpe), ctx))
   }
 
   @throws[UnexpectedSILFormatException]
   def visitAllocValueBuffer(r: Option[SILResult], I: SILOperator.allocValueBuffer, ctx: Context): ArrayBuffer[RawInstructionDef] = {
     val result = getSingleResult(r, Utils.SILTypeToPointerType(I.tpe), ctx) // $T to $*T
-    makeOperator(ctx, makeNewOperator(result, ctx))
+    makeOperator(ctx, makeNewOperator(result, Utils.SILTypeToType(I.tpe), ctx))
   }
 
   def visitAllocGlobal(r: Option[SILResult], I: SILOperator.allocGlobal, ctx: Context): ArrayBuffer[RawInstructionDef] = {
@@ -910,22 +938,24 @@ class SWIRLGen {
   @throws[UnexpectedSILFormatException]
   def visitClassMethod(r: Option[SILResult], I: SILOperator.classMethod, ctx: Context): ArrayBuffer[RawInstructionDef] = {
     val result = getSingleResult(r, Utils.SILTypeToType(I.tpe), ctx)
-    makeOperator(ctx, Operator.dynamicRef(result, Utils.print(I.declRef)))
+    makeOperator(ctx, Operator.dynamicRef(result, makeSymbolRef(I.operand.value, ctx), Utils.print(I.declRef)))
   }
 
   @throws[UnexpectedSILFormatException]
   def visitObjCMethod(r: Option[SILResult], I: SILOperator.objcMethod, ctx: Context): ArrayBuffer[RawInstructionDef] = {
+    ctx.builtins.add((Utils.SILDeclRefToString(I.declRef), Utils.SILFunctionTypeToReturnType(I.tpe), new ArrayBuffer[Type]()))
     val result = getSingleResult(r, Utils.SILTypeToType(I.tpe), ctx)
     makeOperator(ctx, Operator.builtinRef(result, Utils.print(I.declRef)))
   }
 
   def visitSuperMethod(r: Option[SILResult], I: SILOperator.superMethod, ctx: Context): ArrayBuffer[RawInstructionDef] = {
     val result = getSingleResult(r, Utils.SILTypeToType(I.tpe), ctx)
-    makeOperator(ctx, Operator.dynamicRef(result, Utils.print(I.declRef)))
+    makeOperator(ctx, Operator.dynamicRef(result, makeSymbolRef(I.operand.value, ctx), Utils.print(I.declRef)))
   }
 
   @throws[UnexpectedSILFormatException]
   def visitObjCSuperMethod(r: Option[SILResult], I: SILOperator.objcSuperMethod, ctx: Context): ArrayBuffer[RawInstructionDef] = {
+    ctx.builtins.add((Utils.SILDeclRefToString(I.declRef), Utils.SILFunctionTypeToReturnType(I.tpe), new ArrayBuffer[Type]()))
     val result = getSingleResult(r, Utils.SILTypeToType(I.tpe), ctx)
     if (I.declRef.name.length < 2) { // #T.method[...]
       throw new UnexpectedSILFormatException("Expected decl ref of objc_super_method to have at least two components: " + Utils.print(I.declRef))
@@ -936,10 +966,13 @@ class SWIRLGen {
   @throws[UnexpectedSILFormatException]
   def visitWitnessMethod(r: Option[SILResult], I: SILOperator.witnessMethod, ctx: Context): ArrayBuffer[RawInstructionDef] = {
     val result = getSingleResult(r, Utils.SILTypeToType(I.tpe), ctx)
+    val n = new Symbol(generateSymbolName(result.ref.name, ctx), Utils.SILTypeToType(I.archetype))
     if (I.declRef.name.length < 2) { // #T.method[...]
       throw new UnexpectedSILFormatException("Expected decl ref of witness_method to have at least two components: " + Utils.print(I.declRef))
     }
-    makeOperator(ctx, Operator.dynamicRef(result, Utils.print(I.declRef)))
+    makeOperator(ctx,
+      Operator.neww(n, n.tpe),
+      Operator.dynamicRef(result, n.ref, Utils.print(I.declRef)))
   }
 
   /* FUNCTION APPLICATION */
@@ -947,7 +980,8 @@ class SWIRLGen {
   @throws[UnexpectedSILFormatException]
   def visitApply(r: Option[SILResult], I: SILOperator.apply, ctx: Context): ArrayBuffer[RawInstructionDef] = {
     val result = getSingleResult(r, Utils.SILFunctionTypeToReturnType(I.tpe), ctx)
-    makeOperator(ctx, Operator.apply(result, makeSymbolRef(I.value, ctx), stringArrayToSymbolRefArrayBuffer(I.arguments, ctx)))
+    val functionType = Utils.SILTypeToType(I.tpe)
+    makeOperator(ctx, Operator.apply(result, makeSymbolRef(I.value, ctx), stringArrayToSymbolRefArrayBuffer(I.arguments, ctx), Some(functionType)))
   }
 
   @throws[UnexpectedSILFormatException]
@@ -990,7 +1024,7 @@ class SWIRLGen {
     }
     operators.append(makeOperator(ctx,
       Operator.apply/*Coroutine*/(result, makeSymbolRef(I.value, ctx),
-        stringArrayToSymbolRefArrayBuffer(I.arguments, ctx),
+        stringArrayToSymbolRefArrayBuffer(I.arguments, ctx), Some(Utils.SILTypeToType(I.tpe))
       /* new Symbol(token, Utils.SILTypeToType(SILType.namedType("*Any")))*/ )).head)
     operators
   }
@@ -1010,7 +1044,8 @@ class SWIRLGen {
     //  The return type is the partially-applied function type.
     // For now, just treat as regular apply (special thunk case is handled in SWIRLPass)
     val result = getSingleResult(r, Utils.SILFunctionTypeToReturnType(I.tpe), ctx)
-    makeOperator(ctx, Operator.apply(result, makeSymbolRef(I.value, ctx), stringArrayToSymbolRefArrayBuffer(I.arguments, ctx)))
+    val functionType = Utils.SILTypeToType(I.tpe)
+    makeOperator(ctx, Operator.apply(result, makeSymbolRef(I.value, ctx), stringArrayToSymbolRefArrayBuffer(I.arguments, ctx), Some(functionType)))
   }
 
   @throws[UnexpectedSILFormatException]
@@ -1019,13 +1054,17 @@ class SWIRLGen {
     // Use Any type because we don't know the type of the function ref value.
     val functionRef = new Symbol(generateSymbolName(r.get.valueNames.head, ctx), new Type())
     val arguments = ArrayBuffer[SymbolRef]()
+    val argumentTypes = ArrayBuffer[Type]()
     I.operands.foreach(op => {
       arguments.append(makeSymbolRef(op.value, ctx))
+      argumentTypes.append(Utils.SILTypeToType(op.tpe))
     })
+    val tpe = Utils.SILTypeToType(I.tpe)
+    ctx.builtins.add((I.name, tpe, argumentTypes))
     makeOperator(
       ctx,
       Operator.builtinRef(functionRef, I.name),
-      Operator.apply(result, functionRef.ref, arguments)
+      Operator.apply(result, functionRef.ref, arguments, None)
     )
   }
 
@@ -1034,7 +1073,7 @@ class SWIRLGen {
   @throws[UnexpectedSILFormatException]
   def visitMetatype(r: Option[SILResult], I: SILOperator.metatype, ctx: Context): ArrayBuffer[RawInstructionDef] = {
     val result = getSingleResult(r, Utils.SILTypeToType(I.tpe), ctx)
-    makeOperator(ctx, makeNewOperator(result, ctx))
+    makeOperator(ctx, makeNewOperator(result, Utils.SILTypeToType(I.tpe), ctx))
   }
 
   @throws[UnexpectedSILFormatException]
@@ -1043,20 +1082,20 @@ class SWIRLGen {
     // in the instruction. However, the documentation refers to a "dynamic metatype" of the operand.
     // For now, use the provided metatype.
     val result = getSingleResult(r, Utils.SILTypeToType(I.tpe), ctx)
-    makeOperator(ctx, makeNewOperator(result, ctx))
+    makeOperator(ctx, makeNewOperator(result, Utils.SILTypeToType(I.tpe), ctx))
   }
 
   @throws[UnexpectedSILFormatException]
   def visitExistentialMetatype(r: Option[SILResult], I: SILOperator.existentialMetatype, ctx: Context): ArrayBuffer[RawInstructionDef] = {
     // Same as value_metatype for now.
     val result = getSingleResult(r, Utils.SILTypeToType(I.tpe), ctx)
-    makeOperator(ctx, makeNewOperator(result, ctx))
+    makeOperator(ctx, makeNewOperator(result, Utils.SILTypeToType(I.tpe), ctx))
   }
 
   @throws[UnexpectedSILFormatException]
   def visitObjCProtocol(r: Option[SILResult], I: SILOperator.objcProtocol, ctx: Context): ArrayBuffer[RawInstructionDef] = {
     val result = getSingleResult(r, Utils.SILTypeToType(I.tpe), ctx)
-    makeOperator(ctx, makeNewOperator(result, ctx))
+    makeOperator(ctx, makeNewOperator(result, Utils.SILTypeToType(I.tpe), ctx))
   }
 
   /* AGGREGATE TYPES */
@@ -1184,7 +1223,7 @@ class SWIRLGen {
     }
     val result = getSingleResult(r, Utils.SILTypeToType(I.tpe), ctx)
     val operators = ArrayBuffer[RawInstructionDef]()
-    operators.append(makeOperator(ctx, makeNewOperator(result, ctx)).head)
+    operators.append(makeOperator(ctx, makeNewOperator(result, Utils.SILTypeToType(I.tpe), ctx)).head)
     if (init.nonEmpty) {
       I.operands.view.zipWithIndex.foreach(op => {
         if (init.get.args.length <= op._2) {
@@ -1254,7 +1293,7 @@ class SWIRLGen {
   def visitObject(r: Option[SILResult], I: SILOperator.objct, ctx: Context): ArrayBuffer[RawInstructionDef] = {
     // Only new instruction because field names are not known.
     val result = getSingleResult(r, Utils.SILTypeToType(I.tpe), ctx)
-    makeOperator(ctx, makeNewOperator(result, ctx))
+    makeOperator(ctx, makeNewOperator(result, Utils.SILTypeToType(I.tpe), ctx))
   }
 
   @throws[UnexpectedSILFormatException]
@@ -1282,7 +1321,7 @@ class SWIRLGen {
     val result = getSingleResult(r, Utils.SILTypeToType(I.tpe), ctx)
     val typeString = new Symbol(generateSymbolName(result.ref.name, ctx), new Type("Builtin.RawPointer"))
     var instructions = makeOperator(ctx,
-      makeNewOperator(result, ctx),
+      makeNewOperator(result, Utils.SILTypeToType(I.tpe), ctx),
       Operator.literal(typeString, Literal.string(Utils.print(I.declRef))),
       Operator.fieldWrite(typeString.ref, result.ref, "type", None))
     if (I.operand.nonEmpty) {
@@ -1420,7 +1459,7 @@ class SWIRLGen {
   @throws[UnexpectedSILFormatException]
   def visitAllocExistentialBox(r: Option[SILResult], I: SILOperator.allocExistentialBox, ctx: Context): ArrayBuffer[RawInstructionDef] = {
     val result = getSingleResult(r, Utils.SILTypeToPointerType(I.tpeP), ctx) // $T to $*T
-    makeOperator(ctx, makeNewOperator(result, ctx))
+    makeOperator(ctx, makeNewOperator(result, Utils.SILTypeToType(I.tpeP), ctx))
   }
 
   @throws[UnexpectedSILFormatException]
@@ -1457,7 +1496,7 @@ class SWIRLGen {
     //  is read from I.operand (function ref to a closure) and called.
     // For now, just create a new value
     val result = getSingleResult(r, Utils.SILTypeToType(I.tpe), ctx)
-    makeOperator(ctx, makeNewOperator(result, ctx))
+    makeOperator(ctx, makeNewOperator(result, Utils.SILTypeToType(I.tpe), ctx))
   }
 
   /* UNCHECKED CONVERSIONS */
@@ -1671,8 +1710,7 @@ class SWIRLGen {
     // We are still uncertain about this instruction. Parsing is not complete either.
     // So this is just temporary
     val result = getSingleResult(r, Utils.SILTypeToPointerType(I.tpe), ctx) // $T to $*T
-    ctx.instantiatedTypes.add(Utils.print(I.tpe))
-    makeOperator(ctx, makeNewOperator(result, ctx))
+    makeOperator(ctx, makeNewOperator(result, Utils.SILTypeToType(I.tpe), ctx))
   }
 
     /* RUNTIME FAILURES */
@@ -1857,7 +1895,7 @@ class SWIRLGen {
     val condVal = generateSymbolName(I.value, ctx)
     val instructions = new ArrayBuffer[RawInstructionDef]()
     instructions.appendAll(makeOperator(ctx,
-      Operator.apply(retVal, makeSymbolRef(I.value, ctx), stringArrayToSymbolRefArrayBuffer(I.arguments, ctx)),
+      Operator.apply(retVal, makeSymbolRef(I.value, ctx), stringArrayToSymbolRefArrayBuffer(I.arguments, ctx), Some(Utils.SILTypeToType(I.tpe))),
       makeNewOperator(new Symbol(condVal,  Utils.SILTypeToType(SILType.namedType("Builtin.Int1"))), ctx)))
     instructions.appendAll(makeTerminator(ctx,
       Terminator.condBr(

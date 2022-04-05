@@ -19,6 +19,7 @@
 
 package ca.ualberta.maple.swan.ir
 
+import ca.ualberta.maple.swan.ir.DynamicDispatchGraph.Node
 import ca.ualberta.maple.swan.ir.raw.Utils
 import ca.ualberta.maple.swan.parser.{SILDeclRef, SILModule, SILWitnessEntry}
 import org.jgrapht._
@@ -26,85 +27,75 @@ import org.jgrapht.alg.TransitiveClosure
 import org.jgrapht.graph._
 import org.jgrapht.traverse.BreadthFirstIterator
 
-import scala.collection.mutable
+import scala.collection.{immutable, mutable}
 import scala.collection.mutable.ArrayBuffer
 import scala.jdk.CollectionConverters.CollectionHasAsScala
+import scala.jdk.CollectionConverters._
 import scala.reflect.ClassTag
 
 /** Creates a DDG from a SIL Module's witness and value tables. */
 class DynamicDispatchGraph extends Serializable {
 
   private val graph: Graph[Node, DefaultEdge] = new SimpleDirectedGraph(classOf[DefaultEdge])
-  private val nodes: mutable.HashMap[String, Node] = new mutable.HashMap[String, Node]()
+  val nodes: mutable.HashMap[String, Node] = new mutable.HashMap[String, Node]()
+  private val classNodes: mutable.HashSet[Node.Class] = new mutable.HashSet[Node.Class]()
   private val reachabilityCache: SimpleDirectedGraph[Node, DefaultEdge] = new SimpleDirectedGraph(classOf[DefaultEdge])
 
   /**
-   * Query the graph with an index. Optionally, specify RTA types.
+   * Query the graph with an index. Optionally, specify RTA types (Class Nodes).
    */
   def query(index: String, types: Option[mutable.HashSet[String]]): Array[String] = {
     if (!nodes.contains(index)) return Array.empty
     val functions = ArrayBuffer[String]()
     val startNode = nodes(index)
-    val classNodes: Option[Array[Node]] = {
-      if (types.nonEmpty) {
-        // TODO: .toArray not efficient
-        Some(types.get.toArray.filter(s => nodes.contains(s) && nodes(s).isInstanceOf[Node.Class]).map(s => nodes(s)))
-      } else {
-        None
-      }
+    val classNodes: Option[mutable.HashSet[Node]] = {
+      types.map(_.flatMap(nodes.get))
     }
-    val iterator = new BreadthFirstIterator(graph, startNode)
-    var done = false
-    while (iterator.hasNext && !done) {
+    // iterator upto depth 2
+    val iterator: Iterator[Node] = Iterator(startNode) ++ graph.outgoingEdgesOf(startNode).iterator().asScala.map(e => graph.getEdgeTarget(e))
+    while (iterator.hasNext) {
       val cur = iterator.next()
-      if (iterator.getDepth(cur) < 2) {
-        cur match {
-          case Node.Method(s) => {
-            if (classNodes.nonEmpty) {
-              val classes = classNodes.get
-              if (classes.find(cls => reachabilityCache.containsEdge(cur,cls)).nonEmpty) {
+      cur match {
+        case Node.Method(s) => {
+          classNodes match {
+            case Some(classes) =>
+              if (classes.exists(cls => reachabilityCache.containsEdge(cur, cls))) {
                 functions.append(s)
               }
-            } else {
-              functions.append(s)
-            }
+            case None => functions.append(s)
           }
-          case _ =>
         }
-      } else {
-        done = true
+        case _ =>
       }
     }
     functions.toArray
   }
 
+  def isDDGClass(name: String): Boolean = {
+    classNodes.contains(Node.Class(name))
+  }
+
+  def queryTypeTargets(index: String): immutable.MultiDict[String,String] = {
+    nodes.get(index) match {
+      case Some(startNode) => {
+        val methods: Set[Node.Method] = {
+          val nodes: Set[Node] = Set.empty[Node] + startNode ++ graph.outgoingEdgesOf(startNode).asScala.toSeq.map(graph.getEdgeTarget).collect{ case n : Node.Method => n}
+          nodes.collect{case n : Node.Method => n}
+        }
+        val edges: mutable.MultiDict[String,String] = mutable.MultiDict.empty[String,String]
+        methods.foreach{m => classNodes.foreach{cls =>
+          if (reachabilityCache.containsEdge(m, cls)) edges.addOne(cls.s, m.name)}
+        }
+        //val edges = classNodes.toSeq.flatMap(cls => methods.toSeq.collect{case cur @ Node.Method(s) if reachabilityCache.containsEdge(cur, cls) => (cls.s, s)})
+        immutable.MultiDict.from(edges)
+      }
+      case None => immutable.MultiDict.empty
+    }
+  }
+
   private def addEdge(from: Node, to: Node) = {
     graph.addEdge(from, to)
     reachabilityCache.addEdge(from, to)
-  }
-
-  /** A node in the DDG. */
-  sealed class Node(val name: String) extends Serializable {
-    override def hashCode(): Int = {
-      this.name.hashCode()
-    }
-    override def equals(obj: Any): Boolean = {
-      obj match {
-        case node: Node =>
-          this.name == node.name
-        case _ =>
-          false
-      }
-    }
-    override def toString: String = {
-      this.name
-    }
-  }
-  object Node {
-    case class Class(s: String) extends Node(name = s)
-    case class Protocol(s: String) extends Node(name = s)
-    case class Index(s: String) extends Node(name = s)
-    case class Method(s: String) extends Node(name = s)
   }
 
   /** Generate and populate `graph`. */
@@ -115,7 +106,11 @@ class DynamicDispatchGraph extends Serializable {
       } else {
         val n = {
           tpe match {
-            case "Class" => Node.Class(name)
+            case "Class" => {
+              val n = Node.Class(name)
+              classNodes.add(n)
+              n
+            }
             case "Protocol" => Node.Protocol(name)
             case "Index" => Node.Index(name)
             case "Method" => Node.Method(name)
@@ -219,5 +214,32 @@ class DynamicDispatchGraph extends Serializable {
     dot.append("\n")
     dot.append("}")
     dot.toString()
+  }
+}
+
+object DynamicDispatchGraph {
+  /** A node in the DDG. */
+  sealed class Node(val name: String) extends Serializable {
+    override def hashCode(): Int = {
+      this.name.hashCode()
+    }
+    override def equals(obj: Any): Boolean = {
+      obj match {
+        case node: Node =>
+          this.name == node.name
+        case _ =>
+          false
+      }
+    }
+    override def toString: String = {
+      this.name
+    }
+  }
+
+  object Node {
+    case class Class(s: String) extends Node(name = s)
+    case class Protocol(s: String) extends Node(name = s)
+    case class Index(s: String) extends Node(name = s)
+    case class Method(s: String) extends Node(name = s)
   }
 }

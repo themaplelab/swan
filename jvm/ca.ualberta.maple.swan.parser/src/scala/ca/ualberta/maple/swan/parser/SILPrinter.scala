@@ -1841,6 +1841,11 @@ class SILPrinter extends Printer {
     this.toString
   }
 
+  def printSILDeclRef(ref: SILDeclRef): String = {
+    clear()
+    print(ref)
+    this.toString
+  }
 
   def print(tpe: SILType): Unit = {
     tpe match {
