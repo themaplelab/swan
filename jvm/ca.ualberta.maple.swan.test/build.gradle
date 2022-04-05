@@ -1,0 +1,45 @@
+plugins {
+    id 'scala'
+    id 'com.github.johnrengelman.shadow' version '5.2.0'
+    id 'application'
+}
+
+group 'ca.ualberta.maple.swan'
+
+sourceCompatibility = 1.8
+
+sourceSets {
+    main {
+        scala {
+            srcDirs = ['src/scala']
+        }
+    }
+}
+
+dependencies {
+    implementation project(":ca.ualberta.maple.swan.ir")
+    implementation project(":ca.ualberta.maple.swan.parser")
+    implementation project(":ca.ualberta.maple.swan.drivers")
+    implementation project(":ca.ualberta.maple.swan.utils")
+    implementation project(":ca.ualberta.maple.swan.spds")
+
+    implementation 'org.scala-lang:scala3-library_3:' + project.property("SCALA_VERSION")
+
+    implementation 'info.picocli:picocli:4.6.1'
+}
+
+mainClassName = "ca.ualberta.maple.swan.test.AnnotationChecker"
+
+run {
+    enableAssertions = true
+    standardInput = System.in
+}
+
+jar {
+    manifest {
+        attributes (
+                'Main-Class': 'ca.ualberta.maple.swan.test.AnnotationChecker'
+        )
+    }
+}
+
