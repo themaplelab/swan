@@ -19,13 +19,14 @@
 
 package ca.ualberta.maple.swan.drivers
 
-import ca.ualberta.maple.swan.drivers.Driver.{taintAnalysisResultsFileName, typeStateAnalysisResultsFileName}
+import ca.ualberta.maple.swan.drivers.Driver.{cryptoAnalysisResultsFileName, taintAnalysisResultsFileName, typeStateAnalysisResultsFileName}
 import ca.ualberta.maple.swan.ir._
 import ca.ualberta.maple.swan.ir.canonical.SWIRLPass
 import ca.ualberta.maple.swan.ir.raw.SWIRLGen
 import ca.ualberta.maple.swan.parser.{SILModule, SILParser}
 import ca.ualberta.maple.swan.spds.Stats
 import ca.ualberta.maple.swan.spds.Stats.{AllStats, GeneralStats}
+import ca.ualberta.maple.swan.spds.analysis.crypto.CryptoAnalysis
 import ca.ualberta.maple.swan.spds.analysis.taint._
 import ca.ualberta.maple.swan.spds.analysis.typestate.{TypeStateAnalysis, TypeStateResults}
 import ca.ualberta.maple.swan.spds.cg.CallGraphBuilder.CallGraphStyle.Style
@@ -38,14 +39,15 @@ import picocli.CommandLine.{ArgGroup, Command, Option, Parameters}
 import java.io.{File, FileWriter}
 import java.nio.charset.StandardCharsets
 import java.nio.file.{Files, Paths}
-import java.util.concurrent.{Callable, ExecutionException, Future, FutureTask, TimeUnit, TimeoutException}
-import scala.collection.{immutable, mutable}
+import java.util.concurrent.{ExecutionException, FutureTask, TimeUnit, TimeoutException}
 import scala.collection.mutable.ArrayBuffer
+import scala.collection.{immutable, mutable}
 
 object Driver {
 
   val taintAnalysisResultsFileName = "taint-results.json"
   val typeStateAnalysisResultsFileName = "typestate-results.json"
+  val cryptoAnalysisResultsFileName = "crypto-results.json"
 
   private val callGraphOptions = immutable.HashMap(
     ("cha", CallGraphBuilder.CallGraphStyle.CHA),
@@ -75,11 +77,13 @@ object Driver {
     var constructCallGraph = false
     var callGraphTimeout = 0
     var callGraphAlgorithms: ArrayBuffer[CallGraphBuilder.CallGraphStyle.Style] = ArrayBuffer.empty
+    var moduleFilters: ArrayBuffer[String] = ArrayBuffer.empty
     var taintAnalysisSpec: scala.Option[File] = None
     var typeStateAnalysisSpec: scala.Option[File] = None
     var pathTracking = false
     var analyzeLibraries = false
     var analyzeClosures = false
+    var analyzeCrypto = false
     var skipEntryPointsPruning = false
     var printToProbe = false
     var printToDot = false
@@ -125,6 +129,12 @@ object Driver {
       }
       this
     }
+    def moduleFilters(a: Array[Driver.ModuleFilter]): Options = {
+      a.foreach(v => {
+        if (v != null) moduleFilters.append(v.module)
+      })
+      this
+    }
     def taintAnalysisSpec(v: File): Options = {
       this.taintAnalysisSpec = scala.Option(v); this
     }
@@ -136,6 +146,9 @@ object Driver {
     }
     def analyzeLibraries(v: Boolean): Options = {
       this.analyzeLibraries = v; this
+    }
+    def analyzeCrypto(v: Boolean): Options = {
+      this.analyzeCrypto = v; this
     }
     def analyzeClosures(v: Boolean): Options = {
       this.analyzeClosures = v; this
@@ -171,6 +184,14 @@ object Driver {
       description = Array("Algorithm(s) used for building the Call Graph.")
     )
     var cgAlgorithm: String = null
+  }
+
+  class ModuleFilter() {
+    @Option(names = Array("--module"),
+      required = false,
+      description = Array("Modules to analyze (basically selective analysis mostly meant for libraries). Uses regex matching.")
+    )
+    var module: String = null
   }
 }
 
@@ -227,6 +248,9 @@ class Driver extends Runnable {
   @ArgGroup(exclusive = false, multiplicity="0..*")
   private val callGraphAndPointerAlgorithms: Array[Driver.CGPAPair] = Array.empty[Driver.CGPAPair]
 
+  @ArgGroup(exclusive = false, multiplicity="0..*")
+  private val moduleFilters: Array[Driver.ModuleFilter] = Array.empty[Driver.ModuleFilter]
+
   @Option(names = Array("-t", "--taint-analysis-spec"),
     description = Array("JSON specification file for taint analysis."))
   private val taintAnalysisSpec: File = null
@@ -271,6 +295,10 @@ class Driver extends Runnable {
     description = Array("Cache SIL and SWIRL group module. This is experimental, slow, and incomplete (DDGs and CFGs not serialized)."))
   private val useCache = new Array[Boolean](0)
 
+  @Option(names = Array("--crypto"),
+    description = Array("Analyze application for crypto API misuses. Currently only supports CryptoSwift."))
+  private val cryptoAnalysis = new Array[Boolean](0)
+
   @Parameters(arity = "1", paramLabel = "swan-dir", description = Array("swan-dir to process."))
   private val inputFile: File = null
 
@@ -288,10 +316,12 @@ class Driver extends Runnable {
       .constructCallGraph(constructCallGraph.nonEmpty)
       .callGraphTimeout(cgTimeout)
       .callGraphPAAlgorithms(callGraphAndPointerAlgorithms)
+      .moduleFilters(moduleFilters)
       .taintAnalysisSpec(taintAnalysisSpec)
       .typeStateAnalysisSpec(typeStateAnalysisSpec)
       .pathTracking(pathTracking.nonEmpty)
       .analyzeLibraries(analyzeLibraries.nonEmpty)
+      .analyzeCrypto(cryptoAnalysis.nonEmpty)
       .analyzeClosures(analyzeClosures.nonEmpty)
       .skipEntryPointsPruning(skipEntryPointsPruning.nonEmpty)
       .printToProbe(printProbe.nonEmpty)
@@ -408,7 +438,7 @@ class Driver extends Runnable {
       fw.close()
     }
     val stats = new mutable.HashMap[String, AllStats]()
-    if (options.constructCallGraph || options.taintAnalysisSpec.nonEmpty || options.typeStateAnalysisSpec.nonEmpty) {
+    if (options.constructCallGraph || options.taintAnalysisSpec.nonEmpty || options.typeStateAnalysisSpec.nonEmpty || options.analyzeCrypto) {
       options.callGraphAlgorithms.foreach { cgAlgo =>
         if (options.callGraphTimeout == 0) {
           val cgResults = createCallGraph(group, cgAlgo)
@@ -490,6 +520,7 @@ class Driver extends Runnable {
       })
       val f = Paths.get(swanDir.getPath, taintAnalysisResultsFileName).toFile
       TaintSpecification.writeResults(f, allResults)
+      Logging.printInfo("Taint results written to " + taintAnalysisResultsFileName)
     }
     if (options.typeStateAnalysisSpec.nonEmpty) {
       val allResults = new ArrayBuffer[TypeStateResults]()
@@ -502,6 +533,13 @@ class Driver extends Runnable {
       })
       val f = Paths.get(swanDir.getPath, typeStateAnalysisResultsFileName).toFile
       TypeStateResults.writeResults(f, allResults)
+      Logging.printInfo("Typestate results written to " + typeStateAnalysisResultsFileName)
+    }
+    if (options.analyzeCrypto) {
+      val results = new CryptoAnalysis(cg, debugDir, analyzeLibraries.nonEmpty).evaluate()
+      val f = Paths.get(swanDir.getPath, cryptoAnalysisResultsFileName).toFile
+      results.writeResults(f)
+      Logging.printInfo("Crypto results written to " + cryptoAnalysisResultsFileName)
     }
     stats.put(cgPrefix, allStats)
   }
@@ -552,7 +590,7 @@ class Driver extends Runnable {
     if (partial && rawSwirlModule.functions(0).name.startsWith("SWAN_FAKE_MAIN")) rawSwirlModule.functions.remove(0)
     if (options.rawSwirlModuleCB != null) options.rawSwirlModuleCB(rawSwirlModule)
     if (options.debug) writeFile(rawSwirlModule, debugDir, file.getName + ".raw")
-    val canSwirlModule = new SWIRLPass().runPasses(rawSwirlModule)
+    val canSwirlModule = new SWIRLPass().runPasses(rawSwirlModule, options.moduleFilters)
     if (options.canSwirlModuleCB != null) options.canSwirlModuleCB(canSwirlModule)
     if (options.debug) writeFile(canSwirlModule, debugDir, file.getName)
     (silModule, rawSwirlModule, canSwirlModule)
@@ -562,7 +600,7 @@ class Driver extends Runnable {
   def swirlRunner(debugDir: File, modelsContent: String, options: Driver.Options, name: String): (Module, CanModule) = {
     val swirlModule = new SWIRLParser(modelsContent, model = true).parseModule()
     if (options.debug) writeFile(swirlModule, debugDir, name + ".raw")
-    val canSwirlModule = new SWIRLPass().runPasses(swirlModule)
+    val canSwirlModule = new SWIRLPass().runPasses(swirlModule, options.moduleFilters)
     if (options.debug) writeFile(canSwirlModule, debugDir, name)
     (swirlModule, canSwirlModule)
   }

@@ -34,9 +34,10 @@ class SWIRLPass {
   // https://github.com/themaplelab/swan/wiki/SWIRL#swirlpass-and-canonical-swirl
 
   /** Convert a raw module to a canonical module. */
-  def runPasses(module: Module): CanModule = {
+  def runPasses(module: Module, moduleFilter: ArrayBuffer[String] = ArrayBuffer.empty): CanModule = {
     Logging.printInfo("Running SWIRL canonical passes on " + module)
-    val isLibrary = !module.functions.exists(_.name.startsWith("main_"))
+    val isLibrary = if (moduleFilter.nonEmpty) !moduleFilter.exists(m => module.meta.toString.matches(m)) else
+      !module.functions.exists(_.name.startsWith("main_"))
     val startTime = System.nanoTime()
     resolveAliases(module)
     val functions = new ArrayBuffer[CanFunction]()

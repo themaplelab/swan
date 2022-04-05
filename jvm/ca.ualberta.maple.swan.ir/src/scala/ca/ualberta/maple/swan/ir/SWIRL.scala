@@ -264,9 +264,15 @@ object BinaryOperation {
 
 sealed trait Literal extends Serializable
 object Literal {
-  case class string(value: String) extends Literal
-  case class int(value: BigInt) extends Literal
-  case class float(value: Double) extends Literal
+  case class string(value: String) extends Literal {
+    override def toString: String = value
+  }
+  case class int(value: BigInt) extends Literal {
+    override def toString: String = value.toString()
+  }
+  case class float(value: Double) extends Literal {
+    override def toString: String = value.toString
+  }
 }
 
 class Symbol(val ref: SymbolRef, val tpe: Type) extends Serializable {

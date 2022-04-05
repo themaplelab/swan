@@ -28,8 +28,6 @@ jobs:
         USERNAME: ${{ secrets.USERNAME }}
         PASSWORD: ${{ secrets.PASSWORD }}
       run: printf "SCALA_VERSION=3.0.0\nUSERNAME=$USERNAME\nPASSWORD=$PASSWORD\n" > jvm/gradle.properties
-    - name: Build and test jvm/ with Gradle
-      run: cd jvm && ./gradlew build -i
     - name: Build everything
       run: ./build.sh
     - name: Analysis regression tests
