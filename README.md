@@ -40,12 +40,6 @@ We aim to provide developers and researchers with an easy-to-use and well-docume
 - Analysis for *Visits Location Service* and *Standard Location Service* for finding energy inefficient configuration
 - Annotation checker for regression testing
 
-### We are currently working on
-
-- Improving call graph construction
-- Crypto API misuse detection
-- Developing a UI for SWAN
-
 ### Relevant Wiki pages
 
 - [SWIRL](https://github.com/themaplelab/swan/wiki/SWIRL)
