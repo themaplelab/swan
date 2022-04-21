@@ -68,6 +68,32 @@ object CallGraphUtils {
     b
   }
 
+  def calculateMethodStats(cgs: CallGraphStats, skipLibraries: Boolean = false): (Int, Int, Int, Int) = {
+    var methods = 0
+    var allocations = 0
+    var functionRefs = 0
+    var dynamicRefs = 0
+
+    cgs.cg.methods.foreach{ case (_,m) =>
+      val isLibrary = m.delegate.isLibrary
+      if (!(isLibrary && skipLibraries)) {
+        methods += 1
+        m.getCFG.blocks.foreach{case (_,blk) =>
+          blk.stmts.foreach{
+            case _: SWANStatement.Allocation =>
+              allocations += 1
+            case _: SWANStatement.FunctionRef | _: SWANStatement.BuiltinFunctionRef =>
+              functionRefs += 1
+            case _: SWANStatement.DynamicFunctionRef =>
+              dynamicRefs += 1
+            case _ =>
+          }
+        }
+      }
+    }
+    (dynamicRefs, functionRefs, allocations, methods)
+  }
+
   def calculateResolvedCallsites(cgs: CallGraphStats): (Int, Int, Int, Int) = {
     var callsites = 0
     var tUnresolved = 0

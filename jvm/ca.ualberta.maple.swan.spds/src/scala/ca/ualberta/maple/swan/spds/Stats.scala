@@ -47,6 +47,16 @@ object Stats {
     lazy val unresolvedCallSites: Int = resolvedCallSiteStats._2
     lazy val resolvedCallSites: Int = resolvedCallSiteStats._3
     lazy val nonTrivialCallSites: Int = totalCallSites - trivialCallSites
+    lazy private val methodStats: (Int, Int, Int, Int) = CallGraphUtils.calculateMethodStats(this)
+    lazy val dynamicRefs = methodStats._1
+    lazy val functionRefs = methodStats._2
+    lazy val allocations = methodStats._3
+    lazy val methodCount = methodStats._4
+    lazy private val userMethodStats: (Int, Int, Int, Int) = CallGraphUtils.calculateMethodStats(this, skipLibraries = true)
+    lazy val userDynamicRefs = userMethodStats._1
+    lazy val userFunctionRefs = userMethodStats._2
+    lazy val userAllocations = userMethodStats._3
+    lazy val userMethodCount = userMethodStats._4
     var specificData: mutable.ArrayBuffer[SpecificCallGraphStats] = mutable.ArrayBuffer.empty
     val debugInfo = new SWIRLPrinterOptions.CallGraphDebugInfo()
     var finalModuleGroup: Object = cg.moduleGroup
@@ -67,6 +77,14 @@ object Stats {
       sb.append(indent + s"Unresolved Call Sites: $unresolvedCallSites\n")
       sb.append(indent + s"Possibly Unresolved Call Sites: $trulyUnresolvedCallSites\n")
       sb.append(indent + s"Non-trivial call sites: $nonTrivialCallSites\n")
+      sb.append(indent + s"Method Count: $methodCount\n")
+      sb.append(indent + s"Allocations: $allocations\n")
+      sb.append(indent + s"Function Refs: $functionRefs\n")
+      sb.append(indent + s"Dynamic Refs: $dynamicRefs\n")
+      sb.append(indent + s"User Method Count: $userMethodCount\n")
+      sb.append(indent + s"User Allocations: $userAllocations\n")
+      sb.append(indent + s"User Function Refs: $userFunctionRefs\n")
+      sb.append(indent + s"User Dynamic Refs: $userDynamicRefs\n")
       if (specificData.nonEmpty) {
         sb.append(indent + "Specific stats:\n")
         specificData.foreach(d => {
@@ -94,6 +112,14 @@ object Stats {
       u("unresolved_call_sites") = unresolvedCallSites
       u("truly_unresolved_call_sites") = trulyUnresolvedCallSites
       u("non_trivial_call_sites") = nonTrivialCallSites
+      u("method_count") = methodCount
+      u("allocations") = allocations
+      u("function_refs") = functionRefs
+      u("dynamic_refs") = dynamicRefs
+      u("user_method_count") = userMethodCount
+      u("user_allocations") = userAllocations
+      u("user_function_refs") = userFunctionRefs
+      u("user_dynamic_refs") = userDynamicRefs
       specificData.foreach(s => s.toJSON.obj.foreach(o => u(o._1) = o._2))
       u
     }
