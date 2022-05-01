@@ -94,6 +94,15 @@ public class CallGraphInfo {
 		Collection rm = Util.filterLibs(libs, a.findReachables());
 		Util.out.println("Reachable methods: " + rm.size());
 
+		Set<ProbeMethod> reachables = a.findReachables();
+		Set<CallEdge> reachableEdges = new HashSet<CallEdge>();
+		for (CallEdge edge : a.edges()) {
+			if (reachables.contains(edge.src()) && reachables.contains(edge.dst())) {
+				reachableEdges.add(edge);
+		 	}
+		}
+		Util.out.println("Reachable edges  : " + reachableEdges.size());
+
 		if (dashE) {
 			Util.out.println("Entry points: ");
 			for (Iterator pmIt = ep.iterator(); pmIt.hasNext();) {
