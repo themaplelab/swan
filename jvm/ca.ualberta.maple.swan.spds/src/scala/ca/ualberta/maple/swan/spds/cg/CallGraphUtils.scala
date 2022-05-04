@@ -21,7 +21,7 @@ package ca.ualberta.maple.swan.spds.cg
 
 import boomerang.scene.{AllocVal, CallGraph, ControlFlowGraph, DataFlowScope, DeclaredMethod, Method}
 import boomerang.{BackwardQuery, Boomerang, DefaultBoomerangOptions}
-import ca.ualberta.maple.swan.ir.{Instruction, ModuleGroup, Operator, SymbolTableEntry}
+import ca.ualberta.maple.swan.ir.{CanOperator, Instruction, ModuleGroup, Operator, SymbolTableEntry}
 import ca.ualberta.maple.swan.spds.Stats.CallGraphStats
 import ca.ualberta.maple.swan.spds.structures.{SWANCallGraph, SWANMethod, SWANStatement, SWANVal}
 
@@ -92,6 +92,89 @@ object CallGraphUtils {
       }
     }
     (dynamicRefs, functionRefs, allocations, methods)
+  }
+
+  def calculateNonTrivialFlowStats(cgs: CallGraphStats): (Int, Int, Int, Int, Int, Int) = {
+    var functionRefs = 0
+    var nonTrivialFunctionRefs = 0
+    var dynamicRefs = 0
+    var nonTrivialDynamicRefs = 0
+    var trivialDynamicRefApplications = 0
+    var nonTrivialReceivers = 0
+
+    cgs.cg.methods.foreach{ case (_,m) =>
+      val symbolTable = m.delegate.symbolTable
+      val cfg = m.getCFG
+      val nonTrivialOperators = mutable.HashSet.empty[CanOperator]
+      cfg.getStatements.forEach{
+        case s: SWANStatement.ApplyFunctionRef =>
+          s.invokeExpr.args.forEach{ v =>
+            val e: SymbolTableEntry = symbolTable(v.getVariableName)
+            e match {
+              case SymbolTableEntry.operator(symbol, operator) =>
+                nonTrivialOperators.add(operator)
+              case SymbolTableEntry.argument(argument) =>
+              case SymbolTableEntry.multiple(symbol, operators) =>
+                nonTrivialOperators.addAll(operators)
+            }
+          }
+          val fRef = s.invokeExpr.getFunctionRef.getVariableName
+          val e: SymbolTableEntry = symbolTable(fRef)
+          e match {
+            case SymbolTableEntry.operator(symbol, operator) => {
+              operator match {
+                case Operator.dynamicRef(result, obj, index) => {
+                  trivialDynamicRefApplications += 1
+                  val receiver: SWANVal = s.invokeExpr.args.asScala.last.asInstanceOf[SWANVal]
+                  symbolTable(receiver.getVariableName) match {
+                    case SymbolTableEntry.operator(symbol, operator) => // trivial
+                    case SymbolTableEntry.argument(argument) => // interproc
+                      nonTrivialReceivers += 1
+                    case SymbolTableEntry.multiple(symbol, operators) => //basic block arg
+                      nonTrivialReceivers += 1
+                  }
+                }
+                case _: Operator =>
+              }
+            }
+            case _ =>
+          }
+        case s: SWANStatement.FieldWrite =>
+          val v = s.getRightOp
+          val e: SymbolTableEntry = symbolTable(v.getVariableName)
+          e match {
+            case SymbolTableEntry.operator(symbol, operator) =>
+              nonTrivialOperators.add(operator)
+            case SymbolTableEntry.argument(argument) =>
+            case SymbolTableEntry.multiple(symbol, operators) =>
+              nonTrivialOperators.addAll(operators)
+          }
+        case s: SWANStatement.DynamicFunctionRef =>
+          dynamicRefs += 1
+        case s: SWANStatement.BuiltinFunctionRef =>
+          functionRefs += 1
+        case s: SWANStatement.FunctionRef =>
+          functionRefs += 1
+        case _: SWANStatement =>
+      }
+      // basic block applications
+      symbolTable.foreachEntry((_,e) => e match {
+        case SymbolTableEntry.multiple(symbol, operators) =>
+          nonTrivialOperators.addAll(operators)
+        case SymbolTableEntry.operator(symbol, operator) =>
+        case SymbolTableEntry.argument(argument) =>
+      })
+      nonTrivialOperators.foreach {
+        case _: Operator.dynamicRef =>
+          nonTrivialDynamicRefs += 1
+        case _: Operator.builtinRef =>
+          nonTrivialFunctionRefs += 1
+        case _: Operator.functionRef =>
+          nonTrivialFunctionRefs += 1
+        case _: Operator =>
+      }
+    }
+    (dynamicRefs, nonTrivialDynamicRefs, functionRefs, nonTrivialFunctionRefs, trivialDynamicRefApplications, nonTrivialReceivers)
   }
 
   def calculateResolvedCallsites(cgs: CallGraphStats): (Int, Int, Int, Int) = {

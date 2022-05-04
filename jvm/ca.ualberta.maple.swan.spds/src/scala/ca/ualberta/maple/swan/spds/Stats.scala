@@ -57,6 +57,13 @@ object Stats {
     lazy val userFunctionRefs = userMethodStats._2
     lazy val userAllocations = userMethodStats._3
     lazy val userMethodCount = userMethodStats._4
+    lazy private val nonTrivialStats: (Int, Int, Int, Int, Int, Int) = CallGraphUtils.calculateNonTrivialFlowStats(cgs=this)
+    lazy val totalFunctionRefs = nonTrivialStats._3
+    lazy val nonTrivialFunctionRefs = nonTrivialStats._4
+    lazy val totalDynamicRefs = nonTrivialStats._1
+    lazy val nonTrivialDynamicRefs = nonTrivialStats._2
+    lazy val trivialDynamicRefApplications = nonTrivialStats._5
+    lazy val nonTrivialReceivers = nonTrivialStats._6
     var specificData: mutable.ArrayBuffer[SpecificCallGraphStats] = mutable.ArrayBuffer.empty
     val debugInfo = new SWIRLPrinterOptions.CallGraphDebugInfo()
     var finalModuleGroup: Object = cg.moduleGroup
@@ -81,6 +88,12 @@ object Stats {
       sb.append(indent + s"Allocations: $allocations\n")
       sb.append(indent + s"Function Refs: $functionRefs\n")
       sb.append(indent + s"Dynamic Refs: $dynamicRefs\n")
+      sb.append(indent + s"Total Function Refs: $totalFunctionRefs\n")
+      sb.append(indent + s"Non Trivial Function Refs: $nonTrivialFunctionRefs\n")
+      sb.append(indent + s"Total Dynamic Refs: $totalFunctionRefs\n")
+      sb.append(indent + s"Non Trivial Dynamic Refs: $nonTrivialDynamicRefs\n")
+      sb.append(indent + s"Trivial Dynamic Ref Applications: $trivialDynamicRefApplications\n")
+      sb.append(indent + s"Non Trivial Receivers for Trivial Applications: $nonTrivialReceivers\n")
       sb.append(indent + s"User Method Count: $userMethodCount\n")
       sb.append(indent + s"User Allocations: $userAllocations\n")
       sb.append(indent + s"User Function Refs: $userFunctionRefs\n")
@@ -116,6 +129,12 @@ object Stats {
       u("allocations") = allocations
       u("function_refs") = functionRefs
       u("dynamic_refs") = dynamicRefs
+      u("total_function_refs") = totalFunctionRefs
+      u("non_trivial_function_refs") = nonTrivialFunctionRefs
+      u("total_dynamic_refs") = totalDynamicRefs
+      u("non_trivial_dynamic_refs") = nonTrivialDynamicRefs
+      u("trivial_dynamic_ref_applications") = trivialDynamicRefApplications
+      u("non_trivial_receivers") = nonTrivialReceivers
       u("user_method_count") = userMethodCount
       u("user_allocations") = userAllocations
       u("user_function_refs") = userFunctionRefs
