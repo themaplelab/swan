@@ -302,7 +302,7 @@ class SILParser extends SILPrinter {
     batches.append(currBatch)
     toDemangle.foreach(m => {
       currBatch.append(m)
-      if (currBatch.length > 40) {
+      if (currBatch.length > 10) {
         currBatch = new ArrayBuffer[SILMangledName]()
         batches.append(currBatch)
       }
@@ -442,9 +442,11 @@ class SILParser extends SILPrinter {
 
       case "alloc_stack" => {
         val dynamicLifetime = skip("[dynamic_lifetime]")
+        val lexical = skip("[lexical]")
+        val moved = skip("[moved]")
         val tpe = parseType()
         val attributes = parseUntilNil( parseDebugAttribute )
-        SILInstruction.operator(SILOperator.allocStack(tpe, dynamicLifetime, attributes))
+        SILInstruction.operator(SILOperator.allocStack(tpe, dynamicLifetime, lexical, moved, attributes))
       }
       case "alloc_ref" => {
         var allocAttributes = new ArrayBuffer[SILAllocAttribute]
@@ -1879,6 +1881,7 @@ class SILParser extends SILPrinter {
     if(skip("name")) return Some(SILDebugAttribute.name(parseString()))
     if(skip("let")) return Some(SILDebugAttribute.let)
     if(skip("var")) return Some(SILDebugAttribute.variable)
+    if(skip("implicit")) return Some(SILDebugAttribute.variable)
     this.cursor = c
     None
   }

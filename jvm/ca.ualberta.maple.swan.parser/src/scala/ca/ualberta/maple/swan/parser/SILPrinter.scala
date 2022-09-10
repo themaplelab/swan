@@ -162,9 +162,11 @@ class SILPrinter extends Printer {
 
         // *** ALLOCATION AND DEALLOCATION ***
 
-      case SILOperator.allocStack(tpe, dynamicLifetime, attributes) => {
+      case SILOperator.allocStack(tpe, dynamicLifetime, lexical, moved, attributes) => {
         print("alloc_stack ")
         print("[dynamic_lifetime] ", when = dynamicLifetime)
+        print("[lexical] ", when = lexical)
+        print("[moved] ", when = moved)
         print(tpe)
         print(whenEmpty = false, ", ", attributes, ", ", "", (a: SILDebugAttribute) => print(a))
       }
@@ -1540,6 +1542,9 @@ class SILPrinter extends Printer {
       }
       case SILDebugAttribute.variable => {
         print("var")
+      }
+      case SILDebugAttribute._implicit => {
+        print("implicit")
       }
     }
   }

@@ -107,7 +107,7 @@ object SILInstructionDef {
 sealed trait SILOperator
 object SILOperator {
   /***** ALLOCATION AND DEALLOCATION *****/
-  case class allocStack(tpe: SILType, dynamicLifetime: Boolean, attributes: ArrayBuffer[SILDebugAttribute]) extends SILOperator
+  case class allocStack(tpe: SILType, dynamicLifetime: Boolean, lexical: Boolean, moved: Boolean, attributes: ArrayBuffer[SILDebugAttribute]) extends SILOperator
   case class allocRef(attributes: ArrayBuffer[SILAllocAttribute], tailElems: ArrayBuffer[(SILType, SILOperand)], tpe: SILType) extends SILOperator
   case class allocRefDynamic(objc: Boolean, tailElems: ArrayBuffer[(SILType, SILOperand)], operand: SILOperand, tpe: SILType) extends SILOperator
   case class allocBox(tpe: SILType, attributes: ArrayBuffer[SILDebugAttribute]) extends SILOperator
@@ -449,6 +449,7 @@ object SILDebugAttribute {
   case class name(name: String) extends SILDebugAttribute
   case object let extends SILDebugAttribute
   case object variable extends SILDebugAttribute
+  case object _implicit extends SILDebugAttribute
 }
 
 sealed trait SILAccessorKind

@@ -659,6 +659,7 @@ class SWIRLGen {
         }
         case SILDebugAttribute.let =>
         case SILDebugAttribute.variable =>
+        case SILDebugAttribute._implicit =>
       }
     }
     NOP
@@ -679,6 +680,7 @@ class SWIRLGen {
       }
       case SILDebugAttribute.let =>
       case SILDebugAttribute.variable =>
+      case SILDebugAttribute._implicit =>
     }
     NOP
   }

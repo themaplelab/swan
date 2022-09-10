@@ -68,7 +68,7 @@ sudo cp /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoo
 
 Run `build.sh` in the repo root. You can also run the nested `build.sh` scripts **from root** to build separate toolchain components.
 
-All toolchain components should now be available in `lib/`. If you want to make sure everything works, you can run run `./gradlew build` in `jvm/` and `./test.bash` in `tests/`.
+All toolchain components should now be available in `lib/`. If you want to make sure everything works, you can run `./gradlew build` in `jvm/` and `./test.bash` in `tests/`.
 
 ------
 
