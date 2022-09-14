@@ -79,6 +79,8 @@ SWAN's toolchain uses a three-step process:
 2. Analyze the SIL in the directory
 3. Process analysis results
 
+![SWAN Pipeline](https://github.com/themaplelab/swan/blob/spds/doc/readme/pipeline.png)
+
 ### 1. Dump SIL using either `swan-swiftc` or `swan-xcodebuild`
 
 You can dump SIL for Xcode projects with `swan-xcodebuild`. Give it the same arguments you give `xcodebuild`, but put them after `--` (`swan-xcodebuild` specific arguments go before `--`). If you specify a single architecture with `-arch`, the build time will be faster and `swan-xcodebuild` will have less output to parse.
