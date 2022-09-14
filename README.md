@@ -20,24 +20,25 @@ SWAN is a static program analysis framework that enables deep dataflow analysis 
 
 We aim to provide developers and researchers with an easy-to-use and well-documented platform for analyzing Swift applications.
 
-:construction: **SWAN is very much WIP.**
+:construction: **SWAN is very much WIP. It is an academic project created by the Maple Lab at the University of Alberta. Please feel free to file an issue if you have any questions or problems.**
 
 ### Features
 
 - Wrappers for `xcodebuild` and `swiftc` that build and dump SIL
-- SIL parser (99% coverage, up to 100k lines/second)
+- SIL parser (estimated 99% coverage, up to 100k lines/second)
 - Well documented intermediate representation (IR), called *SWIRL*
 - Ability to write models for black-box functions with SWIRL
 - Partial language and Swift Standard Library models
 - Modular IR translation pipeline (for integration with other engines)
 - Development tool for viewing Swift, SIL, and SWIRL side-by-side
-- Optimizations: multi-threaded module processing, caching, selective parsing
-- Cross-module analysis support
-- [Synchronized Pushdown Systems (SPDS)](https://github.com/CodeShield-Security/SPDS) integration
-- Call graph construction that handles dynamic dispatch and function pointers + RTA, CHA, VTA
-- Configurable taint analysis
-- Configurable typestate analysis
+- Optimizations: multi-threaded module processing (also working on caching and selective parsing)
+- Cross-module analysis support (i.e. library analysis)
+- [Synchronized Pushdown Systems (SPDS)](https://github.com/CodeShield-Security/SPDS) integration for quick pointer analysis queries
+- A suite of call graph construction algorithms that handle dynamic dispatch and function pointers (we adapted adapted CHA, VTA, and our own algorithm called UCG)
+- Configurable taint analysis using JSON configuration files
+- Configurable typestate analysis using JSON configuration files or programmable typestate analysis for more robust analyses
 - Analysis for *Visits Location Service* and *Standard Location Service* for finding energy inefficient configuration
+- Analysis for finding crypto API misuses in apps using the CryptoSwift library
 - Annotation checker for regression testing
 
 ### Relevant Wiki pages
@@ -52,7 +53,7 @@ We aim to provide developers and researchers with an easy-to-use and well-docume
 
 For now, you will need to build the framework to use SWAN.
 
-We have tested SWAN on macOS Big Sur with Xcode 12.5 and Ubuntu 20.04 with Swift 5.4. You need Xcode Command Line Tools installed for macOS, or the latest Swift release for Linux (see [this](https://linuxconfig.org/how-to-install-swift-on-ubuntu-20-04)). Anything involving Xcode will not work on Linux, but you should be able to build Swift Package Manager projects. You also need Java 8.
+We have tested SWAN on macOS Big Sur with Xcode 13 and Ubuntu 20.04 with Swift 5.4. You need Xcode Command Line Tools installed for macOS, or the latest Swift release for Linux (see [this](https://linuxconfig.org/how-to-install-swift-on-ubuntu-20-04)). Anything involving Xcode will not work on Linux, but you should be able to build Swift Package Manager projects. You also need Java 8.
 
 ```
 git clone https://github.com/themaplelab/swan.git -b spds

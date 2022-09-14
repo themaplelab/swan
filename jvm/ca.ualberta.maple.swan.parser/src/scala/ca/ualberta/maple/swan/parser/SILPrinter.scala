@@ -264,8 +264,10 @@ class SILPrinter extends Printer {
 
         // *** DEBUG INFORMATION ***
 
-      case SILOperator.debugValue(operand, attributes) => {
+      case SILOperator.debugValue(poison, moved, operand, attributes) => {
         print("debug_value ")
+        print("[poison] ", when = poison)
+        print("[moved] ", when = moved)
         print(operand)
         print(whenEmpty = false, ", ", attributes, ", ", "", (a: SILDebugAttribute) => print(a))
       }

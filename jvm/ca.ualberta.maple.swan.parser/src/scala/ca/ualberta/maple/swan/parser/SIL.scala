@@ -124,7 +124,7 @@ object SILOperator {
   // NSIP: project_value_buffer
 
   /***** DEBUG INFORMATION *****/
-  case class debugValue(operand: SILOperand, attributes: ArrayBuffer[SILDebugAttribute]) extends SILOperator
+  case class debugValue(poison: Boolean, moved: Boolean, operand: SILOperand, attributes: ArrayBuffer[SILDebugAttribute]) extends SILOperator
   case class debugValueAddr(operand: SILOperand, attributes: ArrayBuffer[SILDebugAttribute]) extends SILOperator
 
   /***** ACCESSING MEMORY *****/

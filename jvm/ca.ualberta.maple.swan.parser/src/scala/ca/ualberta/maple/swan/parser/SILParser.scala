@@ -433,6 +433,15 @@ class SILParser extends SILPrinter {
   }
 
   @throws[Error]
+  def missing(instr: String): Error = {
+    parseError(s"SWAN doesn't have parsing support for the $instr instruction.\n" +
+      "Please file an issue at https://github.com/themaplelab/swan/issues/new\n" +
+      "with this message and your project's code/SIL (if possible).\n" +
+      "SWAN doesn't support SIL instructions that its authors have never or rarely encountered\n" +
+      "or, for instance, new SIL instructions that have been recently added.")
+  }
+
+  @throws[Error]
   def parseInstructionBody(instructionName: String): SILInstruction = {
     // NSIP: Not seen in practice
     // Case instruction ordering based on apple/swift tag swift-5.2-RELEASE SIL.rst
@@ -487,6 +496,7 @@ class SILParser extends SILPrinter {
         val attributes = parseUntilNil( parseDebugAttribute )
         SILInstruction.operator(SILOperator.allocBox(tpe, attributes))
       }
+      // Not in SIL.rst
       case "alloc_value_buffer" => {
         val tpe = parseType()
         take("in")
@@ -496,6 +506,18 @@ class SILParser extends SILPrinter {
       case "alloc_global" => {
         val name = parseMangledName()
         SILInstruction.operator(SILOperator.allocGlobal(name))
+      }
+      case "get_async_continuation" => {
+        throw missing("get_async_continuation")
+      }
+      case "get_async_continuation_addr" => {
+        throw missing("get_async_continuation_addr")
+      }
+      case "hop_to_executor" => {
+        throw missing("hop_to_executor")
+      }
+      case "extract_executor" => {
+        throw missing("extract_executor")
       }
       case "dealloc_stack" => {
         val operand = parseOperand()
@@ -512,6 +534,9 @@ class SILParser extends SILPrinter {
         val fieldIndex = parseInt()
         SILInstruction.operator(SILOperator.projectBox(operand, fieldIndex))
       }
+      case "dealloc_stack_ref" => {
+        throw missing("dealloc_stack_ref")
+      }
       case "dealloc_ref" => {
         val stack: Boolean = skip("[stack]")
         val operand: SILOperand = parseOperand()
@@ -523,28 +548,38 @@ class SILParser extends SILPrinter {
         val operand2 = parseOperand()
         SILInstruction.operator(SILOperator.deallocPartialRef(operand1, operand2))
       }
+      // Not in SIL.rst
       case "dealloc_value_buffer" => {
         val tpe = parseType()
         take("in")
         val operand = parseOperand()
         SILInstruction.operator(SILOperator.deallocValueBuffer(tpe, operand))
       }
+      // Not in SIL.rst, NSIP
       case "project_value_buffer" => {
-        // Tricky, NSIP
-        throw parseError("unhandled instruction")
+        throw missing("project_value_buffer")
       }
 
-        // *** DEBUG INFORMATION ***
+      // *** DEBUG INFORMATION ***
 
       case "debug_value" => {
+        val poison = skip("[poison]")
+        val moved = skip("[moved]")
         val operand = parseOperand()
         val attributes = parseUntilNil(parseDebugAttribute)
-        SILInstruction.operator(SILOperator.debugValue(operand, attributes))
+        SILInstruction.operator(SILOperator.debugValue(poison, moved, operand, attributes))
       }
+      // Not in SIL.rst
       case "debug_value_addr" => {
         val operand = parseOperand()
         val attributes = parseUntilNil(parseDebugAttribute)
         SILInstruction.operator(SILOperator.debugValueAddr(operand, attributes))
+      }
+
+        // *** PROFILING ***
+
+      case "increment_profiler_counter" => {
+        throw missing("increment_profiler_counter")
       }
 
         // *** ACCESSING MEMORY ***
@@ -607,6 +642,9 @@ class SILParser extends SILPrinter {
         val operand = parseOperand()
         SILInstruction.operator(SILOperator.copyAddr(take, value, initialization, operand))
       }
+      case "explicit_copy_addr" => {
+        throw missing("explicit_copy_addr")
+      }
       case "destroy_addr" => {
         val operand = parseOperand()
         SILInstruction.operator(SILOperator.destroyAddr(operand))
@@ -617,8 +655,8 @@ class SILParser extends SILPrinter {
         val index = parseOperand()
         SILInstruction.operator(SILOperator.indexAddr(addr, index))
       }
-      case "tail_addr" => {
-        throw parseError("unhandled instruction") // NSIP
+      case "tail_addr" => { // NSIP
+        throw missing("tail_addr")
       }
       case "index_raw_pointer" => {
         val pointer = parseOperand()
@@ -633,6 +671,9 @@ class SILParser extends SILPrinter {
         take("to")
         val toType = parseType()
         SILInstruction.operator(SILOperator.bindMemory(operand1, operand2, toType))
+      }
+      case "rebind_memory" => {
+        throw missing("rebind_memory")
       }
       case "begin_access" => {
         take("[")
@@ -756,7 +797,7 @@ class SILParser extends SILPrinter {
         SILInstruction.operator(SILOperator.endCowMutation(operand, keepUnique))
       }
       case "is_escaping_closure" => {
-        val objc = skip("[objc]")
+        val objc = skip("[objc]") // SIL.rst does not have the [objc] part
         val operand = parseOperand()
         SILInstruction.operator(SILOperator.isEscapingClosure(operand, objc))
       }
@@ -770,8 +811,6 @@ class SILParser extends SILPrinter {
         val operand2 = parseOperand()
         SILInstruction.operator(SILOperator.copyBlockWithoutEscaping(operand1, operand2))
       }
-      // builtin "unsafeGuaranteed" not sure what to do about this one
-      // builtin "unsafeGuaranteedEnd" not sure what to do about this one
 
         // *** LITERALS ***
 
@@ -799,8 +838,8 @@ class SILParser extends SILPrinter {
         val tpe = parseType()
         SILInstruction.operator(SILOperator.globalAddr(name, tpe))
       }
-      case "global_value" => {
-        throw parseError("unhandled instruction") // NSIP
+      case "global_value" => { // NSIP
+        throw missing("global_value")
       }
       case "integer_literal" => {
         val tpe = parseType()
@@ -819,6 +858,9 @@ class SILParser extends SILPrinter {
         val encoding = parseEncoding()
         val value = parseString()
         SILInstruction.operator(SILOperator.stringLiteral(encoding, value))
+      }
+      case "base_addr_to_offset" => {
+        throw missing("base_addr_to_offset")
       }
 
         // *** DYNAMIC DISPATCH ***
@@ -991,10 +1033,15 @@ class SILParser extends SILPrinter {
         val operand = parseOperand()
         SILInstruction.operator(SILOperator.copyValue(operand))
       }
+      case "explicit_copy_value" => {
+        throw missing("explicit_copy_value instruction")
+      }
+      case "move_value" => {
+        throw missing("move_value")
+      }
       case "strong_copy_unmanaged_value" => {
         val operand = parseOperand()
         SILInstruction.operator(SILOperator.strongCopyUnmanagedValue(operand))
-
       }
       case "release_value" => {
         val operand = parseOperand()
@@ -1016,6 +1063,7 @@ class SILParser extends SILPrinter {
         val operand = parseOperand()
         SILInstruction.operator(SILOperator.autoreleaseValue(operand))
       }
+      // Not in SIL.rst
       case "unmanaged_autorelease_value" => {
         val operand = parseOperand()
         SILInstruction.operator(SILOperator.unmanagedAutoreleaseValue(operand))
@@ -1162,14 +1210,14 @@ class SILParser extends SILPrinter {
         SILInstruction.operator(SILOperator.initExistentialAddr(operand, tpe))
       }
       case "init_existential_value" => {
-        throw parseError("unhandled instruction") // NSIP
+        throw missing("init_existential_value")
       }
       case "deinit_existential_addr" => {
         val operand = parseOperand()
         SILInstruction.operator(SILOperator.deinitExistentialAddr(operand))
       }
       case "deinit_existential_value" => {
-        throw parseError("unhandled instruction") // NSIP
+        throw missing("deinit_existential_value")
       }
       case "open_existential_addr" => {
         val access = parseAllowedAccess()
@@ -1179,7 +1227,7 @@ class SILParser extends SILPrinter {
         SILInstruction.operator(SILOperator.openExistentialAddr(access, operand, tpe))
       }
       case "open_existential_value" => {
-        throw parseError("unhandled instruction") // NSIP
+        throw missing("open_existential_value")
       }
       case "init_existential_ref" => {
         val operand = parseOperand()
@@ -1226,7 +1274,7 @@ class SILParser extends SILPrinter {
         SILInstruction.operator(SILOperator.openExistentialBox(operand, tpe))
       }
       case "open_existential_box_value" => {
-        throw parseError("unhandled instruction") // NSIP
+        throw missing("open_existential_box_value")
       }
       case "dealloc_existential_box" => {
         val operand = parseOperand()
@@ -1314,6 +1362,9 @@ class SILParser extends SILPrinter {
         val tpe = parseType()
         SILInstruction.operator(SILOperator.uncheckedBitwiseCast(operand, tpe))
       }
+      case "unchecked_value_cast" => {
+        throw missing("unchecked_value_cast")
+      }
       case "unchecked_ownership_conversion" => {
         val operand = parseOperand()
         take(",")
@@ -1375,11 +1426,11 @@ class SILParser extends SILPrinter {
       }
       case "thin_function_to_pointer" => {
         // NSIP, no documentation
-        throw parseError("unhandled instruction")
+        throw missing("this_function_to_pointer")
       }
       case "pointer_to_thin_function" => {
         // NSIP, no documentation
-        throw parseError("unhandled instruction")
+        throw missing("pointer_to_thin_function")
       }
       case "classify_bridge_object" => {
         val operand = parseOperand()
@@ -1458,8 +1509,8 @@ class SILParser extends SILPrinter {
         val toOperand = parseOperand()
         SILInstruction.operator(SILOperator.unconditionalCheckedCastAddr(fromTpe, fromOperand, toTpe, toOperand))
       }
-      case "unconditional_checked_cast_value" => {
-        throw parseError("unhandled instruction") // NSIP
+      case "unconditional_checked_cast_value" => { // NSIP
+        throw missing("unconditional_checked_cast_value")
       }
 
         // *** OTHER (e.g., undocumented) ***
@@ -1597,8 +1648,8 @@ class SILParser extends SILPrinter {
         val failureLabel = parseIdentifier()
         SILInstruction.terminator(SILTerminator.checkedCastBr(exact, operand, tpe, naked, succeedLabel, failureLabel))
       }
-      case "checked_cast_value_br" => {
-        throw parseError("unhandled instruction") // NSIP
+      case "checked_cast_value_br" => { // NSIP
+        throw missing("checked_cast_value_br")
       }
       case "checked_cast_addr_br" => {
         // For some reason fromTpe nor toTpe have a "$" prefix.
@@ -1632,13 +1683,55 @@ class SILParser extends SILPrinter {
         val error = parseIdentifier()
         SILInstruction.terminator(SILTerminator.tryApply(value, substitutions, arguments, tpe, normal, error))
       }
+      case "await_async_continuation" => {
+        throw missing("await_async_continuation")
+      }
+
+        // *** DIFFERENTIABLE PROGRAMMING ***
+
+      // These instructions are new and we have never seen them in practice.
+
+      case "differentiable_function" => {
+        throw missing("differentiable_function")
+      }
+      case "linear_function" => {
+        throw missing("linear_function")
+      }
+      case "differentiable_function_extract" => {
+        throw missing("differentiable_function_extract")
+      }
+      case "linear_function_extract" => {
+        throw missing("linear_function_extract")
+      }
+      case "differentiability_witness_function" => {
+        throw missing("differentiability_witness_function")
+      }
+
+        // *** OPTIMIZER DATAFLOW MARKERS ***
+
+      // These instructions are new and we have never seen them in practice.
+
+      case "mark_must_check" => {
+        throw missing("mark_must_check")
+      }
+
+       // *** NO IMPLICIT COPY AND NO ESCAPE VALUE ***
+
+      // These instructions are new and we have never seen them in practice.
+
+      case "copyable_to_moveonlywrapper" => {
+        throw missing("copyable_to_moveonlywrapper")
+      }
+      case "moveonlywrapper_to_copyable" => {
+        throw missing("moveonlywrapper_to_copyable")
+      }
 
         // *** DEFAULT FALLBACK ***
 
       case _ : String => {
-        //val _ = skip(_ != "\n")
-        //Instruction.operator(Operator.unknown(instructionName))
-        throw parseError("unknown instruction")
+        throw parseError(s"Unhandled instruction.\n" +
+          "Please file an issue at https://github.com/themaplelab/swan/issues/new\n" +
+          "with this message and your project's code/SIL (if possible).")
       }
     }
   }
