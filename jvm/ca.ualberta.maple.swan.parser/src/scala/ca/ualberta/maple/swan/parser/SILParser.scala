@@ -302,7 +302,8 @@ class SILParser extends SILPrinter {
     batches.append(currBatch)
     toDemangle.foreach(m => {
       currBatch.append(m)
-      if (currBatch.length > 10) {
+      // TODO: Find optimal batch size
+      if (currBatch.length > 100) {
         currBatch = new ArrayBuffer[SILMangledName]()
         batches.append(currBatch)
       }
@@ -312,8 +313,10 @@ class SILParser extends SILPrinter {
       batch.foreach(m => {
         strings.append("\'" + m.mangled + "\'")
       })
-      val demangled = (swiftDemangleCommand + strings.mkString(" ")).!!.split(System.lineSeparator())
-      batch.view.zipWithIndex.foreach(m => m._1.demangled = demangled(m._2))
+      if (strings.nonEmpty) {
+        val demangled = (swiftDemangleCommand + strings.mkString(" ")).!!.split(System.lineSeparator())
+        batch.view.zipWithIndex.foreach(m => m._1.demangled = demangled(m._2))
+      }
     })
   }
 
