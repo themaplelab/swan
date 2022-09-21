@@ -266,9 +266,9 @@ class CryptoAnalysis(val cg: SWANCallGraph, val debugDir: File, val analyzeLibra
 
   /**
    * Given a function config, return any call sites matching it.
-   * @param config An array containing the config. This is a tuple (A, B) where A is and Int
+   * @param config An array containing the config. This is a tuple (A, B) where A is an Int
    *               representing the which argument of the function we are interested in,
-   *               and B is the full name of the function.
+   *               and B is a String representing the full name of the function.
    * @return Call sites matching the config.
    */
   private def getCallSitesUsingConfig(config: Array[(Int, String)]): mutable.ArrayBuffer[CallSiteSelector] = {
