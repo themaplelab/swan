@@ -48,6 +48,9 @@ class CryptoAnalysis(val cg: SWANCallGraph, val debugDir: File, val analyzeLibra
 
   private val debug = false
 
+  private val validFields = Array("_value", "data")
+
+  // Stores a call site and the argument index of interest
   class CallSiteSelector(val apply: SWANStatement.ApplyFunctionRef, val argIdx: Int) {
     def getBackwardQuery: BackwardQuery = {
       val edge = new ControlFlowGraph.Edge(apply.m.getCFG.getPredsOf(apply).iterator().next(), apply)
@@ -57,6 +60,7 @@ class CryptoAnalysis(val cg: SWANCallGraph, val debugDir: File, val analyzeLibra
     }
   }
 
+  // Evaluate all rules
   def evaluate(): CryptoAnalysis.Results = {
     System.out.println("=== Evaluating CryptoAnalysis: All Rules")
     val results = new CryptoAnalysis.Results()
@@ -77,8 +81,7 @@ class CryptoAnalysis(val cg: SWANCallGraph, val debugDir: File, val analyzeLibra
     if (!analyzeLibraries) potentialCallSites.filterInPlace(p => !p.apply.m.delegate.isLibrary)
     potentialCallSites.foreach(callSite => {
       if (debug) System.out.println(s"POTENTIAL CALL SITE: ${callSite.apply} (arg ${callSite.argIdx})")
-      val query = callSite.getBackwardQuery
-      if (comesFrom(callSite, query,
+      if (comesFrom(callSite,
         Array(("CryptoSwift.ECB.init() -> CryptoSwift.ECB", false)))) {
         reportViolation(CryptoAnalysis.ResultType.RULE_1, resultCollector, callSite.apply, "Using ECB Block Mode")
       }
@@ -93,8 +96,8 @@ class CryptoAnalysis(val cg: SWANCallGraph, val debugDir: File, val analyzeLibra
     if (!analyzeLibraries) potentialCallSites.filterInPlace(p => !p.apply.m.delegate.isLibrary)
     potentialCallSites.foreach(callSite => {
       if (debug) System.out.println(s"POTENTIAL CALL SITE: ${callSite.apply} (arg ${callSite.argIdx})")
-      val query = callSite.getBackwardQuery
-      if (!comesFrom(callSite, query,
+      // Do not report a violation if the value comes from a random function.
+      if (!comesFrom(callSite,
         Array(("static (extension in CryptoSwift):CryptoSwift.Cryptors.randomIV(Swift.Int) -> [Swift.UInt8]", false)))) {
         reportViolation(CryptoAnalysis.ResultType.RULE_2, resultCollector, callSite.apply,
           "Non-Random IV - Use randomIV()")
@@ -261,6 +264,13 @@ class CryptoAnalysis(val cg: SWANCallGraph, val debugDir: File, val analyzeLibra
     getCallSitesUsingConfig(initializersWithKeys)
   }
 
+  /**
+   * Given a function config, return any call sites matching it.
+   * @param config An array containing the config. This is a tuple (A, B) where A is and Int
+   *               representing the which argument of the function we are interested in,
+   *               and B is the full name of the function.
+   * @return Call sites matching the config.
+   */
   private def getCallSitesUsingConfig(config: Array[(Int, String)]): mutable.ArrayBuffer[CallSiteSelector] = {
     val callSites = mutable.ArrayBuffer.empty[CallSiteSelector]
     config.foreach(init => {
@@ -275,6 +285,12 @@ class CryptoAnalysis(val cg: SWANCallGraph, val debugDir: File, val analyzeLibra
     callSites
   }
 
+  /**
+   * Determine if the allocation sites of a query are constant.
+   * This includes checking the validFields of the allocation sites
+   * in case they are pointers or enums because SIL uses those for
+   * literals.
+   */
   private def isConstant(query: BackwardQuery): (Boolean, mutable.HashSet[Literal]) = {
     if (debug) System.out.println("IS_CONSTANT: " + query)
     val results = doBackwardQuery(query)
@@ -298,10 +314,34 @@ class CryptoAnalysis(val cg: SWANCallGraph, val debugDir: File, val analyzeLibra
     (foundConstant, constantValues)
   }
 
-  private def comesFrom(callSiteSelector: CallSiteSelector, query: BackwardQuery, from: Array[(String, Boolean)]): Boolean = {
+  /***
+   * This function checks if a call site argument comes from a particular set of functions
+   * @param callSiteSelector The call site from which we are querying
+   * @param from The functions from which we are checking if callSiteSelector comes from.
+   *             It is an array of a tuple (A, B), where A is the function name and B is
+   *             whether A is a regex.
+   */
+  private def comesFrom(callSiteSelector: CallSiteSelector, from: Array[(String, Boolean)]): Boolean = {
+    val query = callSiteSelector.getBackwardQuery
     if (debug) System.out.println("COME_FROM: " + query)
-    val validFields = Array("_value", "data")
+
+    // The class field "validFields" are fields of builtin types that can
+    // propagate data implicitly. In this analysis, we consider a pointer
+    // containing a value X (at field  _value) and the value X itself to
+    // be the same. Sometimes a function will take the raw value (X), and
+    // sometimes it will take the pointer.
+    // We basically want to bridge the dataflow so that these we have continuous
+    // dataflow for something like this:
+    //     x = X()
+    //     *y = x
+    //     sink(y) // detect that y itself (not the underlying value) comes from x
+    // The same goes for enums, which use the "data" field for storing a value.
+
+    // Have we found that the query comes from any of the functions in "from"?
     var found = false
+    // For each from method, do a forward query from any return values from
+    // that method. Then, see if that value reaches the callSiteSelector.
+    //
     from.foreach(s => {
       val methods = if (s._2) cg.methods.filter(p => Pattern.matches(s._1, p._1)) else cg.methods.filter(p => p._1.equals(s._1))
       methods.foreach(m => {
@@ -311,20 +351,29 @@ class CryptoAnalysis(val cg: SWANCallGraph, val debugDir: File, val analyzeLibra
           val forwardQuery = new ForwardQuery(cfgEdge, new AllocVal(apply.getLeftOp, apply, apply.getLeftOp))
           val results = doForwardQuery(forwardQuery)
           results.asStatementValWeightTable().cellSet().forEach(cell => {
+            // Check if we reach the callSiteSelector
             cell.getRowKey.getStart match {
               case apply: SWANStatement.ApplyFunctionRef => {
                 if (apply.equals(query.cfgEdge().getTarget) && apply.getInvokeExpr.getArg(callSiteSelector.argIdx).equals(cell.getColumnKey)) {
                   found = true
                 }
               }
+              // If we come across a field write, see if that field write is one of our validFields,
+              // and create a new query from the value being written to if it is.
+              // Note that we only go one level deep because we use this only for when the sink
+              // (or callSiteSelector) takes in a pointer or enum instead of the value itself.
+              // This could also be extended to be as many levels deep as necessary to propagate
+              // taintedness, for instance.
               case fieldWrite: SWANStatement.FieldWrite => {
                 if (fieldWrite.uses(cell.getColumnKey) && validFields.contains(fieldWrite.getWrittenField.asInstanceOf[SWANField].name)) {
                   val v = fieldWrite.getFieldStore.getX
+                  // Create new query for the field write object
                   val forwardQuery = new ForwardQuery(cell.getRowKey, new AllocVal(v, fieldWrite, v))
                   val results = doForwardQuery(forwardQuery)
                   results.asStatementValWeightTable().cellSet().forEach(cell => {
                     cell.getRowKey.getStart match {
                       case apply: SWANStatement.ApplyFunctionRef => {
+                        // Check if we reach the callSiteSelector via this field write
                         if (apply.equals(query.cfgEdge().getTarget) && apply.getInvokeExpr.getArg(callSiteSelector.argIdx).equals(cell.getColumnKey)) {
                           if (debug) System.out.println("FOUND WITH FIELD WRITE: " + fieldWrite)
                           found = true
@@ -344,9 +393,11 @@ class CryptoAnalysis(val cg: SWANCallGraph, val debugDir: File, val analyzeLibra
     found
   }
 
+  /**
+   * Check the query results to see if there is a constant value, including in the validFields.
+   */
   private def findUnderlyingValuesOfField(initialResults: BackwardBoomerangResults[Weight.NoWeight],
                                   forwardQuery: ForwardQuery, resultCollector: mutable.ArrayBuffer[BackwardBoomerangResults[Weight.NoWeight]]): Unit = {
-    val validFields = Array("_value", "data")
     initialResults.asStatementValWeightTable(forwardQuery).cellSet().forEach(cell => {
       val startStmt = cell.getRowKey.getStart
       if (startStmt.isFieldStore && startStmt.uses(cell.getColumnKey) && validFields.contains(startStmt.getWrittenField.asInstanceOf[SWANField].name)) {
