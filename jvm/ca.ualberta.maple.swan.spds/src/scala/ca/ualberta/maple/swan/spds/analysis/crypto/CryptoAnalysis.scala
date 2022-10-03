@@ -341,7 +341,6 @@ class CryptoAnalysis(val cg: SWANCallGraph, val debugDir: File, val analyzeLibra
     var found = false
     // For each from method, do a forward query from any return values from
     // that method. Then, see if that value reaches the callSiteSelector.
-    //
     from.foreach(s => {
       val methods = if (s._2) cg.methods.filter(p => Pattern.matches(s._1, p._1)) else cg.methods.filter(p => p._1.equals(s._1))
       methods.foreach(m => {

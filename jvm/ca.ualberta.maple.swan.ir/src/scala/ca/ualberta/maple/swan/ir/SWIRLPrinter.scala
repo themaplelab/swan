@@ -182,7 +182,11 @@ class SWIRLPrinter extends Printer {
     if (options.genLocationMap) {
       function.symbolTable.foreach(entry => {
         entry._2 match {
-          case SymbolTableEntry.operator(symbol, operator) => locMap.put(symbol, locMap(operator))
+          case SymbolTableEntry.operator(symbol, operator) => {
+            if (locMap.contains(operator)) {
+              locMap.put(symbol, locMap(operator))
+            }
+          }
           case _ =>
         }
       })
