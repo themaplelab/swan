@@ -931,7 +931,7 @@ class SWIRLGen {
 
   @throws[UnexpectedSILFormatException]
   def visitStringLiteral(r: Option[SILResult], I: SILOperator.stringLiteral, ctx: Context): ArrayBuffer[RawInstructionDef] = {
-    val result = getSingleResult(r, Utils.SILTypeToType(SILType.namedType("$Builtin.RawPointer")), ctx)
+    val result = getSingleResult(r, Utils.SILTypeToType(SILType.namedType("Builtin.RawPointer")), ctx)
     makeOperator(ctx, Operator.literal(result, Literal.string(I.value)))
   }
 
