@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 
+# This tests Rule 7 - Constant Passwords
+
 source ../../tester.bash
-TAINT_SPEC=DEFAULT
-DRIVER_OPTIONS="--cg-algo ucg"
+IS_CRYPTO=1
 test_directory

@@ -50,21 +50,9 @@ object Driver {
   val cryptoAnalysisResultsFileName = "crypto-results.json"
 
   private val callGraphOptions = immutable.HashMap(
-    ("cha", CallGraphBuilder.CallGraphStyle.CHA),
-    ("cha_sm", CallGraphBuilder.CallGraphStyle.CHA_SIGMATCHING),
-    ("orta", CallGraphBuilder.CallGraphStyle.ORTA),
-    ("orta_sm", CallGraphBuilder.CallGraphStyle.ORTA_SIGMATCHING),
-    ("prta", CallGraphBuilder.CallGraphStyle.PRTA),
-    ("prta_sm", CallGraphBuilder.CallGraphStyle.PRTA_SIGMATCHING),
-    ("spds", CallGraphBuilder.CallGraphStyle.SPDS),
-    ("spds_wpf", CallGraphBuilder.CallGraphStyle.SPDS_WP_FILTER),
-    ("spds_queryf", CallGraphBuilder.CallGraphStyle.SPDS_QUERY_FILTER),
-    ("vta", CallGraphBuilder.CallGraphStyle.VTA),
-    ("ucg", CallGraphBuilder.CallGraphStyle.UCG),
-    ("ucg_vta", CallGraphBuilder.CallGraphStyle.UCG_VTA),
-    ("ucg_vta_spds", CallGraphBuilder.CallGraphStyle.UCG_VTA_SPDS),
-    ("ucg_spds", CallGraphBuilder.CallGraphStyle.UCG_SPDS),
-    ("ucg_spds_dynamic", CallGraphBuilder.CallGraphStyle.UCG_SPDS_DYNAMIC))
+    ("chafp", CallGraphBuilder.CallGraphStyle.CHA_FP),
+    ("vtafp", CallGraphBuilder.CallGraphStyle.VTA_FP),
+    ("ucg", CallGraphBuilder.CallGraphStyle.UCG))
 
   /* Because this driver can be invoked programmatically, most picocli options
    * (@Option) should have a matching field in Driver.Options.
@@ -124,7 +112,7 @@ object Driver {
         }
       })
       if (this.callGraphAlgorithms.isEmpty) {
-        val style = CallGraphBuilder.CallGraphStyle.UCG
+        val style = CallGraphBuilder.CallGraphStyle.VTA_FP
         this.callGraphAlgorithms.append(style)
       }
       this
@@ -546,21 +534,24 @@ class Driver extends Runnable {
 
   private def cgAlgoPrefix(cgAlgo: Style) = {
     cgAlgo match {
-      case CallGraphBuilder.CallGraphStyle.CHA => "CHA"
-      case CallGraphBuilder.CallGraphStyle.CHA_SIGMATCHING => "CHA_SIG"
-      case CallGraphBuilder.CallGraphStyle.ORTA => "ORTA"
-      case CallGraphBuilder.CallGraphStyle.ORTA_SIGMATCHING => "ORTA_SIG"
-      case CallGraphBuilder.CallGraphStyle.PRTA => "PRTA"
-      case CallGraphBuilder.CallGraphStyle.PRTA_SIGMATCHING => "PRTA_SIG"
-      case CallGraphBuilder.CallGraphStyle.SPDS => "SPDS"
-      case CallGraphBuilder.CallGraphStyle.SPDS_WP_FILTER => "SPDS_WPF"
-      case CallGraphBuilder.CallGraphStyle.SPDS_QUERY_FILTER => "SPDS_QUERYF"
-      case CallGraphBuilder.CallGraphStyle.VTA => "VTA"
+      case CallGraphBuilder.CallGraphStyle.CHA_FP => "CHA_FP"
+      case CallGraphBuilder.CallGraphStyle.VTA_FP => "VTA_FP"
       case CallGraphBuilder.CallGraphStyle.UCG => "UCG"
-      case CallGraphBuilder.CallGraphStyle.UCG_VTA => "UCG_VTA"
-      case CallGraphBuilder.CallGraphStyle.UCG_SPDS => "UCG_SPDS"
-      case CallGraphBuilder.CallGraphStyle.UCG_SPDS_DYNAMIC => "UCG_SPDS_DYNAMIC"
-      case CallGraphBuilder.CallGraphStyle.UCG_VTA_SPDS => "UCG_VTA_SPDS"
+//      case CallGraphBuilder.CallGraphStyle.CHA => "CHA"
+//      case CallGraphBuilder.CallGraphStyle.CHA_SIGMATCHING => "CHA_SIG"
+//      case CallGraphBuilder.CallGraphStyle.ORTA => "ORTA"
+//      case CallGraphBuilder.CallGraphStyle.ORTA_SIGMATCHING => "ORTA_SIG"
+//      case CallGraphBuilder.CallGraphStyle.PRTA => "PRTA"
+//      case CallGraphBuilder.CallGraphStyle.PRTA_SIGMATCHING => "PRTA_SIG"
+//      case CallGraphBuilder.CallGraphStyle.SPDS => "SPDS"
+//      case CallGraphBuilder.CallGraphStyle.SPDS_WP_FILTER => "SPDS_WPF"
+//      case CallGraphBuilder.CallGraphStyle.SPDS_QUERY_FILTER => "SPDS_QUERYF"
+//      case CallGraphBuilder.CallGraphStyle.VTA => "VTA"
+//      case CallGraphBuilder.CallGraphStyle.UCG => "UCG"
+//      case CallGraphBuilder.CallGraphStyle.UCG_VTA => "UCG_VTA"
+//      case CallGraphBuilder.CallGraphStyle.UCG_SPDS => "UCG_SPDS"
+//      case CallGraphBuilder.CallGraphStyle.UCG_SPDS_DYNAMIC => "UCG_SPDS_DYNAMIC"
+//      case CallGraphBuilder.CallGraphStyle.UCG_VTA_SPDS => "UCG_VTA_SPDS"
     }
   }
 

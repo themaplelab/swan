@@ -897,11 +897,29 @@ bb0(%0 : $`*Zip2Sequence<Array<τ_0_0>, Array<τ_0_1>>`, %1 : $`*Array<τ_0_0>`,
 
 // -------------------- Swift.String --------------------------------
 
+// %0 -> bytes array to convert to string, the rest is irrelevant
+// Write %0's data to the return optional
+func [model] @`(extension in Foundation):Swift.String.init<A where A: Swift.Sequence, A.Element == Swift.UInt8>(bytes: __shared A, encoding: (extension in Foundation):Swift.String.Encoding) -> Swift.String?` : $`@owned Optional<String>` {
+bb0(%0 : $`@in_guaranteed τ_0_0`, %1 : $`@in String.Encoding`, %2 : $`@thin String.Type`):
+  optional_string = new $`@owned Optional<String>`
+  val = pointer_read %0, $`τ_0_0`
+  field_write val to optional_string, data
+  return optional_string
+}
+
 // %0 -> string to initialize, the rest is irrelevant
 // Simply return the first argument because that is the string value.
 func [model] @`Swift.String.init(_builtinStringLiteral: Builtin.RawPointer, utf8CodeUnitCount: Builtin.Word, isASCII: Builtin.Int1) -> Swift.String` : $`@owned String` {
 bb0(%0 : $`Builtin.RawPointer`, %1 : $`Builtin.Word`, %2 : $`Builtin.Int1`, %3 : $`@thin String.Type`):
   return %0
+}
+
+// %0 -> Array from which to initialize the string, the rest is irrelevant
+// Read _value because it contains the actual array
+func [model] @`Swift.String.init(cString: Swift.UnsafePointer<Swift.UInt8>) -> Swift.String` : $`@owned String` {
+bb0(%0 : $`UnsafePointer<UInt8>`, %1 : $`@thin String.Type`):
+  val = field_read %0, _value, $`@owned String`
+  return val
 }
 
 // String initialization
@@ -947,6 +965,10 @@ bb0(%0 : $`Builtin.Word`):
   return %ret
 }
 
+func [model] @`Swift._ContiguousArrayBuffer.firstElementAddress.getter : Swift.UnsafeMutablePointer<A>` : $`UnsafeMutablePointer<τ_0_0>` {
+bb0(%0 : $`@guaranteed _ContiguousArrayBuffer<τ_0_0>`):
+  return %0
+}
 
 // -------------------- Operators -----------------------------------
 
@@ -993,6 +1015,22 @@ bb0(%0 : $`@guaranteed Array<τ_0_0>`):
 func [model] @`Swift.Array.firstIndex.getter : Swift.Int` : $`Int` {
 bb0(%0 : $`@guaranteed Array<τ_0_0>`):
   %ret = new $`Int`
+  return %ret
+}
+
+func [model] @`Swift.Array._baseAddressIfContiguous.getter : Swift.UnsafeMutablePointer<A>?` : $`Optional<UnsafeMutablePointer<τ_0_0>>` {
+bb0(%0 : $`@guaranteed Array<τ_0_0>`):
+  %ret = new $`Optional<UnsafeMutablePointer<τ_0_0>>`
+  ump = new $`UnsafeMutablePointer<τ_0_0>`
+  field_write %0 to ump, _rawValue
+  field_write ump to %ret, data
+  return %ret
+}
+
+func [model] @`Swift.Array._owner.getter : Swift.AnyObject?` : $`@owned Optional<AnyObject>` {
+bb0(%0 : $`@guaranteed Array<τ_0_0>`):
+  %ret = new $`@owned Optional<AnyObject>`
+  field_write %0 to %ret, data
   return %ret
 }
 

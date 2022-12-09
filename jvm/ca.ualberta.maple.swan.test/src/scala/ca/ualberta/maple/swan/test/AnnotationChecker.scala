@@ -263,12 +263,12 @@ class AnnotationChecker extends Runnable {
   }
 
   private def checkCryptoResults(resultsFile: File): Unit = {
+    val failures = ArrayBuffer.empty[String]
     def printErr(s: String, exit: Boolean = false): Unit = {
       System.err.println("[Crypto] " + s)
       if (exit) System.exit(1)
     }
     val results = getCryptoResults(resultsFile)
-    var failure = false
     getSourceDirs.foreach(p => {
       val f = new File(p.toUri)
       val buffer = Source.fromFile(f)
@@ -316,16 +316,14 @@ class AnnotationChecker extends Runnable {
                 if (a.status.isEmpty || a.status.get == "fp") {
                   annot.remove(idx)
                 } else if (a.status.get == "fn") {
-                  failure = true
-                  printErr("Annotation is not an FN: //?" + a.name + "?" + a.tpe + "?fn" + " on line " + a.line)
+                  failures.append("Annotation is not an FN: //?" + a.name + "?" + a.tpe + "?fn" + " on line " + a.line)
                 }
                 if (annot.isEmpty) {
                   annotations.remove(pos.line)
                 }
               }
             } else {
-              failure = true
-              printErr("Missing annotation for " + pos.toString)
+              failures.append("Missing annotation for " + pos.toString)
             }
           }
         }
@@ -333,14 +331,17 @@ class AnnotationChecker extends Runnable {
       annotations.foreach(v => {
         v._2.foreach(a => {
           if (a.status.isEmpty || a.status.get != "fn") {
-            failure = true
-            printErr("No matching path node for annotation: //?" + a.name + "?" + a.tpe +
+            failures.append("No matching path node for annotation: //?" + a.name + "?" + a.tpe +
               { if (a.status.nonEmpty) "?" + a.status.get else ""} + " on line " + a.line)
           }
         })
       })
     })
-    if (failure) System.exit(1)
+    failures.sortInPlace()
+    failures.foreach(f => {
+      printErr(f, exit = false)
+    })
+    if (failures.nonEmpty) System.exit(1)
   }
 
   private def getCryptoResults(resultsFile: File): CryptoAnalysis.Results = {

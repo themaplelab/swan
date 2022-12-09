@@ -48,6 +48,8 @@ class CryptoAnalysis(val cg: SWANCallGraph, val debugDir: File, val analyzeLibra
 
   private val debug = false
 
+  private val testCaseMode: Boolean = try { sys.env("TEST_CASE_MODE").nonEmpty } catch { case _: Exception => false }
+
   private val validFields = Array("_value", "data")
 
   // Stores a call site and the argument index of interest
@@ -58,6 +60,13 @@ class CryptoAnalysis(val cg: SWANCallGraph, val debugDir: File, val analyzeLibra
       val query = BackwardQuery.make(edge, arg)
       query
     }
+  }
+
+  def filterTestCaseMode(s: String): String = {
+    if (testCaseMode) {
+      s.replace("CryptoSwift", "test")
+        .replace("throws ", "")
+    } else s
   }
 
   // Evaluate all rules
@@ -75,14 +84,14 @@ class CryptoAnalysis(val cg: SWANCallGraph, val debugDir: File, val analyzeLibra
   }
 
   private def evaluateRule1(resultCollector: CryptoAnalysis.Results): Unit = {
-    System.out.println("=== Evaluating CryptoAnalysis: Rule 1")
+    System.out.println("=== Evaluating CryptoAnalysis: Rule 1 (ECB Block Mode)")
     val i = resultCollector.values.size
     val potentialCallSites = getCallSitesWithBlockMode
     if (!analyzeLibraries) potentialCallSites.filterInPlace(p => !p.apply.m.delegate.isLibrary)
     potentialCallSites.foreach(callSite => {
       if (debug) System.out.println(s"POTENTIAL CALL SITE: ${callSite.apply} (arg ${callSite.argIdx})")
       if (comesFrom(callSite,
-        Array(("CryptoSwift.ECB.init() -> CryptoSwift.ECB", false)))) {
+        Array((filterTestCaseMode("CryptoSwift.ECB.init() -> CryptoSwift.ECB"), false)))) {
         reportViolation(CryptoAnalysis.ResultType.RULE_1, resultCollector, callSite.apply, "Using ECB Block Mode")
       }
     })
@@ -90,7 +99,7 @@ class CryptoAnalysis(val cg: SWANCallGraph, val debugDir: File, val analyzeLibra
   }
 
   private def evaluateRule2(resultCollector: CryptoAnalysis.Results): Unit = {
-    System.out.println("=== Evaluating CryptoAnalysis: Rule 2")
+    System.out.println("=== Evaluating CryptoAnalysis: Rule 2 (Non-Random IVs)")
     val i = resultCollector.values.size
     val potentialCallSites = getCallSitesWithIVs
     if (!analyzeLibraries) potentialCallSites.filterInPlace(p => !p.apply.m.delegate.isLibrary)
@@ -98,7 +107,7 @@ class CryptoAnalysis(val cg: SWANCallGraph, val debugDir: File, val analyzeLibra
       if (debug) System.out.println(s"POTENTIAL CALL SITE: ${callSite.apply} (arg ${callSite.argIdx})")
       // Do not report a violation if the value comes from a random function.
       if (!comesFrom(callSite,
-        Array(("static (extension in CryptoSwift):CryptoSwift.Cryptors.randomIV(Swift.Int) -> [Swift.UInt8]", false)))) {
+        Array((filterTestCaseMode("static (extension in CryptoSwift):CryptoSwift.Cryptors.randomIV(Swift.Int) -> [Swift.UInt8]"), false)))) {
         reportViolation(CryptoAnalysis.ResultType.RULE_2, resultCollector, callSite.apply,
           "Non-Random IV - Use randomIV()")
       }
@@ -107,7 +116,7 @@ class CryptoAnalysis(val cg: SWANCallGraph, val debugDir: File, val analyzeLibra
   }
 
   private def evaluateRule3(resultCollector: CryptoAnalysis.Results): Unit = {
-    System.out.println("=== Evaluating CryptoAnalysis: Rule 3")
+    System.out.println("=== Evaluating CryptoAnalysis: Rule 3 (Constant Keys)")
     val i = resultCollector.values.size
     val potentialCallSites = getCallSitesWithKeys
     if (!analyzeLibraries) potentialCallSites.filterInPlace(p => !p.apply.m.delegate.isLibrary)
@@ -119,12 +128,16 @@ class CryptoAnalysis(val cg: SWANCallGraph, val debugDir: File, val analyzeLibra
         reportViolation(CryptoAnalysis.ResultType.RULE_3, resultCollector, callSite.apply,
           "Constant Key: " + result._2.mkString("[", ",", "]"))
       }
+      if (comesFrom(callSite,
+        getStaticArrayInitializers)) {
+        reportViolation(CryptoAnalysis.ResultType.RULE_3, resultCollector, callSite.apply, "Constant Key")
+      }
     })
     System.out.println(s"  Found ${resultCollector.values.size - i} violations")
   }
 
   private def evaluateRule4(resultCollector: CryptoAnalysis.Results): Unit = {
-    System.out.println("=== Evaluating CryptoAnalysis: Rule 4")
+    System.out.println("=== Evaluating CryptoAnalysis: Rule 4 (Constant Salt)")
     val i = resultCollector.values.size
     val potentialCallSites = getCallSitesWithSalts
     if (!analyzeLibraries) potentialCallSites.filterInPlace(p => !p.apply.m.delegate.isLibrary)
@@ -136,13 +149,17 @@ class CryptoAnalysis(val cg: SWANCallGraph, val debugDir: File, val analyzeLibra
         reportViolation(CryptoAnalysis.ResultType.RULE_4, resultCollector, callSite.apply,
           "Constant Salt: " + result._2.mkString("[", ",", "]"))
       }
+      if (comesFrom(callSite,
+        getStaticArrayInitializers)) {
+        reportViolation(CryptoAnalysis.ResultType.RULE_4, resultCollector, callSite.apply, "Constant Salt")
+      }
     })
     System.out.println(s"  Found ${resultCollector.values.size - i} violations")
   }
 
 
   private def evaluateRule5(resultCollector: CryptoAnalysis.Results): Unit = {
-    System.out.println("=== Evaluating CryptoAnalysis: Rule 5")
+    System.out.println("=== Evaluating CryptoAnalysis: Rule 5 (Low Iteration Count)")
     val i = resultCollector.values.size
     val potentialCallSites = getCallSitesWithIterations
     potentialCallSites.foreach(callSite => {
@@ -152,12 +169,12 @@ class CryptoAnalysis(val cg: SWANCallGraph, val debugDir: File, val analyzeLibra
       if (result._1) {
         val violating = mutable.ArrayBuffer.empty[Int]
         result._2.foreach {
-          case Literal.int(value) if value < 1000 => violating.append(value.toInt)
+          case Literal.int(value) if value < 100000 => violating.append(value.toInt)
           case _ =>
         }
         if (violating.nonEmpty) {
           reportViolation(CryptoAnalysis.ResultType.RULE_5, resultCollector, callSite.apply,
-            "Low iteration count (<1000): " + violating.mkString("[", ",", "]"))
+            "Low iteration count (<100000): " + violating.mkString("[", ",", "]"))
         }
       }
     })
@@ -165,7 +182,7 @@ class CryptoAnalysis(val cg: SWANCallGraph, val debugDir: File, val analyzeLibra
   }
 
   private def evaluateRule7(resultCollector: CryptoAnalysis.Results): Unit = {
-    System.out.println("=== Evaluating CryptoAnalysis: Rule 7")
+    System.out.println("=== Evaluating CryptoAnalysis: Rule 7 (Constant Password)")
     val i = resultCollector.values.size
     val potentialCallSites = getCallSitesWithPassword
     if (!analyzeLibraries) potentialCallSites.filterInPlace(p => !p.apply.m.delegate.isLibrary)
@@ -176,6 +193,10 @@ class CryptoAnalysis(val cg: SWANCallGraph, val debugDir: File, val analyzeLibra
       if (result._1) {
         reportViolation(CryptoAnalysis.ResultType.RULE_7, resultCollector, callSite.apply,
           "Constant Password: " + result._2.mkString("[", ",", "]"))
+      }
+      if (comesFrom(callSite,
+        getStaticArrayInitializers)) {
+        reportViolation(CryptoAnalysis.ResultType.RULE_7, resultCollector, callSite.apply, "Constant Password")
       }
     })
     System.out.println(s"  Found ${resultCollector.values.size - i} violations")
@@ -192,13 +213,36 @@ class CryptoAnalysis(val cg: SWANCallGraph, val debugDir: File, val analyzeLibra
     // System.out.println(sb.toString())
   }
 
+  private def removeCryptoSwiftPrefix(arr: Array[(Int, String)]): Array[(Int, String)] = {
+    val a = ArrayBuffer.empty[(Int, String)]
+    arr.foreach(x => {
+      a.append((x._1,  filterTestCaseMode(x._2)))
+    })
+    a.toArray
+  }
+
+  private def getStaticArrayInitializers: Array[(String, Boolean)] = {
+    Array(
+      ("Swift.Array.init<A where A == A1.Element, A1: Swift.Sequence>(A1) -> [A]", false),
+      ("Swift._allocateUninitializedArray<A>(Builtin.Word) -> ([A], Builtin.RawPointer)", false),
+      ("Swift._finalizeUninitializedArray<A>(__owned [A]) -> [A]", false))
+  }
+
+  // TODO: Add Regex support for these functions
+
   private def getCallSitesWithSalts: mutable.ArrayBuffer[CallSiteSelector] = {
     val initializersWithSalts = Array(
       (1, "CryptoSwift.HKDF.init(password: [Swift.UInt8], salt: [Swift.UInt8]?, info: [Swift.UInt8]?, keyLength: Swift.Int?, variant: CryptoSwift.HMAC.Variant) throws -> CryptoSwift.HKDF"),
       (1, "CryptoSwift.PKCS5.PBKDF1.init(password: [Swift.UInt8], salt: [Swift.UInt8], variant: CryptoSwift.PKCS5.PBKDF1.Variant, iterations: Swift.Int, keyLength: Swift.Int?) throws -> CryptoSwift.PKCS5.PBKDF1"),
+      (1, "CryptoSwift.PKCS5.PBKDF1.init(password: [Swift.UInt8], salt: [Swift.UInt8], iterations: Swift.Int, keyLength: Swift.Int?) throws -> CryptoSwift.PKCS5.PBKDF1"),
+      (1, "CryptoSwift.PKCS5.PBKDF2.init(password: [Swift.UInt8], salt: [Swift.UInt8], iterations: Swift.Int, keyLength: Swift.Int?, variant: CryptoSwift.PKCS5.PBKDF2.Variant) throws -> CryptoSwift.PKCS5.PBKDF2"),
       (1, "CryptoSwift.PKCS5.PBKDF2.init(password: [Swift.UInt8], salt: [Swift.UInt8], iterations: Swift.Int, keyLength: Swift.Int?, variant: CryptoSwift.HMAC.Variant) throws -> CryptoSwift.PKCS5.PBKDF2"),
       (1, "CryptoSwift.Scrypt.__allocating_init(password: [Swift.UInt8], salt: [Swift.UInt8], dkLen: Swift.Int, N: Swift.Int, r: Swift.Int, p: Swift.Int) throws -> CryptoSwift.Scrypt"))
-    getCallSitesUsingConfig(initializersWithSalts)
+    if (testCaseMode) {
+      getCallSitesUsingConfig(removeCryptoSwiftPrefix(initializersWithSalts))
+    } else {
+      getCallSitesUsingConfig(initializersWithSalts)
+    }
   }
 
   private def getCallSitesWithPassword: mutable.ArrayBuffer[CallSiteSelector] = {
@@ -207,20 +251,35 @@ class CryptoAnalysis(val cg: SWANCallGraph, val debugDir: File, val analyzeLibra
       (0, "CryptoSwift.PKCS5.PBKDF1.init(password: [Swift.UInt8], salt: [Swift.UInt8], variant: CryptoSwift.PKCS5.PBKDF1.Variant, iterations: Swift.Int, keyLength: Swift.Int?) throws -> CryptoSwift.PKCS5.PBKDF1"),
       (0, "CryptoSwift.PKCS5.PBKDF2.init(password: [Swift.UInt8], salt: [Swift.UInt8], iterations: Swift.Int, keyLength: Swift.Int?, variant: CryptoSwift.HMAC.Variant) throws -> CryptoSwift.PKCS5.PBKDF2"),
       (0, "CryptoSwift.Scrypt.__allocating_init(password: [Swift.UInt8], salt: [Swift.UInt8], dkLen: Swift.Int, N: Swift.Int, r: Swift.Int, p: Swift.Int) throws -> CryptoSwift.Scrypt"))
-    getCallSitesUsingConfig(initializersWithPassword)
+    if (testCaseMode) {
+      getCallSitesUsingConfig(removeCryptoSwiftPrefix(initializersWithPassword))
+    } else {
+      getCallSitesUsingConfig(initializersWithPassword)
+    }
   }
 
   private def getCallSitesWithIterations: mutable.ArrayBuffer[CallSiteSelector] = {
-    val initializersWithSalts = Array(
+    val initializersWithIterations = Array(
       (3, "CryptoSwift.PKCS5.PBKDF1.init(password: [Swift.UInt8], salt: [Swift.UInt8], variant: CryptoSwift.PKCS5.PBKDF1.Variant, iterations: Swift.Int, keyLength: Swift.Int?) throws -> CryptoSwift.PKCS5.PBKDF1"),
-      (2, "CryptoSwift.PKCS5.PBKDF2.init(password: [Swift.UInt8], salt: [Swift.UInt8], iterations: Swift.Int, keyLength: Swift.Int?, variant: CryptoSwift.HMAC.Variant) throws -> CryptoSwift.PKCS5.PBKDF2"))
-    getCallSitesUsingConfig(initializersWithSalts)
+      (2, "CryptoSwift.PKCS5.PBKDF2.init(password: [Swift.UInt8], salt: [Swift.UInt8], iterations: Swift.Int, keyLength: Swift.Int?, variant: CryptoSwift.HMAC.Variant) throws -> CryptoSwift.PKCS5.PBKDF2"),
+      (2, "CryptoSwift.PKCS5.PBKDF2.init(password: [Swift.UInt8], salt: [Swift.UInt8], iterations: Swift.Int, keyLength: Swift.Int?, variant: CryptoSwift.PKCS5.PBKDF2.Variant) throws -> CryptoSwift.PKCS5.PBKDF2"))
+    if (testCaseMode) {
+      val a = removeCryptoSwiftPrefix(initializersWithIterations)
+      // a.foreach(x => System.out.println(x._2))
+      getCallSitesUsingConfig(a)
+    } else {
+      getCallSitesUsingConfig(initializersWithIterations)
+    }
   }
 
   private def getCallSitesWithKeys: mutable.ArrayBuffer[CallSiteSelector] = {
     val initializersWithKeys: Array[(Int, String)] = Array(
       (0, "CryptoSwift.AES.__allocating_init(key: [Swift.UInt8], blockMode: CryptoSwift.BlockMode, padding: CryptoSwift.Padding) throws -> CryptoSwift.AES"),
+      (0, "CryptoSwift.AES.__allocating_init(key: [Swift.UInt8], blockMode: CryptoSwift.BlockMode) throws -> CryptoSwift.AES"),
       (0, "CryptoSwift.AES.__allocating_init(key: Swift.String, iv: Swift.String, padding: CryptoSwift.Padding) throws -> CryptoSwift.AES"),
+      (0, "CryptoSwift.AES.__allocating_init(key: Swift.String, iv: Swift.String) throws -> CryptoSwift.AES"),
+      (0, "CryptoSwift.HMAC.__allocating_init(key: [Swift.UInt8]) -> CryptoSwift.HMAC"),
+      (0, "CryptoSwift.HMAC.__allocating_init(key: Swift.String) throws -> CryptoSwift.HMAC"),
       (0, "CryptoSwift.HMAC.__allocating_init(key: [Swift.UInt8], variant: CryptoSwift.HMAC.Variant) -> CryptoSwift.HMAC"),
       (0, "CryptoSwift.HMAC.__allocating_init(key: Swift.String, variant: CryptoSwift.HMAC.Variant) throws -> CryptoSwift.HMAC"),
       (0, "CryptoSwift.ChaCha20.__allocating_init(key: [Swift.UInt8], iv: [Swift.UInt8]) throws -> CryptoSwift.ChaCha20"),
@@ -229,27 +288,41 @@ class CryptoAnalysis(val cg: SWANCallGraph, val debugDir: File, val analyzeLibra
       (0, "CryptoSwift.CMAC.__allocating_init(key: [Swift.UInt8]) throws -> CryptoSwift.CMAC"),
       (0, "CryptoSwift.Poly1305.__allocating_init(key: [Swift.UInt8]) -> CryptoSwift.Poly1305"),
       (0, "CryptoSwift.Blowfish.__allocating_init(key: [Swift.UInt8], blockMode: CryptoSwift.BlockMode, padding: CryptoSwift.Padding) throws -> CryptoSwift.Blowfish"),
+      (0, "CryptoSwift.Blowfish.__allocating_init(key: [Swift.UInt8], blockMode: CryptoSwift.BlockMode) throws -> CryptoSwift.Blowfish"),
       (0, "CryptoSwift.Blowfish.__allocating_init(key: Swift.String, iv: Swift.String, padding: CryptoSwift.Padding) throws -> CryptoSwift.Blowfish"),
+      (0, "CryptoSwift.Blowfish.__allocating_init(key: Swift.String, iv: Swift.String) throws -> CryptoSwift.Blowfish"),
+      (0, "CryptoSwift.Blowfish.__allocating_init(key: [Swift.UInt8], padding: CryptoSwift.Padding) throws -> CryptoSwift.Blowfish"),
       (0, "CryptoSwift.Rabbit.__allocating_init(key: [Swift.UInt8], iv: [Swift.UInt8]?) throws -> CryptoSwift.Rabbit"),
       (0, "CryptoSwift.Rabbit.__allocating_init(key: Swift.String) throws -> CryptoSwift.Rabbit"),
       (0, "CryptoSwift.Rabbit.__allocating_init(key: Swift.String, iv: Swift.String) throws -> CryptoSwift.Rabbit"),
       (0, "CryptoSwift.Rabbit.__allocating_init(key: [Swift.UInt8]) throws -> CryptoSwift.Rabbit"))
-    getCallSitesUsingConfig(initializersWithKeys)
+    if (testCaseMode) {
+      getCallSitesUsingConfig(removeCryptoSwiftPrefix(initializersWithKeys))
+    } else {
+      getCallSitesUsingConfig(initializersWithKeys)
+    }
   }
 
   private def getCallSitesWithBlockMode: mutable.ArrayBuffer[CallSiteSelector] = {
-    val initializersWithKeys: Array[(Int, String)] = Array(
+    val initializersWithBlockMode: Array[(Int, String)] = Array(
       (1, "CryptoSwift.AES.__allocating_init(key: [Swift.UInt8], blockMode: CryptoSwift.BlockMode, padding: CryptoSwift.Padding) throws -> CryptoSwift.AES"),
+      (1, "CryptoSwift.AES.__allocating_init(key: [Swift.UInt8], blockMode: CryptoSwift.BlockMode) throws -> CryptoSwift.AES"),
       (1, "CryptoSwift.Blowfish.__allocating_init(key: [Swift.UInt8], blockMode: CryptoSwift.BlockMode, padding: CryptoSwift.Padding) throws -> CryptoSwift.Blowfish"))
-    getCallSitesUsingConfig(initializersWithKeys)
+    if (testCaseMode) {
+      getCallSitesUsingConfig(removeCryptoSwiftPrefix(initializersWithBlockMode))
+    } else {
+      getCallSitesUsingConfig(initializersWithBlockMode)
+    }
   }
 
   private def getCallSitesWithIVs: mutable.ArrayBuffer[CallSiteSelector] = {
-    val initializersWithKeys: Array[(Int, String)] = Array(
+    val initializersWithIVs: Array[(Int, String)] = Array(
       // Cryptors
+      (1, "CryptoSwift.AES.__allocating_init(key: Swift.String, iv: Swift.String) throws -> CryptoSwift.AES"),
       (1, "CryptoSwift.AES.__allocating_init(key: Swift.String, iv: Swift.String, padding: CryptoSwift.Padding) throws -> CryptoSwift.AES"),
       (1, "CryptoSwift.ChaCha20.__allocating_init(key: [Swift.UInt8], iv: [Swift.UInt8]) throws -> CryptoSwift.ChaCha20"),
       (1, "CryptoSwift.ChaCha20.__allocating_init(key: Swift.String, iv: Swift.String) throws -> CryptoSwift.ChaCha20"),
+      (1, "CryptoSwift.Blowfish.__allocating_init(key: Swift.String, iv: Swift.String) throws -> CryptoSwift.Blowfish"),
       (1, "CryptoSwift.Blowfish.__allocating_init(key: Swift.String, iv: Swift.String, padding: CryptoSwift.Padding) throws -> CryptoSwift.Blowfish"),
       (1, "CryptoSwift.Rabbit.__allocating_init(key: [Swift.UInt8], iv: [Swift.UInt8]?) throws -> CryptoSwift.Rabbit"),
       (1, "CryptoSwift.Rabbit.__allocating_init(key: Swift.String, iv: Swift.String) throws -> CryptoSwift.Rabbit"),
@@ -260,8 +333,14 @@ class CryptoAnalysis(val cg: SWANCallGraph, val debugDir: File, val analyzeLibra
       (0, "CryptoSwift.CCM.init(iv: [Swift.UInt8], tagLength: Swift.Int, messageLength: Swift.Int, additionalAuthenticatedData: [Swift.UInt8]?) -> CryptoSwift.CCM"),
       (0, "CryptoSwift.CCM.init(iv: [Swift.UInt8], tagLength: Swift.Int, messageLength: Swift.Int, authenticationTag: [Swift.UInt8], additionalAuthenticatedData: [Swift.UInt8]?) -> CryptoSwift.CCM"),
       (0, "CryptoSwift.OFB.init(iv: [Swift.UInt8]) -> CryptoSwift.OFB"),
-      (0, "CryptoSwift.CTR.init(iv: [Swift.UInt8], counter: Swift.Int) -> CryptoSwift.CTR"))
-    getCallSitesUsingConfig(initializersWithKeys)
+      (0, "CryptoSwift.CTR.init(iv: [Swift.UInt8], counter: Swift.Int) -> CryptoSwift.CTR"),
+      (0, "CryptoSwift.GCM.__allocating_init(iv: [Swift.UInt8], authenticationTag: [Swift.UInt8], additionalAuthenticatedData: [Swift.UInt8]?, mode: CryptoSwift.GCM.Mode) -> CryptoSwift.GCM"),
+      (0, "CryptoSwift.GCM.__allocating_init(iv: [Swift.UInt8], additionalAuthenticatedData: [Swift.UInt8]?, tagLength: Swift.Int, mode: CryptoSwift.GCM.Mode) -> CryptoSwift.GCM"))
+    if (testCaseMode) {
+      getCallSitesUsingConfig(removeCryptoSwiftPrefix(initializersWithIVs))
+    } else {
+      getCallSitesUsingConfig(initializersWithIVs)
+    }
   }
 
   /**
@@ -363,8 +442,11 @@ class CryptoAnalysis(val cg: SWANCallGraph, val debugDir: File, val analyzeLibra
               // (or callSiteSelector) takes in a pointer or enum instead of the value itself.
               // This could also be extended to be as many levels deep as necessary to propagate
               // taintedness, for instance.
+              // NOTE:
+              // Only do this if the field write method is the same as the call site's method
+              // to preserve context sensitivity (avoids FPs but possibly adds FNs).
               case fieldWrite: SWANStatement.FieldWrite => {
-                if (fieldWrite.uses(cell.getColumnKey) && validFields.contains(fieldWrite.getWrittenField.asInstanceOf[SWANField].name)) {
+                if (fieldWrite.uses(cell.getColumnKey) && validFields.contains(fieldWrite.getWrittenField.asInstanceOf[SWANField].name) && fieldWrite.m.equals(callSiteSelector.apply.m)) {
                   val v = fieldWrite.getFieldStore.getX
                   // Create new query for the field write object
                   val forwardQuery = new ForwardQuery(cell.getRowKey, new AllocVal(v, fieldWrite, v))

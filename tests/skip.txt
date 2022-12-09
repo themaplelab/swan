@@ -12,3 +12,6 @@ ObjectSensitivity1
 array
 set
 dictionary
+
+# Fails with UCG.Options.VTA_SPDS, have to use UCG.Options.NONE for it to work.
+DynamicDispatch1

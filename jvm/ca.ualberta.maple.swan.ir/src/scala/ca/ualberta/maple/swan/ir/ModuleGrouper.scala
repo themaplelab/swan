@@ -93,8 +93,8 @@ object ModuleGrouper {
               case FunctionAttribute.coroutine => {
                 f.attribute.get match {
                   case FunctionAttribute.stub => existing.attribute = Some(FunctionAttribute.linked)
-                  case FunctionAttribute.coroutine => add(f)
-                  case FunctionAttribute.model => add(f)
+                  // case FunctionAttribute.coroutine => add(f)
+                  case FunctionAttribute.model => add(f, FunctionAttribute.modelOverride)
                   case _ => throwException("unexpected")
                 }
               }

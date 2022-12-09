@@ -19,7 +19,7 @@
 
 package ca.ualberta.maple.swan.spds.analysis.taint
 
-import ca.ualberta.maple.swan.ir.{CanInstructionDef, Position}
+import ca.ualberta.maple.swan.ir.{CanFunction, CanInstructionDef, Position}
 import ca.ualberta.maple.swan.spds.analysis.taint.TaintResults.Path
 import ca.ualberta.maple.swan.spds.analysis.taint.TaintSpecification.JSONMethod
 
@@ -37,10 +37,10 @@ class TaintResults(val paths: ArrayBuffer[Path],
       sb.append("  (")
       sb.append(path._2.toString)
       sb.append(") from ")
-      sb.append(path._1.source.name)
+      sb.append(path._1.sourceName)
       sb.append(" to \n")
       sb.append("           ")
-      sb.append(path._1.sink.name)
+      sb.append(path._1.sinkName)
       sb.append("\n")
       if (path._1.nodes.nonEmpty) {
         sb.append("      path:\n")

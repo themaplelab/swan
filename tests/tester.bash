@@ -186,9 +186,9 @@ test_directory() {
     fi
 
     # run analysis
-
-    if [[ -z ${IS_TAINT} && -z ${IS_TYPESTATE} ]]; then
-      echo -e "${RED} NO ANALYSIS SPEC${ENDCOLOR}" > ${ERROR_MESSAGE_FILE}
+    
+    if [[ -z ${IS_TAINT} && -z ${IS_TYPESTATE} && -z ${IS_CRYPTO} ]]; then
+      echo -e "${RED} NO ANALYSIS SELECTED${ENDCOLOR}" > ${ERROR_MESSAGE_FILE}
       false
     fi
 
@@ -199,6 +199,11 @@ test_directory() {
 
     if [[ ! -z ${IS_TYPESTATE} ]]; then
       java ${JAVA_ARGS} -jar ${LIB_DIR}/driver.jar -e typestate-spec.json swan-dir/ ${DRIVER_OPTIONS} > ${ERROR_MESSAGE_FILE} 2>&1
+      mv ${ERROR_MESSAGE_FILE} driver-log.txt
+    fi
+
+    if [[ ! -z ${IS_CRYPTO} ]]; then
+      TEST_CASE_MODE=1 java ${JAVA_ARGS} -jar ${LIB_DIR}/driver.jar --crypto swan-dir/ ${DRIVER_OPTIONS} > ${ERROR_MESSAGE_FILE} 2>&1
       mv ${ERROR_MESSAGE_FILE} driver-log.txt
     fi
 

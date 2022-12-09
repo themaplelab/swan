@@ -555,10 +555,11 @@ object StructInit {
   def populateInits(): ArrayBuffer[StructInit] = {
     val arr = new ArrayBuffer[StructInit]()
     val basicTypes = Array(
-      "Double", "Int", "Int8", "Int32", "Int64", "UInt", "UInt8", "UInt32", "UInt64")
+      "Double", "Int", "Int8", "Int32", "Int64", "UInt", "UInt8", "UInt32", "UInt64", "UnsafePointer<UInt8>")
     basicTypes.foreach(t => {
       arr.append(new StructInit(t, ArrayBuffer("_value"), InitType.normal))
     })
+    arr.append(new StructInit("UnsafeRawPointer", ArrayBuffer("_rawValue"), InitType.normal))
     arr.append(new StructInit("IndexingIterator<Array<.*>>", ArrayBuffer("_elements", "_position"), InitType.normal, true))
     arr
   }

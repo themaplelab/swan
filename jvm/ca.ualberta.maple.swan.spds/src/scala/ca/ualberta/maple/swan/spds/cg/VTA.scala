@@ -39,7 +39,7 @@ class VTA(mg: ModuleGroup, options: Options) extends TypeFlowCG(mg, options: Opt
     Logging.printInfo("Building conservative graph (CHA) for VTA")
     val conservativeGraph = new CHA(mg, true, options: Options)
     // val conservativeGraph = new UCGSound(mg,PointerAnalysisStyle.SPDS,true, options)
-    conservativeGraph.buildCallGraph(CallGraphBuilder.CallGraphStyle.CHA)
+    conservativeGraph.buildCallGraph(CallGraphBuilder.CallGraphStyle.CHA_FP)
     cgs.specificData.addOne(conservativeGraph.cgs.specificData.last)
 
     Logging.printInfo("Building type propagation graph for VTA")
