@@ -124,7 +124,7 @@ object SILOperator {
   // NSIP: project_value_buffer
 
   /***** DEBUG INFORMATION *****/
-  case class debugValue(poison: Boolean, moved: Boolean, operand: SILOperand, attributes: ArrayBuffer[SILDebugAttribute]) extends SILOperator
+  case class debugValue(poison: Boolean, moved: Boolean, trace: Boolean, operand: SILOperand, attributes: ArrayBuffer[SILDebugAttribute], debugInfoExpr: Option[SILDebugInfoExpr]) extends SILOperator
   case class debugValueAddr(operand: SILOperand, attributes: ArrayBuffer[SILDebugAttribute]) extends SILOperator
 
   /***** ACCESSING MEMORY *****/
@@ -432,7 +432,6 @@ object SILSelectValueCase {
   case class default(select: String) extends SILSelectValueCase
 }
 
-
 sealed trait SILConvention
 object SILConvention {
   case object c extends SILConvention
@@ -450,6 +449,14 @@ object SILDebugAttribute {
   case object let extends SILDebugAttribute
   case object variable extends SILDebugAttribute
   case object _implicit extends SILDebugAttribute
+}
+
+class SILDebugInfoExpr(val operand: SILDiExprOperand, val otherOperands: Option[ArrayBuffer[SILDiExprOperand]])
+class SILDiExprOperand(val operator: SILDiExprOperator, val operands: Option[ArrayBuffer[SILOperand]])
+sealed trait SILDiExprOperator
+object SILDiExprOperator {
+  case object opFragment extends SILDiExprOperator
+  case object opDeref extends SILDiExprOperator
 }
 
 sealed trait SILAccessorKind

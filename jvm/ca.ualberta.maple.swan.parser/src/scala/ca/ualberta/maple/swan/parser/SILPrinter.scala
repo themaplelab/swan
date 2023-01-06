@@ -264,11 +264,13 @@ class SILPrinter extends Printer {
 
         // *** DEBUG INFORMATION ***
 
-      case SILOperator.debugValue(poison, moved, operand, attributes) => {
+      case SILOperator.debugValue(poison, moved, trace, operand, attributes, debugInfoExpr) => {
         print("debug_value ")
         print("[poison] ", when = poison)
         print("[moved] ", when = moved)
+        print("[trace]", when = trace)
         print(operand)
+        // TODO: print debugInfoExpr
         print(whenEmpty = false, ", ", attributes, ", ", "", (a: SILDebugAttribute) => print(a))
       }
       case SILOperator.debugValueAddr(operand, attributes) => {

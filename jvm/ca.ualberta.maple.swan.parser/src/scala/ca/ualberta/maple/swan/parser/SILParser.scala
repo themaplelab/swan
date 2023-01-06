@@ -568,9 +568,19 @@ class SILParser extends SILPrinter {
       case "debug_value" => {
         val poison = skip("[poison]")
         val moved = skip("[moved]")
+        val trace = skip("[trace]")
         val operand = parseOperand()
         val attributes = parseUntilNil(parseDebugAttribute)
-        SILInstruction.operator(SILOperator.debugValue(poison, moved, operand, attributes))
+        // TODO
+        // val advancedAttributes = parseUntilNil(parseAdvancedDebugAttribute)
+        val debugInfoExpr = {
+          if (peek(", expr")) {
+            take(",")
+            take("expr")
+            Some(parseDebugInfoExpr())
+          } else None
+        }
+        SILInstruction.operator(SILOperator.debugValue(poison, moved, trace, operand, attributes, debugInfoExpr))
       }
       // Not in SIL.rst
       case "debug_value_addr" => {
@@ -1980,6 +1990,33 @@ class SILParser extends SILPrinter {
     if(skip("implicit")) return Some(SILDebugAttribute.variable)
     this.cursor = c
     None
+  }
+
+  @throws[Error]
+  def parseDebugInfoExpr(): SILDebugInfoExpr = {
+    val operand = parseSILDiExprOperand()
+    val otherOperands = ArrayBuffer.empty[SILDiExprOperand]
+    while (skip(":")) {
+      otherOperands.append(parseSILDiExprOperand())
+    }
+    new SILDebugInfoExpr(operand, if (otherOperands.nonEmpty) Some(otherOperands) else None)
+  }
+
+  @throws[Error]
+  def parseSILDiExprOperand(): SILDiExprOperand = {
+    val operator = parseSILDiExprOperator()
+    val operands = ArrayBuffer.empty[SILOperand]
+    while (skip(":")) {
+      operands.append(parseOperand())
+    }
+    new SILDiExprOperand(operator, if (operands.nonEmpty) Some(operands) else None)
+  }
+
+  @throws[Error]
+  def parseSILDiExprOperator(): SILDiExprOperator = {
+    if(skip("op_fragment")) return SILDiExprOperator.opFragment
+    if(skip("op_deref")) return SILDiExprOperator.opDeref
+    throw parseError("unknown di-expr-operator")
   }
 
   @throws[Error]
