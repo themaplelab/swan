@@ -32,6 +32,7 @@ object CallGraphBuilder {
         case CallGraphStyle.CHA_FP => new CHA(moduleGroup, true, options)
         case CallGraphStyle.VTA_FP => new VTA(moduleGroup, options)
         case CallGraphStyle.UCG => new UCG(moduleGroup, UCG.Options.VTA_SPDS, true, options)
+        case CallGraphStyle.UCG_NO_VTA => new UCG(moduleGroup, UCG.Options.SPDS, true, options)
 //        case CallGraphStyle.CHA => new CHA(moduleGroup, false, options)
 //        case CallGraphStyle.CHA_SIGMATCHING => new CHA(moduleGroup, true, options)
 //        case CallGraphStyle.ORTA => new ORTA(moduleGroup, false, options)
@@ -62,6 +63,7 @@ object CallGraphBuilder {
     val CHA_FP: CallGraphStyle.Value = Value
     val VTA_FP: CallGraphStyle.Value = Value
     val UCG: CallGraphStyle.Value = Value
+    val UCG_NO_VTA: CallGraphStyle.Value = Value
 
 //    val CHA: CallGraphStyle.Value = Value
 //    val VTA: CallGraphStyle.Value = Value

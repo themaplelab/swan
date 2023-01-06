@@ -411,6 +411,7 @@ class SWIRLPass {
           case Operator.binaryOp(result, operation, lhs, rhs) => {
             operation match {
               case BinaryOperation.regular => {
+                // TODO: The second assign overwrites the first
                 val a1 = new RawOperatorDef(Operator.assign(result, lhs), op.position)
                 val a2 = new RawOperatorDef(Operator.assign(result, rhs), op.position)
                 mapToSIL(op, a1, module)

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 the SWAN project authors. All rights reserved.
+ * Copyright (c) 2023 the SWAN project authors. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -52,7 +52,8 @@ object Driver {
   private val callGraphOptions = immutable.HashMap(
     ("chafp", CallGraphBuilder.CallGraphStyle.CHA_FP),
     ("vtafp", CallGraphBuilder.CallGraphStyle.VTA_FP),
-    ("ucg", CallGraphBuilder.CallGraphStyle.UCG))
+    ("ucg", CallGraphBuilder.CallGraphStyle.UCG),
+    ("ucg_no_vta", CallGraphBuilder.CallGraphStyle.UCG_NO_VTA))
 
   /* Because this driver can be invoked programmatically, most picocli options
    * (@Option) should have a matching field in Driver.Options.
@@ -107,12 +108,12 @@ object Driver {
         if (v != null) {
           callGraphOptions.get(v.cgAlgorithm.toLowerCase()) match {
             case Some(value) => callGraphAlgorithms.append(value)
-            case None => throw new RuntimeException("Unrecognized CG style. Options are " + callGraphOptions.mkString(","))
+            case None => throw new RuntimeException("Unrecognized CG style. Options are " + callGraphOptions.keys.mkString(", "))
           }
         }
       })
       if (this.callGraphAlgorithms.isEmpty) {
-        val style = CallGraphBuilder.CallGraphStyle.VTA_FP
+        val style = CallGraphBuilder.CallGraphStyle.UCG_NO_VTA
         this.callGraphAlgorithms.append(style)
       }
       this
@@ -206,7 +207,7 @@ object Driver {
   "                   WN0xdolllloodOX        dWXKKXN                            \n"  +
   "                      WWNXKKKXNWW  WX0OkxxddxkKN                             \n"  +
   "                                      WNNNNWW                                 |@" +
-  "\n\n Copyright (c) 2021 the SWAN project authors. All rights reserved.\n"         +
+  "\n\n Copyright (c) 2023 the SWAN project authors. All rights reserved.\n"         +
   " Licensed under the Apache License, Version 2.0, available at\n"                  +
   " http://www.apache.org/licenses/LICENSE-2.0\n"                                    +
   " This software has dependencies with other licenses.\n"                           +
@@ -537,6 +538,7 @@ class Driver extends Runnable {
       case CallGraphBuilder.CallGraphStyle.CHA_FP => "CHA_FP"
       case CallGraphBuilder.CallGraphStyle.VTA_FP => "VTA_FP"
       case CallGraphBuilder.CallGraphStyle.UCG => "UCG"
+      case CallGraphBuilder.CallGraphStyle.UCG_NO_VTA => "UCG_NO_VTA"
 //      case CallGraphBuilder.CallGraphStyle.CHA => "CHA"
 //      case CallGraphBuilder.CallGraphStyle.CHA_SIGMATCHING => "CHA_SIG"
 //      case CallGraphBuilder.CallGraphStyle.ORTA => "ORTA"

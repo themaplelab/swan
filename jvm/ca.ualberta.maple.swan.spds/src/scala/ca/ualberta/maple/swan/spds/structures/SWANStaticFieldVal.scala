@@ -22,7 +22,7 @@ package ca.ualberta.maple.swan.spds.structures
 import boomerang.scene.ControlFlowGraph.Edge
 import boomerang.scene._
 
-class SWANStaticFieldVal(val field: Field, method: Method, unbalanced: Edge = null) extends StaticFieldVal(method, unbalanced) {
+class SWANStaticFieldVal(val field: SWANField, method: Method, unbalanced: Edge = null) extends StaticFieldVal(method, unbalanced) {
 
   override def asUnbalanced(edge: Edge): Val = {
     new SWANStaticFieldVal(field, method, edge)

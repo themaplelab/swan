@@ -272,6 +272,11 @@ bb0(%0 : $`@thin Array<τ_0_0>.Type`):
   return ret
 }
 
+func [model] @`Swift.Array.init<A where A == A1.Element, A1: Swift.Sequence>(A1) -> [A]` : $`@owned Array<τ_0_0>` {
+bb0(%0 : $`@in τ_1_0`, %1 : $`@thin Array<τ_0_0>.Type`):
+  return %0
+}
+
 // %0 -> value to append (pointer), %1 -> array pointer
 func [model] @`Swift.Array.append(__owned A) -> ()` : $`()` {
 bb0(%0 : $`*τ_0_0`, %1 : $`*Array<τ_0_0>`):
@@ -952,6 +957,11 @@ bb0(%0 : $`String`, %1 : $`String`, %2 : $`String.Type`):
   return %ret
 }
 
+func [model] @`Swift.String.utf8.getter : Swift.String.UTF8View` : $`@owned String.UTF8View` {
+bb0(%0 : $`@guaranteed String`):
+  return %0
+}
+
 // -------------------- SIL -----------------------------------------
 // Usually low-level functions.
 
@@ -975,6 +985,11 @@ bb0(%0 : $`@guaranteed _ContiguousArrayBuffer<τ_0_0>`):
 func [model] @`static Swift.String.+ infix(Swift.String, Swift.String) -> Swift.String` : $`@owned String` {
 bb0(%0 : $`@guaranteed String`, %1 : $`@guaranteed String`, %2 : $`@thin String.Type`):
   %ret = binary_op %0 [reg] %1, $`@owned String`
+  cond_br %0, true bb1, false bb2
+bb1:
+  %ret = binary_op %1 [reg] %0, $`@owned String`
+  br bb2
+bb2:
   return %ret
 }
 

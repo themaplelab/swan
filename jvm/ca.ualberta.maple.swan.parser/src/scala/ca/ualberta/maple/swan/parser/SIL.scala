@@ -561,6 +561,7 @@ object StructInit {
     })
     arr.append(new StructInit("UnsafeRawPointer", ArrayBuffer("_rawValue"), InitType.normal))
     arr.append(new StructInit("IndexingIterator<Array<.*>>", ArrayBuffer("_elements", "_position"), InitType.normal, true))
+    arr.append(new StructInit("StaticString", ArrayBuffer("_builtinStringLiteral", "utf8CodeUnitCount", "isASCII"), InitType.normal))
     arr
   }
 }

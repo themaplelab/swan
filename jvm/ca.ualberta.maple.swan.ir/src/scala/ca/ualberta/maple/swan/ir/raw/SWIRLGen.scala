@@ -1228,9 +1228,8 @@ class SWIRLGen {
     operators.append(makeOperator(ctx, makeNewOperator(result, Utils.SILTypeToType(I.tpe), ctx)).head)
     if (init.nonEmpty) {
       I.operands.view.zipWithIndex.foreach(op => {
-        if (init.get.args.length <= op._2) {
-          // TODO: This appears to be non-deterministic
-          throw new UnexpectedSILFormatException("Missing init arg definition for " + result.tpe)
+        if (op._2 >= init.get.args.length) {
+          throw new UnexpectedSILFormatException("Missing/incorrect init arg definition for " + result.tpe.name + " | " + ctx.pos.getOrElse("unknown pos"))
         }
         operators.append(makeOperator(ctx,
           Operator.fieldWrite(makeSymbolRef(op._1.value, ctx), result.ref, init.get.args(op._2), None)).head)

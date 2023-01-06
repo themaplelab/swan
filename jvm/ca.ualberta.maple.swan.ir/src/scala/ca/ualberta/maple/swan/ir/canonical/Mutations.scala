@@ -35,7 +35,6 @@ class Mutations(val function: CanFunction, val module: Module) {
   def doMutations(): Unit = {
     locationManager()
     pointerManager()
-
     // ...
   }
 

@@ -269,6 +269,10 @@ func test_r3_simple_violation() throws {
   _ = try Rabbit(key: keyString) //$KEY$error
   _ = try Rabbit(key: key, iv: iv) //$KEY$error
   _ = try Rabbit(key: keyString, iv: ivString) //$KEY$error
+
+  // Concat
+  let concatKey = "con"+"cat"+"me"
+  _ = try AES(key: concatKey, iv: ivString) //$KEY$error
 }
 
 func test_r3_simple_no_violation() throws {
@@ -319,4 +323,8 @@ func test_r3_simple_no_violation() throws {
   _ = try Rabbit(key: keyString)
   _ = try Rabbit(key: key, iv: iv)
   _ = try Rabbit(key: keyString, iv: ivString)
+
+  // Concat
+  let concatKey = "con"+"cat"+keyString+"me"
+  _ = try AES(key: concatKey, iv: ivString) //$KEY$error$fp
 }

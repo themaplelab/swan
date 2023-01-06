@@ -22,6 +22,7 @@ package ca.ualberta.maple.swan.test
 import ca.ualberta.maple.swan.drivers.Driver
 import ca.ualberta.maple.swan.ir.{CanInstructionDef, Position}
 import ca.ualberta.maple.swan.spds.analysis.crypto.CryptoAnalysis
+import ca.ualberta.maple.swan.spds.analysis.crypto.CryptoAnalysis.ResultType
 import ca.ualberta.maple.swan.spds.analysis.taint.TaintResults.Path
 import ca.ualberta.maple.swan.spds.analysis.taint.TaintSpecification.JSONMethod
 import ca.ualberta.maple.swan.spds.analysis.taint.{TaintResults, TaintSpecification}
@@ -244,7 +245,7 @@ class AnnotationChecker extends Runnable {
               }
             } else {
               failure = true
-              printErr("Missing annotation for " + pos.toString)
+              printErr("Missing " + e._2 + " annotation for " + pos.toString)
             }
           }
         })
@@ -274,9 +275,9 @@ class AnnotationChecker extends Runnable {
       val buffer = Source.fromFile(f)
       val annotations = new mutable.HashMap[Int, ArrayBuffer[Annotation]]
       buffer.getLines().zipWithIndex.foreach(l => {
-        val line = l._1
+        val line = l._1.trim
         val idx = l._2 + 1
-        if (line.contains("//")) {
+        if (line.contains("//") && !line.startsWith("//")) {
           line.split("//").foreach(c => {
             if (c.startsWith("$")) {
               val components = c.trim.split(" ")(0).split("\\$")
@@ -323,7 +324,7 @@ class AnnotationChecker extends Runnable {
                 }
               }
             } else {
-              failures.append("Missing annotation for " + pos.toString)
+              failures.append(s"Missing ${ResultType.toDisplayString(e.tpe)} annotation on ${pos.toString}")
             }
           }
         }
