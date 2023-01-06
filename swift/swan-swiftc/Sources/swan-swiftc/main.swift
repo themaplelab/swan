@@ -156,8 +156,10 @@ struct SWANSwiftcBuild: ParsableCommand {
       printFailure("Could not write SIL to \(filename)\nReason: \(error.localizedDescription)")
     }
     
-    // Delete generated unneeded generate file '-.gsil_0.sil'
-    try FileManager().removeItem(at: URL(fileURLWithPath: "-.gsil_0.sil"))
+    do {
+      // Delete unneeded generated file '-.gsil_0.sil'
+      try FileManager().removeItem(at: URL(fileURLWithPath: "-.gsil_0.sil"))
+    } catch {}
     
     printStatus("\nSIL written to \(outputDir.path)")
   }
