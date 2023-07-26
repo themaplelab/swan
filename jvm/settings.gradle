@@ -1,3 +1,9 @@
+pluginManagement {
+    plugins {
+        id 'com.github.johnrengelman.shadow' version "${GradleShadowVersion}"
+    }
+}
+
 rootProject.name = 'swan-spds'
 
 include 'ca.ualberta.maple.swan.spds'

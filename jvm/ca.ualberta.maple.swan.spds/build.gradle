@@ -36,21 +36,21 @@ dependencies {
     implementation project(":ca.ualberta.maple.swan.ir")
     implementation project(":ca.ualberta.maple.swan.utils")
 
-    compile 'org.jsoup:jsoup:1.12.1' // pretty print html
+    implementation 'org.jsoup:jsoup:1.12.1' // pretty print html
 
-    compile 'de.fraunhofer.iem:WPDS:3.1.1'
-    compile 'de.fraunhofer.iem:boomerangScope:3.1.1'
-    compile 'de.fraunhofer.iem:boomerangPDS:3.1.1'
-    compile 'de.fraunhofer.iem:idealPDS:3.1.1'
+    implementation 'de.fraunhofer.iem:WPDS:3.1.1'
+    implementation 'de.fraunhofer.iem:boomerangScope:3.1.1'
+    implementation 'de.fraunhofer.iem:boomerangPDS:3.1.1'
+    implementation 'de.fraunhofer.iem:idealPDS:3.1.1'
 
-    compile 'com.lihaoyi:upickle_2.13:1.3.13'
+    implementation 'com.lihaoyi:upickle_2.13:1.3.13'
 
     implementation 'org.scala-lang:scala3-library_3:'+project.property("SCALA_VERSION")
-    compile group: 'org.scala-lang.modules', name: 'scala-collection-contrib_2.13', version: '0.2.2'
+    implementation group: 'org.scala-lang.modules', name: 'scala-collection-contrib_2.13', version: '0.2.2'
 
     testImplementation('org.junit.jupiter:junit-jupiter-api:5.4.2')
     testImplementation('org.junit.jupiter:junit-jupiter-params:5.4.2')
-    testRuntime('org.junit.jupiter:junit-jupiter-engine:5.4.2')
+    testRuntimeOnly('org.junit.jupiter:junit-jupiter-engine:5.4.2')
 }
 
 mainClassName = "ca.ualberta.maple.swan.spds.probe.CallGraphInfo"

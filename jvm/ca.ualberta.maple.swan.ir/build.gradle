@@ -31,9 +31,9 @@ dependencies {
     implementation project(":ca.ualberta.maple.swan.utils")
 
     implementation 'org.scala-lang:scala3-library_3:'+project.property("SCALA_VERSION")
-    compile group: 'org.scala-lang.modules', name: 'scala-collection-contrib_2.13', version: '0.2.2'
+    implementation group: 'org.scala-lang.modules', name: 'scala-collection-contrib_2.13', version: '0.2.2'
 
-    compile group: "guru.nidi", name: "graphviz-java", version: "0.9.0"
+    implementation group: "guru.nidi", name: "graphviz-java", version: "0.9.0"
 
-    compile group: 'org.jgrapht', name: 'jgrapht-core', version:'1.4.0'
+    implementation group: 'org.jgrapht', name: 'jgrapht-core', version:'1.4.0'
 }
