@@ -328,7 +328,7 @@ class SILParser extends SILPrinter {
   def parseFunction(): SILFunction = {
     take("sil")
     val linkage = parseLinkage()
-    val attributes = { parseNilOrMany("[", parseFunctionAttribute) }.getOrElse(new ArrayBuffer[SILFunctionAttribute])
+    val attributes = { parseNilOrMany("[", () => parseFunctionAttribute()) }.getOrElse(new ArrayBuffer[SILFunctionAttribute])
     val name = parseMangledName()
     take(":")
     val tpe = parseType()
@@ -2837,7 +2837,7 @@ class SILParser extends SILPrinter {
           continue = false
         } else {
           val escaped = take(_ == '\\')
-          append(escaped)
+          s.append(escaped)
           if (escaped.length % 2 != 0) {
             if (skip("\"")) s.append("\"")
           }
