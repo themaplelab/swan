@@ -213,10 +213,13 @@ class SILParser extends SILPrinter {
   @throws[Error]
   protected def parseMany[T:ClassTag](pre: String, parseOne: () => T): ArrayBuffer[T] = {
     val result = new ArrayBuffer[T]
-    do {
-      val element = parseOne()
-      result.append(element)
-    } while (peek(pre))
+    while {
+      {
+        val element = parseOne()
+        result.append(element)
+      };
+      peek(pre)
+    } do ()
     result
   }
 
@@ -2827,18 +2830,21 @@ class SILParser extends SILPrinter {
     take("\"", skip = false)
     val s = new StringBuilder
     var continue = true
-    do {
-      s.append(take(c => c != '\\' && c != '\"'))
-      if (skip("\"")) {
-        continue = false
-      } else {
-        val escaped = take(_ == '\\')
-        s.append(escaped)
-        if (escaped.length % 2 != 0) {
-          if (skip("\"")) s.append("\"")
+    while {
+      {
+        s.append(take(c => c != '\\' && c != '\"'))
+        if (skip("\"")) {
+          continue = false
+        } else {
+          val escaped = take(_ == '\\')
+          append(escaped)
+          if (escaped.length % 2 != 0) {
+            if (skip("\"")) s.append("\"")
+          }
         }
-      }
-    } while (continue)
+      };
+      continue
+    } do ()
     s.toString
   }
 
