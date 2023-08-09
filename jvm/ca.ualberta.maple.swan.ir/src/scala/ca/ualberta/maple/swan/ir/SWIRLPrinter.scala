@@ -586,7 +586,7 @@ class SWIRLPrinter extends Printer {
     binaryOperation match {
       case BinaryOperation.regular => print("[reg]")
       case BinaryOperation.arbitrary => print("[arb]")
-      case BinaryOperation.equals => print("[eq]")
+      case BinaryOperation.equalsOp => print("[eq]")
     }
   }
 

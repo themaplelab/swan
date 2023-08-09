@@ -208,10 +208,13 @@ class SWIRLParser extends SWIRLPrinter {
   @throws[Error]
   protected def parseMany[T:ClassTag](pre: String, parseOne: () => T): ArrayBuffer[T] = {
     val result = new ArrayBuffer[T]
-    do {
-      val element = parseOne()
-      result.append(element)
-    } while (peek(pre))
+    while {
+      {
+        val element = parseOne()
+        result.append(element)
+      };
+      peek(pre)
+    } do ()
     result
   }
 
@@ -689,7 +692,7 @@ class SWIRLParser extends SWIRLPrinter {
   def parseBinaryOperation(): BinaryOperation = {
     if(skip("[reg]")) return BinaryOperation.regular
     if(skip("[arb]")) return BinaryOperation.arbitrary
-    if(skip("[eq]")) return BinaryOperation.equals
+    if(skip("[eq]")) return BinaryOperation.equalsOp
     throw parseError("unknown unary operation")
   }
 
@@ -801,10 +804,13 @@ class SWIRLParser extends SWIRLPrinter {
         false
       }
     }
-    do {
-      s += take(_ != '\"')
-      take("\"")
-    } while (continue())
+    while {
+      {
+        s += take(_ != '\"')
+        take("\"")
+      };
+      continue()
+    } do ()
     s
   }
 

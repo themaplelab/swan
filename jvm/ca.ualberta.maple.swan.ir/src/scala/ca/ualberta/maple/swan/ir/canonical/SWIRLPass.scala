@@ -317,7 +317,7 @@ class SWIRLPass {
           cases.zipWithIndex.foreach(c => {
             val cse = c._1
             val cond = new Symbol(generateSymbolName(cse.value.name), new Type("Builtin.Int1"))
-            val binaryOp = new RawOperatorDef(Operator.binaryOp(cond, BinaryOperation.equals, cse.value, switchOn), position)
+            val binaryOp = new RawOperatorDef(Operator.binaryOp(cond, BinaryOperation.equalsOp, cse.value, switchOn), position)
             val brIf = new RawTerminatorDef(Terminator.brIf(cond.ref, cse.destination, new ArrayBuffer), position)
             mapToSIL(b.terminator, binaryOp, module)
             mapToSIL(b.terminator, brIf, module)
@@ -362,7 +362,7 @@ class SWIRLPass {
             val typeLiteralSymbol = new Symbol(generateSymbolName(switchOn.name), new Type("Builtin.RawPointer"))
             val typeLiteral = new RawOperatorDef(Operator.literal(typeLiteralSymbol, Literal.string(c._1.decl)), position)
             val cond = new Symbol(generateSymbolName(switchOn.name), new Type("Builtin.Int1"))
-            val binaryOp = new RawOperatorDef(Operator.binaryOp(cond, BinaryOperation.equals, typeSymbol.ref, typeLiteralSymbol.ref), position)
+            val binaryOp = new RawOperatorDef(Operator.binaryOp(cond, BinaryOperation.equalsOp, typeSymbol.ref, typeLiteralSymbol.ref), position)
             // T0DO: SLOW
             val targetBlock = f.blocks.find(p => p.blockRef.equals(cse.destination)).get
             val brIf = new RawTerminatorDef(Terminator.brIf(cond.ref, cse.destination,
@@ -419,7 +419,7 @@ class SWIRLPass {
                 b.operators(idx) = a2
                 b.operators.insert(idx, a1)
               }
-              case BinaryOperation.arbitrary | BinaryOperation.equals => {
+              case BinaryOperation.arbitrary | BinaryOperation.equalsOp => {
                 val ni = new RawOperatorDef(Operator.neww(result, result.tpe), op.position)
                 mapToSIL(op, ni, module)
                 b.operators(idx) = ni

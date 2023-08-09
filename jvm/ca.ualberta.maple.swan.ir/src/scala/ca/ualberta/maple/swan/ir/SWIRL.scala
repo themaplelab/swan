@@ -259,7 +259,7 @@ sealed trait BinaryOperation extends Serializable
 object BinaryOperation {
   case object regular extends BinaryOperation
   case object arbitrary extends BinaryOperation
-  case object equals extends BinaryOperation
+  case object equalsOp extends BinaryOperation
 }
 
 sealed trait Literal extends Serializable

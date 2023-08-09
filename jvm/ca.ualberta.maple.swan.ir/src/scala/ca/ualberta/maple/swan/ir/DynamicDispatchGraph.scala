@@ -100,7 +100,7 @@ class DynamicDispatchGraph extends Serializable {
 
   /** Generate and populate `graph`. */
   def generate(module: SILModule): Unit = {
-    def makeNode[T <: Node](name: String, tpe: String)(implicit tag: ClassTag[T]): Node = {
+    def makeNode[T <: Node](name: String, tpe: String): Node = {
       if (nodes.contains(name)) {
         nodes(name)
       } else {
