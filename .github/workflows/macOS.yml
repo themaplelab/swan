@@ -26,7 +26,7 @@ jobs:
       env:
         USERNAME: ${{ secrets.USERNAME }}
         PASSWORD: ${{ secrets.PASSWORD }}
-      run: printf "SCALA_VERSION=3.0.0\nUSERNAME=$USERNAME\nPASSWORD=$PASSWORD\n" > jvm/gradle.properties
+      run: printf "SCALA_VERSION=3.0.0\nGradleShadowVersion=8.0.0\nUSERNAME=$USERNAME\nPASSWORD=$PASSWORD\n" > jvm/gradle.properties
     - name: Add swift-demangle to PATH
       run: |
         mkdir -p $GITHUB_WORKSPACE/bin
