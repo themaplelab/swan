@@ -26,7 +26,7 @@ jobs:
     - name: Set gradle settings
       env:
         USERNAME: ${{ secrets.USERNAME }}
-        PASSWORD: ${{ secrets.PASSWORD }}
+        PASSWORD: ${{ secrets.GITHUB_TOKEN }}
       run: printf "SCALA_VERSION=3.0.0\nGradleShadowVersion=8.0.0\nUSERNAME=$USERNAME\nPASSWORD=$PASSWORD\n" > jvm/gradle.properties
     - name: Build everything
       run: ./build.sh
