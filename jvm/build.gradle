@@ -4,7 +4,6 @@ version '1.0-SNAPSHOT'
 allprojects {
     repositories {
         mavenCentral()
-        jcenter()
         maven {
             name = "github"
             url = uri("https://maven.pkg.github.com/CodeShield-Security/SPDS/")
@@ -13,9 +12,10 @@ allprojects {
                 password = project.property("PASSWORD")
             }
         }
+
         maven {
-            name = "soot"
-            url = uri("https://soot-build.cs.uni-paderborn.de/nexus/repository/soot-release/")
+            name = "local"
+            url = "file://" + project.rootDir + "/resources/spds"
         }
     }
 }

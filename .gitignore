@@ -33,6 +33,9 @@ dev/SwanViewer/SwanViewer.xcodeproj/project.xcworkspace
 *.tar.gz
 *.rar
 
+# don't ignore JARs in the local maven repo
+!jvm/resources/spds/**/*.jar
+
 # virtual machine crash logs, see http://www.java.com/en/download/help/error_hotspot.xml
 hs_err_pid*
 
