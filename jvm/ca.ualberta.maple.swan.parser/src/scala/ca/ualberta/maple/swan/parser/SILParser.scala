@@ -81,6 +81,7 @@ class SILParser extends SILPrinter {
   @throws[Error]
   protected def take(query: String, skip: Boolean = true): Unit = {
     if (!peek(query)) {
+      println(":::: " + chars.view.slice(cursor, cursor + query.length).mkString)
       throw parseError(query + " expected")
     }
     cursor += query.length
@@ -172,6 +173,40 @@ class SILParser extends SILPrinter {
       while (!break) {
         val element = parseOne()
         result.append(element)
+        if (peek(suf)) {
+          break = true
+        } else {
+          if (!sep.isEmpty) {
+            take(sep)
+          }
+          // In case (element,)
+          if (peek(suf)) {
+            break = true
+          }
+        }
+      }
+    }
+    take(suf)
+    result
+  }
+
+  @throws[Error]
+  protected def parseNilOrManyBlocks[T: ClassTag](pre: String, sep: String = "", suf: String = "", parseOne: () => T): Option[ArrayBuffer[T]] = {
+    if (!peek(pre)) return None
+    Some(parseManyBlocks(pre, sep, suf, parseOne))
+  }
+
+  @throws[Error]
+  protected def parseManyBlocks[T: ClassTag](pre: String, sep: String, suf: String, parseOne: () => T): ArrayBuffer[T] = {
+    take(pre)
+    if(peek("[")) skip(_ != '\n')
+    val result = new ArrayBuffer[T]
+    if (!peek(suf)) {
+      var break = false
+      while (!break) {
+        val element = parseOne()
+        result.append(element)
+
         if (peek(suf)) {
           break = true
         } else {
@@ -332,13 +367,14 @@ class SILParser extends SILPrinter {
     val name = parseMangledName()
     take(":")
     val tpe = parseType()
-    val blocks = { parseNilOrMany("{", "", "}", parseBlock) }.getOrElse(new ArrayBuffer[SILBlock])
+    val blocks = { parseNilOrManyBlocks("{", "", "}", parseBlock) }.getOrElse(new ArrayBuffer[SILBlock])
     new SILFunction(linkage, attributes, name, tpe, blocks)
   }
 
   // https://github.com/apple/swift/blob/master/docs/SIL.rst#basic-blocks
   @throws[Error]
   def parseBlock(): SILBlock = {
+//    if(peek("[")) skip(_ != '\n') // skip the first line if it starts with '[' to ignore escape information.
     val identifier = parseIdentifier()
     val arguments = { parseNilOrMany("(", ",", ")", parseArgument) }.getOrElse(new ArrayBuffer[SILArgument])
     take(":")
@@ -639,6 +675,7 @@ class SILParser extends SILPrinter {
         SILInstruction.operator(SILOperator.storeBorrow(from, to))
       }
       case "begin_borrow" => {
+        skip("[lexical]") // skip the optional [lexical] attribute
         val operand = parseOperand()
         SILInstruction.operator(SILOperator.beginBorrow(operand))
       }
@@ -654,7 +691,7 @@ class SILParser extends SILPrinter {
         val take = skip("[take]")
         val value = parseValue()
         this.take("to")
-        val initialization = skip("[initialization]")
+        val initialization = skip("[init]")
         val operand = parseOperand()
         SILInstruction.operator(SILOperator.copyAddr(take, value, initialization, operand))
       }
@@ -666,10 +703,11 @@ class SILParser extends SILPrinter {
         SILInstruction.operator(SILOperator.destroyAddr(operand))
       }
       case "index_addr" => {
+        val stackProtection = skip("[stack_protection]")
         val addr = parseOperand()
         take(",")
         val index = parseOperand()
-        SILInstruction.operator(SILOperator.indexAddr(addr, index))
+        SILInstruction.operator(SILOperator.indexAddr(stackProtection, addr, index))
       }
       case "tail_addr" => { // NSIP
         throw missing("tail_addr")
@@ -1786,8 +1824,9 @@ class SILParser extends SILPrinter {
     take(":")
     val tpe = {
       if (peek("@")) {
-        val attr = parseTypeAttribute()
-        SILType.withOwnership(attr, parseType())
+//        val attr = parseTypeAttribute()
+        val attrs = parseMany("@", parseTypeAttribute)
+        SILType.attributedType(attrs, parseType())
       } else {
         parseType()
       }
@@ -2724,6 +2763,7 @@ class SILParser extends SILPrinter {
         grow(tpe)
       }
     } else {
+      skip("any") // skip that new keyword in Swift 5.7
       val name = parseTypeName()
       val arg: Option[SILType] = {
         if ((nakedStack.inSquare || nakedStack.inParen) && skip(":")) {
@@ -2910,6 +2950,7 @@ class SILParser extends SILPrinter {
     if(skip("@callee_guaranteed")) return SILTypeAttribute.calleeGuaranteed
     if(skip("@substituted")) return SILTypeAttribute.substituted
     if(skip("@convention")) return SILTypeAttribute.convention(parseConvention())
+    if(skip("@closureCapture")) return SILTypeAttribute.closureCapture
     if(skip("@guaranteed")) return SILTypeAttribute.guaranteed
     if(skip("@in_guaranteed")) return SILTypeAttribute.inGuaranteed
     // Must appear before "inout" to parse correctly.

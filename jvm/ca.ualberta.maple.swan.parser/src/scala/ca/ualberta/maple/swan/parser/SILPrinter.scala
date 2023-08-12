@@ -333,8 +333,9 @@ class SILPrinter extends Printer {
         print("destroy_addr ")
         print(operand)
       }
-      case SILOperator.indexAddr(addr, index) => {
+      case SILOperator.indexAddr(stackProtection, addr, index) => {
         print("index_addr ")
+        print( "[stack_protection] ", stackProtection)
         print(addr)
         print(", ")
         print(index)
@@ -1981,6 +1982,7 @@ class SILPrinter extends Printer {
         print("@convention")
         print(convention)
       }
+      case SILTypeAttribute.closureCapture => print("@closureCapture")
       case SILTypeAttribute.guaranteed => print("@guaranteed")
       case SILTypeAttribute.inGuaranteed => print("@in_guaranteed")
       case SILTypeAttribute.in => print("@in")

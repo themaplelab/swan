@@ -145,7 +145,7 @@ object SILOperator {
   // Raw SIL only: mark_uninitialized_behaviour
   case class copyAddr(take: Boolean, value: String, initialization: Boolean, operand: SILOperand) extends SILOperator
   case class destroyAddr(operand: SILOperand) extends SILOperator
-  case class indexAddr(addr: SILOperand, index: SILOperand) extends SILOperator
+  case class indexAddr(stackProtection: Boolean, addr: SILOperand, index: SILOperand) extends SILOperator
   // NSIP: tail_addr
   case class indexRawPointer(pointer: SILOperand, offset: SILOperand) extends SILOperator
   case class bindMemory(operand1: SILOperand, operand2: SILOperand, toType: SILType) extends SILOperator
@@ -768,6 +768,7 @@ object SILTypeAttribute {
   case object calleeGuaranteed extends SILTypeAttribute
   case object substituted extends SILTypeAttribute
   case class convention(convention: SILConvention) extends SILTypeAttribute
+  case object closureCapture extends SILTypeAttribute
   case object guaranteed extends SILTypeAttribute
   case object inGuaranteed extends SILTypeAttribute
   case object in extends SILTypeAttribute
