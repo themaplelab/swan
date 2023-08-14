@@ -309,8 +309,9 @@ class SILPrinter extends Printer {
         print(" to ")
         print(to)
       }
-      case SILOperator.beginBorrow(operand) => {
+      case SILOperator.beginBorrow(lexical, operand) => {
         print("begin_borrow ")
+        print("[lexical] ", lexical)
         print(operand)
       }
       case SILOperator.endBorrow(operand) => {
@@ -326,7 +327,7 @@ class SILPrinter extends Printer {
         print( "[take] ", take)
         print(value)
         print(" to ")
-        print( "[initialization] ", initialization)
+        print( "[init] ", initialization)
         print(operand)
       }
       case SILOperator.destroyAddr(operand) => {

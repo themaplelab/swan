@@ -327,9 +327,6 @@ class Driver extends Runnable {
     if (!swanDir.exists()) {
       throw new FileExistsException("swan-dir does not exist")
     }
-
-    Logging.printInfo(swanDir.getAbsolutePath)
-
     val runStartTime = System.nanoTime()
     val generalStats = new GeneralStats
     val proc = new SwanDirProcessor(swanDir, options, invalidateCache.nonEmpty, forceRead.nonEmpty)

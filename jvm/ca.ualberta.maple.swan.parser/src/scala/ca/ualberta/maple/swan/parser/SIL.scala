@@ -133,7 +133,7 @@ object SILOperator {
   // SIL.rst says that load_borrow takes a sil-value, but in reality it takes a sil-operand.
   case class loadBorrow(operand: SILOperand) extends SILOperator
   // begin_borrow has T0D0 in SIL.rst and I think it's NSIP, but tensorflow had parsing for it so use it.
-  case class beginBorrow(operand: SILOperand) extends SILOperator
+  case class beginBorrow(lexical: Boolean, operand: SILOperand) extends SILOperator
   // NOTE: The SIL.rst for end_borrow is not consistent with in-practice instructions at all.
   case class endBorrow(operand: SILOperand) extends SILOperator
   // Not documented in SIL.rst

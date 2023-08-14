@@ -81,7 +81,6 @@ class SILParser extends SILPrinter {
   @throws[Error]
   protected def take(query: String, skip: Boolean = true): Unit = {
     if (!peek(query)) {
-      println(":::: " + chars.view.slice(cursor, cursor + query.length).mkString)
       throw parseError(query + " expected")
     }
     cursor += query.length
@@ -675,9 +674,9 @@ class SILParser extends SILPrinter {
         SILInstruction.operator(SILOperator.storeBorrow(from, to))
       }
       case "begin_borrow" => {
-        skip("[lexical]") // skip the optional [lexical] attribute
+        val lexical = skip("[lexical]")
         val operand = parseOperand()
-        SILInstruction.operator(SILOperator.beginBorrow(operand))
+        SILInstruction.operator(SILOperator.beginBorrow(lexical, operand))
       }
       case "end_borrow" => {
         val operand = parseOperand()
@@ -1824,7 +1823,6 @@ class SILParser extends SILPrinter {
     take(":")
     val tpe = {
       if (peek("@")) {
-//        val attr = parseTypeAttribute()
         val attrs = parseMany("@", parseTypeAttribute)
         SILType.attributedType(attrs, parseType())
       } else {
