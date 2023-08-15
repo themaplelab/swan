@@ -712,8 +712,10 @@ class SWIRLGen {
   @throws[UnexpectedSILTypeBehaviourException]
   @throws[UnexpectedSILTypeBehaviourException]
   def visitStoreBorrow(r: Option[SILResult], I: SILOperator.storeBorrow, ctx: Context): ArrayBuffer[RawInstructionDef] = {
-    makeOperator(ctx, Operator.pointerWrite(makeSymbolRef(I.from, ctx), makeSymbolRef(I.to.value, ctx)))
-    makeOperator(ctx, Operator.assign(getSingleResult(r, Utils.SILTypeToType(I.to.tpe), ctx), makeSymbolRef(I.to.value, ctx)))
+    val instructions = new ArrayBuffer[RawInstructionDef]()
+    instructions.appendAll(makeOperator(ctx, Operator.pointerWrite(makeSymbolRef(I.from, ctx), makeSymbolRef(I.to.value, ctx))))
+    instructions.appendAll(makeOperator(ctx, Operator.assign(getSingleResult(r, Utils.SILTypeToType(I.to.tpe), ctx), makeSymbolRef(I.to.value, ctx))))
+    instructions
   }
 
   @throws[UnexpectedSILFormatException]
