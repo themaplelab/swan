@@ -3789,9 +3789,9 @@ sil public_external [transparent] [serialized] [ossa] @$sSLsE3zzloiySnyxGx_xtFZ 
 // %2                                             // users: %43, %7
 bb0(%0 : $*Range<Self>, %1 : $*Self, %2 : $*Self, %3 : $@thick Self.Type):
   %4 = alloc_stack $Self, scope 216               // users: %38, %35, %27, %5
-  copy_addr %1 to [initialization] %4 : $*Self, scope 216 // id: %5
+  copy_addr %1 to [init] %4 : $*Self, scope 216 // id: %5
   %6 = alloc_stack $Self, scope 216               // users: %37, %36, %27, %7
-  copy_addr %2 to [initialization] %6 : $*Self, scope 216 // id: %7
+  copy_addr %2 to [init] %6 : $*Self, scope 216 // id: %7
   %8 = string_literal utf8 "Can't form Range with upperBound < lowerBound", scope 216 // user: %10
   %9 = integer_literal $Builtin.Word, 45, scope 216 // user: %14
   %10 = builtin "ptrtoint_Word"(%8 : $Builtin.RawPointer) : $Builtin.Word, scope 216 // user: %14
@@ -3839,9 +3839,9 @@ bb7:                                              // Preds: bb6
   dealloc_stack %4 : $*Self, scope 216            // id: %38
   %39 = metatype $@thin Range<Self>.Type, scope 216 // user: %45
   %40 = alloc_stack $Self, scope 216              // users: %47, %45, %41
-  copy_addr %1 to [initialization] %40 : $*Self, scope 216 // id: %41
+  copy_addr %1 to [init] %40 : $*Self, scope 216 // id: %41
   %42 = alloc_stack $Self, scope 216              // users: %46, %45, %43
-  copy_addr %2 to [initialization] %42 : $*Self, scope 216 // id: %43
+  copy_addr %2 to [init] %42 : $*Self, scope 216 // id: %43
   // function_ref Range.init(uncheckedBounds:)
   %44 = function_ref @$sSn15uncheckedBoundsSnyxGx5lower_x5uppert_tcfC : $@convention(method) <τ_0_0 where τ_0_0 : Comparable> (@in τ_0_0, @in τ_0_0, @thin Range<τ_0_0>.Type) -> @out Range<τ_0_0>, scope 216 // user: %45
   %45 = apply %44<Self>(%0, %40, %42, %39) : $@convention(method) <τ_0_0 where τ_0_0 : Comparable> (@in τ_0_0, @in τ_0_0, @thin Range<τ_0_0>.Type) -> @out Range<τ_0_0>, scope 216
