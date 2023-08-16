@@ -927,6 +927,13 @@ bb0(%0 : $`UnsafePointer<UInt8>`, %1 : $`@thin String.Type`):
   return val
 }
 
+// %0 -> Array from which to initialize the string, the rest is irrelevant
+// Just return the actual array directly
+func [model] @`Swift.String.init(cString: [Swift.UInt8]) -> Swift.String` : $`@owned String` {
+bb0(%0 : $`@owned Array<UInt8>`, %1 : $`@thin String.Type`):
+  return %0
+}
+
 // String initialization
 func [model] @`Swift.String.init<A where A: Swift.LosslessStringConvertible, A: Swift.Sequence, A.Swift.Sequence.Element == Swift.Character>(A) -> Swift.String` : $`@owned String` {
 bb0(%0 : $`*τ_0_0`, %1 : $`@thin String.Type`):
