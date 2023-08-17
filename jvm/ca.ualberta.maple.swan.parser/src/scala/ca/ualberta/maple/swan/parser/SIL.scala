@@ -280,7 +280,7 @@ object SILOperator {
 
   /***** UNCHECKED CONVERSIONS *****/
   case class upcast(operand: SILOperand, tpe: SILType) extends SILOperator
-  case class addressToPointer(operand: SILOperand, tpe: SILType) extends SILOperator
+  case class addressToPointer(stackProtection: Boolean, operand: SILOperand, tpe: SILType) extends SILOperator
   case class pointerToAddress(operand: SILOperand, strict: Boolean, tpe: SILType) extends SILOperator
   case class uncheckedRefCast(operand: SILOperand, tpe: SILType) extends SILOperator
   case class uncheckedRefCastAddr(fromTpe: SILType, fromOperand: SILOperand, toTpe: SILType, toOperand: SILOperand) extends SILOperator

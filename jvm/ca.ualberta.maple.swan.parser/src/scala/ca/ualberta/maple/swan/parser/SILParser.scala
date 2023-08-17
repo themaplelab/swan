@@ -1369,10 +1369,11 @@ class SILParser extends SILPrinter {
         SILInstruction.operator(SILOperator.upcast(operand, tpe))
       }
       case "address_to_pointer" => {
+        val stackProtection = skip("[stack_protection]")
         val operand = parseOperand()
         take("to")
         val tpe = parseType()
-        SILInstruction.operator(SILOperator.addressToPointer(operand, tpe))
+        SILInstruction.operator(SILOperator.addressToPointer(stackProtection, operand, tpe))
       }
       case "pointer_to_address" => {
         val operand = parseOperand()

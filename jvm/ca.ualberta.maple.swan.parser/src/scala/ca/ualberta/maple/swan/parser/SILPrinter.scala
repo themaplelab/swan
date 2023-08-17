@@ -932,8 +932,9 @@ class SILPrinter extends Printer {
         print(" to ")
         print(tpe)
       }
-      case SILOperator.addressToPointer(operand, tpe) => {
+      case SILOperator.addressToPointer(stackProtection, operand, tpe) => {
         print("address_to_pointer ")
+        print( "[stack_protection] ", stackProtection)
         print(operand)
         print(" to ")
         print(tpe)
