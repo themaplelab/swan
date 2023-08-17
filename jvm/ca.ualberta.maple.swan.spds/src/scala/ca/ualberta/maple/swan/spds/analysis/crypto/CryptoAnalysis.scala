@@ -450,7 +450,7 @@ class CryptoAnalysis(val cg: SWANCallGraph, val debugDir: File, val analyzeLibra
     // containing a value X (at field  _value) and the value X itself to
     // be the same. Sometimes a function will take the raw value (X), and
     // sometimes it will take the pointer.
-    // We basically want to bridge the dataflow so that these we have continuous
+    // We basically want to bridge the dataflow so that we have continuous
     // dataflow for something like this:
     //     x = X()
     //     *y = x
@@ -519,7 +519,7 @@ class CryptoAnalysis(val cg: SWANCallGraph, val debugDir: File, val analyzeLibra
         })
       })
     })
-    if (debug) System.out.println("FOUND")
+    if (debug) if (found) System.out.println("FOUND") else System.out.println("NOT FOUND")
     found
   }
 
