@@ -2512,6 +2512,7 @@ class SILParser extends SILPrinter {
   @throws[Error]
   def parseLoc(): Option[SILLoc] = {
     if(!skip("loc")) return None
+    skip("*") // TODO: temporary fix for Swift 5.9
     val path = parseString()
     take(":")
     val line = parseInt()
