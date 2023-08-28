@@ -42,6 +42,7 @@ import java.nio.file.{Files, Paths}
 import java.util.concurrent.{ExecutionException, FutureTask, TimeUnit, TimeoutException}
 import scala.collection.mutable.ArrayBuffer
 import scala.collection.{immutable, mutable}
+import scala.sys.process._
 
 object Driver {
 
@@ -327,6 +328,12 @@ class Driver extends Runnable {
     if (!swanDir.exists()) {
       throw new FileExistsException("swan-dir does not exist")
     }
+
+    try
+      ("swift-demangle --version").!!
+    catch
+      case e: Exception => throw new FileExistsException("Cannot find swift-demangle. Create a symbolic link for swift-demangle in /usr/local/bin/ or add it to $PATH.")
+
     val runStartTime = System.nanoTime()
     val generalStats = new GeneralStats
     val proc = new SwanDirProcessor(swanDir, options, invalidateCache.nonEmpty, forceRead.nonEmpty)
