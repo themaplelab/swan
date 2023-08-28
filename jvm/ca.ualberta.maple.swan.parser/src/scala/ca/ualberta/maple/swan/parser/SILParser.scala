@@ -2989,6 +2989,8 @@ class SILParser extends SILPrinter {
     if(skip("@opened")) {
       take("(")
       val value = parseString()
+      skip(",")
+      parseNakedType()
       take(")")
       return SILTypeAttribute.opened(value)
     }
