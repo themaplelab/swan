@@ -31,7 +31,7 @@ import ca.ualberta.maple.swan.spds.analysis.taint._
 import ca.ualberta.maple.swan.spds.analysis.typestate.{TypeStateAnalysis, TypeStateResults}
 import ca.ualberta.maple.swan.spds.cg.CallGraphBuilder.CallGraphStyle.Style
 import ca.ualberta.maple.swan.spds.cg.{CallGraphBuilder, CallGraphConstructor, CallGraphUtils}
-import ca.ualberta.maple.swan.utils.Logging
+import ca.ualberta.maple.swan.utils.{Logging, SwiftDemangleLocator}
 import org.apache.commons.io.{FileExistsException, FileUtils, IOUtils}
 import picocli.CommandLine
 import picocli.CommandLine.{ArgGroup, Command, Option, Parameters}
@@ -329,8 +329,13 @@ class Driver extends Runnable {
       throw new FileExistsException("swan-dir does not exist")
     }
 
+    var swiftDemangleLocation: String = SwiftDemangleLocator.swiftDemangleLocation()
+    if swiftDemangleLocation == null then {
+      throw new FileExistsException("Cannot find swift-demangle. Create a symbolic link for swift-demangle in /usr/local/bin/ or add it to $PATH.")
+    }
+
     try
-      ("swift-demangle --version").!!
+      (s"$swiftDemangleLocation --version").!!
     catch
       case e: Exception => throw new FileExistsException("Cannot find swift-demangle. Create a symbolic link for swift-demangle in /usr/local/bin/ or add it to $PATH.")
 

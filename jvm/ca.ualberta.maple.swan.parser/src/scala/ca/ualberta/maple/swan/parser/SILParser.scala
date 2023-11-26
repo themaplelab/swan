@@ -24,7 +24,7 @@ import java.nio.charset.StandardCharsets
 import java.nio.file.{Files, Path}
 import java.util
 
-import ca.ualberta.maple.swan.utils.Logging
+import ca.ualberta.maple.swan.utils.{Logging, SwiftDemangleLocator}
 
 import scala.annotation.tailrec
 import scala.collection.mutable.ArrayBuffer
@@ -44,7 +44,7 @@ class SILParser extends SILPrinter {
   private var cursor: Int = 0
   def position(): Int = { cursor }
 
-  var swiftDemangleCommand = "swift-demangle -compact "
+  var swiftDemangleCommand = s"${SwiftDemangleLocator.swiftDemangleLocation()} -compact "
 
   private val toDemangle: ArrayBuffer[SILMangledName] = new ArrayBuffer[SILMangledName]
 
