@@ -35,6 +35,7 @@ import scala.util.control.Breaks
 // Canonical SIL Parser. Most of it is reverse engineered. It does not
 // necessarily follow the naming or store properties in the same
 // way that the Swift compiler does. e.g. SILDeclRef and SILType.
+// Last supported: https://github.com/swiftlang/swift/releases/tag/swift-5.8.1-RELEASE
 class SILParser extends SILPrinter {
 
   // Default constructor should not be called.
