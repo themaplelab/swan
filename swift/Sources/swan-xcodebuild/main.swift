@@ -20,33 +20,20 @@
 import ArgumentParser
 import ColorizeSwift
 import Foundation
+import SwanSwiftBuildLogParser
 
 struct Constants {
   static let defaultSwanDir = "swan-dir/"
   static let xcodebuildLog  = "xcodebuild.log"
 }
 
-struct Section {
-  let platform: String
-  let target: String
-  let project: String
-  let sil: String
-}
-
-extension String: Error {}
-
-func ==(lhs: Section, rhs: Section) -> Bool {
-  // Do NOT include platform. Might not be necesssary to compare SIL.
-  return ((lhs.target == rhs.target) && (lhs.project == rhs.project) && (lhs.sil == rhs.sil))
-}
-
-struct SWANXcodebuild: ParsableCommand {
+struct SWANXcodebuild: ParsableCommand, Logger {
   static let configuration = CommandConfiguration(
     abstract: "Build and dump SIL for a Swift application using xcodebuild.")
 
   // Ignore the warning generated from this.
   @Option(default: Constants.defaultSwanDir, help: "Output directory for SIL.")
-  var swanDir: String?
+  var swanDir: String
 
   @Flag(help: "Attempt to parse the build output even if xcodebuild fails.")
   var allowFailure: Bool
@@ -80,7 +67,7 @@ struct SWANXcodebuild: ParsableCommand {
 
   func run() throws {
 
-    let outputDir = URL(fileURLWithPath: self.swanDir!)
+    let outputDir = URL(fileURLWithPath: self.swanDir)
     let srcCopyDir = outputDir.appendingPathComponent("src")
 
     let xcodebuildLog = outputDir.appendingPathComponent(Constants.xcodebuildLog)
@@ -175,64 +162,9 @@ struct SWANXcodebuild: ParsableCommand {
 
     print("")
 
-    var roughSections = output.components(separatedBy: "\nCompileSwift normal ")
-    roughSections.removeFirst()
-    var sections = [Section]()
+    let sections = try SwanSwiftBuildLogParser.parse(xcodebuildLog: String(xcodebuildLog.path), logger: self)
+    try SwanSwiftBuildLogParser.save(sections: sections, to: outputDir, logger: self)
 
-    for (idx, s) in roughSections.enumerated() {
-      // Quick and dirty parsing
-      let chars: [Character] = Array(s[s.startIndex...s.firstIndex(of: "\n")!])
-      var cursor: Int = 0
-      let platform = String(chars.suffix(from: cursor).prefix(while: { (character) -> Bool in
-        return character != " "
-      }))
-      cursor += platform.count + 1
-      // Some sources have a Swift file path.
-      if (chars[cursor] != "(") {
-        let path = String(chars.suffix(from: cursor).prefix(while: { (character) -> Bool in
-          return character != "("
-        }))
-        cursor += path.count
-      }
-      var expected = "(in target '"
-      if (!chars.suffix(from: cursor).starts(with: expected)) {
-        throw "parsing error: section: \(idx), target expected\n\(String(chars))"
-      }
-      cursor += expected.count
-      let target = String(chars.suffix(from: cursor).prefix(while: { (character) -> Bool in
-        return character != "'"
-      }))
-      cursor += target.count
-      expected = "' from project '"
-      if (!chars.suffix(from: cursor).starts(with: expected)) {
-        throw "parsing error: section: \(idx), project expected\n\(String(chars))"
-      }
-      cursor += expected.count
-      let project = String(chars.suffix(from: cursor).prefix(while: { (character) -> Bool in
-        return character != "'"
-      }))
-      // Isolate SIL from rest of output
-      var sil = s.components(separatedBy: "\nsil_stage canonical")[1].components(separatedBy: "\n\n\n\n")[0]
-      sil = "sil_stage canonical\(sil)\n\n"
-      let newSection = Section(platform: platform, target: target, project: project, sil: sil)
-      print("Detected compilation unit\n  target: \(target)\n  project: \(project)\n  platform: \(platform)\n  SIL lines: \(sil.components(separatedBy: "\n").count)\n")
-      if (!sections.contains(where: { (section) -> Bool in return section == newSection})) {
-        sections.append(newSection)
-      } else {
-        print("Ignored section because it already exists under another platform.")
-      }
-    }
-
-    for section in sections {
-      let filename = outputDir.appendingPathComponent("\(section.target).\(section.project).sil")
-      do {
-        try section.sil.write(to: filename, atomically: true, encoding: String.Encoding.utf8)
-      } catch {
-        printFailure("Could not write SIL to \(filename)\nReason: \(error.localizedDescription)")
-      }
-    }
-
-    printStatus("\nSIL written to \(outputDir.path)")
   }
 
 }

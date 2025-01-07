@@ -34,7 +34,7 @@ struct SWANSwiftcBuild: ParsableCommand {
   
   // Ignore the warning generated from this.
   @Option(default: Constants.defaultSwanDir, help: "Output directory for SIL.")
-  var swanDir: String?
+  var swanDir: String
   
   @Argument(help: "Prefix these arguments with --")
   var swiftcArgs: [String]
@@ -67,7 +67,7 @@ struct SWANSwiftcBuild: ParsableCommand {
   
   func run() throws {
 
-    let outputDir = URL(fileURLWithPath: self.swanDir!)
+    let outputDir = URL(fileURLWithPath: self.swanDir)
     let srcCopyDir = outputDir.appendingPathComponent("src")
     
     let swiftcLog = outputDir.appendingPathComponent(Constants.swiftcLog)

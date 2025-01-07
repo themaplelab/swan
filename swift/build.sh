@@ -11,6 +11,9 @@ if [ "${scriptdir}" != "./swift" ]; then
   exit 1
 fi
 
-"${scriptdir}"/swan-xcodebuild/build.sh
 
-"${scriptdir}"/swan-swiftc/build.sh
+cd "${scriptdir}" && swift build -c release && cd ..
+
+cp "${scriptdir}"/.build/release/swan-xcodebuild lib/swan-xcodebuild
+cp "${scriptdir}"/.build/release/swan-swiftc lib/swan-swiftc
+cp "${scriptdir}"/.build/release/swan-xcodebuildlog2sil lib/swan-xcodebuildlog2sil
