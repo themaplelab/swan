@@ -683,7 +683,7 @@ class SILParser extends SILPrinter {
         val pointerEscape = skip("[pointer_escape]")
         val varDecl = skip("[var_decl]")
         val operand = parseOperand()
-        SILInstruction.operator(SILOperator.beginBorrow(lexical, operand))
+        SILInstruction.operator(SILOperator.beginBorrow(lexical, operand, pointerEscape, varDecl))
       }
       case "end_borrow" => {
         val operand = parseOperand()
