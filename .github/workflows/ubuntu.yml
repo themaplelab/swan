@@ -2,9 +2,9 @@ name: Ubuntu CI
 
 on:
   push:
-    branches: [ spds ]
+    branches: [parser-fix]
   pull_request:
-    branches: [ spds ]
+    branches: [parser-fix]
 
 jobs:
   build:
