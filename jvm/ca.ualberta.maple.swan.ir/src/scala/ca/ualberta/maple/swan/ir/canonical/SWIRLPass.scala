@@ -75,6 +75,7 @@ class SWIRLPass {
         }
       })
     })
+
     // Verify that all values referenced are either block arguments or created with an operator.
     function.refTable.symbols.foreach(ref => {
       // Use the value (not the key) due to COPY operations.

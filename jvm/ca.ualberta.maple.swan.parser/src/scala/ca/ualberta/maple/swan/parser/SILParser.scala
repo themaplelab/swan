@@ -494,10 +494,11 @@ class SILParser extends SILPrinter {
       case "alloc_stack" => {
         val dynamicLifetime = skip("[dynamic_lifetime]")
         val lexical = skip("[lexical]")
+        val varDecl = skip("[var_decl]")
         val moved = skip("[moved]")
         val tpe = parseType()
         val attributes = parseUntilNil( parseDebugAttribute )
-        SILInstruction.operator(SILOperator.allocStack(tpe, dynamicLifetime, lexical, moved, attributes))
+        SILInstruction.operator(SILOperator.allocStack(tpe, dynamicLifetime, lexical, varDecl, moved, attributes))
       }
       case "alloc_ref" => {
         var allocAttributes = new ArrayBuffer[SILAllocAttribute]
@@ -1097,7 +1098,10 @@ class SILParser extends SILPrinter {
         throw missing("explicit_copy_value instruction")
       }
       case "move_value" => {
-        throw missing("move_value")
+        val lexical = skip("[lexical]")
+        val varDecl = skip("[var_decl]")
+        val operand = parseOperand()
+        SILInstruction.operator(SILOperator.moveValue(lexical, varDecl, operand))
       }
       case "strong_copy_unmanaged_value" => {
         val operand = parseOperand()

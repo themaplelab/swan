@@ -107,7 +107,7 @@ object SILInstructionDef {
 sealed trait SILOperator
 object SILOperator {
   /***** ALLOCATION AND DEALLOCATION *****/
-  case class allocStack(tpe: SILType, dynamicLifetime: Boolean, lexical: Boolean, moved: Boolean, attributes: ArrayBuffer[SILDebugAttribute]) extends SILOperator
+  case class allocStack(tpe: SILType, dynamicLifetime: Boolean, lexical: Boolean, varDecl: Boolean, moved: Boolean, attributes: ArrayBuffer[SILDebugAttribute]) extends SILOperator
   case class allocRef(attributes: ArrayBuffer[SILAllocAttribute], tailElems: ArrayBuffer[(SILType, SILOperand)], tpe: SILType) extends SILOperator
   case class allocRefDynamic(objc: Boolean, tailElems: ArrayBuffer[(SILType, SILOperand)], operand: SILOperand, tpe: SILType) extends SILOperator
   case class allocBox(tpe: SILType, attributes: ArrayBuffer[SILDebugAttribute]) extends SILOperator
@@ -231,6 +231,7 @@ object SILOperator {
   case class unmanagedRetainValue(operand: SILOperand) extends SILOperator
   case class strongCopyUnmanagedValue(operand: SILOperand) extends SILOperator
   case class copyValue(operand: SILOperand) extends SILOperator
+  case class moveValue(lexical: Boolean, varDecl: Boolean, operand: SILOperand) extends SILOperator
   case class releaseValue(operand: SILOperand) extends SILOperator
   case class releaseValueAddr(operand: SILOperand) extends SILOperator
   case class unmanagedReleaseValue(operand: SILOperand) extends SILOperator
