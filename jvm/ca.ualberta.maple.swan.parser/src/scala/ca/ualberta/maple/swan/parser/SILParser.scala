@@ -2040,6 +2040,7 @@ class SILParser extends SILPrinter {
     if(skip("let")) return Some(SILDebugAttribute.let)
     if(skip("var")) return Some(SILDebugAttribute.variable)
     if(skip("implicit")) return Some(SILDebugAttribute.variable)
+    if(skip("type")) return Some(SILDebugAttribute.tpe(parseType()))
     this.cursor = c
     None
   }

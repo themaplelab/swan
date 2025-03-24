@@ -451,6 +451,7 @@ object SILDebugAttribute {
   case object let extends SILDebugAttribute
   case object variable extends SILDebugAttribute
   case object _implicit extends SILDebugAttribute
+  case class tpe(tpe: SILType) extends SILDebugAttribute
 }
 
 class SILDebugInfoExpr(val operand: SILDiExprOperand, val otherOperands: Option[ArrayBuffer[SILDiExprOperand]])
