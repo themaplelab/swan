@@ -53,7 +53,7 @@ We aim to provide developers and researchers with an easy-to-use and well-docume
 
 For now, you will need to build the framework to use SWAN.
 
-We have tested SWAN on macOS Big Sur with Xcode 13 and Ubuntu 20.04 with Swift 5.4. You need Xcode Command Line Tools installed for macOS, or the latest Swift release for Linux (see [this](https://linuxconfig.org/how-to-install-swift-on-ubuntu-20-04)). Anything involving Xcode will not work on Linux, but you should be able to build Swift Package Manager projects. You also need Java 8.
+We have tested SWAN on macOS Big Sur with Xcode 14.3.1 and Ubuntu 20.04 with Swift 5.8.1. You need Xcode Command Line Tools installed for macOS, or the latest Swift release for Linux (see [this](https://linuxconfig.org/how-to-install-swift-on-ubuntu-20-04)). Anything involving Xcode will not work on Linux, but you should be able to build Swift Package Manager projects. You also need Java 8.
 
 ```
 git clone https://github.com/themaplelab/swan.git -b spds
