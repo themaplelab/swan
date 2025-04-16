@@ -36,7 +36,7 @@ struct Section {
 extension String: Error {}
 
 func ==(lhs: Section, rhs: Section) -> Bool {
-  // Do NOT include platform. Might not be necesssary to compare SIL.
+  // Do NOT include platform. Might not be necessary to compare SIL.
   return ((lhs.target == rhs.target) && (lhs.project == rhs.project) && (lhs.sil == rhs.sil))
 }
 

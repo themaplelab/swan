@@ -162,10 +162,11 @@ class SILPrinter extends Printer {
 
         // *** ALLOCATION AND DEALLOCATION ***
 
-      case SILOperator.allocStack(tpe, dynamicLifetime, lexical, moved, attributes) => {
+      case SILOperator.allocStack(tpe, dynamicLifetime, lexical, varDecl, moved, attributes) => {
         print("alloc_stack ")
         print("[dynamic_lifetime] ", when = dynamicLifetime)
         print("[lexical] ", when = lexical)
+        print("[varDecl] ", when = varDecl)
         print("[moved] ", when = moved)
         print(tpe)
         print(whenEmpty = false, ", ", attributes, ", ", "", (a: SILDebugAttribute) => print(a))
@@ -278,6 +279,9 @@ class SILPrinter extends Printer {
         print(operand)
         print(whenEmpty = false, ", ", attributes, ", ", "", (a: SILDebugAttribute) => print(a))
       }
+      case SILOperator.debugStep() => {
+        print("debug_step")
+      }
 
         // *** ACCESSING MEMORY ***
 
@@ -309,9 +313,11 @@ class SILPrinter extends Printer {
         print(" to ")
         print(to)
       }
-      case SILOperator.beginBorrow(lexical, operand) => {
+      case SILOperator.beginBorrow(lexical, operand, pointerEscape, varDecl) => {
         print("begin_borrow ")
         print("[lexical] ", lexical)
+        print("[pointer_escape]", pointerEscape)
+        print("[var_decl]", varDecl)
         print(operand)
       }
       case SILOperator.endBorrow(operand) => {
@@ -687,6 +693,12 @@ class SILPrinter extends Printer {
       }
       case SILOperator.copyValue(operand) => {
         print("copy_value ")
+        print(operand)
+      }
+      case SILOperator.moveValue(lexical, varDecl, operand) => {
+        print("move_value ")
+        print("[lexical] ", when = lexical)
+        print("[var_decl] ", when = varDecl)
         print(operand)
       }
       case SILOperator.strongCopyUnmanagedValue(operand) => {

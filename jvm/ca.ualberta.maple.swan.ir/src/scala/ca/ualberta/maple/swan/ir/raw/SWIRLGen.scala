@@ -379,6 +379,7 @@ class SWIRLGen {
           case inst: SILOperator.deallocValueBuffer => visitDeallocValueBuffer(result, inst, ctx)
           case inst: SILOperator.debugValue => visitDebugValue(result, inst, ctx)
           case inst: SILOperator.debugValueAddr => visitDebugValueAddr(result, inst, ctx)
+          case inst: SILOperator.debugStep => visitDebugStep(result, inst, ctx)
           case inst: SILOperator.load => visitLoad(result, inst, ctx)
           case inst: SILOperator.store => visitStore(result, inst, ctx)
           case inst: SILOperator.loadBorrow => visitLoadBorrow(result, inst, ctx)
@@ -441,6 +442,7 @@ class SWIRLGen {
           case inst: SILOperator.retainValueAddr => visitRetainValueAddr(result, inst, ctx)
           case inst: SILOperator.unmanagedRetainValue => visitUnmanagedRetainValue(result, inst, ctx)
           case inst: SILOperator.copyValue => visitCopyValue(result, inst, ctx)
+          case inst: SILOperator.moveValue => visitMoveValue(result, inst, ctx)
           case inst: SILOperator.strongCopyUnmanagedValue => visitStrongCopyUnmanagedValue(result, inst, ctx)
           case inst: SILOperator.releaseValue => visitReleaseValue(result, inst, ctx)
           case inst: SILOperator.releaseValueAddr => visitReleaseValueAddr(result, inst, ctx)
@@ -682,6 +684,10 @@ class SWIRLGen {
       case SILDebugAttribute.variable =>
       case SILDebugAttribute._implicit =>
     }
+    NOP
+  }
+
+  def visitDebugStep(r: Option[SILResult], I: SILOperator.debugStep, ctx: Context): ArrayBuffer[RawInstructionDef] = {
     NOP
   }
 
@@ -1119,6 +1125,13 @@ class SWIRLGen {
 
   @throws[UnexpectedSILFormatException]
   def visitCopyValue(r: Option[SILResult], I: SILOperator.copyValue, ctx: Context): ArrayBuffer[RawInstructionDef] = {
+    // TODO: @sil_unmanaged -> @owned
+    val result = getSingleResult(r, Utils.SILTypeToType(I.operand.tpe), ctx)
+    makeOperator(ctx, Operator.assign(result, makeSymbolRef(I.operand.value, ctx)))
+  }
+
+  @throws[UnexpectedSILFormatException]
+  def visitMoveValue(r: Option[SILResult], I: SILOperator.moveValue, ctx: Context): ArrayBuffer[RawInstructionDef] = {
     // TODO: @sil_unmanaged -> @owned
     val result = getSingleResult(r, Utils.SILTypeToType(I.operand.tpe), ctx)
     makeOperator(ctx, Operator.assign(result, makeSymbolRef(I.operand.value, ctx)))

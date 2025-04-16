@@ -3,6 +3,10 @@ version '1.0-SNAPSHOT'
 
 allprojects {
     repositories {
+        maven {
+            name = "local"
+            url = "file://" + project.rootDir + "/resources/spds"
+        }
         mavenCentral()
         maven {
             name = "github"
@@ -11,11 +15,6 @@ allprojects {
                 username = project.property("USERNAME")
                 password = project.property("PASSWORD")
             }
-        }
-
-        maven {
-            name = "local"
-            url = "file://" + project.rootDir + "/resources/spds"
         }
     }
 }
